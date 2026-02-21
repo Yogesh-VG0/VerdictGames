@@ -1,11 +1,20 @@
-# Verdict.Games Backend
+# Verdict.Games
 
-This is the central API and background worker service for Verdict.Games, powering PC and Android game reviews.
-Built with FastAPI, PostgreSQL, Redis, and Celery.
+This is the full-stack application for Verdict.Games, powering PC and Android game reviews.
+
+## Components
+
+- **Backend**: FastAPI, PostgreSQL, Redis, and Celery
+- **Frontend**: Vite + React with Vercel Web Analytics integration
 
 ## Prerequisites
+
+### Backend
 - Docker & Docker Compose
 - Or locally: Python 3.11, PostgreSQL, Redis
+
+### Frontend
+- Node.js 18+ and npm (or pnpm, yarn, bun)
 
 ## Quick Start (Docker)
 1. Copy the environment file:
@@ -29,8 +38,14 @@ Built with FastAPI, PostgreSQL, Redis, and Celery.
    `celery -A worker.celery_app worker --loglevel=info`
 
 ## Architecture
+
+### Backend
 - `app/api/`: REST Endpoints powered by FastAPI
 - `app/models/`: SQLAlchemy ORM definitions mapping to PostgreSQL
 - `app/schemas/`: Pydantic Models for Data Validation
 - `app/services/`: Interactions with 3rd-party APIs (RAWG, Steam API, PlayStore scraping)
-- `worker/`: Async tasks offloaded to celery handling scrapes & rating recalculations.
+- `worker/`: Async tasks offloaded to celery handling scrapes & rating recalculations
+
+### Frontend
+- `frontend/`: Vite + React application with Vercel Web Analytics
+- See [frontend/README.md](frontend/README.md) for detailed frontend documentation
