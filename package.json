@@ -11,7 +11,9 @@
     "build": "next build",
     "start": "next start -p $PORT",
     "lint": "eslint",
-    "heroku-postbuild": "next build"
+    "heroku-postbuild": "next build",
+    "scheduler:trending": "node scripts/heroku-refresh-trending.mjs",
+    "scheduler:discover": "node scripts/heroku-discover-games.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.98.0",
