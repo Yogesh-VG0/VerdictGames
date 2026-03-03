@@ -9,6 +9,7 @@ import VerdictBadge from "@/components/ui/VerdictBadge";
 import ScoreRing from "@/components/ui/ScoreRing";
 import PixelBadge from "@/components/ui/PixelBadge";
 import PixelButton from "@/components/ui/PixelButton";
+import ScoreChips from "@/components/ScoreChips";
 import { cn, scoreColor } from "@/lib/utils";
 
 interface HeroCarouselProps {
@@ -184,6 +185,9 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
                 )}
               </div>
             </div>
+
+            {/* Multi-source score chips */}
+            <ScoreChips game={game} variant="full" />
 
             {/* Summary - hidden on very small screens */}
             <p className="hidden sm:block text-sm md:text-base text-secondary max-w-2xl line-clamp-2">

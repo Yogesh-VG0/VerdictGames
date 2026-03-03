@@ -77,10 +77,10 @@ export default function HomePage() {
             ) : trending.data && trending.data.length > 0 ? (
               <>
                 <SectionHeader
-                  title="Trending Now"
+                  title="Most Played Right Now"
                   href="/search?sort=trending"
                   icon="🔥"
-                  subtitle="What everyone's playing right now"
+                  subtitle="Ranked by Steam concurrent players"
                 />
                 {/* Spotlight first game + scroll for the rest */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -158,10 +158,10 @@ export default function HomePage() {
             ) : topRated.data && topRated.data.length > 0 ? (
               <>
                 <SectionHeader
-                  title="Top Rated"
+                  title="Top Verdict Scores"
                   href="/search?sort=top-rated"
                   icon="🏆"
-                  subtitle="The highest-scored games by our verdict"
+                  subtitle="Highest-scored games from Steam, IGDB & Metacritic signals"
                 />
                 <GameGrid games={topRated.data} />
               </>

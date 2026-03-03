@@ -57,6 +57,10 @@ export function mapGameRow(row: GameRow): Game {
     metacriticUrl: row.metacritic_url ?? undefined,
     websiteUrl: row.website_url ?? undefined,
     redditUrl: row.reddit_url ?? undefined,
+    steamRatingLabel: row.steam_rating_label ?? undefined,
+    rawgMetacritic: row.rawg_metacritic ?? undefined,
+    rawgRating: row.rawg_rating ?? undefined,
+    scoreSource: row.score_source ?? undefined,
     lastEnrichedAt: row.last_enriched_at ?? undefined,
     enrichmentSources: row.enrichment_sources ?? undefined,
   };

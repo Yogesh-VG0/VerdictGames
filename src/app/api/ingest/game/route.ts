@@ -14,6 +14,17 @@ import { ingestGame } from "@/lib/services/ingest";
 
 export async function POST(request: NextRequest) {
   try {
+    // Auth check — require CRON_SECRET to prevent abuse
+    const secret = process.env.CRON_SECRET;
+    if (secret) {
+      const provided =
+        request.nextUrl.searchParams.get("secret") ??
+        request.headers.get("authorization")?.replace("Bearer ", "");
+      if (provided !== secret) {
+        return jsonError("Unauthorized", 401);
+      }
+    }
+
     // Validate that Supabase + RAWG are configured
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
       return jsonError(

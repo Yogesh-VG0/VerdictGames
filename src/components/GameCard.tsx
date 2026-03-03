@@ -7,6 +7,7 @@ import { Game } from "@/lib/types";
 import { scoreColor, cn } from "@/lib/utils";
 import PixelBadge from "@/components/ui/PixelBadge";
 import VerdictBadge from "@/components/ui/VerdictBadge";
+import ScoreChips from "@/components/ScoreChips";
 
 interface GameCardProps {
   game: Game;
@@ -56,16 +57,18 @@ export default function GameCard({
             />
             {/* Gradient overlay */}
             <div className="absolute inset-0 bg-gradient-to-t from-background via-background/30 to-transparent" />
-            {/* Score badge with glow */}
+            {/* Verdict score badge */}
             <div
               className={cn(
-                "absolute top-3 right-3 w-12 h-12 rounded-sm flex items-center justify-center",
+                "absolute top-3 right-3 rounded-sm px-2 py-1 flex items-center gap-1.5",
                 "bg-background/85 backdrop-blur-md border border-border text-sm font-bold tabular-nums",
                 scoreColor(game.score),
                 "group-hover:" + scoreGlowClass(game.score),
                 "transition-shadow duration-300"
               )}
+              title={`Verdict Score: ${game.score} (source: ${game.scoreSource ?? "blended"})`}
             >
+              <span className="text-[9px] opacity-60 font-medium">V</span>
               {game.score}
             </div>
           </div>
@@ -88,6 +91,7 @@ export default function GameCard({
               {game.title}
             </h3>
             <VerdictBadge label={game.verdictLabel} size="sm" />
+            <ScoreChips game={game} variant="compact" />
             {game.verdictSummary && (
               <p className="text-xs text-secondary line-clamp-2 leading-relaxed">
                 {game.verdictSummary}
@@ -124,12 +128,14 @@ export default function GameCard({
           {/* Score overlay */}
           <div
             className={cn(
-              "absolute top-2 right-2 w-9 h-9 rounded-sm flex items-center justify-center",
+              "absolute top-2 right-2 rounded-sm px-1.5 py-0.5 flex items-center gap-1",
               "bg-background/80 backdrop-blur-sm border border-border text-xs font-bold tabular-nums",
               scoreColor(game.score),
               "transition-shadow duration-300"
             )}
+            title={`Verdict ${game.score} (${game.scoreSource ?? "blended"})`}
           >
+            <span className="text-[8px] opacity-50">V</span>
             {game.score}
           </div>
 
@@ -165,6 +171,8 @@ export default function GameCard({
           <div className="flex items-center gap-2">
             <VerdictBadge label={game.verdictLabel} size="sm" />
           </div>
+
+          <ScoreChips game={game} variant="compact" />
 
           <div className="flex flex-wrap gap-1 pt-0.5">
             {game.genres.slice(0, 2).map((g) => (

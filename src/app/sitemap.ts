@@ -1,17 +1,20 @@
 import type { MetadataRoute } from "next";
 
-const SITE_URL = process.env.SITE_URL || "https://www.verdict.games";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://www.verdict.games";
+
+/** Fixed build date for static pages — avoids crawler churn from new Date() every run */
+const BUILD_DATE = "2026-03-03T00:00:00Z";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Static pages
   const staticPages: MetadataRoute.Sitemap = [
-    { url: `${SITE_URL}`, lastModified: new Date(), changeFrequency: "daily", priority: 1.0 },
-    { url: `${SITE_URL}/search`, lastModified: new Date(), changeFrequency: "daily", priority: 0.8 },
-    { url: `${SITE_URL}/lists`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.7 },
-    { url: `${SITE_URL}/reviews`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.7 },
-    { url: `${SITE_URL}/about`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.4 },
-    { url: `${SITE_URL}/privacy`, lastModified: new Date(), changeFrequency: "yearly", priority: 0.2 },
-    { url: `${SITE_URL}/terms`, lastModified: new Date(), changeFrequency: "yearly", priority: 0.2 },
+    { url: `${SITE_URL}`, lastModified: BUILD_DATE, changeFrequency: "daily", priority: 1.0 },
+    { url: `${SITE_URL}/search`, lastModified: BUILD_DATE, changeFrequency: "daily", priority: 0.8 },
+    { url: `${SITE_URL}/lists`, lastModified: BUILD_DATE, changeFrequency: "weekly", priority: 0.7 },
+    { url: `${SITE_URL}/reviews`, lastModified: BUILD_DATE, changeFrequency: "weekly", priority: 0.7 },
+    { url: `${SITE_URL}/about`, lastModified: BUILD_DATE, changeFrequency: "monthly", priority: 0.4 },
+    { url: `${SITE_URL}/privacy`, lastModified: BUILD_DATE, changeFrequency: "yearly", priority: 0.2 },
+    { url: `${SITE_URL}/terms`, lastModified: BUILD_DATE, changeFrequency: "yearly", priority: 0.2 },
   ];
 
   // Dynamic game pages

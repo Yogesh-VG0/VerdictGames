@@ -63,6 +63,10 @@ export interface Database {
           website_url: string | null;
           reddit_url: string | null;
           cheapshark_id: string | null;
+          steam_rating_label: string | null;
+          rawg_metacritic: number | null;
+          rawg_rating: number | null;
+          score_source: string;
           last_enriched_at: string | null;
           enrichment_sources: string[];
 

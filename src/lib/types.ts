@@ -80,6 +80,12 @@ export interface Game {
   websiteUrl?: string;
   redditUrl?: string;
 
+  // Per-source scores
+  steamRatingLabel?: string;
+  rawgMetacritic?: number;
+  rawgRating?: number;
+  scoreSource?: string;
+
   // Enrichment tracking
   lastEnrichedAt?: string;
   enrichmentSources?: string[];

@@ -16,6 +16,7 @@ import ReviewCard from "@/components/ReviewCard";
 import GameGrid from "@/components/GameGrid";
 import SectionHeader from "@/components/SectionHeader";
 import FadeInSection from "@/components/FadeInSection";
+import ScoreChips from "@/components/ScoreChips";
 import { Skeleton } from "@/components/ui/Skeleton";
 
 interface Props {
@@ -217,23 +218,29 @@ export default function GameDetailPage({ params }: Props) {
                   </div>
 
                   {/* Rating breakdown */}
-                  <div className="grid grid-cols-3 gap-4 mt-5 pt-4 border-t border-border/50">
-                    <div className="text-center space-y-0.5">
-                      <p className={cn("text-xl font-bold", sc)}>{game.score}</p>
-                      <p className="text-[10px] text-tertiary uppercase tracking-wider">Verdict</p>
+                  <div className="mt-5 pt-4 border-t border-border/50 space-y-3">
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="text-center space-y-0.5">
+                        <p className={cn("text-xl font-bold", sc)}>{game.score}</p>
+                        <p className="text-[10px] text-tertiary uppercase tracking-wider">Verdict</p>
+                      </div>
+                      <div className="text-center space-y-0.5">
+                        <p className={cn("text-xl font-bold", game.userScore ? scoreColor(game.userScore) : "text-tertiary")}>
+                          {game.userScore ? `${game.userScore}%` : "—"}
+                        </p>
+                        <p className="text-[10px] text-tertiary uppercase tracking-wider">Steam</p>
+                      </div>
+                      <div className="text-center space-y-0.5">
+                        <p className={cn("text-xl font-bold", game.igdbRating ? scoreColor(game.igdbRating) : "text-tertiary")}>
+                          {game.igdbRating ? Math.round(game.igdbRating) : "—"}
+                        </p>
+                        <p className="text-[10px] text-tertiary uppercase tracking-wider">IGDB</p>
+                      </div>
                     </div>
-                    <div className="text-center space-y-0.5">
-                      <p className={cn("text-xl font-bold", game.userScore ? scoreColor(game.userScore) : "text-tertiary")}>
-                        {game.userScore ?? "—"}
-                      </p>
-                      <p className="text-[10px] text-tertiary uppercase tracking-wider">Community</p>
-                    </div>
-                    <div className="text-center space-y-0.5">
-                      <p className={cn("text-xl font-bold", game.igdbRating ? scoreColor(game.igdbRating) : "text-tertiary")}>
-                        {game.igdbRating ?? "—"}
-                      </p>
-                      <p className="text-[10px] text-tertiary uppercase tracking-wider">Critics</p>
-                    </div>
+                    <ScoreChips game={game} variant="full" className="justify-center" />
+                    <p className="text-[9px] text-tertiary text-center">
+                      Verdict score derived from {game.scoreSource === "steam" ? "Steam reviews" : game.scoreSource === "igdb" ? "IGDB rating" : game.scoreSource === "metacritic" ? "Metacritic" : "RAWG/IGDB signals"}
+                    </p>
                   </div>
                 </div>
 

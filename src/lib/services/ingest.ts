@@ -201,10 +201,20 @@ export async function ingestGame(options: IngestOptions): Promise<IngestResult> 
 
   // ── Step 10: Compute score ──
   // Priority: Steam review % → IGDB aggregated → RAWG metacritic → RAWG rating * 20
-  const score = steamScore
-    ?? igdbEnrichment?.igdbRating
-    ?? fullGame.metacritic
-    ?? Math.round((fullGame.rating || 3) * 20);
+  // Also track which source the main score came from
+  let scoreSource = "blended";
+  const score = (() => {
+    if (steamScore !== null) { scoreSource = "steam"; return steamScore; }
+    if (igdbEnrichment?.igdbRating) { scoreSource = "igdb"; return igdbEnrichment.igdbRating; }
+    if (fullGame.metacritic) { scoreSource = "metacritic"; return fullGame.metacritic; }
+    scoreSource = "rawg";
+    return Math.round((fullGame.rating || 3) * 20);
+  })();
+
+  // Store per-source values separately
+  const steamRatingLabel = steamReviewData?.review_score_desc ?? null;
+  const rawgMetacritic = fullGame.metacritic ?? null;
+  const rawgRating = fullGame.rating ?? null;
 
   const verdictLabel = scoreToVerdict(score);
 
@@ -267,6 +277,10 @@ export async function ingestGame(options: IngestOptions): Promise<IngestResult> 
     website_url: igdbEnrichment?.websiteUrl ?? fullGame.website ?? null,
     reddit_url: igdbEnrichment?.redditUrl ?? fullGame.reddit_url ?? null,
     cheapshark_id: cheapsharkId,
+    steam_rating_label: steamRatingLabel,
+    rawg_metacritic: rawgMetacritic,
+    rawg_rating: rawgRating,
+    score_source: scoreSource,
     last_enriched_at: new Date().toISOString(),
     enrichment_sources: enrichmentSources,
   };
