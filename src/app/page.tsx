@@ -3,13 +3,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import {
-  getFeaturedGame,
+  getFeaturedGames,
   getTrendingGames,
   getNewReleases,
   getTopRated,
   getPersonalizedGames,
 } from "@/lib/api";
-import FeaturedHero from "@/components/FeaturedHero";
+import HeroCarousel from "@/components/HeroCarousel";
 import FadeInSection from "@/components/FadeInSection";
 import GameCard from "@/components/GameCard";
 import GameGrid from "@/components/GameGrid";
@@ -24,36 +24,41 @@ import {
 export default function HomePage() {
   const featured = useQuery({
     queryKey: ["featured"],
-    queryFn: getFeaturedGame,
+    queryFn: () => getFeaturedGames(5),
+    staleTime: 5 * 60 * 1000,
   });
   const trending = useQuery({
     queryKey: ["trending"],
     queryFn: getTrendingGames,
+    staleTime: 5 * 60 * 1000,
   });
   const newReleases = useQuery({
     queryKey: ["newReleases"],
     queryFn: () => getNewReleases(8),
+    staleTime: 5 * 60 * 1000,
   });
   const topRated = useQuery({
     queryKey: ["topRated"],
     queryFn: () => getTopRated(8),
+    staleTime: 5 * 60 * 1000,
   });
   const personalized = useQuery({
     queryKey: ["personalized"],
-    queryFn: () => getPersonalizedGames(6),
+    queryFn: () => getPersonalizedGames(8),
+    staleTime: 5 * 60 * 1000,
   });
 
   return (
     <div className="space-y-0">
-      {/* ── Featured Hero ── */}
+      {/* ── Hero Carousel ── */}
       <section className="relative">
         <div className="absolute inset-0 hero-spotlight pointer-events-none" />
         <div className="max-w-7xl mx-auto px-4 pt-6 pb-10">
           <FadeInSection>
             {featured.isLoading ? (
               <HeroSkeleton />
-            ) : featured.data ? (
-              <FeaturedHero game={featured.data} />
+            ) : featured.data && featured.data.length > 0 ? (
+              <HeroCarousel games={featured.data} interval={7000} />
             ) : null}
           </FadeInSection>
         </div>

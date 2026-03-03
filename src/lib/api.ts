@@ -67,6 +67,15 @@ export async function getFeaturedGame(): Promise<Game | null> {
   return trending.find((g) => g.featured) ?? trending[0] ?? null;
 }
 
+/** Get multiple featured games for the hero carousel. */
+export async function getFeaturedGames(limit = 5): Promise<Game[]> {
+  const trending = await getTrendingGames();
+  // Featured games first, then fill with trending
+  const featured = trending.filter((g) => g.featured);
+  const nonFeatured = trending.filter((g) => !g.featured);
+  return [...featured, ...nonFeatured].slice(0, limit);
+}
+
 /** Get trending games. */
 export async function getTrendingGames(): Promise<Game[]> {
   return (await apiFetch<Game[]>("/api/games/trending?limit=10")) ?? [];
@@ -118,10 +127,39 @@ export async function getRelatedGames(slug: string, limit = 4): Promise<Game[]> 
   return [];
 }
 
-/** "Because you viewed…" personalized. */
+/** "Because you viewed…" personalized — genre-diverse picks. */
 export async function getPersonalizedGames(limit = 6): Promise<Game[]> {
-  const topRated = await getTopRated(limit + 2);
-  return topRated.slice(2, 2 + limit);
+  // Get a larger pool and pick diverse genres
+  const pool = await getTopRated(30);
+  const trending = await getTrendingGames();
+  const trendingIds = new Set(trending.map((g) => g.id));
+
+  // Filter out games already in trending to avoid duplicates
+  const candidates = pool.filter((g) => !trendingIds.has(g.id));
+
+  // Pick one game per genre for diversity
+  const seenGenres = new Set<string>();
+  const picks: Game[] = [];
+
+  for (const game of candidates) {
+    if (picks.length >= limit) break;
+    const primaryGenre = game.genres[0] ?? "unknown";
+    if (!seenGenres.has(primaryGenre) || seenGenres.size >= 6) {
+      seenGenres.add(primaryGenre);
+      picks.push(game);
+    }
+  }
+
+  // If we still need more, fill from remaining
+  if (picks.length < limit) {
+    const pickIds = new Set(picks.map((p) => p.id));
+    for (const game of candidates) {
+      if (picks.length >= limit) break;
+      if (!pickIds.has(game.id)) picks.push(game);
+    }
+  }
+
+  return picks;
 }
 
 /* ═══════════════════════════════════════════════════

@@ -329,6 +329,121 @@ export function igdbImageUrl(imageId: string, size: string = "cover_big"): strin
   return `https://images.igdb.com/igdb/image/upload/t_${size}/${imageId}.jpg`;
 }
 
+/* ───────── PopScore / Popularity Primitives ───────── */
+
+/**
+ * IGDB Popularity Types:
+ * 1 = IGDB Visits
+ * 2 = Want to Play
+ * 3 = Playing
+ * 4 = Played
+ * 5 = Steam 24hr Peak Players
+ * 6 = Steam Positive Reviews
+ * 7 = Steam Negative Reviews
+ * 8 = Steam Total Reviews
+ */
+
+export interface PopularityPrimitive {
+  id: number;
+  game_id: number;
+  popularity_type: number;
+  value: number;
+}
+
+/**
+ * Fetch top games by an IGDB popularity type.
+ * Returns game IDs sorted by popularity value descending.
+ */
+export async function getPopularByType(
+  popularityType: number,
+  limit = 50
+): Promise<PopularityPrimitive[] | null> {
+  return igdbQuery<PopularityPrimitive>(
+    "popularity_primitives",
+    `fields game_id, value, popularity_type;
+     sort value desc;
+     limit ${limit};
+     where popularity_type = ${popularityType};`
+  );
+}
+
+/**
+ * Fetch game names for a list of IGDB game IDs.
+ */
+export async function getIgdbGamesByIds(
+  ids: number[],
+  limit = 50
+): Promise<IgdbGame[] | null> {
+  if (ids.length === 0) return [];
+  return igdbQuery<IgdbGame>(
+    "games",
+    `fields name, slug, first_release_date, total_rating, cover.image_id,
+            genres.name, platforms.name, platforms.abbreviation, hypes;
+     where id = (${ids.join(",")}) & game_type = 0;
+     limit ${limit};`
+  );
+}
+
+/**
+ * Get currently trending games using IGDB PopScore.
+ * Combines: IGDB Visits (type 1), Want to Play (type 2), Playing (type 3), Steam Peak Players (type 5).
+ * Returns a weighted list of IGDB game IDs with scores.
+ */
+export async function getTrendingFromIgdb(
+  limit = 40
+): Promise<{ igdbId: number; name: string; slug: string; popScore: number }[]> {
+  // Fetch multiple popularity types in parallel
+  const [visits, wantToPlay, playing, steamPeak] = await Promise.all([
+    getPopularByType(1, 100),  // IGDB Visits
+    getPopularByType(2, 100),  // Want to Play
+    getPopularByType(3, 100),  // Playing
+    getPopularByType(5, 100),  // Steam 24hr Peak Players
+  ]);
+
+  if (!visits && !wantToPlay && !playing && !steamPeak) return [];
+
+  // Build a combined score map: igdbId -> weighted score
+  const scoreMap = new Map<number, number>();
+
+  const weights = { visits: 0.25, wantToPlay: 0.30, playing: 0.30, steamPeak: 0.15 };
+
+  function addScores(items: PopularityPrimitive[] | null, weight: number) {
+    if (!items) return;
+    // Normalize: top item = 1.0
+    const maxVal = items[0]?.value || 1;
+    for (const item of items) {
+      const normalized = item.value / maxVal;
+      scoreMap.set(
+        item.game_id,
+        (scoreMap.get(item.game_id) || 0) + normalized * weight
+      );
+    }
+  }
+
+  addScores(visits, weights.visits);
+  addScores(wantToPlay, weights.wantToPlay);
+  addScores(playing, weights.playing);
+  addScores(steamPeak, weights.steamPeak);
+
+  // Sort by combined score
+  const sorted = [...scoreMap.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, limit);
+
+  const igdbIds = sorted.map(([id]) => id);
+  const games = await getIgdbGamesByIds(igdbIds);
+  if (!games) return [];
+
+  // Map back with scores
+  const gameMap = new Map(games.map((g) => [g.id, g]));
+  return sorted
+    .filter(([id]) => gameMap.has(id))
+    .map(([id, popScore]) => {
+      const g = gameMap.get(id)!;
+      return { igdbId: id, name: g.name, slug: g.slug, popScore };
+    });
+}
+
 /* ───────── Utilities ───────── */
 
 function escapeQuotes(str: string): string {
