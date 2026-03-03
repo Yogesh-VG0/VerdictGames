@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { scoreColorVar } from "@/lib/utils";
+import { scoreColorVar, cn } from "@/lib/utils";
 
 interface ScoreRingProps {
   score: number;
@@ -26,7 +26,7 @@ export default function ScoreRing({
   useEffect(() => setMounted(true), []);
 
   return (
-    <div className={className} style={{ width: size, height: size }}>
+    <div className={cn("relative", className)} style={{ width: size, height: size }}>
       <svg width={size} height={size} className="-rotate-90">
         {/* Background track */}
         <circle

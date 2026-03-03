@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { motion, AnimatePresence, type Variants } from "framer-motion";
+import { motion, AnimatePresence, type Variants, type PanInfo } from "framer-motion";
 import { Game } from "@/lib/types";
 import VerdictBadge from "@/components/ui/VerdictBadge";
 import ScoreRing from "@/components/ui/ScoreRing";
@@ -57,9 +57,12 @@ const contentVariants: Variants = {
   },
 };
 
+const SWIPE_THRESHOLD = 50;
+
 export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselProps) {
   const [[page, direction], setPage] = useState([0, 0]);
   const [isPaused, setIsPaused] = useState(false);
+  const isSwiping = useRef(false);
 
   const slideCount = games.length;
   const currentIndex = ((page % slideCount) + slideCount) % slideCount;
@@ -70,6 +73,24 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
       setPage(([p]) => [p + newDirection, newDirection]);
     },
     []
+  );
+
+  // Touch/swipe handler
+  const handleDragEnd = useCallback(
+    (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+      const { offset, velocity } = info;
+      // Swipe if offset or velocity exceeds threshold
+      if (Math.abs(offset.x) > SWIPE_THRESHOLD || Math.abs(velocity.x) > 300) {
+        if (offset.x < 0) {
+          paginate(1);  // swipe left → next
+        } else {
+          paginate(-1); // swipe right → prev
+        }
+      }
+      // Reset swiping flag after a tick
+      setTimeout(() => { isSwiping.current = false; }, 100);
+    },
+    [paginate]
   );
 
   // Auto-advance
@@ -83,12 +104,19 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
 
   return (
     <section
-      className="relative rounded-sm overflow-hidden border border-border group"
+      className="relative rounded-sm overflow-hidden border border-border group touch-pan-y"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
     >
-      {/* Background images with transition */}
-      <div className="relative aspect-[16/9] sm:aspect-[16/9] md:aspect-[21/9] overflow-hidden">
+      {/* Background images with swipe support */}
+      <motion.div
+        className="relative aspect-[4/3] sm:aspect-[16/9] md:aspect-[21/9] overflow-hidden cursor-grab active:cursor-grabbing"
+        drag="x"
+        dragConstraints={{ left: 0, right: 0 }}
+        dragElastic={0.15}
+        onDragStart={() => { isSwiping.current = true; }}
+        onDragEnd={handleDragEnd}
+      >
         <AnimatePresence initial={false} custom={direction} mode="popLayout">
           <motion.div
             key={page}
@@ -114,10 +142,10 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent z-[1]" />
         <div className="absolute inset-0 bg-gradient-to-r from-background/80 to-transparent z-[1]" />
         <div className="absolute inset-0 hero-spotlight opacity-60 z-[1]" />
-      </div>
+      </motion.div>
 
       {/* Content overlay */}
-      <div className="absolute bottom-0 left-0 right-0 p-4 md:p-8 z-[2]">
+      <div className="absolute bottom-0 left-0 right-0 p-3 sm:p-4 md:p-8 z-[2]">
         <AnimatePresence mode="wait">
           <motion.div
             key={`content-${currentIndex}`}
@@ -125,43 +153,46 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
             initial="enter"
             animate="center"
             exit="exit"
-            className="space-y-3"
+            className="space-y-2 sm:space-y-3"
           >
             {/* Featured label */}
-            <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-accent">
+            <span className="inline-flex items-center gap-1.5 text-[10px] sm:text-xs font-bold uppercase tracking-wider text-accent">
               <span className="w-1.5 h-1.5 bg-accent rounded-full animate-pixel-pulse" />
               Featured
             </span>
 
             {/* Title */}
-            <h1 className="text-2xl md:text-4xl lg:text-5xl font-bold text-foreground leading-tight max-w-2xl">
+            <h1 className="text-lg sm:text-2xl md:text-4xl lg:text-5xl font-bold text-foreground leading-tight max-w-2xl">
               {game.title}
             </h1>
 
             {/* Score + Verdict + Platforms */}
-            <div className="flex items-center gap-3 flex-wrap">
-              <ScoreRing score={game.score} size={56} strokeWidth={3} />
+            <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+              <ScoreRing score={game.score} size={40} strokeWidth={3} className="sm:hidden" />
+              <ScoreRing score={game.score} size={56} strokeWidth={3} className="hidden sm:block" />
               <VerdictBadge label={game.verdictLabel} size="lg" />
-              {game.platforms.map((p) => (
-                <PixelBadge key={p} variant={p === "PC" ? "muted" : "success"} size="md">
-                  {p}
-                </PixelBadge>
-              ))}
-              {game.releaseDate && (
-                <span className="text-xs text-tertiary font-medium">
-                  {new Date(game.releaseDate).getFullYear()}
-                </span>
-              )}
+              <div className="hidden sm:flex items-center gap-2">
+                {game.platforms.map((p) => (
+                  <PixelBadge key={p} variant={p === "PC" ? "muted" : "success"} size="md">
+                    {p}
+                  </PixelBadge>
+                ))}
+                {game.releaseDate && (
+                  <span className="text-xs text-tertiary font-medium">
+                    {new Date(game.releaseDate).getFullYear()}
+                  </span>
+                )}
+              </div>
             </div>
 
-            {/* Summary */}
-            <p className="text-sm md:text-base text-secondary max-w-2xl line-clamp-2">
+            {/* Summary - hidden on very small screens */}
+            <p className="hidden sm:block text-sm md:text-base text-secondary max-w-2xl line-clamp-2">
               {game.verdictSummary}
             </p>
 
             {/* CTA */}
-            <div className="flex gap-3 pt-1">
-              <Link href={`/game/${game.slug}`}>
+            <div className="flex gap-3 pt-0.5 sm:pt-1">
+              <Link href={`/game/${game.slug}`} onClick={(e) => { if (isSwiping.current) e.preventDefault(); }}>
                 <PixelButton size="md">Read Verdict</PixelButton>
               </Link>
             </div>
@@ -169,14 +200,14 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
         </AnimatePresence>
       </div>
 
-      {/* Navigation arrows */}
+      {/* Navigation arrows - hidden on mobile (use swipe instead) */}
       {slideCount > 1 && (
         <>
           <button
             onClick={() => paginate(-1)}
-            className="absolute left-3 top-1/2 -translate-y-1/2 z-[3] w-10 h-10 rounded-full
+            className="hidden sm:flex absolute left-2 md:left-3 top-1/3 md:top-1/2 -translate-y-1/2 z-[3] w-9 h-9 md:w-10 md:h-10 rounded-full
                        bg-background/60 backdrop-blur-sm border border-border/50
-                       flex items-center justify-center text-foreground
+                       items-center justify-center text-foreground
                        opacity-0 group-hover:opacity-100 transition-opacity duration-300
                        hover:bg-accent/20 hover:border-accent/50"
             aria-label="Previous game"
@@ -187,9 +218,9 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
           </button>
           <button
             onClick={() => paginate(1)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 z-[3] w-10 h-10 rounded-full
+            className="hidden sm:flex absolute right-2 md:right-3 top-1/3 md:top-1/2 -translate-y-1/2 z-[3] w-9 h-9 md:w-10 md:h-10 rounded-full
                        bg-background/60 backdrop-blur-sm border border-border/50
-                       flex items-center justify-center text-foreground
+                       items-center justify-center text-foreground
                        opacity-0 group-hover:opacity-100 transition-opacity duration-300
                        hover:bg-accent/20 hover:border-accent/50"
             aria-label="Next game"
@@ -203,7 +234,7 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
 
       {/* Dot indicators */}
       {slideCount > 1 && (
-        <div className="absolute bottom-3 right-4 md:right-8 z-[3] flex items-center gap-2">
+        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 sm:left-auto sm:translate-x-0 sm:right-4 md:right-8 z-[3] flex items-center gap-1.5 sm:gap-2">
           {games.map((_, i) => (
             <button
               key={i}
