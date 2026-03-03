@@ -51,6 +51,7 @@ export interface Database {
           is_free: boolean;
           current_players: number | null;
           peak_players_24h: number | null;
+          players_updated_at: string | null;
           trailer_url: string | null;
           trailer_thumbnail: string | null;
           igdb_id: number | null;

@@ -48,6 +48,7 @@ export function mapGameRow(row: GameRow): Game {
     isFree: row.is_free ?? undefined,
     currentPlayers: row.current_players ?? undefined,
     peakPlayers24h: row.peak_players_24h ?? undefined,
+    playersUpdatedAt: row.players_updated_at ?? undefined,
     trailerUrl: row.trailer_url ?? undefined,
     trailerThumbnail: row.trailer_thumbnail ?? undefined,
     igdbRating: row.igdb_rating ?? undefined,

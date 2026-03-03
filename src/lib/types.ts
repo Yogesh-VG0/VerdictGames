@@ -64,6 +64,7 @@ export interface Game {
   // Player counts (Steam)
   currentPlayers?: number;
   peakPlayers24h?: number;
+  playersUpdatedAt?: string;
 
   // Media
   trailerUrl?: string;

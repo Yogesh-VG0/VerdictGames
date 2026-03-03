@@ -10,6 +10,7 @@ import { createClient } from "@supabase/supabase-js";
 import "dotenv/config";
 
 const BASE = process.env.API_URL || "http://localhost:3000";
+const CRON_SECRET = process.env.CRON_SECRET || "";
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -47,7 +48,10 @@ async function main() {
     try {
       const r = await fetch(`${BASE}/api/ingest/game`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(CRON_SECRET ? { Authorization: `Bearer ${CRON_SECRET}` } : {}),
+        },
         body: JSON.stringify({ query: title, forceRefresh: true }),
       });
 

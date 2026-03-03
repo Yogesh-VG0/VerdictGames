@@ -3,6 +3,9 @@
  *
  * Full-text search across games with filter support.
  * Query params: q, platform, genre, year, monetization, sort, page
+ *
+ * On-demand ingest: if a text query returns 0 results and no filters
+ * are active, attempts to ingest the game from external sources.
  */
 
 import { NextRequest } from "next/server";
@@ -90,10 +93,33 @@ export async function GET(request: NextRequest) {
 
     if (error) throw error;
 
-    const games = (data ?? []).map(mapGameRow);
-    const total = count ?? 0;
+    let games = (data ?? []).map(mapGameRow);
+    let total = count ?? 0;
 
-    const result: PaginatedResponse<Game> = {
+    // ── On-demand ingest: if text query + page 1 + no results + no filters ──
+    const noFilters = platform === "All" && !genre && !year && monetization === "All";
+    if (total === 0 && q.length >= 2 && page === 1 && noFilters) {
+      try {
+        const { ingestGame } = await import("@/lib/services/ingest");
+        const result = await ingestGame({ query: q });
+        if (result.success && result.gameId) {
+          // Re-query to get the newly ingested game
+          const { data: freshData, count: freshCount } = await supabase
+            .from("games")
+            .select("*", { count: "exact" })
+            .eq("id", result.gameId) as unknown as { data: GameRow[] | null; count: number | null };
+          if (freshData?.length) {
+            games = freshData.map(mapGameRow);
+            total = freshCount ?? 1;
+          }
+        }
+      } catch (ingestErr) {
+        console.warn("[API] /search on-demand ingest failed:", ingestErr);
+        // Non-fatal: return empty results
+      }
+    }
+
+    const paginatedResult: PaginatedResponse<Game> = {
       items: games,
       total,
       page,
@@ -101,7 +127,7 @@ export async function GET(request: NextRequest) {
       hasMore: start + PAGE_SIZE < total,
     };
 
-    return jsonOk(result);
+    return jsonOk(paginatedResult);
   } catch (err) {
     console.error("[API] /search error:", err);
     const empty: PaginatedResponse<Game> = { items: [], total: 0, page, pageSize: PAGE_SIZE, hasMore: false };

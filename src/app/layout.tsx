@@ -18,17 +18,29 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://www.verdict.games"),
   title: {
     default: "verdict.games — The Verdict on Every Game",
     template: "%s | verdict.games",
   },
   description:
     "Your trusted source for honest PC and Android game reviews. Discover verdicts, curated lists, and a community that cares about gaming.",
+  icons: {
+    icon: "/favicon.png",
+    apple: "/favicon.png",
+  },
   openGraph: {
     title: "verdict.games",
     description: "Honest verdicts for PC and Android games.",
     siteName: "verdict.games",
     type: "website",
+    images: [{ url: "/og-default.png", width: 1200, height: 630 }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "verdict.games",
+    description: "Honest verdicts for PC and Android games.",
+    images: ["/og-default.png"],
   },
 };
 
