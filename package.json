@@ -1,12 +1,17 @@
 {
-  "name": "verdict-games-temp",
+  "name": "verdict-games",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=18.x",
+    "npm": ">=9.x"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
-    "lint": "eslint"
+    "start": "next start -p $PORT",
+    "lint": "eslint",
+    "heroku-postbuild": "next build"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.98.0",
