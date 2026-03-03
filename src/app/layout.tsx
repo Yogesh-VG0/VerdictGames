@@ -26,8 +26,11 @@ export const metadata: Metadata = {
   description:
     "Your trusted source for honest PC and Android game reviews. Discover verdicts, curated lists, and a community that cares about gaming.",
   icons: {
-    icon: "/favicon.png",
-    apple: "/favicon.png",
+    icon: [
+      { url: "/favicon.png", type: "image/png", sizes: "any" },
+    ],
+    shortcut: "/favicon.png",
+    apple: { url: "/favicon.png", type: "image/png" },
   },
   openGraph: {
     title: "verdict.games",

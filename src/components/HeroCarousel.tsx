@@ -139,10 +139,10 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
           </motion.div>
         </AnimatePresence>
 
-        {/* Static gradient overlays (always visible) */}
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent z-[1]" />
-        <div className="absolute inset-0 bg-gradient-to-r from-background/80 to-transparent z-[1]" />
-        <div className="absolute inset-0 hero-spotlight opacity-60 z-[1]" />
+        {/* Static gradient overlays — always dark so images stay vibrant in both themes */}
+        <div className="absolute inset-0 hero-gradient-bottom z-[1]" />
+        <div className="absolute inset-0 hero-gradient-right z-[1]" />
+        <div className="absolute inset-0 hero-gradient-vignette opacity-60 z-[1]" />
       </motion.div>
 
       {/* Content overlay */}
@@ -163,7 +163,7 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
             </span>
 
             {/* Title */}
-            <h1 className="text-lg sm:text-2xl md:text-4xl lg:text-5xl font-bold text-foreground leading-tight max-w-2xl">
+            <h1 className="text-lg sm:text-2xl md:text-4xl lg:text-5xl font-bold hero-overlay-text leading-tight max-w-2xl drop-shadow-lg">
               {game.title}
             </h1>
 
@@ -179,7 +179,7 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
                   </PixelBadge>
                 ))}
                 {game.releaseDate && (
-                  <span className="text-xs text-tertiary font-medium">
+                  <span className="text-xs hero-overlay-text-muted font-medium">
                     {new Date(game.releaseDate).getFullYear()}
                   </span>
                 )}
@@ -190,7 +190,7 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
             <ScoreChips game={game} variant="full" />
 
             {/* Summary - hidden on very small screens */}
-            <p className="hidden sm:block text-sm md:text-base text-secondary max-w-2xl line-clamp-2">
+            <p className="hidden sm:block text-sm md:text-base hero-overlay-text-secondary max-w-2xl line-clamp-2">
               {game.verdictSummary}
             </p>
 
@@ -210,10 +210,10 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
           <button
             onClick={() => paginate(-1)}
             className="hidden sm:flex absolute left-2 md:left-3 top-1/3 md:top-1/2 -translate-y-1/2 z-[3] w-9 h-9 md:w-10 md:h-10 rounded-full
-                       bg-background/60 backdrop-blur-sm border border-border/50
-                       items-center justify-center text-foreground
+                       bg-black/50 backdrop-blur-sm border border-white/20
+                       items-center justify-center text-white
                        opacity-0 group-hover:opacity-100 transition-opacity duration-300
-                       hover:bg-accent/20 hover:border-accent/50"
+                       hover:bg-accent/30 hover:border-accent/50"
             aria-label="Previous game"
           >
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="rotate-180">
@@ -223,10 +223,10 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
           <button
             onClick={() => paginate(1)}
             className="hidden sm:flex absolute right-2 md:right-3 top-1/3 md:top-1/2 -translate-y-1/2 z-[3] w-9 h-9 md:w-10 md:h-10 rounded-full
-                       bg-background/60 backdrop-blur-sm border border-border/50
-                       items-center justify-center text-foreground
+                       bg-black/50 backdrop-blur-sm border border-white/20
+                       items-center justify-center text-white
                        opacity-0 group-hover:opacity-100 transition-opacity duration-300
-                       hover:bg-accent/20 hover:border-accent/50"
+                       hover:bg-accent/30 hover:border-accent/50"
             aria-label="Next game"
           >
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -247,7 +247,7 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
                 "transition-all duration-300 rounded-full",
                 i === currentIndex
                   ? "w-6 h-2 bg-accent"
-                  : "w-2 h-2 bg-foreground/30 hover:bg-foreground/50"
+                  : "w-2 h-2 bg-white/40 hover:bg-white/60"
               )}
               aria-label={`Go to slide ${i + 1}`}
             />

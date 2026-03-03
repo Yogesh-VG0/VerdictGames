@@ -55,8 +55,8 @@ export default function GameCard({
               className="object-cover transition-transform duration-500 group-hover:scale-110"
               priority={priority}
             />
-            {/* Gradient overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/30 to-transparent" />
+            {/* Gradient overlay — always dark */}
+            <div className="absolute inset-0 card-image-gradient" />
             {/* Verdict score badge */}
             <div
               className={cn(
@@ -87,13 +87,13 @@ export default function GameCard({
                 </span>
               )}
             </div>
-            <h3 className="text-base font-bold text-foreground leading-tight line-clamp-2 group-hover:text-accent transition-colors">
+            <h3 className="text-base font-bold text-white leading-tight line-clamp-2 group-hover:text-accent transition-colors drop-shadow-md">
               {game.title}
             </h3>
             <VerdictBadge label={game.verdictLabel} size="sm" />
             <ScoreChips game={game} variant="compact" />
             {game.verdictSummary && (
-              <p className="text-xs text-secondary line-clamp-2 leading-relaxed">
+              <p className="text-xs text-white/70 line-clamp-2 leading-relaxed">
                 {game.verdictSummary}
               </p>
             )}
@@ -123,7 +123,7 @@ export default function GameCard({
           />
 
           {/* Hover gradient overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
           {/* Score overlay */}
           <div

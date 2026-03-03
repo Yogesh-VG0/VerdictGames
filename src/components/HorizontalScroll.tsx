@@ -27,7 +27,7 @@ export default function HorizontalScroll({
     <div className={cn("relative group", className)}>
       {/* Gradient edge fades */}
       <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-background to-transparent z-[1] opacity-0 group-hover:opacity-100 transition-opacity" />
-      <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-background to-transparent z-[1]" />
+      <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-background via-background/80 to-transparent z-[1]" />
 
       {/* Scroll container */}
       <div

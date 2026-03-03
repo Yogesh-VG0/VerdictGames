@@ -27,10 +27,10 @@ export default function FeaturedHero({ game }: FeaturedHeroProps) {
           priority
         />
 
-        {/* Multi-layer gradient overlays for depth */}
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-r from-background/80 to-transparent" />
-        <div className="absolute inset-0 hero-spotlight opacity-60" />
+        {/* Multi-layer gradient overlays — always dark */}
+        <div className="absolute inset-0 hero-gradient-bottom" />
+        <div className="absolute inset-0 hero-gradient-right" />
+        <div className="absolute inset-0 hero-gradient-vignette opacity-60" />
       </div>
 
       {/* Content overlay */}
@@ -52,7 +52,7 @@ export default function FeaturedHero({ game }: FeaturedHeroProps) {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="text-2xl md:text-4xl lg:text-5xl font-bold text-foreground leading-tight max-w-2xl"
+          className="text-2xl md:text-4xl lg:text-5xl font-bold hero-overlay-text leading-tight max-w-2xl drop-shadow-lg"
         >
           {game.title}
         </motion.h1>
@@ -83,7 +83,7 @@ export default function FeaturedHero({ game }: FeaturedHeroProps) {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
-          className="text-sm md:text-base text-secondary max-w-2xl line-clamp-2"
+          className="text-sm md:text-base hero-overlay-text-secondary max-w-2xl line-clamp-2"
         >
           {game.verdictSummary}
         </motion.p>

@@ -140,10 +140,10 @@ export default function GameDetailPage({ params }: Props) {
             className="object-cover"
             priority
           />
-          {/* Multi-layer gradients for depth */}
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
-          <div className="absolute inset-0 bg-gradient-to-r from-background/70 via-transparent to-transparent" />
-          <div className="absolute inset-0 hero-spotlight" />
+          {/* Multi-layer gradients — always dark so images stay vibrant */}
+          <div className="absolute inset-0 hero-gradient-bottom" />
+          <div className="absolute inset-0 hero-gradient-right" />
+          <div className="absolute inset-0 hero-gradient-vignette" />
         </div>
 
         {/* Hero content overlaid at bottom */}
@@ -166,29 +166,29 @@ export default function GameDetailPage({ params }: Props) {
                   <PixelBadge variant="success" size="md">Free to Play</PixelBadge>
                 )}
                 {game.releaseDate && (
-                  <span className="text-xs text-secondary font-medium ml-1">
+                  <span className="text-xs hero-overlay-text-muted font-medium ml-1">
                     {formatDate(game.releaseDate)}
                   </span>
                 )}
               </div>
 
               {/* Title */}
-              <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold text-foreground leading-[1.1] max-w-3xl">
+              <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold hero-overlay-text leading-[1.1] max-w-3xl drop-shadow-lg">
                 {game.title}
               </h1>
               {game.subtitle && (
-                <p className="text-sm md:text-base text-secondary max-w-2xl">{game.subtitle}</p>
+                <p className="text-sm md:text-base hero-overlay-text-secondary max-w-2xl">{game.subtitle}</p>
               )}
 
               {/* Quick info chips */}
-              <div className="flex flex-wrap items-center gap-2 text-xs text-tertiary">
+              <div className="flex flex-wrap items-center gap-2 text-xs hero-overlay-text-muted">
                 {game.developer && (
-                  <span className="bg-surface/60 backdrop-blur-sm px-2.5 py-1 rounded-sm border border-border/50">
+                  <span className="bg-black/40 backdrop-blur-sm px-2.5 py-1 rounded-sm border border-white/15">
                     {game.developer}
                   </span>
                 )}
                 {game.genres.slice(0, 3).map((g) => (
-                  <span key={g} className="bg-surface/60 backdrop-blur-sm px-2.5 py-1 rounded-sm border border-border/50">
+                  <span key={g} className="bg-black/40 backdrop-blur-sm px-2.5 py-1 rounded-sm border border-white/15">
                     {g}
                   </span>
                 ))}
@@ -214,10 +214,11 @@ export default function GameDetailPage({ params }: Props) {
                 className="rounded-sm border border-border bg-surface overflow-hidden"
               >
                 {/* Score header band */}
-                <div className="relative p-5 md:p-6 mesh-gradient">
-                  <div className="flex items-start gap-5 md:gap-6">
+                <div className="relative p-4 sm:p-5 md:p-6 mesh-gradient">
+                  <div className="flex items-start gap-4 sm:gap-5 md:gap-6">
                     <div className={cn("shrink-0 rounded-sm", scoreGlowClass(game.score))}>
-                      <ScoreRing score={game.score} size={88} strokeWidth={5} className="relative" />
+                      <ScoreRing score={game.score} size={72} strokeWidth={4} className="relative sm:hidden" />
+                      <ScoreRing score={game.score} size={88} strokeWidth={5} className="relative hidden sm:block" />
                     </div>
                     <div className="flex-1 space-y-2 min-w-0">
                       <div className="flex items-center gap-3 flex-wrap">
@@ -407,26 +408,84 @@ export default function GameDetailPage({ params }: Props) {
                 <h3 className="text-sm font-bold text-foreground uppercase tracking-wider section-title-line flex items-center gap-2">
                   <span className="text-base">💬</span>
                   Community Reviews
-                  {game.reviewCount > 0 && (
-                    <span className="text-tertiary font-normal normal-case tracking-normal ml-1">
-                      ({game.reviewCount.toLocaleString()} Steam reviews)
-                    </span>
-                  )}
                 </h3>
+
+                {/* Steam Review Summary Card — always show if data exists */}
+                {(game.reviewCount > 0 || game.userScore) && (
+                  <div className="rounded-sm border border-border bg-surface-2 p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg">🎮</span>
+                        <span className="text-sm font-semibold text-foreground">Steam Reviews</span>
+                      </div>
+                      {game.steamRatingLabel && (
+                        <span className={cn(
+                          "text-xs font-bold px-2 py-0.5 rounded-sm border",
+                          game.userScore && game.userScore >= 80
+                            ? "bg-score-great/15 text-score-great border-score-great/25"
+                            : game.userScore && game.userScore >= 70
+                              ? "bg-score-good/15 text-score-good border-score-good/25"
+                              : game.userScore && game.userScore >= 50
+                                ? "bg-score-mixed/15 text-score-mixed border-score-mixed/25"
+                                : "bg-score-bad/15 text-score-bad border-score-bad/25"
+                        )}>
+                          {game.steamRatingLabel}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Review percentage bar */}
+                    {game.userScore != null && (
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-secondary">
+                            <span className="text-score-great font-semibold">{game.userScore}%</span> positive
+                          </span>
+                          <span className="text-tertiary">
+                            {game.reviewCount.toLocaleString()} reviews
+                          </span>
+                        </div>
+                        <div
+                          className="steam-review-bar"
+                          style={{ "--positive-pct": `${game.userScore}%` } as React.CSSProperties}
+                        />
+                        <div className="flex items-center justify-between text-[10px] text-tertiary">
+                          <span>👍 ~{Math.round(game.reviewCount * (game.userScore / 100)).toLocaleString()} positive</span>
+                          <span>👎 ~{Math.round(game.reviewCount * ((100 - game.userScore) / 100)).toLocaleString()} negative</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {game.steamUrl && (
+                      <a
+                        href={game.steamUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block text-center text-xs text-accent hover:text-accent-hover font-medium transition-colors pt-1"
+                      >
+                        View all reviews on Steam →
+                      </a>
+                    )}
+                  </div>
+                )}
+
+                {/* Verdict.games community reviews */}
                 {reviewsData?.items && reviewsData.items.length > 0 ? (
                   <div className="space-y-3">
+                    <h4 className="text-xs font-semibold text-secondary uppercase tracking-wider">
+                      Verdict.games Community
+                    </h4>
                     {reviewsData.items.map((review) => (
                       <ReviewCard key={review.id} review={review} showGame={false} />
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-8 space-y-2">
-                    <div className="text-4xl">🎮</div>
-                    <p className="text-secondary text-sm">
-                      No community reviews yet on Verdict.games.
+                  <div className="rounded-sm border border-dashed border-border/60 bg-surface-2/50 p-6 text-center space-y-2">
+                    <p className="text-secondary text-sm font-medium">
+                      Be the first to review on Verdict.games!
                     </p>
                     <p className="text-tertiary text-xs">
-                      Be the first to share your verdict!
+                      Community reviews from Verdict.games members will appear here.
                     </p>
                   </div>
                 )}

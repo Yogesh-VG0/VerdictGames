@@ -513,3 +513,130 @@ body {
   background-clip: text;
   animation: shimmer 3s ease-in-out infinite;
 }
+
+/* ═══════════════════════════════════════════════════
+   Hero / Image Overlay — Always Dark
+   Forces dark gradients on image overlays so images
+   don't wash out in light mode.
+   ═══════════════════════════════════════════════════ */
+
+.hero-gradient-bottom {
+  background: linear-gradient(to top, #060a13 0%, rgba(6, 10, 19, 0.7) 40%, rgba(6, 10, 19, 0.3) 65%, transparent 100%);
+}
+.hero-gradient-right {
+  background: linear-gradient(to right, rgba(6, 10, 19, 0.75) 0%, rgba(6, 10, 19, 0.3) 40%, transparent 70%);
+}
+.hero-gradient-vignette {
+  background:
+    radial-gradient(ellipse at 30% 100%, rgba(168, 85, 247, 0.12) 0%, transparent 60%),
+    radial-gradient(ellipse at 70% 0%, rgba(34, 211, 238, 0.06) 0%, transparent 50%);
+}
+/* Force light text inside hero overlay areas (both modes) */
+.hero-overlay-text {
+  color: #f1f5f9 !important;
+}
+.hero-overlay-text-secondary {
+  color: #cbd5e1 !important;
+}
+.hero-overlay-text-muted {
+  color: #94a3b8 !important;
+}
+
+/* Card image gradient — always dark to keep images vibrant */
+.card-image-gradient {
+  background: linear-gradient(to top, rgba(6, 10, 19, 0.9) 0%, rgba(6, 10, 19, 0.3) 50%, transparent 100%);
+}
+
+/* ═══════════════════════════════════════════════════
+   Light Mode Specific Overrides
+   ═══════════════════════════════════════════════════ */
+
+/* Keep hero sections dark-themed in light mode */
+.light .hero-spotlight {
+  background:
+    radial-gradient(ellipse at 30% 100%, rgba(124, 58, 237, 0.12) 0%, transparent 60%),
+    radial-gradient(ellipse at 70% 0%, rgba(8, 145, 178, 0.06) 0%, transparent 50%);
+}
+
+/* Ensure score glows are visible in light mode */
+.light .score-glow-great { box-shadow: 0 0 16px rgba(22, 163, 74, 0.35), 0 0 32px rgba(22, 163, 74, 0.15); }
+.light .score-glow-good { box-shadow: 0 0 16px rgba(101, 163, 13, 0.35), 0 0 32px rgba(101, 163, 13, 0.15); }
+.light .score-glow-mixed { box-shadow: 0 0 16px rgba(202, 138, 4, 0.35), 0 0 32px rgba(202, 138, 4, 0.15); }
+.light .score-glow-bad { box-shadow: 0 0 16px rgba(220, 38, 38, 0.35), 0 0 32px rgba(220, 38, 38, 0.15); }
+
+/* Light mode card hover shadow */
+.light .hover-lift:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08), 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
+/* Light mode glass card */
+.light .glass-card {
+  background: rgba(255, 255, 255, 0.75);
+  border-color: rgba(203, 213, 225, 0.5);
+}
+
+/* ═══════════════════════════════════════════════════
+   Enhanced Micro-Interactions
+   ═══════════════════════════════════════════════════ */
+
+/* Smooth page transitions */
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.page-enter {
+  animation: page-enter 0.4s ease-out both;
+}
+
+/* Ripple effect for buttons */
+@keyframes ripple {
+  to {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+/* Subtle bounce for interactive elements */
+@keyframes subtle-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+.animate-subtle-bounce {
+  animation: subtle-bounce 2s ease-in-out infinite;
+}
+
+/* Slide up reveal for sections */
+@keyframes slide-up-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(32px);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+.animate-slide-up-reveal {
+  animation: slide-up-reveal 0.6s ease-out both;
+}
+
+/* Review card steam indicator */
+.steam-review-bar {
+  background: linear-gradient(90deg, #4ade80 var(--positive-pct), #f87171 var(--positive-pct));
+  border-radius: 99px;
+  height: 6px;
+}
+.light .steam-review-bar {
+  background: linear-gradient(90deg, #16a34a var(--positive-pct), #dc2626 var(--positive-pct));
+}

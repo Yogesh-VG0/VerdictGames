@@ -49,11 +49,11 @@ export default function HomePage() {
   });
 
   return (
-    <div className="space-y-0">
+    <div className="space-y-0 page-enter">
       {/* ── Hero Carousel ── */}
       <section className="relative">
         <div className="absolute inset-0 hero-spotlight pointer-events-none" />
-        <div className="max-w-7xl mx-auto px-4 pt-6 pb-10">
+        <div className="max-w-7xl mx-auto px-4 pt-4 sm:pt-6 pb-8 sm:pb-10">
           <FadeInSection>
             {featured.isLoading ? (
               <HeroSkeleton />
