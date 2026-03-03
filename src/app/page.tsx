@@ -44,110 +44,189 @@ export default function HomePage() {
   });
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-6 space-y-10">
+    <div className="space-y-0">
       {/* ── Featured Hero ── */}
-      <FadeInSection>
-        {featured.isLoading ? (
-          <HeroSkeleton />
-        ) : featured.data ? (
-          <FeaturedHero game={featured.data} />
-        ) : null}
-      </FadeInSection>
+      <section className="relative">
+        <div className="absolute inset-0 hero-spotlight pointer-events-none" />
+        <div className="max-w-7xl mx-auto px-4 pt-6 pb-10">
+          <FadeInSection>
+            {featured.isLoading ? (
+              <HeroSkeleton />
+            ) : featured.data ? (
+              <FeaturedHero game={featured.data} />
+            ) : null}
+          </FadeInSection>
+        </div>
+      </section>
 
       {/* ── Trending Now ── */}
-      <FadeInSection>
-        <section>
-          {trending.isLoading ? (
-            <>
-              <SectionHeaderSkeleton />
-              <GameGridSkeleton count={4} />
-            </>
-          ) : trending.data && trending.data.length > 0 ? (
-            <>
-              <SectionHeader title="Trending Now" href="/search?sort=trending" />
-              <HorizontalScroll>
-              {trending.data.map((game) => (
-                <div key={game.id} className="shrink-0 w-40 sm:w-48 md:w-52 lg:w-56">
-                  <GameCard game={game} />
+      <section className="relative py-10">
+        <div className="absolute inset-0 mesh-gradient opacity-50 pointer-events-none" />
+        <div className="max-w-7xl mx-auto px-4 relative">
+          <FadeInSection>
+            {trending.isLoading ? (
+              <>
+                <SectionHeaderSkeleton />
+                <GameGridSkeleton count={4} />
+              </>
+            ) : trending.data && trending.data.length > 0 ? (
+              <>
+                <SectionHeader
+                  title="Trending Now"
+                  href="/search?sort=trending"
+                  icon="🔥"
+                  subtitle="What everyone's playing right now"
+                />
+                {/* Spotlight first game + scroll for the rest */}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                  {/* Large spotlight card */}
+                  <div className="lg:col-span-4">
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ duration: 0.5 }}
+                    >
+                      <GameCard game={trending.data[0]} priority className="h-full" variant="spotlight" />
+                    </motion.div>
+                  </div>
+                  {/* Remaining trending games */}
+                  <div className="lg:col-span-8">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                      {trending.data.slice(1, 9).map((game, i) => (
+                        <motion.div
+                          key={game.id}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.1 + i * 0.05, duration: 0.4 }}
+                        >
+                          <GameCard game={game} />
+                        </motion.div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
-              ))}
-            </HorizontalScroll>
-          </>
-        ) : null}
+              </>
+            ) : null}
+          </FadeInSection>
+        </div>
       </section>
-      </FadeInSection>
+
+      {/* ── Divider ── */}
+      <div className="max-w-7xl mx-auto px-4">
+        <hr className="pixel-divider" />
+      </div>
 
       {/* ── New Releases ── */}
-      <FadeInSection>
-        <section>
-          {newReleases.isLoading ? (
-          <>
-            <SectionHeaderSkeleton />
-            <GameGridSkeleton count={4} />
-          </>
-        ) : newReleases.data ? (
-          <>
-            <SectionHeader title="New Releases" href="/search?sort=newest" />
-            <GameGrid games={newReleases.data} />
-          </>
-        ) : null}
+      <section className="py-10">
+        <div className="max-w-7xl mx-auto px-4">
+          <FadeInSection>
+            {newReleases.isLoading ? (
+              <>
+                <SectionHeaderSkeleton />
+                <GameGridSkeleton count={4} />
+              </>
+            ) : newReleases.data && newReleases.data.length > 0 ? (
+              <>
+                <SectionHeader
+                  title="New Releases"
+                  href="/search?sort=newest"
+                  icon="✨"
+                  subtitle="Fresh games worth your attention"
+                />
+                <GameGrid games={newReleases.data} />
+              </>
+            ) : null}
+          </FadeInSection>
+        </div>
       </section>
-      </FadeInSection>
 
       {/* ── Top Rated ── */}
-      <FadeInSection>
-        <section>
-          {topRated.isLoading ? (
-          <>
-            <SectionHeaderSkeleton />
-            <GameGridSkeleton count={4} />
-          </>
-        ) : topRated.data ? (
-          <>
-            <SectionHeader title="Top Rated" href="/search?sort=top-rated" />
-            <GameGrid games={topRated.data} />
-          </>
-        ) : null}
+      <section className="relative py-10">
+        <div className="absolute inset-0 mesh-gradient opacity-30 pointer-events-none" />
+        <div className="max-w-7xl mx-auto px-4 relative">
+          <FadeInSection>
+            {topRated.isLoading ? (
+              <>
+                <SectionHeaderSkeleton />
+                <GameGridSkeleton count={4} />
+              </>
+            ) : topRated.data && topRated.data.length > 0 ? (
+              <>
+                <SectionHeader
+                  title="Top Rated"
+                  href="/search?sort=top-rated"
+                  icon="🏆"
+                  subtitle="The highest-scored games by our verdict"
+                />
+                <GameGrid games={topRated.data} />
+              </>
+            ) : null}
+          </FadeInSection>
+        </div>
       </section>
-      </FadeInSection>
+
+      {/* ── Divider ── */}
+      <div className="max-w-7xl mx-auto px-4">
+        <hr className="pixel-divider" />
+      </div>
 
       {/* ── Because You Viewed… ── */}
-      <FadeInSection>
-        <section>
-          {personalized.isLoading ? (
-          <>
-            <SectionHeaderSkeleton />
-            <GameGridSkeleton count={4} />
-          </>
-        ) : personalized.data && personalized.data.length > 0 ? (
-          <>
-            <SectionHeader title="Because You Viewed Hades II" />
-            <HorizontalScroll>
-              {personalized.data.map((game) => (
-                <div key={game.id} className="shrink-0 w-40 sm:w-48 md:w-52 lg:w-56">
-                  <GameCard game={game} />
-                </div>
-              ))}
-            </HorizontalScroll>
-          </>
-        ) : null}
+      <section className="py-10">
+        <div className="max-w-7xl mx-auto px-4">
+          <FadeInSection>
+            {personalized.isLoading ? (
+              <>
+                <SectionHeaderSkeleton />
+                <GameGridSkeleton count={4} />
+              </>
+            ) : personalized.data && personalized.data.length > 0 ? (
+              <>
+                <SectionHeader
+                  title="Recommended For You"
+                  icon="💎"
+                  subtitle="Games we think you'll love"
+                />
+                <HorizontalScroll>
+                  {personalized.data.map((game) => (
+                    <div key={game.id} className="shrink-0 w-40 sm:w-48 md:w-52 lg:w-56">
+                      <GameCard game={game} />
+                    </div>
+                  ))}
+                </HorizontalScroll>
+              </>
+            ) : null}
+          </FadeInSection>
+        </div>
       </section>
-      </FadeInSection>
 
       {/* ── Footer ── */}
-      <FadeInSection>
-      <footer className="border-t border-border pt-8 pb-4 text-center space-y-2">
-        <p className="text-accent font-bold text-sm">VERDICT<span className="text-secondary font-light">.games</span></p>
-        <p className="text-xs text-tertiary">
-          Honest verdicts for PC & Android games. Built with care.
-        </p>
-        <div className="flex items-center justify-center gap-4 text-xs text-tertiary">
-          <a href="/about" className="hover:text-secondary transition-colors">About</a>
-          <a href="/privacy" className="hover:text-secondary transition-colors">Privacy</a>
-          <a href="/terms" className="hover:text-secondary transition-colors">Terms</a>
+      <footer className="border-t border-border bg-surface/50">
+        <div className="max-w-7xl mx-auto px-4 py-10">
+          <FadeInSection>
+            <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+              <div className="text-center md:text-left">
+                <p className="text-lg font-bold">
+                  <span className="gradient-text">VERDICT</span>
+                  <span className="text-secondary font-light">.games</span>
+                </p>
+                <p className="text-xs text-tertiary mt-1">
+                  Honest verdicts for PC & Android games. Built with care.
+                </p>
+              </div>
+              <div className="flex items-center gap-6 text-xs text-tertiary">
+                <a href="/about" className="hover:text-accent transition-colors">About</a>
+                <a href="/privacy" className="hover:text-accent transition-colors">Privacy</a>
+                <a href="/terms" className="hover:text-accent transition-colors">Terms</a>
+              </div>
+            </div>
+            <div className="mt-6 pt-4 border-t border-border/50 text-center">
+              <p className="text-[10px] text-tertiary">
+                Data from RAWG, Steam, IGDB, CheapShark & Wikipedia. All trademarks belong to their respective owners.
+              </p>
+            </div>
+          </FadeInSection>
         </div>
       </footer>
-      </FadeInSection>
     </div>
   );
 }
