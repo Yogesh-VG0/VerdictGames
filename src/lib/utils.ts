@@ -63,21 +63,6 @@ export function pluralize(count: number, singular: string, plural?: string): str
   return count === 1 ? singular : (plural ?? singular + "s");
 }
 
-/** Generate a deterministic cover image URL from picsum using a seed. */
-export function coverUrl(seed: string, w = 400, h = 560): string {
-  return `https://picsum.photos/seed/${seed}/${w}/${h}`;
-}
-
-/** Generate a screenshot URL. */
-export function screenshotUrl(seed: string, index: number, w = 800, h = 450): string {
-  return `https://picsum.photos/seed/${seed}-ss${index}/${w}/${h}`;
-}
-
-/** Generate an avatar URL. */
-export function avatarUrl(seed: string, size = 128): string {
-  return `https://picsum.photos/seed/${seed}-avatar/${size}/${size}`;
-}
-
 /** cn – simple className merge (no clsx dep needed). */
 export function cn(...classes: (string | false | null | undefined)[]): string {
   return classes.filter(Boolean).join(" ");
