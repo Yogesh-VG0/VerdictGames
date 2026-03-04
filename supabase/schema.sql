@@ -149,12 +149,15 @@ CREATE UNIQUE INDEX idx_list_items_unique ON list_items (list_id, game_id);
 -- ───────────────────────── UPDATED_AT TRIGGER ─────────────────────────
 
 CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SET search_path = ''
+AS $$
 BEGIN
   NEW.updated_at = now();
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$;
 
 CREATE TRIGGER set_games_updated_at
   BEFORE UPDATE ON games
@@ -192,21 +195,22 @@ CREATE POLICY "Public read list_items" ON list_items FOR SELECT USING (true);
 CREATE POLICY "Public read game_sources" ON game_sources FOR SELECT USING (true);
 
 -- Service role can do everything (for API routes using SERVICE_ROLE key)
-CREATE POLICY "Service insert games" ON games FOR INSERT WITH CHECK (true);
-CREATE POLICY "Service update games" ON games FOR UPDATE USING (true);
-CREATE POLICY "Service delete games" ON games FOR DELETE USING (true);
+-- Scoped to service_role so anon/authenticated users cannot bypass RLS.
+CREATE POLICY "Service insert games" ON games FOR INSERT TO service_role WITH CHECK (true);
+CREATE POLICY "Service update games" ON games FOR UPDATE TO service_role USING (true) WITH CHECK (true);
+CREATE POLICY "Service delete games" ON games FOR DELETE TO service_role USING (true);
 
-CREATE POLICY "Service insert game_sources" ON game_sources FOR INSERT WITH CHECK (true);
-CREATE POLICY "Service update game_sources" ON game_sources FOR UPDATE USING (true);
+CREATE POLICY "Service insert game_sources" ON game_sources FOR INSERT TO service_role WITH CHECK (true);
+CREATE POLICY "Service update game_sources" ON game_sources FOR UPDATE TO service_role USING (true) WITH CHECK (true);
 
-CREATE POLICY "Service insert reviews" ON reviews FOR INSERT WITH CHECK (true);
-CREATE POLICY "Service update reviews" ON reviews FOR UPDATE USING (true);
+CREATE POLICY "Service insert reviews" ON reviews FOR INSERT TO service_role WITH CHECK (true);
+CREATE POLICY "Service update reviews" ON reviews FOR UPDATE TO service_role USING (true) WITH CHECK (true);
 
-CREATE POLICY "Service insert profiles" ON profiles FOR INSERT WITH CHECK (true);
-CREATE POLICY "Service update profiles" ON profiles FOR UPDATE USING (true);
+CREATE POLICY "Service insert profiles" ON profiles FOR INSERT TO service_role WITH CHECK (true);
+CREATE POLICY "Service update profiles" ON profiles FOR UPDATE TO service_role USING (true) WITH CHECK (true);
 
-CREATE POLICY "Service insert lists" ON lists FOR INSERT WITH CHECK (true);
-CREATE POLICY "Service update lists" ON lists FOR UPDATE USING (true);
+CREATE POLICY "Service insert lists" ON lists FOR INSERT TO service_role WITH CHECK (true);
+CREATE POLICY "Service update lists" ON lists FOR UPDATE TO service_role USING (true) WITH CHECK (true);
 
-CREATE POLICY "Service insert list_items" ON list_items FOR INSERT WITH CHECK (true);
-CREATE POLICY "Service delete list_items" ON list_items FOR DELETE USING (true);
+CREATE POLICY "Service insert list_items" ON list_items FOR INSERT TO service_role WITH CHECK (true);
+CREATE POLICY "Service delete list_items" ON list_items FOR DELETE TO service_role USING (true);
