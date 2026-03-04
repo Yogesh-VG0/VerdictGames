@@ -181,6 +181,66 @@ export async function getGameReviews(
   return data ?? EMPTY_PAGE<Review>();
 }
 
+/* ═══════════════════════════════════════════════════
+   STEAM DATA — News & Achievements
+   ═══════════════════════════════════════════════════ */
+
+export interface SteamNewsArticle {
+  id: string;
+  title: string;
+  url: string;
+  author: string;
+  contents: string;
+  feedLabel: string;
+  date: string;
+  tags: string[];
+}
+
+export interface SteamNewsData {
+  title: string;
+  steamAppId?: number;
+  news: SteamNewsArticle[];
+  message?: string;
+}
+
+export interface SteamAchievementItem {
+  name: string;
+  description: string | null;
+  icon: string;
+  iconGray: string;
+  globalUnlockPercent: number;
+}
+
+export interface SteamAchievementsData {
+  title: string;
+  steamAppId?: number;
+  total: number;
+  achievements: SteamAchievementItem[];
+  message?: string;
+}
+
+/** Get latest Steam news for a game. */
+export async function getGameNews(
+  slug: string,
+  count = 5
+): Promise<SteamNewsData> {
+  const data = await apiFetch<SteamNewsData>(
+    `/api/games/${encodeURIComponent(slug)}/news?count=${count}`
+  );
+  return data ?? { title: "", news: [] };
+}
+
+/** Get Steam achievement stats for a game. */
+export async function getGameAchievements(
+  slug: string,
+  limit = 20
+): Promise<SteamAchievementsData> {
+  const data = await apiFetch<SteamAchievementsData>(
+    `/api/games/${encodeURIComponent(slug)}/achievements?limit=${limit}`
+  );
+  return data ?? { title: "", total: 0, achievements: [] };
+}
+
 /** Get the global reviews feed. */
 export async function getGlobalReviews(options?: {
   sort?: "newest" | "helpful";

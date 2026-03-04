@@ -5,7 +5,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { getGameBySlug, getGameReviews, getRelatedGames } from "@/lib/api";
+import { getGameBySlug, getGameReviews, getRelatedGames, getGameNews, getGameAchievements } from "@/lib/api";
+import type { SteamNewsArticle, SteamAchievementItem } from "@/lib/api";
 import { formatDate, scoreColor, cn } from "@/lib/utils";
 import ScoreRing from "@/components/ui/ScoreRing";
 import VerdictBadge from "@/components/ui/VerdictBadge";
@@ -89,6 +90,18 @@ export default function GameDetailPage({ params }: Props) {
   const { data: related } = useQuery({
     queryKey: ["relatedGames", slug],
     queryFn: () => getRelatedGames(slug),
+    enabled: !!game,
+  });
+
+  const { data: newsData } = useQuery({
+    queryKey: ["gameNews", slug],
+    queryFn: () => getGameNews(slug, 5),
+    enabled: !!game,
+  });
+
+  const { data: achievementsData } = useQuery({
+    queryKey: ["gameAchievements", slug],
+    queryFn: () => getGameAchievements(slug, 10),
     enabled: !!game,
   });
 
@@ -401,6 +414,104 @@ export default function GameDetailPage({ params }: Props) {
                 </section>
               </div>
             </FadeInSection>
+
+            {/* ── Steam Achievements ── */}
+            {achievementsData && achievementsData.achievements.length > 0 && (
+              <FadeInSection>
+                <section className="rounded-sm border border-border bg-surface p-5 md:p-6 space-y-4">
+                  <h3 className="text-sm font-bold text-foreground uppercase tracking-wider section-title-line flex items-center gap-2">
+                    <span className="text-base">🏆</span>
+                    Achievements
+                    <span className="text-xs font-normal text-tertiary ml-auto">
+                      {achievementsData.total} total
+                    </span>
+                  </h3>
+                  <div className="space-y-2">
+                    {achievementsData.achievements.map((ach: SteamAchievementItem) => (
+                      <div
+                        key={ach.name}
+                        className="flex items-center gap-3 p-2.5 rounded-sm bg-surface-2 border border-border/50 hover:border-accent/30 transition-colors"
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={ach.icon}
+                          alt={ach.name}
+                          width={40}
+                          height={40}
+                          className="rounded-sm shrink-0"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-foreground truncate">{ach.name}</p>
+                          {ach.description && (
+                            <p className="text-xs text-tertiary truncate">{ach.description}</p>
+                          )}
+                        </div>
+                        <div className="shrink-0 text-right">
+                          <p className={cn(
+                            "text-sm font-bold tabular-nums",
+                            ach.globalUnlockPercent >= 50 ? "text-score-great" :
+                            ach.globalUnlockPercent >= 20 ? "text-score-good" :
+                            ach.globalUnlockPercent >= 5 ? "text-score-mixed" : "text-score-bad"
+                          )}>
+                            {ach.globalUnlockPercent}%
+                          </p>
+                          <p className="text-[10px] text-tertiary">unlocked</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  {achievementsData.total > achievementsData.achievements.length && (
+                    <p className="text-xs text-tertiary text-center pt-1">
+                      Showing {achievementsData.achievements.length} of {achievementsData.total} achievements
+                    </p>
+                  )}
+                </section>
+              </FadeInSection>
+            )}
+
+            {/* ── Latest Steam News ── */}
+            {newsData && newsData.news.length > 0 && (
+              <FadeInSection>
+                <section className="rounded-sm border border-border bg-surface p-5 md:p-6 space-y-4">
+                  <h3 className="text-sm font-bold text-foreground uppercase tracking-wider section-title-line flex items-center gap-2">
+                    <span className="text-base">📰</span>
+                    Latest News
+                  </h3>
+                  <div className="space-y-3">
+                    {newsData.news.map((article: SteamNewsArticle) => (
+                      <a
+                        key={article.id}
+                        href={article.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block p-3 rounded-sm bg-surface-2 border border-border/50 hover:border-accent/40 hover:bg-accent/5 transition-all group"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-medium text-foreground group-hover:text-accent transition-colors line-clamp-2">
+                              {article.title}
+                            </p>
+                            <p className="text-xs text-tertiary mt-1 line-clamp-2">
+                              {article.contents.replace(/<[^>]*>/g, "").replace(/\{[^}]*\}/g, "").substring(0, 150)}
+                            </p>
+                          </div>
+                          <span className="text-xs text-tertiary group-hover:text-accent shrink-0 transition-colors">→</span>
+                        </div>
+                        <div className="flex items-center gap-2 mt-2 text-[10px] text-tertiary">
+                          {article.feedLabel && (
+                            <span className="bg-surface px-1.5 py-0.5 rounded border border-border/50">
+                              {article.feedLabel}
+                            </span>
+                          )}
+                          {article.author && <span>by {article.author}</span>}
+                          <span>{new Date(article.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
+                        </div>
+                      </a>
+                    ))}
+                  </div>
+                </section>
+              </FadeInSection>
+            )}
 
             {/* ── Community Reviews ── */}
             <FadeInSection>

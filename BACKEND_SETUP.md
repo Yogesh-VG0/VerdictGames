@@ -104,6 +104,9 @@ curl -X POST http://localhost:3000/api/ingest/batch \
 | GET | `/api/search?q=&platform=&genre=&sort=&page=` | Search with filters |
 | GET | `/api/games/[slug]` | Single game detail |
 | GET | `/api/games/[slug]/reviews` | Reviews for a game |
+| GET | `/api/games/[slug]/deals` | Price deals for a game |
+| GET | `/api/games/[slug]/news` | Latest Steam news/patch notes |
+| GET | `/api/games/[slug]/achievements` | Steam achievement stats |
 | GET | `/api/reviews?sort=&platform=&page=` | Global review feed |
 | GET | `/api/lists` | All curated lists |
 | GET | `/api/lists/[slug]` | Single list with games |

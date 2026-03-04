@@ -197,3 +197,191 @@ export function steamScoreToPercent(
 export function steamStoreUrl(appId: number): string {
   return `https://store.steampowered.com/app/${appId}`;
 }
+
+/* ═══════════════════════════════════════════════════
+   STEAM WEB API — Key-Required & Public Endpoints
+   ═══════════════════════════════════════════════════ */
+
+const STEAM_API_KEY = process.env.STEAM_API_KEY;
+
+/* ───────── News Types ───────── */
+
+export interface SteamNewsItem {
+  gid: string;
+  title: string;
+  url: string;
+  author: string;
+  contents: string;        // may contain HTML/BBCode
+  feedlabel: string;       // e.g. "Community Announcements"
+  date: number;            // Unix timestamp
+  feedname: string;
+  appid: number;
+  tags?: string[];
+}
+
+interface SteamNewsResponse {
+  appnews: {
+    appid: number;
+    newsitems: SteamNewsItem[];
+    count: number;
+  };
+}
+
+/* ───────── Achievement Types ───────── */
+
+export interface SteamAchievement {
+  name: string;            // internal API name
+  displayName: string;     // human-readable name
+  description?: string;
+  icon: string;            // URL to unlocked icon
+  icongray: string;        // URL to locked icon
+  percent: number;         // global unlock percentage
+}
+
+interface SchemaForGameResponse {
+  game: {
+    gameName: string;
+    availableGameStats?: {
+      achievements?: {
+        name: string;
+        defaultvalue: number;
+        displayName: string;
+        hidden: number;
+        description?: string;
+        icon: string;
+        icongray: string;
+      }[];
+    };
+  };
+}
+
+interface GlobalAchievementResponse {
+  achievementpercentages: {
+    achievements: {
+      name: string;
+      percent: number;
+    }[];
+  };
+}
+
+/* ───────── News API ───────── */
+
+/**
+ * Get latest news/patch notes for a Steam game.
+ * No API key required — public endpoint.
+ *
+ * ISteamNews/GetNewsForApp/v2
+ */
+export async function getSteamNews(
+  appId: number,
+  count = 5,
+  maxLength = 500
+): Promise<SteamNewsItem[]> {
+  try {
+    const res = await fetch(
+      `${STEAM_API_BASE}/ISteamNews/GetNewsForApp/v2/?appid=${appId}&count=${count}&maxlength=${maxLength}&format=json`,
+      { next: { revalidate: 1800 } } // cache 30 min
+    );
+
+    if (!res.ok) return [];
+
+    const data: SteamNewsResponse = await res.json();
+    return data?.appnews?.newsitems ?? [];
+  } catch {
+    console.error(`[Steam] Failed to fetch news for ${appId}`);
+    return [];
+  }
+}
+
+/* ───────── Achievement Stats API ───────── */
+
+type AchievementSchemaItem = {
+  name: string;
+  defaultvalue: number;
+  displayName: string;
+  hidden: number;
+  description?: string;
+  icon: string;
+  icongray: string;
+};
+
+/**
+ * Get achievement schema (names, descriptions, icons) for a game.
+ * Requires API key.
+ *
+ * ISteamUserStats/GetSchemaForGame/v2
+ */
+export async function getSteamAchievementSchema(
+  appId: number
+): Promise<AchievementSchemaItem[] | null> {
+  if (!STEAM_API_KEY) return null;
+  try {
+    const res = await fetch(
+      `${STEAM_API_BASE}/ISteamUserStats/GetSchemaForGame/v2/?key=${STEAM_API_KEY}&appid=${appId}&l=english`,
+      { next: { revalidate: 86400 } } // cache 24h — schema rarely changes
+    );
+
+    if (!res.ok) return null;
+
+    const data: SchemaForGameResponse = await res.json();
+    return data?.game?.availableGameStats?.achievements ?? null;
+  } catch {
+    console.error(`[Steam] Failed to fetch achievement schema for ${appId}`);
+    return null;
+  }
+}
+
+/**
+ * Get global achievement unlock percentages (public, no key required).
+ *
+ * ISteamUserStats/GetGlobalAchievementPercentagesForApp/v2
+ */
+export async function getSteamGlobalAchievements(
+  appId: number
+): Promise<Map<string, number>> {
+  try {
+    const res = await fetch(
+      `${STEAM_API_BASE}/ISteamUserStats/GetGlobalAchievementPercentagesForApp/v2/?gameid=${appId}&format=json`,
+      { next: { revalidate: 3600 } } // cache 1h
+    );
+
+    if (!res.ok) return new Map();
+
+    const data: GlobalAchievementResponse = await res.json();
+    const map = new Map<string, number>();
+    for (const a of data?.achievementpercentages?.achievements ?? []) {
+      map.set(a.name, Math.round(a.percent * 10) / 10);
+    }
+    return map;
+  } catch {
+    console.error(`[Steam] Failed to fetch global achievements for ${appId}`);
+    return new Map();
+  }
+}
+
+/**
+ * Get merged achievement data: schema + global unlock percentages.
+ * Returns achievements sorted by unlock % descending.
+ */
+export async function getSteamAchievements(
+  appId: number
+): Promise<SteamAchievement[]> {
+  const [schema, percentages] = await Promise.all([
+    getSteamAchievementSchema(appId),
+    getSteamGlobalAchievements(appId),
+  ]);
+
+  if (!schema) return [];
+
+  return schema
+    .filter((a) => a.hidden === 0) // exclude hidden achievements
+    .map((a) => ({
+      name: a.name,
+      displayName: a.displayName,
+      description: a.description,
+      icon: a.icon,
+      icongray: a.icongray,
+      percent: percentages.get(a.name) ?? 0,
+    }))
+    .sort((a, b) => b.percent - a.percent);
+}
