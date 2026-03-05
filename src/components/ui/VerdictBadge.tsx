@@ -9,7 +9,7 @@ interface VerdictBadgeProps {
 }
 
 const sizeStyles = {
-  sm: "px-2 py-0.5 text-[10px]",
+  sm: "px-2.5 py-0.5 text-[10px]",
   md: "px-3 py-1 text-xs",
   lg: "px-4 py-1.5 text-sm",
 };
@@ -22,7 +22,7 @@ export default function VerdictBadge({
   return (
     <span
       className={cn(
-        "inline-flex items-center font-bold uppercase tracking-widest border rounded-sm",
+        "inline-flex items-center font-bold uppercase tracking-widest border rounded-full",
         verdictBgClass(label),
         sizeStyles[size],
         className

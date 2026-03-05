@@ -36,7 +36,7 @@ export default function ListsPage() {
       {isLoading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="rounded-sm border border-border overflow-hidden">
+            <div key={i} className="rounded-2xl border border-white/[0.08] overflow-hidden">
               <Skeleton className="aspect-video w-full" />
               <div className="p-4 space-y-2">
                 <Skeleton className="h-5 w-3/4" />
@@ -57,7 +57,7 @@ export default function ListsPage() {
             <motion.div key={list.id} variants={gridItem}>
             <Link
               href={`/lists/${list.slug}`}
-              className="group rounded-sm border border-border bg-surface overflow-hidden pixel-corners hover:border-border-hover hover:shadow-lg hover:shadow-accent/5 transition-all duration-300 block"
+              className="group rounded-2xl border border-white/[0.08] bg-surface overflow-hidden hover:border-white/[0.15] hover:shadow-lg hover:shadow-accent/5 transition-all duration-300 block"
             >
               <div className="relative aspect-video overflow-hidden">
                 <Image

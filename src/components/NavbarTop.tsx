@@ -33,20 +33,31 @@ export default function NavbarTop() {
   return (
     <>
       {/* ── Mobile header ── */}
-      <header className="sticky top-0 z-50 md:hidden border-b border-border bg-background/90 backdrop-blur-md">
-        <div className="flex items-center justify-between px-4 h-12">
-          <Link href="/" className="flex items-center gap-1.5 group">
-            <Image src="/favicon.png" alt="V" width={24} height={24} className="rounded-sm" />
-            <span className="text-accent font-bold text-base tracking-tight">
-              VERDICT
-            </span>
-            <span className="text-secondary text-base font-light">.games</span>
+      <header className="sticky top-0 z-50 md:hidden bg-background/70 backdrop-blur-xl border-b border-white/[0.06]">
+        <div className="flex items-center justify-between px-4 h-14">
+          <Link href="/" className="flex items-center group">
+            <Image
+              src="/verdict_logo_light.png"
+              alt="Verdict Games"
+              width={132}
+              height={48}
+              className="h-9 w-auto dark:hidden"
+              priority
+            />
+            <Image
+              src="/verdict_logo_dark.png"
+              alt="Verdict Games"
+              width={132}
+              height={48}
+              className="hidden h-9 w-auto dark:block"
+              priority
+            />
           </Link>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
             <motion.button
               whileTap={{ scale: 0.9 }}
               onClick={() => setMobileSearchOpen(!mobileSearchOpen)}
-              className="w-9 h-9 rounded-sm border border-border bg-surface-2 flex items-center justify-center text-secondary hover:text-foreground transition-colors"
+              className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-secondary hover:text-foreground transition-colors"
               aria-label="Search"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
@@ -64,15 +75,15 @@ export default function NavbarTop() {
               animate={{ height: "auto", opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="overflow-hidden border-t border-border"
+              className="overflow-hidden border-t border-white/[0.06]"
             >
-              <form onSubmit={handleSearch} className="px-4 py-2">
+              <form onSubmit={handleSearch} className="px-4 py-3">
                 <input
                   type="search"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="Search games..."
-                  className="w-full h-9 px-3 text-sm rounded-sm border border-border bg-surface-2 text-foreground placeholder:text-tertiary focus:outline-none focus:border-accent transition-colors"
+                  className="w-full h-10 px-4 text-sm rounded-xl bg-white/5 border border-white/10 text-foreground placeholder:text-tertiary focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/20 transition-all"
                   autoFocus
                 />
               </form>
@@ -81,20 +92,34 @@ export default function NavbarTop() {
         </AnimatePresence>
       </header>
 
-      {/* ── Desktop header ── */}
-      <header className="sticky top-0 z-50 hidden md:block border-b border-border bg-background/80 backdrop-blur-md">
-        <nav className="max-w-7xl mx-auto px-4 h-14 flex items-center gap-6">
+      {/* ── Desktop floating navbar ── */}
+      <header className="fixed top-4 left-1/2 -translate-x-1/2 z-50 hidden md:block w-[95%] max-w-5xl">
+        <nav className="flex items-center gap-2 px-2 h-14 rounded-2xl bg-black/50 backdrop-blur-2xl border border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
           {/* Logo */}
-          <Link href="/" className="shrink-0 flex items-center gap-2 group">
-            <Image src="/favicon.png" alt="V" width={28} height={28} className="rounded-sm" />
-            <span className="text-accent font-bold text-lg tracking-tight group-hover:text-accent-hover transition-colors">
-              VERDICT
-            </span>
-            <span className="text-secondary text-lg font-light">.games</span>
+          <Link href="/" className="shrink-0 flex items-center pl-3 group">
+            <Image
+              src="/verdict_logo_light.png"
+              alt="Verdict Games"
+              width={150}
+              height={52}
+              className="h-10 w-auto dark:hidden"
+              priority
+            />
+            <Image
+              src="/verdict_logo_dark.png"
+              alt="Verdict Games"
+              width={150}
+              height={52}
+              className="hidden h-10 w-auto dark:block"
+              priority
+            />
           </Link>
 
+          {/* Spacer */}
+          <div className="flex-1" />
+
           {/* Nav links */}
-          <div className="hidden lg:flex items-center gap-1">
+          <div className="flex items-center gap-1">
             {navLinks.map((link) => {
               const isActive = link.href === "/" ? pathname === "/" : pathname.startsWith(link.href);
               return (
@@ -102,18 +127,18 @@ export default function NavbarTop() {
                   key={link.href}
                   href={link.href}
                   className={cn(
-                    "relative px-3 py-1.5 text-sm transition-colors rounded-sm",
+                    "relative px-4 py-2 text-sm font-medium transition-all duration-200 rounded-xl",
                     isActive
-                      ? "text-accent font-medium"
-                      : "text-secondary hover:text-foreground hover:bg-surface-2"
+                      ? "text-foreground bg-white/10"
+                      : "text-secondary hover:text-foreground hover:bg-white/5"
                   )}
                 >
                   {link.label}
                   {isActive && (
                     <motion.span
-                      layoutId="nav-underline"
-                      className="absolute bottom-0 left-1 right-1 h-0.5 bg-accent rounded-full"
-                      transition={{ type: "spring", stiffness: 500, damping: 35 }}
+                      layoutId="nav-pill"
+                      className="absolute inset-0 rounded-xl bg-white/10 -z-10"
+                      transition={{ type: "spring", stiffness: 400, damping: 30 }}
                     />
                   )}
                 </Link>
@@ -121,21 +146,21 @@ export default function NavbarTop() {
             })}
           </div>
 
-          {/* Spacer */}
-          <div className="flex-1" />
+          {/* Divider */}
+          <div className="w-px h-6 bg-white/10 mx-1" />
 
           {/* Search */}
-          <form onSubmit={handleSearch} className="relative max-w-xs w-full">
+          <form onSubmit={handleSearch} className="relative w-52">
             <input
               ref={inputRef}
               type="search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search games..."
-              className="w-full h-9 pl-9 pr-3 text-sm rounded-sm border border-border bg-surface-2 text-foreground placeholder:text-tertiary focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/30 transition-all"
+              className="w-full h-9 pl-9 pr-3 text-sm rounded-xl bg-white/5 border border-white/10 text-foreground placeholder:text-tertiary focus:outline-none focus:border-accent/40 focus:bg-white/10 transition-all"
             />
             <svg
-              className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-tertiary"
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-tertiary"
               fill="none"
               viewBox="0 0 24 24"
               strokeWidth={2}
@@ -150,7 +175,9 @@ export default function NavbarTop() {
           </form>
 
           {/* Theme toggle */}
-          <ThemeToggle />
+          <div className="pr-2">
+            <ThemeToggle />
+          </div>
         </nav>
       </header>
     </>

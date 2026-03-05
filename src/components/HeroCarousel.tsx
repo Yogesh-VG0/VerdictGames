@@ -105,13 +105,13 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
 
   return (
     <section
-      className="relative rounded-sm overflow-hidden border border-border group touch-pan-y"
+      className="relative rounded-2xl overflow-hidden border border-white/[0.06] group touch-pan-y shadow-[0_0_60px_-20px_rgba(0,0,0,0.5)]"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
     >
       {/* Background images with swipe support */}
       <motion.div
-        className="relative aspect-[4/3] sm:aspect-[16/9] md:aspect-[21/9] overflow-hidden cursor-grab active:cursor-grabbing"
+        className="relative aspect-[3/4] sm:aspect-[16/9] md:aspect-[2.4/1] overflow-hidden cursor-grab active:cursor-grabbing"
         drag="x"
         dragConstraints={{ left: 0, right: 0 }}
         dragElastic={0.15}

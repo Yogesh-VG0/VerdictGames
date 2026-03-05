@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import Providers from "./providers";
 import NavbarTop from "@/components/NavbarTop";
@@ -17,6 +17,12 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const spaceGrotesk = Space_Grotesk({
+  variable: "--font-space-grotesk",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+});
+
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://www.verdict.games"),
   title: {
@@ -27,10 +33,22 @@ export const metadata: Metadata = {
     "Your trusted source for honest PC and Android game reviews. Discover verdicts, curated lists, and a community that cares about gaming.",
   icons: {
     icon: [
-      { url: "/favicon.png", type: "image/png", sizes: "any" },
+      {
+        url: "/verdict_logo_dark.png",
+        type: "image/png",
+        sizes: "32x32",
+        media: "(prefers-color-scheme: dark)",
+      },
+      {
+        url: "/verdict_logo_light.png",
+        type: "image/png",
+        sizes: "32x32",
+        media: "(prefers-color-scheme: light)",
+      },
+      { url: "/verdict_logo_dark.png", type: "image/png", sizes: "32x32" },
     ],
-    shortcut: "/favicon.png",
-    apple: { url: "/favicon.png", type: "image/png" },
+    shortcut: "/verdict_logo_dark.png",
+    apple: { url: "/verdict_logo_light.png", type: "image/png" },
   },
   openGraph: {
     title: "verdict.games",
@@ -55,11 +73,11 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
+        className={`${geistSans.variable} ${geistMono.variable} ${spaceGrotesk.variable} antialiased bg-background text-foreground`}
       >
         <Providers>
           <NavbarTop />
-          <main className="min-h-screen pb-20 md:pb-0 pt-0">{children}</main>
+          <main className="min-h-screen pb-20 md:pb-0 md:pt-20 pt-0">{children}</main>
           <BottomNav />
         </Providers>
         <Analytics />

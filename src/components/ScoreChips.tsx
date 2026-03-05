@@ -60,7 +60,7 @@ export default function ScoreChips({
   if (chips.length === 0) {
     return (
       <div className={cn("flex items-center gap-1", className)}>
-        <span className="inline-flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-[10px] font-bold bg-accent/15 text-accent border border-accent/20">
+        <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold bg-accent/15 text-accent border border-accent/20">
           Verdict {game.score}
         </span>
       </div>
@@ -77,7 +77,7 @@ export default function ScoreChips({
           <span
             key={source}
             className={cn(
-              "inline-flex items-center gap-1 rounded-sm border border-white/10 font-bold tabular-nums",
+              "inline-flex items-center gap-1 rounded-full border border-white/10 font-bold tabular-nums",
               style.bg,
               isCompact ? "px-1.5 py-0.5 text-[10px]" : "px-2 py-1 text-xs"
             )}

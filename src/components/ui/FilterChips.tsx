@@ -34,10 +34,10 @@ export default function FilterChips<T extends string>({
             role="radio"
             aria-checked={isActive}
             className={cn(
-              "relative px-3 py-1.5 text-xs font-medium rounded-sm border transition-colors duration-150",
+              "relative px-3.5 py-1.5 text-xs font-medium rounded-full border transition-all duration-200",
               isActive
-                ? "bg-accent text-white border-accent"
-                : "bg-surface-2 text-secondary border-border hover:border-border-hover hover:text-foreground"
+                ? "bg-accent text-white border-accent shadow-[0_0_12px_-3px_rgba(168,85,247,0.4)]"
+                : "bg-white/5 text-secondary border-white/10 hover:border-white/20 hover:text-foreground hover:bg-white/10"
             )}
           >
             {option}

@@ -8,8 +8,8 @@ export function Skeleton({
   return (
     <div
       className={cn(
-        "rounded-sm bg-surface-2 animate-shimmer",
-        "bg-gradient-to-r from-surface-2 via-elevated to-surface-2",
+        "rounded-2xl bg-white/5 animate-shimmer",
+        "bg-gradient-to-r from-white/5 via-white/10 to-white/5",
         className
       )}
       {...props}

@@ -108,14 +108,14 @@ export default function GameDetailPage({ params }: Props) {
   if (isLoading) {
     return (
       <div className="max-w-6xl mx-auto px-4 py-6 space-y-8">
-        <Skeleton className="aspect-[21/9] w-full rounded-sm" />
+        <Skeleton className="aspect-[21/9] w-full rounded-2xl" />
         <div className="space-y-3">
           <Skeleton className="h-10 w-64" />
           <Skeleton className="h-5 w-96" />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Skeleton className="h-64 col-span-2 rounded-sm" />
-          <Skeleton className="h-64 rounded-sm" />
+          <Skeleton className="h-64 col-span-2 rounded-2xl" />
+          <Skeleton className="h-64 rounded-2xl" />
         </div>
       </div>
     );
@@ -196,12 +196,12 @@ export default function GameDetailPage({ params }: Props) {
               {/* Quick info chips */}
               <div className="flex flex-wrap items-center gap-2 text-xs hero-overlay-text-muted">
                 {game.developer && (
-                  <span className="bg-black/40 backdrop-blur-sm px-2.5 py-1 rounded-sm border border-white/15">
+                  <span className="bg-black/40 backdrop-blur-sm px-2.5 py-1 rounded-full border border-white/15">
                     {game.developer}
                   </span>
                 )}
                 {game.genres.slice(0, 3).map((g) => (
-                  <span key={g} className="bg-black/40 backdrop-blur-sm px-2.5 py-1 rounded-sm border border-white/15">
+                  <span key={g} className="bg-black/40 backdrop-blur-sm px-2.5 py-1 rounded-full border border-white/15">
                     {g}
                   </span>
                 ))}
@@ -224,12 +224,12 @@ export default function GameDetailPage({ params }: Props) {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2, duration: 0.5 }}
-                className="rounded-sm border border-border bg-surface overflow-hidden"
+                className="rounded-2xl border border-white/[0.08] bg-surface overflow-hidden"
               >
                 {/* Score header band */}
                 <div className="relative p-4 sm:p-5 md:p-6 mesh-gradient">
                   <div className="flex items-start gap-4 sm:gap-5 md:gap-6">
-                    <div className={cn("shrink-0 rounded-sm", scoreGlowClass(game.score))}>
+                    <div className={cn("shrink-0 rounded-xl", scoreGlowClass(game.score))}>
                       <ScoreRing score={game.score} size={72} strokeWidth={4} className="relative sm:hidden" />
                       <ScoreRing score={game.score} size={88} strokeWidth={5} className="relative hidden sm:block" />
                     </div>
@@ -271,7 +271,7 @@ export default function GameDetailPage({ params }: Props) {
                 </div>
 
                 {/* Pros & Cons */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-border">
+                <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-white/[0.06]">
                   <div className="p-5 space-y-2.5">
                     <h4 className="text-xs font-bold text-success uppercase tracking-wider flex items-center gap-1.5">
                       <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>
@@ -300,7 +300,7 @@ export default function GameDetailPage({ params }: Props) {
 
             {/* ── Overview / Description ── */}
             <FadeInSection>
-              <section className="rounded-sm border border-border bg-surface p-5 md:p-6 space-y-4">
+              <section className="rounded-2xl border border-white/[0.08] bg-surface p-5 md:p-6 space-y-4">
                 <h3 className="text-sm font-bold text-foreground uppercase tracking-wider section-title-line">
                   Overview
                 </h3>
@@ -312,7 +312,7 @@ export default function GameDetailPage({ params }: Props) {
                     {game.tags.map((tag) => (
                       <span
                         key={tag}
-                        className="text-[10px] text-tertiary bg-surface-2 px-2 py-1 rounded-sm border border-border/50 hover:border-accent/30 hover:text-accent transition-colors cursor-default"
+                        className="text-[10px] text-tertiary bg-white/5 px-2.5 py-1 rounded-full border border-white/[0.08] hover:border-accent/30 hover:text-accent transition-colors cursor-default"
                       >
                         {tag}
                       </span>
@@ -325,7 +325,7 @@ export default function GameDetailPage({ params }: Props) {
             {/* ── Media ── */}
             <FadeInSection>
               {(game.screenshots.length > 0 || game.trailerUrl) && (
-                <section className="rounded-sm border border-border bg-surface p-5 md:p-6 space-y-4">
+                <section className="rounded-2xl border border-white/[0.08] bg-surface p-5 md:p-6 space-y-4">
                   <h3 className="text-sm font-bold text-foreground uppercase tracking-wider section-title-line">
                     Media
                   </h3>
@@ -336,7 +336,7 @@ export default function GameDetailPage({ params }: Props) {
                       href={game.trailerUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="relative block aspect-video rounded-sm overflow-hidden border border-border group"
+                      className="relative block aspect-video rounded-xl overflow-hidden border border-white/[0.08] group"
                     >
                       <Image
                         src={game.trailerThumbnail || game.screenshots[0] || game.headerImage}
@@ -354,7 +354,7 @@ export default function GameDetailPage({ params }: Props) {
                         </motion.div>
                       </div>
                       <div className="absolute bottom-3 left-3">
-                        <span className="text-xs text-white/80 bg-black/50 backdrop-blur-sm px-2 py-1 rounded-sm">
+                        <span className="text-xs text-white/80 bg-black/50 backdrop-blur-sm px-2 py-1 rounded-lg">
                           Watch Trailer
                         </span>
                       </div>
@@ -372,7 +372,7 @@ export default function GameDetailPage({ params }: Props) {
             {/* ── Performance & Monetization ── */}
             <FadeInSection>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <section className="rounded-sm border border-border bg-surface p-5 space-y-3">
+                <section className="rounded-2xl border border-white/[0.08] bg-surface p-5 space-y-3">
                   <h3 className="text-sm font-bold text-foreground uppercase tracking-wider flex items-center gap-2">
                     <span className="text-base">⚡</span> Performance
                   </h3>
@@ -384,7 +384,7 @@ export default function GameDetailPage({ params }: Props) {
                     )}
                   </p>
                 </section>
-                <section className="rounded-sm border border-border bg-surface p-5 space-y-3">
+                <section className="rounded-2xl border border-white/[0.08] bg-surface p-5 space-y-3">
                   <h3 className="text-sm font-bold text-foreground uppercase tracking-wider flex items-center gap-2">
                     <span className="text-base">💳</span> Monetization
                   </h3>
@@ -418,7 +418,7 @@ export default function GameDetailPage({ params }: Props) {
             {/* ── Steam Achievements ── */}
             {achievementsData && achievementsData.achievements.length > 0 && (
               <FadeInSection>
-                <section className="rounded-sm border border-border bg-surface p-5 md:p-6 space-y-4">
+                <section className="rounded-2xl border border-white/[0.08] bg-surface p-5 md:p-6 space-y-4">
                   <h3 className="text-sm font-bold text-foreground uppercase tracking-wider section-title-line flex items-center gap-2">
                     <span className="text-base">🏆</span>
                     Achievements
@@ -430,7 +430,7 @@ export default function GameDetailPage({ params }: Props) {
                     {achievementsData.achievements.map((ach: SteamAchievementItem) => (
                       <div
                         key={ach.name}
-                        className="flex items-center gap-3 p-2.5 rounded-sm bg-surface-2 border border-border/50 hover:border-accent/30 transition-colors"
+                        className="flex items-center gap-3 p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.06] hover:border-accent/30 transition-colors"
                       >
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
@@ -438,7 +438,7 @@ export default function GameDetailPage({ params }: Props) {
                           alt={ach.name}
                           width={40}
                           height={40}
-                          className="rounded-sm shrink-0"
+                          className="rounded-lg shrink-0"
                         />
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-foreground truncate">{ach.name}</p>
@@ -472,7 +472,7 @@ export default function GameDetailPage({ params }: Props) {
             {/* ── Latest Steam News ── */}
             {newsData && newsData.news.length > 0 && (
               <FadeInSection>
-                <section className="rounded-sm border border-border bg-surface p-5 md:p-6 space-y-4">
+                <section className="rounded-2xl border border-white/[0.08] bg-surface p-5 md:p-6 space-y-4">
                   <h3 className="text-sm font-bold text-foreground uppercase tracking-wider section-title-line flex items-center gap-2">
                     <span className="text-base">📰</span>
                     Latest News
@@ -484,7 +484,7 @@ export default function GameDetailPage({ params }: Props) {
                         href={article.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="block p-3 rounded-sm bg-surface-2 border border-border/50 hover:border-accent/40 hover:bg-accent/5 transition-all group"
+                        className="block p-3 rounded-xl bg-white/[0.03] border border-white/[0.06] hover:border-accent/40 hover:bg-accent/5 transition-all group"
                       >
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0 flex-1">
@@ -499,7 +499,7 @@ export default function GameDetailPage({ params }: Props) {
                         </div>
                         <div className="flex items-center gap-2 mt-2 text-[10px] text-tertiary">
                           {article.feedLabel && (
-                            <span className="bg-surface px-1.5 py-0.5 rounded border border-border/50">
+                            <span className="bg-surface px-1.5 py-0.5 rounded-full border border-white/[0.06]">
                               {article.feedLabel}
                             </span>
                           )}
@@ -515,7 +515,7 @@ export default function GameDetailPage({ params }: Props) {
 
             {/* ── Community Reviews ── */}
             <FadeInSection>
-              <section className="rounded-sm border border-border bg-surface p-5 md:p-6 space-y-4">
+              <section className="rounded-2xl border border-white/[0.08] bg-surface p-5 md:p-6 space-y-4">
                 <h3 className="text-sm font-bold text-foreground uppercase tracking-wider section-title-line flex items-center gap-2">
                   <span className="text-base">💬</span>
                   Community Reviews
@@ -523,7 +523,7 @@ export default function GameDetailPage({ params }: Props) {
 
                 {/* Steam Review Summary Card — always show if data exists */}
                 {(game.reviewCount > 0 || game.userScore) && (
-                  <div className="rounded-sm border border-border bg-surface-2 p-4 space-y-3">
+                  <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] p-4 space-y-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <span className="text-lg">🎮</span>
@@ -531,7 +531,7 @@ export default function GameDetailPage({ params }: Props) {
                       </div>
                       {game.steamRatingLabel && (
                         <span className={cn(
-                          "text-xs font-bold px-2 py-0.5 rounded-sm border",
+                          "text-xs font-bold px-2 py-0.5 rounded-full border",
                           game.userScore && game.userScore >= 80
                             ? "bg-score-great/15 text-score-great border-score-great/25"
                             : game.userScore && game.userScore >= 70
@@ -591,7 +591,7 @@ export default function GameDetailPage({ params }: Props) {
                     ))}
                   </div>
                 ) : (
-                  <div className="rounded-sm border border-dashed border-border/60 bg-surface-2/50 p-6 text-center space-y-2">
+                  <div className="rounded-xl border border-dashed border-white/[0.1] bg-white/[0.02] p-6 text-center space-y-2">
                     <p className="text-secondary text-sm font-medium">
                       Be the first to review on Verdict.games!
                     </p>
@@ -611,7 +611,7 @@ export default function GameDetailPage({ params }: Props) {
               {/* ── Where to Play ── */}
               <FadeInSection>
                 {(game.steamUrl || game.playStoreUrl || currentPrice) && (
-                  <section className="rounded-sm border border-border bg-surface p-5 space-y-4">
+                  <section className="rounded-2xl border border-white/[0.08] bg-surface p-5 space-y-4">
                     <h3 className="text-sm font-bold text-foreground uppercase tracking-wider section-title-line">
                       Where to Play
                     </h3>
@@ -621,7 +621,7 @@ export default function GameDetailPage({ params }: Props) {
                           href={game.steamUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-sm border border-border bg-surface-2 text-foreground hover:border-accent hover:bg-accent/5 transition-all group w-full"
+                          className="flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl border border-white/[0.08] bg-white/[0.03] text-foreground hover:border-accent hover:bg-accent/5 transition-all group w-full"
                         >
                           <span className="text-lg">🎮</span>
                           <span className="flex-1">Steam</span>
@@ -633,7 +633,7 @@ export default function GameDetailPage({ params }: Props) {
                           href={game.playStoreUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-sm border border-border bg-surface-2 text-foreground hover:border-success hover:bg-success/5 transition-all group w-full"
+                          className="flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl border border-white/[0.08] bg-white/[0.03] text-foreground hover:border-success hover:bg-success/5 transition-all group w-full"
                         >
                           <span className="text-lg">📱</span>
                           <span className="flex-1">Google Play</span>
@@ -645,7 +645,7 @@ export default function GameDetailPage({ params }: Props) {
                           href={game.priceDealUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-sm border border-border bg-surface-2 text-foreground hover:border-warning hover:bg-warning/5 transition-all group w-full"
+                          className="flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl border border-white/[0.08] bg-white/[0.03] text-foreground hover:border-warning hover:bg-warning/5 transition-all group w-full"
                         >
                           <span className="text-lg">💰</span>
                           <span className="flex-1">Best Deal</span>
@@ -657,7 +657,7 @@ export default function GameDetailPage({ params }: Props) {
                           href={game.websiteUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-sm border border-border bg-surface-2 text-foreground hover:border-secondary hover:bg-border/20 transition-all group w-full"
+                          className="flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl border border-white/[0.08] bg-white/[0.03] text-foreground hover:border-secondary hover:bg-white/[0.05] transition-all group w-full"
                         >
                           <span className="text-lg">🌐</span>
                           <span className="flex-1">Official Site</span>
@@ -689,7 +689,7 @@ export default function GameDetailPage({ params }: Props) {
 
               {/* ── Game Details ── */}
               <FadeInSection>
-                <section className="rounded-sm border border-border bg-surface p-5 space-y-4">
+                <section className="rounded-2xl border border-white/[0.08] bg-surface p-5 space-y-4">
                   <h3 className="text-sm font-bold text-foreground uppercase tracking-wider section-title-line">
                     Details
                   </h3>
@@ -728,7 +728,7 @@ export default function GameDetailPage({ params }: Props) {
               {/* ── Live Stats ── */}
               <FadeInSection>
                 {(game.currentPlayers || game.reviewCount > 0 || game.userScore || game.igdbRating) && (
-                  <section className="rounded-sm border border-border bg-surface p-5 space-y-4">
+                  <section className="rounded-2xl border border-white/[0.08] bg-surface p-5 space-y-4">
                     <h3 className="text-sm font-bold text-foreground uppercase tracking-wider section-title-line flex items-center gap-2">
                       <span className="text-base">📊</span> Live Stats
                     </h3>
@@ -790,32 +790,32 @@ export default function GameDetailPage({ params }: Props) {
               {/* ── External Links ── */}
               <FadeInSection>
                 {(game.igdbUrl || game.wikipediaUrl || game.metacriticUrl || game.redditUrl) && (
-                  <section className="rounded-sm border border-border bg-surface p-5 space-y-3">
+                  <section className="rounded-2xl border border-white/[0.08] bg-surface p-5 space-y-3">
                     <h3 className="text-sm font-bold text-foreground uppercase tracking-wider section-title-line">
                       More Info
                     </h3>
                     <div className="grid grid-cols-2 gap-2">
                       {game.igdbUrl && (
                         <a href={game.igdbUrl} target="_blank" rel="noopener noreferrer"
-                          className="px-3 py-2 text-xs font-medium rounded-sm border border-border bg-surface-2 text-secondary hover:text-accent hover:border-accent text-center transition-colors">
+                          className="px-3 py-2 text-xs font-medium rounded-xl border border-white/[0.08] bg-white/[0.03] text-secondary hover:text-accent hover:border-accent text-center transition-colors">
                           IGDB
                         </a>
                       )}
                       {game.wikipediaUrl && (
                         <a href={game.wikipediaUrl} target="_blank" rel="noopener noreferrer"
-                          className="px-3 py-2 text-xs font-medium rounded-sm border border-border bg-surface-2 text-secondary hover:text-accent hover:border-accent text-center transition-colors">
+                          className="px-3 py-2 text-xs font-medium rounded-xl border border-white/[0.08] bg-white/[0.03] text-secondary hover:text-accent hover:border-accent text-center transition-colors">
                           Wikipedia
                         </a>
                       )}
                       {game.metacriticUrl && (
                         <a href={game.metacriticUrl} target="_blank" rel="noopener noreferrer"
-                          className="px-3 py-2 text-xs font-medium rounded-sm border border-border bg-surface-2 text-secondary hover:text-accent hover:border-accent text-center transition-colors">
+                          className="px-3 py-2 text-xs font-medium rounded-xl border border-white/[0.08] bg-white/[0.03] text-secondary hover:text-accent hover:border-accent text-center transition-colors">
                           Metacritic
                         </a>
                       )}
                       {game.redditUrl && (
                         <a href={game.redditUrl} target="_blank" rel="noopener noreferrer"
-                          className="px-3 py-2 text-xs font-medium rounded-sm border border-border bg-surface-2 text-secondary hover:text-accent hover:border-accent text-center transition-colors">
+                          className="px-3 py-2 text-xs font-medium rounded-xl border border-white/[0.08] bg-white/[0.03] text-secondary hover:text-accent hover:border-accent text-center transition-colors">
                           Reddit
                         </a>
                       )}
@@ -832,7 +832,7 @@ export default function GameDetailPage({ params }: Props) {
         {/* ── Related Games ── */}
         <FadeInSection>
           {related && related.length > 0 && (
-            <section className="mt-12 pt-8 border-t border-border">
+            <section className="mt-12 pt-8 border-t border-white/[0.06]">
               <SectionHeader title="You Might Also Like" icon="🎯" />
               <GameGrid games={related} columns={4} />
             </section>
@@ -841,7 +841,7 @@ export default function GameDetailPage({ params }: Props) {
 
         {/* ── Attribution ── */}
         <FadeInSection>
-          <div className="text-[10px] text-tertiary border-t border-border/50 pt-4 mt-8 space-y-1">
+          <div className="text-[10px] text-tertiary border-t border-white/[0.06] pt-4 mt-8 space-y-1">
             <p>
               Data sourced from RAWG, Steam, IGDB, CheapShark, and Wikipedia.
               {game.enrichmentSources && game.enrichmentSources.length > 0 && (

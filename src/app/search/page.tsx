@@ -96,7 +96,7 @@ function SearchContent() {
       </motion.div>
 
       {/* Sticky search bar */}
-      <div className="sticky top-12 md:top-14 z-40 bg-background/90 backdrop-blur-md py-3 -mx-4 px-4 border-b border-border">
+      <div className="sticky top-12 md:top-20 z-40 bg-background/80 backdrop-blur-xl py-3 -mx-4 px-4 border-b border-white/[0.06]">
         <div className="relative">
           <svg
             className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-tertiary"
@@ -112,7 +112,7 @@ function SearchContent() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search by title, genre, developer..."
-            className="w-full h-11 pl-10 pr-4 text-sm rounded-sm border border-border bg-surface-2 text-foreground placeholder:text-tertiary focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/30 transition-all"
+            className="w-full h-11 pl-10 pr-4 text-sm rounded-xl border border-white/10 bg-white/5 text-foreground placeholder:text-tertiary focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/20 transition-all"
             autoFocus
           />
           {/* Typing indicator */}
@@ -172,7 +172,7 @@ function SearchContent() {
                 setGenre(e.target.value);
                 setPage(1);
               }}
-              className="h-8 px-2 text-xs rounded-sm border border-border bg-surface-2 text-foreground focus:outline-none focus:border-accent"
+              className="h-8 px-2 text-xs rounded-xl border border-white/10 bg-white/5 text-foreground focus:outline-none focus:border-accent/50"
             >
               <option value="">All Genres</option>
               {allGenres.map((g) => (
@@ -194,7 +194,7 @@ function SearchContent() {
                 setYear(e.target.value);
                 setPage(1);
               }}
-              className="h-8 px-2 text-xs rounded-sm border border-border bg-surface-2 text-foreground focus:outline-none focus:border-accent"
+              className="h-8 px-2 text-xs rounded-xl border border-white/10 bg-white/5 text-foreground focus:outline-none focus:border-accent/50"
             >
               <option value="">All Years</option>
               {allYears.map((y) => (
@@ -268,7 +268,7 @@ function SearchContent() {
                 <div className="flex justify-center pt-8">
                   <button
                     onClick={() => setPage((p) => p + 1)}
-                    className="px-6 py-2 text-sm font-medium text-accent border border-accent rounded-sm hover:bg-accent-soft transition-colors"
+                    className="px-6 py-2 text-sm font-medium text-accent border border-accent rounded-full hover:bg-accent/10 transition-colors"
                   >
                     Load more
                   </button>
@@ -300,7 +300,7 @@ function SearchContent() {
                     setMonetization("All");
                     setSort("relevance");
                   }}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 text-sm text-accent border border-accent rounded-sm hover:bg-accent-soft transition-colors"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 text-sm text-accent border border-accent rounded-full hover:bg-accent/10 transition-colors"
                 >
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />

@@ -118,11 +118,11 @@ export default function HomePage() {
 
       {/* ── Divider ── */}
       <div className="max-w-7xl mx-auto px-4">
-        <hr className="pixel-divider" />
+        <hr className="border-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
       </div>
 
       {/* ── New Releases ── */}
-      <section className="py-10">
+      <section className="py-12">
         <div className="max-w-7xl mx-auto px-4">
           <FadeInSection>
             {newReleases.isLoading ? (
@@ -146,7 +146,7 @@ export default function HomePage() {
       </section>
 
       {/* ── Top Rated ── */}
-      <section className="relative py-10">
+      <section className="relative py-12">
         <div className="absolute inset-0 mesh-gradient opacity-30 pointer-events-none" />
         <div className="max-w-7xl mx-auto px-4 relative">
           <FadeInSection>
@@ -172,11 +172,11 @@ export default function HomePage() {
 
       {/* ── Divider ── */}
       <div className="max-w-7xl mx-auto px-4">
-        <hr className="pixel-divider" />
+        <hr className="border-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
       </div>
 
       {/* ── Because You Viewed… ── */}
-      <section className="py-10">
+      <section className="py-12">
         <div className="max-w-7xl mx-auto px-4">
           <FadeInSection>
             {personalized.isLoading ? (
@@ -205,8 +205,8 @@ export default function HomePage() {
       </section>
 
       {/* ── Footer ── */}
-      <footer className="border-t border-border bg-surface/50">
-        <div className="max-w-7xl mx-auto px-4 py-10">
+      <footer className="border-t border-white/[0.06] bg-black/30">
+        <div className="max-w-7xl mx-auto px-4 py-12">
           <FadeInSection>
             <div className="flex flex-col md:flex-row items-center justify-between gap-6">
               <div className="text-center md:text-left">
@@ -224,7 +224,7 @@ export default function HomePage() {
                 <a href="/terms" className="hover:text-accent transition-colors">Terms</a>
               </div>
             </div>
-            <div className="mt-6 pt-4 border-t border-border/50 text-center">
+            <div className="mt-6 pt-4 border-t border-white/[0.06] text-center">
               <p className="text-[10px] text-tertiary">
                 Data from RAWG, Steam, IGDB, CheapShark & Wikipedia. All trademarks belong to their respective owners.
               </p>

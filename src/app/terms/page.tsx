@@ -10,7 +10,7 @@ export default function TermsPage() {
     <div className="max-w-3xl mx-auto px-4 py-8 space-y-6 animate-fade-in-up">
       <header className="space-y-2">
         <h1 className="text-3xl font-bold text-foreground">Terms of Service</h1>
-        <div className="pixel-divider w-24" />
+        <div className="w-24 h-px bg-gradient-to-r from-accent to-transparent" />
         <p className="text-xs text-tertiary">Last updated: March 2026</p>
       </header>
 

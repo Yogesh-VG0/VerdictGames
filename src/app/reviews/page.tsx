@@ -43,7 +43,7 @@ export default function ReviewsPage() {
       </motion.div>
 
       {/* Filters */}
-      <div className="flex flex-wrap items-end gap-4 border-b border-border pb-4">
+      <div className="flex flex-wrap items-end gap-4 border-b border-white/[0.06] pb-4">
         <div className="space-y-1">
           <label className="text-[10px] uppercase tracking-wider text-tertiary font-medium">
             Platform

@@ -64,8 +64,8 @@ export default function BottomNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden border-t border-border bg-background/90 backdrop-blur-md safe-area-bottom">
-      <div className="flex items-center justify-around h-14 px-2">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-black/60 backdrop-blur-2xl border-t border-white/[0.06] safe-area-bottom">
+      <div className="flex items-center justify-around h-16 px-2">
         {links.map((link) => {
           const isActive =
             link.href === "/"
@@ -77,7 +77,7 @@ export default function BottomNav() {
               key={link.href}
               href={link.href}
               className={cn(
-                "relative flex flex-col items-center gap-0.5 px-3 py-1 rounded-sm transition-all duration-200 press-effect",
+                "relative flex flex-col items-center gap-1 px-3 py-1.5 rounded-xl transition-all duration-200",
                 isActive
                   ? "text-accent"
                   : "text-tertiary hover:text-secondary"
@@ -91,7 +91,7 @@ export default function BottomNav() {
               </span>
               <span className="text-[10px] font-medium">{link.label}</span>
               {isActive && (
-                <span className="absolute -top-px left-1/2 -translate-x-1/2 w-4 h-0.5 bg-accent rounded-full" />
+                <span className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-5 h-0.5 bg-accent rounded-full" />
               )}
             </Link>
           );

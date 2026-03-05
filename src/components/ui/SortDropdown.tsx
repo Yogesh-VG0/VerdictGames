@@ -20,10 +20,10 @@ export default function SortDropdown<T extends string>({
       value={selected}
       onChange={(e) => onChange(e.target.value as T)}
       className={cn(
-        "appearance-none bg-surface-2 text-foreground text-xs font-medium",
-        "px-3 py-2 pr-8 rounded-sm border border-border",
-        "focus:outline-none focus:border-accent",
-        "cursor-pointer transition-colors",
+        "appearance-none bg-white/5 text-foreground text-xs font-medium",
+        "px-4 py-2 pr-8 rounded-xl border border-white/10",
+        "focus:outline-none focus:border-accent/50",
+        "cursor-pointer transition-all hover:bg-white/10",
         className
       )}
       style={{

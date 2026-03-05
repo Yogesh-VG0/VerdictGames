@@ -19,8 +19,8 @@ export default function ReviewCard({
   return (
     <article
       className={cn(
-        "rounded-sm border border-border bg-surface p-4 space-y-3 pixel-corners",
-        "hover:border-border-hover hover:shadow-md hover:shadow-accent/5 transition-all duration-300",
+        "rounded-2xl border border-white/[0.08] bg-surface p-4 space-y-3",
+        "hover:border-white/[0.15] hover:shadow-lg hover:shadow-accent/5 transition-all duration-300",
         className
       )}
     >
@@ -30,7 +30,7 @@ export default function ReviewCard({
         {showGame && (
           <Link
             href={`/game/${review.gameSlug}`}
-            className="shrink-0 relative w-10 h-14 rounded-sm overflow-hidden border border-border"
+            className="shrink-0 relative w-10 h-14 rounded-lg overflow-hidden border border-white/[0.08]"
           >
             <Image
               src={review.gameCover}

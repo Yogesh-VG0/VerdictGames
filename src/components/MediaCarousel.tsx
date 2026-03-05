@@ -24,7 +24,7 @@ export default function MediaCarousel({
   return (
     <div className={cn("space-y-3", className)}>
       {/* Main image */}
-      <div className="relative aspect-video rounded-sm overflow-hidden border border-border bg-surface-2">
+      <div className="relative aspect-video rounded-xl overflow-hidden border border-white/[0.08] bg-black/30">
         <AnimatePresence mode="wait">
           <motion.div
             key={active}
@@ -49,14 +49,14 @@ export default function MediaCarousel({
           <>
             <button
               onClick={() => setActive((p) => (p === 0 ? images.length - 1 : p - 1))}
-              className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-sm bg-background/70 backdrop-blur-sm border border-border flex items-center justify-center text-foreground hover:bg-background transition-colors"
+              className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/60 backdrop-blur-md border border-white/10 flex items-center justify-center text-white hover:bg-black/80 transition-colors"
               aria-label="Previous image"
             >
               ‹
             </button>
             <button
               onClick={() => setActive((p) => (p === images.length - 1 ? 0 : p + 1))}
-              className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-sm bg-background/70 backdrop-blur-sm border border-border flex items-center justify-center text-foreground hover:bg-background transition-colors"
+              className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/60 backdrop-blur-md border border-white/10 flex items-center justify-center text-white hover:bg-black/80 transition-colors"
               aria-label="Next image"
             >
               ›
@@ -76,10 +76,10 @@ export default function MediaCarousel({
               key={i}
               onClick={() => setActive(i)}
               className={cn(
-                "relative shrink-0 w-20 h-12 rounded-sm overflow-hidden border transition-all",
+                "relative shrink-0 w-20 h-12 rounded-lg overflow-hidden border transition-all",
                 i === active
                   ? "border-accent ring-1 ring-accent/50"
-                  : "border-border opacity-60 hover:opacity-100"
+                  : "border-white/10 opacity-60 hover:opacity-100"
               )}
             >
               <Image

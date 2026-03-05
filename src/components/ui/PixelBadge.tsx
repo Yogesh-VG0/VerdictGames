@@ -30,7 +30,7 @@ export default function PixelBadge({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 font-medium uppercase tracking-wider border rounded-sm",
+        "inline-flex items-center gap-1 font-medium uppercase tracking-wider border rounded-full",
         variantStyles[variant],
         sizeStyles[size],
         className

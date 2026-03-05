@@ -41,9 +41,9 @@ export default function ProfilePage({ params }: Props) {
           </div>
         </div>
         <div className="grid grid-cols-3 gap-4">
-          <Skeleton className="h-20 rounded-sm" />
-          <Skeleton className="h-20 rounded-sm" />
-          <Skeleton className="h-20 rounded-sm" />
+          <Skeleton className="h-20 rounded-2xl" />
+          <Skeleton className="h-20 rounded-2xl" />
+          <Skeleton className="h-20 rounded-2xl" />
         </div>
       </div>
     );
@@ -74,7 +74,7 @@ export default function ProfilePage({ params }: Props) {
             user.recentActivity.map((item) => (
               <div
                 key={item.id}
-                className="flex items-center gap-3 text-sm py-2 border-b border-border last:border-0"
+                className="flex items-center gap-3 text-sm py-2 border-b border-white/[0.06] last:border-0"
               >
                 <span className="text-lg">
                   {item.type === "review" ? "📝" : item.type === "list" ? "📋" : "⭐"}
@@ -163,7 +163,7 @@ export default function ProfilePage({ params }: Props) {
     <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
       {/* Profile header */}
       <div className="flex items-start gap-4 md:gap-6">
-        <div className="relative w-20 h-20 md:w-24 md:h-24 rounded-full overflow-hidden border-2 border-border shrink-0">
+        <div className="relative w-20 h-20 md:w-24 md:h-24 rounded-full overflow-hidden border-2 border-white/[0.1] shrink-0">
           <Image
             src={user.avatar}
             alt={user.displayName}
@@ -197,7 +197,7 @@ export default function ProfilePage({ params }: Props) {
         ].map((stat) => (
           <div
             key={stat.label}
-            className="rounded-sm border border-border bg-surface p-3 text-center pixel-corners"
+            className="rounded-2xl border border-white/[0.08] bg-surface p-3 text-center"
           >
             <p className="text-lg font-bold text-foreground">{stat.value}</p>
             <p className="text-[10px] text-tertiary uppercase tracking-wider">

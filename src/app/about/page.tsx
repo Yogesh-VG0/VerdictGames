@@ -10,7 +10,7 @@ export default function AboutPage() {
     <div className="max-w-3xl mx-auto px-4 py-8 space-y-8 animate-fade-in-up">
       <header className="space-y-2">
         <h1 className="text-3xl font-bold text-foreground">About verdict.games</h1>
-        <div className="pixel-divider w-24" />
+        <div className="w-24 h-px bg-gradient-to-r from-accent to-transparent" />
       </header>
 
       <section className="space-y-4 text-sm text-secondary leading-relaxed">
@@ -50,19 +50,19 @@ export default function AboutPage() {
 
         <h2 className="text-lg font-semibold text-foreground pt-4">Verdict Scale</h2>
         <div className="grid grid-cols-2 gap-3">
-          <div className="rounded-sm border border-border bg-surface p-3">
+          <div className="rounded-2xl border border-white/[0.08] bg-surface p-3">
             <p className="text-score-great font-bold text-sm">90–100 • MUST PLAY</p>
             <p className="text-xs text-tertiary">Exceptional. Essential gaming.</p>
           </div>
-          <div className="rounded-sm border border-border bg-surface p-3">
+          <div className="rounded-2xl border border-white/[0.08] bg-surface p-3">
             <p className="text-score-good font-bold text-sm">75–89 • WORTH IT</p>
             <p className="text-xs text-tertiary">Solid. Recommended with context.</p>
           </div>
-          <div className="rounded-sm border border-border bg-surface p-3">
+          <div className="rounded-2xl border border-white/[0.08] bg-surface p-3">
             <p className="text-score-mixed font-bold text-sm">50–74 • MIXED</p>
             <p className="text-xs text-tertiary">Flawed. Know what you&apos;re getting into.</p>
           </div>
-          <div className="rounded-sm border border-border bg-surface p-3">
+          <div className="rounded-2xl border border-white/[0.08] bg-surface p-3">
             <p className="text-score-bad font-bold text-sm">0–49 • SKIP</p>
             <p className="text-xs text-tertiary">Not recommended. Serious issues.</p>
           </div>
@@ -71,7 +71,7 @@ export default function AboutPage() {
         <h2 className="text-lg font-semibold text-foreground pt-4">Tech stack</h2>
         <p>
           Built with Next.js, TypeScript, Tailwind CSS, and Supabase. Data sourced from RAWG, Steam,
-          IGDB, CheapShark, and Wikipedia. Designed mobile-first with a pixel-art gaming aesthetic.
+          IGDB, CheapShark, and Wikipedia. Designed mobile-first with a cinematic dark glass aesthetic.
         </p>
       </section>
     </div>

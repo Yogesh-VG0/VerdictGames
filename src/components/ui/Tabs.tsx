@@ -23,7 +23,7 @@ export default function Tabs({ tabs, defaultTab, className }: TabsProps) {
     <div className={className}>
       {/* Tab headers */}
       <div
-        className="flex gap-0 border-b border-border overflow-x-auto no-scrollbar"
+        className="flex gap-1 border-b border-white/[0.06] overflow-x-auto no-scrollbar"
         role="tablist"
       >
         {tabs.map((tab) => {

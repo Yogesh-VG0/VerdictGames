@@ -36,12 +36,12 @@ export default function PixelButton({
 }: PixelButtonProps) {
   return (
     <motion.button
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
+      whileHover={{ scale: 1.03 }}
+      whileTap={{ scale: 0.97 }}
       className={cn(
         "relative inline-flex items-center justify-center gap-2 font-medium",
-        "rounded-sm border transition-colors duration-150",
-        "focus-visible:outline-2 focus-visible:outline-accent",
+        "rounded-full border transition-all duration-200",
+        "focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2",
         variantStyles[variant],
         sizeStyles[size],
         className

@@ -34,7 +34,7 @@ export default function ScoreRing({
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke="var(--vg-border)"
+          stroke="rgba(255,255,255,0.08)"
           strokeWidth={strokeWidth}
         />
         {/* Score arc */}
