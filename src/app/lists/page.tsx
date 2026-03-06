@@ -1,10 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { getCuratedLists } from "@/lib/api";
+import { useAuth } from "@/hooks/useAuth";
 import PixelBadge from "@/components/ui/PixelBadge";
 import { Skeleton } from "@/components/ui/Skeleton";
 
@@ -14,10 +16,16 @@ const gridItem = {
 };
 
 export default function ListsPage() {
+  const { user } = useAuth();
+  const [tab, setTab] = useState<"all" | "mine">("all");
+
   const { data: lists, isLoading } = useQuery({
     queryKey: ["lists"],
     queryFn: getCuratedLists,
   });
+
+  const myLists = lists?.filter((l) => l.ownerId === user?.profileId) ?? [];
+  const displayLists = tab === "mine" ? myLists : lists;
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-6 space-y-6">
@@ -33,6 +41,28 @@ export default function ListsPage() {
         </p>
       </motion.div>
 
+      {/* Tabs */}
+      {user && (
+        <div className="flex gap-2">
+          {[
+            { id: "all" as const, label: "All Lists" },
+            { id: "mine" as const, label: "My Lists" },
+          ].map((t) => (
+            <button
+              key={t.id}
+              onClick={() => setTab(t.id)}
+              className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                tab === t.id
+                  ? "bg-accent text-white shadow-lg shadow-accent/20"
+                  : "bg-surface border border-white/[0.08] text-secondary hover:text-foreground"
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+      )}
+
       {isLoading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {Array.from({ length: 6 }).map((_, i) => (
@@ -46,14 +76,14 @@ export default function ListsPage() {
             </div>
           ))}
         </div>
-      ) : lists && lists.length > 0 ? (
+      ) : displayLists && displayLists.length > 0 ? (
         <motion.div
           initial="hidden"
           animate="show"
           variants={{ show: { transition: { staggerChildren: 0.07 } } }}
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
         >
-          {lists.map((list) => (
+          {displayLists.map((list) => (
             <motion.div key={list.id} variants={gridItem}>
             <Link
               href={`/lists/${list.slug}`}

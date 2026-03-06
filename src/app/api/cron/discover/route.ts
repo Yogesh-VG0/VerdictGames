@@ -58,13 +58,14 @@ function formatDateRange(daysBack: number, daysForward: number): string {
 }
 
 export async function GET(request: NextRequest) {
-  // Optional secret check for production security
+  // Require CRON_SECRET for production security
   const cronSecret = process.env.CRON_SECRET;
-  if (cronSecret) {
-    const provided = request.nextUrl.searchParams.get("secret");
-    if (provided !== cronSecret) {
-      return jsonError("Unauthorized", 401);
-    }
+  if (!cronSecret) {
+    return jsonError("CRON_SECRET not configured", 503);
+  }
+  const provided = request.nextUrl.searchParams.get("secret");
+  if (provided !== cronSecret) {
+    return jsonError("Unauthorized", 401);
   }
 
   if (!process.env.RAWG_API_KEY) {

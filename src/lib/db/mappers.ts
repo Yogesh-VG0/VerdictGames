@@ -5,8 +5,8 @@
  * Keeps database column naming (snake_case) isolated from frontend (camelCase).
  */
 
-import type { Game, Review, User, GameList, Platform, MonetizationType, VerdictLabel } from "../types";
-import type { GameRow, ReviewRow, ProfileRow, ListRow } from "../supabase/types";
+import type { Game, Review, ReviewComment, User, GameList, UserGame, Platform, MonetizationType, VerdictLabel, LibraryStatus } from "../types";
+import type { GameRow, ReviewRow, ProfileRow, ListRow, UserGameRow, ReviewCommentRow } from "../supabase/types";
 
 /** Map a games row to the frontend Game interface. */
 export function mapGameRow(row: GameRow): Game {
@@ -64,6 +64,12 @@ export function mapGameRow(row: GameRow): Game {
     scoreSource: row.score_source ?? undefined,
     lastEnrichedAt: row.last_enriched_at ?? undefined,
     enrichmentSources: row.enrichment_sources ?? undefined,
+
+    // HLTB
+    hltbMain: row.hltb_main ?? undefined,
+    hltbExtras: row.hltb_extras ?? undefined,
+    hltbCompletionist: row.hltb_completionist ?? undefined,
+    franchise: row.franchise ?? undefined,
   };
 }
 
@@ -94,10 +100,28 @@ export function mapReviewRow(
   };
 }
 
+/** Map a review_comments row to the frontend ReviewComment interface. */
+export function mapCommentRow(
+  row: ReviewCommentRow & {
+    profile?: { username: string; avatar_url: string } | null;
+  }
+): ReviewComment {
+  return {
+    id: row.id,
+    reviewId: row.review_id,
+    userId: row.profile_id,
+    username: row.profile?.username ?? "",
+    userAvatar: row.profile?.avatar_url ?? "",
+    body: row.body,
+    parentId: row.parent_id ?? undefined,
+    createdAt: row.created_at,
+  };
+}
+
 /** Map a profiles row to the frontend User interface. */
 export function mapProfileRow(
   row: ProfileRow,
-  stats: { gamesReviewed: number; listsCreated: number }
+  stats: { gamesReviewed: number; listsCreated: number; followerCount?: number; followingCount?: number; libraryCount?: number }
 ): User {
   return {
     id: row.id,
@@ -110,6 +134,9 @@ export function mapProfileRow(
     joinedAt: row.joined_at,
     favoriteGenres: row.favorite_genres,
     recentActivity: [], // populated separately
+    followerCount: stats.followerCount ?? 0,
+    followingCount: stats.followingCount ?? 0,
+    libraryCount: stats.libraryCount ?? 0,
   };
 }
 
@@ -129,5 +156,28 @@ export function mapListRow(
     curatedBy: row.curated_by,
     createdAt: row.created_at,
     tags: row.tags,
+    ownerId: row.owner_id ?? undefined,
+    isPublic: row.is_public,
+  };
+}
+
+/** Map a user_games row (with joined game) to the frontend UserGame interface. */
+export function mapUserGameRow(
+  row: UserGameRow & {
+    game?: GameRow | null;
+  }
+): UserGame {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    gameId: row.game_id,
+    game: row.game ? mapGameRow(row.game as GameRow) : undefined,
+    status: row.status as LibraryStatus,
+    personalRating: row.personal_rating ?? undefined,
+    hoursPlayed: row.hours_played,
+    notes: row.notes,
+    startedAt: row.started_at ?? undefined,
+    completedAt: row.completed_at ?? undefined,
+    createdAt: row.created_at,
   };
 }

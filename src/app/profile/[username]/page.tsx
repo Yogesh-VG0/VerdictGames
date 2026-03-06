@@ -1,15 +1,17 @@
 "use client";
 
-import { use } from "react";
+import { use, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useQuery } from "@tanstack/react-query";
-import { getUserProfile, getUserReviews } from "@/lib/api";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { getUserProfile, getUserReviews, toggleFollow } from "@/lib/api";
+import { useAuth } from "@/hooks/useAuth";
 import { formatDate, cn } from "@/lib/utils";
 import ReviewCard from "@/components/ReviewCard";
 import PixelBadge from "@/components/ui/PixelBadge";
 import PixelButton from "@/components/ui/PixelButton";
 import Tabs from "@/components/ui/Tabs";
+import AuthModal from "@/components/AuthModal";
 import { Skeleton, ReviewCardSkeleton } from "@/components/ui/Skeleton";
 
 interface Props {
@@ -18,6 +20,9 @@ interface Props {
 
 export default function ProfilePage({ params }: Props) {
   const { username } = use(params);
+  const { user: currentUser } = useAuth();
+  const queryClient = useQueryClient();
+  const [authModalOpen, setAuthModalOpen] = useState(false);
 
   const { data: user, isLoading } = useQuery({
     queryKey: ["user", username],
@@ -29,6 +34,15 @@ export default function ProfilePage({ params }: Props) {
     queryFn: () => getUserReviews(username),
     enabled: !!user,
   });
+
+  const followMutation = useMutation({
+    mutationFn: (action: "follow" | "unfollow") => toggleFollow(user?.id ?? "", action),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["user", username] });
+    },
+  });
+
+  const isOwnProfile = currentUser?.username === username;
 
   if (isLoading) {
     return (
@@ -77,7 +91,7 @@ export default function ProfilePage({ params }: Props) {
                 className="flex items-center gap-3 text-sm py-2 border-b border-white/[0.06] last:border-0"
               >
                 <span className="text-lg">
-                  {item.type === "review" ? "📝" : item.type === "list" ? "📋" : "⭐"}
+                  {item.type === "review" ? "📝" : item.type === "list" ? "📋" : item.type === "library" ? "📚" : "⭐"}
                 </span>
                 <div className="flex-1 min-w-0">
                   {item.type === "review" && (
@@ -172,12 +186,43 @@ export default function ProfilePage({ params }: Props) {
             className="object-cover"
           />
         </div>
-        <div className="space-y-1.5">
-          <h1 className="text-xl md:text-2xl font-bold text-foreground">
-            {user.displayName}
-          </h1>
+        <div className="space-y-1.5 flex-1">
+          <div className="flex items-center gap-3 flex-wrap">
+            <h1 className="text-xl md:text-2xl font-bold text-foreground">
+              {user.displayName}
+            </h1>
+            {!isOwnProfile && (
+              <button
+                onClick={() => {
+                  if (!currentUser) {
+                    setAuthModalOpen(true);
+                    return;
+                  }
+                  followMutation.mutate("follow");
+                }}
+                disabled={followMutation.isPending}
+                className="px-3 py-1 rounded-lg text-xs font-medium bg-accent/10 border border-accent/30 text-accent hover:bg-accent/20 transition-all disabled:opacity-50"
+              >
+                {followMutation.isPending ? "..." : "Follow"}
+              </button>
+            )}
+          </div>
           <p className="text-xs text-tertiary">@{user.username}</p>
           <p className="text-sm text-secondary">{user.bio}</p>
+          {/* Follower/Following counts */}
+          <div className="flex items-center gap-4 text-xs pt-1">
+            <span className="text-secondary">
+              <span className="font-bold text-foreground">{user.followerCount ?? 0}</span> followers
+            </span>
+            <span className="text-secondary">
+              <span className="font-bold text-foreground">{user.followingCount ?? 0}</span> following
+            </span>
+            {user.libraryCount != null && user.libraryCount > 0 && (
+              <span className="text-secondary">
+                <span className="font-bold text-foreground">{user.libraryCount}</span> in library
+              </span>
+            )}
+          </div>
           <div className="flex flex-wrap gap-1 pt-1">
             {user.favoriteGenres.map((g) => (
               <PixelBadge key={g} variant="muted" size="sm">
@@ -209,6 +254,9 @@ export default function ProfilePage({ params }: Props) {
 
       {/* Tabs */}
       <Tabs tabs={tabs} defaultTab="activity" />
+
+      {/* Auth Modal */}
+      <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} />
     </div>
   );
 }

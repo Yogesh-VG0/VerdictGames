@@ -7,8 +7,12 @@
 import {
   Game,
   Review,
+  ReviewComment,
   User,
+  UserGame,
   GameList,
+  LibraryStats,
+  LibraryStatus,
   SearchFilters,
   PaginatedResponse,
 } from "./types";
@@ -285,4 +289,144 @@ export async function getUserProfile(username: string): Promise<User | null> {
 export async function getUserReviews(username: string): Promise<Review[]> {
   const allReviews = await getGlobalReviews({ sort: "newest", page: 1 });
   return allReviews.items.filter((r) => r.username === username);
+}
+
+/* ═══════════════════════════════════════════════════
+   LIBRARY QUERIES (Authenticated)
+   ═══════════════════════════════════════════════════ */
+
+/** Get user's game library. */
+export async function getLibrary(status?: string): Promise<UserGame[]> {
+  const params = status ? `?status=${status}` : "";
+  return (await apiFetch<UserGame[]>(`/api/library${params}`)) ?? [];
+}
+
+/** Add or update a game in library. */
+export async function updateLibraryGame(data: {
+  gameId: string;
+  status?: LibraryStatus;
+  personalRating?: number;
+  hoursPlayed?: number;
+  notes?: string;
+  startedAt?: string;
+  completedAt?: string;
+}): Promise<UserGame | null> {
+  return apiFetch<UserGame>("/api/library", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+/** Remove a game from library. */
+export async function removeFromLibrary(gameId: string): Promise<boolean> {
+  const result = await apiFetch<{ removed: boolean }>("/api/library", {
+    method: "DELETE",
+    body: JSON.stringify({ gameId }),
+  });
+  return result?.removed ?? false;
+}
+
+/** Get library stats. */
+export async function getLibraryStats(): Promise<LibraryStats | null> {
+  return apiFetch<LibraryStats>("/api/library/stats");
+}
+
+/* ═══════════════════════════════════════════════════
+   REVIEW MUTATIONS (Authenticated)
+   ═══════════════════════════════════════════════════ */
+
+/** Submit a new review. */
+export async function submitReview(data: {
+  gameId: string;
+  rating: number;
+  title: string;
+  bodyText: string;
+  pros?: string[];
+  cons?: string[];
+  platform?: string;
+}): Promise<{ id: string } | null> {
+  return apiFetch<{ id: string }>("/api/reviews", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+/** Vote on a review (1 = helpful, -1 = unhelpful). */
+export async function voteOnReview(reviewId: string, value: 1 | -1): Promise<boolean> {
+  const result = await apiFetch<{ voted: boolean }>(`/api/reviews/${reviewId}/vote`, {
+    method: "POST",
+    body: JSON.stringify({ value }),
+  });
+  return result?.voted ?? false;
+}
+
+/** Get comments for a review. */
+export async function getReviewComments(reviewId: string): Promise<ReviewComment[]> {
+  return (await apiFetch<ReviewComment[]>(`/api/reviews/${reviewId}/comments`)) ?? [];
+}
+
+/** Add a comment to a review. */
+export async function addReviewComment(reviewId: string, body: string, parentId?: string): Promise<ReviewComment | null> {
+  return apiFetch<ReviewComment>(`/api/reviews/${reviewId}/comments`, {
+    method: "POST",
+    body: JSON.stringify({ body, parentId }),
+  });
+}
+
+/* ═══════════════════════════════════════════════════
+   FOLLOW SYSTEM
+   ═══════════════════════════════════════════════════ */
+
+/** Follow or unfollow a user. */
+export async function toggleFollow(profileId: string, action: "follow" | "unfollow"): Promise<boolean> {
+  const result = await apiFetch<{ following: boolean }>("/api/follow", {
+    method: "POST",
+    body: JSON.stringify({ targetProfileId: profileId, action }),
+  });
+  return result?.following ?? false;
+}
+
+/* ═══════════════════════════════════════════════════
+   CALENDAR
+   ═══════════════════════════════════════════════════ */
+
+/** Get games releasing in a specific month. */
+export async function getCalendarGames(month?: string): Promise<Game[]> {
+  const params = month ? `?month=${month}` : "";
+  return (await apiFetch<Game[]>(`/api/calendar${params}`)) ?? [];
+}
+
+/* ═══════════════════════════════════════════════════
+   COMPARE
+   ═══════════════════════════════════════════════════ */
+
+/** Compare two games side by side. */
+export async function compareGames(slug1: string, slug2: string): Promise<{ game1: Game; game2: Game } | null> {
+  return apiFetch<{ game1: Game; game2: Game }>(`/api/compare?g1=${encodeURIComponent(slug1)}&g2=${encodeURIComponent(slug2)}`);
+}
+
+/* ═══════════════════════════════════════════════════
+   RECOMMENDATIONS
+   ═══════════════════════════════════════════════════ */
+
+/** Get personalized recommendations. */
+export async function getRecommendations(limit = 8): Promise<Game[]> {
+  return (await apiFetch<Game[]>(`/api/recommendations?limit=${limit}`)) ?? [];
+}
+
+/* ═══════════════════════════════════════════════════
+   DEVELOPERS
+   ═══════════════════════════════════════════════════ */
+
+export interface DeveloperHub {
+  name: string;
+  slug: string;
+  gameCount: number;
+  averageScore: number;
+  games: Game[];
+}
+
+/** Get developer hub data. */
+export async function getDeveloperHub(slug: string): Promise<DeveloperHub | null> {
+  return apiFetch<DeveloperHub>(`/api/developers/${encodeURIComponent(slug)}`);
 }

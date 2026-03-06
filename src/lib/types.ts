@@ -16,6 +16,8 @@ export type VerdictLabel = "MUST PLAY" | "WORTH IT" | "MIXED" | "SKIP";
 
 export type SortOption = "relevance" | "newest" | "top-rated" | "trending";
 
+export type LibraryStatus = "wishlist" | "playing" | "completed" | "dropped" | "paused";
+
 export interface Game {
   id: string;
   slug: string;
@@ -90,6 +92,14 @@ export interface Game {
   // Enrichment tracking
   lastEnrichedAt?: string;
   enrichmentSources?: string[];
+
+  // HLTB
+  hltbMain?: number;
+  hltbExtras?: number;
+  hltbCompletionist?: number;
+
+  // Franchise
+  franchise?: string;
 }
 
 export interface Review {
@@ -111,6 +121,18 @@ export interface Review {
   platform: Platform;
 }
 
+export interface ReviewComment {
+  id: string;
+  reviewId: string;
+  userId: string;
+  username: string;
+  userAvatar: string;
+  body: string;
+  parentId?: string;
+  createdAt: string;
+  replies?: ReviewComment[];
+}
+
 export interface User {
   id: string;
   username: string;
@@ -122,16 +144,20 @@ export interface User {
   joinedAt: string;
   favoriteGenres: string[];
   recentActivity: ActivityItem[];
+  followerCount?: number;
+  followingCount?: number;
+  libraryCount?: number;
 }
 
 export interface ActivityItem {
   id: string;
-  type: "review" | "list" | "rating";
+  type: "review" | "list" | "rating" | "library";
   gameSlug?: string;
   gameTitle?: string;
   listSlug?: string;
   listTitle?: string;
   rating?: number;
+  status?: LibraryStatus;
   createdAt: string;
 }
 
@@ -146,6 +172,34 @@ export interface GameList {
   curatedBy: string;
   createdAt: string;
   tags: string[];
+  ownerId?: string;
+  isPublic?: boolean;
+}
+
+export interface UserGame {
+  id: string;
+  userId: string;
+  gameId: string;
+  game?: Game;
+  status: LibraryStatus;
+  personalRating?: number;
+  hoursPlayed: number;
+  notes: string;
+  startedAt?: string;
+  completedAt?: string;
+  createdAt: string;
+}
+
+export interface LibraryStats {
+  total: number;
+  wishlist: number;
+  playing: number;
+  completed: number;
+  dropped: number;
+  paused: number;
+  totalHours: number;
+  averageRating: number;
+  genreBreakdown: Record<string, number>;
 }
 
 export interface SearchFilters {
@@ -164,4 +218,13 @@ export interface PaginatedResponse<T> {
   page: number;
   pageSize: number;
   hasMore: boolean;
+}
+
+export interface AuthUser {
+  id: string;
+  email: string;
+  profileId: string;
+  username: string;
+  displayName: string;
+  avatar: string;
 }

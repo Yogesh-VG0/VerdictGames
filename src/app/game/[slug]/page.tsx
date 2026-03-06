@@ -1,6 +1,6 @@
 "use client";
 
-import { use } from "react";
+import { use, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
@@ -19,6 +19,10 @@ import SectionHeader from "@/components/SectionHeader";
 import FadeInSection from "@/components/FadeInSection";
 import ScoreChips from "@/components/ScoreChips";
 import { Skeleton } from "@/components/ui/Skeleton";
+import LibraryStatusSelector from "@/components/LibraryStatusSelector";
+import ReviewForm from "@/components/ReviewForm";
+import CommentThread from "@/components/CommentThread";
+import AuthModal from "@/components/AuthModal";
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -75,6 +79,7 @@ function StatBar({ value, max, label, color }: { value: number; max: number; lab
 
 export default function GameDetailPage({ params }: Props) {
   const { slug } = use(params);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
 
   const { data: game, isLoading } = useQuery({
     queryKey: ["game", slug],
@@ -587,7 +592,13 @@ export default function GameDetailPage({ params }: Props) {
                       Verdict.games Community
                     </h4>
                     {reviewsData.items.map((review) => (
-                      <ReviewCard key={review.id} review={review} showGame={false} />
+                      <div key={review.id} className="space-y-2">
+                        <ReviewCard review={review} showGame={false} />
+                        <CommentThread
+                          reviewId={review.id}
+                          onAuthRequired={() => setAuthModalOpen(true)}
+                        />
+                      </div>
                     ))}
                   </div>
                 ) : (
@@ -600,6 +611,13 @@ export default function GameDetailPage({ params }: Props) {
                     </p>
                   </div>
                 )}
+
+                {/* Review submission form */}
+                <ReviewForm
+                  gameId={game.id}
+                  gameSlug={slug}
+                  onAuthRequired={() => setAuthModalOpen(true)}
+                />
               </section>
             </FadeInSection>
           </div>
@@ -607,6 +625,45 @@ export default function GameDetailPage({ params }: Props) {
           {/* ─── RIGHT COLUMN (Sidebar) ─── */}
           <div className="lg:col-span-4 space-y-6">
             <div className="lg:sticky lg:top-20 space-y-6">
+
+              {/* ── Add to Library ── */}
+              <FadeInSection>
+                <LibraryStatusSelector
+                  gameId={game.id}
+                  onAuthRequired={() => setAuthModalOpen(true)}
+                />
+              </FadeInSection>
+
+              {/* ── HLTB Data ── */}
+              {(game.hltbMain || game.hltbExtras || game.hltbCompletionist) && (
+                <FadeInSection>
+                  <section className="rounded-2xl border border-white/[0.08] bg-surface p-5 space-y-3">
+                    <h3 className="text-sm font-bold text-foreground uppercase tracking-wider section-title-line flex items-center gap-2">
+                      <span className="text-base">⏱️</span> How Long to Beat
+                    </h3>
+                    <div className="grid grid-cols-3 gap-2 text-center">
+                      {game.hltbMain != null && (
+                        <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-3">
+                          <p className="text-lg font-bold text-accent tabular-nums">{game.hltbMain}h</p>
+                          <p className="text-[10px] text-tertiary uppercase tracking-wider">Main</p>
+                        </div>
+                      )}
+                      {game.hltbExtras != null && (
+                        <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-3">
+                          <p className="text-lg font-bold text-score-good tabular-nums">{game.hltbExtras}h</p>
+                          <p className="text-[10px] text-tertiary uppercase tracking-wider">+ Extras</p>
+                        </div>
+                      )}
+                      {game.hltbCompletionist != null && (
+                        <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-3">
+                          <p className="text-lg font-bold text-score-great tabular-nums">{game.hltbCompletionist}h</p>
+                          <p className="text-[10px] text-tertiary uppercase tracking-wider">100%</p>
+                        </div>
+                      )}
+                    </div>
+                  </section>
+                </FadeInSection>
+              )}
 
               {/* ── Where to Play ── */}
               <FadeInSection>
@@ -696,7 +753,16 @@ export default function GameDetailPage({ params }: Props) {
                   <dl className="space-y-3 text-sm">
                     <div className="flex justify-between">
                       <dt className="text-tertiary">Developer</dt>
-                      <dd className="text-foreground font-medium text-right">{game.developer || "—"}</dd>
+                      <dd className="text-foreground font-medium text-right">
+                        {game.developer ? (
+                          <Link
+                            href={`/developers/${encodeURIComponent(game.developer.toLowerCase().replace(/\s+/g, "-"))}`}
+                            className="hover:text-accent transition-colors"
+                          >
+                            {game.developer}
+                          </Link>
+                        ) : "—"}
+                      </dd>
                     </div>
                     <div className="flex justify-between">
                       <dt className="text-tertiary">Publisher</dt>
@@ -854,6 +920,9 @@ export default function GameDetailPage({ params }: Props) {
           </div>
         </FadeInSection>
       </div>
+
+      {/* Auth Modal */}
+      <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} />
     </div>
   );
 }

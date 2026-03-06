@@ -16,13 +16,14 @@ export async function POST(request: NextRequest) {
   try {
     // Auth check — require CRON_SECRET to prevent abuse
     const secret = process.env.CRON_SECRET;
-    if (secret) {
-      const provided =
-        request.nextUrl.searchParams.get("secret") ??
-        request.headers.get("authorization")?.replace("Bearer ", "");
-      if (provided !== secret) {
-        return jsonError("Unauthorized", 401);
-      }
+    if (!secret) {
+      return jsonError("CRON_SECRET not configured", 503);
+    }
+    const provided =
+      request.nextUrl.searchParams.get("secret") ??
+      request.headers.get("authorization")?.replace("Bearer ", "");
+    if (provided !== secret) {
+      return jsonError("Unauthorized", 401);
     }
 
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {

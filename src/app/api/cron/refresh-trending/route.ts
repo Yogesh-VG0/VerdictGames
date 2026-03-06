@@ -55,15 +55,16 @@ function slugify(str: string): string {
 }
 
 export async function GET(request: NextRequest) {
-  // Auth check
+  // Require CRON_SECRET for production security
   const cronSecret = process.env.CRON_SECRET;
-  if (cronSecret) {
-    const provided =
-      request.nextUrl.searchParams.get("secret") ??
-      request.headers.get("authorization")?.replace("Bearer ", "");
-    if (provided !== cronSecret) {
-      return jsonError("Unauthorized", 401);
-    }
+  if (!cronSecret) {
+    return jsonError("CRON_SECRET not configured", 503);
+  }
+  const provided =
+    request.nextUrl.searchParams.get("secret") ??
+    request.headers.get("authorization")?.replace("Bearer ", "");
+  if (provided !== cronSecret) {
+    return jsonError("Unauthorized", 401);
   }
 
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {

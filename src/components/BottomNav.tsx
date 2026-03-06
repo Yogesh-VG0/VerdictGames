@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 
-const links = [
+const baseLinks = [
   {
     href: "/",
     label: "Home",
@@ -28,6 +29,15 @@ const links = [
     ),
   },
   {
+    href: "/library",
+    label: "Library",
+    icon: (
+      <svg viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+        <path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
+      </svg>
+    ),
+  },
+  {
     href: "/reviews",
     label: "Reviews",
     icon: (
@@ -36,32 +46,28 @@ const links = [
       </svg>
     ),
   },
-  {
-    href: "/lists",
-    label: "Lists",
-    icon: (
-      <svg viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
-        <path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z" />
-      </svg>
-    ),
-  },
-  {
-    href: "/profile/pixelpaladin",
-    label: "Profile",
-    icon: (
-      <svg viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
-        <path
-          fillRule="evenodd"
-          d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
-          clipRule="evenodd"
-        />
-      </svg>
-    ),
-  },
 ];
 
 export default function BottomNav() {
   const pathname = usePathname();
+  const { user } = useAuth();
+
+  const links = [
+    ...baseLinks,
+    {
+      href: user ? `/profile/${user.username}` : "/about",
+      label: user ? "Profile" : "More",
+      icon: (
+        <svg viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+          <path
+            fillRule="evenodd"
+            d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
+            clipRule="evenodd"
+          />
+        </svg>
+      ),
+    },
+  ];
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-black/60 backdrop-blur-2xl border-t border-white/[0.06] safe-area-bottom">

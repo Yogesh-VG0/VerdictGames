@@ -33,22 +33,10 @@ export const metadata: Metadata = {
     "Your trusted source for honest PC and Android game reviews. Discover verdicts, curated lists, and a community that cares about gaming.",
   icons: {
     icon: [
-      {
-        url: "/verdict_logo_dark.png",
-        type: "image/png",
-        sizes: "32x32",
-        media: "(prefers-color-scheme: dark)",
-      },
-      {
-        url: "/verdict_logo_light.png",
-        type: "image/png",
-        sizes: "32x32",
-        media: "(prefers-color-scheme: light)",
-      },
-      { url: "/verdict_logo_dark.png", type: "image/png", sizes: "32x32" },
+      { url: "/verdict_logo_dark.png", type: "image/png", sizes: "192x192" },
     ],
     shortcut: "/verdict_logo_dark.png",
-    apple: { url: "/verdict_logo_light.png", type: "image/png" },
+    apple: { url: "/verdict_logo_dark.png", type: "image/png", sizes: "180x180" },
   },
   openGraph: {
     title: "verdict.games",
@@ -57,6 +45,7 @@ export const metadata: Metadata = {
     type: "website",
     images: [{ url: "/og-default.png", width: 1200, height: 630 }],
   },
+  manifest: "/manifest.json",
   twitter: {
     card: "summary_large_image",
     title: "verdict.games",

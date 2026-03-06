@@ -8,7 +8,9 @@ import {
   getNewReleases,
   getTopRated,
   getPersonalizedGames,
+  getRecommendations,
 } from "@/lib/api";
+import { useAuth } from "@/hooks/useAuth";
 import HeroCarousel from "@/components/HeroCarousel";
 import FadeInSection from "@/components/FadeInSection";
 import GameCard from "@/components/GameCard";
@@ -22,6 +24,8 @@ import {
 } from "@/components/ui/Skeleton";
 
 export default function HomePage() {
+  const { user } = useAuth();
+
   const featured = useQuery({
     queryKey: ["featured"],
     queryFn: () => getFeaturedGames(5),
@@ -43,8 +47,8 @@ export default function HomePage() {
     staleTime: 5 * 60 * 1000,
   });
   const personalized = useQuery({
-    queryKey: ["personalized"],
-    queryFn: () => getPersonalizedGames(8),
+    queryKey: ["personalized", !!user],
+    queryFn: () => (user ? getRecommendations(8) : getPersonalizedGames(8)),
     staleTime: 5 * 60 * 1000,
   });
 
@@ -187,9 +191,9 @@ export default function HomePage() {
             ) : personalized.data && personalized.data.length > 0 ? (
               <>
                 <SectionHeader
-                  title="Recommended For You"
+                  title={user ? "Recommended For You" : "You Might Enjoy"}
                   icon="💎"
-                  subtitle="Games we think you'll love"
+                  subtitle={user ? "Based on your library" : "Games we think you'll love"}
                 />
                 <HorizontalScroll>
                   {personalized.data.map((game) => (
