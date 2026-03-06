@@ -25,10 +25,10 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | null>(null);
 
 function getSupabaseBrowser() {
-  return createBrowserClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !key) return null;
+  return createBrowserClient<Database>(url, key);
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -37,6 +37,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const supabase = getSupabaseBrowser();
 
   const fetchProfile = useCallback(async (authId: string, email: string) => {
+    if (!supabase) return;
     const { data: profile } = await supabase
       .from("profiles")
       .select("id, username, display_name, avatar_url")
@@ -56,6 +57,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [supabase]);
 
   useEffect(() => {
+    if (!supabase) { setLoading(false); return; }
+
     // Check initial session
     supabase.auth.getUser().then(({ data: { user: authUser } }) => {
       if (authUser) {
@@ -77,12 +80,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [supabase, fetchProfile]);
 
   const signInWithEmail = async (email: string, password: string) => {
+    if (!supabase) return { error: "Auth not configured" };
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) return { error: error.message };
     return {};
   };
 
   const signUpWithEmail = async (email: string, password: string, username: string) => {
+    if (!supabase) return { error: "Auth not configured" };
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -95,6 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signInWithOAuth = async (provider: "google" | "discord") => {
+    if (!supabase) return;
     await supabase.auth.signInWithOAuth({
       provider,
       options: {
@@ -104,11 +110,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
+    if (!supabase) return;
     await supabase.auth.signOut();
     setUser(null);
   };
 
   const refreshUser = async () => {
+    if (!supabase) return;
     const { data: { user: authUser } } = await supabase.auth.getUser();
     if (authUser) {
       await fetchProfile(authUser.id, authUser.email ?? "");
