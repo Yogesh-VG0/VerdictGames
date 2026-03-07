@@ -430,3 +430,50 @@ export interface DeveloperHub {
 export async function getDeveloperHub(slug: string): Promise<DeveloperHub | null> {
   return apiFetch<DeveloperHub>(`/api/developers/${encodeURIComponent(slug)}`);
 }
+
+/* ═══════════════════════════════════════════════════
+   UPCOMING GAMES
+   ═══════════════════════════════════════════════════ */
+
+/** Get upcoming games (future release dates). */
+export async function getUpcomingGames(limit = 12): Promise<Game[]> {
+  // Use calendar API for next 3 months
+  const now = new Date();
+  const month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const games = await getCalendarGames(month);
+  const upcoming = games.filter((g) => {
+    if (!g.releaseDate) return true;
+    return new Date(g.releaseDate) >= now;
+  });
+  return upcoming.slice(0, limit);
+}
+
+/* ═══════════════════════════════════════════════════
+   TOP GAMES BY PLATFORM
+   ═══════════════════════════════════════════════════ */
+
+/** Get top rated games filtered by platform. */
+export async function getTopByPlatform(platform: string, limit = 12): Promise<Game[]> {
+  const results = await searchGames({
+    platform,
+    sort: "top-rated",
+    page: 1,
+  });
+  return results.items.slice(0, limit);
+}
+
+/* ═══════════════════════════════════════════════════
+   DATABASE STATS
+   ═══════════════════════════════════════════════════ */
+
+export interface SiteStats {
+  totalGames: number;
+  totalReviews: number;
+  totalUsers: number;
+  enrichmentSources: number;
+}
+
+/** Get site-wide statistics. */
+export async function getSiteStats(): Promise<SiteStats> {
+  return (await apiFetch<SiteStats>("/api/games/stats")) ?? { totalGames: 0, totalReviews: 0, totalUsers: 0, enrichmentSources: 5 };
+}

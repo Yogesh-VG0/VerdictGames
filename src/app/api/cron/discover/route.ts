@@ -72,55 +72,80 @@ export async function GET(request: NextRequest) {
     return jsonError("RAWG_API_KEY not configured", 503);
   }
 
+  // "deep" mode fetches many more games across genres, years, and platforms
+  const deep = request.nextUrl.searchParams.get("deep") === "true";
+  const pageParam = parseInt(request.nextUrl.searchParams.get("page") ?? "1", 10);
+
   const now = new Date();
   const currentYear = now.getFullYear();
   const lastMonth = formatDateRange(30, 0);
-  const upcoming = formatDateRange(0, 90);
+  const upcoming = formatDateRange(0, 180);
   const recentWindow = formatDateRange(90, 0);
+  const thisYear = `${currentYear}-01-01,${currentYear}-12-31`;
+  const lastYear = `${currentYear - 1}-01-01,${currentYear - 1}-12-31`;
 
-  // Fetch multiple lists in parallel from RAWG
-  const [trending, newReleases, upcomingGames, topThisYear, popularAllTime] =
-    await Promise.all([
-      // Currently trending/popular
-      fetchRawgList("games", {
-        ordering: "-added",
-        dates: recentWindow,
-      }, 20),
-      // Recently released
-      fetchRawgList("games", {
-        ordering: "-released",
-        dates: lastMonth,
-      }, 15),
-      // Upcoming releases
-      fetchRawgList("games", {
-        ordering: "-added",
-        dates: upcoming,
-      }, 10),
-      // Top rated this year
-      fetchRawgList("games", {
-        ordering: "-rating",
-        dates: `${currentYear}-01-01,${currentYear}-12-31`,
-        metacritic: "70,100",
-      }, 15),
-      // All-time popular (fill gaps)
-      fetchRawgList("games", {
-        ordering: "-rating",
-        metacritic: "80,100",
-      }, 15),
-    ]);
+  // Fetch many lists in parallel from RAWG
+  const fetches: Promise<RawgListResult[]>[] = [
+    // Currently trending/popular
+    fetchRawgList("games", { ordering: "-added", dates: recentWindow }, 40),
+    // Recently released
+    fetchRawgList("games", { ordering: "-released", dates: lastMonth }, 40),
+    // Upcoming releases (6 months out)
+    fetchRawgList("games", { ordering: "-added", dates: upcoming }, 40),
+    // Top rated this year
+    fetchRawgList("games", { ordering: "-metacritic", dates: thisYear, metacritic: "60,100" }, 40),
+    // Top rated last year
+    fetchRawgList("games", { ordering: "-metacritic", dates: lastYear, metacritic: "70,100" }, 40),
+    // All-time popular
+    fetchRawgList("games", { ordering: "-rating", metacritic: "80,100" }, 40),
+    // Most played / added recently
+    fetchRawgList("games", { ordering: "-added", metacritic: "1,100" }, 40),
+    // Highest rated with lots of reviews
+    fetchRawgList("games", { ordering: "-rating", page: String(pageParam) }, 40),
+  ];
+
+  if (deep) {
+    // Fetch by specific popular genres
+    const genres = ["action", "rpg", "adventure", "strategy", "shooter", "puzzle", "platformer", "racing", "sports", "simulation", "indie", "fighting"];
+    for (const genre of genres) {
+      fetches.push(
+        fetchRawgList("games", { genres: genre, ordering: "-rating", metacritic: "70,100" }, 20)
+      );
+      fetches.push(
+        fetchRawgList("games", { genres: genre, ordering: "-added", dates: recentWindow }, 10)
+      );
+    }
+
+    // Platform-specific: PS5, Xbox Series, Switch
+    const platformIds = ["187", "186", "7"]; // PS5, Xbox Series, Switch RAWG IDs
+    for (const pid of platformIds) {
+      fetches.push(
+        fetchRawgList("games", { platforms: pid, ordering: "-metacritic", metacritic: "70,100" }, 20)
+      );
+    }
+
+    // Classic years
+    for (let y = currentYear - 5; y <= currentYear - 2; y++) {
+      fetches.push(
+        fetchRawgList("games", { ordering: "-metacritic", dates: `${y}-01-01,${y}-12-31`, metacritic: "75,100" }, 20)
+      );
+    }
+  }
+
+  const allLists = await Promise.all(fetches);
 
   // Deduplicate by RAWG slug
   const seen = new Set<string>();
   const allGames: { name: string; source: string }[] = [];
 
-  for (const [list, source] of [
-    [trending, "trending"],
-    [newReleases, "new-release"],
-    [upcomingGames, "upcoming"],
-    [topThisYear, "top-this-year"],
-    [popularAllTime, "popular-all-time"],
-  ] as [RawgListResult[], string][]) {
-    for (const game of list) {
+  const sourceLabels = [
+    "trending", "new-release", "upcoming", "top-this-year", "top-last-year",
+    "popular-all-time", "most-added", "highest-rated",
+  ];
+
+  for (let i = 0; i < allLists.length; i++) {
+    const source = sourceLabels[i] ?? `batch-${i}`;
+    for (const game of allLists[i]) {
       if (!seen.has(game.slug)) {
         seen.add(game.slug);
         allGames.push({ name: game.name, source });
@@ -154,8 +179,8 @@ export async function GET(request: NextRequest) {
       errors.push(`${name}: ${(err as Error).message}`);
     }
 
-    // Rate limit: 200ms between each call
-    await new Promise((r) => setTimeout(r, 200));
+    // Rate limit: 150ms between each call
+    await new Promise((r) => setTimeout(r, 150));
   }
 
   return jsonOk({
@@ -164,7 +189,8 @@ export async function GET(request: NextRequest) {
     alreadyExisted: existedCount,
     failed: failedCount,
     newGames,
-    errors: errors.slice(0, 10), // limit error output
+    errors: errors.slice(0, 20),
     timestamp: now.toISOString(),
+    mode: deep ? "deep" : "standard",
   });
 }

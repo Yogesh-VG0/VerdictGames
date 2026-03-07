@@ -1,6 +1,6 @@
 # verdict.games — Complete Project Documentation
 
-> **The Verdict on Every Game** — A premium game reviews and discovery platform built for players who want honest, data-driven opinions on PC and Android games. Think of it as a Letterboxd for games, enriched with data from 5+ external APIs.
+> **The Verdict on Every Game** — A premium game reviews and discovery platform built for players who want honest, data-driven opinions on games across all major platforms (PC, PlayStation, Xbox, Nintendo Switch, Android, iOS, and more). Think of it as a Letterboxd for games, enriched with data from 5+ external APIs.
 
 ---
 
@@ -68,9 +68,9 @@
 **verdict.games** is a full-stack, production-ready game reviews platform that aggregates data from multiple external APIs to provide comprehensive game profiles with:
 
 - **293+ games** in the database with data from RAWG, Steam, IGDB, CheapShark, and Wikipedia
-- **Auto-discovery** — cron endpoints that find and ingest trending, new, and top-rated games automatically
+- **Auto-discovery** — cron endpoints that find and ingest trending, new, and top-rated games automatically (~320 games/standard run, ~700+ games/deep run)
 - **Rich game pages** — multi-source scoring, verdict badges, pros/cons, pricing, media, external links, achievements, news
-- **Search & filter** — by platform, genre, year, monetization, with full-text search and on-demand ingestion
+- **Search & filter** — by platform (PC, PS5, PS4, Xbox, Switch, Android, iOS, Linux), genre, year, monetization, with full-text search and on-demand ingestion
 - **Curated lists** — hand-picked game collections
 - **Community reviews** — user reviews with helpful voting and pros/cons
 - **Responsive design** — mobile-first with a pixel-art gaming aesthetic
@@ -385,7 +385,7 @@ Core game data — the largest table with 50+ columns spanning base metadata and
 | `cover_image` | TEXT | `''` | NOT NULL |
 | `header_image` | TEXT | `''` | NOT NULL |
 | `screenshots` | TEXT[] | `'{}'` | NOT NULL |
-| `platforms` | TEXT[] | `'{}'` | NOT NULL — `["PC", "Android"]` |
+| `platforms` | TEXT[] | `'{}'` | NOT NULL — supports `PC`, `PlayStation 5`, `PlayStation 4`, `Xbox Series X|S`, `Xbox One`, `Nintendo Switch`, `Nintendo Switch 2`, `Android`, `iOS`, `macOS`, `Linux` |
 | `genres` | TEXT[] | `'{}'` | NOT NULL |
 | `tags` | TEXT[] | `'{}'` | NOT NULL |
 | `developer` | TEXT | `''` | NOT NULL |
@@ -1459,22 +1459,30 @@ twitter: summary_large_image card
 
 ## 20. Deployment
 
-### Vercel (Primary)
+### Architecture
+- **Frontend + API Routes**: Deployed on **Vercel** (primary hosting)
+- **Cron Scheduler**: Runs on **Heroku** for periodic game discovery and trending refresh
+- Both share the same codebase and Supabase database
+
+### Vercel (Frontend + API)
 1. Push to GitHub
 2. Import into Vercel
 3. Add environment variables in Vercel → Settings → Environment Variables
-4. Set `NEXT_PUBLIC_SITE_URL` to production URL
+4. Set `NEXT_PUBLIC_SITE_URL` to production URL (e.g., `https://www.verdict.games`)
 5. Deploy — `vercel.json` hints `nextjs` framework
 
-### Heroku (Alternative)
+### Heroku (Cron Scheduler + Backup Hosting)
 - `Procfile`: `web: npm run start`
 - `heroku-postbuild` script: `next build`
-- Scheduler commands:
-  - `npm run scheduler:trending` — daily trending refresh
-  - `npm run scheduler:discover` — periodic game discovery
+- **Heroku Scheduler** — Add-on for automated jobs:
+  - `npm run scheduler:trending` — Daily trending refresh (updates trending flags via IGDB PopScore + RAWG)
+  - `npm run scheduler:discover` — Daily/weekly game discovery (~320 games per standard run)
+  - `npm run scheduler:discover -- --deep` — Weekly deep discovery (~700+ games, includes genre & platform-specific searches)
+- All scheduler scripts call the `/api/cron/*` endpoints on the Vercel deployment URL
 
 ### Cron Job Setup
-- **Discover**: Run `GET /api/cron/discover?secret=YOUR_SECRET` daily or weekly
+- **Discover (Standard)**: Run `GET /api/cron/discover?secret=YOUR_SECRET` daily — fetches ~320 new games
+- **Discover (Deep)**: Run `GET /api/cron/discover?secret=YOUR_SECRET&deep=true` weekly — fetches ~700+ games across genres, platforms, and historical years
 - **Refresh Trending**: Run `GET /api/cron/refresh-trending?secret=YOUR_SECRET` daily
 - Can be triggered via: Vercel Cron, Heroku Scheduler, GitHub Actions, or any external cron service
 

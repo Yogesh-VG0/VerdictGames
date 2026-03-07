@@ -3,7 +3,18 @@
    Single source of truth for all data shapes
    ═══════════════════════════════════════════════════ */
 
-export type Platform = "PC" | "Android";
+export type Platform =
+  | "PC"
+  | "PlayStation 5"
+  | "PlayStation 4"
+  | "Xbox Series X|S"
+  | "Xbox One"
+  | "Nintendo Switch"
+  | "Nintendo Switch 2"
+  | "Android"
+  | "iOS"
+  | "macOS"
+  | "Linux";
 
 export type MonetizationType =
   | "Free"

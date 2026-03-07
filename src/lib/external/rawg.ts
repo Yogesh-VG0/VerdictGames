@@ -227,14 +227,22 @@ export function mapRawgPlatforms(
   if (!platforms) return [];
 
   const mapped: string[] = [];
+  const add = (p: string) => { if (!mapped.includes(p)) mapped.push(p); };
+
   for (const { platform } of platforms) {
-    const name = platform.slug.toLowerCase();
-    if (name === "pc" || name === "linux" || name === "macos") {
-      if (!mapped.includes("PC")) mapped.push("PC");
-    } else if (name === "android") {
-      if (!mapped.includes("Android")) mapped.push("Android");
-    }
-    // We only track PC and Android for now
+    const slug = platform.slug.toLowerCase();
+    const name = platform.name.toLowerCase();
+
+    if (slug === "pc") add("PC");
+    else if (slug === "linux") add("Linux");
+    else if (slug === "macos" || slug === "macintosh") add("macOS");
+    else if (slug === "playstation5" || name.includes("playstation 5")) add("PlayStation 5");
+    else if (slug === "playstation4" || name.includes("playstation 4")) add("PlayStation 4");
+    else if (slug === "xbox-series-x" || name.includes("xbox series")) add("Xbox Series X|S");
+    else if (slug === "xbox-one" || name.includes("xbox one")) add("Xbox One");
+    else if (slug === "nintendo-switch" || name.includes("nintendo switch")) add("Nintendo Switch");
+    else if (slug === "android") add("Android");
+    else if (slug === "ios") add("iOS");
   }
 
   return mapped;

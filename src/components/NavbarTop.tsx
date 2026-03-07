@@ -41,24 +41,24 @@ export default function NavbarTop() {
       {/* ── Mobile header ── */}
       <header className="sticky top-0 z-50 md:hidden bg-background/70 backdrop-blur-xl border-b border-white/[0.06]">
         <div className="flex items-center justify-between px-4 h-14">
-          <Link href="/" className="flex items-center gap-2 group">
+          <Link href="/" className="flex items-center gap-2.5 group">
             <Image
               src="/verdict_logo_light.png"
               alt="Verdict Games"
-              width={40}
-              height={40}
-              className="h-8 w-8 rounded-lg dark:hidden"
+              width={48}
+              height={48}
+              className="h-10 w-10 rounded-xl dark:hidden drop-shadow-lg"
               priority
             />
             <Image
               src="/verdict_logo_dark.png"
               alt="Verdict Games"
-              width={40}
-              height={40}
-              className="hidden h-8 w-8 rounded-lg dark:block"
+              width={48}
+              height={48}
+              className="hidden h-10 w-10 rounded-xl dark:block drop-shadow-lg"
               priority
             />
-            <span className="font-bold text-base tracking-tight text-foreground">
+            <span className="font-bold text-lg tracking-tight text-foreground">
               Verdict<span className="text-accent">.games</span>
             </span>
           </Link>
@@ -121,24 +121,24 @@ export default function NavbarTop() {
       <header className="fixed top-4 left-1/2 -translate-x-1/2 z-50 hidden md:block w-[95%] max-w-5xl">
         <nav className="flex items-center gap-2 px-2 h-14 rounded-2xl bg-black/50 backdrop-blur-2xl border border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
           {/* Logo */}
-          <Link href="/" className="shrink-0 flex items-center gap-2.5 pl-3 group">
+          <Link href="/" className="shrink-0 flex items-center gap-3 pl-3 group">
             <Image
               src="/verdict_logo_light.png"
               alt="Verdict Games"
-              width={44}
-              height={44}
-              className="h-9 w-9 rounded-lg dark:hidden"
+              width={52}
+              height={52}
+              className="h-10 w-10 rounded-xl dark:hidden drop-shadow-lg"
               priority
             />
             <Image
               src="/verdict_logo_dark.png"
               alt="Verdict Games"
-              width={44}
-              height={44}
-              className="hidden h-9 w-9 rounded-lg dark:block"
+              width={52}
+              height={52}
+              className="hidden h-10 w-10 rounded-xl dark:block drop-shadow-lg"
               priority
             />
-            <span className="font-bold text-base tracking-tight text-foreground">
+            <span className="font-bold text-lg tracking-tight text-foreground">
               Verdict<span className="text-accent">.games</span>
             </span>
           </Link>

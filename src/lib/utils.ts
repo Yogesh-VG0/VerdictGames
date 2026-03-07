@@ -67,3 +67,31 @@ export function pluralize(count: number, singular: string, plural?: string): str
 export function cn(...classes: (string | false | null | undefined)[]): string {
   return classes.filter(Boolean).join(" ");
 }
+
+/** Short platform label for badges. */
+export function platformShort(platform: string): string {
+  const map: Record<string, string> = {
+    "PC": "PC",
+    "PlayStation 5": "PS5",
+    "PlayStation 4": "PS4",
+    "Xbox Series X|S": "XSX",
+    "Xbox One": "XB1",
+    "Nintendo Switch": "NSW",
+    "Nintendo Switch 2": "NS2",
+    "Android": "AND",
+    "iOS": "iOS",
+    "macOS": "Mac",
+    "Linux": "LNX",
+  };
+  return map[platform] ?? platform;
+}
+
+/** Badge color variant for platforms. */
+export function platformVariant(platform: string): "accent" | "success" | "warning" | "muted" | "default" {
+  if (platform === "PC" || platform === "macOS" || platform === "Linux") return "accent";
+  if (platform.startsWith("PlayStation")) return "default";
+  if (platform.startsWith("Xbox")) return "success";
+  if (platform.startsWith("Nintendo")) return "warning";
+  if (platform === "Android" || platform === "iOS") return "muted";
+  return "default";
+}

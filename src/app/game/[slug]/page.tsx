@@ -7,7 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { getGameBySlug, getGameReviews, getRelatedGames, getGameNews, getGameAchievements } from "@/lib/api";
 import type { SteamNewsArticle, SteamAchievementItem } from "@/lib/api";
-import { formatDate, scoreColor, cn } from "@/lib/utils";
+import { formatDate, scoreColor, cn, platformShort, platformVariant } from "@/lib/utils";
 import ScoreRing from "@/components/ui/ScoreRing";
 import VerdictBadge from "@/components/ui/VerdictBadge";
 import PixelBadge from "@/components/ui/PixelBadge";
@@ -176,8 +176,8 @@ export default function GameDetailPage({ params }: Props) {
               {/* Platform + Year */}
               <div className="flex flex-wrap gap-2 items-center">
                 {game.platforms.map((p) => (
-                  <PixelBadge key={p} variant={p === "PC" ? "accent" : "success"} size="md">
-                    {p}
+                  <PixelBadge key={p} variant={platformVariant(p)} size="md">
+                    {platformShort(p)}
                   </PixelBadge>
                 ))}
                 {game.isFree && (

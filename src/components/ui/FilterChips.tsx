@@ -7,6 +7,7 @@ interface FilterChipsProps<T extends string> {
   options: T[];
   selected: T;
   onChange: (value: T) => void;
+  labelFn?: (value: T) => string;
   className?: string;
 }
 
@@ -14,6 +15,7 @@ export default function FilterChips<T extends string>({
   options,
   selected,
   onChange,
+  labelFn,
   className,
 }: FilterChipsProps<T>) {
   return (
@@ -40,7 +42,7 @@ export default function FilterChips<T extends string>({
                 : "bg-white/5 text-secondary border-white/10 hover:border-white/20 hover:text-foreground hover:bg-white/10"
             )}
           >
-            {option}
+            {labelFn ? labelFn(option) : option}
           </motion.button>
         );
       })}

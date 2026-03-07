@@ -5,7 +5,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { submitReview } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
-import { cn } from "@/lib/utils";
+import { cn, platformShort } from "@/lib/utils";
 import PixelButton from "@/components/ui/PixelButton";
 
 interface ReviewFormProps {
@@ -15,7 +15,7 @@ interface ReviewFormProps {
   onSuccess?: () => void;
 }
 
-const PLATFORMS = ["PC", "Android"] as const;
+const PLATFORMS = ["PC", "PlayStation 5", "PlayStation 4", "Xbox Series X|S", "Xbox One", "Nintendo Switch", "Android", "iOS"] as const;
 
 export default function ReviewForm({ gameId, gameSlug, onAuthRequired, onSuccess }: ReviewFormProps) {
   const { user } = useAuth();
@@ -151,7 +151,7 @@ export default function ReviewForm({ gameId, gameSlug, onAuthRequired, onSuccess
                         : "bg-white/5 border-white/[0.08] text-secondary hover:text-foreground"
                     )}
                   >
-                    {p}
+                    {platformShort(p)}
                   </button>
                 ))}
               </div>

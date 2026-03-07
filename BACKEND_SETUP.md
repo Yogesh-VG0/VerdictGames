@@ -101,7 +101,9 @@ curl -X POST http://localhost:3000/api/ingest/batch \
 | GET | `/api/games/trending` | Trending games |
 | GET | `/api/games/new-releases` | Newest releases |
 | GET | `/api/games/top-rated` | Highest-scored games |
-| GET | `/api/search?q=&platform=&genre=&sort=&page=` | Search with filters |
+| GET | `/api/games/stats` | Site-wide statistics (total games, reviews, users) |
+| GET | `/api/search?q=&platform=&genre=&sort=&page=` | Search with filters (all platforms) |
+| GET | `/api/calendar?month=YYYY-MM` | Games by release month |
 | GET | `/api/games/[slug]` | Single game detail |
 | GET | `/api/games/[slug]/reviews` | Reviews for a game |
 | GET | `/api/games/[slug]/deals` | Price deals for a game |
@@ -113,6 +115,9 @@ curl -X POST http://localhost:3000/api/ingest/batch \
 | GET | `/api/profile/[username]` | User profile |
 | POST | `/api/ingest/game` | Ingest single game |
 | POST | `/api/ingest/batch` | Ingest multiple games |
+| GET | `/api/cron/discover?secret=` | Auto-discover ~320 games (standard mode) |
+| GET | `/api/cron/discover?secret=&deep=true` | Deep discovery ~700+ games |
+| GET | `/api/cron/refresh-trending?secret=` | Update trending/featured flags |
 
 All GET routes return `{ success: true, data: ... }` and fall back to mock data when Supabase is not configured.
 
@@ -178,12 +183,30 @@ src/
 
 ---
 
-## Deploying to Vercel
+## Deploying
 
+### Frontend — Vercel
 1. Push to GitHub
 2. Import into Vercel
 3. Add all environment variables in Vercel dashboard → Settings → Environment Variables
-4. Set `NEXT_PUBLIC_SITE_URL` to your production URL
+4. Set `NEXT_PUBLIC_SITE_URL` to your production URL (e.g., `https://www.verdict.games`)
 5. Deploy
+
+### Backend Cron — Heroku
+1. Create a Heroku app and push the same codebase
+2. Add environment variables via `heroku config:set`
+3. Install **Heroku Scheduler** add-on: `heroku addons:create scheduler:standard`
+4. Configure scheduled jobs:
+   - **Daily**: `npm run scheduler:trending` — refreshes trending flags
+   - **Daily**: `npm run scheduler:discover` — discovers ~320 new games
+   - **Weekly**: `npm run scheduler:discover -- --deep` — deep discovery (~700+ games)
+5. The scheduler scripts call the Vercel-hosted API endpoints (set `NEXT_PUBLIC_SITE_URL` to Vercel URL)
+
+### Supported Platforms
+The database supports games across all major platforms:
+- PC, PlayStation 5, PlayStation 4
+- Xbox Series X|S, Xbox One
+- Nintendo Switch, Nintendo Switch 2
+- Android, iOS, macOS, Linux
 
 The app will automatically use Supabase in production and mock data locally if env vars are missing.

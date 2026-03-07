@@ -10,7 +10,7 @@ import ScoreRing from "@/components/ui/ScoreRing";
 import PixelBadge from "@/components/ui/PixelBadge";
 import PixelButton from "@/components/ui/PixelButton";
 import ScoreChips from "@/components/ScoreChips";
-import { cn, scoreColor } from "@/lib/utils";
+import { cn, scoreColor, platformShort, platformVariant } from "@/lib/utils";
 
 interface HeroCarouselProps {
   games: Game[];
@@ -172,12 +172,15 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
               <ScoreRing score={game.score} size={40} strokeWidth={3} className="sm:hidden" />
               <ScoreRing score={game.score} size={56} strokeWidth={3} className="hidden sm:block" />
               <VerdictBadge label={game.verdictLabel} size="lg" />
-              <div className="hidden sm:flex items-center gap-2">
-                {game.platforms.map((p) => (
-                  <PixelBadge key={p} variant={p === "PC" ? "muted" : "success"} size="md">
-                    {p}
+              <div className="hidden sm:flex items-center gap-2 flex-wrap">
+                {game.platforms.slice(0, 5).map((p) => (
+                  <PixelBadge key={p} variant={platformVariant(p)} size="md">
+                    {platformShort(p)}
                   </PixelBadge>
                 ))}
+                {game.platforms.length > 5 && (
+                  <span className="text-xs hero-overlay-text-muted">+{game.platforms.length - 5}</span>
+                )}
                 {game.releaseDate && (
                   <span className="text-xs hero-overlay-text-muted font-medium">
                     {new Date(game.releaseDate).getFullYear()}

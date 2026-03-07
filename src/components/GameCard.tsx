@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Game } from "@/lib/types";
-import { scoreColor, cn } from "@/lib/utils";
+import { scoreColor, cn, platformShort, platformVariant } from "@/lib/utils";
 import PixelBadge from "@/components/ui/PixelBadge";
 import VerdictBadge from "@/components/ui/VerdictBadge";
 import ScoreChips from "@/components/ScoreChips";
@@ -75,12 +75,15 @@ export default function GameCard({
 
           {/* Content overlay at bottom */}
           <div className="absolute bottom-0 left-0 right-0 p-4 space-y-2">
-            <div className="flex items-center gap-1.5">
-              {game.platforms.map((p) => (
-                <PixelBadge key={p} variant={p === "PC" ? "accent" : "success"} size="sm">
-                  {p}
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {game.platforms.slice(0, 4).map((p) => (
+                <PixelBadge key={p} variant={platformVariant(p)} size="sm">
+                  {platformShort(p)}
                 </PixelBadge>
               ))}
+              {game.platforms.length > 4 && (
+                <span className="text-[9px] text-white/40">+{game.platforms.length - 4}</span>
+              )}
               {yearFromDate(game.releaseDate) && (
                 <span className="text-[10px] text-white/50 font-medium ml-auto">
                   {yearFromDate(game.releaseDate)}
@@ -140,16 +143,19 @@ export default function GameCard({
           </div>
 
           {/* Platform badges */}
-          <div className="absolute bottom-2.5 left-2.5 flex gap-1.5">
-            {game.platforms.map((p) => (
+          <div className="absolute bottom-2.5 left-2.5 flex gap-1 flex-wrap max-w-[80%]">
+            {game.platforms.slice(0, 3).map((p) => (
               <PixelBadge
                 key={p}
-                variant={p === "PC" ? "accent" : "success"}
+                variant={platformVariant(p)}
                 size="sm"
               >
-                {p}
+                {platformShort(p)}
               </PixelBadge>
             ))}
+            {game.platforms.length > 3 && (
+              <PixelBadge variant="muted" size="sm">+{game.platforms.length - 3}</PixelBadge>
+            )}
           </div>
 
           {/* Year badge */}

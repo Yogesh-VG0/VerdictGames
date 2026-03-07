@@ -33,10 +33,11 @@ export const metadata: Metadata = {
     "Your trusted source for honest PC and Android game reviews. Discover verdicts, curated lists, and a community that cares about gaming.",
   icons: {
     icon: [
-      { url: "/verdict_logo_dark.png", type: "image/png", sizes: "192x192" },
+      { url: "/favicon-32.png", type: "image/png", sizes: "32x32" },
+      { url: "/icon-192.png", type: "image/png", sizes: "192x192" },
     ],
-    shortcut: "/verdict_logo_dark.png",
-    apple: { url: "/verdict_logo_dark.png", type: "image/png", sizes: "180x180" },
+    shortcut: "/favicon-32.png",
+    apple: { url: "/apple-icon.png", type: "image/png", sizes: "180x180" },
   },
   openGraph: {
     title: "verdict.games",

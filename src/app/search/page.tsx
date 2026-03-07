@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect, Suspense, useCallback, useRef } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { searchGames } from "@/lib/api";
 import type { SearchFilters, SortOption, MonetizationType, Platform } from "@/lib/types";
+import { platformShort } from "@/lib/utils";
 
 const allGenres: string[] = [
   "Action", "Action RPG", "Adventure", "Battle Royale", "Card Game",
@@ -91,7 +92,7 @@ function SearchContent() {
       >
         <h1 className="text-2xl font-bold text-foreground">Search Games</h1>
         <p className="text-sm text-secondary">
-          Find your next favorite PC or Android game.
+          Discover and filter games across all platforms.
         </p>
       </motion.div>
 
@@ -136,12 +137,13 @@ function SearchContent() {
               Platform
             </label>
             <FilterChips
-              options={["All", "PC", "Android"] as (Platform | "All")[]}
+              options={["All", "PC", "PlayStation 5", "PlayStation 4", "Xbox Series X|S", "Xbox One", "Nintendo Switch", "Android", "iOS", "Linux"] as (Platform | "All")[]}
               selected={platform}
               onChange={(v) => {
                 setPlatform(v);
                 setPage(1);
               }}
+              labelFn={(v) => v === "All" ? "All" : platformShort(v as Platform)}
             />
           </div>
 

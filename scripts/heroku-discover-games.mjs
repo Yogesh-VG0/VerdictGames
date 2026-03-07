@@ -33,15 +33,20 @@ try {
 
 const SITE_URL = process.env.SITE_URL || "https://www.verdict.games";
 const CRON_SECRET = process.env.CRON_SECRET || "";
+const DEEP = process.argv.includes("--deep");
 
 const start = Date.now();
 console.log("═══════════════════════════════════════════");
 console.log("  VERDICT.GAMES — Discover New Games");
+console.log(`  Mode: ${DEEP ? "DEEP (all genres/platforms/years)" : "Standard"}`);
 console.log(`  ${new Date().toISOString()}`);
 console.log("═══════════════════════════════════════════\n");
 
-const url = `${SITE_URL}/api/cron/discover${CRON_SECRET ? `?secret=${CRON_SECRET}` : ""}`;
-console.log(`🌐 Calling ${SITE_URL}/api/cron/discover ...`);
+const params = new URLSearchParams();
+if (CRON_SECRET) params.set("secret", CRON_SECRET);
+if (DEEP) params.set("deep", "true");
+const url = `${SITE_URL}/api/cron/discover?${params}`;
+console.log(`🌐 Calling ${SITE_URL}/api/cron/discover${DEEP ? " (deep)" : ""} ...`);
 
 try {
   const res = await fetch(url, {
@@ -50,7 +55,7 @@ try {
       "User-Agent": "VerdictGames-HerokuScheduler/1.0",
       ...(CRON_SECRET ? { Authorization: `Bearer ${CRON_SECRET}` } : {}),
     },
-    signal: AbortSignal.timeout(120000), // 2 min timeout — discovery can be slow
+    signal: AbortSignal.timeout(600000), // 10 min timeout — deep discovery can be slow
   });
 
   if (!res.ok) {
