@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { getGlobalReviews } from "@/lib/api";
@@ -50,7 +51,7 @@ export default function ReviewsPage() {
             Platform
           </label>
           <FilterChips
-            options={["All", "PC", "PlayStation 5", "PlayStation 4", "Xbox Series X|S", "Xbox One", "Nintendo Switch", "Android"] as ("All" | Platform)[]}
+            options={["All", "PC", "PlayStation 5", "Xbox Series X|S", "Nintendo Switch", "Android"] as ("All" | Platform)[]}
             selected={platform}
             onChange={setPlatform}
             labelFn={(v) => v === "All" ? "All" : platformShort(v as Platform)}
@@ -89,12 +90,20 @@ export default function ReviewsPage() {
             </motion.div>
           ))
         ) : (
-          <div className="text-center py-16 space-y-3">
+          <div className="text-center py-16 space-y-4">
             <div className="text-4xl">📝</div>
-            <p className="text-foreground font-semibold">No reviews yet</p>
-            <p className="text-sm text-secondary">
-              Be the first to share your verdict.
+            <p className="text-foreground font-semibold text-lg">No community reviews yet</p>
+            <p className="text-sm text-secondary max-w-md mx-auto">
+              Be the first to share your verdict! Browse games and write a review to help other players make better choices.
             </p>
+            <div className="flex justify-center gap-3 pt-2">
+              <Link href="/search?sort=top-rated" className="px-4 py-2 text-sm font-medium text-accent border border-accent rounded-full hover:bg-accent/10 transition-colors">
+                Browse Games
+              </Link>
+              <Link href="/search?sort=trending" className="px-4 py-2 text-sm font-medium text-white bg-accent rounded-full hover:bg-accent-hover transition-colors">
+                See Trending
+              </Link>
+            </div>
           </div>
         )}
       </motion.div>

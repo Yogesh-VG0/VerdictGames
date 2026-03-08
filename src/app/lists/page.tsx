@@ -128,12 +128,20 @@ export default function ListsPage() {
           ))}
         </motion.div>
       ) : (
-        <div className="text-center py-16 space-y-3">
+        <div className="text-center py-16 space-y-4">
           <div className="text-4xl">📋</div>
-          <p className="text-foreground font-semibold">No lists yet</p>
-          <p className="text-sm text-secondary">
-            Check back soon for curated game collections.
+          <p className="text-foreground font-semibold text-lg">Curated Lists Coming Soon</p>
+          <p className="text-sm text-secondary max-w-md mx-auto">
+            Our editors are putting together hand-picked game collections. In the meantime, explore games by genre or platform.
           </p>
+          <div className="flex justify-center gap-3 pt-2">
+            <Link href="/search?sort=top-rated" className="px-4 py-2 text-sm font-medium text-accent border border-accent rounded-full hover:bg-accent/10 transition-colors">
+              Browse Top Rated
+            </Link>
+            <Link href="/search?sort=trending" className="px-4 py-2 text-sm font-medium text-white bg-accent rounded-full hover:bg-accent-hover transition-colors">
+              Explore Trending
+            </Link>
+          </div>
         </div>
       )}
     </div>

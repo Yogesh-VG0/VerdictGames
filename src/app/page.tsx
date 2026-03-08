@@ -13,7 +13,6 @@ import {
   getRecommendations,
   getUpcomingGames,
   getTopByPlatform,
-  getSiteStats,
 } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
 import type { Platform } from "@/lib/types";
@@ -34,7 +33,7 @@ const PLATFORM_TABS: { label: string; value: Platform }[] = [
   { label: "PS5", value: "PlayStation 5" },
   { label: "Xbox", value: "Xbox Series X|S" },
   { label: "Switch", value: "Nintendo Switch" },
-  { label: "PS4", value: "PlayStation 4" },
+  { label: "Android", value: "Android" },
 ];
 
 export default function HomePage() {
@@ -48,39 +47,35 @@ export default function HomePage() {
   });
   const trending = useQuery({
     queryKey: ["trending"],
-    queryFn: getTrendingGames,
+    queryFn: () => getTrendingGames(),
     staleTime: 5 * 60 * 1000,
   });
   const newReleases = useQuery({
     queryKey: ["newReleases"],
-    queryFn: () => getNewReleases(12),
+    queryFn: () => getNewReleases(16),
     staleTime: 5 * 60 * 1000,
   });
   const topRated = useQuery({
     queryKey: ["topRated"],
-    queryFn: () => getTopRated(12),
+    queryFn: () => getTopRated(16),
     staleTime: 5 * 60 * 1000,
   });
   const upcoming = useQuery({
     queryKey: ["upcoming"],
-    queryFn: () => getUpcomingGames(12),
+    queryFn: () => getUpcomingGames(16),
     staleTime: 10 * 60 * 1000,
   });
   const topByPlatform = useQuery({
     queryKey: ["topByPlatform", selectedPlatform],
-    queryFn: () => getTopByPlatform(selectedPlatform, 12),
+    queryFn: () => getTopByPlatform(selectedPlatform, 16),
     staleTime: 5 * 60 * 1000,
   });
   const personalized = useQuery({
     queryKey: ["personalized", !!user],
-    queryFn: () => (user ? getRecommendations(8) : getPersonalizedGames(8)),
+    queryFn: () => (user ? getRecommendations(12) : getPersonalizedGames(12)),
     staleTime: 5 * 60 * 1000,
   });
-  const stats = useQuery({
-    queryKey: ["siteStats"],
-    queryFn: getSiteStats,
-    staleTime: 60 * 60 * 1000,
-  });
+
 
   return (
     <div className="space-y-0 page-enter">
@@ -98,34 +93,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── Site Stats Bar ── */}
-      {stats.data && (stats.data.totalGames > 0) && (
-        <section className="relative border-y border-white/[0.06] bg-surface/50">
-          <div className="max-w-7xl mx-auto px-4 py-4">
-            <div className="flex items-center justify-center gap-6 sm:gap-12 flex-wrap text-center">
-              <div>
-                <p className="text-xl sm:text-2xl font-bold gradient-text">{stats.data.totalGames.toLocaleString()}+</p>
-                <p className="text-[10px] sm:text-xs text-tertiary uppercase tracking-wider">Games</p>
-              </div>
-              <div className="w-px h-8 bg-white/10 hidden sm:block" />
-              <div>
-                <p className="text-xl sm:text-2xl font-bold text-accent">{stats.data.enrichmentSources}</p>
-                <p className="text-[10px] sm:text-xs text-tertiary uppercase tracking-wider">Data Sources</p>
-              </div>
-              <div className="w-px h-8 bg-white/10 hidden sm:block" />
-              <div>
-                <p className="text-xl sm:text-2xl font-bold text-pixel-green">{stats.data.totalReviews.toLocaleString()}</p>
-                <p className="text-[10px] sm:text-xs text-tertiary uppercase tracking-wider">Reviews</p>
-              </div>
-              <div className="w-px h-8 bg-white/10 hidden sm:block" />
-              <div>
-                <p className="text-xl sm:text-2xl font-bold text-pixel-cyan">{stats.data.totalUsers.toLocaleString()}</p>
-                <p className="text-[10px] sm:text-xs text-tertiary uppercase tracking-wider">Members</p>
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
+
 
       {/* ── Trending Now ── */}
       <section className="relative py-10">
@@ -298,7 +266,7 @@ export default function HomePage() {
             ) : topByPlatform.data && topByPlatform.data.length > 0 ? (
               <GameGrid games={topByPlatform.data} />
             ) : (
-              <p className="text-secondary text-sm py-8 text-center">No games found for this platform yet. Games are being discovered automatically!</p>
+              <p className="text-secondary text-sm py-8 text-center">No games found for this platform yet. Try browsing <button onClick={() => setSelectedPlatform("PC")} className="text-accent hover:underline">PC games</button> instead.</p>
             )}
           </FadeInSection>
         </div>

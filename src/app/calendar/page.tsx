@@ -151,11 +151,12 @@ export default function CalendarPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="text-center py-16 space-y-3"
+            className="text-center py-16 space-y-4"
           >
             <div className="text-5xl">📭</div>
-            <p className="text-secondary text-sm">
-              No releases found for this month.
+            <p className="text-foreground font-semibold text-lg">No releases found for this month</p>
+            <p className="text-secondary text-sm max-w-md mx-auto">
+              Try selecting a different month, or browse games that are already available.
             </p>
           </motion.div>
         )}

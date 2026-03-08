@@ -1,7 +1,7 @@
 {
   "name": "Verdict Games",
   "short_name": "Verdict",
-  "description": "Honest verdicts for PC & Android games — reviews, scores, and deals from Steam, IGDB, RAWG & more",
+  "description": "Honest verdicts for games across all platforms — reviews, scores, and deals from Steam, IGDB, RAWG & more",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#030712",

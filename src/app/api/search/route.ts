@@ -14,7 +14,7 @@ import { mapGameRow } from "@/lib/db/mappers";
 import type { Game, PaginatedResponse, SortOption } from "@/lib/types";
 import type { GameRow } from "@/lib/supabase/types";
 
-const PAGE_SIZE = 12;
+const PAGE_SIZE = 24;
 
 export async function GET(request: NextRequest) {
   const params = request.nextUrl.searchParams;

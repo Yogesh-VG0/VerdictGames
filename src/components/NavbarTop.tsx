@@ -43,19 +43,11 @@ export default function NavbarTop() {
         <div className="flex items-center justify-between px-4 h-14">
           <Link href="/" className="flex items-center gap-2.5 group">
             <Image
-              src="/verdict_logo_light.png"
+              src="/verdict_logo.png"
               alt="Verdict Games"
-              width={48}
-              height={48}
-              className="h-10 w-10 rounded-xl dark:hidden drop-shadow-lg"
-              priority
-            />
-            <Image
-              src="/verdict_logo_dark.png"
-              alt="Verdict Games"
-              width={48}
-              height={48}
-              className="hidden h-10 w-10 rounded-xl dark:block drop-shadow-lg"
+              width={40}
+              height={40}
+              className="h-9 w-9 rounded-lg drop-shadow-lg"
               priority
             />
             <span className="font-bold text-lg tracking-tight text-foreground">
@@ -123,19 +115,11 @@ export default function NavbarTop() {
           {/* Logo */}
           <Link href="/" className="shrink-0 flex items-center gap-3 pl-3 group">
             <Image
-              src="/verdict_logo_light.png"
+              src="/verdict_logo.png"
               alt="Verdict Games"
-              width={52}
-              height={52}
-              className="h-10 w-10 rounded-xl dark:hidden drop-shadow-lg"
-              priority
-            />
-            <Image
-              src="/verdict_logo_dark.png"
-              alt="Verdict Games"
-              width={52}
-              height={52}
-              className="hidden h-10 w-10 rounded-xl dark:block drop-shadow-lg"
+              width={44}
+              height={44}
+              className="h-9 w-9 rounded-lg drop-shadow-lg"
               priority
             />
             <span className="font-bold text-lg tracking-tight text-foreground">

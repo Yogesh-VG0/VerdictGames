@@ -137,27 +137,13 @@ function SearchContent() {
               Platform
             </label>
             <FilterChips
-              options={["All", "PC", "PlayStation 5", "PlayStation 4", "Xbox Series X|S", "Xbox One", "Nintendo Switch", "Android", "iOS", "Linux"] as (Platform | "All")[]}
+              options={["All", "PC", "PlayStation 5", "Xbox Series X|S", "Nintendo Switch", "Android"] as (Platform | "All")[]}
               selected={platform}
               onChange={(v) => {
                 setPlatform(v);
                 setPage(1);
               }}
               labelFn={(v) => v === "All" ? "All" : platformShort(v as Platform)}
-            />
-          </div>
-
-          <div className="space-y-1">
-            <label className="text-[10px] uppercase tracking-wider text-tertiary font-medium">
-              Monetization
-            </label>
-            <FilterChips
-              options={["All", "Free", "Paid", "Free with IAP", "Free with Ads"] as (MonetizationType | "All")[]}
-              selected={monetization}
-              onChange={(v) => {
-                setMonetization(v);
-                setPage(1);
-              }}
             />
           </div>
         </div>

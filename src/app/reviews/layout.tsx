@@ -2,10 +2,10 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Reviews",
-  description: "Read community reviews and honest verdicts for PC & Android games. Share your own opinions and help others find great games.",
+  description: "Read community reviews and honest verdicts for games across all platforms. Share your own opinions and help others find great games.",
   openGraph: {
     title: "Reviews | verdict.games",
-    description: "Community reviews and honest verdicts for PC & Android games.",
+    description: "Community reviews and honest verdicts for games across all platforms.",
   },
 };
 

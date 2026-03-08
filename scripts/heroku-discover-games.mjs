@@ -55,7 +55,7 @@ try {
       "User-Agent": "VerdictGames-HerokuScheduler/1.0",
       ...(CRON_SECRET ? { Authorization: `Bearer ${CRON_SECRET}` } : {}),
     },
-    signal: AbortSignal.timeout(600000), // 10 min timeout — deep discovery can be slow
+    signal: AbortSignal.timeout(1200000), // 20 min timeout — standard discovery now fetches many more games
   });
 
   if (!res.ok) {

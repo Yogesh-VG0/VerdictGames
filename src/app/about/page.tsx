@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "About",
-  description: "Learn about verdict.games — your trusted source for honest PC and Android game reviews.",
+  description: "Learn about verdict.games — your trusted source for honest game reviews across all platforms.",
 };
 
 export default function AboutPage() {
@@ -16,8 +16,8 @@ export default function AboutPage() {
       <section className="space-y-4 text-sm text-secondary leading-relaxed">
         <p>
           <strong className="text-foreground">verdict.games</strong> is a premium game reviews
-          platform built for players who want honest, no-nonsense opinions on PC and Android
-          games. Think of it as a{" "}
+          platform built for players who want honest, no-nonsense opinions on games across
+          all platforms. Think of it as a{" "}
           <span className="text-accent font-medium">Letterboxd for games</span> — clean,
           community-driven, and designed for people who care about quality.
         </p>
@@ -44,7 +44,7 @@ export default function AboutPage() {
           </li>
           <li className="flex items-start gap-2">
             <span className="text-accent mt-0.5">▸</span>
-            <span>Android gaming is real gaming and deserves the same critical attention.</span>
+            <span>Every platform deserves the same critical attention — PC, console, and mobile.</span>
           </li>
         </ul>
 

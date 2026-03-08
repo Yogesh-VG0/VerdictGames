@@ -2,10 +2,10 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Search Games",
-  description: "Search and filter PC & Android games by genre, platform, year, monetization, and more. Find your next favorite game with honest verdict scores.",
+  description: "Search and filter games by genre, platform, year, and more. Find your next favorite game with honest verdict scores.",
   openGraph: {
     title: "Search Games | verdict.games",
-    description: "Search and filter PC & Android games by genre, platform, year, monetization, and more.",
+    description: "Search and filter games by genre, platform, year, and more.",
   },
 };
 

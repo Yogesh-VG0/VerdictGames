@@ -104,30 +104,80 @@ export async function GET(request: NextRequest) {
     fetchRawgList("games", { ordering: "-rating", page: String(pageParam) }, 40),
   ];
 
+  // Always fetch platform-specific games (PS5, Xbox Series, Switch, PS4, Android)
+  const platformIds = [
+    { id: "187", name: "PS5" },
+    { id: "186", name: "Xbox Series" },
+    { id: "7", name: "Switch" },
+    { id: "18", name: "PS4" },
+    { id: "21", name: "Android" },
+  ];
+  for (const plat of platformIds) {
+    fetches.push(
+      fetchRawgList("games", { platforms: plat.id, ordering: "-metacritic", metacritic: "60,100" }, 40)
+    );
+    fetches.push(
+      fetchRawgList("games", { platforms: plat.id, ordering: "-rating" }, 40)
+    );
+    fetches.push(
+      fetchRawgList("games", { platforms: plat.id, ordering: "-added", dates: recentWindow }, 20)
+    );
+  }
+
+  // Always fetch by popular genres (more aggressive in standard mode now)
+  const genres = ["action", "rpg", "adventure", "strategy", "shooter", "puzzle", "platformer", "racing", "sports", "simulation", "indie", "fighting"];
+  for (const genre of genres) {
+    fetches.push(
+      fetchRawgList("games", { genres: genre, ordering: "-rating", metacritic: "65,100" }, 40)
+    );
+    fetches.push(
+      fetchRawgList("games", { genres: genre, ordering: "-added", dates: recentWindow }, 20)
+    );
+  }
+
+  // Multi-page top rated games to build a larger library
+  for (let p = 1; p <= 5; p++) {
+    fetches.push(
+      fetchRawgList("games", { ordering: "-metacritic", metacritic: "70,100", page: String(p) }, 40)
+    );
+  }
+
+  // Recent years with high ratings
+  for (let y = currentYear - 5; y <= currentYear; y++) {
+    fetches.push(
+      fetchRawgList("games", { ordering: "-metacritic", dates: `${y}-01-01,${y}-12-31`, metacritic: "60,100" }, 40)
+    );
+  }
+
   if (deep) {
-    // Fetch by specific popular genres
-    const genres = ["action", "rpg", "adventure", "strategy", "shooter", "puzzle", "platformer", "racing", "sports", "simulation", "indie", "fighting"];
+    // Go even deeper: more pages per genre + platform combo
     for (const genre of genres) {
+      for (let p = 2; p <= 3; p++) {
+        fetches.push(
+          fetchRawgList("games", { genres: genre, ordering: "-rating", page: String(p) }, 40)
+        );
+      }
+    }
+
+    for (const plat of platformIds) {
+      for (let p = 2; p <= 4; p++) {
+        fetches.push(
+          fetchRawgList("games", { platforms: plat.id, ordering: "-rating", page: String(p) }, 40)
+        );
+      }
+    }
+
+    // Classic years with lower thresholds
+    for (let y = currentYear - 10; y <= currentYear - 6; y++) {
       fetches.push(
-        fetchRawgList("games", { genres: genre, ordering: "-rating", metacritic: "70,100" }, 20)
-      );
-      fetches.push(
-        fetchRawgList("games", { genres: genre, ordering: "-added", dates: recentWindow }, 10)
+        fetchRawgList("games", { ordering: "-metacritic", dates: `${y}-01-01,${y}-12-31`, metacritic: "70,100" }, 40)
       );
     }
 
-    // Platform-specific: PS5, Xbox Series, Switch
-    const platformIds = ["187", "186", "7"]; // PS5, Xbox Series, Switch RAWG IDs
-    for (const pid of platformIds) {
+    // More pages of all-time favorites
+    for (let p = 2; p <= 10; p++) {
       fetches.push(
-        fetchRawgList("games", { platforms: pid, ordering: "-metacritic", metacritic: "70,100" }, 20)
-      );
-    }
-
-    // Classic years
-    for (let y = currentYear - 5; y <= currentYear - 2; y++) {
-      fetches.push(
-        fetchRawgList("games", { ordering: "-metacritic", dates: `${y}-01-01,${y}-12-31`, metacritic: "75,100" }, 20)
+        fetchRawgList("games", { ordering: "-metacritic", metacritic: "70,100", page: String(p) }, 40)
       );
     }
   }
@@ -179,8 +229,8 @@ export async function GET(request: NextRequest) {
       errors.push(`${name}: ${(err as Error).message}`);
     }
 
-    // Rate limit: 150ms between each call
-    await new Promise((r) => setTimeout(r, 150));
+    // Rate limit: 100ms between each call
+    await new Promise((r) => setTimeout(r, 100));
   }
 
   return jsonOk({

@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
     const supabase = getServerSupabase();
 
     const limit = parseInt(
-      request.nextUrl.searchParams.get("limit") ?? "8",
+      request.nextUrl.searchParams.get("limit") ?? "16",
       10
     );
 
