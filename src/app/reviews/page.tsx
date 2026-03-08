@@ -9,6 +9,7 @@ import FilterChips from "@/components/ui/FilterChips";
 import SortDropdown from "@/components/ui/SortDropdown";
 import { ReviewCardSkeleton } from "@/components/ui/Skeleton";
 import type { Platform } from "@/lib/types";
+import { platformShort } from "@/lib/utils";
 
 const listItem = {
   hidden: { opacity: 0, y: 16 },
@@ -38,7 +39,7 @@ export default function ReviewsPage() {
       >
         <h1 className="text-2xl font-bold text-foreground">Community Reviews</h1>
         <p className="text-sm text-secondary">
-          Latest verdicts from the community on PC and Android games.
+          Latest verdicts from the community across all platforms.
         </p>
       </motion.div>
 
@@ -49,9 +50,10 @@ export default function ReviewsPage() {
             Platform
           </label>
           <FilterChips
-            options={["All", "PC", "Android"] as ("All" | Platform)[]}
+            options={["All", "PC", "PlayStation 5", "PlayStation 4", "Xbox Series X|S", "Xbox One", "Nintendo Switch", "Android"] as ("All" | Platform)[]}
             selected={platform}
             onChange={setPlatform}
+            labelFn={(v) => v === "All" ? "All" : platformShort(v as Platform)}
           />
         </div>
         <div className="space-y-1 ml-auto">

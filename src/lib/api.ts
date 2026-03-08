@@ -13,6 +13,7 @@ import {
   GameList,
   LibraryStats,
   LibraryStatus,
+  Platform,
   SearchFilters,
   PaginatedResponse,
 } from "./types";
@@ -248,7 +249,7 @@ export async function getGameAchievements(
 /** Get the global reviews feed. */
 export async function getGlobalReviews(options?: {
   sort?: "newest" | "helpful";
-  platform?: "PC" | "Android" | "All";
+  platform?: Platform | "All";
   page?: number;
 }): Promise<PaginatedResponse<Review>> {
   const params = new URLSearchParams();
