@@ -16,6 +16,7 @@ import {
   getSiteStats,
 } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
+import type { Platform } from "@/lib/types";
 import HeroCarousel from "@/components/HeroCarousel";
 import FadeInSection from "@/components/FadeInSection";
 import GameCard from "@/components/GameCard";
@@ -28,7 +29,7 @@ import {
   SectionHeaderSkeleton,
 } from "@/components/ui/Skeleton";
 
-const PLATFORM_TABS = [
+const PLATFORM_TABS: { label: string; value: Platform }[] = [
   { label: "PC", value: "PC" },
   { label: "PS5", value: "PlayStation 5" },
   { label: "Xbox", value: "Xbox Series X|S" },
@@ -38,7 +39,7 @@ const PLATFORM_TABS = [
 
 export default function HomePage() {
   const { user } = useAuth();
-  const [selectedPlatform, setSelectedPlatform] = useState("PC");
+  const [selectedPlatform, setSelectedPlatform] = useState<Platform | "All">("PC");
 
   const featured = useQuery({
     queryKey: ["featured"],

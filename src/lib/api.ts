@@ -454,7 +454,7 @@ export async function getUpcomingGames(limit = 12): Promise<Game[]> {
    ═══════════════════════════════════════════════════ */
 
 /** Get top rated games filtered by platform. */
-export async function getTopByPlatform(platform: string, limit = 12): Promise<Game[]> {
+export async function getTopByPlatform(platform: Platform | "All", limit = 12): Promise<Game[]> {
   const results = await searchGames({
     platform,
     sort: "top-rated",
