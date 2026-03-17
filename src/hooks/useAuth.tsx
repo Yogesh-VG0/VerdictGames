@@ -44,17 +44,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .eq("auth_id", authId)
       .maybeSingle();
 
-    if (profile) {
-      setUser({
-        id: authId,
-        email,
-        profileId: profile.id,
-        username: profile.username,
-        displayName: profile.display_name,
-        avatar: profile.avatar_url,
-        role: (profile as { role?: string }).role === "admin" ? "admin" : "user",
-      });
+    if (!profile) {
+      // If OAuth succeeded but profile doesn't exist yet, bootstrap it server-side.
+      try {
+        await fetch("/api/auth/bootstrap", { method: "POST" });
+        const { data: profile2 } = await supabase
+          .from("profiles")
+          .select("id, username, display_name, avatar_url, role")
+          .eq("auth_id", authId)
+          .maybeSingle();
+        if (!profile2) return;
+        setUser({
+          id: authId,
+          email,
+          profileId: profile2.id,
+          username: profile2.username,
+          displayName: profile2.display_name,
+          avatar: profile2.avatar_url,
+          role: (profile2 as { role?: string }).role === "admin" ? "admin" : "user",
+        });
+      } catch {
+        return;
+      }
+      return;
     }
+
+    setUser({
+      id: authId,
+      email,
+      profileId: profile.id,
+      username: profile.username,
+      displayName: profile.display_name,
+      avatar: profile.avatar_url,
+      role: (profile as { role?: string }).role === "admin" ? "admin" : "user",
+    });
   }, [supabase]);
 
   useEffect(() => {

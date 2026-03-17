@@ -9,6 +9,7 @@ import ThemeToggle from "./ThemeToggle";
 import AuthModal from "./AuthModal";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
+import { isAdminEmail } from "@/lib/adminEmails";
 
 export default function NavbarTop() {
   const router = useRouter();
@@ -215,6 +216,15 @@ export default function NavbarTop() {
                       >
                         👤 Profile
                       </Link>
+                      {isAdminEmail(user.email) && (
+                        <Link
+                          href="/admin"
+                          onClick={() => setProfileDropdownOpen(false)}
+                          className="flex items-center gap-2 px-4 py-2.5 text-sm text-secondary hover:text-foreground hover:bg-white/5 transition-colors"
+                        >
+                          🛠️ Admin Dashboard
+                        </Link>
+                      )}
                       <Link
                         href="/library"
                         onClick={() => setProfileDropdownOpen(false)}

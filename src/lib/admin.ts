@@ -6,15 +6,7 @@
 
 import { getCurrentUser } from "./supabase/auth";
 import { jsonError } from "./api/response";
-
-const ADMIN_EMAILS = [
-  "yogeshvadivel456@gmail.com",
-  "atharva@verdict.games",
-];
-
-export function isAdminEmail(email: string): boolean {
-  return ADMIN_EMAILS.includes(email.toLowerCase().trim());
-}
+import { isAdminEmail } from "./adminEmails";
 
 /**
  * Checks if the current request is from an admin user.
