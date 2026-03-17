@@ -47,14 +47,20 @@ export default function GameCard({
         >
           {/* Cover image - taller for spotlight */}
           <div className="relative aspect-[3/4] overflow-hidden">
-            <Image
-              src={game.coverImage}
-              alt={game.title}
-              fill
-              sizes="(max-width: 640px) 100vw, 33vw"
-              className="object-cover transition-transform duration-700 group-hover:scale-110"
-              priority={priority}
-            />
+            {game.coverImage ? (
+              <Image
+                src={game.coverImage}
+                alt={game.title}
+                fill
+                sizes="(max-width: 640px) 100vw, 33vw"
+                className="object-cover transition-transform duration-700 group-hover:scale-110"
+                priority={priority}
+              />
+            ) : (
+              <div className="absolute inset-0 bg-surface-2 flex items-center justify-center">
+                <span className="text-tertiary text-xs font-medium">{game.title.slice(0, 2).toUpperCase()}</span>
+              </div>
+            )}
             {/* Gradient overlay — always dark */}
             <div className="absolute inset-0 card-image-gradient" />
             {/* Verdict score badge */}
@@ -116,14 +122,20 @@ export default function GameCard({
       >
         {/* Cover image */}
         <div className="relative aspect-[3/4] overflow-hidden">
-          <Image
-            src={game.coverImage}
-            alt={game.title}
-            fill
-            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-            className="object-cover transition-transform duration-700 group-hover:scale-110"
-            priority={priority}
-          />
+          {game.coverImage ? (
+            <Image
+              src={game.coverImage}
+              alt={game.title}
+              fill
+              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+              className="object-cover transition-transform duration-700 group-hover:scale-110"
+              priority={priority}
+            />
+          ) : (
+            <div className="absolute inset-0 bg-surface-2 flex items-center justify-center">
+              <span className="text-tertiary text-xs font-medium">{game.title.slice(0, 2).toUpperCase()}</span>
+            </div>
+          )}
 
           {/* Gradient overlay on hover */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-60 group-hover:opacity-80 transition-opacity duration-300" />
@@ -174,8 +186,13 @@ export default function GameCard({
             {game.title}
           </h3>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <VerdictBadge label={game.verdictLabel} size="sm" />
+            {game.trendingReason && (
+              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-accent/15 text-accent border border-accent/20">
+                {game.trendingReason}
+              </span>
+            )}
           </div>
 
           <ScoreChips game={game} variant="compact" />

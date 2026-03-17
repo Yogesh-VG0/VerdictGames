@@ -39,6 +39,7 @@ import {
 import { findCheapSharkDeal } from "../external/cheapshark";
 import { findIgdbMatch, extractIgdbEnrichment, isIgdbConfigured } from "../external/igdb";
 import { findGameWikiSummary } from "../external/wikipedia";
+import { fetchHLTBData } from "../external/howlongtobeat";
 import { slugify } from "../utils/slugify";
 import { scoreToVerdict } from "../utils/score";
 
@@ -125,24 +126,20 @@ export async function ingestGame(options: IngestOptions): Promise<IngestResult> 
     cheapSharkData,
     igdbData,
     wikiData,
+    hltbData,
   ] = await Promise.all([
-    // Steam reviews (if Steam game)
     steamAppId ? getSteamReviewSummary(steamAppId) : Promise.resolve(null),
-    // Steam app details for price
     steamAppId ? getSteamAppDetails(steamAppId) : Promise.resolve(null),
-    // Steam player count
     steamAppId ? getSteamPlayerCount(steamAppId) : Promise.resolve(null),
-    // CheapShark deals
     findCheapSharkDeal(fullGame.name, steamAppId).catch(() => null),
-    // IGDB metadata (only if configured)
     isIgdbConfigured()
       ? findIgdbMatch(
           fullGame.name,
           fullGame.released ? new Date(fullGame.released).getFullYear() : undefined
         ).catch(() => null)
       : Promise.resolve(null),
-    // Wikipedia summary
     findGameWikiSummary(fullGame.name).catch(() => null),
+    fetchHLTBData(fullGame.name).catch(() => null),
   ]);
 
   // ── Step 6: Process Steam data ──
@@ -188,6 +185,11 @@ export async function ingestGame(options: IngestOptions): Promise<IngestResult> 
   if (igdbData) {
     igdbEnrichment = extractIgdbEnrichment(igdbData);
     enrichmentSources.push("igdb");
+  }
+
+  // ── Step 8b: Process HLTB data ──
+  if (hltbData) {
+    enrichmentSources.push("hltb");
   }
 
   // ── Step 9: Process Wikipedia data ──
@@ -281,6 +283,10 @@ export async function ingestGame(options: IngestOptions): Promise<IngestResult> 
     rawg_metacritic: rawgMetacritic,
     rawg_rating: rawgRating,
     score_source: scoreSource,
+    hltb_main: hltbData?.main ?? null,
+    hltb_extras: hltbData?.extras ?? null,
+    hltb_completionist: hltbData?.completionist ?? null,
+    hltb_last_fetched: hltbData ? new Date().toISOString() : null,
     last_enriched_at: new Date().toISOString(),
     enrichment_sources: enrichmentSources,
   };

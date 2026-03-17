@@ -420,6 +420,7 @@ export interface Database {
           avatar_url: string;
           bio: string;
           favorite_genres: string[];
+          role: string;
           joined_at: string;
           updated_at: string;
         };
@@ -431,6 +432,7 @@ export interface Database {
           avatar_url: string;
           bio: string;
           favorite_genres: string[];
+          role?: string;
           joined_at?: string;
           updated_at?: string;
         };

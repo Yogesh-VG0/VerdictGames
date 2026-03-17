@@ -11,7 +11,7 @@
 import { NextRequest } from "next/server";
 import { jsonOk } from "@/lib/api/response";
 import { mapGameRow } from "@/lib/db/mappers";
-import type { Game, PaginatedResponse, SortOption } from "@/lib/types";
+import type { Game, PaginatedResponse, SortOption, Platform } from "@/lib/types";
 import type { GameRow } from "@/lib/supabase/types";
 
 const PAGE_SIZE = 24;
@@ -96,26 +96,75 @@ export async function GET(request: NextRequest) {
     let games = (data ?? []).map(mapGameRow);
     let total = count ?? 0;
 
-    // ── On-demand ingest: if text query + page 1 + no results + no filters ──
+    // ── 3-layer search: DB → RAWG instant preview → background ingest ──
     const noFilters = platform === "All" && !genre && !year && monetization === "All";
-    if (total === 0 && q.length >= 2 && page === 1 && noFilters) {
+    if (total < 3 && q.length >= 2 && page === 1 && noFilters) {
       try {
+        // Layer 2: RAWG instant search for immediate results
+        const { searchRawg, mapRawgPlatforms } = await import("@/lib/external/rawg");
+        const rawgResults = await searchRawg(q, 1, 5);
+        const { normalizeTitle } = await import("@/lib/utils/slugify");
+        const existingSlugs = new Set(games.map((g) => normalizeTitle(g.title)));
+
+        if (rawgResults.results.length > 0) {
+          // Show RAWG results instantly as preview cards
+          for (const rg of rawgResults.results) {
+            if (existingSlugs.has(normalizeTitle(rg.name))) continue;
+            const previewGame: Game = {
+              id: `rawg-${rg.id}`,
+              slug: rg.slug,
+              title: rg.name,
+              coverImage: rg.background_image ?? "",
+              headerImage: rg.background_image ?? "",
+              screenshots: (rg.short_screenshots ?? []).map((s) => s.image),
+              platforms: mapRawgPlatforms(rg.platforms) as Platform[],
+              genres: (rg.genres ?? []).map((g) => g.name),
+              tags: (rg.tags ?? []).slice(0, 6).map((t) => t.name),
+              developer: "",
+              publisher: "",
+              releaseDate: rg.released ?? "",
+              description: "",
+              score: rg.metacritic ?? Math.round((rg.rating || 3) * 20),
+              verdictLabel: rg.metacritic && rg.metacritic >= 80 ? "MUST PLAY" : rg.metacritic && rg.metacritic >= 65 ? "WORTH IT" : rg.metacritic && rg.metacritic >= 45 ? "MIXED" : "MIXED",
+              verdictSummary: "",
+              pros: [],
+              cons: [],
+              monetization: "Paid",
+              performanceNotes: "",
+              monetizationNotes: "",
+              reviewCount: rg.ratings_count ?? 0,
+              rawgRating: rg.rating,
+              rawgMetacritic: rg.metacritic ?? undefined,
+              subtitle: "",
+            };
+            games.push(previewGame);
+            existingSlugs.add(normalizeTitle(rg.name));
+          }
+          total = games.length;
+        }
+
+        // Layer 3: Background ingest for full enrichment (non-blocking)
         const { ingestGame } = await import("@/lib/services/ingest");
         const result = await ingestGame({ query: q });
         if (result.success && result.gameId) {
-          // Re-query to get the newly ingested game
-          const { data: freshData, count: freshCount } = await supabase
-            .from("games")
-            .select("*", { count: "exact" })
-            .eq("id", result.gameId) as unknown as { data: GameRow[] | null; count: number | null };
-          if (freshData?.length) {
-            games = freshData.map(mapGameRow);
-            total = freshCount ?? 1;
+          const alreadyHave = games.some((g) => g.id === result.gameId);
+          if (!alreadyHave) {
+            const { data: freshData } = await supabase
+              .from("games")
+              .select("*")
+              .eq("id", result.gameId) as unknown as { data: GameRow[] | null };
+            if (freshData?.length) {
+              // Replace RAWG preview with full enriched version if it exists
+              const enriched = freshData.map(mapGameRow);
+              const enrichedTitle = normalizeTitle(enriched[0].title);
+              games = games.filter((g) => normalizeTitle(g.title) !== enrichedTitle);
+              games = [...enriched, ...games];
+              total = games.length;
+            }
           }
         }
       } catch (ingestErr) {
         console.warn("[API] /search on-demand ingest failed:", ingestErr);
-        // Non-fatal: return empty results
       }
     }
 

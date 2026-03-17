@@ -23,14 +23,24 @@
    - [IGDB / Twitch API](#73-igdb--twitch-api)
    - [CheapShark API](#74-cheapshark-api)
    - [Wikipedia REST API](#75-wikipedia-rest-api)
+   - [HowLongToBeat API](#76-howlongtobeat-api)
+   - [GX Corner APIs (8 feeds)](#77-gx-corner-apis)
 8. [Backend — API Routes](#8-backend--api-routes)
-   - [Game Routes](#81-game-routes)
-   - [Search Route](#82-search-route)
-   - [Review Routes](#83-review-routes)
-   - [List Routes](#84-list-routes)
-   - [Profile Route](#85-profile-route)
-   - [Ingestion Routes](#86-ingestion-routes)
-   - [Cron Routes](#87-cron-routes)
+   - [Auth Routes](#81-auth-routes)
+   - [Game Routes](#82-game-routes)
+   - [Discovery / Search / Recommendations Routes](#83-discovery--search--recommendations-routes)
+   - [Review Routes (Reviews, Votes, Comments)](#84-review-routes-reviews-votes-comments)
+   - [List Routes](#85-list-routes)
+   - [Profile Routes](#86-profile-routes)
+   - [Library Routes](#87-library-routes)
+   - [Social Routes (Follows)](#88-social-routes-follows)
+   - [Calendar Routes](#89-calendar-routes)
+   - [Compare Routes](#810-compare-routes)
+   - [Developer Routes](#811-developer-routes)
+   - [Ingestion Routes](#812-ingestion-routes)
+   - [Cron Routes](#813-cron-routes)
+   - [GX Corner Proxy Routes](#814-gx-corner-proxy-routes)
+   - [Admin Routes](#815-admin-routes)
 9. [Ingestion Pipeline](#9-ingestion-pipeline)
 10. [Frontend — Pages](#10-frontend--pages)
     - [Home Page](#101-home-page)
@@ -39,11 +49,17 @@
     - [Reviews Page](#104-reviews-page)
     - [Lists Page](#105-lists-page)
     - [Profile Page](#106-profile-page)
-    - [Static Pages (About, Privacy, Terms)](#107-static-pages)
+    - [Library Page](#107-library-page)
+    - [Compare Page](#108-compare-page)
+    - [Release Calendar Page](#109-release-calendar-page)
+    - [Developer Hub Page](#1010-developer-hub-page)
+    - [Static Pages (About, Privacy, Terms)](#1011-static-pages)
+    - [Admin Dashboard](#1012-admin-dashboard)
 11. [Frontend — Components](#11-frontend--components)
     - [Layout Components](#111-layout-components)
     - [Display Components](#112-display-components)
     - [UI Primitives](#113-ui-primitives)
+    - [GX Corner Components](#114-gx-corner-components)
 12. [Design System](#12-design-system)
     - [Color Tokens](#121-color-tokens)
     - [Typography](#122-typography)
@@ -153,6 +169,7 @@ verdict-games/
 │
 ├── scripts/                    # Node.js CLI scripts for DB operations
 │   ├── apply-migration-001.mjs
+│   ├── apply-migration-003.mjs
 │   ├── apply-schema.mjs
 │   ├── heroku-discover-games.mjs
 │   ├── heroku-refresh-trending.mjs
@@ -174,10 +191,45 @@ verdict-games/
 │   │   ├── robots.ts           # robots.txt generation
 │   │   ├── sitemap.ts          # Dynamic sitemap generation
 │   │   │
+│   │   ├── admin/              # Admin dashboard pages
+│   │   │   ├── layout.tsx      # Sidebar nav + role guard
+│   │   │   ├── page.tsx        # Dashboard overview
+│   │   │   ├── games/
+│   │   │   │   ├── page.tsx    # Searchable game table
+│   │   │   │   └── [id]/page.tsx # Game editor form
+│   │   │   └── reviews/page.tsx  # Review moderation
+│   │   │
 │   │   ├── api/                # API route handlers
+│   │   │   ├── admin/
+│   │   │   │   ├── stats/route.ts             # GET — admin stats
+│   │   │   │   ├── games/
+│   │   │   │   │   ├── route.ts               # GET — paginated game list
+│   │   │   │   │   └── [id]/
+│   │   │   │   │       ├── route.ts           # GET/PATCH — view/edit game
+│   │   │   │   │       └── ingest/route.ts    # POST — force re-ingest
+│   │   │   │   ├── reviews/route.ts           # GET/POST/DELETE — review CRUD
+│   │   │   │   └── featured/route.ts          # POST — toggle flags
+│   │   │   ├── auth/
+│   │   │   │   ├── callback/route.ts          # GET — OAuth callback exchange
+│   │   │   │   └── me/route.ts                # GET — current user
+│   │   │   ├── calendar/route.ts              # GET — release calendar
+│   │   │   ├── compare/route.ts               # GET — compare two games
 │   │   │   ├── cron/
 │   │   │   │   ├── discover/route.ts        # GET — auto-discover games
 │   │   │   │   └── refresh-trending/route.ts # GET — update trending flags
+│   │   │   ├── gx/
+│   │   │   │   ├── highlights/route.ts      # GET — GX hero highlights
+│   │   │   │   ├── calendar/route.ts        # GET — GX release calendar
+│   │   │   │   ├── free-to-play/route.ts    # GET — GX free-to-play
+│   │   │   │   ├── top-games/route.ts       # GET — GX PS Plus/Game Pass
+│   │   │   │   ├── deals/route.ts           # GET — GX super deals
+│   │   │   │   ├── top-liked/route.ts       # GET — GX most liked
+│   │   │   │   └── news/
+│   │   │   │       ├── popular/route.ts     # GET — GX trending news
+│   │   │   │       └── feed/route.ts        # GET — GX full news feed
+│   │   │   ├── developers/
+│   │   │   │   └── [slug]/route.ts            # GET — developer hub data
+│   │   │   ├── follow/route.ts                # POST — follow/unfollow user
 │   │   │   ├── games/
 │   │   │   │   ├── [slug]/
 │   │   │   │   │   ├── route.ts             # GET — single game detail
@@ -188,6 +240,7 @@ verdict-games/
 │   │   │   │   ├── new-releases/route.ts    # GET — newest games
 │   │   │   │   ├── top-rated/route.ts       # GET — highest-scored
 │   │   │   │   └── trending/route.ts        # GET — trending games
+│   │   │   │   └── stats/route.ts           # GET — site stats (games/reviews/users)
 │   │   │   ├── ingest/
 │   │   │   │   ├── game/route.ts            # POST — ingest single game
 │   │   │   │   └── batch/route.ts           # POST — batch ingest
@@ -196,8 +249,16 @@ verdict-games/
 │   │   │   │   └── [slug]/route.ts          # GET — single list
 │   │   │   ├── profile/
 │   │   │   │   └── [username]/route.ts      # GET — user profile
-│   │   │   ├── reviews/route.ts             # GET — global reviews feed
+│   │   │   ├── recommendations/route.ts     # GET — personalized recommendations
+│   │   │   ├── reviews/
+│   │   │   │   ├── route.ts                 # GET/POST — global reviews feed + submit
+│   │   │   │   └── [id]/
+│   │   │   │       ├── comments/route.ts    # GET/POST — review comments
+│   │   │   │       └── vote/route.ts        # POST — vote helpful/unhelpful
 │   │   │   └── search/route.ts              # GET — search with filters
+│   │   │   └── library/
+│   │   │       ├── route.ts                 # GET/POST/DELETE — user library
+│   │   │       └── stats/route.ts           # GET — library stats
 │   │   │
 │   │   ├── game/[slug]/                     # Game detail page
 │   │   │   ├── layout.tsx                   # SEO metadata generation
@@ -229,6 +290,10 @@ verdict-games/
 │   │   └── terms/page.tsx                   # Terms of service
 │   │
 │   ├── components/                          # Reusable React components
+│   │   ├── AuthModal.tsx                    # Login/sign-up modal (email + OAuth)
+│   │   ├── GXDealCard.tsx                   # GX deal card (discount, store, price)
+│   │   ├── GXNewsCard.tsx                   # GX news article card
+│   │   ├── GXServiceBadge.tsx               # PS Plus / Game Pass badge
 │   │   ├── BottomNav.tsx                    # Mobile bottom navigation
 │   │   ├── FadeInSection.tsx                # Scroll-reveal animation wrapper
 │   │   ├── FeaturedHero.tsx                 # Static featured game hero
@@ -236,9 +301,12 @@ verdict-games/
 │   │   ├── GameGrid.tsx                     # Animated game grid with stagger
 │   │   ├── HeroCarousel.tsx                 # Auto-advancing hero carousel
 │   │   ├── HorizontalScroll.tsx             # Horizontal scroll with arrows
+│   │   ├── LibraryStatusSelector.tsx        # Add/remove + status picker for library
 │   │   ├── MediaCarousel.tsx                # Image gallery with thumbnails
 │   │   ├── NavbarTop.tsx                    # Top navigation bar
+│   │   ├── CommentThread.tsx                # Threaded review comments UI
 │   │   ├── ReviewCard.tsx                   # Review display card
+│   │   ├── ReviewForm.tsx                   # Review submission UI
 │   │   ├── ScoreChips.tsx                   # Multi-source score badges
 │   │   ├── SectionHeader.tsx                # Section title with "See all" link
 │   │   ├── ThemeToggle.tsx                  # Dark/light mode toggle button
@@ -254,9 +322,11 @@ verdict-games/
 │   │       └── VerdictBadge.tsx             # Verdict label badge
 │   │
 │   ├── hooks/
+│   │   ├── useAuth.tsx                      # Auth context/provider (Supabase Auth)
 │   │   └── useTheme.tsx                     # Theme context + localStorage
 │   │
 │   └── lib/                                 # Core application logic
+│       ├── admin.ts                         # Admin access control (email list + guard)
 │       ├── api.ts                           # Client-side API functions
 │       ├── types.ts                         # Frontend TypeScript interfaces
 │       ├── utils.ts                         # UI utilities (score colors, formatting)
@@ -266,6 +336,8 @@ verdict-games/
 │       │   └── mappers.ts                   # DB row → frontend model mappers
 │       ├── external/
 │       │   ├── cheapshark.ts                # CheapShark API client
+│       │   ├── gxcorner.ts                  # GX Corner API client (8 feeds)
+│       │   ├── howlongtobeat.ts             # HowLongToBeat API client
 │       │   ├── igdb.ts                      # IGDB/Twitch API client
 │       │   ├── rawg.ts                      # RAWG API client
 │       │   ├── steam.ts                     # Steam API client
@@ -273,6 +345,7 @@ verdict-games/
 │       ├── services/
 │       │   └── ingest.ts                    # Multi-source ingestion pipeline
 │       ├── supabase/
+│       │   ├── auth.ts                     # Server-side auth helpers (getCurrentUser)
 │       │   ├── client.ts                    # Browser Supabase client (anon key)
 │       │   ├── index.ts                     # Barrel export
 │       │   ├── server.ts                    # Server Supabase client (service_role)
@@ -285,7 +358,8 @@ verdict-games/
     ├── schema.sql                           # Full database schema DDL
     └── migrations/
         ├── 001_multi_source.sql             # Multi-source enrichment columns
-        └── 002_security_lint_fixes.sql      # Security lint fixes
+        ├── 002_security_lint_fixes.sql      # Security lint fixes
+        └── 004_admin_role.sql              # Admin role column + constraint
 ```
 
 ---
@@ -328,6 +402,7 @@ verdict-games/
 
 ### `vercel.json`
 - Framework hint: `nextjs`
+- Vercel Cron schedules: refresh-trending (every 6h), discover (daily 3 AM UTC), deep discover (Sundays 3 AM UTC)
 
 ### `Procfile`
 - Heroku process: `web: npm run start`
@@ -349,7 +424,11 @@ verdict-games/
 | `CRON_SECRET` | Optional | Server only | Secret for authenticating cron/ingest endpoints |
 | `DATABASE_URL` | Scripts only | CLI scripts | Direct PostgreSQL connection string |
 
-**Graceful degradation**: If Supabase environment variables are missing, all API routes return empty data arrays instead of errors, and the frontend renders gracefully with empty states.
+### `.env` vs `.env.local`
+- **Next.js runtime**: Use `.env.local` (recommended) or platform environment variables (Vercel/Heroku).
+- **Scripts**: Some scripts load `../.env` directly (not `.env.local`). If you use the provided scripts to apply schema/migrations, keep a root `.env` with at least `DATABASE_URL` set.
+
+**Graceful degradation**: If Supabase env vars are missing, most public GET routes return empty arrays instead of errors, and the frontend renders empty states. Authenticated routes return `401`.
 
 ---
 
@@ -365,6 +444,7 @@ User profile data.
 | Column | Type | Default | Constraints |
 |--------|------|---------|-------------|
 | `id` | UUID | `gen_random_uuid()` | PRIMARY KEY |
+| `auth_id` | UUID | — | UNIQUE, FK → `auth.users(id)` (migration 003) |
 | `username` | TEXT | — | NOT NULL, UNIQUE |
 | `display_name` | TEXT | `''` | NOT NULL |
 | `avatar_url` | TEXT | `''` | NOT NULL |
@@ -488,6 +568,8 @@ Curated game collections.
 | `cover_image` | TEXT | Default `''` |
 | `curated_by` | TEXT | Default `''` — username |
 | `tags` | TEXT[] | Default `'{}'` |
+| `owner_id` | UUID | Nullable — FK → `profiles(id)` (migration 003) |
+| `is_public` | BOOLEAN | Default `true` (migration 003) |
 | `created_at` | TIMESTAMPTZ | `now()` |
 | `updated_at` | TIMESTAMPTZ | `now()` (auto-updated via trigger) |
 
@@ -503,6 +585,61 @@ Join table linking lists to games with ordering.
 | `added_at` | TIMESTAMPTZ | `now()` |
 
 **Unique constraint**: `(list_id, game_id)` — prevents duplicate games in a list.
+
+#### `user_games`
+User library/backlog table (wishlist/playing/completed/etc.) with optional personal rating and hours played.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | UUID | PRIMARY KEY |
+| `user_id` | UUID | FK → `profiles(id)` |
+| `game_id` | UUID | FK → `games(id)` |
+| `status` | TEXT | `wishlist \| playing \| completed \| dropped \| paused` |
+| `personal_rating` | INTEGER | Nullable, 0–100 |
+| `hours_played` | NUMERIC(8,1) | Default 0 |
+| `notes` | TEXT | Default `''` |
+| `started_at` | DATE | Nullable |
+| `completed_at` | DATE | Nullable |
+| `created_at` | TIMESTAMPTZ | `now()` |
+| `updated_at` | TIMESTAMPTZ | `now()` (trigger) |
+
+**Unique constraint**: `(user_id, game_id)` — prevents duplicates in a user’s library.
+
+#### `follows`
+Follower/following edges between profiles.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | UUID | PRIMARY KEY |
+| `follower_id` | UUID | FK → `profiles(id)` |
+| `following_id` | UUID | FK → `profiles(id)` |
+| `created_at` | TIMESTAMPTZ | `now()` |
+
+**Unique constraint**: `(follower_id, following_id)` — prevents duplicate follow edges.
+
+#### `review_comments`
+Threaded comments on reviews (supports replies via `parent_id`).
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | UUID | PRIMARY KEY |
+| `review_id` | UUID | FK → `reviews(id)` |
+| `profile_id` | UUID | FK → `profiles(id)` |
+| `body` | TEXT | 1–2000 chars |
+| `parent_id` | UUID | Nullable — FK → `review_comments(id)` |
+| `created_at` | TIMESTAMPTZ | `now()` |
+| `updated_at` | TIMESTAMPTZ | `now()` (trigger) |
+
+#### `review_votes`
+Helpful/unhelpful voting on reviews. Values are `1` or `-1`. A trigger keeps `reviews.helpful` in sync with the sum.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | UUID | PRIMARY KEY |
+| `review_id` | UUID | FK → `reviews(id)` |
+| `profile_id` | UUID | FK → `profiles(id)` |
+| `value` | SMALLINT | `-1` or `1` |
+| `created_at` | TIMESTAMPTZ | `now()` |
 
 ### 6.2 Indexes
 
@@ -530,6 +667,18 @@ idx_lists_slug                 — lists(slug)
 idx_list_items_list_id         — list_items(list_id)
 idx_list_items_game_id         — list_items(game_id)
 idx_list_items_unique          — list_items(list_id, game_id) UNIQUE
+idx_profiles_auth_id           — profiles(auth_id) WHERE auth_id IS NOT NULL
+idx_user_games_unique          — user_games(user_id, game_id) UNIQUE
+idx_user_games_user_id         — user_games(user_id)
+idx_user_games_game_id         — user_games(game_id)
+idx_user_games_status          — user_games(user_id, status)
+idx_follows_unique             — follows(follower_id, following_id) UNIQUE
+idx_follows_follower           — follows(follower_id)
+idx_follows_following          — follows(following_id)
+idx_review_comments_review      — review_comments(review_id)
+idx_review_comments_parent      — review_comments(parent_id) WHERE parent_id IS NOT NULL
+idx_review_votes_unique         — review_votes(review_id, profile_id) UNIQUE
+idx_review_votes_review         — review_votes(review_id)
 ```
 
 ### 6.3 Triggers
@@ -539,6 +688,8 @@ A single trigger function `update_updated_at_column()` automatically sets `updat
 - `profiles`
 - `reviews`
 - `lists`
+ - `user_games` (migration 003)
+ - `review_comments` (migration 003)
 
 The function uses `SET search_path = ''` to prevent search_path injection attacks.
 
@@ -552,6 +703,8 @@ RLS is enabled on **all 6 tables**. Policies:
 **Write policies** (service_role only — `TO service_role`):
 - INSERT, UPDATE, DELETE restricted to `service_role` (used only in server-side Route Handlers)
 - Anonymous and authenticated users cannot write directly to any table
+ 
+**Note (migration 003)**: The current codebase adds authenticated self-management policies for user-owned tables (`user_games`, `follows`, `review_comments`, `review_votes`) and allows authenticated inserts/updates for `reviews`, `lists`, and `profiles` for the owning user. See `supabase/migrations/003_user_features.sql`.
 
 ### 6.5 Migrations
 
@@ -571,6 +724,28 @@ RLS is enabled on **all 6 tables**. Policies:
 - Fixes Supabase linter warnings:
   - `function_search_path_mutable` — pins `search_path = ''` on trigger function
   - `rls_policy_always_true` — rescopes service write policies to `TO service_role`
+
+**Migration 003: `003_user_features.sql`**
+- Adds Supabase Auth linkage and user features:
+  - `profiles.auth_id` FK → `auth.users`
+  - New tables: `user_games`, `follows`, `review_comments`, `review_votes`
+  - Adds list ownership/public fields: `lists.owner_id`, `lists.is_public`
+  - Adds HLTB + franchise fields to games: `hltb_main`, `hltb_extras`, `hltb_completionist`, `hltb_last_fetched`, `franchise`
+- Adds a trigger on `auth.users` to auto-create a `profiles` row on signup (`handle_new_user()`).
+- Adds a trigger to sync `reviews.helpful` from votes (`sync_review_helpful_count()`).
+
+**Migration 004: `004_admin_role.sql`**
+- Adds `role` column to `profiles` table (`TEXT NOT NULL DEFAULT 'user'`)
+- CHECK constraint: `role IN ('user', 'admin')`
+- Partial index: `idx_profiles_role` on `profiles(role) WHERE role = 'admin'` for fast admin lookups
+
+**Migration 005: `005_admin_overrides.sql`**
+- Adds manual override fields to `games` table:
+  - `is_featured_manual` (BOOLEAN, default false) — admin can pin games to Featured
+  - `is_trending_manual` (BOOLEAN, default false) — admin can pin games to Trending
+  - `manual_score` (INTEGER, nullable) — admin score override
+- Partial indexes on `is_featured_manual` and `is_trending_manual` for fast lookups
+- The cron `refresh-trending` preserves manual overrides when resetting algorithmic flags
 
 ---
 
@@ -678,6 +853,49 @@ RLS is enabled on **all 6 tables**. Policies:
 
 **Cache**: 24 hours.
 
+### 7.6 HowLongToBeat API
+**File**: `src/lib/external/howlongtobeat.ts`
+**Integration**: Wired into the ingestion pipeline (`src/lib/services/ingest.ts`)
+
+Fetches playtime estimates by searching the HowLongToBeat API for matching game titles. Populates the following `games` table columns (added in migration 003):
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `hltb_main` | REAL | Main story completion time (hours) |
+| `hltb_extras` | REAL | Main + extras completion time (hours) |
+| `hltb_completionist` | REAL | 100% completionist time (hours) |
+| `hltb_last_fetched` | TIMESTAMPTZ | When HLTB data was last retrieved |
+
+**Used for**: Game detail page stats, comparison page HLTB column.
+
+### 7.7 GX Corner APIs
+**File**: `src/lib/external/gxcorner.ts`
+**Base URLs**:
+- Game data: `https://proxy.gxcorner.games`
+- News data: `https://api.news.gxcorner.games`
+
+**Auth**: None required (public APIs, CORS-enabled)
+**Cache**: 5 minutes (`next: { revalidate: 300 }` with 15-second timeout)
+
+8 public feeds providing real-time gaming industry data:
+
+| # | Feed | Function | Description |
+|---|------|----------|-------------|
+| API 2 | Highlights | `getGXHighlights()` | Hero carousel highlights with trailers, prices, tags |
+| API 3 | Calendar | `getGXCalendar()` | Release calendar with platform/CTA info |
+| API 4 | Free-to-Play | `getGXFreeToPlay()` | Free-to-play games sorted by order |
+| API 5 | Top Games | `getGXTopGames()` | PS Plus / Game Pass featured titles |
+| API 6 | Super Deals | `getGXDeals()` | Discounted games with deal type, store, prices |
+| API 7 | Top Liked | `getGXTopLiked()` | Most anticipated games ranked by community likes |
+| API 8a | Popular News | `getGXPopularNews()` | Trending gaming news articles |
+| API 8b | News Feed | `getGXNewsFeed()` | Full gaming news feed |
+
+**TypeScript types** (exported from `src/lib/external/gxcorner.ts` and re-exported via `src/lib/types.ts`):
+- `GXHighlight`, `GXCalendarEntry`, `GXGameListEntry`, `GXDealEntry`, `GXTopLikedGame`, `GXNewsArticle`
+- Supporting types: `GXGenre`, `GXPlatform`, `GXStore`, `GXPrice`, `GXGameDetail`
+
+**Used for**: Homepage sections (Hot Right Now, Best Deals, Free to Play, PS Plus & Game Pass, Gaming News), trending signal in refresh-trending cron.
+
 ---
 
 ## 8. Backend — API Routes
@@ -690,7 +908,17 @@ All API routes follow a consistent pattern:
 5. Return `{ success: true, data: ... }` envelope via `jsonOk()`
 6. Catch errors and return empty data or `{ success: false, error: "..." }` via `jsonError()`
 
-### 8.1 Game Routes
+### 8.1 Auth Routes
+
+#### `GET /api/auth/me`
+- Returns the current authenticated user (Supabase auth user + matching `profiles` row).
+- **Auth**: Required (returns 401 if not authenticated).
+
+#### `GET /api/auth/callback`
+- OAuth callback handler. Exchanges `code` for session cookies and redirects.
+- **Security**: validates `next` is a safe relative path to prevent open redirects.
+
+### 8.2 Game Routes
 
 #### `GET /api/games/trending`
 - Returns games with `trending = true`, ordered by score descending
@@ -734,7 +962,10 @@ All API routes follow a consistent pattern:
 - **Query params**: `limit` (default: 20, max: 100)
 - Returns: `{ title, steamAppId, total, achievements[] }` sorted by unlock % descending
 
-### 8.2 Search Route
+#### `GET /api/games/stats`
+- Returns site-wide counts: `{ totalGames, totalReviews, totalUsers, enrichmentSources }`
+
+### 8.3 Discovery / Search / Recommendations Routes
 
 #### `GET /api/search`
 - Full-text search across games with multi-filter support
@@ -746,10 +977,20 @@ All API routes follow a consistent pattern:
   - `monetization` — `Free` | `Paid` | `Free with IAP` | etc. | `All`
   - `sort` — `relevance` | `newest` | `top-rated` | `trending`
   - `page` — Page number
-- **On-demand ingestion**: If text query returns 0 results and no filters are active, automatically attempts to ingest the game from external sources and re-queries
+- **3-layer search pipeline** (when text query returns fewer than 3 DB results and no filters active):
+  1. **Layer 1 — Database**: standard Supabase full-text / ilike search
+  2. **Layer 2 — RAWG instant preview**: if DB returns < 3 results, searches RAWG API for immediate preview cards (shown instantly to the user)
+  3. **Layer 3 — Background ingest**: triggers full multi-source ingestion; if successful, replaces the RAWG preview with the fully enriched game
+- This makes search feel **instant and unlimited** — every game in existence is searchable via RAWG fallback
 - Page size: 12
 
-### 8.3 Review Routes
+#### `GET /api/recommendations`
+- Returns personalized recommendations.
+- **Anonymous users**: genre-diverse, top-scored picks.
+- **Authenticated users**: derives preferred genres from `user_games` and excludes games already in library.
+- **Query params**: `limit` (default: 8)
+
+### 8.4 Review Routes (Reviews, Votes, Comments)
 
 #### `GET /api/reviews`
 - Returns the global reviews feed across all games
@@ -757,7 +998,28 @@ All API routes follow a consistent pattern:
 - Joins with `games` and `profiles` tables
 - Page size: 12
 
-### 8.4 List Routes
+#### `POST /api/reviews`
+- Submits a new review for a game.
+- **Auth**: Required.
+- Prevents duplicates per `(profile_id, game_id)`.
+- Body: `{ gameId, rating, title, bodyText, pros?, cons?, platform? }`
+
+#### `POST /api/reviews/[id]/vote`
+- Votes on a review (`value: 1 | -1`).
+- **Auth**: Required.
+- Upserts into `review_votes` (unique by `(review_id, profile_id)`).
+- DB trigger keeps `reviews.helpful` synced to sum of votes.
+
+#### `GET /api/reviews/[id]/comments`
+- Returns nested comment threads for a review.
+- Public read.
+
+#### `POST /api/reviews/[id]/comments`
+- Adds a comment or reply (`parentId` optional).
+- **Auth**: Required.
+- Validates body length (1–2000).
+
+### 8.5 List Routes
 
 #### `GET /api/lists`
 - Returns all curated lists with their games
@@ -768,14 +1030,63 @@ All API routes follow a consistent pattern:
 - Returns a single list by slug with ordered games
 - Returns 404 if not found
 
-### 8.5 Profile Route
+### 8.6 Profile Routes
 
 #### `GET /api/profile/[username]`
 - Returns a user profile by username with stats
 - Counts reviews by `profile_id` and lists by `curated_by` username
 - Returns 404 if not found
 
-### 8.6 Ingestion Routes
+### 8.7 Library Routes
+
+#### `GET /api/library`
+- Returns the current user’s `user_games` joined with full `games` rows.
+- **Auth**: Required.
+- **Query params**: `status` (`all` | `wishlist` | `playing` | `completed` | `dropped` | `paused`).
+
+#### `POST /api/library`
+- Upserts a library entry for the current user (conflict: `user_id,game_id`).
+- **Auth**: Required.
+- Body: `{ gameId, status?, personalRating?, hoursPlayed?, notes?, startedAt?, completedAt? }`
+
+#### `DELETE /api/library`
+- Removes a game from the current user’s library.
+- **Auth**: Required.
+- Body: `{ gameId }`
+
+#### `GET /api/library/stats`
+- Computes library totals per status, totalHours, averageRating, and genreBreakdown.
+- **Auth**: Required.
+
+### 8.8 Social Routes (Follows)
+
+#### `POST /api/follow`
+- Follow/unfollow a user profile.
+- **Auth**: Required.
+- Body: `{ targetProfileId, action: "follow" | "unfollow" }`
+- Prevents self-follow.
+
+### 8.9 Calendar Routes
+
+#### `GET /api/calendar`
+- Release calendar query over `games.release_date`.
+- **Query params**: `month=YYYY-MM` (optional; defaults to next 3 months), `limit` (default 50).
+- Returns games ordered by release date ascending.
+
+### 8.10 Compare Routes
+
+#### `GET /api/compare`
+- Compare two games by slug.
+- **Query params**: `g1` (slug), `g2` (slug).
+- Returns `{ game1, game2 }` or 404 if either missing.
+
+### 8.11 Developer Routes
+
+#### `GET /api/developers/[slug]`
+- Developer hub data: case-insensitive match over `games.developer`.
+- Returns `{ name, slug, gameCount, averageScore, games[] }`.
+
+### 8.12 Ingestion Routes
 
 #### `POST /api/ingest/game`
 - On-demand single game ingestion
@@ -792,7 +1103,7 @@ All API routes follow a consistent pattern:
 - Maximum 50 games per batch
 - Returns: `{ total, succeeded, failed, alreadyExisted, results[] }`
 
-### 8.7 Cron Routes
+### 8.13 Cron Routes
 
 #### `GET /api/cron/discover`
 - Auto-discovers new games from RAWG across 5 categories:
@@ -808,17 +1119,64 @@ All API routes follow a consistent pattern:
 - Returns: `{ discovered, newGamesIngested, alreadyExisted, failed, newGames[], errors[], timestamp }`
 
 #### `GET /api/cron/refresh-trending`
-- Updates `trending` and `featured` flags using multi-source signals
+- Updates `trending` and `featured` flags using multi-source signals + **freshnessScore** ranking
 - **Flow**:
   1. Fetch IGDB PopScore (weighted: visits 25%, want-to-play 30%, playing 30%, Steam peak 15%)
+  1b. Fetch GX Top Liked signal — cross-references most-liked games from GX Corner by slug/title matching; falls back to RAWG trending if GX fails
   2. Cross-reference with database by slug/title matching
   3. RAWG fallback: fetch trending from last 90 days
-  4. Fill remaining slots with recency-weighted high-scored games (combined recency bonus + score * 0.25)
-  5. Reset all `trending`/`featured` flags to `false`
+  4. **FreshnessScore fill** — remaining slots filled using composite score: `recency (30%) + rating (30%) + popularity (20%) + manualBoost (20%)`
+  5. Reset algorithmic flags (preserving `is_trending_manual`/`is_featured_manual` overrides)
   6. Set `trending = true` for up to 20 games
   7. Set `featured = true` for top 5 trending by score
+- **Manual override preservation**: games with `is_trending_manual = true` or `is_featured_manual = true` are never reset by the cron
 - **Auth**: Optional `CRON_SECRET` check
+- **Vercel Cron**: Configured in `vercel.json` — runs every 6 hours (`0 */6 * * *`)
 - Returns: `{ trendingCount, featuredCount, log[], timestamp }`
+
+**Vercel Cron Configuration** (`vercel.json`):
+| Schedule | Path | Description |
+|----------|------|-------------|
+| `0 */6 * * *` | `/api/cron/refresh-trending` | Refresh trending/featured every 6 hours |
+| `0 3 * * *` | `/api/cron/discover` | Daily game discovery at 3 AM UTC |
+| `0 3 * * 0` | `/api/cron/discover?deep=true` | Weekly deep discovery (Sundays at 3 AM UTC) |
+
+### 8.14 GX Corner Proxy Routes
+
+Server-side proxy routes for the 8 GX Corner feeds. Each route fetches from the GX Corner API via the client in `src/lib/external/gxcorner.ts` and returns the data directly. All routes use `export const revalidate = 300` for 5-minute ISR caching.
+
+| Route | Method | Description |
+|-------|--------|-------------|
+| `/api/gx/highlights` | GET | Hero carousel highlights |
+| `/api/gx/calendar` | GET | Release calendar |
+| `/api/gx/free-to-play` | GET | Free-to-play games |
+| `/api/gx/top-games` | GET | PS Plus / Game Pass titles |
+| `/api/gx/deals` | GET | Discounted games (Super Deals) |
+| `/api/gx/top-liked` | GET | Most anticipated / most liked games |
+| `/api/gx/news/popular` | GET | Trending gaming news |
+| `/api/gx/news/feed` | GET | Full news feed |
+
+**Files**: `src/app/api/gx/highlights/route.ts`, `src/app/api/gx/calendar/route.ts`, `src/app/api/gx/free-to-play/route.ts`, `src/app/api/gx/top-games/route.ts`, `src/app/api/gx/deals/route.ts`, `src/app/api/gx/top-liked/route.ts`, `src/app/api/gx/news/popular/route.ts`, `src/app/api/gx/news/feed/route.ts`
+
+### 8.15 Admin Routes
+
+Protected admin API routes for managing games, reviews, and featured flags. All routes are guarded by `requireAdmin()` from `src/lib/admin.ts`, which checks the authenticated user's email against a hardcoded admin email list.
+
+| Route | Method | Description |
+|-------|--------|-------------|
+| `/api/admin/stats` | GET | Dashboard statistics (game/review/user counts) |
+| `/api/admin/games` | GET | Paginated game list with search |
+| `/api/admin/games/[id]` | GET | Single game details for editing |
+| `/api/admin/games/[id]` | PATCH | Update game fields |
+| `/api/admin/games/[id]/ingest` | POST | Force re-ingest a game from external sources |
+| `/api/admin/reviews` | GET | List all reviews (paginated) |
+| `/api/admin/reviews` | POST | Create a new editorial review |
+| `/api/admin/reviews` | DELETE | Delete a review by ID |
+| `/api/admin/featured` | POST | Toggle `featured` / `trending` flags on a game |
+
+**Auth**: All routes return `401` (not authenticated) or `403` (not admin) if the user lacks admin access.
+
+**Files**: `src/app/api/admin/stats/route.ts`, `src/app/api/admin/games/route.ts`, `src/app/api/admin/games/[id]/route.ts`, `src/app/api/admin/games/[id]/ingest/route.ts`, `src/app/api/admin/reviews/route.ts`, `src/app/api/admin/featured/route.ts`
 
 ---
 
@@ -842,6 +1200,7 @@ The ingestion pipeline is the core data enrichment engine. It follows a 13-step 
    - CheapShark deal search
    - IGDB metadata match (if Twitch credentials configured)
    - Wikipedia game summary
+   - HowLongToBeat playtime estimates (main, extras, completionist)
 7. **Process Steam data** — Extract review percentage, count, price, player count
 8. **Process CheapShark data** — Compare prices (use lower of Steam/CheapShark), get cheapest-ever, deal URL
 9. **Process IGDB data** — Extract trailer URL, Wikipedia/Reddit/official URLs, IGDB rating
@@ -869,10 +1228,15 @@ The ingestion pipeline is the core data enrichment engine. It follows a 13-step 
 Sections displayed in order:
 1. **Hero Carousel** — Auto-advancing (7s interval) carousel of featured/trending games with swipe support, gradient overlays, score rings, verdict badges, score chips, CTA button
 2. **Most Played Right Now** — Spotlight card (3/4 aspect ratio) for #1 trending game + 2–4 column grid for remaining trending games, ordered by concurrent players
-3. **New Releases** — 4-column GameGrid of newest releases
-4. **Top Verdict Scores** — 4-column GameGrid of highest-scored games
-5. **Recommended For You** — Horizontal scroll of genre-diverse picks (filters out trending duplicates)
-6. **Footer** — Links to About, Privacy, Terms + data attribution
+3. **Hot Right Now** — Horizontal scroll of most anticipated games (powered by GX Top Liked)
+4. **New Releases** — 4-column GameGrid of newest releases
+5. **Best Deals** — Horizontal scroll of discounted games with discount %, store badges, prices (powered by GX Super Deals, uses `GXDealCard`)
+6. **Top Verdict Scores** — 4-column GameGrid of highest-scored games
+7. **Free to Play** — Horizontal scroll of free-to-play titles with platform badges (powered by GX Free-to-Play)
+8. **On PS Plus & Game Pass** — Horizontal scroll with service filter tabs and `GXServiceBadge` components (powered by GX Top Games)
+9. **Recommended For You** — Horizontal scroll of genre-diverse picks (filters out trending duplicates)
+10. **Gaming News** — Grid of trending gaming news articles with publisher info (powered by GX Popular News, uses `GXNewsCard`)
+11. **Footer** — Links to About, Privacy, Terms + data attribution
 
 **Data fetching**: React Query with 5-minute stale times. Shows skeleton states (`HeroSkeleton`, `GameGridSkeleton`, `SectionHeaderSkeleton`) while loading.
 
@@ -935,7 +1299,34 @@ The most feature-rich page in the application:
 - **Stats**: Games Reviewed, Lists Created, Favorite Genres badges
 - **Activity**: Tabbed interface (Reviews / Lists) with user's reviews as ReviewCards
 
-### 10.7 Static Pages
+### 10.7 Library Page
+**File**: `src/app/library/page.tsx` (Client Component)
+
+- Auth-gated personal library/backlog
+- Tabs for status filters (`all`, `playing`, `completed`, `wishlist`, `paused`, `dropped`)
+- Uses `/api/library` and `/api/library/stats` via React Query
+
+### 10.8 Compare Page
+**File**: `src/app/compare/page.tsx` (Client Component)
+
+- Two search inputs backed by `/api/search` for autocomplete
+- Fetches comparison payload from `/api/compare?g1=&g2=`
+- Renders side-by-side score, verdict, and key attributes (players, price, HLTB if available)
+
+### 10.9 Release Calendar Page
+**File**: `src/app/calendar/page.tsx` (Client Component)
+
+- Month picker (rolling window)
+- Groups games by release date
+- Data source: `/api/calendar?month=YYYY-MM`
+
+### 10.10 Developer Hub Page
+**File**: `src/app/developers/[slug]/page.tsx` (Client Component)
+
+- Developer overview with average score and all matching games
+- Data source: `/api/developers/[slug]`
+
+### 10.11 Static Pages
 
 #### About (`src/app/about/page.tsx`)
 - Mission statement, features list, data attribution table (RAWG, Steam, IGDB, CheapShark, Wikipedia with descriptions), tech stack list, "built by verdictgamer" credit
@@ -945,6 +1336,31 @@ The most feature-rich page in the application:
 
 #### Terms (`src/app/terms/page.tsx`)
 - Terms of service covering: Use of service, intellectual property, user content, data accuracy, no warranties, limitation of liability, changes, contact info
+
+### 10.12 Admin Dashboard
+
+A full admin interface for managing games, reviews, and featured content. Access restricted to users whose email matches the hardcoded admin list in `src/lib/admin.ts`.
+
+**Layout**: `src/app/admin/layout.tsx`
+- Sidebar navigation with links to Dashboard, Games, Reviews
+- Role guard — redirects non-admin users away
+
+**Dashboard**: `src/app/admin/page.tsx`
+- Stats overview (total games, reviews, users)
+- Quick actions for common admin tasks
+
+**Games List**: `src/app/admin/games/page.tsx`
+- Searchable, paginated table of all games in the database
+- Links to individual game editor pages
+
+**Game Editor**: `src/app/admin/games/[id]/page.tsx`
+- Full form for editing all game fields (metadata, scores, flags, media)
+- "Force Re-ingest" button to re-fetch data from external sources
+- Toggle featured/trending flags
+
+**Reviews**: `src/app/admin/reviews/page.tsx`
+- Review moderation: view, delete existing reviews
+- Write new editorial reviews
 
 ---
 
@@ -1004,6 +1420,22 @@ Two variants:
 #### `ReviewCard`
 - Displays: game cover (optional), game title, username, date, platform, circular score badge, review title, body (4 lines clamp), pros/cons, helpful count
 - Pixel corner decorations, hover border/shadow effects
+
+#### `ReviewForm`
+- Auth-gated "Write a review" form used on game detail pages
+- Posts to `POST /api/reviews`
+
+#### `CommentThread`
+- Expand/collapse comment thread for a review
+- Reads `GET /api/reviews/[id]/comments` and posts to `POST /api/reviews/[id]/comments`
+
+#### `LibraryStatusSelector`
+- "Add to Library" dropdown for a game
+- Uses `GET/POST/DELETE /api/library` and updates `libraryStats`
+
+#### `AuthModal`
+- Login/sign-up modal with email/password + OAuth (Google, Discord)
+- Uses `useAuth()` and Supabase Auth redirect flow (`/api/auth/callback`)
 
 #### `ScoreChips`
 Multi-source score display with two variants:
@@ -1069,6 +1501,26 @@ Multi-source score display with two variants:
   - MIXED: yellow
   - SKIP: red
 - 3 sizes: `sm`, `md`, `lg`
+
+### 11.4 GX Corner Components
+
+#### `GXDealCard`
+**File**: `src/components/GXDealCard.tsx`
+- Displays a game deal with: cover image, discount percentage badge, store badge (color-coded), original price (strikethrough), sale price, game title, genre tags
+- Used in the "Best Deals" homepage section
+- Links to the deal URL on the respective store
+
+#### `GXNewsCard`
+**File**: `src/components/GXNewsCard.tsx`
+- News article card with: article image, title, publisher name, publisher favicon
+- Links to the original article URL
+- Used in the "Gaming News" homepage section
+
+#### `GXServiceBadge`
+**File**: `src/components/GXServiceBadge.tsx`
+- Small badge indicating PS Plus or Game Pass availability
+- Color-coded per service (PS Plus blue, Game Pass green)
+- Used in the "On PS Plus & Game Pass" homepage section
 
 ---
 
@@ -1357,6 +1809,8 @@ Full `Database` interface with typed `Tables` for all 6 tables (Row, Insert, Upd
 | Function | Purpose |
 |----------|---------|
 | `slugify` | Title → URL slug (lowercase, hyphens, strip specials, `&` → `and`) |
+| `normalizeTitle` | Strips all non-alphanumeric chars for fuzzy title comparison (used in GX→DB matching, search deduplication) |
+| `titlesMatch` | Compares two titles after normalization — returns true if they match |
 
 ### `src/lib/api/response.ts`
 | Function | Purpose |
@@ -1414,6 +1868,14 @@ All scripts are ESM (`.mjs`) files using `dotenv` for environment variable loadi
 
 ### `scripts/apply-migration-001.mjs`
 - Applies `supabase/migrations/001_multi_source.sql`
+
+### `scripts/apply-migration-003.mjs`
+- Applies `supabase/migrations/003_user_features.sql`
+- Requires `DATABASE_URL` (the script reads it from root `.env`)
+
+### `scripts/apply-migration-005.mjs`
+- Applies `supabase/migrations/005_admin_overrides.sql`
+- Adds `is_featured_manual`, `is_trending_manual`, `manual_score` columns to `games`
 
 ### `scripts/migrate-score-columns.mjs`
 - Adds per-source score columns (`steam_rating_label`, `rawg_metacritic`, `rawg_rating`, `score_source`) and re-enriches all games
@@ -1506,6 +1968,12 @@ twitter: summary_large_image card
 - Bad requests return 400 with descriptive messages
 - POST routes check for required fields before processing
 
+### Admin Access Control
+- Admin routes (`/api/admin/*`) are protected by `requireAdmin()` from `src/lib/admin.ts`
+- Access is controlled by a **hardcoded email list** in `src/lib/admin.ts` — only users whose Supabase Auth email matches a listed admin email can access admin endpoints
+- Non-admin users receive `403 Forbidden`; unauthenticated users receive `401 Not authenticated`
+- The admin dashboard UI (`/admin/*`) also enforces a client-side role guard in `src/app/admin/layout.tsx`
+
 ### Environment Checks
 - All API routes check for Supabase configuration before attempting database operations
 - Missing config returns empty data (graceful degradation), not crashes
@@ -1569,10 +2037,26 @@ Auto-generated based on score + primary genre:
    - Want-to-play: 30%
    - Currently playing: 30%
    - Steam 24hr peak players: 15%
-2. **RAWG trending** (last 90 days, ordered by recently added)
-3. **Recency fill** — games from last 4 years weighted by: `score × 0.25 + recencyBonus` where recency bonus is 40 (< 6 months), 30 (< 1 year), 20 (< 2 years), or 10
+2. **GX Top Liked** signal (with RAWG fallback if GX API is down)
+3. **RAWG trending** (last 90 days, ordered by recently added)
+4. **FreshnessScore fill** — games from last 4 years ranked by composite: `recency (30%) + rating (30%) + popularity (20%) + manualBoost (20%)`
+   - Recency: 100 (< 30d), 80 (< 90d), 60 (< 180d), 40 (< 1y), 20 (< 2y), 10 (older)
+   - Rating: direct score (0-100)
+   - Popularity: `min(100, current_players / 1000)`
+   - ManualBoost: 100 if `is_trending_manual` or `is_featured_manual` is true
+5. **Manual override preservation**: Games pinned by admin (`is_trending_manual`, `is_featured_manual`) are never reset
 
 Featured = top 5 trending by score.
+
+### Trending Reason Badges
+Each game gets a `trendingReason` string computed from its data:
+- "Editor's Pick" — `is_trending_manual` or `is_featured_manual` set by admin
+- "Popular Now" — `current_players > 10000`
+- "New Release" — released within last 30 days
+- "Coming Soon" — release date is in the future
+- "On Sale" — has an active deal URL
+- "Highly Rated" — score >= 90
+- "Trending" — has `trending` flag but no other qualifier
 
 ---
 
@@ -1585,13 +2069,16 @@ Featured = top 5 trending by score.
 | `tsconfig.json` | 36 | Config | TypeScript strict mode, paths |
 | `eslint.config.mjs` | 19 | Config | ESLint 9 flat config |
 | `postcss.config.mjs` | 8 | Config | Tailwind CSS v4 plugin |
-| `vercel.json` | 3 | Config | Framework hint |
+| `vercel.json` | 17 | Config | Framework hint + Vercel Cron schedules |
 | `Procfile` | 1 | Config | Heroku web process |
 | `supabase/schema.sql` | ~210 | SQL | Full database schema |
 | `supabase/migrations/001_multi_source.sql` | ~48 | SQL | Multi-source columns |
 | `supabase/migrations/002_security_lint_fixes.sql` | ~72 | SQL | Security policy fixes |
+| `supabase/migrations/003_user_features.sql` | ~220 | SQL | Auth + library/follows/comments/votes + RLS |
+| `supabase/migrations/004_admin_role.sql` | 9 | SQL | Admin role column + CHECK constraint |
+| `supabase/migrations/005_admin_overrides.sql` | 10 | SQL | Admin override columns (featured/trending/score) |
 | `src/app/layout.tsx` | 72 | Layout | Root layout with fonts, nav, analytics |
-| `src/app/page.tsx` | ~220 | Page | Homepage with 5 sections |
+| `src/app/page.tsx` | ~740 | Page | Homepage with 11 sections (incl. 5 GX-powered) |
 | `src/app/providers.tsx` | 26 | Provider | QueryClient + ThemeProvider |
 | `src/app/error.tsx` | 27 | Page | Global error boundary |
 | `src/app/loading.tsx` | 22 | Page | Root loading skeleton |
@@ -1606,9 +2093,18 @@ Featured = top 5 trending by score.
 | `src/app/lists/page.tsx` | ~80 | Page | Curated lists index |
 | `src/app/lists/[slug]/page.tsx` | ~80 | Page | List detail |
 | `src/app/profile/[username]/page.tsx` | ~150 | Page | User profile |
+| `src/app/library/page.tsx` | ~200 | Page | Authenticated user library |
+| `src/app/compare/page.tsx` | ~300 | Page | Game comparison (side-by-side) |
+| `src/app/calendar/page.tsx` | ~170 | Page | Release calendar |
+| `src/app/developers/[slug]/page.tsx` | ~115 | Page | Developer hub |
 | `src/app/about/page.tsx` | ~120 | Page | About page |
 | `src/app/privacy/page.tsx` | ~100 | Page | Privacy policy |
 | `src/app/terms/page.tsx` | ~100 | Page | Terms of service |
+| `src/app/admin/layout.tsx` | — | Layout | Admin sidebar nav + role guard |
+| `src/app/admin/page.tsx` | — | Page | Admin dashboard overview |
+| `src/app/admin/games/page.tsx` | — | Page | Admin game list (search + paginate) |
+| `src/app/admin/games/[id]/page.tsx` | — | Page | Admin game editor form |
+| `src/app/admin/reviews/page.tsx` | — | Page | Admin review moderation |
 | `src/app/api/games/trending/route.ts` | ~60 | API | Trending games endpoint |
 | `src/app/api/games/new-releases/route.ts` | ~70 | API | New releases endpoint |
 | `src/app/api/games/top-rated/route.ts` | ~45 | API | Top rated endpoint |
@@ -1617,17 +2113,46 @@ Featured = top 5 trending by score.
 | `src/app/api/games/[slug]/deals/route.ts` | ~80 | API | Game deals endpoint |
 | `src/app/api/games/[slug]/news/route.ts` | ~65 | API | Game news endpoint |
 | `src/app/api/games/[slug]/achievements/route.ts` | ~65 | API | Game achievements endpoint |
+| `src/app/api/games/stats/route.ts` | ~30 | API | Site-wide stats endpoint |
 | `src/app/api/search/route.ts` | ~130 | API | Search with on-demand ingest |
-| `src/app/api/reviews/route.ts` | ~80 | API | Global reviews feed |
+| `src/app/api/recommendations/route.ts` | ~110 | API | Personalized recommendations |
+| `src/app/api/reviews/route.ts` | ~130 | API | Global reviews feed + submit review |
+| `src/app/api/reviews/[id]/vote/route.ts` | ~45 | API | Vote on a review |
+| `src/app/api/reviews/[id]/comments/route.ts` | ~100 | API | Review comments (threaded) |
 | `src/app/api/lists/route.ts` | ~70 | API | All curated lists |
 | `src/app/api/lists/[slug]/route.ts` | ~65 | API | Single list |
+| `src/app/api/auth/me/route.ts` | ~15 | API | Current authenticated user |
+| `src/app/api/auth/callback/route.ts` | ~50 | API | Supabase OAuth callback |
+| `src/app/api/library/route.ts` | ~120 | API | User library (CRUD) |
+| `src/app/api/library/stats/route.ts` | ~60 | API | Library stats |
+| `src/app/api/follow/route.ts` | ~50 | API | Follow/unfollow user |
+| `src/app/api/calendar/route.ts` | ~60 | API | Release calendar |
+| `src/app/api/compare/route.ts` | ~50 | API | Compare two games |
+| `src/app/api/developers/[slug]/route.ts` | ~60 | API | Developer hub API |
 | `src/app/api/profile/[username]/route.ts` | ~60 | API | User profile |
 | `src/app/api/ingest/game/route.ts` | ~75 | API | Single game ingestion |
 | `src/app/api/ingest/batch/route.ts` | ~75 | API | Batch game ingestion |
 | `src/app/api/cron/discover/route.ts` | ~150 | API | Auto-discover games |
-| `src/app/api/cron/refresh-trending/route.ts` | ~213 | API | Refresh trending/featured |
+| `src/app/api/cron/refresh-trending/route.ts` | ~213 | API | Refresh trending/featured (+ GX signal) |
+| `src/app/api/gx/highlights/route.ts` | — | API | GX hero highlights proxy |
+| `src/app/api/gx/calendar/route.ts` | — | API | GX release calendar proxy |
+| `src/app/api/gx/free-to-play/route.ts` | — | API | GX free-to-play proxy |
+| `src/app/api/gx/top-games/route.ts` | — | API | GX PS Plus/Game Pass proxy |
+| `src/app/api/gx/deals/route.ts` | — | API | GX super deals proxy |
+| `src/app/api/gx/top-liked/route.ts` | — | API | GX most liked proxy |
+| `src/app/api/gx/news/popular/route.ts` | — | API | GX trending news proxy |
+| `src/app/api/gx/news/feed/route.ts` | — | API | GX full news feed proxy |
+| `src/app/api/admin/stats/route.ts` | — | API | Admin dashboard stats |
+| `src/app/api/admin/games/route.ts` | — | API | Admin game list |
+| `src/app/api/admin/games/[id]/route.ts` | — | API | Admin game view/edit |
+| `src/app/api/admin/games/[id]/ingest/route.ts` | — | API | Admin force re-ingest |
+| `src/app/api/admin/reviews/route.ts` | — | API | Admin review CRUD |
+| `src/app/api/admin/featured/route.ts` | — | API | Admin toggle featured/trending |
 | `src/components/NavbarTop.tsx` | ~175 | Component | Top navigation |
 | `src/components/BottomNav.tsx` | ~100 | Component | Mobile bottom nav |
+| `src/components/GXDealCard.tsx` | 89 | Component | GX deal card (discount, store, price) |
+| `src/components/GXNewsCard.tsx` | — | Component | GX news article card |
+| `src/components/GXServiceBadge.tsx` | — | Component | PS Plus / Game Pass badge |
 | `src/components/GameCard.tsx` | ~220 | Component | Game card (2 variants) |
 | `src/components/GameGrid.tsx` | ~60 | Component | Animated game grid |
 | `src/components/HeroCarousel.tsx` | ~280 | Component | Auto-advancing hero |
@@ -1649,6 +2174,8 @@ Featured = top 5 trending by score.
 | `src/components/ui/Tabs.tsx` | ~60 | UI | Tab navigation |
 | `src/components/ui/VerdictBadge.tsx` | ~35 | UI | Verdict label badge |
 | `src/hooks/useTheme.tsx` | ~55 | Hook | Theme context + toggle |
+| `src/hooks/useAuth.tsx` | — | Hook | Auth context/provider (Supabase Auth) |
+| `src/lib/admin.ts` | 36 | Auth | Admin access control (email list + guard) |
 | `src/lib/api.ts` | ~260 | Client | Frontend API wrapper |
 | `src/lib/types.ts` | ~160 | Types | All frontend interfaces |
 | `src/lib/utils.ts` | ~70 | Utility | UI helpers |
@@ -1659,13 +2186,16 @@ Featured = top 5 trending by score.
 | `src/lib/external/igdb.ts` | ~460 | External | IGDB/Twitch API client |
 | `src/lib/external/cheapshark.ts` | ~275 | External | CheapShark API client |
 | `src/lib/external/wikipedia.ts` | ~120 | External | Wikipedia API client |
+| `src/lib/external/gxcorner.ts` | 286 | External | GX Corner API client (8 feeds) |
+| `src/lib/external/howlongtobeat.ts` | — | External | HowLongToBeat API client |
 | `src/lib/services/ingest.ts` | ~575 | Service | Multi-source ingestion pipeline |
+| `src/lib/supabase/auth.ts` | — | Auth | Server-side auth helpers (getCurrentUser) |
 | `src/lib/supabase/client.ts` | ~30 | DB | Browser Supabase client |
 | `src/lib/supabase/server.ts` | ~33 | DB | Server Supabase client |
 | `src/lib/supabase/index.ts` | ~8 | DB | Barrel export |
 | `src/lib/supabase/types.ts` | ~180 | DB | Database type definitions |
 | `src/lib/utils/score.ts` | ~18 | Utility | Server-safe score mapping |
-| `src/lib/utils/slugify.ts` | ~18 | Utility | URL slug generator |
+| `src/lib/utils/slugify.ts` | ~30 | Utility | URL slug + title normalization |
 | `scripts/ingest-full-library.mjs` | ~300 | Script | Bulk game ingestion |
 | `scripts/seed-flags.mjs` | ~40 | Script | Set trending/featured flags |
 | `scripts/refresh-games.mjs` | ~30 | Script | Re-ingest specific games |
@@ -1674,6 +2204,8 @@ Featured = top 5 trending by score.
 | `scripts/heroku-refresh-trending.mjs` | ~20 | Script | Heroku cron: trending |
 | `scripts/apply-schema.mjs` | ~20 | Script | Apply SQL schema |
 | `scripts/apply-migration-001.mjs` | ~20 | Script | Apply migration 001 |
+| `scripts/apply-migration-003.mjs` | ~80 | Script | Apply migration 003 (user features) |
+| `scripts/apply-migration-005.mjs` | ~60 | Script | Apply migration 005 (admin overrides) |
 | `scripts/migrate-score-columns.mjs` | ~40 | Script | Add score columns |
 | `scripts/migrate-players-updated-at.mjs` | ~20 | Script | Add players_updated_at |
 

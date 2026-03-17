@@ -478,3 +478,40 @@ export interface SiteStats {
 export async function getSiteStats(): Promise<SiteStats> {
   return (await apiFetch<SiteStats>("/api/games/stats")) ?? { totalGames: 0, totalReviews: 0, totalUsers: 0, enrichmentSources: 5 };
 }
+
+/* ═══════════════════════════════════════════════════
+   GX CORNER — Live feeds (no DB, refreshed every 5 min)
+   ═══════════════════════════════════════════════════ */
+
+import type {
+  GXDeal,
+  GXNewsItem,
+  GXTopGame,
+  GXFreeGame,
+  GXMostLiked,
+  GXCalendarGame,
+} from "./types";
+
+export async function getGXDeals(): Promise<GXDeal[]> {
+  return (await apiFetch<GXDeal[]>("/api/gx/deals")) ?? [];
+}
+
+export async function getGXPopularNews(): Promise<GXNewsItem[]> {
+  return (await apiFetch<GXNewsItem[]>("/api/gx/news/popular")) ?? [];
+}
+
+export async function getGXTopGames(): Promise<GXTopGame[]> {
+  return (await apiFetch<GXTopGame[]>("/api/gx/top-games")) ?? [];
+}
+
+export async function getGXFreeToPlay(): Promise<GXFreeGame[]> {
+  return (await apiFetch<GXFreeGame[]>("/api/gx/free-to-play")) ?? [];
+}
+
+export async function getGXTopLiked(): Promise<GXMostLiked[]> {
+  return (await apiFetch<GXMostLiked[]>("/api/gx/top-liked")) ?? [];
+}
+
+export async function getGXCalendar(): Promise<GXCalendarGame[]> {
+  return (await apiFetch<GXCalendarGame[]>("/api/gx/calendar")) ?? [];
+}

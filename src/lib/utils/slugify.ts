@@ -10,10 +10,20 @@ export function slugify(text: string): string {
     .toString()
     .toLowerCase()
     .trim()
-    .replace(/\s+/g, "-")          // Replace spaces with hyphens
-    .replace(/&/g, "-and-")        // Replace & with 'and'
-    .replace(/[^\w-]+/g, "")       // Remove all non-word chars (except hyphens)
-    .replace(/--+/g, "-")          // Replace multiple hyphens with single
-    .replace(/^-+/, "")            // Trim leading hyphens
-    .replace(/-+$/, "");           // Trim trailing hyphens
+    .replace(/\s+/g, "-")
+    .replace(/&/g, "-and-")
+    .replace(/[^\w-]+/g, "")
+    .replace(/--+/g, "-")
+    .replace(/^-+/, "")
+    .replace(/-+$/, "");
+}
+
+/** Strips all non-alphanumeric chars for fuzzy title comparison. */
+export function normalizeTitle(title: string): string {
+  return title.toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+/** Checks if two titles match after normalization. */
+export function titlesMatch(a: string, b: string): boolean {
+  return normalizeTitle(a) === normalizeTitle(b);
 }

@@ -56,6 +56,7 @@ export async function getCurrentUser() {
       username: profile.username,
       displayName: profile.display_name,
       avatar: profile.avatar_url,
+      role: (profile as ProfileRow & { role?: string }).role === "admin" ? "admin" : "user",
     };
   } catch {
     return null;

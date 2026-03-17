@@ -3,6 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { motion } from "framer-motion";
 import {
   getFeaturedGames,
@@ -13,6 +14,11 @@ import {
   getRecommendations,
   getUpcomingGames,
   getTopByPlatform,
+  getGXDeals,
+  getGXPopularNews,
+  getGXTopGames,
+  getGXFreeToPlay,
+  getGXTopLiked,
 } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
 import type { Platform } from "@/lib/types";
@@ -22,6 +28,9 @@ import GameCard from "@/components/GameCard";
 import GameGrid from "@/components/GameGrid";
 import HorizontalScroll from "@/components/HorizontalScroll";
 import SectionHeader from "@/components/SectionHeader";
+import GXDealCard from "@/components/GXDealCard";
+import GXNewsCard from "@/components/GXNewsCard";
+import GXServiceBadge from "@/components/GXServiceBadge";
 import {
   HeroSkeleton,
   GameGridSkeleton,
@@ -39,6 +48,7 @@ const PLATFORM_TABS: { label: string; value: Platform }[] = [
 export default function HomePage() {
   const { user } = useAuth();
   const [selectedPlatform, setSelectedPlatform] = useState<Platform | "All">("PC");
+  const [serviceFilter, setServiceFilter] = useState<string>("all");
 
   const featured = useQuery({
     queryKey: ["featured"],
@@ -73,6 +83,32 @@ export default function HomePage() {
   const personalized = useQuery({
     queryKey: ["personalized", !!user],
     queryFn: () => (user ? getRecommendations(12) : getPersonalizedGames(12)),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const gxTopLiked = useQuery({
+    queryKey: ["gx-top-liked"],
+    queryFn: () => getGXTopLiked(),
+    staleTime: 5 * 60 * 1000,
+  });
+  const gxDeals = useQuery({
+    queryKey: ["gx-deals"],
+    queryFn: () => getGXDeals(),
+    staleTime: 5 * 60 * 1000,
+  });
+  const gxFreeToPlay = useQuery({
+    queryKey: ["gx-free-to-play"],
+    queryFn: () => getGXFreeToPlay(),
+    staleTime: 5 * 60 * 1000,
+  });
+  const gxTopGames = useQuery({
+    queryKey: ["gx-top-games"],
+    queryFn: () => getGXTopGames(),
+    staleTime: 5 * 60 * 1000,
+  });
+  const gxNews = useQuery({
+    queryKey: ["gx-news"],
+    queryFn: () => getGXPopularNews(),
     staleTime: 5 * 60 * 1000,
   });
 
@@ -306,6 +342,300 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* ── Hot Right Now (GX Top Liked) ── */}
+      {gxTopLiked.data && gxTopLiked.data.length > 0 && (
+        <>
+          <div className="max-w-7xl mx-auto px-4">
+            <hr className="border-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+          </div>
+          <section className="relative py-12">
+            <div className="absolute inset-0 mesh-gradient opacity-40 pointer-events-none" />
+            <div className="max-w-7xl mx-auto px-4 relative">
+              <FadeInSection>
+                <SectionHeader
+                  title="Hot Right Now"
+                  icon="🔥"
+                  subtitle="Most anticipated games by community votes — live data"
+                />
+                <HorizontalScroll>
+                  {gxTopLiked.data.map((game, i) => (
+                    <motion.div
+                      key={game.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.05, duration: 0.4 }}
+                      className="shrink-0 w-44 sm:w-52"
+                    >
+                      <a
+                        href={game.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block group rounded-2xl border border-white/[0.08] bg-surface overflow-hidden card-shimmer hover:border-purple-500/20 transition-all duration-300"
+                      >
+                        <div className="relative aspect-[3/4] overflow-hidden">
+                          {game.cover && (
+                            <Image
+                              src={game.cover}
+                              alt={game.title}
+                              fill
+                              sizes="(max-width: 640px) 50vw, 20vw"
+                              className="object-cover transition-transform duration-700 group-hover:scale-110"
+                            />
+                          )}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                          <div className="absolute top-2.5 right-2.5 rounded-xl px-2 py-1 bg-accent/80 backdrop-blur-md border border-white/10 text-[10px] font-bold text-white flex items-center gap-1">
+                            <span>♥</span> {game.likes.toLocaleString()}
+                          </div>
+                        </div>
+                        <div className="p-3 space-y-1.5">
+                          <h3 className="text-sm font-semibold text-foreground leading-tight line-clamp-1 group-hover:text-accent transition-colors">
+                            {game.title}
+                          </h3>
+                          <div className="flex flex-wrap gap-1.5">
+                            {game.genres.slice(0, 2).map((g) => (
+                              <span key={g} className="text-[10px] text-tertiary font-medium">{g}</span>
+                            ))}
+                          </div>
+                          {game.releaseDate && (
+                            <p className="text-[10px] text-pixel-cyan font-medium">
+                              {new Date(game.releaseDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                            </p>
+                          )}
+                        </div>
+                      </a>
+                    </motion.div>
+                  ))}
+                </HorizontalScroll>
+              </FadeInSection>
+            </div>
+          </section>
+        </>
+      )}
+
+      {/* ── Best Deals (GX Super Deals) ── */}
+      {gxDeals.data && gxDeals.data.length > 0 && (
+        <>
+          <div className="max-w-7xl mx-auto px-4">
+            <hr className="border-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+          </div>
+          <section className="py-12">
+            <div className="max-w-7xl mx-auto px-4">
+              <FadeInSection>
+                <SectionHeader
+                  title="Best Deals"
+                  icon="💰"
+                  subtitle="Live discounts from top stores — updated every 5 minutes"
+                />
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                  {gxDeals.data.slice(0, 10).map((deal, i) => (
+                    <motion.div
+                      key={deal.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.04, duration: 0.4 }}
+                    >
+                      <GXDealCard deal={deal} />
+                    </motion.div>
+                  ))}
+                </div>
+              </FadeInSection>
+            </div>
+          </section>
+        </>
+      )}
+
+      {/* ── Free to Play (GX F2P) ── */}
+      {gxFreeToPlay.data && gxFreeToPlay.data.length > 0 && (
+        <>
+          <div className="max-w-7xl mx-auto px-4">
+            <hr className="border-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+          </div>
+          <section className="relative py-12">
+            <div className="absolute inset-0 mesh-gradient opacity-30 pointer-events-none" />
+            <div className="max-w-7xl mx-auto px-4 relative">
+              <FadeInSection>
+                <SectionHeader
+                  title="Free to Play"
+                  icon="🆓"
+                  subtitle="Jump right in — no wallet required"
+                />
+                <HorizontalScroll>
+                  {gxFreeToPlay.data.slice(0, 12).map((game, i) => (
+                    <motion.div
+                      key={game.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.05, duration: 0.4 }}
+                      className="shrink-0 w-44 sm:w-52"
+                    >
+                      <a
+                        href={game.url ?? "#"}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block group rounded-2xl border border-white/[0.08] bg-surface overflow-hidden card-shimmer hover:border-pixel-green/20 transition-all duration-300"
+                      >
+                        <div className="relative aspect-[3/4] overflow-hidden">
+                          {game.cover && (
+                            <Image
+                              src={game.cover}
+                              alt={game.title}
+                              fill
+                              sizes="(max-width: 640px) 50vw, 20vw"
+                              className="object-cover transition-transform duration-700 group-hover:scale-110"
+                            />
+                          )}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                          <div className="absolute top-2.5 left-2.5">
+                            <span className="text-[10px] font-bold text-white bg-pixel-green/80 backdrop-blur-md px-2 py-0.5 rounded-lg border border-white/10">
+                              FREE
+                            </span>
+                          </div>
+                        </div>
+                        <div className="p-3 space-y-1.5">
+                          <h3 className="text-sm font-semibold text-foreground leading-tight line-clamp-1 group-hover:text-pixel-green transition-colors">
+                            {game.title}
+                          </h3>
+                          <div className="flex flex-wrap gap-1.5">
+                            {game.genres.slice(0, 2).map((g) => (
+                              <span key={g} className="text-[10px] text-tertiary font-medium">{g}</span>
+                            ))}
+                          </div>
+                        </div>
+                      </a>
+                    </motion.div>
+                  ))}
+                </HorizontalScroll>
+              </FadeInSection>
+            </div>
+          </section>
+        </>
+      )}
+
+      {/* ── PS Plus & Game Pass (GX Top Games) ── */}
+      {gxTopGames.data && gxTopGames.data.length > 0 && (() => {
+        const SERVICE_TABS = [
+          { label: "All", value: "all" },
+          { label: "PS Plus", value: "PS PLUS" },
+          { label: "Game Pass", value: "GAMEPASS" },
+          { label: "PS+ Extra", value: "PS + EXTRA" },
+        ];
+        const filtered = serviceFilter === "all"
+          ? gxTopGames.data
+          : gxTopGames.data.filter((g) => g.serviceTag === serviceFilter);
+
+        return (
+          <>
+            <div className="max-w-7xl mx-auto px-4">
+              <hr className="border-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+            </div>
+            <section className="py-12">
+              <div className="max-w-7xl mx-auto px-4">
+                <FadeInSection>
+                  <SectionHeader
+                    title="On PS Plus & Game Pass"
+                    icon="🎮"
+                    subtitle="Games available on subscription services right now"
+                  />
+                  <div className="flex items-center gap-2 mb-6 overflow-x-auto no-scrollbar pb-1">
+                    {SERVICE_TABS.map((tab) => (
+                      <button
+                        key={tab.value}
+                        onClick={() => setServiceFilter(tab.value)}
+                        className={`px-4 py-2 rounded-xl text-sm font-medium transition-all whitespace-nowrap ${
+                          serviceFilter === tab.value
+                            ? "bg-accent text-white shadow-sm shadow-accent/20"
+                            : "bg-white/5 text-secondary hover:text-foreground hover:bg-white/10 border border-white/10"
+                        }`}
+                      >
+                        {tab.label}
+                      </button>
+                    ))}
+                  </div>
+                  <HorizontalScroll>
+                    {filtered.slice(0, 16).map((game, i) => (
+                      <motion.div
+                        key={game.id + i}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: i * 0.04, duration: 0.4 }}
+                        className="shrink-0 w-44 sm:w-52"
+                      >
+                        <a
+                          href={game.url ?? "#"}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block group rounded-2xl border border-white/[0.08] bg-surface overflow-hidden card-shimmer hover:border-purple-500/20 transition-all duration-300"
+                        >
+                          <div className="relative aspect-[3/4] overflow-hidden">
+                            {game.cover && (
+                              <Image
+                                src={game.cover}
+                                alt={game.title}
+                                fill
+                                sizes="(max-width: 640px) 50vw, 20vw"
+                                className="object-cover transition-transform duration-700 group-hover:scale-110"
+                              />
+                            )}
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                            {game.serviceTag && (
+                              <div className="absolute top-2.5 left-2.5">
+                                <GXServiceBadge name={game.serviceTag} color={game.serviceColor} />
+                              </div>
+                            )}
+                          </div>
+                          <div className="p-3 space-y-1.5">
+                            <h3 className="text-sm font-semibold text-foreground leading-tight line-clamp-1 group-hover:text-accent transition-colors">
+                              {game.title}
+                            </h3>
+                            <div className="flex flex-wrap gap-1.5">
+                              {game.genres.slice(0, 2).map((g) => (
+                                <span key={g} className="text-[10px] text-tertiary font-medium">{g}</span>
+                              ))}
+                            </div>
+                          </div>
+                        </a>
+                      </motion.div>
+                    ))}
+                  </HorizontalScroll>
+                </FadeInSection>
+              </div>
+            </section>
+          </>
+        );
+      })()}
+
+      {/* ── Gaming News (GX Popular News) ── */}
+      {gxNews.data && gxNews.data.length > 0 && (
+        <>
+          <div className="max-w-7xl mx-auto px-4">
+            <hr className="border-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+          </div>
+          <section className="py-12">
+            <div className="max-w-7xl mx-auto px-4">
+              <FadeInSection>
+                <SectionHeader
+                  title="Gaming News"
+                  icon="📰"
+                  subtitle="Trending stories from top gaming outlets"
+                />
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {gxNews.data.slice(0, 6).map((article, i) => (
+                    <motion.div
+                      key={article.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.06, duration: 0.4 }}
+                    >
+                      <GXNewsCard article={article} />
+                    </motion.div>
+                  ))}
+                </div>
+              </FadeInSection>
+            </div>
+          </section>
+        </>
+      )}
+
       {/* ── Data Sources Banner ── */}
       <section className="border-t border-b border-white/[0.06] bg-surface/30">
         <div className="max-w-7xl mx-auto px-4 py-10">
@@ -316,7 +646,7 @@ export default function HomePage() {
                 <span className="text-foreground">Game Intelligence</span>
               </h2>
               <p className="text-sm text-secondary max-w-2xl mx-auto">
-                Every game is enriched with data from 5 sources — giving you the most comprehensive verdict possible.
+                Every game is enriched with data from 7 sources — giving you the most comprehensive verdict possible.
               </p>
               <div className="flex items-center justify-center gap-4 sm:gap-8 flex-wrap pt-4">
                 {[
@@ -325,6 +655,8 @@ export default function HomePage() {
                   { name: "IGDB", desc: "Ratings & Trailers", color: "text-accent" },
                   { name: "CheapShark", desc: "Deals & Prices", color: "text-pixel-green" },
                   { name: "Wikipedia", desc: "Descriptions", color: "text-pixel-orange" },
+                  { name: "HLTB", desc: "Playtime Data", color: "text-pixel-cyan" },
+                  { name: "GX Corner", desc: "Live Trends & News", color: "text-accent" },
                 ].map((src) => (
                   <div key={src.name} className="text-center">
                     <p className={`text-sm sm:text-base font-bold ${src.color}`}>{src.name}</p>
@@ -392,7 +724,7 @@ export default function HomePage() {
 
             <div className="mt-8 pt-6 border-t border-white/[0.06] flex flex-col sm:flex-row items-center justify-between gap-4">
               <p className="text-[11px] text-tertiary">
-                © {new Date().getFullYear()} verdict.games — Data from RAWG, Steam, IGDB, CheapShark & Wikipedia.
+                © {new Date().getFullYear()} verdict.games — Data from RAWG, Steam, IGDB, CheapShark, Wikipedia, HLTB & GX Corner.
               </p>
               <p className="text-[10px] text-tertiary">
                 All game titles, trademarks, and copyrights belong to their respective owners.

@@ -8,6 +8,21 @@
 import type { Game, Review, ReviewComment, User, GameList, UserGame, Platform, MonetizationType, VerdictLabel, LibraryStatus } from "../types";
 import type { GameRow, ReviewRow, ProfileRow, ListRow, UserGameRow, ReviewCommentRow } from "../supabase/types";
 
+function computeTrendingReason(row: GameRow): string | undefined {
+  const r = row as GameRow & { is_trending_manual?: boolean; is_featured_manual?: boolean };
+  if (r.is_trending_manual || r.is_featured_manual) return "Editor's Pick";
+  if (row.current_players && row.current_players > 10000) return "Popular Now";
+  if (row.release_date) {
+    const age = Date.now() - new Date(row.release_date).getTime();
+    if (age < 30 * 86400000 && age >= 0) return "New Release";
+    if (age < 0) return "Coming Soon";
+  }
+  if (row.price_deal_url && row.price_lowest != null) return "On Sale";
+  if (row.score >= 90) return "Highly Rated";
+  if (row.trending) return "Trending";
+  return undefined;
+}
+
 /** Map a games row to the frontend Game interface. */
 export function mapGameRow(row: GameRow): Game {
   return {
@@ -70,6 +85,11 @@ export function mapGameRow(row: GameRow): Game {
     hltbExtras: row.hltb_extras ?? undefined,
     hltbCompletionist: row.hltb_completionist ?? undefined,
     franchise: row.franchise ?? undefined,
+
+    // Trending signals
+    isFeaturedManual: (row as GameRow & { is_featured_manual?: boolean }).is_featured_manual ?? undefined,
+    isTrendingManual: (row as GameRow & { is_trending_manual?: boolean }).is_trending_manual ?? undefined,
+    trendingReason: computeTrendingReason(row),
   };
 }
 

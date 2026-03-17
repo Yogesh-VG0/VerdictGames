@@ -111,6 +111,11 @@ export interface Game {
 
   // Franchise
   franchise?: string;
+
+  // Trending/freshness signals
+  trendingReason?: string;
+  isFeaturedManual?: boolean;
+  isTrendingManual?: boolean;
 }
 
 export interface Review {
@@ -238,4 +243,78 @@ export interface AuthUser {
   username: string;
   displayName: string;
   avatar: string;
+  role?: "user" | "admin";
+}
+
+/* ═══════════════════════════════════════════════════
+   GX CORNER — Live feed types (not stored in DB)
+   ═══════════════════════════════════════════════════ */
+
+export interface GXDeal {
+  id: string;
+  title: string;
+  cover: string | null;
+  discount: number | null;
+  price: number | null;
+  currency: string | null;
+  buyUrl: string | null;
+  storeName: string | null;
+  storeColor: string | null;
+  badge: string | null;
+  dealType: string | null;
+  genres: string[];
+}
+
+export interface GXNewsItem {
+  id: number;
+  title: string;
+  image: string;
+  url: string;
+  publisherName: string;
+  publisherFavicon: string;
+  related?: { name: string; url: string; icon: string }[];
+}
+
+export interface GXTopGame {
+  id: string;
+  title: string;
+  cover: string | null;
+  url: string | null;
+  serviceName: string | null;
+  serviceColor: string | null;
+  serviceTag: string | null;
+  genres: string[];
+  platforms: string[];
+}
+
+export interface GXFreeGame {
+  id: string;
+  title: string;
+  cover: string | null;
+  url: string | null;
+  ctaLabel: string | null;
+  genres: string[];
+}
+
+export interface GXMostLiked {
+  id: string;
+  title: string;
+  slug: string;
+  cover: string;
+  url: string;
+  releaseDate: string | null;
+  likes: number;
+  genres: string[];
+}
+
+export interface GXCalendarGame {
+  title: string;
+  slug: string | null;
+  cover: string | null;
+  releaseDate: string;
+  hotGame: boolean;
+  url: string | null;
+  ctaLabel: string | null;
+  genres: string[];
+  platforms: string[];
 }

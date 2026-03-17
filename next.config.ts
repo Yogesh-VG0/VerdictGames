@@ -12,6 +12,9 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "img.youtube.com" },
       { protocol: "https", hostname: "images.igdb.com" },
       { protocol: "https", hostname: "upload.wikimedia.org" },
+      { protocol: "https", hostname: "proxy.gxcorner.games" },
+      { protocol: "https", hostname: "assets.news.gxcorner.games" },
+      { protocol: "https", hostname: "play.gx.games" },
     ],
   },
 };

@@ -122,6 +122,50 @@ export async function GET(request: NextRequest) {
     log.push(`IGDB PopScore error: ${(err as Error).message}`);
   }
 
+  // ── 1b. GX Top Liked signal ──
+  try {
+    const { getGXTopLiked } = await import("@/lib/external/gxcorner");
+    const gxGames = await getGXTopLiked();
+
+    if (gxGames.length > 0) {
+      log.push(`GX Top Liked returned ${gxGames.length} games`);
+
+      for (const gxGame of gxGames) {
+        if (trendingIds.length >= 20) break;
+
+        const gxSlug = slugify(gxGame.title);
+        const { data: gxRows } = await supabase
+          .from("games")
+          .select("id, title")
+          .or(`slug.eq.${gxGame.slug},slug.eq.${gxSlug}`)
+          .limit(1);
+
+        const gxMatch = (gxRows as { id: string; title: string }[] | null)?.[0];
+        if (gxMatch && !trendingIds.includes(gxMatch.id)) {
+          trendingIds.push(gxMatch.id);
+          log.push(`  ✓ [GX] ${gxMatch.title} (likes: ${gxGame.likesCount})`);
+          continue;
+        }
+
+        if (!gxMatch) {
+          const { data: nameRows } = await supabase
+            .from("games")
+            .select("id, title")
+            .ilike("title", gxGame.title)
+            .limit(1);
+
+          const nameMatch = (nameRows as { id: string; title: string }[] | null)?.[0];
+          if (nameMatch && !trendingIds.includes(nameMatch.id)) {
+            trendingIds.push(nameMatch.id);
+            log.push(`  ✓ [GX name] ${nameMatch.title}`);
+          }
+        }
+      }
+    }
+  } catch (err) {
+    log.push(`GX Top Liked error: ${(err as Error).message}`);
+  }
+
   // ── 2. RAWG fallback for more matches ──
   if (trendingIds.length < 20 && process.env.RAWG_API_KEY) {
     const rawgGames = await fetchRawgTrending(process.env.RAWG_API_KEY);
@@ -145,42 +189,52 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  // ── 3. Fill remaining with recency-weighted high-scored games ──
+  // ── 3. Fill remaining using freshnessScore (recency * 0.2 + rating * 0.2 + popularity * 0.2 + gxBoost * 0.4) ──
   if (trendingIds.length < 20) {
     const needed = 20 - trendingIds.length;
-    log.push(`Filling ${needed} remaining slots with recency-weighted games`);
+    log.push(`Filling ${needed} remaining slots with freshnessScore`);
 
-    // Get recent well-scored games not already selected
+    const excludeClause = trendingIds.length > 0
+      ? `(${trendingIds.join(",")})`
+      : "(00000000-0000-0000-0000-000000000000)";
+
     const { data: fillGames } = await supabase
       .from("games")
-      .select("id, title, score, release_date")
-      .not("id", "in", `(${trendingIds.join(",")})`)
+      .select("id, title, score, release_date, current_players, is_featured_manual, is_trending_manual")
+      .not("id", "in", excludeClause)
       .not("release_date", "is", null)
       .gte("release_date", new Date(Date.now() - 4 * 365 * 86400000).toISOString().slice(0, 10))
       .order("score", { ascending: false })
-      .limit(needed * 2);
+      .limit(needed * 3) as unknown as { data: { id: string; title: string; score: number; release_date: string; current_players: number | null; is_featured_manual?: boolean; is_trending_manual?: boolean }[] | null };
 
     if (fillGames) {
-      // Sort by combined recency + score
-      const scored = (fillGames as { id: string; title: string; score: number; release_date: string }[]).map((g) => {
+      type FillGame = { id: string; title: string; score: number; release_date: string; current_players: number | null; is_featured_manual?: boolean; is_trending_manual?: boolean };
+      const scored = (fillGames as FillGame[]).map((g) => {
         const ageMs = Date.now() - new Date(g.release_date).getTime();
         const ageDays = ageMs / 86400000;
-        const recencyBonus = ageDays < 180 ? 40 : ageDays < 365 ? 30 : ageDays < 730 ? 20 : 10;
-        return { ...g, combined: g.score * 0.25 + recencyBonus };
+        const recencyScore = ageDays < 30 ? 100 : ageDays < 90 ? 80 : ageDays < 180 ? 60 : ageDays < 365 ? 40 : ageDays < 730 ? 20 : 10;
+        const ratingScore = g.score;
+        const popularityScore = g.current_players ? Math.min(100, g.current_players / 1000) : 0;
+        const manualBoost = (g.is_trending_manual || g.is_featured_manual) ? 100 : 0;
+
+        const freshness = (recencyScore * 0.3) + (ratingScore * 0.3) + (popularityScore * 0.2) + (manualBoost * 0.2);
+        return { ...g, freshness };
       });
-      scored.sort((a, b) => b.combined - a.combined);
+      scored.sort((a, b) => b.freshness - a.freshness);
 
       for (const g of scored.slice(0, needed)) {
         trendingIds.push(g.id);
-        log.push(`  + [fill] ${g.title} (score: ${g.score})`);
+        log.push(`  + [freshness] ${g.title} (score: ${g.score}, freshness: ${g.freshness.toFixed(1)})`);
       }
     }
   }
 
-  // ── 4. Reset all flags, then apply ──
+  // ── 4. Reset algorithmic flags (preserving manual overrides) ──
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const gamesTable = supabase.from("games") as any;
-  await gamesTable.update({ trending: false, featured: false }).neq("id", "00000000-0000-0000-0000-000000000000");
+  await gamesTable.update({ trending: false, featured: false })
+    .eq("is_trending_manual", false)
+    .eq("is_featured_manual", false);
 
   if (trendingIds.length > 0) {
     // Mark trending
