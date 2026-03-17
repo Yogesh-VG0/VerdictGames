@@ -1,9 +1,11 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import type { GXDeal } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { slugify } from "@/lib/utils/slugify";
 
 interface GXDealCardProps {
   deal: GXDeal;
@@ -11,18 +13,17 @@ interface GXDealCardProps {
 
 export default function GXDealCard({ deal }: GXDealCardProps) {
   const hasDiscount = deal.discount && deal.discount > 0;
+  const gameHref = `/game/${slugify(deal.title)}`;
 
   return (
-    <motion.a
-      href={deal.buyUrl ?? "#"}
-      target="_blank"
-      rel="noopener noreferrer"
+    <motion.div
       whileHover={{ y: -4 }}
       whileTap={{ scale: 0.98 }}
       transition={{ duration: 0.3, ease: "easeOut" }}
       className="block group rounded-2xl border border-white/[0.08] bg-surface overflow-hidden card-shimmer hover:border-purple-500/20 hover:shadow-[0_0_30px_-8px_rgba(168,85,247,0.2)] transition-all duration-500"
     >
-      <div className="relative aspect-[3/4] overflow-hidden">
+      <Link href={gameHref} className="block">
+        <div className="relative aspect-[3/4] overflow-hidden">
         {deal.cover ? (
           <Image
             src={deal.cover}
@@ -51,12 +52,29 @@ export default function GXDealCard({ deal }: GXDealCardProps) {
             </span>
           </div>
         )}
-      </div>
+        </div>
+      </Link>
 
       <div className="p-3.5 space-y-2">
-        <h3 className="text-sm font-semibold text-foreground leading-tight line-clamp-1 group-hover:text-accent transition-colors">
-          {deal.title}
-        </h3>
+        <div className="flex items-start justify-between gap-2">
+          <Link
+            href={gameHref}
+            className="text-sm font-semibold text-foreground leading-tight line-clamp-1 group-hover:text-accent transition-colors"
+          >
+            {deal.title}
+          </Link>
+          {deal.buyUrl && (
+            <a
+              href={deal.buyUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="shrink-0 text-[10px] font-bold px-2 py-1 rounded-lg bg-white/5 border border-white/10 text-secondary hover:text-foreground hover:bg-white/10 transition-colors"
+              title="Open store deal"
+            >
+              Store →
+            </a>
+          )}
+        </div>
 
         <div className="flex items-center justify-between">
           {deal.storeName && (
@@ -83,6 +101,6 @@ export default function GXDealCard({ deal }: GXDealCardProps) {
           ))}
         </div>
       </div>
-    </motion.a>
+    </motion.div>
   );
 }

@@ -22,6 +22,7 @@ import {
 } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
 import type { Platform } from "@/lib/types";
+import { slugify } from "@/lib/utils/slugify";
 import HeroCarousel from "@/components/HeroCarousel";
 import FadeInSection from "@/components/FadeInSection";
 import GameCard from "@/components/GameCard";
@@ -366,10 +367,8 @@ export default function HomePage() {
                       transition={{ delay: i * 0.05, duration: 0.4 }}
                       className="shrink-0 w-44 sm:w-52"
                     >
-                      <a
-                        href={game.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                      <Link
+                        href={`/game/${game.slug || slugify(game.title)}`}
                         className="block group rounded-2xl border border-white/[0.08] bg-surface overflow-hidden card-shimmer hover:border-purple-500/20 transition-all duration-300"
                       >
                         <div className="relative aspect-[3/4] overflow-hidden">
@@ -402,7 +401,7 @@ export default function HomePage() {
                             </p>
                           )}
                         </div>
-                      </a>
+                      </Link>
                     </motion.div>
                   ))}
                 </HorizontalScroll>
@@ -468,10 +467,8 @@ export default function HomePage() {
                       transition={{ delay: i * 0.05, duration: 0.4 }}
                       className="shrink-0 w-44 sm:w-52"
                     >
-                      <a
-                        href={game.url ?? "#"}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                      <Link
+                        href={`/game/${slugify(game.title)}`}
                         className="block group rounded-2xl border border-white/[0.08] bg-surface overflow-hidden card-shimmer hover:border-pixel-green/20 transition-all duration-300"
                       >
                         <div className="relative aspect-[3/4] overflow-hidden">
@@ -501,7 +498,7 @@ export default function HomePage() {
                             ))}
                           </div>
                         </div>
-                      </a>
+                      </Link>
                     </motion.div>
                   ))}
                 </HorizontalScroll>
@@ -560,10 +557,8 @@ export default function HomePage() {
                         transition={{ delay: i * 0.04, duration: 0.4 }}
                         className="shrink-0 w-44 sm:w-52"
                       >
-                        <a
-                          href={game.url ?? "#"}
-                          target="_blank"
-                          rel="noopener noreferrer"
+                        <Link
+                          href={`/game/${slugify(game.title)}`}
                           className="block group rounded-2xl border border-white/[0.08] bg-surface overflow-hidden card-shimmer hover:border-purple-500/20 transition-all duration-300"
                         >
                           <div className="relative aspect-[3/4] overflow-hidden">
@@ -593,7 +588,7 @@ export default function HomePage() {
                               ))}
                             </div>
                           </div>
-                        </a>
+                        </Link>
                       </motion.div>
                     ))}
                   </HorizontalScroll>
