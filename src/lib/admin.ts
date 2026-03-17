@@ -8,7 +8,7 @@ import { getCurrentUser } from "./supabase/auth";
 import { jsonError } from "./api/response";
 
 const ADMIN_EMAILS = [
-  "yogesh@verdict.games",
+  "yogeshvadivel456@gmail.com",
   "atharva@verdict.games",
 ];
 
