@@ -3,11 +3,14 @@
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
-import { getCalendarGames } from "@/lib/api";
+import { getCalendarGames, getGXCalendar } from "@/lib/api";
 import GameCard from "@/components/GameCard";
 import FadeInSection from "@/components/FadeInSection";
 import SectionHeader from "@/components/SectionHeader";
 import { Skeleton } from "@/components/ui/Skeleton";
+import type { Game, Platform } from "@/lib/types";
+import type { GXCalendarGame } from "@/lib/types";
+import { slugify } from "@/lib/utils/slugify";
 
 const MONTHS = [
   "January", "February", "March", "April", "May", "June",
@@ -18,9 +21,69 @@ function monthKey(date: Date): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
 }
 
+const PLATFORM_TABS: { label: string; value: Platform | "All" }[] = [
+  { label: "All", value: "All" },
+  { label: "PC", value: "PC" },
+  { label: "PS5", value: "PlayStation 5" },
+  { label: "Xbox", value: "Xbox Series X|S" },
+  { label: "Switch", value: "Nintendo Switch" },
+  { label: "Android", value: "Android" },
+];
+
+function mapGXPlatformName(p: string): Platform | null {
+  const s = p.toLowerCase();
+  if (s.includes("windows") || s === "pc") return "PC";
+  if (s.includes("playstation") || s === "ps5") return "PlayStation 5";
+  if (s.includes("xbox")) return "Xbox Series X|S";
+  if (s.includes("switch")) return "Nintendo Switch";
+  if (s.includes("android")) return "Android";
+  if (s.includes("ios")) return "iOS";
+  if (s.includes("mac")) return "macOS";
+  if (s.includes("linux")) return "Linux";
+  return null;
+}
+
+function gxCalendarToGame(gx: GXCalendarGame): Game {
+  const platforms = (gx.platforms ?? [])
+    .map(mapGXPlatformName)
+    .filter(Boolean) as Platform[];
+
+  const slug = gx.slug ?? slugify(gx.title);
+
+  return {
+    id: `gx-cal-${slug}`,
+    slug,
+    title: gx.title,
+    subtitle: undefined,
+    coverImage: gx.cover ?? "",
+    headerImage: gx.cover ?? "",
+    screenshots: [],
+    platforms,
+    genres: gx.genres ?? [],
+    tags: [],
+    developer: "",
+    publisher: "",
+    releaseDate: gx.releaseDate ?? "",
+    description: "",
+    score: 0,
+    verdictLabel: "SKIP",
+    verdictSummary: "",
+    pros: [],
+    cons: [],
+    monetization: "Paid",
+    performanceNotes: "",
+    monetizationNotes: "",
+    reviewCount: 0,
+    featured: false,
+    trending: false,
+    scoreSource: "gx",
+  };
+}
+
 export default function CalendarPage() {
   const now = new Date();
   const [selectedMonth, setSelectedMonth] = useState(monthKey(now));
+  const [selectedPlatform, setSelectedPlatform] = useState<Platform | "All">("All");
 
   // Build 12-month range (current month ± 5)
   const monthOptions = useMemo(() => {
@@ -37,8 +100,21 @@ export default function CalendarPage() {
   }, []);
 
   const { data: games, isLoading } = useQuery({
-    queryKey: ["calendar", selectedMonth],
-    queryFn: () => getCalendarGames(selectedMonth),
+    queryKey: ["calendar", "gx", selectedMonth, selectedPlatform],
+    queryFn: async () => {
+      // Primary: GX Calendar
+      const gx = await getGXCalendar();
+      const gxGames = (gx ?? [])
+        .filter((g) => (g.releaseDate ?? "").slice(0, 7) === selectedMonth)
+        .map(gxCalendarToGame)
+        .filter((g) => selectedPlatform === "All" ? true : g.platforms.includes(selectedPlatform));
+
+      if (gxGames.length > 0) return gxGames;
+
+      // Fallback: DB calendar (backup)
+      const db = await getCalendarGames(selectedMonth);
+      return (db ?? []).filter((g) => selectedPlatform === "All" ? true : g.platforms.includes(selectedPlatform));
+    },
     staleTime: 5 * 60 * 1000,
   });
 
@@ -80,6 +156,25 @@ export default function CalendarPage() {
               }`}
             >
               {m.label}
+            </button>
+          ))}
+        </div>
+      </FadeInSection>
+
+      {/* Platform picker */}
+      <FadeInSection>
+        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+          {PLATFORM_TABS.map((t) => (
+            <button
+              key={t.value}
+              onClick={() => setSelectedPlatform(t.value)}
+              className={`shrink-0 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                t.value === selectedPlatform
+                  ? "bg-accent text-white shadow-lg shadow-accent/20"
+                  : "bg-surface border border-white/[0.08] text-secondary hover:text-foreground hover:border-white/20"
+              }`}
+            >
+              {t.label}
             </button>
           ))}
         </div>
