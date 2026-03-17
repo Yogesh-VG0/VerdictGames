@@ -43,7 +43,8 @@ export async function getCurrentUser() {
 
     const { data: profile, error: profileErr } = await supabase
       .from("profiles")
-      .select("*")
+      // NOTE: `role` may not exist in some deployed DBs yet (would cause PostgREST 400).
+      .select("id, username, display_name, avatar_url")
       .eq("auth_id", user.id)
       .maybeSingle() as { data: ProfileRow | null; error: unknown };
 
@@ -51,7 +52,7 @@ export async function getCurrentUser() {
     if (profileErr) {
       const { data: profileById } = await supabase
         .from("profiles")
-        .select("*")
+        .select("id, username, display_name, avatar_url")
         .eq("id", user.id)
         .maybeSingle() as { data: ProfileRow | null };
       resolvedProfile = profileById;
@@ -66,7 +67,7 @@ export async function getCurrentUser() {
       username: resolvedProfile.username,
       displayName: resolvedProfile.display_name,
       avatar: resolvedProfile.avatar_url,
-      role: (resolvedProfile as ProfileRow & { role?: string }).role === "admin" ? "admin" : "user",
+      role: "user",
     };
   } catch {
     return null;

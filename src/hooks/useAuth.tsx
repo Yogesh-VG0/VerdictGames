@@ -39,9 +39,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const fetchProfile = useCallback(async (authId: string, email: string) => {
     if (!supabase) return;
     // Try `auth_id` first (newer schema). If API returns 400, fall back to `id` (older schema).
+    // NOTE: `role` may not exist in some deployed DBs yet (would cause PostgREST 400).
     const { data: profile, error: profileErr } = await supabase
       .from("profiles")
-      .select("id, username, display_name, avatar_url, role")
+      .select("id, username, display_name, avatar_url")
       .eq("auth_id", authId)
       .maybeSingle();
 
@@ -49,7 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (profileErr) {
       const { data: profileById } = await supabase
         .from("profiles")
-        .select("id, username, display_name, avatar_url, role")
+        .select("id, username, display_name, avatar_url")
         .eq("id", authId)
         .maybeSingle();
       resolvedProfile = profileById ?? null;
@@ -61,14 +62,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await fetch("/api/auth/bootstrap", { method: "POST" });
         const { data: profile2, error: profile2Err } = await supabase
           .from("profiles")
-          .select("id, username, display_name, avatar_url, role")
+          .select("id, username, display_name, avatar_url")
           .eq("auth_id", authId)
           .maybeSingle();
         let bootProfile = profile2;
         if (profile2Err) {
           const { data: profile2ById } = await supabase
             .from("profiles")
-            .select("id, username, display_name, avatar_url, role")
+            .select("id, username, display_name, avatar_url")
             .eq("id", authId)
             .maybeSingle();
           bootProfile = profile2ById ?? null;
@@ -81,7 +82,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           username: bootProfile.username,
           displayName: bootProfile.display_name,
           avatar: bootProfile.avatar_url,
-          role: (bootProfile as { role?: string }).role === "admin" ? "admin" : "user",
+          role: "user",
         });
       } catch {
         return;
@@ -96,7 +97,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       username: resolvedProfile.username,
       displayName: resolvedProfile.display_name,
       avatar: resolvedProfile.avatar_url,
-      role: (resolvedProfile as { role?: string }).role === "admin" ? "admin" : "user",
+      role: "user",
     });
   }, [supabase]);
 
