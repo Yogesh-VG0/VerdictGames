@@ -23,13 +23,32 @@ export async function GET(
     const { getServerSupabase } = await import("@/lib/supabase/server");
     const supabase = getServerSupabase();
 
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from("games")
       .select("*")
       .eq("slug", slug)
       .maybeSingle() as { data: GameRow | null; error: unknown };
 
     if (error) throw error;
+
+    // If not found, try on-demand ingestion using a humanized title from the slug.
+    if (!data) {
+      try {
+        const { ingestGame } = await import("@/lib/services/ingest");
+        const queryTitle = slug.replace(/-/g, " ");
+        const result = await ingestGame({ query: queryTitle });
+        if (result.success && result.gameId) {
+          const refetch = await supabase
+            .from("games")
+            .select("*")
+            .eq("id", result.gameId)
+            .maybeSingle() as { data: GameRow | null };
+          data = refetch.data;
+        }
+      } catch (ingestErr) {
+        console.warn(`[API] /games/${slug} on-demand ingest failed:`, ingestErr);
+      }
+    }
 
     if (!data) {
       return jsonNotFound("Game");
