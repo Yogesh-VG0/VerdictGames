@@ -1,17 +1,4 @@
 {
   "framework": "nextjs",
-  "crons": [
-    {
-      "path": "/api/cron/refresh-trending",
-      "schedule": "0 */6 * * *"
-    },
-    {
-      "path": "/api/cron/discover",
-      "schedule": "0 3 * * *"
-    },
-    {
-      "path": "/api/cron/discover?deep=true",
-      "schedule": "0 3 * * 0"
-    }
-  ]
+  "crons": []
 }
