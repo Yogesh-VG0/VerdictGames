@@ -252,7 +252,7 @@ export default function HomePage() {
                 <SectionHeaderSkeleton />
                 <GameGridSkeleton count={4} />
               </>
-            ) : topRated.data && topRated.data.length > 0 ? (
+            ) : (topRated.data && topRated.data.length > 0) || (topByPlatform.data && topByPlatform.data.length > 0) ? (
               <>
                 <SectionHeader
                   title="Top Verdict Scores"
@@ -260,51 +260,44 @@ export default function HomePage() {
                   icon="🏆"
                   subtitle="Highest-scored games from Steam, IGDB & Metacritic signals"
                 />
-                <GameGrid games={topRated.data} />
+                {/* Platform tabs */}
+                <div className="flex items-center gap-2 mb-6 overflow-x-auto no-scrollbar pb-1">
+                  {PLATFORM_TABS.map((tab) => (
+                    <button
+                      key={tab.value}
+                      onClick={() => setSelectedPlatform(tab.value)}
+                      className={`px-4 py-2 rounded-xl text-sm font-medium transition-all whitespace-nowrap ${
+                        selectedPlatform === tab.value
+                          ? "bg-accent text-white shadow-sm shadow-accent/20"
+                          : "bg-white/5 text-secondary hover:text-foreground hover:bg-white/10 border border-white/10"
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+                {selectedPlatform === "PC" &&
+                topRated.data &&
+                topRated.data.length > 0 ? (
+                  <GameGrid games={topRated.data} />
+                ) : topByPlatform.isLoading ? (
+                  <GameGridSkeleton count={4} />
+                ) : topByPlatform.data && topByPlatform.data.length > 0 ? (
+                  <GameGrid games={topByPlatform.data} />
+                ) : (
+                  <p className="text-secondary text-sm py-8 text-center">
+                    No games found for this platform yet. Try browsing{" "}
+                    <button
+                      onClick={() => setSelectedPlatform("PC")}
+                      className="text-accent hover:underline"
+                    >
+                      PC games
+                    </button>{" "}
+                    instead.
+                  </p>
+                )}
               </>
             ) : null}
-          </FadeInSection>
-        </div>
-      </section>
-
-      {/* ── Divider ── */}
-      <div className="max-w-7xl mx-auto px-4">
-        <hr className="border-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-      </div>
-
-      {/* ── Top by Platform ── */}
-      <section className="py-12">
-        <div className="max-w-7xl mx-auto px-4">
-          <FadeInSection>
-            <SectionHeader
-              title="Best Games by Platform"
-              href="/search?sort=top-rated"
-              icon="🎮"
-              subtitle="Browse top-rated games across all platforms"
-            />
-            {/* Platform tabs */}
-            <div className="flex items-center gap-2 mb-6 overflow-x-auto no-scrollbar pb-1">
-              {PLATFORM_TABS.map((tab) => (
-                <button
-                  key={tab.value}
-                  onClick={() => setSelectedPlatform(tab.value)}
-                  className={`px-4 py-2 rounded-xl text-sm font-medium transition-all whitespace-nowrap ${
-                    selectedPlatform === tab.value
-                      ? "bg-accent text-white shadow-sm shadow-accent/20"
-                      : "bg-white/5 text-secondary hover:text-foreground hover:bg-white/10 border border-white/10"
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-            {topByPlatform.isLoading ? (
-              <GameGridSkeleton count={4} />
-            ) : topByPlatform.data && topByPlatform.data.length > 0 ? (
-              <GameGrid games={topByPlatform.data} />
-            ) : (
-              <p className="text-secondary text-sm py-8 text-center">No games found for this platform yet. Try browsing <button onClick={() => setSelectedPlatform("PC")} className="text-accent hover:underline">PC games</button> instead.</p>
-            )}
           </FadeInSection>
         </div>
       </section>

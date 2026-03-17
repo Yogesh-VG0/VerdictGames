@@ -4,13 +4,13 @@ import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { getCalendarGames, getGXCalendar } from "@/lib/api";
+import { gxCalendarToGame } from "@/lib/api";
 import GameCard from "@/components/GameCard";
 import FadeInSection from "@/components/FadeInSection";
 import SectionHeader from "@/components/SectionHeader";
 import { Skeleton } from "@/components/ui/Skeleton";
 import type { Game, Platform } from "@/lib/types";
 import type { GXCalendarGame } from "@/lib/types";
-import { slugify } from "@/lib/utils/slugify";
 
 const MONTHS = [
   "January", "February", "March", "April", "May", "June",
@@ -29,56 +29,6 @@ const PLATFORM_TABS: { label: string; value: Platform | "All" }[] = [
   { label: "Switch", value: "Nintendo Switch" },
   { label: "Android", value: "Android" },
 ];
-
-function mapGXPlatformName(p: string): Platform | null {
-  const s = p.toLowerCase();
-  if (s.includes("windows") || s === "pc") return "PC";
-  if (s.includes("playstation") || s === "ps5") return "PlayStation 5";
-  if (s.includes("xbox")) return "Xbox Series X|S";
-  if (s.includes("switch")) return "Nintendo Switch";
-  if (s.includes("android")) return "Android";
-  if (s.includes("ios")) return "iOS";
-  if (s.includes("mac")) return "macOS";
-  if (s.includes("linux")) return "Linux";
-  return null;
-}
-
-function gxCalendarToGame(gx: GXCalendarGame): Game {
-  const platforms = (gx.platforms ?? [])
-    .map(mapGXPlatformName)
-    .filter(Boolean) as Platform[];
-
-  const slug = gx.slug ?? slugify(gx.title);
-
-  return {
-    id: `gx-cal-${slug}`,
-    slug,
-    title: gx.title,
-    subtitle: undefined,
-    coverImage: gx.cover ?? "",
-    headerImage: gx.cover ?? "",
-    screenshots: [],
-    platforms,
-    genres: gx.genres ?? [],
-    tags: [],
-    developer: "",
-    publisher: "",
-    releaseDate: gx.releaseDate ?? "",
-    description: "",
-    score: 0,
-    verdictLabel: "SKIP",
-    verdictSummary: "",
-    pros: [],
-    cons: [],
-    monetization: "Paid",
-    performanceNotes: "",
-    monetizationNotes: "",
-    reviewCount: 0,
-    featured: false,
-    trending: false,
-    scoreSource: "gx",
-  };
-}
 
 export default function CalendarPage() {
   const now = new Date();
@@ -99,21 +49,21 @@ export default function CalendarPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const { data: games, isLoading } = useQuery({
+  const { data: games, isLoading } = useQuery<Game[]>({
     queryKey: ["calendar", "gx", selectedMonth, selectedPlatform],
     queryFn: async () => {
       // Primary: GX Calendar
       const gx = await getGXCalendar();
       const gxGames = (gx ?? [])
-        .filter((g) => (g.releaseDate ?? "").slice(0, 7) === selectedMonth)
-        .map(gxCalendarToGame)
-        .filter((g) => selectedPlatform === "All" ? true : g.platforms.includes(selectedPlatform));
+        .filter((g: GXCalendarGame) => (g.releaseDate ?? "").slice(0, 7) === selectedMonth)
+        .map((g: GXCalendarGame) => gxCalendarToGame(g))
+        .filter((g: Game) => selectedPlatform === "All" ? true : g.platforms.includes(selectedPlatform));
 
       if (gxGames.length > 0) return gxGames;
 
       // Fallback: DB calendar (backup)
       const db = await getCalendarGames(selectedMonth);
-      return (db ?? []).filter((g) => selectedPlatform === "All" ? true : g.platforms.includes(selectedPlatform));
+      return (db ?? []).filter((g: Game) => selectedPlatform === "All" ? true : g.platforms.includes(selectedPlatform));
     },
     staleTime: 5 * 60 * 1000,
   });
@@ -121,8 +71,8 @@ export default function CalendarPage() {
   // Group games by day
   const grouped = useMemo(() => {
     if (!games) return {};
-    const map: Record<string, typeof games> = {};
-    for (const g of games) {
+    const map: Record<string, Game[]> = {};
+    for (const g of games as Game[]) {
       const day = g.releaseDate?.slice(0, 10) ?? "TBA";
       (map[day] ??= []).push(g);
     }
