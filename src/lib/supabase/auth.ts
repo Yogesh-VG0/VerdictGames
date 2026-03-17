@@ -41,22 +41,32 @@ export async function getCurrentUser() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return null;
 
-    const { data: profile } = await supabase
+    const { data: profile, error: profileErr } = await supabase
       .from("profiles")
       .select("*")
       .eq("auth_id", user.id)
-      .maybeSingle() as { data: ProfileRow | null };
+      .maybeSingle() as { data: ProfileRow | null; error: unknown };
 
-    if (!profile) return null;
+    let resolvedProfile = profile;
+    if (profileErr) {
+      const { data: profileById } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .maybeSingle() as { data: ProfileRow | null };
+      resolvedProfile = profileById;
+    }
+
+    if (!resolvedProfile) return null;
 
     return {
       id: user.id,
       email: user.email ?? "",
-      profileId: profile.id,
-      username: profile.username,
-      displayName: profile.display_name,
-      avatar: profile.avatar_url,
-      role: (profile as ProfileRow & { role?: string }).role === "admin" ? "admin" : "user",
+      profileId: resolvedProfile.id,
+      username: resolvedProfile.username,
+      displayName: resolvedProfile.display_name,
+      avatar: resolvedProfile.avatar_url,
+      role: (resolvedProfile as ProfileRow & { role?: string }).role === "admin" ? "admin" : "user",
     };
   } catch {
     return null;

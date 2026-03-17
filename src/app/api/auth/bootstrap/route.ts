@@ -22,12 +22,21 @@ export async function POST() {
 
     const service = getServerSupabase();
 
-    // Check if profile exists
-    const { data: existing } = await service
+    // Check if profile exists. Prefer auth_id, but fall back to id if auth_id isn't available.
+    const { data: existing, error: existingErr } = await service
       .from("profiles")
       .select("id")
       .eq("auth_id", user.id)
       .maybeSingle();
+
+    if (existingErr) {
+      const { data: existingById } = await service
+        .from("profiles")
+        .select("id")
+        .eq("id", user.id)
+        .maybeSingle();
+      if (existingById) return jsonOk({ created: false });
+    }
 
     if (existing) return jsonOk({ created: false });
 
@@ -41,16 +50,26 @@ export async function POST() {
     // Note: local generated Supabase types may not include `auth_id` on Insert yet.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const profilesTable = service.from("profiles") as any;
-    const { error: insertErr } = await profilesTable.insert({
-      auth_id: user.id,
+    const rowBase = {
       username: preferredUsername.toLowerCase().replace(/[^a-z0-9_]/g, "").slice(0, 24) || "user",
       display_name: preferredUsername.slice(0, 32),
       avatar_url: (user.user_metadata?.avatar_url as string | undefined) ?? "",
       bio: "",
       favorite_genres: [],
-    });
+    };
 
-    if (insertErr) return jsonError(insertErr.message, 500);
+    // Try inserting with auth_id (new schema). If it fails, fall back to id=user.id (older schema).
+    let insertErr: { message?: string } | null = null;
+    {
+      const { error } = await profilesTable.insert({ ...rowBase, auth_id: user.id });
+      insertErr = error ?? null;
+    }
+    if (insertErr) {
+      const { error } = await profilesTable.insert({ ...rowBase, id: user.id });
+      insertErr = error ?? null;
+    }
+
+    if (insertErr) return jsonError(insertErr.message ?? "Profile insert failed", 500);
     return jsonOk({ created: true });
   } catch (e) {
     return NextResponse.json({ success: false, error: (e as Error).message }, { status: 500 });

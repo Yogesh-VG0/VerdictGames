@@ -38,30 +38,50 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const fetchProfile = useCallback(async (authId: string, email: string) => {
     if (!supabase) return;
-    const { data: profile } = await supabase
+    // Try `auth_id` first (newer schema). If API returns 400, fall back to `id` (older schema).
+    const { data: profile, error: profileErr } = await supabase
       .from("profiles")
       .select("id, username, display_name, avatar_url, role")
       .eq("auth_id", authId)
       .maybeSingle();
 
-    if (!profile) {
+    let resolvedProfile = profile;
+    if (profileErr) {
+      const { data: profileById } = await supabase
+        .from("profiles")
+        .select("id, username, display_name, avatar_url, role")
+        .eq("id", authId)
+        .maybeSingle();
+      resolvedProfile = profileById ?? null;
+    }
+
+    if (!resolvedProfile) {
       // If OAuth succeeded but profile doesn't exist yet, bootstrap it server-side.
       try {
         await fetch("/api/auth/bootstrap", { method: "POST" });
-        const { data: profile2 } = await supabase
+        const { data: profile2, error: profile2Err } = await supabase
           .from("profiles")
           .select("id, username, display_name, avatar_url, role")
           .eq("auth_id", authId)
           .maybeSingle();
-        if (!profile2) return;
+        let bootProfile = profile2;
+        if (profile2Err) {
+          const { data: profile2ById } = await supabase
+            .from("profiles")
+            .select("id, username, display_name, avatar_url, role")
+            .eq("id", authId)
+            .maybeSingle();
+          bootProfile = profile2ById ?? null;
+        }
+        if (!bootProfile) return;
         setUser({
           id: authId,
           email,
-          profileId: profile2.id,
-          username: profile2.username,
-          displayName: profile2.display_name,
-          avatar: profile2.avatar_url,
-          role: (profile2 as { role?: string }).role === "admin" ? "admin" : "user",
+          profileId: bootProfile.id,
+          username: bootProfile.username,
+          displayName: bootProfile.display_name,
+          avatar: bootProfile.avatar_url,
+          role: (bootProfile as { role?: string }).role === "admin" ? "admin" : "user",
         });
       } catch {
         return;
@@ -72,11 +92,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser({
       id: authId,
       email,
-      profileId: profile.id,
-      username: profile.username,
-      displayName: profile.display_name,
-      avatar: profile.avatar_url,
-      role: (profile as { role?: string }).role === "admin" ? "admin" : "user",
+      profileId: resolvedProfile.id,
+      username: resolvedProfile.username,
+      displayName: resolvedProfile.display_name,
+      avatar: resolvedProfile.avatar_url,
+      role: (resolvedProfile as { role?: string }).role === "admin" ? "admin" : "user",
     });
   }, [supabase]);
 
