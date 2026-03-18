@@ -11,9 +11,21 @@ import { jsonOk } from "@/lib/api/response";
 import { mapGameRow } from "@/lib/db/mappers";
 import type { GameRow } from "@/lib/supabase/types";
 
-export const dynamic = "force-dynamic";
-
 const DECAY_DAYS = 365;
+
+function deduplicateBySteamAppId(games: GameRow[]): GameRow[] {
+  const byAppId = new Map<number, GameRow>();
+  for (const g of games) {
+    const appId = g.steam_app_id;
+    if (appId == null) continue;
+    const existing = byAppId.get(appId);
+    if (!existing || (g.release_date && (!existing.release_date || g.release_date > existing.release_date))) {
+      byAppId.set(appId, g);
+    }
+  }
+  const chosenIds = new Set(Array.from(byAppId.values()).map((g) => g.id));
+  return games.filter((g) => g.steam_app_id == null || chosenIds.has(g.id));
+}
 
 function trendingRank(g: GameRow, minPlayers: number, maxPlayers: number): number {
   const score = g.score ?? 0;
@@ -52,11 +64,12 @@ export async function GET(request: NextRequest) {
     if (error) throw error;
 
     if (data && data.length >= 3) {
-      const players = data.map((g) => g.current_players ?? 0);
+      const deduped = deduplicateBySteamAppId(data);
+      const players = deduped.map((g) => g.current_players ?? 0);
       const minPlayers = Math.min(...players);
       const maxPlayers = Math.max(1, ...players);
-      const ranked = [...data].sort((a, b) => trendingRank(b, minPlayers, maxPlayers) - trendingRank(a, minPlayers, maxPlayers));
-      return jsonOk(ranked.slice(0, limit).map(mapGameRow));
+      const ranked = [...deduped].sort((a, b) => trendingRank(b, minPlayers, maxPlayers) - trendingRank(a, minPlayers, maxPlayers));
+      return jsonOk(ranked.slice(0, limit).map(mapGameRow), 200, { cache: true });
     }
 
     // Fallback: recency-weighted scoring from recent games pool
@@ -77,7 +90,7 @@ export async function GET(request: NextRequest) {
     if (poolErr) throw poolErr;
 
     if (!pool || pool.length === 0) {
-      return jsonOk((data ?? []).map(mapGameRow));
+      return jsonOk((data ?? []).map(mapGameRow), 200, { cache: true });
     }
 
     const allForMax = [...(data ?? []), ...pool];
@@ -93,11 +106,11 @@ export async function GET(request: NextRequest) {
       .slice(0, limit - (data?.length ?? 0))
       .map((s) => s.row);
 
-    const combined = [...(data ?? []), ...fallbackGames];
+    const combined = deduplicateBySteamAppId([...(data ?? []), ...fallbackGames]);
     const reranked = combined.sort((a, b) => trendingRank(b, minPlayers, maxPlayers) - trendingRank(a, minPlayers, maxPlayers));
-    return jsonOk(reranked.slice(0, limit).map(mapGameRow));
+    return jsonOk(reranked.slice(0, limit).map(mapGameRow), 200, { cache: true });
   } catch (err) {
     console.error("[API] /games/trending error:", err);
-    return jsonOk([]);
+    return jsonOk([], 200, { cache: true });
   }
 }

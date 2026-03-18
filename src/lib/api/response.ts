@@ -6,8 +6,12 @@
 
 import { NextResponse } from "next/server";
 
-export function jsonOk<T>(data: T, status = 200) {
-  return NextResponse.json({ success: true, data }, { status });
+const CACHE_PUBLIC = "s-maxage=60, stale-while-revalidate=300";
+
+export function jsonOk<T>(data: T, status = 200, options?: { cache?: boolean }) {
+  const headers: HeadersInit = {};
+  if (options?.cache) headers["Cache-Control"] = CACHE_PUBLIC;
+  return NextResponse.json({ success: true, data }, { status, headers: Object.keys(headers).length ? headers : undefined });
 }
 
 export function jsonError(message: string, status = 500) {

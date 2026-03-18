@@ -12,7 +12,7 @@ import type { GameRow } from "@/lib/supabase/types";
 export async function GET(request: NextRequest) {
   try {
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      return jsonOk([]);
+      return jsonOk([], 200, { cache: true });
     }
 
     const { getServerSupabase } = await import("@/lib/supabase/server");
@@ -33,9 +33,9 @@ export async function GET(request: NextRequest) {
 
     const games = (data ?? []).map(mapGameRow);
 
-    return jsonOk(games);
+    return jsonOk(games, 200, { cache: true });
   } catch (err) {
     console.error("[API] /games/top-rated error:", err);
-    return jsonOk([]);
+    return jsonOk([], 200, { cache: true });
   }
 }

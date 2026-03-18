@@ -107,7 +107,7 @@ export async function GET(
       }
     }
 
-    return jsonOk(mapGameRow(data));
+    return jsonOk(mapGameRow(data), 200, { cache: true });
   } catch (err) {
     console.error(`[API] /games/${slug} error:`, err);
     return jsonNotFound("Game");

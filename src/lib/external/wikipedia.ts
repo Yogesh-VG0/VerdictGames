@@ -72,9 +72,35 @@ export async function getWikiSummary(
   }
 }
 
+const ANTI_GAME_KEYWORDS = [
+  "operating system", "software", "kernel", "mit", "research", "university",
+  "programming language", "framework", "library", "algorithm", "protocol",
+  "file system", "database", "compiler", "browser", "application software",
+];
+
+const STRONG_GAME_INDICATORS = [
+  "video game", "gameplay", "player", "release", "console", "playstation",
+  "xbox", "nintendo", "steam", "pc game", "developed by", "published by",
+];
+
+function isValidGameWiki(article: { title: string; extract: string }, gameTitle: string): boolean {
+  const text = (article.title + " " + article.extract).toLowerCase();
+  const gameNorm = gameTitle.toLowerCase().replace(/[^a-z0-9]/g, "");
+
+  if (ANTI_GAME_KEYWORDS.some((kw) => text.includes(kw))) return false;
+  if (!STRONG_GAME_INDICATORS.some((kw) => text.includes(kw))) return false;
+
+  const titleNorm = article.title.toLowerCase().replace(/[^a-z0-9]/g, "");
+  if (article.title.toLowerCase().includes("(operating system)") || article.title.toLowerCase().includes("(os)")) return false;
+  if (gameNorm.length >= 4 && !titleNorm.includes(gameNorm) && !gameNorm.includes(titleNorm.slice(0, 6))) return false;
+
+  return true;
+}
+
 /**
  * Search Wikipedia for a game page and return its summary.
  * Tries multiple title variants to find the right page.
+ * Rejects wrong matches (e.g. TRIX OS instead of TRIX game).
  */
 export async function findGameWikiSummary(
   gameTitle: string
@@ -82,7 +108,6 @@ export async function findGameWikiSummary(
   excerpt: string;
   url: string;
 } | null> {
-  // Try title variants in order of specificity
   const variants = [
     `${gameTitle} (video game)`,
     gameTitle,
@@ -91,33 +116,15 @@ export async function findGameWikiSummary(
 
   for (const variant of variants) {
     const summary = await getWikiSummary(variant);
-    if (summary?.extract) {
-      // Verify it's actually about a video game (basic heuristic)
-      const text = summary.extract.toLowerCase();
-      const gameIndicators = [
-        "video game", "game", "developed", "published",
-        "gameplay", "player", "release", "console", "playstation",
-        "xbox", "nintendo", "steam", "pc game",
-      ];
-
-      const isGameRelated = gameIndicators.some((kw) => text.includes(kw));
-
-      if (isGameRelated) {
-        // Keep a generous excerpt; cut at sentence boundary near 1200 chars
-        let excerpt = summary.extract;
-        if (excerpt.length > 1200) {
-          const cut = excerpt.substring(0, 1200);
-          const lastPeriod = cut.lastIndexOf(".");
-          excerpt = lastPeriod > 400 ? cut.substring(0, lastPeriod + 1) : cut.trimEnd() + "...";
-        }
-
-        return {
-          excerpt,
-          url: summary.content_urls.desktop.page,
-        };
+    if (summary?.extract && isValidGameWiki(summary, gameTitle)) {
+      let excerpt = summary.extract;
+      if (excerpt.length > 1200) {
+        const cut = excerpt.substring(0, 1200);
+        const lastPeriod = cut.lastIndexOf(".");
+        excerpt = lastPeriod > 400 ? cut.substring(0, lastPeriod + 1) : cut.trimEnd() + "...";
       }
+      return { excerpt, url: summary.content_urls.desktop.page };
     }
   }
-
   return null;
 }

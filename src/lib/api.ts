@@ -133,10 +133,9 @@ export async function getRelatedGames(slug: string, limit = 4): Promise<Game[]> 
 }
 
 /** "Because you viewed…" personalized — genre-diverse picks. */
-export async function getPersonalizedGames(limit = 6): Promise<Game[]> {
-  // Get a larger pool and pick diverse genres
+export async function getPersonalizedGames(limit = 6, trendingCache?: Game[]): Promise<Game[]> {
   const pool = await getTopRated(30);
-  const trending = await getTrendingGames();
+  const trending = trendingCache ?? (await getTrendingGames());
   const trendingIds = new Set(trending.map((g) => g.id));
 
   // Filter out games already in trending to avoid duplicates

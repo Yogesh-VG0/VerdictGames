@@ -168,13 +168,25 @@ export async function ingestGame(options: IngestOptions): Promise<IngestResult> 
   const steamPrice = steamAppData ? extractSteamPrice(steamAppData) : null;
   const currentPlayers = steamPlayerData ?? null;
 
+  const freeIndicators = ["free-to-play", "free to play", "f2p"];
+  const allTags = [
+    ...(fullGame.tags ?? []).map((t) => t.name.toLowerCase()),
+    ...(fullGame.genres ?? []).map((g) => g.name.toLowerCase()),
+  ];
+  const hasFreeTag = allTags.some((t) => freeIndicators.includes(t));
+
   // ── Step 7: Process CheapShark data ──
   let cheapsharkId: string | null = null;
   let priceCurrent: number | null = steamPrice?.priceCurrent ?? null;
   let priceCurrency: string = steamPrice?.priceCurrency ?? "USD";
   let priceLowest: number | null = null;
   let priceDealUrl: string | null = null;
-  let isFree: boolean = steamPrice?.isFree ?? false;
+  let isFree: boolean = steamPrice?.isFree ?? hasFreeTag;
+
+  if (hasFreeTag) {
+    isFree = true;
+    priceCurrent = 0;
+  }
 
   if (cheapSharkData) {
     cheapsharkId = cheapSharkData.cheapsharkId;

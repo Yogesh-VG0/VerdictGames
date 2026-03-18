@@ -6,7 +6,6 @@ import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import {
-  getFeaturedGames,
   getTrendingGames,
   getNewReleases,
   getTopRated,
@@ -47,20 +46,19 @@ export default function HomePage() {
   const { user } = useAuth();
   const [discoverTab, setDiscoverTab] = useState<DiscoverTab>("new");
 
-  const featured = useQuery({
-    queryKey: ["featured"],
-    queryFn: () => getFeaturedGames(4),
-    staleTime: 5 * 60 * 1000,
-  });
   const trending = useQuery({
     queryKey: ["trending"],
     queryFn: () => getTrendingGames(),
     staleTime: 60 * 1000,
     refetchInterval: 2 * 60 * 1000,
   });
+  const featured = trending.data
+    ? [...trending.data.filter((g) => g.featured), ...trending.data.filter((g) => !g.featured)].slice(0, 4)
+    : [];
   const personalized = useQuery({
-    queryKey: ["personalized", !!user],
-    queryFn: () => (user ? getRecommendations(12) : getPersonalizedGames(12)),
+    queryKey: ["personalized", !!user, trending.data?.length],
+    queryFn: () => (user ? getRecommendations(12) : getPersonalizedGames(12, trending.data ?? undefined)),
+    enabled: !!user || !!trending.data,
     staleTime: 5 * 60 * 1000,
   });
   const newReleases = useQuery({
@@ -97,10 +95,10 @@ export default function HomePage() {
       <section className="relative">
         <div className="absolute inset-0 hero-spotlight pointer-events-none" />
         <FadeInSection>
-          {featured.isLoading ? (
+          {trending.isLoading ? (
             <div className="max-w-7xl mx-auto px-4 pt-4 sm:pt-6 pb-8"><HeroSkeleton /></div>
-          ) : featured.data && featured.data.length > 0 ? (
-            <HeroCarousel games={featured.data.slice(0, 4)} interval={7000} />
+          ) : featured.length > 0 ? (
+            <HeroCarousel games={featured} interval={7000} />
           ) : null}
         </FadeInSection>
       </section>

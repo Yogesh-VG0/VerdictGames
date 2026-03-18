@@ -7,6 +7,7 @@
 
 import type { Game, Review, ReviewComment, User, GameList, UserGame, Platform, MonetizationType, VerdictLabel, LibraryStatus } from "../types";
 import type { GameRow, ReviewRow, ProfileRow, ListRow, UserGameRow, ReviewCommentRow } from "../supabase/types";
+import { scoreToVerdict } from "../utils/score";
 
 function computeTrendingReason(row: GameRow): string | undefined {
   const r = row as GameRow & { is_trending_manual?: boolean; is_featured_manual?: boolean };
@@ -18,13 +19,29 @@ function computeTrendingReason(row: GameRow): string | undefined {
     if (age < 0) return "Coming Soon";
   }
   if (row.price_deal_url && row.price_lowest != null) return "On Sale";
-  if (row.score >= 90) return "Highly Rated";
+  if (displayScore(row.score ?? 0, row.review_count ?? 0) >= 90) return "Highly Rated";
   if (row.trending) return "Trending";
   return undefined;
 }
 
+const MIN_REVIEWS_FOR_RAW_SCORE = 50;
+const BAYESIAN_PRIOR_WEIGHT = 500;
+const BAYESIAN_PRIOR_SCORE = 80;
+
+function displayScore(score: number, reviewCount: number): number {
+  if (reviewCount >= MIN_REVIEWS_FOR_RAW_SCORE) return score;
+  return Math.round(
+    (score * reviewCount + BAYESIAN_PRIOR_SCORE * BAYESIAN_PRIOR_WEIGHT) /
+      (reviewCount + BAYESIAN_PRIOR_WEIGHT)
+  );
+}
+
 /** Map a games row to the frontend Game interface. */
 export function mapGameRow(row: GameRow): Game {
+  const rawScore = row.score ?? 0;
+  const reviewCount = row.review_count ?? 0;
+  const score = displayScore(rawScore, reviewCount);
+
   return {
     id: row.id,
     slug: row.slug,
@@ -40,8 +57,8 @@ export function mapGameRow(row: GameRow): Game {
     publisher: row.publisher,
     releaseDate: row.release_date ?? "",
     description: row.description,
-    score: row.score,
-    verdictLabel: row.verdict_label as VerdictLabel,
+    score,
+    verdictLabel: scoreToVerdict(score) as VerdictLabel,
     verdictSummary: row.verdict_summary,
     pros: row.pros,
     cons: row.cons,
