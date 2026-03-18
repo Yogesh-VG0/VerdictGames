@@ -80,6 +80,9 @@ export interface Database {
           hltb_last_fetched: string | null;
           franchise: string | null;
 
+          // Momentum tracking (migration 002)
+          momentum: number;
+
           created_at: string;
           updated_at: string;
         };
@@ -145,6 +148,7 @@ export interface Database {
           hltb_completionist?: number | null;
           hltb_last_fetched?: string | null;
           franchise?: string | null;
+          momentum?: number;
           created_at?: string;
           updated_at?: string;
         };
@@ -212,6 +216,7 @@ export interface Database {
           hltb_completionist?: number | null;
           hltb_last_fetched?: string | null;
           franchise?: string | null;
+          momentum?: number;
           created_at?: string;
           updated_at?: string;
         };
@@ -513,6 +518,27 @@ export interface Database {
           follower_id?: string;
           following_id?: string;
           created_at?: string;
+        };
+        Relationships: [];
+      };
+      player_snapshots: {
+        Row: {
+          id: string;
+          game_id: string;
+          player_count: number;
+          recorded_at: string;
+        };
+        Insert: {
+          id?: string;
+          game_id: string;
+          player_count: number;
+          recorded_at?: string;
+        };
+        Update: {
+          id?: string;
+          game_id?: string;
+          player_count?: number;
+          recorded_at?: string;
         };
         Relationships: [];
       };

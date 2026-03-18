@@ -2,12 +2,12 @@
  * GET /api/games/top-rated
  *
  * Returns games sorted by score descending.
+ * Delegates to the shared service layer.
  */
 
 import { NextRequest } from "next/server";
 import { jsonOk } from "@/lib/api/response";
-import { mapGameRow } from "@/lib/db/mappers";
-import type { GameRow } from "@/lib/supabase/types";
+import { fetchTopRated } from "@/lib/services/homepage";
 
 export async function GET(request: NextRequest) {
   try {
@@ -15,24 +15,12 @@ export async function GET(request: NextRequest) {
       return jsonOk([], 200, { cache: true });
     }
 
-    const { getServerSupabase } = await import("@/lib/supabase/server");
-    const supabase = getServerSupabase();
-
     const limit = parseInt(
       request.nextUrl.searchParams.get("limit") ?? "16",
       10
     );
 
-    const { data, error } = await supabase
-      .from("games")
-      .select("*")
-      .order("score", { ascending: false })
-      .limit(limit) as { data: GameRow[] | null; error: unknown };
-
-    if (error) throw error;
-
-    const games = (data ?? []).map(mapGameRow);
-
+    const games = await fetchTopRated(limit);
     return jsonOk(games, 200, { cache: true });
   } catch (err) {
     console.error("[API] /games/top-rated error:", err);

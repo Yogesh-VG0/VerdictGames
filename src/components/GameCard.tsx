@@ -125,8 +125,16 @@ export default function GameCard({
               <div className="absolute top-3 right-3 rounded-xl px-2.5 py-1 bg-accent/70 backdrop-blur-md border border-white/10 text-[10px] font-bold text-white">
                 Coming Soon
               </div>
-            ) : null}
-          </div>
+              ) : null}
+
+              {game.trendingReason && (
+                <div className="absolute bottom-3 right-3 z-[1]">
+                  <span className="text-[9px] font-bold text-white bg-white/15 backdrop-blur-md px-2 py-0.5 rounded-lg border border-white/10 whitespace-nowrap">
+                    {game.trendingReason}
+                  </span>
+                </div>
+              )}
+            </div>
 
           <div className="absolute bottom-0 left-0 right-0 p-4 space-y-2 z-[1]">
             <div className="flex items-center gap-1.5 flex-wrap">
@@ -218,6 +226,14 @@ export default function GameCard({
             <div className="absolute top-2.5 left-2.5">
               <span className="text-[10px] text-white/70 bg-black/50 backdrop-blur-md px-2 py-0.5 rounded-lg font-medium border border-white/5">
                 {yearFromDate(game.releaseDate)}
+              </span>
+            </div>
+          )}
+
+          {game.trendingReason && (
+            <div className="absolute bottom-2.5 right-2.5 z-[1]">
+              <span className="text-[9px] font-bold text-white bg-white/15 backdrop-blur-md px-1.5 py-0.5 rounded-lg border border-white/10 whitespace-nowrap">
+                {game.trendingReason}
               </span>
             </div>
           )}

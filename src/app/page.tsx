@@ -6,12 +6,9 @@ import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import {
-  getTrendingGames,
-  getNewReleases,
-  getTopRated,
+  getHomepageData,
   getPersonalizedGames,
   getRecommendations,
-  getGXDeals,
   getGXPopularNews,
   getGXFreeToPlay,
 } from "@/lib/api";
@@ -46,12 +43,29 @@ export default function HomePage() {
   const { user } = useAuth();
   const [discoverTab, setDiscoverTab] = useState<DiscoverTab>("new");
 
-  const trending = useQuery({
-    queryKey: ["trending"],
-    queryFn: () => getTrendingGames(),
+  // ── Single homepage aggregator call ──
+  const homepage = useQuery({
+    queryKey: ["homepage"],
+    queryFn: () => getHomepageData(),
     staleTime: 60 * 1000,
     refetchInterval: 2 * 60 * 1000,
   });
+  const trending = {
+    data: homepage.data?.trending,
+    isLoading: homepage.isLoading,
+  };
+  const newReleases = {
+    data: homepage.data?.newReleases,
+    isLoading: homepage.isLoading,
+  };
+  const topRated = {
+    data: homepage.data?.topRated,
+    isLoading: homepage.isLoading,
+  };
+  const gxDeals = {
+    data: homepage.data?.deals,
+    isLoading: homepage.isLoading,
+  };
   const featured = trending.data
     ? [...trending.data.filter((g) => g.featured), ...trending.data.filter((g) => !g.featured)].slice(0, 4)
     : [];
@@ -60,22 +74,6 @@ export default function HomePage() {
     queryFn: () => (user ? getRecommendations(12) : getPersonalizedGames(12, trending.data ?? undefined)),
     enabled: !!user || !!trending.data,
     staleTime: 5 * 60 * 1000,
-  });
-  const newReleases = useQuery({
-    queryKey: ["newReleases"],
-    queryFn: () => getNewReleases(16),
-    staleTime: 5 * 60 * 1000,
-  });
-  const topRated = useQuery({
-    queryKey: ["topRated"],
-    queryFn: () => getTopRated(10),
-    staleTime: 5 * 60 * 1000,
-  });
-  const gxDeals = useQuery({
-    queryKey: ["gx-deals"],
-    queryFn: () => getGXDeals(),
-    staleTime: 5 * 60 * 1000,
-    enabled: discoverTab === "deals",
   });
   const gxFreeToPlay = useQuery({
     queryKey: ["gx-free-to-play"],

@@ -328,6 +328,73 @@ export async function GET(request: NextRequest) {
     }
   }
 
+  // ── 6. Momentum Tracking — snapshot + compute ──
+  try {
+    // Fetch all games with current player data
+    const { data: gamesWithPlayers } = await supabase
+      .from("games")
+      .select("id, title, current_players")
+      .not("current_players", "is", null)
+      .gt("current_players", 0)
+      .limit(500) as { data: { id: string; title: string; current_players: number }[] | null };
+
+    if (gamesWithPlayers && gamesWithPlayers.length > 0) {
+      // Throttle: check if we already have a snapshot in the last hour
+      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+      const { data: recentSnapshot } = await supabase
+        .from("player_snapshots")
+        .select("id")
+        .gte("recorded_at", oneHourAgo)
+        .limit(1);
+
+      if (!recentSnapshot || recentSnapshot.length === 0) {
+        // Insert hourly snapshots
+        const snapshots = gamesWithPlayers.map((g) => ({
+          game_id: g.id,
+          player_count: g.current_players,
+        }));
+        await supabase.from("player_snapshots").insert(snapshots);
+        log.push(`📸 Snapshotted ${snapshots.length} player counts`);
+      } else {
+        log.push("📸 Snapshot skipped (already have one within the last hour)");
+      }
+
+      // Compute momentum for each game: log(current+1) - log(previous+1)
+      let momentumUpdated = 0;
+      for (const game of gamesWithPlayers) {
+        const { data: prevSnapshots } = await supabase
+          .from("player_snapshots")
+          .select("player_count")
+          .eq("game_id", game.id)
+          .order("recorded_at", { ascending: false })
+          .range(1, 1) as { data: { player_count: number }[] | null };
+
+        if (prevSnapshots && prevSnapshots.length > 0) {
+          const previous = prevSnapshots[0].player_count;
+          const current = game.current_players;
+          const momentum = Math.log(current + 1) - Math.log(previous + 1);
+          // Round to 4 decimal places
+          const rounded = Math.round(momentum * 10000) / 10000;
+          await gamesTable.update({ momentum: rounded }).eq("id", game.id);
+          momentumUpdated++;
+        }
+      }
+      log.push(`📈 Updated momentum for ${momentumUpdated} games`);
+
+      // Cleanup: delete snapshots older than 7 days
+      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+      const { count: deletedCount } = await supabase
+        .from("player_snapshots")
+        .delete()
+        .lt("recorded_at", sevenDaysAgo) as unknown as { count: number };
+      if (deletedCount > 0) {
+        log.push(`🗑️ Cleaned up ${deletedCount} old snapshots`);
+      }
+    }
+  } catch (err) {
+    log.push(`Momentum tracking error: ${(err as Error).message}`);
+  }
+
   return jsonOk({
     trendingCount: trendingIds.length,
     featuredCount: featuredGames?.length ?? 0,

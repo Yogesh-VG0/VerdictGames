@@ -16,6 +16,7 @@ import {
   Platform,
   SearchFilters,
   PaginatedResponse,
+  GXDeal,
 } from "./types";
 
 const PAGE_SIZE = 12;
@@ -94,6 +95,23 @@ export async function getNewReleases(limit = 8): Promise<Game[]> {
 /** Get top-rated games. */
 export async function getTopRated(limit = 8): Promise<Game[]> {
   return (await apiFetch<Game[]>(`/api/games/top-rated?limit=${limit}`)) ?? [];
+}
+
+/* ═══════════════════════════════════════════════════
+   HOMEPAGE AGGREGATOR
+   ═══════════════════════════════════════════════════ */
+
+export interface HomepageData {
+  trending: Game[];
+  topRated: Game[];
+  newReleases: Game[];
+  deals: GXDeal[];
+}
+
+/** Fetch all homepage sections in a single call. */
+export async function getHomepageData(): Promise<HomepageData> {
+  const data = await apiFetch<HomepageData>("/api/homepage");
+  return data ?? { trending: [], topRated: [], newReleases: [], deals: [] };
 }
 
 /** Search games with filters and pagination. */
@@ -495,7 +513,7 @@ export async function getSiteStats(): Promise<SiteStats> {
    GX CORNER — Live feeds (no DB, refreshed every 5 min)
    ═══════════════════════════════════════════════════ */
 
-import type { GXDeal, GXNewsItem, GXTopGame, GXFreeGame, GXMostLiked, GXCalendarGame, Platform as GXPlatform } from "./types";
+import type { GXNewsItem, GXTopGame, GXFreeGame, GXMostLiked, GXCalendarGame, Platform as GXPlatform } from "./types";
 import { slugify } from "./utils/slugify";
 
 function mapGXPlatformName(p: string): GXPlatform | null {

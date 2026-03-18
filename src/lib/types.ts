@@ -116,6 +116,9 @@ export interface Game {
   trendingReason?: string;
   isFeaturedManual?: boolean;
   isTrendingManual?: boolean;
+
+  // Momentum (rate of player count change)
+  momentum?: number;
 }
 
 export interface Review {

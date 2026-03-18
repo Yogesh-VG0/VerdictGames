@@ -1,0 +1,227 @@
+/**
+ * VERDICT.GAMES — Homepage Service Layer
+ *
+ * Shared game-fetching logic used by both the /api/homepage aggregator
+ * and the individual /api/games/* routes. No internal HTTP calls —
+ * hits Supabase directly for minimal latency.
+ */
+
+import { getServerSupabase } from "@/lib/supabase/server";
+import { mapGameRow } from "@/lib/db/mappers";
+import { filterQualityGames } from "@/lib/utils/quality";
+import type { GameRow } from "@/lib/supabase/types";
+import type { Game, GXDeal } from "@/lib/types";
+
+/* ═══════════════════════════════════════════════════
+   Trending logic (extracted from /api/games/trending)
+   ═══════════════════════════════════════════════════ */
+
+const DECAY_DAYS = 365;
+
+function deduplicateBySteamAppId(games: GameRow[]): GameRow[] {
+  const byAppId = new Map<number, GameRow>();
+  for (const g of games) {
+    const appId = g.steam_app_id;
+    if (appId == null) continue;
+    const existing = byAppId.get(appId);
+    if (!existing || (g.release_date && (!existing.release_date || g.release_date > existing.release_date))) {
+      byAppId.set(appId, g);
+    }
+  }
+  const chosenIds = new Set(Array.from(byAppId.values()).map((g) => g.id));
+  return games.filter((g) => g.steam_app_id == null || chosenIds.has(g.id));
+}
+
+function trendingRank(g: GameRow, minPlayers: number, maxPlayers: number): number {
+  const score = g.score ?? 0;
+  const playerCount = g.current_players ?? 0;
+  const logPlayers = Math.log10(playerCount + 1);
+  const logMin = Math.log10(Math.max(minPlayers, 0) + 1);
+  const logMax = Math.log10(Math.max(maxPlayers, 1) + 1);
+  const spread = logMax - logMin || 1;
+  const playerScore = Math.min(100, ((logPlayers - logMin) / spread) * 100);
+  const ageMs = Date.now() - new Date(g.release_date ?? "2000-01-01").getTime();
+  const ageDays = ageMs / 86400000;
+  const recency = Math.min(100, Math.exp(-ageDays / DECAY_DAYS) * 100);
+  // Factor in momentum (log-based, stored on the row)
+  const momentum = (g as GameRow & { momentum?: number }).momentum ?? 0;
+  const momentumBoost = Math.max(0, Math.min(20, momentum * 50));
+  return (score * 0.25) + (playerScore * 0.35) + (recency * 0.25) + (momentumBoost * 0.15);
+}
+
+export async function fetchTrendingGames(limit = 10): Promise<Game[]> {
+  const supabase = getServerSupabase();
+
+  const { data, error } = await supabase
+    .from("games")
+    .select("*")
+    .eq("trending", true)
+    .limit(40) as { data: GameRow[] | null; error: unknown };
+
+  if (error) throw error;
+
+  if (data && data.length >= 3) {
+    const deduped = deduplicateBySteamAppId(data);
+    const filtered = filterQualityGames(deduped, { section: "trending", minResults: 3 });
+    const players = filtered.map((g) => g.current_players ?? 0);
+    const minPlayers = Math.min(...players);
+    const maxPlayers = Math.max(1, ...players);
+    const ranked = [...filtered].sort((a, b) => trendingRank(b, minPlayers, maxPlayers) - trendingRank(a, minPlayers, maxPlayers));
+    return ranked.slice(0, limit).map(mapGameRow);
+  }
+
+  // Fallback: recency-weighted scoring from recent games pool
+  const cutoff = new Date();
+  cutoff.setFullYear(cutoff.getFullYear() - 4);
+  const cutoffStr = cutoff.toISOString().slice(0, 10);
+
+  const { data: pool, error: poolErr } = await supabase
+    .from("games")
+    .select("*")
+    .not("release_date", "is", null)
+    .gte("release_date", cutoffStr)
+    .lte("release_date", new Date().toISOString().slice(0, 10))
+    .gt("score", 0)
+    .order("release_date", { ascending: false })
+    .limit(100) as { data: GameRow[] | null; error: unknown };
+
+  if (poolErr) throw poolErr;
+
+  if (!pool || pool.length === 0) {
+    return (data ?? []).map(mapGameRow);
+  }
+
+  const allForMax = [...(data ?? []), ...pool];
+  const players = allForMax.map((g) => g.current_players ?? 0);
+  const minPlayers = Math.min(...players);
+  const maxPlayers = Math.max(1, ...players);
+  const scored = pool.map((g) => ({ row: g, rank: trendingRank(g, minPlayers, maxPlayers) }));
+  scored.sort((a, b) => b.rank - a.rank);
+
+  const alreadyIncluded = new Set((data ?? []).map((d) => d.id));
+  const fallbackGames = scored
+    .filter((s) => !alreadyIncluded.has(s.row.id))
+    .slice(0, limit - (data?.length ?? 0))
+    .map((s) => s.row);
+
+  const combined = deduplicateBySteamAppId([...(data ?? []), ...fallbackGames]);
+  const filtered = filterQualityGames(combined, { section: "trending", minResults: 3 });
+  const reranked = filtered.sort((a, b) => trendingRank(b, minPlayers, maxPlayers) - trendingRank(a, minPlayers, maxPlayers));
+  return reranked.slice(0, limit).map(mapGameRow);
+}
+
+/* ═══════════════════════════════════════════════════
+   New Releases (extracted from /api/games/new-releases)
+   ═══════════════════════════════════════════════════ */
+
+function dateCutoff(yearsBack: number): string {
+  const d = new Date();
+  d.setFullYear(d.getFullYear() - yearsBack);
+  return d.toISOString().slice(0, 10);
+}
+
+export async function fetchNewReleases(limit = 16): Promise<Game[]> {
+  const supabase = getServerSupabase();
+  const fetchLimit = limit * 2; // over-fetch for quality filtering
+
+  // Try last 2 years first
+  let { data, error } = await supabase
+    .from("games")
+    .select("*")
+    .not("release_date", "is", null)
+    .lte("release_date", new Date().toISOString().slice(0, 10))
+    .gte("release_date", dateCutoff(2))
+    .order("release_date", { ascending: false })
+    .limit(fetchLimit) as { data: GameRow[] | null; error: unknown };
+
+  // Fallback to 5 years if insufficient
+  if (!error && (!data || data.length < limit)) {
+    const fallback = await supabase
+      .from("games")
+      .select("*")
+      .not("release_date", "is", null)
+      .lte("release_date", new Date().toISOString().slice(0, 10))
+      .gte("release_date", dateCutoff(5))
+      .order("release_date", { ascending: false })
+      .limit(fetchLimit) as { data: GameRow[] | null; error: unknown };
+
+    if (!fallback.error && fallback.data && fallback.data.length > (data?.length ?? 0)) {
+      data = fallback.data;
+      error = fallback.error;
+    }
+  }
+
+  if (error) throw error;
+
+  const filtered = filterQualityGames(data ?? [], { section: "newReleases", minResults: 4 });
+  return filtered.slice(0, limit).map(mapGameRow);
+}
+
+/* ═══════════════════════════════════════════════════
+   Top Rated (extracted from /api/games/top-rated)
+   ═══════════════════════════════════════════════════ */
+
+export async function fetchTopRated(limit = 10): Promise<Game[]> {
+  const supabase = getServerSupabase();
+  const fetchLimit = limit * 2;
+
+  const { data, error } = await supabase
+    .from("games")
+    .select("*")
+    .order("score", { ascending: false })
+    .limit(fetchLimit) as { data: GameRow[] | null; error: unknown };
+
+  if (error) throw error;
+
+  const filtered = filterQualityGames(data ?? [], { section: "topRated", minResults: 4 });
+  return filtered.slice(0, limit).map(mapGameRow);
+}
+
+/* ═══════════════════════════════════════════════════
+   GX Deals (mapped from GX Corner external API)
+   ═══════════════════════════════════════════════════ */
+
+export async function fetchDeals(): Promise<GXDeal[]> {
+  try {
+    const { getGXDeals } = await import("@/lib/external/gxcorner");
+    const raw = await getGXDeals();
+    return raw.map((entry) => ({
+      id: entry.id,
+      title: entry.game.title,
+      cover: entry.game.imageCoverVertical?.url ?? null,
+      discount: entry.game.prices?.[0]?.discount ?? null,
+      price: entry.game.prices?.[0]?.price ?? null,
+      currency: entry.game.prices?.[0]?.currency?.abbr ?? null,
+      buyUrl: entry.game.prices?.[0]?.url ?? null,
+      storeName: entry.store?.name ?? null,
+      storeColor: entry.store?.color ?? null,
+      badge: entry.tag?.name ?? null,
+      dealType: entry.dealType,
+      genres: entry.game.genres.map((g) => g.name),
+    }));
+  } catch {
+    return [];
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   Homepage Aggregator — single call, all sections
+   ═══════════════════════════════════════════════════ */
+
+export interface HomepageData {
+  trending: Game[];
+  topRated: Game[];
+  newReleases: Game[];
+  deals: GXDeal[];
+}
+
+export async function fetchHomepageData(): Promise<HomepageData> {
+  const [trending, topRated, newReleases, deals] = await Promise.all([
+    fetchTrendingGames(10).catch(() => [] as Game[]),
+    fetchTopRated(10).catch(() => [] as Game[]),
+    fetchNewReleases(16).catch(() => [] as Game[]),
+    fetchDeals().catch(() => [] as GXDeal[]),
+  ]);
+
+  return { trending, topRated, newReleases, deals };
+}

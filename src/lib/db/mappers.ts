@@ -11,16 +11,40 @@ import { scoreToVerdict } from "../utils/score";
 
 function computeTrendingReason(row: GameRow): string | undefined {
   const r = row as GameRow & { is_trending_manual?: boolean; is_featured_manual?: boolean };
-  if (r.is_trending_manual || r.is_featured_manual) return "Editor's Pick";
-  if (row.current_players && row.current_players > 10000) return "Popular Now";
+  const momentum = row.momentum ?? 0;
+  const score = displayScore(row.score ?? 0, row.review_count ?? 0);
+  const currentPlayers = row.current_players ?? 0;
+  const reviewCount = row.review_count ?? 0;
+
+  // Priority order: movement > money > quality > status
+
+  // 1. Momentum signals (most important)
+  if (momentum > 0.2) return "🔥 Trending Up";
+  if (momentum < -0.2) return "📉 Falling";
+
+  // 2. Deals (high conversion)
+  if (row.price_deal_url && row.price_lowest != null) return "💰 On Sale";
+
+  // 3. Quality + recency
   if (row.release_date) {
     const age = Date.now() - new Date(row.release_date).getTime();
-    if (age < 30 * 86400000 && age >= 0) return "New Release";
-    if (age < 0) return "Coming Soon";
+    if (age < 0) return "🗓️ Coming Soon";
+    if (age < 30 * 86400000 && score >= 70) return "🚀 New & Hot";
+    if (age < 30 * 86400000) return "✨ Just Released";
   }
-  if (row.price_deal_url && row.price_lowest != null) return "On Sale";
-  if (displayScore(row.score ?? 0, row.review_count ?? 0) >= 90) return "Highly Rated";
-  if (row.trending) return "Trending";
+
+  // 4. Quality tiers
+  if (score >= 90 && reviewCount >= 50) return "👑 Top Rated";
+  if (score >= 80 && reviewCount < 50 && currentPlayers < 5000) return "💎 Hidden Gem";
+
+  // 5. Popularity
+  if (currentPlayers > 10000) return "🎮 Popular Now";
+
+  // 6. Manual overrides
+  if (r.is_trending_manual || r.is_featured_manual) return "⭐ Editor's Pick";
+
+  // 7. Generic fallback
+  if (row.trending) return "🔥 Trending";
   return undefined;
 }
 
@@ -107,6 +131,9 @@ export function mapGameRow(row: GameRow): Game {
     isFeaturedManual: (row as GameRow & { is_featured_manual?: boolean }).is_featured_manual ?? undefined,
     isTrendingManual: (row as GameRow & { is_trending_manual?: boolean }).is_trending_manual ?? undefined,
     trendingReason: computeTrendingReason(row),
+
+    // Momentum
+    momentum: row.momentum ?? undefined,
   };
 }
 
