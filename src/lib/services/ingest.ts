@@ -55,13 +55,15 @@ export interface IngestResult {
 
 export interface IngestOptions {
   query: string;
-  forceRefresh?: boolean; // re-fetch even if game already exists
+  forceRefresh?: boolean;
+  /** When set, prefer the RAWG result whose slug most closely matches this. */
+  expectedSlug?: string;
 }
 
 /* ───────── Main Ingestion Function ───────── */
 
 export async function ingestGame(options: IngestOptions): Promise<IngestResult> {
-  const { query, forceRefresh = false } = options;
+  const { query, forceRefresh = false, expectedSlug } = options;
   const supabase = getServerSupabase();
 
   // ── Step 1: Search RAWG ──
@@ -76,13 +78,22 @@ export async function ingestGame(options: IngestOptions): Promise<IngestResult> 
     };
   }
 
-  // Pick the best match: prefer results with release dates, ratings, and higher rating counts
+  // Pick the best match. When an expectedSlug is provided (e.g. from a GX link),
+  // strongly prefer results whose RAWG slug matches it. This prevents e.g.
+  // "grand-theft-auto-vi" from resolving to GTA V.
+  const normalizeForCompare = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+  const expectedNorm = expectedSlug ? normalizeForCompare(expectedSlug) : null;
+
   const bestMatch = searchResults.results.reduce((best, cur) => {
-    // Score each result: has release date (+3), has rating (+2), higher ratings_count (+1)
-    const scoreOf = (r: typeof best) =>
-      (r.released ? 3 : 0) +
-      (r.rating ? 2 : 0) +
-      Math.min((r.ratings_count ?? 0) / 1000, 5);
+    const scoreOf = (r: typeof best) => {
+      let s = (r.released ? 3 : 0) + (r.rating ? 2 : 0) + Math.min((r.ratings_count ?? 0) / 1000, 5);
+      if (expectedNorm) {
+        const rSlug = normalizeForCompare(r.slug ?? r.name);
+        if (rSlug === expectedNorm) s += 100;
+        else if (rSlug.includes(expectedNorm) || expectedNorm.includes(rSlug)) s += 30;
+      }
+      return s;
+    };
     return scoreOf(cur) > scoreOf(best) ? cur : best;
   }, searchResults.results[0]);
   const slug = slugify(bestMatch.name);

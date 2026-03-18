@@ -31,12 +31,23 @@ export async function GET(
 
     if (error) throw error;
 
-    // If not found, try on-demand ingestion using a humanized title from the slug.
+    // If not found, try fuzzy slug match first (handles minor slug differences)
+    if (!data) {
+      const { data: fuzzy } = await supabase
+        .from("games")
+        .select("*")
+        .ilike("slug", slug)
+        .maybeSingle() as { data: GameRow | null };
+      if (fuzzy) data = fuzzy;
+    }
+
+    // If still not found, try on-demand ingestion.
+    // Pass the original slug as a hint so ingest can verify the RAWG result.
     if (!data) {
       try {
         const { ingestGame } = await import("@/lib/services/ingest");
         const queryTitle = slug.replace(/-/g, " ");
-        const result = await ingestGame({ query: queryTitle });
+        const result = await ingestGame({ query: queryTitle, expectedSlug: slug });
         if (result.success && result.gameId) {
           const refetch = await supabase
             .from("games")

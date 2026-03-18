@@ -30,6 +30,17 @@ function yearFromDate(date: string | undefined): string | null {
   return isNaN(y) ? null : String(y);
 }
 
+function isUnreleased(game: Game): boolean {
+  if (!game.releaseDate) return false;
+  return new Date(game.releaseDate) > new Date();
+}
+
+function hasRealScore(game: Game): boolean {
+  if (isUnreleased(game)) return false;
+  if (game.score === 0 && game.scoreSource === "gx") return false;
+  return true;
+}
+
 export default function GameCard({
   game,
   priority = false,
@@ -43,7 +54,7 @@ export default function GameCard({
           whileHover={{ y: -4 }}
           whileTap={{ scale: 0.98 }}
           transition={{ duration: 0.3, ease: "easeOut" }}
-          className="relative rounded-2xl border border-white/[0.08] bg-surface overflow-hidden card-shimmer h-full hover:border-purple-500/30 hover:shadow-[0_0_40px_-8px_rgba(168,85,247,0.25)] transition-all duration-500"
+          className="relative rounded-2xl border border-border bg-surface overflow-hidden card-shimmer h-full hover:border-accent/30 hover:shadow-[0_0_40px_-8px_rgba(168,85,247,0.2)] transition-all duration-500"
         >
           {/* Cover image - taller for spotlight */}
           <div className="relative aspect-[3/4] overflow-hidden">
@@ -63,20 +74,26 @@ export default function GameCard({
             )}
             {/* Gradient overlay — always dark */}
             <div className="absolute inset-0 card-image-gradient" />
-            {/* Verdict score badge */}
-            <div
-              className={cn(
-                "absolute top-3 right-3 rounded-xl px-2.5 py-1 flex items-center gap-1.5",
-                "bg-black/60 backdrop-blur-md border border-white/10 text-sm font-bold tabular-nums",
-                scoreColor(game.score),
-                "group-hover:" + scoreGlowClass(game.score),
-                "transition-all duration-300"
-              )}
-              title={`Verdict Score: ${game.score} (source: ${game.scoreSource ?? "blended"})`}
-            >
-              <span className="text-[9px] opacity-50 font-medium">V</span>
-              {game.score}
-            </div>
+            {/* Verdict score badge — hidden for unreleased games */}
+            {hasRealScore(game) ? (
+              <div
+                className={cn(
+                  "absolute top-3 right-3 rounded-xl px-2.5 py-1 flex items-center gap-1.5",
+                  "bg-black/60 backdrop-blur-md border border-white/10 text-sm font-bold tabular-nums",
+                  scoreColor(game.score),
+                  "group-hover:" + scoreGlowClass(game.score),
+                  "transition-all duration-300"
+                )}
+                title={`Verdict Score: ${game.score} (source: ${game.scoreSource ?? "blended"})`}
+              >
+                <span className="text-[9px] opacity-50 font-medium">V</span>
+                {game.score}
+              </div>
+            ) : isUnreleased(game) ? (
+              <div className="absolute top-3 right-3 rounded-xl px-2.5 py-1 bg-accent/70 backdrop-blur-md border border-white/10 text-[10px] font-bold text-white">
+                Coming Soon
+              </div>
+            ) : null}
           </div>
 
           {/* Content overlay at bottom */}
@@ -99,8 +116,8 @@ export default function GameCard({
             <h3 className="text-base font-bold text-white leading-tight line-clamp-2 group-hover:text-accent transition-colors drop-shadow-md">
               {game.title}
             </h3>
-            <VerdictBadge label={game.verdictLabel} size="sm" />
-            <ScoreChips game={game} variant="compact" />
+            {hasRealScore(game) && <VerdictBadge label={game.verdictLabel} size="sm" />}
+            {hasRealScore(game) && <ScoreChips game={game} variant="compact" />}
             {game.verdictSummary && (
               <p className="text-xs text-white/60 line-clamp-2 leading-relaxed">
                 {game.verdictSummary}
@@ -118,7 +135,7 @@ export default function GameCard({
         whileHover={{ y: -6 }}
         whileTap={{ scale: 0.98 }}
         transition={{ duration: 0.3, ease: "easeOut" }}
-        className="relative rounded-2xl border border-white/[0.08] bg-surface overflow-hidden card-shimmer h-full hover:border-purple-500/20 hover:shadow-[0_0_30px_-8px_rgba(168,85,247,0.2)] transition-all duration-500"
+        className="relative rounded-2xl border border-border bg-surface overflow-hidden card-shimmer h-full hover:border-accent/30 hover:shadow-[0_0_30px_-8px_rgba(168,85,247,0.15)] transition-all duration-500"
       >
         {/* Cover image */}
         <div className="relative aspect-[3/4] overflow-hidden">
@@ -140,19 +157,26 @@ export default function GameCard({
           {/* Gradient overlay on hover */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-60 group-hover:opacity-80 transition-opacity duration-300" />
 
-          {/* Score overlay */}
-          <div
-            className={cn(
-              "absolute top-2.5 right-2.5 rounded-xl px-2 py-1 flex items-center gap-1",
-              "bg-black/60 backdrop-blur-md border border-white/10 text-xs font-bold tabular-nums",
-              scoreColor(game.score),
-              "transition-all duration-300"
-            )}
-            title={`Verdict ${game.score} (${game.scoreSource ?? "blended"})`}
-          >
-            <span className="text-[8px] opacity-40">V</span>
-            {game.score}
-          </div>
+          {/* Score overlay — hidden for unreleased / unscored games */}
+          {hasRealScore(game) && (
+            <div
+              className={cn(
+                "absolute top-2.5 right-2.5 rounded-xl px-2 py-1 flex items-center gap-1",
+                "bg-black/60 backdrop-blur-md border border-white/10 text-xs font-bold tabular-nums",
+                scoreColor(game.score),
+                "transition-all duration-300"
+              )}
+              title={`Verdict ${game.score} (${game.scoreSource ?? "blended"})`}
+            >
+              <span className="text-[8px] opacity-40">V</span>
+              {game.score}
+            </div>
+          )}
+          {isUnreleased(game) && (
+            <div className="absolute top-2.5 right-2.5 rounded-xl px-2 py-1 bg-accent/70 backdrop-blur-md border border-white/10 text-[10px] font-bold text-white">
+              Coming Soon
+            </div>
+          )}
 
           {/* Platform badges */}
           <div className="absolute bottom-2.5 left-2.5 flex gap-1 flex-wrap max-w-[80%]">
@@ -187,7 +211,7 @@ export default function GameCard({
           </h3>
 
           <div className="flex items-center gap-2 flex-wrap">
-            <VerdictBadge label={game.verdictLabel} size="sm" />
+            {hasRealScore(game) && <VerdictBadge label={game.verdictLabel} size="sm" />}
             {game.trendingReason && (
               <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-accent/15 text-accent border border-accent/20">
                 {game.trendingReason}
@@ -195,7 +219,7 @@ export default function GameCard({
             )}
           </div>
 
-          <ScoreChips game={game} variant="compact" />
+          {hasRealScore(game) && <ScoreChips game={game} variant="compact" />}
 
           <div className="flex flex-wrap gap-1.5 pt-0.5">
             {game.genres.slice(0, 2).map((g) => (

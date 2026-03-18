@@ -26,7 +26,6 @@ import { slugify } from "@/lib/utils/slugify";
 import HeroCarousel from "@/components/HeroCarousel";
 import FadeInSection from "@/components/FadeInSection";
 import GameCard from "@/components/GameCard";
-import GameGrid from "@/components/GameGrid";
 import HorizontalScroll from "@/components/HorizontalScroll";
 import SectionHeader from "@/components/SectionHeader";
 import GXDealCard from "@/components/GXDealCard";
@@ -150,34 +149,19 @@ export default function HomePage() {
                   icon="🔥"
                   subtitle="Ranked by Steam concurrent players"
                 />
-                {/* Spotlight first game + scroll for the rest */}
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                  {/* Large spotlight card */}
-                  <div className="lg:col-span-4">
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ duration: 0.5 }}
-                    >
-                      <GameCard game={trending.data[0]} priority className="h-full" variant="spotlight" />
-                    </motion.div>
-                  </div>
-                  {/* Remaining trending games */}
-                  <div className="lg:col-span-8">
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                      {trending.data.slice(1, 9).map((game, i) => (
-                        <motion.div
-                          key={game.id}
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: 0.1 + i * 0.05, duration: 0.4 }}
-                        >
-                          <GameCard game={game} />
-                        </motion.div>
-                      ))}
+                <HorizontalScroll>
+                  {trending.data.slice(0, 12).map((game, i) => (
+                    <div key={game.id} className="shrink-0 w-40 sm:w-48 md:w-52 lg:w-56">
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: i * 0.04, duration: 0.4 }}
+                      >
+                        <GameCard game={game} priority={i === 0} />
+                      </motion.div>
                     </div>
-                  </div>
-                </div>
+                  ))}
+                </HorizontalScroll>
               </>
             ) : null}
           </FadeInSection>
@@ -186,7 +170,7 @@ export default function HomePage() {
 
       {/* ── Divider ── */}
       <div className="max-w-7xl mx-auto px-4">
-        <hr className="border-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+        <hr className="border-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
       </div>
 
       {/* ── New Releases ── */}
@@ -206,7 +190,19 @@ export default function HomePage() {
                   icon="✨"
                   subtitle="Fresh games worth your attention"
                 />
-                <GameGrid games={newReleases.data} />
+                <HorizontalScroll>
+                  {newReleases.data.map((game, i) => (
+                    <div key={game.id} className="shrink-0 w-40 sm:w-48 md:w-52 lg:w-56">
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: i * 0.03, duration: 0.4 }}
+                      >
+                        <GameCard game={game} />
+                      </motion.div>
+                    </div>
+                  ))}
+                </HorizontalScroll>
               </>
             ) : null}
           </FadeInSection>
@@ -239,7 +235,7 @@ export default function HomePage() {
 
       {/* ── Divider ── */}
       <div className="max-w-7xl mx-auto px-4">
-        <hr className="border-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+        <hr className="border-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
       </div>
 
       {/* ── Top Rated ── */}
@@ -279,11 +275,23 @@ export default function HomePage() {
                 {selectedPlatform === "PC" &&
                 topRated.data &&
                 topRated.data.length > 0 ? (
-                  <GameGrid games={topRated.data} />
+                  <HorizontalScroll>
+                    {topRated.data.map((game) => (
+                      <div key={game.id} className="shrink-0 w-40 sm:w-48 md:w-52 lg:w-56">
+                        <GameCard game={game} />
+                      </div>
+                    ))}
+                  </HorizontalScroll>
                 ) : topByPlatform.isLoading ? (
                   <GameGridSkeleton count={4} />
                 ) : topByPlatform.data && topByPlatform.data.length > 0 ? (
-                  <GameGrid games={topByPlatform.data} />
+                  <HorizontalScroll>
+                    {topByPlatform.data.map((game) => (
+                      <div key={game.id} className="shrink-0 w-40 sm:w-48 md:w-52 lg:w-56">
+                        <GameCard game={game} />
+                      </div>
+                    ))}
+                  </HorizontalScroll>
                 ) : (
                   <p className="text-secondary text-sm py-8 text-center">
                     No games found for this platform yet. Try browsing{" "}
@@ -304,7 +312,7 @@ export default function HomePage() {
 
       {/* ── Divider ── */}
       <div className="max-w-7xl mx-auto px-4">
-        <hr className="border-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+        <hr className="border-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
       </div>
 
       {/* ── Because You Viewed… ── */}
@@ -340,7 +348,7 @@ export default function HomePage() {
       {gxTopLiked.data && gxTopLiked.data.length > 0 && (
         <>
           <div className="max-w-7xl mx-auto px-4">
-            <hr className="border-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+            <hr className="border-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
           </div>
           <section className="relative py-12">
             <div className="absolute inset-0 mesh-gradient opacity-40 pointer-events-none" />
@@ -362,7 +370,7 @@ export default function HomePage() {
                     >
                       <Link
                         href={`/game/${game.slug || slugify(game.title)}`}
-                        className="block group rounded-2xl border border-white/[0.08] bg-surface overflow-hidden card-shimmer hover:border-purple-500/20 transition-all duration-300"
+                        className="block group rounded-2xl border border-border bg-surface overflow-hidden card-shimmer hover:border-accent/30 transition-all duration-300"
                       >
                         <div className="relative aspect-[3/4] overflow-hidden">
                           {game.cover && (
@@ -408,7 +416,7 @@ export default function HomePage() {
       {gxDeals.data && gxDeals.data.length > 0 && (
         <>
           <div className="max-w-7xl mx-auto px-4">
-            <hr className="border-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+            <hr className="border-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
           </div>
           <section className="py-12">
             <div className="max-w-7xl mx-auto px-4">
@@ -418,18 +426,19 @@ export default function HomePage() {
                   icon="💰"
                   subtitle="Live discounts from top stores — updated every 5 minutes"
                 />
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                <HorizontalScroll>
                   {gxDeals.data.slice(0, 10).map((deal, i) => (
                     <motion.div
                       key={deal.id}
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: i * 0.04, duration: 0.4 }}
+                      className="shrink-0 w-40 sm:w-48 md:w-52"
                     >
                       <GXDealCard deal={deal} />
                     </motion.div>
                   ))}
-                </div>
+                </HorizontalScroll>
               </FadeInSection>
             </div>
           </section>
@@ -440,7 +449,7 @@ export default function HomePage() {
       {gxFreeToPlay.data && gxFreeToPlay.data.length > 0 && (
         <>
           <div className="max-w-7xl mx-auto px-4">
-            <hr className="border-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+            <hr className="border-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
           </div>
           <section className="relative py-12">
             <div className="absolute inset-0 mesh-gradient opacity-30 pointer-events-none" />
@@ -462,7 +471,7 @@ export default function HomePage() {
                     >
                       <Link
                         href={`/game/${slugify(game.title)}`}
-                        className="block group rounded-2xl border border-white/[0.08] bg-surface overflow-hidden card-shimmer hover:border-pixel-green/20 transition-all duration-300"
+                        className="block group rounded-2xl border border-border bg-surface overflow-hidden card-shimmer hover:border-pixel-green/30 transition-all duration-300"
                       >
                         <div className="relative aspect-[3/4] overflow-hidden">
                           {game.cover && (
@@ -516,7 +525,7 @@ export default function HomePage() {
         return (
           <>
             <div className="max-w-7xl mx-auto px-4">
-              <hr className="border-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+              <hr className="border-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
             </div>
             <section className="py-12">
               <div className="max-w-7xl mx-auto px-4">
@@ -552,7 +561,7 @@ export default function HomePage() {
                       >
                         <Link
                           href={`/game/${slugify(game.title)}`}
-                          className="block group rounded-2xl border border-white/[0.08] bg-surface overflow-hidden card-shimmer hover:border-purple-500/20 transition-all duration-300"
+                          className="block group rounded-2xl border border-border bg-surface overflow-hidden card-shimmer hover:border-accent/30 transition-all duration-300"
                         >
                           <div className="relative aspect-[3/4] overflow-hidden">
                             {game.cover && (
@@ -596,7 +605,7 @@ export default function HomePage() {
       {gxNews.data && gxNews.data.length > 0 && (
         <>
           <div className="max-w-7xl mx-auto px-4">
-            <hr className="border-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+            <hr className="border-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
           </div>
           <section className="py-12">
             <div className="max-w-7xl mx-auto px-4">
@@ -606,18 +615,19 @@ export default function HomePage() {
                   icon="📰"
                   subtitle="Trending stories from top gaming outlets"
                 />
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {gxNews.data.slice(0, 6).map((article, i) => (
+                <HorizontalScroll>
+                  {gxNews.data.slice(0, 8).map((article, i) => (
                     <motion.div
                       key={article.id}
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: i * 0.06, duration: 0.4 }}
+                      transition={{ delay: i * 0.05, duration: 0.4 }}
+                      className="shrink-0 w-64 sm:w-72 md:w-80"
                     >
                       <GXNewsCard article={article} />
                     </motion.div>
                   ))}
-                </div>
+                </HorizontalScroll>
               </FadeInSection>
             </div>
           </section>
@@ -625,7 +635,7 @@ export default function HomePage() {
       )}
 
       {/* ── Data Sources Banner ── */}
-      <section className="border-t border-b border-white/[0.06] bg-surface/30">
+      <section className="border-t border-b border-border bg-surface/30">
         <div className="max-w-7xl mx-auto px-4 py-10">
           <FadeInSection>
             <div className="text-center space-y-4">
@@ -658,7 +668,7 @@ export default function HomePage() {
       </section>
 
       {/* ── Footer ── */}
-      <footer className="border-t border-white/[0.06] bg-black/30">
+      <footer className="border-t border-border bg-surface/50">
         <div className="max-w-7xl mx-auto px-4 py-12">
           <FadeInSection>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
@@ -710,7 +720,7 @@ export default function HomePage() {
               </div>
             </div>
 
-            <div className="mt-8 pt-6 border-t border-white/[0.06] flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="mt-8 pt-6 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-4">
               <p className="text-[11px] text-tertiary">
                 © {new Date().getFullYear()} verdict.games — Data from RAWG, Steam, IGDB, CheapShark, Wikipedia, HLTB & GX Corner.
               </p>

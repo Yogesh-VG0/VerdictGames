@@ -17,7 +17,7 @@ export default function GXNewsCard({ article }: GXNewsCardProps) {
       whileHover={{ y: -3 }}
       whileTap={{ scale: 0.98 }}
       transition={{ duration: 0.3, ease: "easeOut" }}
-      className="block group rounded-2xl border border-white/[0.08] bg-surface overflow-hidden card-shimmer hover:border-purple-500/20 hover:shadow-[0_0_20px_-8px_rgba(168,85,247,0.15)] transition-all duration-500"
+      className="block group rounded-2xl border border-border bg-surface overflow-hidden card-shimmer hover:border-accent/30 hover:shadow-[0_0_20px_-8px_rgba(168,85,247,0.12)] transition-all duration-500"
     >
       <div className="relative aspect-video overflow-hidden">
         {article.image ? (
@@ -48,7 +48,7 @@ export default function GXNewsCard({ article }: GXNewsCardProps) {
               alt={article.publisherName}
               width={14}
               height={14}
-              className="rounded-sm border border-white/10"
+              className="rounded-sm border border-border"
             />
           )}
           <span className="text-[11px] text-tertiary font-medium">{article.publisherName}</span>

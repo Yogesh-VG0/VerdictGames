@@ -20,7 +20,7 @@ export default function GXDealCard({ deal }: GXDealCardProps) {
       whileHover={{ y: -4 }}
       whileTap={{ scale: 0.98 }}
       transition={{ duration: 0.3, ease: "easeOut" }}
-      className="block group rounded-2xl border border-white/[0.08] bg-surface overflow-hidden card-shimmer hover:border-purple-500/20 hover:shadow-[0_0_30px_-8px_rgba(168,85,247,0.2)] transition-all duration-500"
+      className="block group rounded-2xl border border-border bg-surface overflow-hidden card-shimmer hover:border-accent/30 hover:shadow-[0_0_30px_-8px_rgba(168,85,247,0.15)] transition-all duration-500"
     >
       <Link href={gameHref} className="block">
         <div className="relative aspect-[3/4] overflow-hidden">
@@ -68,7 +68,7 @@ export default function GXDealCard({ deal }: GXDealCardProps) {
               href={deal.buyUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="shrink-0 text-[10px] font-bold px-2 py-1 rounded-lg bg-white/5 border border-white/10 text-secondary hover:text-foreground hover:bg-white/10 transition-colors"
+              className="shrink-0 text-[10px] font-bold px-2 py-1 rounded-lg bg-surface-2 border border-border text-secondary hover:text-foreground hover:bg-elevated transition-colors"
               title="Open store deal"
             >
               Store →
@@ -80,8 +80,8 @@ export default function GXDealCard({ deal }: GXDealCardProps) {
           {deal.storeName && (
             <span
               className={cn(
-                "text-[10px] font-bold px-2 py-0.5 rounded-md border border-white/10",
-                "bg-white/5 text-secondary"
+                "text-[10px] font-bold px-2 py-0.5 rounded-md border border-border",
+                "bg-surface-2 text-secondary"
               )}
               style={deal.storeColor ? { color: deal.storeColor } : undefined}
             >

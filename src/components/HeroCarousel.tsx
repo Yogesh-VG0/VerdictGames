@@ -105,13 +105,16 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
 
   return (
     <section
-      className="relative rounded-2xl overflow-hidden border border-white/[0.06] group touch-pan-y shadow-[0_0_60px_-20px_rgba(0,0,0,0.5)]"
+      className="relative rounded-2xl overflow-hidden border border-white/[0.06] group touch-pan-y shadow-[0_8px_60px_-20px_rgba(0,0,0,0.6)] ring-1 ring-white/[0.04]"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
     >
+      {/* Ambient glow behind the hero */}
+      <div className="absolute -inset-1 bg-gradient-to-br from-accent/20 via-transparent to-pixel-cyan/10 blur-2xl opacity-50 -z-10 group-hover:opacity-70 transition-opacity duration-700" />
+
       {/* Background images with swipe support */}
       <motion.div
-        className="relative aspect-[3/4] sm:aspect-[16/9] md:aspect-[2.4/1] overflow-hidden cursor-grab active:cursor-grabbing"
+        className="relative aspect-[3/4] sm:aspect-[16/9] md:aspect-[2.35/1] overflow-hidden cursor-grab active:cursor-grabbing"
         drag="x"
         dragConstraints={{ left: 0, right: 0 }}
         dragElastic={0.15}
@@ -146,7 +149,7 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
       </motion.div>
 
       {/* Content overlay */}
-      <div className="absolute bottom-0 left-0 right-0 p-3 sm:p-4 md:p-8 z-[2]">
+      <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 md:p-10 z-[2]">
         <AnimatePresence mode="wait">
           <motion.div
             key={`content-${currentIndex}`}
@@ -154,16 +157,17 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
             initial="enter"
             animate="center"
             exit="exit"
-            className="space-y-2 sm:space-y-3"
+            className="space-y-2.5 sm:space-y-3"
           >
             {/* Featured label */}
-            <span className="inline-flex items-center gap-1.5 text-[10px] sm:text-xs font-bold uppercase tracking-wider text-accent">
+            <span className="inline-flex items-center gap-2 text-[10px] sm:text-xs font-bold uppercase tracking-[0.15em] text-accent">
               <span className="w-1.5 h-1.5 bg-accent rounded-full animate-pixel-pulse" />
               Featured
+              <span className="h-px w-6 bg-accent/40" />
             </span>
 
             {/* Title */}
-            <h1 className="text-lg sm:text-2xl md:text-4xl lg:text-5xl font-bold hero-overlay-text leading-tight max-w-2xl drop-shadow-lg">
+            <h1 className="text-xl sm:text-3xl md:text-4xl lg:text-5xl font-bold hero-overlay-text leading-[1.1] max-w-2xl drop-shadow-lg">
               {game.title}
             </h1>
 
@@ -241,7 +245,7 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
 
       {/* Dot indicators */}
       {slideCount > 1 && (
-        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 sm:left-auto sm:translate-x-0 sm:right-4 md:right-8 z-[3] flex items-center gap-1.5 sm:gap-2">
+        <div className="absolute bottom-4 sm:bottom-5 left-1/2 -translate-x-1/2 sm:left-auto sm:translate-x-0 sm:right-6 md:right-10 z-[3] flex items-center gap-1.5 sm:gap-2 bg-black/30 backdrop-blur-sm rounded-full px-2 py-1.5">
           {games.map((_, i) => (
             <button
               key={i}
@@ -249,8 +253,8 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
               className={cn(
                 "transition-all duration-300 rounded-full",
                 i === currentIndex
-                  ? "w-6 h-2 bg-accent"
-                  : "w-2 h-2 bg-white/40 hover:bg-white/60"
+                  ? "w-6 h-1.5 bg-accent"
+                  : "w-1.5 h-1.5 bg-white/40 hover:bg-white/60"
               )}
               aria-label={`Go to slide ${i + 1}`}
             />
