@@ -111,7 +111,7 @@ export default function AdminReviewsPage() {
                 value={formData.gameId}
                 onChange={(e) => setFormData((f) => ({ ...f, gameId: e.target.value }))}
                 placeholder="UUID of the game"
-                className="w-full rounded-xl border border-white/[0.08] bg-background px-4 py-2.5 text-sm text-foreground placeholder:text-tertiary focus:outline-none focus:border-accent/50 transition-all"
+                className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm text-foreground placeholder:text-tertiary focus:outline-none focus:border-accent/50 transition-all"
               />
             </div>
             <div className="space-y-1.5">
@@ -122,7 +122,7 @@ export default function AdminReviewsPage() {
                 max={100}
                 value={formData.rating}
                 onChange={(e) => setFormData((f) => ({ ...f, rating: parseInt(e.target.value, 10) || 0 }))}
-                className="w-full rounded-xl border border-white/[0.08] bg-background px-4 py-2.5 text-sm text-foreground focus:outline-none focus:border-accent/50 transition-all"
+                className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm text-foreground focus:outline-none focus:border-accent/50 transition-all"
               />
             </div>
           </div>
@@ -132,7 +132,7 @@ export default function AdminReviewsPage() {
               type="text"
               value={formData.title}
               onChange={(e) => setFormData((f) => ({ ...f, title: e.target.value }))}
-              className="w-full rounded-xl border border-white/[0.08] bg-background px-4 py-2.5 text-sm text-foreground focus:outline-none focus:border-accent/50 transition-all"
+              className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm text-foreground focus:outline-none focus:border-accent/50 transition-all"
             />
           </div>
           <div className="space-y-1.5">
@@ -141,7 +141,7 @@ export default function AdminReviewsPage() {
               value={formData.bodyText}
               onChange={(e) => setFormData((f) => ({ ...f, bodyText: e.target.value }))}
               rows={5}
-              className="w-full rounded-xl border border-white/[0.08] bg-background px-4 py-2.5 text-sm text-foreground focus:outline-none focus:border-accent/50 transition-all resize-y"
+              className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm text-foreground focus:outline-none focus:border-accent/50 transition-all resize-y"
             />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -151,7 +151,7 @@ export default function AdminReviewsPage() {
                 value={formData.pros}
                 onChange={(e) => setFormData((f) => ({ ...f, pros: e.target.value }))}
                 rows={3}
-                className="w-full rounded-xl border border-white/[0.08] bg-background px-4 py-2.5 text-sm text-foreground focus:outline-none focus:border-pixel-green/50 transition-all resize-y"
+                className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm text-foreground focus:outline-none focus:border-pixel-green/50 transition-all resize-y"
               />
             </div>
             <div className="space-y-1.5">
@@ -160,7 +160,7 @@ export default function AdminReviewsPage() {
                 value={formData.cons}
                 onChange={(e) => setFormData((f) => ({ ...f, cons: e.target.value }))}
                 rows={3}
-                className="w-full rounded-xl border border-white/[0.08] bg-background px-4 py-2.5 text-sm text-foreground focus:outline-none focus:border-danger/50 transition-all resize-y"
+                className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm text-foreground focus:outline-none focus:border-danger/50 transition-all resize-y"
               />
             </div>
           </div>
@@ -190,7 +190,7 @@ export default function AdminReviewsPage() {
           reviews.data.reviews.map((review: any) => (
             <div
               key={review.id}
-              className="rounded-2xl border border-white/[0.08] bg-surface p-4 hover:border-white/[0.12] transition-all"
+              className="rounded-2xl border border-border bg-surface p-4 hover:border-border-hover transition-all"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3 min-w-0">
@@ -231,7 +231,7 @@ export default function AdminReviewsPage() {
           <button
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page === 1}
-            className="px-3 py-1.5 rounded-lg text-xs font-medium border border-white/[0.08] bg-surface text-secondary hover:text-foreground disabled:opacity-30 transition-all"
+            className="px-3 py-1.5 rounded-lg text-xs font-medium border border-border bg-surface text-secondary hover:text-foreground disabled:opacity-30 transition-all"
           >
             ← Prev
           </button>
@@ -239,7 +239,7 @@ export default function AdminReviewsPage() {
           <button
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             disabled={page === totalPages}
-            className="px-3 py-1.5 rounded-lg text-xs font-medium border border-white/[0.08] bg-surface text-secondary hover:text-foreground disabled:opacity-30 transition-all"
+            className="px-3 py-1.5 rounded-lg text-xs font-medium border border-border bg-surface text-secondary hover:text-foreground disabled:opacity-30 transition-all"
           >
             Next →
           </button>

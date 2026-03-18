@@ -31,7 +31,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
         {[
           {
             label: "Total Games",
@@ -58,7 +58,7 @@ export default function AdminDashboard() {
           <Link
             key={stat.label}
             href={stat.href}
-            className="rounded-2xl border border-white/[0.08] bg-surface p-5 hover:border-white/[0.15] hover:shadow-lg transition-all group"
+            className="rounded-2xl border border-border bg-surface p-4 sm:p-5 hover:border-border-hover hover:shadow-lg transition-all group"
           >
             <div className="flex items-center justify-between mb-3">
               <span className="text-2xl">{stat.icon}</span>
@@ -84,7 +84,7 @@ export default function AdminDashboard() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Link
             href="/admin/games"
-            className="rounded-2xl border border-white/[0.08] bg-surface p-4 hover:border-accent/30 transition-all group"
+            className="rounded-2xl border border-border bg-surface p-4 hover:border-accent/30 transition-all group"
           >
             <h3 className="text-sm font-semibold text-foreground group-hover:text-accent transition-colors">
               Edit Game Pages
@@ -95,7 +95,7 @@ export default function AdminDashboard() {
           </Link>
           <Link
             href="/admin/reviews"
-            className="rounded-2xl border border-white/[0.08] bg-surface p-4 hover:border-accent/30 transition-all group"
+            className="rounded-2xl border border-border bg-surface p-4 hover:border-accent/30 transition-all group"
           >
             <h3 className="text-sm font-semibold text-foreground group-hover:text-accent transition-colors">
               Write Reviews

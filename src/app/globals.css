@@ -5,14 +5,14 @@
    Modern Cinematic Dark Glass Design
    ═══════════════════════════════════════════════════ */
 
-/* ── Dark Mode (Default) ── */
+/* ── Dark Mode (Default — OLED Black) ── */
 :root {
-  --vg-bg: #030712;
-  --vg-surface: #09090b;
-  --vg-surface-2: #111113;
-  --vg-elevated: #18181b;
-  --vg-border: rgba(255, 255, 255, 0.08);
-  --vg-border-hover: rgba(255, 255, 255, 0.16);
+  --vg-bg: #000000;
+  --vg-surface: #050507;
+  --vg-surface-2: #0a0a0c;
+  --vg-elevated: #111114;
+  --vg-border: rgba(255, 255, 255, 0.06);
+  --vg-border-hover: rgba(255, 255, 255, 0.14);
   --vg-accent: #a855f7;
   --vg-accent-hover: #c084fc;
   --vg-accent-soft: rgba(168, 85, 247, 0.1);
@@ -23,9 +23,9 @@
   --vg-success: #10b981;
   --vg-warning: #f59e0b;
   --vg-danger: #ef4444;
-  --vg-text: #f8fafc;
-  --vg-text-secondary: #94a3b8;
-  --vg-text-muted: #64748b;
+  --vg-text: #f0f2f5;
+  --vg-text-secondary: #8b95a5;
+  --vg-text-muted: #5a6373;
   --vg-score-great: #4ade80;
   --vg-score-good: #a3e635;
   --vg-score-mixed: #facc15;

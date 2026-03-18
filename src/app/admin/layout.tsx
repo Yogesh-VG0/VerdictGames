@@ -47,18 +47,23 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-6">
-      <div className="flex flex-col md:flex-row gap-6">
-        {/* Sidebar */}
+    <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
+      <div className="flex flex-col md:flex-row gap-4 sm:gap-6">
+        {/* Sidebar — horizontal scrollable on mobile, vertical on desktop */}
         <aside className="md:w-56 shrink-0">
           <div className="md:sticky md:top-24 space-y-1">
-            <div className="mb-4">
-              <h2 className="text-sm font-bold text-foreground uppercase tracking-wider">Admin Panel</h2>
-              <p className="text-[11px] text-tertiary mt-0.5">
-                Logged in as {user.username}
-              </p>
+            <div className="flex items-center justify-between md:block mb-2 md:mb-4">
+              <div>
+                <h2 className="text-sm font-bold text-foreground uppercase tracking-wider">Admin Panel</h2>
+                <p className="text-[11px] text-tertiary mt-0.5">
+                  Logged in as {user.username}
+                </p>
+              </div>
+              <Link href="/" className="md:hidden text-xs text-tertiary hover:text-accent transition-colors">
+                ← Site
+              </Link>
             </div>
-            <nav className="flex md:flex-col gap-1 overflow-x-auto no-scrollbar">
+            <nav className="flex md:flex-col gap-1 overflow-x-auto no-scrollbar pb-2 md:pb-0 -mx-1 px-1">
               {NAV_ITEMS.map((item) => {
                 const active = pathname === item.href ||
                   (item.href !== "/admin" && pathname.startsWith(item.href));
@@ -67,10 +72,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     key={item.href}
                     href={item.href}
                     className={cn(
-                      "flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all whitespace-nowrap",
+                      "flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium transition-all whitespace-nowrap",
                       active
                         ? "bg-accent text-white shadow-sm shadow-accent/20"
-                        : "text-secondary hover:text-foreground hover:bg-white/5"
+                        : "text-secondary hover:text-foreground hover:bg-surface-2"
                     )}
                   >
                     <span>{item.icon}</span>
@@ -79,7 +84,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 );
               })}
             </nav>
-            <div className="hidden md:block mt-4 pt-4 border-t border-white/[0.06]">
+            <div className="hidden md:block mt-4 pt-4 border-t border-border">
               <Link href="/" className="text-xs text-tertiary hover:text-accent transition-colors">
                 ← Back to Site
               </Link>

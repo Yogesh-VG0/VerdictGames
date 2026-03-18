@@ -4,10 +4,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Game } from "@/lib/types";
-import { scoreColor, cn, platformShort, platformVariant } from "@/lib/utils";
-import PixelBadge from "@/components/ui/PixelBadge";
+import { scoreColor, cn } from "@/lib/utils";
 import VerdictBadge from "@/components/ui/VerdictBadge";
-import ScoreChips from "@/components/ScoreChips";
+import PlatformIcon from "@/components/ui/PlatformIcon";
 
 interface GameCardProps {
   game: Game;
@@ -99,13 +98,11 @@ export default function GameCard({
           {/* Content overlay at bottom */}
           <div className="absolute bottom-0 left-0 right-0 p-4 space-y-2">
             <div className="flex items-center gap-1.5 flex-wrap">
-              {game.platforms.slice(0, 4).map((p) => (
-                <PixelBadge key={p} variant={platformVariant(p)} size="sm">
-                  {platformShort(p)}
-                </PixelBadge>
+              {game.platforms.slice(0, 5).map((p) => (
+                <PlatformIcon key={p} platform={p} size={14} className="drop-shadow-md brightness-0 invert opacity-80" />
               ))}
-              {game.platforms.length > 4 && (
-                <span className="text-[9px] text-white/40">+{game.platforms.length - 4}</span>
+              {game.platforms.length > 5 && (
+                <span className="text-[9px] text-white/40">+{game.platforms.length - 5}</span>
               )}
               {yearFromDate(game.releaseDate) && (
                 <span className="text-[10px] text-white/50 font-medium ml-auto">
@@ -117,7 +114,6 @@ export default function GameCard({
               {game.title}
             </h3>
             {hasRealScore(game) && <VerdictBadge label={game.verdictLabel} size="sm" />}
-            {hasRealScore(game) && <ScoreChips game={game} variant="compact" />}
             {game.verdictSummary && (
               <p className="text-xs text-white/60 line-clamp-2 leading-relaxed">
                 {game.verdictSummary}
@@ -178,19 +174,13 @@ export default function GameCard({
             </div>
           )}
 
-          {/* Platform badges */}
-          <div className="absolute bottom-2.5 left-2.5 flex gap-1 flex-wrap max-w-[80%]">
-            {game.platforms.slice(0, 3).map((p) => (
-              <PixelBadge
-                key={p}
-                variant={platformVariant(p)}
-                size="sm"
-              >
-                {platformShort(p)}
-              </PixelBadge>
+          {/* Platform icons */}
+          <div className="absolute bottom-2.5 left-2.5 flex items-center gap-1.5">
+            {game.platforms.slice(0, 4).map((p) => (
+              <PlatformIcon key={p} platform={p} size={14} className="drop-shadow-md brightness-0 invert opacity-80" />
             ))}
-            {game.platforms.length > 3 && (
-              <PixelBadge variant="muted" size="sm">+{game.platforms.length - 3}</PixelBadge>
+            {game.platforms.length > 4 && (
+              <span className="text-[9px] text-white/50 font-medium">+{game.platforms.length - 4}</span>
             )}
           </div>
 
@@ -205,23 +195,14 @@ export default function GameCard({
         </div>
 
         {/* Card body */}
-        <div className="p-3.5 space-y-2">
+        <div className="p-3 space-y-1.5">
           <h3 className="text-sm font-semibold text-foreground leading-tight line-clamp-1 group-hover:text-accent transition-colors">
             {game.title}
           </h3>
 
-          <div className="flex items-center gap-2 flex-wrap">
-            {hasRealScore(game) && <VerdictBadge label={game.verdictLabel} size="sm" />}
-            {game.trendingReason && (
-              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-accent/15 text-accent border border-accent/20">
-                {game.trendingReason}
-              </span>
-            )}
-          </div>
+          {hasRealScore(game) && <VerdictBadge label={game.verdictLabel} size="sm" />}
 
-          {hasRealScore(game) && <ScoreChips game={game} variant="compact" />}
-
-          <div className="flex flex-wrap gap-1.5 pt-0.5">
+          <div className="flex flex-wrap gap-1.5">
             {game.genres.slice(0, 2).map((g) => (
               <span
                 key={g}

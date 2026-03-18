@@ -182,7 +182,7 @@ export default function AdminGameEditor({ params }: { params: Promise<{ id: stri
       )}
 
       {/* Flags */}
-      <div className="flex items-center gap-4 rounded-2xl border border-white/[0.08] bg-surface p-4">
+      <div className="flex items-center gap-4 rounded-2xl border border-border bg-surface p-4">
         <label className="flex items-center gap-2 cursor-pointer">
           <input
             type="checkbox"
@@ -218,7 +218,7 @@ export default function AdminGameEditor({ params }: { params: Promise<{ id: stri
             type="text"
             value={form.title}
             onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-            className="w-full rounded-xl border border-white/[0.08] bg-surface px-4 py-3 text-sm text-foreground focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/20 transition-all"
+            className="w-full rounded-xl border border-border bg-surface px-4 py-3 text-sm text-foreground focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/20 transition-all"
           />
         </div>
 
@@ -232,7 +232,7 @@ export default function AdminGameEditor({ params }: { params: Promise<{ id: stri
               max={100}
               value={form.score}
               onChange={(e) => setForm((f) => ({ ...f, score: parseInt(e.target.value, 10) || 0 }))}
-              className="w-full rounded-xl border border-white/[0.08] bg-surface px-4 py-3 text-sm text-foreground focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/20 transition-all"
+              className="w-full rounded-xl border border-border bg-surface px-4 py-3 text-sm text-foreground focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/20 transition-all"
             />
           </div>
           <div className="space-y-1.5">
@@ -240,7 +240,7 @@ export default function AdminGameEditor({ params }: { params: Promise<{ id: stri
             <select
               value={form.verdict_label}
               onChange={(e) => setForm((f) => ({ ...f, verdict_label: e.target.value as VerdictLabel }))}
-              className="w-full rounded-xl border border-white/[0.08] bg-surface px-4 py-3 text-sm text-foreground focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/20 transition-all"
+              className="w-full rounded-xl border border-border bg-surface px-4 py-3 text-sm text-foreground focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/20 transition-all"
             >
               {VERDICT_OPTIONS.map((v) => (
                 <option key={v} value={v}>{v}</option>
@@ -256,7 +256,7 @@ export default function AdminGameEditor({ params }: { params: Promise<{ id: stri
             value={form.verdict_summary}
             onChange={(e) => setForm((f) => ({ ...f, verdict_summary: e.target.value }))}
             rows={3}
-            className="w-full rounded-xl border border-white/[0.08] bg-surface px-4 py-3 text-sm text-foreground focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/20 transition-all resize-y"
+            className="w-full rounded-xl border border-border bg-surface px-4 py-3 text-sm text-foreground focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/20 transition-all resize-y"
           />
         </div>
 
@@ -267,7 +267,7 @@ export default function AdminGameEditor({ params }: { params: Promise<{ id: stri
             value={form.description}
             onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
             rows={6}
-            className="w-full rounded-xl border border-white/[0.08] bg-surface px-4 py-3 text-sm text-foreground focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/20 transition-all resize-y"
+            className="w-full rounded-xl border border-border bg-surface px-4 py-3 text-sm text-foreground focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/20 transition-all resize-y"
           />
         </div>
 
@@ -282,7 +282,7 @@ export default function AdminGameEditor({ params }: { params: Promise<{ id: stri
               onChange={(e) => setProsText(e.target.value)}
               rows={5}
               placeholder="Great visuals&#10;Engaging story&#10;Smooth gameplay"
-              className="w-full rounded-xl border border-white/[0.08] bg-surface px-4 py-3 text-sm text-foreground placeholder:text-tertiary focus:outline-none focus:border-pixel-green/50 focus:ring-1 focus:ring-pixel-green/20 transition-all resize-y"
+              className="w-full rounded-xl border border-border bg-surface px-4 py-3 text-sm text-foreground placeholder:text-tertiary focus:outline-none focus:border-pixel-green/50 focus:ring-1 focus:ring-pixel-green/20 transition-all resize-y"
             />
           </div>
           <div className="space-y-1.5">
@@ -294,7 +294,7 @@ export default function AdminGameEditor({ params }: { params: Promise<{ id: stri
               onChange={(e) => setConsText(e.target.value)}
               rows={5}
               placeholder="Performance issues&#10;Short campaign&#10;Repetitive missions"
-              className="w-full rounded-xl border border-white/[0.08] bg-surface px-4 py-3 text-sm text-foreground placeholder:text-tertiary focus:outline-none focus:border-danger/50 focus:ring-1 focus:ring-danger/20 transition-all resize-y"
+              className="w-full rounded-xl border border-border bg-surface px-4 py-3 text-sm text-foreground placeholder:text-tertiary focus:outline-none focus:border-danger/50 focus:ring-1 focus:ring-danger/20 transition-all resize-y"
             />
           </div>
         </div>

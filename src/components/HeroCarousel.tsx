@@ -7,10 +7,9 @@ import { motion, AnimatePresence, type Variants, type PanInfo } from "framer-mot
 import { Game } from "@/lib/types";
 import VerdictBadge from "@/components/ui/VerdictBadge";
 import ScoreRing from "@/components/ui/ScoreRing";
-import PixelBadge from "@/components/ui/PixelBadge";
 import PixelButton from "@/components/ui/PixelButton";
-import ScoreChips from "@/components/ScoreChips";
-import { cn, scoreColor, platformShort, platformVariant } from "@/lib/utils";
+import PlatformIcon from "@/components/ui/PlatformIcon";
+import { cn } from "@/lib/utils";
 
 interface HeroCarouselProps {
   games: Game[];
@@ -105,16 +104,14 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
 
   return (
     <section
-      className="relative rounded-2xl overflow-hidden border border-white/[0.06] group touch-pan-y shadow-[0_8px_60px_-20px_rgba(0,0,0,0.6)] ring-1 ring-white/[0.04]"
+      className="relative overflow-hidden group touch-pan-y"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
     >
-      {/* Ambient glow behind the hero */}
-      <div className="absolute -inset-1 bg-gradient-to-br from-accent/20 via-transparent to-pixel-cyan/10 blur-2xl opacity-50 -z-10 group-hover:opacity-70 transition-opacity duration-700" />
 
       {/* Background images with swipe support */}
       <motion.div
-        className="relative aspect-[3/4] sm:aspect-[16/9] md:aspect-[2.35/1] overflow-hidden cursor-grab active:cursor-grabbing"
+        className="relative aspect-[3/4] sm:aspect-[16/9] md:aspect-[2.2/1] overflow-hidden cursor-grab active:cursor-grabbing"
         drag="x"
         dragConstraints={{ left: 0, right: 0 }}
         dragElastic={0.15}
@@ -149,7 +146,8 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
       </motion.div>
 
       {/* Content overlay */}
-      <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 md:p-10 z-[2]">
+      <div className="absolute bottom-0 left-0 right-0 z-[2]">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 pb-6 sm:pb-8 md:pb-12">
         <AnimatePresence mode="wait">
           <motion.div
             key={`content-${currentIndex}`}
@@ -176,11 +174,9 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
               <ScoreRing score={game.score} size={40} strokeWidth={3} className="sm:hidden" />
               <ScoreRing score={game.score} size={56} strokeWidth={3} className="hidden sm:block" />
               <VerdictBadge label={game.verdictLabel} size="lg" />
-              <div className="hidden sm:flex items-center gap-2 flex-wrap">
+              <div className="hidden sm:flex items-center gap-2.5 flex-wrap">
                 {game.platforms.slice(0, 5).map((p) => (
-                  <PixelBadge key={p} variant={platformVariant(p)} size="md">
-                    {platformShort(p)}
-                  </PixelBadge>
+                  <PlatformIcon key={p} platform={p} size={18} className="drop-shadow-md brightness-0 invert opacity-90" />
                 ))}
                 {game.platforms.length > 5 && (
                   <span className="text-xs hero-overlay-text-muted">+{game.platforms.length - 5}</span>
@@ -192,9 +188,6 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
                 )}
               </div>
             </div>
-
-            {/* Multi-source score chips */}
-            <ScoreChips game={game} variant="full" />
 
             {/* Summary - hidden on very small screens */}
             <p className="hidden sm:block text-sm md:text-base hero-overlay-text-secondary max-w-2xl line-clamp-2">
@@ -209,6 +202,7 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
             </div>
           </motion.div>
         </AnimatePresence>
+      </div>
       </div>
 
       {/* Navigation arrows - hidden on mobile (use swipe instead) */}

@@ -64,7 +64,7 @@ export default function AdminGamesPage() {
           value={search}
           onChange={(e) => handleSearch(e.target.value)}
           placeholder="Search games by title..."
-          className="w-full rounded-xl border border-white/[0.08] bg-surface px-4 py-3 text-sm text-foreground placeholder:text-tertiary focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/20 transition-all"
+          className="w-full rounded-xl border border-border bg-surface px-4 py-3 text-sm text-foreground placeholder:text-tertiary focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/20 transition-all"
         />
         {games.isFetching && (
           <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -74,18 +74,18 @@ export default function AdminGamesPage() {
       </div>
 
       {/* Games Table */}
-      <div className="rounded-2xl border border-white/[0.08] bg-surface overflow-hidden">
+      <div className="rounded-2xl border border-border bg-surface overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-white/[0.06]">
+              <tr className="border-b border-border">
                 <th className="text-left px-4 py-3 text-xs font-semibold text-secondary uppercase tracking-wider">Game</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-secondary uppercase tracking-wider hidden md:table-cell">Score</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-secondary uppercase tracking-wider hidden lg:table-cell">Status</th>
                 <th className="text-right px-4 py-3 text-xs font-semibold text-secondary uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/[0.04]">
+            <tbody className="divide-y divide-border">
               {games.isLoading ? (
                 Array.from({ length: 8 }).map((_, i) => (
                   <tr key={i}>
@@ -156,7 +156,7 @@ export default function AdminGamesPage() {
           <button
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page === 1}
-            className="px-3 py-1.5 rounded-lg text-xs font-medium border border-white/[0.08] bg-surface text-secondary hover:text-foreground disabled:opacity-30 transition-all"
+            className="px-3 py-1.5 rounded-lg text-xs font-medium border border-border bg-surface text-secondary hover:text-foreground disabled:opacity-30 transition-all"
           >
             ← Prev
           </button>
@@ -166,7 +166,7 @@ export default function AdminGamesPage() {
           <button
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             disabled={page === totalPages}
-            className="px-3 py-1.5 rounded-lg text-xs font-medium border border-white/[0.08] bg-surface text-secondary hover:text-foreground disabled:opacity-30 transition-all"
+            className="px-3 py-1.5 rounded-lg text-xs font-medium border border-border bg-surface text-secondary hover:text-foreground disabled:opacity-30 transition-all"
           >
             Next →
           </button>
