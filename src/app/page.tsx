@@ -394,11 +394,11 @@ export default function HomePage() {
                               <span key={g} className="text-[10px] text-tertiary font-medium">{g}</span>
                             ))}
                           </div>
-                          {game.releaseDate && (
-                            <p className="text-[10px] text-pixel-cyan font-medium">
-                              {new Date(game.releaseDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                            </p>
-                          )}
+                          <p className="text-[10px] text-pixel-cyan font-medium">
+                            {game.releaseDate
+                              ? new Date(game.releaseDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+                              : "Available Now"}
+                          </p>
                         </div>
                       </Link>
                     </motion.div>

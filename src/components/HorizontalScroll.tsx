@@ -58,14 +58,11 @@ export default function HorizontalScroll({
 
   return (
     <div className={cn("relative group", className)}>
-      <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-background to-transparent z-[1] opacity-0 group-hover:opacity-100 transition-opacity" />
-      <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-background via-background/80 to-transparent z-[1]" />
-
       <div
         ref={scrollRef}
         className={cn(
-          "flex gap-4 overflow-x-auto no-scrollbar scroll-smooth pb-2",
-          isDragging && "cursor-grabbing scroll-auto [&_a]:pointer-events-none",
+          "flex gap-4 overflow-x-auto no-scrollbar scroll-smooth pb-2 select-none",
+          isDragging && "cursor-grabbing scroll-auto [&_a]:pointer-events-none [&_img]:pointer-events-none",
           !isDragging && "cursor-grab"
         )}
         onMouseDown={onMouseDown}
@@ -73,6 +70,7 @@ export default function HorizontalScroll({
         onMouseUp={onMouseUp}
         onMouseLeave={onMouseUp}
         onClickCapture={onClickCapture}
+        onDragStart={(e) => e.preventDefault()}
       >
         {children}
       </div>

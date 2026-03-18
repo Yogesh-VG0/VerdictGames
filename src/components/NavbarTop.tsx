@@ -40,7 +40,7 @@ export default function NavbarTop() {
   return (
     <>
       {/* ── Mobile header ── */}
-      <header className="sticky top-0 z-50 md:hidden bg-background/70 backdrop-blur-xl border-b border-white/[0.06]">
+      <header className="sticky top-0 z-50 md:hidden bg-background/80 backdrop-blur-xl border-b border-border">
         <div className="flex items-center justify-between px-4 h-14">
           <Link href="/" className="flex items-center gap-2.5 group">
             <Image
@@ -67,9 +67,14 @@ export default function NavbarTop() {
               </svg>
             </motion.button>
             {user ? (
-              <Link href={`/profile/${user.username}`} className="w-9 h-9 rounded-full bg-accent/20 border border-accent/30 flex items-center justify-center text-accent text-xs font-bold">
-                {user.displayName?.[0]?.toUpperCase() ?? "U"}
-              </Link>
+              <div className="relative">
+                <button
+                  onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
+                  className="w-9 h-9 rounded-full bg-accent/20 border border-accent/30 flex items-center justify-center text-accent text-xs font-bold"
+                >
+                  {user.displayName?.[0]?.toUpperCase() ?? "U"}
+                </button>
+              </div>
             ) : (
               <motion.button
                 whileTap={{ scale: 0.9 }}
@@ -93,7 +98,7 @@ export default function NavbarTop() {
               animate={{ height: "auto", opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="overflow-hidden border-t border-white/[0.06]"
+              className="overflow-hidden border-t border-border"
             >
               <form onSubmit={handleSearch} className="px-4 py-3">
                 <input
@@ -101,18 +106,57 @@ export default function NavbarTop() {
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="Search games..."
-                  className="w-full h-10 px-4 text-sm rounded-xl bg-white/5 border border-white/10 text-foreground placeholder:text-tertiary focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/20 transition-all"
+                  className="w-full h-10 px-4 text-sm rounded-xl bg-surface-2 border border-border text-foreground placeholder:text-tertiary focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/20 transition-all"
                   autoFocus
                 />
               </form>
             </motion.div>
           )}
         </AnimatePresence>
+        {/* Mobile profile dropdown */}
+        <AnimatePresence>
+          {profileDropdownOpen && user && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="overflow-hidden border-t border-border"
+            >
+              <div className="px-4 py-3 border-b border-border">
+                <p className="text-sm font-semibold text-foreground truncate">{user.displayName}</p>
+                <p className="text-[11px] text-tertiary truncate">{user.email}</p>
+              </div>
+              <div className="py-1">
+                <Link href={`/profile/${user.username}`} onClick={() => setProfileDropdownOpen(false)} className="flex items-center gap-3 px-4 py-3 text-sm text-secondary hover:text-foreground hover:bg-surface-2 transition-colors">
+                  <svg className="w-4 h-4 opacity-60" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0" /></svg>
+                  Profile
+                </Link>
+                {isAdminEmail(user.email) && (
+                  <Link href="/admin" onClick={() => setProfileDropdownOpen(false)} className="flex items-center gap-3 px-4 py-3 text-sm text-secondary hover:text-foreground hover:bg-surface-2 transition-colors">
+                    <svg className="w-4 h-4 opacity-60" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 010 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 010-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                    Admin Dashboard
+                  </Link>
+                )}
+                <Link href="/library" onClick={() => setProfileDropdownOpen(false)} className="flex items-center gap-3 px-4 py-3 text-sm text-secondary hover:text-foreground hover:bg-surface-2 transition-colors">
+                  <svg className="w-4 h-4 opacity-60" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" /></svg>
+                  Library
+                </Link>
+              </div>
+              <div className="border-t border-border">
+                <button onClick={() => { signOut(); setProfileDropdownOpen(false); }} className="flex items-center gap-3 w-full px-4 py-3 text-sm text-danger hover:bg-danger/5 transition-colors">
+                  <svg className="w-4 h-4 opacity-60" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" /></svg>
+                  Sign Out
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </header>
 
-      {/* ── Desktop floating navbar ── */}
-      <header className="fixed top-4 left-1/2 -translate-x-1/2 z-50 hidden md:block w-[95%] max-w-5xl">
-        <nav className="flex items-center gap-2 px-2 h-14 rounded-2xl bg-black/50 backdrop-blur-2xl border border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
+      {/* ── Desktop navbar ── */}
+      <header className="sticky top-0 z-50 hidden md:block bg-background/80 backdrop-blur-xl border-b border-border">
+        <nav className="flex items-center gap-2 px-4 h-14 max-w-7xl mx-auto">
           {/* Logo */}
           <Link href="/" className="shrink-0 flex items-center gap-3 pl-3 group">
             <Image
@@ -207,38 +251,49 @@ export default function NavbarTop() {
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: -4, scale: 0.95 }}
                       transition={{ duration: 0.15 }}
-                      className="absolute right-0 top-full mt-2 w-48 rounded-xl bg-surface border border-white/[0.08] shadow-2xl overflow-hidden z-50"
+                      className="absolute right-0 top-full mt-2 w-52 rounded-xl bg-surface border border-border shadow-2xl overflow-hidden z-50"
                     >
-                      <Link
-                        href={`/profile/${user.username}`}
-                        onClick={() => setProfileDropdownOpen(false)}
-                        className="flex items-center gap-2 px-4 py-2.5 text-sm text-secondary hover:text-foreground hover:bg-white/5 transition-colors"
-                      >
-                        👤 Profile
-                      </Link>
-                      {isAdminEmail(user.email) && (
+                      <div className="px-4 py-3 border-b border-border">
+                        <p className="text-sm font-semibold text-foreground truncate">{user.displayName}</p>
+                        <p className="text-[11px] text-tertiary truncate">{user.email}</p>
+                      </div>
+                      <div className="py-1">
                         <Link
-                          href="/admin"
+                          href={`/profile/${user.username}`}
                           onClick={() => setProfileDropdownOpen(false)}
-                          className="flex items-center gap-2 px-4 py-2.5 text-sm text-secondary hover:text-foreground hover:bg-white/5 transition-colors"
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-secondary hover:text-foreground hover:bg-surface-2 transition-colors"
                         >
-                          🛠️ Admin Dashboard
+                          <svg className="w-4 h-4 opacity-60" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0" /></svg>
+                          Profile
                         </Link>
-                      )}
-                      <Link
-                        href="/library"
-                        onClick={() => setProfileDropdownOpen(false)}
-                        className="flex items-center gap-2 px-4 py-2.5 text-sm text-secondary hover:text-foreground hover:bg-white/5 transition-colors"
-                      >
-                        📚 Library
-                      </Link>
-                      <div className="border-t border-white/[0.06]" />
-                      <button
-                        onClick={() => { signOut(); setProfileDropdownOpen(false); }}
-                        className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-danger hover:bg-danger/5 transition-colors"
-                      >
-                        🚪 Sign Out
-                      </button>
+                        {isAdminEmail(user.email) && (
+                          <Link
+                            href="/admin"
+                            onClick={() => setProfileDropdownOpen(false)}
+                            className="flex items-center gap-3 px-4 py-2.5 text-sm text-secondary hover:text-foreground hover:bg-surface-2 transition-colors"
+                          >
+                            <svg className="w-4 h-4 opacity-60" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 010 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 010-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                            Admin Dashboard
+                          </Link>
+                        )}
+                        <Link
+                          href="/library"
+                          onClick={() => setProfileDropdownOpen(false)}
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-secondary hover:text-foreground hover:bg-surface-2 transition-colors"
+                        >
+                          <svg className="w-4 h-4 opacity-60" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" /></svg>
+                          Library
+                        </Link>
+                      </div>
+                      <div className="border-t border-border">
+                        <button
+                          onClick={() => { signOut(); setProfileDropdownOpen(false); }}
+                          className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-danger hover:bg-danger/5 transition-colors"
+                        >
+                          <svg className="w-4 h-4 opacity-60" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" /></svg>
+                          Sign Out
+                        </button>
+                      </div>
                     </motion.div>
                   )}
                 </AnimatePresence>

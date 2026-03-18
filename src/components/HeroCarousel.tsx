@@ -129,20 +129,19 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
             className="absolute inset-0"
           >
             <Image
-              src={game.headerImage}
+              src={game.headerImage || game.coverImage}
               alt={game.title}
               fill
               sizes="100vw"
               className="object-cover"
               priority={currentIndex === 0}
+              quality={90}
             />
           </motion.div>
         </AnimatePresence>
 
-        {/* Static gradient overlays — always dark so images stay vibrant in both themes */}
-        <div className="absolute inset-0 hero-gradient-bottom z-[1]" />
-        <div className="absolute inset-0 hero-gradient-right z-[1]" />
-        <div className="absolute inset-0 hero-gradient-vignette opacity-60 z-[1]" />
+        {/* Minimal gradient for text readability — no heavy blur */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent z-[1]" />
       </motion.div>
 
       {/* Content overlay */}
