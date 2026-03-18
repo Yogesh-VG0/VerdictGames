@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
@@ -12,17 +12,14 @@ import {
   getTopRated,
   getPersonalizedGames,
   getRecommendations,
-  getUpcomingGames,
-  getTopByPlatform,
   getGXDeals,
   getGXPopularNews,
-  getGXTopGames,
   getGXFreeToPlay,
-  getGXTopLiked,
 } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
-import type { Platform } from "@/lib/types";
 import { slugify } from "@/lib/utils/slugify";
+import { cn } from "@/lib/utils";
+import type { Game } from "@/lib/types";
 import HeroCarousel from "@/components/HeroCarousel";
 import FadeInSection from "@/components/FadeInSection";
 import GameCard from "@/components/GameCard";
@@ -30,34 +27,34 @@ import HorizontalScroll from "@/components/HorizontalScroll";
 import SectionHeader from "@/components/SectionHeader";
 import GXDealCard from "@/components/GXDealCard";
 import GXNewsCard from "@/components/GXNewsCard";
-import GXServiceBadge from "@/components/GXServiceBadge";
+import QuickViewModal from "@/components/QuickViewModal";
+import LazySection from "@/components/LazySection";
 import {
   HeroSkeleton,
   GameGridSkeleton,
   SectionHeaderSkeleton,
 } from "@/components/ui/Skeleton";
 
-const PLATFORM_TABS: { label: string; value: Platform }[] = [
-  { label: "PC", value: "PC" },
-  { label: "PS5", value: "PlayStation 5" },
-  { label: "Xbox", value: "Xbox Series X|S" },
-  { label: "Switch", value: "Nintendo Switch" },
-  { label: "Android", value: "Android" },
-];
+type DiscoverTab = "new" | "deals" | "free";
 
 export default function HomePage() {
   const { user } = useAuth();
-  const [selectedPlatform, setSelectedPlatform] = useState<Platform | "All">("PC");
-  const [serviceFilter, setServiceFilter] = useState<string>("all");
+  const [discoverTab, setDiscoverTab] = useState<DiscoverTab>("new");
+  const [quickViewGame, setQuickViewGame] = useState<Game | null>(null);
 
   const featured = useQuery({
     queryKey: ["featured"],
-    queryFn: () => getFeaturedGames(5),
+    queryFn: () => getFeaturedGames(4),
     staleTime: 5 * 60 * 1000,
   });
   const trending = useQuery({
     queryKey: ["trending"],
     queryFn: () => getTrendingGames(),
+    staleTime: 5 * 60 * 1000,
+  });
+  const personalized = useQuery({
+    queryKey: ["personalized", !!user],
+    queryFn: () => (user ? getRecommendations(12) : getPersonalizedGames(12)),
     staleTime: 5 * 60 * 1000,
   });
   const newReleases = useQuery({
@@ -67,44 +64,20 @@ export default function HomePage() {
   });
   const topRated = useQuery({
     queryKey: ["topRated"],
-    queryFn: () => getTopRated(16),
-    staleTime: 5 * 60 * 1000,
-  });
-  const upcoming = useQuery({
-    queryKey: ["upcoming"],
-    queryFn: () => getUpcomingGames(16),
-    staleTime: 10 * 60 * 1000,
-  });
-  const topByPlatform = useQuery({
-    queryKey: ["topByPlatform", selectedPlatform],
-    queryFn: () => getTopByPlatform(selectedPlatform, 16),
-    staleTime: 5 * 60 * 1000,
-  });
-  const personalized = useQuery({
-    queryKey: ["personalized", !!user],
-    queryFn: () => (user ? getRecommendations(12) : getPersonalizedGames(12)),
-    staleTime: 5 * 60 * 1000,
-  });
-
-  const gxTopLiked = useQuery({
-    queryKey: ["gx-top-liked"],
-    queryFn: () => getGXTopLiked(),
+    queryFn: () => getTopRated(10),
     staleTime: 5 * 60 * 1000,
   });
   const gxDeals = useQuery({
     queryKey: ["gx-deals"],
     queryFn: () => getGXDeals(),
     staleTime: 5 * 60 * 1000,
+    enabled: discoverTab === "deals",
   });
   const gxFreeToPlay = useQuery({
     queryKey: ["gx-free-to-play"],
     queryFn: () => getGXFreeToPlay(),
     staleTime: 5 * 60 * 1000,
-  });
-  const gxTopGames = useQuery({
-    queryKey: ["gx-top-games"],
-    queryFn: () => getGXTopGames(),
-    staleTime: 5 * 60 * 1000,
+    enabled: discoverTab === "free",
   });
   const gxNews = useQuery({
     queryKey: ["gx-news"],
@@ -112,24 +85,31 @@ export default function HomePage() {
     staleTime: 5 * 60 * 1000,
   });
 
+  const handleQuickView = useCallback((game: Game) => {
+    setQuickViewGame(game);
+  }, []);
+
+  const DISCOVER_TABS: { label: string; value: DiscoverTab; icon: string }[] = [
+    { label: "New Releases", value: "new", icon: "✨" },
+    { label: "Deals", value: "deals", icon: "💰" },
+    { label: "Free to Play", value: "free", icon: "🆓" },
+  ];
 
   return (
     <div className="space-y-0 page-enter">
-      {/* ── Hero Carousel (full-width) ── */}
+      {/* ── 1. Hero Carousel — max 4 slides, bigger focus ── */}
       <section className="relative">
         <div className="absolute inset-0 hero-spotlight pointer-events-none" />
         <FadeInSection>
           {featured.isLoading ? (
             <div className="max-w-7xl mx-auto px-4 pt-4 sm:pt-6 pb-8"><HeroSkeleton /></div>
           ) : featured.data && featured.data.length > 0 ? (
-            <HeroCarousel games={featured.data} interval={7000} />
+            <HeroCarousel games={featured.data.slice(0, 4)} interval={7000} />
           ) : null}
         </FadeInSection>
       </section>
 
-
-
-      {/* ── Trending Now ── */}
+      {/* ── 2. Trending Now — larger cards, primary section ── */}
       <section className="relative py-10">
         <div className="absolute inset-0 mesh-gradient opacity-50 pointer-events-none" />
         <div className="max-w-7xl mx-auto px-4 relative">
@@ -142,20 +122,25 @@ export default function HomePage() {
             ) : trending.data && trending.data.length > 0 ? (
               <>
                 <SectionHeader
-                  title="Most Played Right Now"
+                  title="Trending Right Now"
                   href="/search?sort=trending"
                   icon="🔥"
-                  subtitle="Ranked by Steam concurrent players"
+                  subtitle="Ranked by real-time player activity & community signals"
                 />
                 <HorizontalScroll>
-                  {trending.data.slice(0, 12).map((game, i) => (
-                    <div key={game.id} className="shrink-0 w-40 sm:w-48 md:w-52 lg:w-56">
+                  {trending.data.slice(0, 10).map((game, i) => (
+                    <div key={game.id} className="shrink-0 w-48 sm:w-56 md:w-60 lg:w-64">
                       <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: i * 0.04, duration: 0.4 }}
                       >
-                        <GameCard game={game} priority={i === 0} />
+                        <GameCard
+                          game={game}
+                          priority={i < 2}
+                          variant={i < 3 ? "spotlight" : "default"}
+                          onQuickView={handleQuickView}
+                        />
                       </motion.div>
                     </div>
                   ))}
@@ -166,154 +151,11 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── Divider ── */}
       <div className="max-w-7xl mx-auto px-4">
         <hr className="border-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
       </div>
 
-      {/* ── New Releases ── */}
-      <section className="py-12">
-        <div className="max-w-7xl mx-auto px-4">
-          <FadeInSection>
-            {newReleases.isLoading ? (
-              <>
-                <SectionHeaderSkeleton />
-                <GameGridSkeleton count={4} />
-              </>
-            ) : newReleases.data && newReleases.data.length > 0 ? (
-              <>
-                <SectionHeader
-                  title="New Releases"
-                  href="/search?sort=newest"
-                  icon="✨"
-                  subtitle="Fresh games worth your attention"
-                />
-                <HorizontalScroll>
-                  {newReleases.data.map((game, i) => (
-                    <div key={game.id} className="shrink-0 w-40 sm:w-48 md:w-52 lg:w-56">
-                      <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: i * 0.03, duration: 0.4 }}
-                      >
-                        <GameCard game={game} />
-                      </motion.div>
-                    </div>
-                  ))}
-                </HorizontalScroll>
-              </>
-            ) : null}
-          </FadeInSection>
-        </div>
-      </section>
-
-      {/* ── Upcoming Games ── */}
-      {upcoming.data && upcoming.data.length > 0 && (
-        <section className="relative py-12">
-          <div className="absolute inset-0 mesh-gradient opacity-30 pointer-events-none" />
-          <div className="max-w-7xl mx-auto px-4 relative">
-            <FadeInSection>
-              <SectionHeader
-                title="Upcoming Games"
-                href="/calendar"
-                icon="📅"
-                subtitle="Most anticipated upcoming releases"
-              />
-              <HorizontalScroll>
-                {upcoming.data.map((game) => (
-                  <div key={game.id} className="shrink-0 w-40 sm:w-48 md:w-52 lg:w-56">
-                    <GameCard game={game} />
-                  </div>
-                ))}
-              </HorizontalScroll>
-            </FadeInSection>
-          </div>
-        </section>
-      )}
-
-      {/* ── Divider ── */}
-      <div className="max-w-7xl mx-auto px-4">
-        <hr className="border-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
-      </div>
-
-      {/* ── Top Rated ── */}
-      <section className="relative py-12">
-        <div className="absolute inset-0 mesh-gradient opacity-30 pointer-events-none" />
-        <div className="max-w-7xl mx-auto px-4 relative">
-          <FadeInSection>
-            {topRated.isLoading ? (
-              <>
-                <SectionHeaderSkeleton />
-                <GameGridSkeleton count={4} />
-              </>
-            ) : (topRated.data && topRated.data.length > 0) || (topByPlatform.data && topByPlatform.data.length > 0) ? (
-              <>
-                <SectionHeader
-                  title="Top Verdict Scores"
-                  href="/search?sort=top-rated"
-                  icon="🏆"
-                  subtitle="Highest-scored games from Steam, IGDB & Metacritic signals"
-                />
-                {/* Platform tabs */}
-                <div className="flex items-center gap-2 mb-6 overflow-x-auto no-scrollbar pb-1">
-                  {PLATFORM_TABS.map((tab) => (
-                    <button
-                      key={tab.value}
-                      onClick={() => setSelectedPlatform(tab.value)}
-                      className={`px-4 py-2 rounded-xl text-sm font-medium transition-all whitespace-nowrap ${
-                        selectedPlatform === tab.value
-                          ? "bg-accent text-white shadow-sm shadow-accent/20"
-                          : "bg-white/5 text-secondary hover:text-foreground hover:bg-white/10 border border-white/10"
-                      }`}
-                    >
-                      {tab.label}
-                    </button>
-                  ))}
-                </div>
-                {selectedPlatform === "PC" &&
-                topRated.data &&
-                topRated.data.length > 0 ? (
-                  <HorizontalScroll>
-                    {topRated.data.map((game) => (
-                      <div key={game.id} className="shrink-0 w-40 sm:w-48 md:w-52 lg:w-56">
-                        <GameCard game={game} />
-                      </div>
-                    ))}
-                  </HorizontalScroll>
-                ) : topByPlatform.isLoading ? (
-                  <GameGridSkeleton count={4} />
-                ) : topByPlatform.data && topByPlatform.data.length > 0 ? (
-                  <HorizontalScroll>
-                    {topByPlatform.data.map((game) => (
-                      <div key={game.id} className="shrink-0 w-40 sm:w-48 md:w-52 lg:w-56">
-                        <GameCard game={game} />
-                      </div>
-                    ))}
-                  </HorizontalScroll>
-                ) : (
-                  <p className="text-secondary text-sm py-8 text-center">
-                    No games found for this platform yet. Try browsing{" "}
-                    <button
-                      onClick={() => setSelectedPlatform("PC")}
-                      className="text-accent hover:underline"
-                    >
-                      PC games
-                    </button>{" "}
-                    instead.
-                  </p>
-                )}
-              </>
-            ) : null}
-          </FadeInSection>
-        </div>
-      </section>
-
-      {/* ── Divider ── */}
-      <div className="max-w-7xl mx-auto px-4">
-        <hr className="border-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
-      </div>
-
-      {/* ── Because You Viewed… ── */}
+      {/* ── 3. For You — moved up to 3rd position ── */}
       <section className="py-12">
         <div className="max-w-7xl mx-auto px-4">
           <FadeInSection>
@@ -327,12 +169,18 @@ export default function HomePage() {
                 <SectionHeader
                   title={user ? "Recommended For You" : "You Might Enjoy"}
                   icon="💎"
-                  subtitle={user ? "Based on your library" : "Games we think you'll love"}
+                  subtitle={user ? "Based on your library & play history" : "Curated picks across diverse genres"}
                 />
                 <HorizontalScroll>
-                  {personalized.data.map((game) => (
-                    <div key={game.id} className="shrink-0 w-40 sm:w-48 md:w-52 lg:w-56">
-                      <GameCard game={game} />
+                  {personalized.data.map((game, i) => (
+                    <div key={game.id} className="shrink-0 w-44 sm:w-52 md:w-56 lg:w-60">
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: i * 0.03, duration: 0.4 }}
+                      >
+                        <GameCard game={game} onQuickView={handleQuickView} />
+                      </motion.div>
                     </div>
                   ))}
                 </HorizontalScroll>
@@ -342,269 +190,201 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── Hot Right Now (GX Top Liked) ── */}
-      {gxTopLiked.data && gxTopLiked.data.length > 0 && (
-        <>
-          <div className="max-w-7xl mx-auto px-4">
-            <hr className="border-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
-          </div>
-          <section className="relative py-12">
-            <div className="absolute inset-0 mesh-gradient opacity-40 pointer-events-none" />
-            <div className="max-w-7xl mx-auto px-4 relative">
-              <FadeInSection>
-                <SectionHeader
-                  title="Hot Right Now"
-                  icon="🔥"
-                  subtitle="Most anticipated games by community votes — live data"
-                />
-                <HorizontalScroll>
-                  {gxTopLiked.data.map((game, i) => (
-                    <motion.div
-                      key={game.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: i * 0.05, duration: 0.4 }}
-                      className="shrink-0 w-44 sm:w-52"
-                    >
-                      <Link
-                        href={`/game/${game.slug || slugify(game.title)}`}
-                        className="block group rounded-2xl border border-border bg-surface overflow-hidden card-shimmer hover:border-accent/30 transition-all duration-300"
-                      >
-                        <div className="relative aspect-[3/4] overflow-hidden">
-                          {game.cover && (
-                            <Image
-                              src={game.cover}
-                              alt={game.title}
-                              fill
-                              sizes="(max-width: 640px) 50vw, 20vw"
-                              className="object-cover transition-transform duration-700 group-hover:scale-110"
-                            />
-                          )}
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-                          <div className="absolute top-2.5 right-2.5 rounded-xl px-2 py-1 bg-accent/80 backdrop-blur-md border border-white/10 text-[10px] font-bold text-white flex items-center gap-1">
-                            <span>♥</span> {game.likes.toLocaleString()}
-                          </div>
-                        </div>
-                        <div className="p-3 space-y-1.5">
-                          <h3 className="text-sm font-semibold text-foreground leading-tight line-clamp-1 group-hover:text-accent transition-colors">
-                            {game.title}
-                          </h3>
-                          <div className="flex flex-wrap gap-1.5">
-                            {game.genres.slice(0, 2).map((g) => (
-                              <span key={g} className="text-[10px] text-tertiary font-medium">{g}</span>
-                            ))}
-                          </div>
-                          <p className="text-[10px] text-pixel-cyan font-medium">
-                            {game.releaseDate
-                              ? new Date(game.releaseDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
-                              : "Available Now"}
-                          </p>
-                        </div>
-                      </Link>
-                    </motion.div>
-                  ))}
-                </HorizontalScroll>
-              </FadeInSection>
-            </div>
-          </section>
-        </>
-      )}
+      <div className="max-w-7xl mx-auto px-4">
+        <hr className="border-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
+      </div>
 
-      {/* ── Best Deals (GX Super Deals) ── */}
-      {gxDeals.data && gxDeals.data.length > 0 && (
-        <>
-          <div className="max-w-7xl mx-auto px-4">
-            <hr className="border-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
-          </div>
-          <section className="py-12">
-            <div className="max-w-7xl mx-auto px-4">
-              <FadeInSection>
-                <SectionHeader
-                  title="Best Deals"
-                  icon="💰"
-                  subtitle="Live discounts from top stores — updated every 5 minutes"
-                />
-                <HorizontalScroll>
-                  {gxDeals.data.slice(0, 10).map((deal, i) => (
-                    <motion.div
-                      key={deal.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: i * 0.04, duration: 0.4 }}
-                      className="shrink-0 w-40 sm:w-48 md:w-52"
-                    >
-                      <GXDealCard deal={deal} />
-                    </motion.div>
-                  ))}
-                </HorizontalScroll>
-              </FadeInSection>
-            </div>
-          </section>
-        </>
-      )}
+      {/* ── 4. Discover — tabbed: New Releases | Deals | Free to Play ── */}
+      <LazySection minHeight="400px">
+        <section className="relative py-12">
+          <div className="absolute inset-0 mesh-gradient opacity-30 pointer-events-none" />
+          <div className="max-w-7xl mx-auto px-4 relative">
+            <FadeInSection>
+              <SectionHeader
+                title="Discover"
+                href="/search"
+                icon="🎮"
+                subtitle="Find your next obsession"
+              />
+              <div className="flex items-center gap-2 mb-6 overflow-x-auto no-scrollbar pb-1">
+                {DISCOVER_TABS.map((tab) => (
+                  <button
+                    key={tab.value}
+                    onClick={() => setDiscoverTab(tab.value)}
+                    className={cn(
+                      "px-4 py-2 rounded-xl text-sm font-medium transition-all whitespace-nowrap flex items-center gap-2",
+                      discoverTab === tab.value
+                        ? "bg-accent text-white shadow-sm shadow-accent/20"
+                        : "bg-white/5 text-secondary hover:text-foreground hover:bg-white/10 border border-white/10"
+                    )}
+                  >
+                    <span>{tab.icon}</span>
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
 
-      {/* ── Free to Play (GX F2P) ── */}
-      {gxFreeToPlay.data && gxFreeToPlay.data.length > 0 && (
-        <>
-          <div className="max-w-7xl mx-auto px-4">
-            <hr className="border-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
-          </div>
-          <section className="relative py-12">
-            <div className="absolute inset-0 mesh-gradient opacity-30 pointer-events-none" />
-            <div className="max-w-7xl mx-auto px-4 relative">
-              <FadeInSection>
-                <SectionHeader
-                  title="Free to Play"
-                  icon="🆓"
-                  subtitle="Jump right in — no wallet required"
-                />
-                <HorizontalScroll>
-                  {gxFreeToPlay.data.slice(0, 12).map((game, i) => (
-                    <motion.div
-                      key={game.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: i * 0.05, duration: 0.4 }}
-                      className="shrink-0 w-44 sm:w-52"
-                    >
-                      <Link
-                        href={`/game/${slugify(game.title)}`}
-                        className="block group rounded-2xl border border-border bg-surface overflow-hidden card-shimmer hover:border-pixel-green/30 transition-all duration-300"
-                      >
-                        <div className="relative aspect-[3/4] overflow-hidden">
-                          {game.cover && (
-                            <Image
-                              src={game.cover}
-                              alt={game.title}
-                              fill
-                              sizes="(max-width: 640px) 50vw, 20vw"
-                              className="object-cover transition-transform duration-700 group-hover:scale-110"
-                            />
-                          )}
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-                          <div className="absolute top-2.5 left-2.5">
-                            <span className="text-[10px] font-bold text-white bg-pixel-green/80 backdrop-blur-md px-2 py-0.5 rounded-lg border border-white/10">
-                              FREE
-                            </span>
-                          </div>
+              {discoverTab === "new" && (
+                <>
+                  {newReleases.isLoading ? (
+                    <GameGridSkeleton count={4} />
+                  ) : newReleases.data && newReleases.data.length > 0 ? (
+                    <HorizontalScroll>
+                      {newReleases.data.map((game, i) => (
+                        <div key={game.id} className="shrink-0 w-44 sm:w-52 md:w-56 lg:w-60">
+                          <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: i * 0.03, duration: 0.4 }}
+                          >
+                            <GameCard game={game} onQuickView={handleQuickView} />
+                          </motion.div>
                         </div>
-                        <div className="p-3 space-y-1.5">
-                          <h3 className="text-sm font-semibold text-foreground leading-tight line-clamp-1 group-hover:text-pixel-green transition-colors">
-                            {game.title}
-                          </h3>
-                          <div className="flex flex-wrap gap-1.5">
-                            {game.genres.slice(0, 2).map((g) => (
-                              <span key={g} className="text-[10px] text-tertiary font-medium">{g}</span>
-                            ))}
-                          </div>
-                        </div>
-                      </Link>
-                    </motion.div>
-                  ))}
-                </HorizontalScroll>
-              </FadeInSection>
-            </div>
-          </section>
-        </>
-      )}
+                      ))}
+                    </HorizontalScroll>
+                  ) : (
+                    <p className="text-secondary text-sm py-8 text-center">No new releases found.</p>
+                  )}
+                </>
+              )}
 
-      {/* ── PS Plus & Game Pass (GX Top Games) ── */}
-      {gxTopGames.data && gxTopGames.data.length > 0 && (() => {
-        const SERVICE_TABS = [
-          { label: "All", value: "all" },
-          { label: "PS Plus", value: "PS PLUS" },
-          { label: "Game Pass", value: "GAMEPASS" },
-          { label: "PS+ Extra", value: "PS + EXTRA" },
-        ];
-        const filtered = serviceFilter === "all"
-          ? gxTopGames.data
-          : gxTopGames.data.filter((g) => g.serviceTag === serviceFilter);
-
-        return (
-          <>
-            <div className="max-w-7xl mx-auto px-4">
-              <hr className="border-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
-            </div>
-            <section className="py-12">
-              <div className="max-w-7xl mx-auto px-4">
-                <FadeInSection>
-                  <SectionHeader
-                    title="On PS Plus & Game Pass"
-                    icon="🎮"
-                    subtitle="Games available on subscription services right now"
-                  />
-                  <div className="flex items-center gap-2 mb-6 overflow-x-auto no-scrollbar pb-1">
-                    {SERVICE_TABS.map((tab) => (
-                      <button
-                        key={tab.value}
-                        onClick={() => setServiceFilter(tab.value)}
-                        className={`px-4 py-2 rounded-xl text-sm font-medium transition-all whitespace-nowrap ${
-                          serviceFilter === tab.value
-                            ? "bg-accent text-white shadow-sm shadow-accent/20"
-                            : "bg-white/5 text-secondary hover:text-foreground hover:bg-white/10 border border-white/10"
-                        }`}
-                      >
-                        {tab.label}
-                      </button>
-                    ))}
-                  </div>
-                  <HorizontalScroll>
-                    {filtered.slice(0, 16).map((game, i) => (
-                      <motion.div
-                        key={game.id + i}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: i * 0.04, duration: 0.4 }}
-                        className="shrink-0 w-44 sm:w-52"
-                      >
-                        <Link
-                          href={`/game/${slugify(game.title)}`}
-                          className="block group rounded-2xl border border-border bg-surface overflow-hidden card-shimmer hover:border-accent/30 transition-all duration-300"
+              {discoverTab === "deals" && (
+                <>
+                  {gxDeals.isLoading ? (
+                    <GameGridSkeleton count={4} />
+                  ) : gxDeals.data && gxDeals.data.length > 0 ? (
+                    <HorizontalScroll>
+                      {gxDeals.data.slice(0, 12).map((deal, i) => (
+                        <motion.div
+                          key={deal.id}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: i * 0.04, duration: 0.4 }}
+                          className="shrink-0 w-40 sm:w-48 md:w-52"
                         >
-                          <div className="relative aspect-[3/4] overflow-hidden">
-                            {game.cover && (
-                              <Image
-                                src={game.cover}
-                                alt={game.title}
-                                fill
-                                sizes="(max-width: 640px) 50vw, 20vw"
-                                className="object-cover transition-transform duration-700 group-hover:scale-110"
-                              />
-                            )}
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-                            {game.serviceTag && (
+                          <GXDealCard deal={deal} />
+                        </motion.div>
+                      ))}
+                    </HorizontalScroll>
+                  ) : (
+                    <p className="text-secondary text-sm py-8 text-center">No deals available right now.</p>
+                  )}
+                </>
+              )}
+
+              {discoverTab === "free" && (
+                <>
+                  {gxFreeToPlay.isLoading ? (
+                    <GameGridSkeleton count={4} />
+                  ) : gxFreeToPlay.data && gxFreeToPlay.data.length > 0 ? (
+                    <HorizontalScroll>
+                      {gxFreeToPlay.data.slice(0, 12).map((game, i) => (
+                        <motion.div
+                          key={game.id}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: i * 0.05, duration: 0.4 }}
+                          className="shrink-0 w-44 sm:w-52"
+                        >
+                          <Link
+                            href={`/game/${slugify(game.title)}`}
+                            className="block group rounded-2xl border border-border bg-surface overflow-hidden card-shimmer hover:border-pixel-green/30 transition-all duration-300"
+                          >
+                            <div className="relative aspect-[3/4] overflow-hidden">
+                              {game.cover && (
+                                <Image
+                                  src={game.cover}
+                                  alt={game.title}
+                                  fill
+                                  sizes="(max-width: 640px) 50vw, 20vw"
+                                  className="object-cover transition-transform duration-700 group-hover:scale-110"
+                                />
+                              )}
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
                               <div className="absolute top-2.5 left-2.5">
-                                <GXServiceBadge name={game.serviceTag} color={game.serviceColor} />
+                                <span className="text-[10px] font-bold text-white bg-pixel-green/80 backdrop-blur-md px-2 py-0.5 rounded-lg border border-white/10">
+                                  FREE
+                                </span>
                               </div>
-                            )}
-                          </div>
-                          <div className="p-3 space-y-1.5">
-                            <h3 className="text-sm font-semibold text-foreground leading-tight line-clamp-1 group-hover:text-accent transition-colors">
-                              {game.title}
-                            </h3>
-                            <div className="flex flex-wrap gap-1.5">
-                              {game.genres.slice(0, 2).map((g) => (
-                                <span key={g} className="text-[10px] text-tertiary font-medium">{g}</span>
-                              ))}
                             </div>
-                          </div>
-                        </Link>
-                      </motion.div>
+                            <div className="p-3 space-y-1.5">
+                              <h3 className="text-sm font-semibold text-foreground leading-tight line-clamp-1 group-hover:text-pixel-green transition-colors">
+                                {game.title}
+                              </h3>
+                              <div className="flex flex-wrap gap-1.5">
+                                {game.genres.slice(0, 2).map((g) => (
+                                  <span key={g} className="text-[10px] text-tertiary font-medium">{g}</span>
+                                ))}
+                              </div>
+                            </div>
+                          </Link>
+                        </motion.div>
+                      ))}
+                    </HorizontalScroll>
+                  ) : (
+                    <p className="text-secondary text-sm py-8 text-center">No free games available.</p>
+                  )}
+                </>
+              )}
+            </FadeInSection>
+          </div>
+        </section>
+      </LazySection>
+
+      <div className="max-w-7xl mx-auto px-4">
+        <hr className="border-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
+      </div>
+
+      {/* ── 5. Top Rated — top 10 only, bigger cards ── */}
+      <LazySection minHeight="400px">
+        <section className="relative py-12">
+          <div className="absolute inset-0 mesh-gradient opacity-30 pointer-events-none" />
+          <div className="max-w-7xl mx-auto px-4 relative">
+            <FadeInSection>
+              {topRated.isLoading ? (
+                <>
+                  <SectionHeaderSkeleton />
+                  <GameGridSkeleton count={4} />
+                </>
+              ) : topRated.data && topRated.data.length > 0 ? (
+                <>
+                  <SectionHeader
+                    title="Top Rated"
+                    href="/search?sort=top-rated"
+                    icon="🏆"
+                    subtitle="Highest Verdict scores across all platforms"
+                  />
+                  <HorizontalScroll>
+                    {topRated.data.slice(0, 10).map((game, i) => (
+                      <div key={game.id} className="shrink-0 w-48 sm:w-56 md:w-60 lg:w-64">
+                        <motion.div
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: i * 0.04, duration: 0.4 }}
+                        >
+                          <GameCard
+                            game={game}
+                            variant={i < 3 ? "spotlight" : "default"}
+                            onQuickView={handleQuickView}
+                          />
+                        </motion.div>
+                      </div>
                     ))}
                   </HorizontalScroll>
-                </FadeInSection>
-              </div>
-            </section>
-          </>
-        );
-      })()}
-
-      {/* ── Gaming News (GX Popular News) ── */}
-      {gxNews.data && gxNews.data.length > 0 && (
-        <>
-          <div className="max-w-7xl mx-auto px-4">
-            <hr className="border-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
+                </>
+              ) : null}
+            </FadeInSection>
           </div>
+        </section>
+      </LazySection>
+
+      <div className="max-w-7xl mx-auto px-4">
+        <hr className="border-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
+      </div>
+
+      {/* ── 6. Gaming News — compact, last content section ── */}
+      <LazySection minHeight="300px">
+        {gxNews.data && gxNews.data.length > 0 && (
           <section className="py-12">
             <div className="max-w-7xl mx-auto px-4">
               <FadeInSection>
@@ -614,7 +394,7 @@ export default function HomePage() {
                   subtitle="Trending stories from top gaming outlets"
                 />
                 <HorizontalScroll>
-                  {gxNews.data.slice(0, 8).map((article, i) => (
+                  {gxNews.data.slice(0, 6).map((article, i) => (
                     <motion.div
                       key={article.id}
                       initial={{ opacity: 0, y: 20 }}
@@ -629,8 +409,8 @@ export default function HomePage() {
               </FadeInSection>
             </div>
           </section>
-        </>
-      )}
+        )}
+      </LazySection>
 
       {/* ── Data Sources Banner ── */}
       <section className="border-t border-b border-border bg-surface/30">
@@ -670,7 +450,6 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 py-12">
           <FadeInSection>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-              {/* Brand */}
               <div className="md:col-span-1">
                 <p className="text-lg font-bold">
                   <span className="gradient-text">VERDICT</span>
@@ -680,8 +459,6 @@ export default function HomePage() {
                   Your trusted source for honest game verdicts. Data-driven reviews powered by 5 APIs.
                 </p>
               </div>
-
-              {/* Browse */}
               <div>
                 <h4 className="text-xs font-semibold text-secondary uppercase tracking-wider mb-3">Browse</h4>
                 <ul className="space-y-2 text-sm text-tertiary">
@@ -692,8 +469,6 @@ export default function HomePage() {
                   <li><Link href="/lists" className="hover:text-accent transition-colors">Curated Lists</Link></li>
                 </ul>
               </div>
-
-              {/* Platforms */}
               <div>
                 <h4 className="text-xs font-semibold text-secondary uppercase tracking-wider mb-3">Platforms</h4>
                 <ul className="space-y-2 text-sm text-tertiary">
@@ -704,8 +479,6 @@ export default function HomePage() {
                   <li><Link href="/search?platform=Android" className="hover:text-accent transition-colors">Android</Link></li>
                 </ul>
               </div>
-
-              {/* Company */}
               <div>
                 <h4 className="text-xs font-semibold text-secondary uppercase tracking-wider mb-3">About</h4>
                 <ul className="space-y-2 text-sm text-tertiary">
@@ -717,7 +490,6 @@ export default function HomePage() {
                 </ul>
               </div>
             </div>
-
             <div className="mt-8 pt-6 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-4">
               <p className="text-[11px] text-tertiary">
                 © {new Date().getFullYear()} verdict.games — Data from RAWG, Steam, IGDB, CheapShark, Wikipedia, HLTB & GX Corner.
@@ -729,6 +501,9 @@ export default function HomePage() {
           </FadeInSection>
         </div>
       </footer>
+
+      {/* Quick View Modal */}
+      <QuickViewModal game={quickViewGame} onClose={() => setQuickViewGame(null)} />
     </div>
   );
 }

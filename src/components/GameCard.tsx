@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -14,6 +15,7 @@ interface GameCardProps {
   className?: string;
   /** "spotlight" renders a larger card with description */
   variant?: "default" | "spotlight";
+  onQuickView?: (game: Game) => void;
 }
 
 function scoreGlowClass(score: number) {
@@ -21,6 +23,33 @@ function scoreGlowClass(score: number) {
   if (score >= 65) return "score-glow-good";
   if (score >= 45) return "score-glow-mixed";
   return "score-glow-bad";
+}
+
+function BlurImage({ src, alt, sizes, priority, className }: {
+  src: string; alt: string; sizes: string; priority?: boolean; className?: string;
+}) {
+  const [loaded, setLoaded] = useState(false);
+  return (
+    <>
+      <div className={cn(
+        "absolute inset-0 bg-surface-2 transition-opacity duration-500",
+        loaded ? "opacity-0" : "opacity-100"
+      )} />
+      <Image
+        src={src}
+        alt={alt}
+        fill
+        sizes={sizes}
+        className={cn(
+          "transition-all duration-700",
+          loaded ? "opacity-100 scale-100" : "opacity-0 scale-105 blur-sm",
+          className
+        )}
+        priority={priority}
+        onLoad={() => setLoaded(true)}
+      />
+    </>
+  );
 }
 
 function yearFromDate(date: string | undefined): string | null {
@@ -40,11 +69,19 @@ function hasRealScore(game: Game): boolean {
   return true;
 }
 
+function scoreGlowBorder(score: number): string {
+  if (score >= 80) return "hover:shadow-[0_0_30px_-8px_rgba(74,222,128,0.25)]";
+  if (score >= 65) return "hover:shadow-[0_0_30px_-8px_rgba(163,230,53,0.25)]";
+  if (score >= 45) return "hover:shadow-[0_0_30px_-8px_rgba(250,204,21,0.25)]";
+  return "hover:shadow-[0_0_30px_-8px_rgba(248,113,113,0.25)]";
+}
+
 export default function GameCard({
   game,
   priority = false,
   className,
   variant = "default",
+  onQuickView,
 }: GameCardProps) {
   if (variant === "spotlight") {
     return (
@@ -53,17 +90,19 @@ export default function GameCard({
           whileHover={{ y: -4 }}
           whileTap={{ scale: 0.98 }}
           transition={{ duration: 0.3, ease: "easeOut" }}
-          className="relative rounded-2xl border border-border bg-surface overflow-hidden card-shimmer h-full hover:border-accent/30 hover:shadow-[0_0_40px_-8px_rgba(168,85,247,0.2)] transition-all duration-500"
+          className={cn(
+            "relative rounded-2xl border border-border bg-surface overflow-hidden card-shimmer h-full hover:border-accent/30 transition-all duration-500",
+            hasRealScore(game) ? scoreGlowBorder(game.score) : "hover:shadow-[0_0_40px_-8px_rgba(168,85,247,0.2)]"
+          )}
         >
           {/* Cover image - taller for spotlight */}
           <div className="relative aspect-[3/4] overflow-hidden">
             {game.coverImage ? (
-              <Image
+              <BlurImage
                 src={game.coverImage}
                 alt={game.title}
-                fill
                 sizes="(max-width: 640px) 100vw, 33vw"
-                className="object-cover transition-transform duration-700 group-hover:scale-110"
+                className="object-cover group-hover:scale-110"
                 priority={priority}
               />
             ) : (
@@ -95,8 +134,20 @@ export default function GameCard({
             ) : null}
           </div>
 
+          {/* Quick view overlay */}
+          {onQuickView && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/40 transition-all duration-300 z-[2]">
+              <button
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); onQuickView(game); }}
+                className="opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-300 px-3 py-1.5 rounded-full bg-white/15 backdrop-blur-md border border-white/20 text-white text-xs font-medium hover:bg-white/25"
+              >
+                Quick View
+              </button>
+            </div>
+          )}
+
           {/* Content overlay at bottom */}
-          <div className="absolute bottom-0 left-0 right-0 p-4 space-y-2">
+          <div className="absolute bottom-0 left-0 right-0 p-4 space-y-2 z-[1]">
             <div className="flex items-center gap-1.5 flex-wrap">
               {game.platforms.slice(0, 5).map((p) => (
                 <PlatformIcon key={p} platform={p} size={14} className="drop-shadow-md brightness-0 invert opacity-80" />
@@ -131,17 +182,19 @@ export default function GameCard({
         whileHover={{ y: -6 }}
         whileTap={{ scale: 0.98 }}
         transition={{ duration: 0.3, ease: "easeOut" }}
-        className="relative rounded-2xl border border-border bg-surface overflow-hidden card-shimmer h-full hover:border-accent/30 hover:shadow-[0_0_30px_-8px_rgba(168,85,247,0.15)] transition-all duration-500"
+        className={cn(
+          "relative rounded-2xl border border-border bg-surface overflow-hidden card-shimmer h-full hover:border-accent/30 transition-all duration-500",
+          hasRealScore(game) ? scoreGlowBorder(game.score) : "hover:shadow-[0_0_30px_-8px_rgba(168,85,247,0.15)]"
+        )}
       >
         {/* Cover image */}
         <div className="relative aspect-[3/4] overflow-hidden">
           {game.coverImage ? (
-            <Image
+            <BlurImage
               src={game.coverImage}
               alt={game.title}
-              fill
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-              className="object-cover transition-transform duration-700 group-hover:scale-110"
+              className="object-cover group-hover:scale-110"
               priority={priority}
             />
           ) : (
@@ -190,6 +243,18 @@ export default function GameCard({
               <span className="text-[10px] text-white/70 bg-black/50 backdrop-blur-md px-2 py-0.5 rounded-lg font-medium border border-white/5">
                 {yearFromDate(game.releaseDate)}
               </span>
+            </div>
+          )}
+
+          {/* Quick view overlay */}
+          {onQuickView && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/40 transition-all duration-300 z-[2]">
+              <button
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); onQuickView(game); }}
+                className="opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-300 px-3 py-1.5 rounded-full bg-white/15 backdrop-blur-md border border-white/20 text-white text-xs font-medium hover:bg-white/25"
+              >
+                Quick View
+              </button>
             </div>
           )}
         </div>

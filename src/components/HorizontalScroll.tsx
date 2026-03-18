@@ -6,15 +6,18 @@ import { cn } from "@/lib/utils";
 interface HorizontalScrollProps {
   children: React.ReactNode;
   className?: string;
+  snap?: boolean;
 }
 
 export default function HorizontalScroll({
   children,
   className,
+  snap = false,
 }: HorizontalScrollProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
-  const dragState = useRef({ startX: 0, scrollLeft: 0, moved: false });
+  const [hasMoved, setHasMoved] = useState(false);
+  const dragState = useRef({ startX: 0, scrollLeft: 0, isMouseDown: false });
 
   function scrollBy(dir: "left" | "right") {
     if (!scrollRef.current) return;
@@ -27,34 +30,38 @@ export default function HorizontalScroll({
 
   const onMouseDown = useCallback((e: MouseEvent) => {
     if (!scrollRef.current) return;
-    setIsDragging(true);
     dragState.current = {
       startX: e.pageX - scrollRef.current.offsetLeft,
       scrollLeft: scrollRef.current.scrollLeft,
-      moved: false,
+      isMouseDown: true,
     };
+    setIsDragging(true);
+    setHasMoved(false);
   }, []);
 
   const onMouseMove = useCallback((e: MouseEvent) => {
-    if (!isDragging || !scrollRef.current) return;
+    if (!dragState.current.isMouseDown || !scrollRef.current) return;
     e.preventDefault();
     const x = e.pageX - scrollRef.current.offsetLeft;
     const walk = (x - dragState.current.startX) * 1.5;
-    if (Math.abs(walk) > 5) dragState.current.moved = true;
+    if (Math.abs(walk) > 8) setHasMoved(true);
     scrollRef.current.scrollLeft = dragState.current.scrollLeft - walk;
-  }, [isDragging]);
+  }, []);
 
-  const onMouseUp = useCallback(() => {
-    setIsDragging(false);
+  const stopDragging = useCallback(() => {
+    dragState.current.isMouseDown = false;
+    setTimeout(() => {
+      setIsDragging(false);
+    }, 50);
   }, []);
 
   const onClickCapture = useCallback((e: MouseEvent) => {
-    if (dragState.current.moved) {
+    if (hasMoved) {
       e.preventDefault();
       e.stopPropagation();
-      dragState.current.moved = false;
+      setHasMoved(false);
     }
-  }, []);
+  }, [hasMoved]);
 
   return (
     <div className={cn("relative group", className)}>
@@ -62,13 +69,14 @@ export default function HorizontalScroll({
         ref={scrollRef}
         className={cn(
           "flex gap-4 overflow-x-auto no-scrollbar scroll-smooth pb-2 select-none",
-          isDragging && "cursor-grabbing scroll-auto [&_a]:pointer-events-none [&_img]:pointer-events-none",
+          snap && "snap-x snap-mandatory",
+          isDragging && hasMoved && "cursor-grabbing scroll-auto [&_a]:pointer-events-none [&_button]:pointer-events-none [&_img]:pointer-events-none",
           !isDragging && "cursor-grab"
         )}
         onMouseDown={onMouseDown}
         onMouseMove={onMouseMove}
-        onMouseUp={onMouseUp}
-        onMouseLeave={onMouseUp}
+        onMouseUp={stopDragging}
+        onMouseLeave={stopDragging}
         onClickCapture={onClickCapture}
         onDragStart={(e) => e.preventDefault()}
       >

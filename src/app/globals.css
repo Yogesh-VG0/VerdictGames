@@ -593,3 +593,30 @@ h1, h2, h3 {
 .light .steam-review-bar {
   background: linear-gradient(90deg, #16a34a var(--positive-pct), #dc2626 var(--positive-pct));
 }
+
+/* ═══════════════════════════════════════════════════
+   Snap Scroll for Horizontal Sections
+   ═══════════════════════════════════════════════════ */
+
+.snap-x {
+  scroll-snap-type: x mandatory;
+}
+.snap-x > * {
+  scroll-snap-align: start;
+}
+
+/* Body scroll lock when modal is open */
+body.modal-open {
+  overflow: hidden;
+  touch-action: none;
+}
+
+/* ═══════════════════════════════════════════════════
+   Mobile Card Improvements
+   ═══════════════════════════════════════════════════ */
+
+@media (max-width: 640px) {
+  .mobile-full-width > * {
+    min-width: calc(100vw - 3rem);
+  }
+}
