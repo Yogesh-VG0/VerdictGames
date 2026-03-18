@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
@@ -19,7 +19,6 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { slugify } from "@/lib/utils/slugify";
 import { cn } from "@/lib/utils";
-import type { Game } from "@/lib/types";
 import HeroCarousel from "@/components/HeroCarousel";
 import FadeInSection from "@/components/FadeInSection";
 import GameCard from "@/components/GameCard";
@@ -27,7 +26,6 @@ import HorizontalScroll from "@/components/HorizontalScroll";
 import SectionHeader from "@/components/SectionHeader";
 import GXDealCard from "@/components/GXDealCard";
 import GXNewsCard from "@/components/GXNewsCard";
-import QuickViewModal from "@/components/QuickViewModal";
 import LazySection from "@/components/LazySection";
 import {
   HeroSkeleton,
@@ -37,10 +35,17 @@ import {
 
 type DiscoverTab = "new" | "deals" | "free";
 
+const CARD_WIDTH = "shrink-0 w-44 sm:w-48 md:w-52 lg:w-56";
+
+const DISCOVER_TABS: { label: string; value: DiscoverTab; icon: string }[] = [
+  { label: "New Releases", value: "new", icon: "✨" },
+  { label: "Deals", value: "deals", icon: "💰" },
+  { label: "Free to Play", value: "free", icon: "🆓" },
+];
+
 export default function HomePage() {
   const { user } = useAuth();
   const [discoverTab, setDiscoverTab] = useState<DiscoverTab>("new");
-  const [quickViewGame, setQuickViewGame] = useState<Game | null>(null);
 
   const featured = useQuery({
     queryKey: ["featured"],
@@ -85,19 +90,9 @@ export default function HomePage() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const handleQuickView = useCallback((game: Game) => {
-    setQuickViewGame(game);
-  }, []);
-
-  const DISCOVER_TABS: { label: string; value: DiscoverTab; icon: string }[] = [
-    { label: "New Releases", value: "new", icon: "✨" },
-    { label: "Deals", value: "deals", icon: "💰" },
-    { label: "Free to Play", value: "free", icon: "🆓" },
-  ];
-
   return (
     <div className="space-y-0 page-enter">
-      {/* ── 1. Hero Carousel — max 4 slides, bigger focus ── */}
+      {/* ── 1. Hero Carousel ── */}
       <section className="relative">
         <div className="absolute inset-0 hero-spotlight pointer-events-none" />
         <FadeInSection>
@@ -109,7 +104,7 @@ export default function HomePage() {
         </FadeInSection>
       </section>
 
-      {/* ── 2. Trending Now — larger cards, primary section ── */}
+      {/* ── 2. Trending Now ── */}
       <section className="relative py-10">
         <div className="absolute inset-0 mesh-gradient opacity-50 pointer-events-none" />
         <div className="max-w-7xl mx-auto px-4 relative">
@@ -129,18 +124,13 @@ export default function HomePage() {
                 />
                 <HorizontalScroll>
                   {trending.data.slice(0, 10).map((game, i) => (
-                    <div key={game.id} className="shrink-0 w-48 sm:w-56 md:w-60 lg:w-64">
+                    <div key={game.id} className={CARD_WIDTH}>
                       <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: i * 0.04, duration: 0.4 }}
                       >
-                        <GameCard
-                          game={game}
-                          priority={i < 2}
-                          variant={i < 3 ? "spotlight" : "default"}
-                          onQuickView={handleQuickView}
-                        />
+                        <GameCard game={game} priority={i < 2} />
                       </motion.div>
                     </div>
                   ))}
@@ -155,7 +145,7 @@ export default function HomePage() {
         <hr className="border-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
       </div>
 
-      {/* ── 3. For You — moved up to 3rd position ── */}
+      {/* ── 3. For You ── */}
       <section className="py-12">
         <div className="max-w-7xl mx-auto px-4">
           <FadeInSection>
@@ -173,13 +163,13 @@ export default function HomePage() {
                 />
                 <HorizontalScroll>
                   {personalized.data.map((game, i) => (
-                    <div key={game.id} className="shrink-0 w-44 sm:w-52 md:w-56 lg:w-60">
+                    <div key={game.id} className={CARD_WIDTH}>
                       <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: i * 0.03, duration: 0.4 }}
                       >
-                        <GameCard game={game} onQuickView={handleQuickView} />
+                        <GameCard game={game} />
                       </motion.div>
                     </div>
                   ))}
@@ -194,7 +184,7 @@ export default function HomePage() {
         <hr className="border-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
       </div>
 
-      {/* ── 4. Discover — tabbed: New Releases | Deals | Free to Play ── */}
+      {/* ── 4. Discover — tabbed ── */}
       <LazySection minHeight="400px">
         <section className="relative py-12">
           <div className="absolute inset-0 mesh-gradient opacity-30 pointer-events-none" />
@@ -231,13 +221,13 @@ export default function HomePage() {
                   ) : newReleases.data && newReleases.data.length > 0 ? (
                     <HorizontalScroll>
                       {newReleases.data.map((game, i) => (
-                        <div key={game.id} className="shrink-0 w-44 sm:w-52 md:w-56 lg:w-60">
+                        <div key={game.id} className={CARD_WIDTH}>
                           <motion.div
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: i * 0.03, duration: 0.4 }}
                           >
-                            <GameCard game={game} onQuickView={handleQuickView} />
+                            <GameCard game={game} />
                           </motion.div>
                         </div>
                       ))}
@@ -260,7 +250,7 @@ export default function HomePage() {
                           initial={{ opacity: 0, y: 20 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: i * 0.04, duration: 0.4 }}
-                          className="shrink-0 w-40 sm:w-48 md:w-52"
+                          className={CARD_WIDTH}
                         >
                           <GXDealCard deal={deal} />
                         </motion.div>
@@ -284,7 +274,7 @@ export default function HomePage() {
                           initial={{ opacity: 0, y: 20 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: i * 0.05, duration: 0.4 }}
-                          className="shrink-0 w-44 sm:w-52"
+                          className={CARD_WIDTH}
                         >
                           <Link
                             href={`/game/${slugify(game.title)}`}
@@ -335,7 +325,7 @@ export default function HomePage() {
         <hr className="border-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
       </div>
 
-      {/* ── 5. Top Rated — top 10 only, bigger cards ── */}
+      {/* ── 5. Top Rated ── */}
       <LazySection minHeight="400px">
         <section className="relative py-12">
           <div className="absolute inset-0 mesh-gradient opacity-30 pointer-events-none" />
@@ -356,17 +346,13 @@ export default function HomePage() {
                   />
                   <HorizontalScroll>
                     {topRated.data.slice(0, 10).map((game, i) => (
-                      <div key={game.id} className="shrink-0 w-48 sm:w-56 md:w-60 lg:w-64">
+                      <div key={game.id} className={CARD_WIDTH}>
                         <motion.div
                           initial={{ opacity: 0, y: 20 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: i * 0.04, duration: 0.4 }}
                         >
-                          <GameCard
-                            game={game}
-                            variant={i < 3 ? "spotlight" : "default"}
-                            onQuickView={handleQuickView}
-                          />
+                          <GameCard game={game} />
                         </motion.div>
                       </div>
                     ))}
@@ -382,7 +368,7 @@ export default function HomePage() {
         <hr className="border-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
       </div>
 
-      {/* ── 6. Gaming News — compact, last content section ── */}
+      {/* ── 6. Gaming News ── */}
       <LazySection minHeight="300px">
         {gxNews.data && gxNews.data.length > 0 && (
           <section className="py-12">
@@ -501,9 +487,6 @@ export default function HomePage() {
           </FadeInSection>
         </div>
       </footer>
-
-      {/* Quick View Modal */}
-      <QuickViewModal game={quickViewGame} onClose={() => setQuickViewGame(null)} />
     </div>
   );
 }

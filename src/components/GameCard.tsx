@@ -13,9 +13,7 @@ interface GameCardProps {
   game: Game;
   priority?: boolean;
   className?: string;
-  /** "spotlight" renders a larger card with description */
   variant?: "default" | "spotlight";
-  onQuickView?: (game: Game) => void;
 }
 
 function scoreGlowClass(score: number) {
@@ -81,7 +79,6 @@ export default function GameCard({
   priority = false,
   className,
   variant = "default",
-  onQuickView,
 }: GameCardProps) {
   if (variant === "spotlight") {
     return (
@@ -95,7 +92,6 @@ export default function GameCard({
             hasRealScore(game) ? scoreGlowBorder(game.score) : "hover:shadow-[0_0_40px_-8px_rgba(168,85,247,0.2)]"
           )}
         >
-          {/* Cover image - taller for spotlight */}
           <div className="relative aspect-[3/4] overflow-hidden">
             {game.coverImage ? (
               <BlurImage
@@ -110,9 +106,7 @@ export default function GameCard({
                 <span className="text-tertiary text-xs font-medium">{game.title.slice(0, 2).toUpperCase()}</span>
               </div>
             )}
-            {/* Gradient overlay — always dark */}
             <div className="absolute inset-0 card-image-gradient" />
-            {/* Verdict score badge — hidden for unreleased games */}
             {hasRealScore(game) ? (
               <div
                 className={cn(
@@ -134,19 +128,6 @@ export default function GameCard({
             ) : null}
           </div>
 
-          {/* Quick view overlay */}
-          {onQuickView && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/40 transition-all duration-300 z-[2]">
-              <button
-                onClick={(e) => { e.preventDefault(); e.stopPropagation(); onQuickView(game); }}
-                className="opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-300 px-3 py-1.5 rounded-full bg-white/15 backdrop-blur-md border border-white/20 text-white text-xs font-medium hover:bg-white/25"
-              >
-                Quick View
-              </button>
-            </div>
-          )}
-
-          {/* Content overlay at bottom */}
           <div className="absolute bottom-0 left-0 right-0 p-4 space-y-2 z-[1]">
             <div className="flex items-center gap-1.5 flex-wrap">
               {game.platforms.slice(0, 5).map((p) => (
@@ -187,7 +168,6 @@ export default function GameCard({
           hasRealScore(game) ? scoreGlowBorder(game.score) : "hover:shadow-[0_0_30px_-8px_rgba(168,85,247,0.15)]"
         )}
       >
-        {/* Cover image */}
         <div className="relative aspect-[3/4] overflow-hidden">
           {game.coverImage ? (
             <BlurImage
@@ -203,10 +183,8 @@ export default function GameCard({
             </div>
           )}
 
-          {/* Gradient overlay on hover */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-60 group-hover:opacity-80 transition-opacity duration-300" />
 
-          {/* Score overlay — hidden for unreleased / unscored games */}
           {hasRealScore(game) && (
             <div
               className={cn(
@@ -227,7 +205,6 @@ export default function GameCard({
             </div>
           )}
 
-          {/* Platform icons */}
           <div className="absolute bottom-2.5 left-2.5 flex items-center gap-1.5">
             {game.platforms.slice(0, 4).map((p) => (
               <PlatformIcon key={p} platform={p} size={14} className="drop-shadow-md brightness-0 invert opacity-80" />
@@ -237,7 +214,6 @@ export default function GameCard({
             )}
           </div>
 
-          {/* Year badge */}
           {yearFromDate(game.releaseDate) && (
             <div className="absolute top-2.5 left-2.5">
               <span className="text-[10px] text-white/70 bg-black/50 backdrop-blur-md px-2 py-0.5 rounded-lg font-medium border border-white/5">
@@ -245,21 +221,8 @@ export default function GameCard({
               </span>
             </div>
           )}
-
-          {/* Quick view overlay */}
-          {onQuickView && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/40 transition-all duration-300 z-[2]">
-              <button
-                onClick={(e) => { e.preventDefault(); e.stopPropagation(); onQuickView(game); }}
-                className="opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-300 px-3 py-1.5 rounded-full bg-white/15 backdrop-blur-md border border-white/20 text-white text-xs font-medium hover:bg-white/25"
-              >
-                Quick View
-              </button>
-            </div>
-          )}
         </div>
 
-        {/* Card body */}
         <div className="p-3 space-y-1.5">
           <h3 className="text-sm font-semibold text-foreground leading-tight line-clamp-1 group-hover:text-accent transition-colors">
             {game.title}

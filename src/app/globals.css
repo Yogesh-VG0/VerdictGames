@@ -605,12 +605,6 @@ h1, h2, h3 {
   scroll-snap-align: start;
 }
 
-/* Body scroll lock when modal is open */
-body.modal-open {
-  overflow: hidden;
-  touch-action: none;
-}
-
 /* ═══════════════════════════════════════════════════
    Mobile Card Improvements
    ═══════════════════════════════════════════════════ */
