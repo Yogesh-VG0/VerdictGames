@@ -23,11 +23,20 @@ function dateRange(daysBack: number): string {
   return `${from.toISOString().slice(0, 10)},${now.toISOString().slice(0, 10)}`;
 }
 
-async function fetchRawgTrending(apiKey: string): Promise<{ name: string; slug: string }[]> {
+type RawgTrendingItem = {
+  name: string;
+  slug: string;
+  rating: number;
+  ratingsCount: number;
+  released: string | null;
+  genres: string[];
+};
+
+async function fetchRawgTrending(apiKey: string): Promise<RawgTrendingItem[]> {
   const params = new URLSearchParams({
     key: apiKey,
     ordering: "-added",
-    page_size: "30",
+    page_size: "50",
     dates: dateRange(90),
   });
   try {
@@ -36,13 +45,29 @@ async function fetchRawgTrending(apiKey: string): Promise<{ name: string; slug: 
     });
     if (!res.ok) return [];
     const json = await res.json();
-    return (json.results ?? []).map((g: { name: string; slug: string }) => ({
+    return (json.results ?? []).map((g: { name: string; slug: string; rating?: number; ratings_count?: number; released?: string | null; genres?: { slug: string }[] }) => ({
       name: g.name,
       slug: g.slug,
+      rating: g.rating ?? 0,
+      ratingsCount: g.ratings_count ?? 0,
+      released: g.released ?? null,
+      genres: (g.genres ?? []).map((x) => x.slug).filter(Boolean),
     }));
   } catch {
     return [];
   }
+}
+
+const DECAY_DAYS = 365;
+
+function rawgIngestPriority(g: RawgTrendingItem, genrePenalty = 1): number {
+  const ratingScore = Math.min(100, (g.rating ?? 0) * 20);
+  const reviewScore = Math.min(100, Math.log10(g.ratingsCount + 1) * 15);
+  const ageMs = g.released ? Date.now() - new Date(g.released).getTime() : 0;
+  const ageDays = Math.max(0, ageMs / 86400000);
+  const recencyScore = Math.min(100, Math.exp(-ageDays / DECAY_DAYS) * 100);
+  const base = (ratingScore * 0.4) + (reviewScore * 0.3) + (recencyScore * 0.3);
+  return base * genrePenalty;
 }
 
 function slugify(str: string): string {
@@ -166,10 +191,12 @@ export async function GET(request: NextRequest) {
     log.push(`GX Top Liked error: ${(err as Error).message}`);
   }
 
-  // ── 2. RAWG fallback for more matches ──
+  // ── 2. RAWG fallback — match existing + ingest missing ──
   if (trendingIds.length < 20 && process.env.RAWG_API_KEY) {
     const rawgGames = await fetchRawgTrending(process.env.RAWG_API_KEY);
     log.push(`RAWG returned ${rawgGames.length} trending games`);
+
+    const missingGames: RawgTrendingItem[] = [];
 
     for (const rg of rawgGames) {
       if (trendingIds.length >= 20) break;
@@ -185,6 +212,49 @@ export async function GET(request: NextRequest) {
       if (rmatch && !trendingIds.includes(rmatch.id)) {
         trendingIds.push(rmatch.id);
         log.push(`  ✓ [RAWG] ${rmatch.title}`);
+      } else if (!rmatch) {
+        missingGames.push(rg);
+      }
+    }
+
+    // Ingest missing RAWG trending games — prioritize by rating, review count, recency + diversity
+    if (missingGames.length > 0 && trendingIds.length < 20) {
+      const sorted = [...missingGames].sort((a, b) => rawgIngestPriority(b, 1) - rawgIngestPriority(a, 1));
+      const toPick = Math.min(5, 20 - trendingIds.length);
+      const toIngest: RawgTrendingItem[] = [];
+      const remaining = [...sorted];
+      const seenGenres = new Set<string>();
+      for (let i = 0; i < toPick && remaining.length > 0; i++) {
+        let best: RawgTrendingItem | null = null;
+        let bestScore = -1;
+        for (const g of remaining) {
+          const overlapCount = g.genres.filter((gen) => seenGenres.has(gen)).length;
+          const genrePenalty = overlapCount > 0 ? Math.max(0.7, 1 - overlapCount * 0.1) : 1;
+          const score = rawgIngestPriority(g, genrePenalty);
+          if (score > bestScore) {
+            bestScore = score;
+            best = g;
+          }
+        }
+        if (best) {
+          toIngest.push(best);
+          best.genres.forEach((gen) => seenGenres.add(gen));
+          remaining.splice(remaining.indexOf(best), 1);
+        }
+      }
+      log.push(`Ingesting ${toIngest.length} missing trending games from RAWG`);
+
+      const { ingestGame } = await import("@/lib/services/ingest");
+      for (const mg of toIngest) {
+        try {
+          const result = await ingestGame({ query: mg.name, expectedSlug: mg.slug });
+          if (result.success && result.gameId && !trendingIds.includes(result.gameId)) {
+            trendingIds.push(result.gameId);
+            log.push(`  + [RAWG ingest] ${mg.name} → ${result.slug} (new: ${!result.alreadyExisted})`);
+          }
+        } catch (err) {
+          log.push(`  ✗ [RAWG ingest] ${mg.name} failed: ${(err as Error).message}`);
+        }
       }
     }
   }

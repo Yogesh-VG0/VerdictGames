@@ -335,36 +335,23 @@ export default function GameDetailPage({ params }: Props) {
                     Media
                   </h3>
 
-                  {/* Trailer */}
-                  {game.trailerUrl && (
-                    <a
-                      href={game.trailerUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="relative block aspect-video rounded-xl overflow-hidden border border-white/[0.08] group"
-                    >
-                      <Image
-                        src={game.trailerThumbnail || game.screenshots[0] || game.headerImage}
-                        alt={`${game.title} trailer`}
-                        fill
-                        sizes="(max-width: 768px) 100vw, 700px"
-                        className="object-cover group-hover:scale-105 transition-transform duration-500"
-                      />
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/40 transition-colors">
-                        <motion.div
-                          whileHover={{ scale: 1.1 }}
-                          className="w-16 h-16 rounded-full bg-accent/90 flex items-center justify-center shadow-lg shadow-accent/30"
-                        >
-                          <span className="text-white text-2xl ml-1">▶</span>
-                        </motion.div>
+                  {/* Trailer — embedded YouTube player */}
+                  {game.trailerUrl && (() => {
+                    const videoId = game.trailerUrl.match(/(?:v=|\/embed\/|youtu\.be\/)([^&?#]+)/)?.[1];
+                    if (!videoId) return null;
+                    return (
+                      <div className="relative aspect-video rounded-xl overflow-hidden border border-white/[0.08]">
+                        <iframe
+                          src={`https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1`}
+                          title={`${game.title} trailer`}
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                          loading="lazy"
+                          className="absolute inset-0 w-full h-full"
+                        />
                       </div>
-                      <div className="absolute bottom-3 left-3">
-                        <span className="text-xs text-white/80 bg-black/50 backdrop-blur-sm px-2 py-1 rounded-lg">
-                          Watch Trailer
-                        </span>
-                      </div>
-                    </a>
-                  )}
+                    );
+                  })()}
 
                   {/* Screenshots carousel */}
                   {game.screenshots.length > 0 && (

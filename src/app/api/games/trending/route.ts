@@ -1,8 +1,8 @@
 /**
  * GET /api/games/trending
  *
- * Returns trending games using a recency-weighted scoring formula.
- * Primary: games with `trending` flag (set by cron).
+ * Returns trending games using a hybrid approach:
+ * Primary: games with `trending` flag, ranked by a blend of score + live players.
  * Fallback: freshness-scored ranking favoring recent, popular games.
  */
 
@@ -10,6 +10,24 @@ import { NextRequest } from "next/server";
 import { jsonOk } from "@/lib/api/response";
 import { mapGameRow } from "@/lib/db/mappers";
 import type { GameRow } from "@/lib/supabase/types";
+
+export const dynamic = "force-dynamic";
+
+const DECAY_DAYS = 365;
+
+function trendingRank(g: GameRow, minPlayers: number, maxPlayers: number): number {
+  const score = g.score ?? 0;
+  const playerCount = g.current_players ?? 0;
+  const logPlayers = Math.log10(playerCount + 1);
+  const logMin = Math.log10(Math.max(minPlayers, 0) + 1);
+  const logMax = Math.log10(Math.max(maxPlayers, 1) + 1);
+  const spread = logMax - logMin || 1;
+  const playerScore = Math.min(100, ((logPlayers - logMin) / spread) * 100);
+  const ageMs = Date.now() - new Date(g.release_date ?? "2000-01-01").getTime();
+  const ageDays = ageMs / 86400000;
+  const recency = Math.min(100, Math.exp(-ageDays / DECAY_DAYS) * 100);
+  return (score * 0.3) + (playerScore * 0.4) + (recency * 0.3);
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -29,16 +47,19 @@ export async function GET(request: NextRequest) {
       .from("games")
       .select("*")
       .eq("trending", true)
-      .order("score", { ascending: false })
-      .limit(limit) as { data: GameRow[] | null; error: unknown };
+      .limit(40) as { data: GameRow[] | null; error: unknown };
 
     if (error) throw error;
 
     if (data && data.length >= 3) {
-      return jsonOk(data.map(mapGameRow));
+      const players = data.map((g) => g.current_players ?? 0);
+      const minPlayers = Math.min(...players);
+      const maxPlayers = Math.max(1, ...players);
+      const ranked = [...data].sort((a, b) => trendingRank(b, minPlayers, maxPlayers) - trendingRank(a, minPlayers, maxPlayers));
+      return jsonOk(ranked.slice(0, limit).map(mapGameRow));
     }
 
-    // Fallback: recency-weighted scoring instead of pure score ranking
+    // Fallback: recency-weighted scoring from recent games pool
     const cutoff = new Date();
     cutoff.setFullYear(cutoff.getFullYear() - 4);
     const cutoffStr = cutoff.toISOString().slice(0, 10);
@@ -59,18 +80,12 @@ export async function GET(request: NextRequest) {
       return jsonOk((data ?? []).map(mapGameRow));
     }
 
-    const now = Date.now();
-    const scored = pool.map((g) => {
-      const ageMs = now - new Date(g.release_date ?? "2000-01-01").getTime();
-      const ageDays = ageMs / 86400000;
-      const recency = ageDays < 30 ? 100 : ageDays < 90 ? 85 : ageDays < 180 ? 65 : ageDays < 365 ? 40 : ageDays < 730 ? 20 : 10;
-      const rating = g.score ?? 0;
-      const popularity = Math.min(100, (g.current_players ?? 0) / 500);
-      const freshness = (recency * 0.35) + (rating * 0.35) + (popularity * 0.3);
-      return { row: g, freshness };
-    });
-
-    scored.sort((a, b) => b.freshness - a.freshness);
+    const allForMax = [...(data ?? []), ...pool];
+    const players = allForMax.map((g) => g.current_players ?? 0);
+    const minPlayers = Math.min(...players);
+    const maxPlayers = Math.max(1, ...players);
+    const scored = pool.map((g) => ({ row: g, rank: trendingRank(g, minPlayers, maxPlayers) }));
+    scored.sort((a, b) => b.rank - a.rank);
 
     const alreadyIncluded = new Set((data ?? []).map((d) => d.id));
     const fallbackGames = scored
@@ -79,7 +94,8 @@ export async function GET(request: NextRequest) {
       .map((s) => s.row);
 
     const combined = [...(data ?? []), ...fallbackGames];
-    return jsonOk(combined.map(mapGameRow));
+    const reranked = combined.sort((a, b) => trendingRank(b, minPlayers, maxPlayers) - trendingRank(a, minPlayers, maxPlayers));
+    return jsonOk(reranked.slice(0, limit).map(mapGameRow));
   } catch (err) {
     console.error("[API] /games/trending error:", err);
     return jsonOk([]);

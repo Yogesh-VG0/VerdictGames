@@ -55,7 +55,8 @@ export default function HomePage() {
   const trending = useQuery({
     queryKey: ["trending"],
     queryFn: () => getTrendingGames(),
-    staleTime: 5 * 60 * 1000,
+    staleTime: 60 * 1000,
+    refetchInterval: 2 * 60 * 1000,
   });
   const personalized = useQuery({
     queryKey: ["personalized", !!user],

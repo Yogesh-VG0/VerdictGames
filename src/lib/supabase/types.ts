@@ -69,6 +69,8 @@ export interface Database {
           rawg_rating: number | null;
           score_source: string;
           last_enriched_at: string | null;
+          is_refreshing?: boolean;
+          refresh_started_at?: string | null;
           enrichment_sources: string[];
 
           // HLTB fields (migration 003)
@@ -202,6 +204,8 @@ export interface Database {
           rawg_rating?: number | null;
           score_source?: string;
           last_enriched_at?: string | null;
+          is_refreshing?: boolean;
+          refresh_started_at?: string | null;
           enrichment_sources?: string[];
           hltb_main?: number | null;
           hltb_extras?: number | null;
