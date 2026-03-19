@@ -144,6 +144,7 @@ export default function GameDetailPage({ params }: Props) {
   const currentPrice = formatPrice(game.priceCurrent, game.priceCurrency);
   const lowestPrice = formatPrice(game.priceLowest, game.priceCurrency);
   const sc = scoreColor(game.score);
+  const isProvisional = game.isProvisional || game.releaseStatus === "upcoming" || game.verdictLabel === "COMING SOON";
 
   return (
     <div className="space-y-0">
@@ -254,8 +255,34 @@ export default function GameDetailPage({ params }: Props) {
           {/* ─── LEFT COLUMN (Main Content) ─── */}
           <div className="lg:col-span-8 space-y-8">
 
-            {/* ── Verdict Card ── */}
+            {/* ── Verdict Card / Provisional Banner ── */}
             <FadeInSection>
+              {isProvisional ? (
+                <motion.section
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2, duration: 0.5 }}
+                  className="rounded-2xl border border-accent/20 bg-surface overflow-hidden"
+                >
+                  <div className="p-6 md:p-8 text-center space-y-4">
+                    <div className="text-4xl">🚀</div>
+                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 border border-accent/20">
+                      <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />
+                      <span className="text-sm font-bold text-accent uppercase tracking-wider">
+                        {game.releaseStatus === "tba" ? "To Be Announced" : game.releaseStatus === "announced" ? "Announced" : "Coming Soon"}
+                      </span>
+                    </div>
+                    <p className="text-sm text-secondary max-w-md mx-auto leading-relaxed">
+                      This game page is awaiting full data enrichment. Scores, reviews, and detailed information will be populated automatically when source data becomes available.
+                    </p>
+                    {game.releaseDate && (
+                      <p className="text-xs text-tertiary">
+                        Expected release: <span className="text-foreground font-medium">{formatDate(game.releaseDate)}</span>
+                      </p>
+                    )}
+                  </div>
+                </motion.section>
+              ) : (
               <motion.section
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -332,6 +359,7 @@ export default function GameDetailPage({ params }: Props) {
                   </div>
                 </div>
               </motion.section>
+              )}
             </FadeInSection>
 
             {/* ── Overview / Description ── */}

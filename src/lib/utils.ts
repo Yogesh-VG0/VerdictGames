@@ -35,6 +35,10 @@ export function verdictBgClass(label: VerdictLabel): string {
       return "bg-score-mixed/20 text-score-mixed border-score-mixed/30";
     case "SKIP":
       return "bg-score-bad/20 text-score-bad border-score-bad/30";
+    case "COMING SOON":
+      return "bg-accent/20 text-accent border-accent/30";
+    default:
+      return "bg-surface-2 text-secondary border-border";
   }
 }
 

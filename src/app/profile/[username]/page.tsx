@@ -199,7 +199,14 @@ export default function ProfilePage({ params }: Props) {
             <h1 className="text-xl md:text-2xl font-bold text-foreground">
               {user.displayName}
             </h1>
-            {!isOwnProfile && (
+            {isOwnProfile ? (
+              <Link
+                href="/settings"
+                className="px-3 py-1 rounded-lg text-xs font-medium bg-surface-2 border border-border text-secondary hover:text-foreground hover:border-border-hover transition-all"
+              >
+                ✏️ Edit Profile
+              </Link>
+            ) : (
               <button
                 onClick={() => {
                   if (!currentUser) {

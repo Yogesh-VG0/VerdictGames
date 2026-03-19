@@ -1,0 +1,249 @@
+"use client";
+
+import { useState, useRef, useCallback } from "react";
+import { useRouter } from "next/navigation";
+import Image from "next/image";
+import { useAuth } from "@/hooks/useAuth";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { getUserProfile } from "@/lib/api";
+
+const GENRE_OPTIONS = [
+  "Action", "Adventure", "RPG", "Strategy", "Simulation",
+  "Sports", "Racing", "Puzzle", "Horror", "FPS",
+  "Platformer", "Fighting", "Survival", "Indie", "MMO",
+  "Roguelike", "Sandbox", "Visual Novel", "Rhythm",
+];
+
+export default function SettingsPage() {
+  const { user } = useAuth();
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const { data: profile, isLoading } = useQuery({
+    queryKey: ["user", user?.username],
+    queryFn: () => getUserProfile(user?.username ?? ""),
+    enabled: !!user?.username,
+  });
+
+  const [displayName, setDisplayName] = useState("");
+  const [bio, setBio] = useState("");
+  const [favoriteGenres, setFavoriteGenres] = useState<string[]>([]);
+  const [avatarPreview, setAvatarPreview] = useState("");
+  const [avatarFile, setAvatarFile] = useState<{ base64: string; contentType: string } | null>(null);
+  const [initialized, setInitialized] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  // Initialize form from profile data
+  if (profile && !initialized) {
+    setDisplayName(profile.displayName ?? "");
+    setBio(profile.bio ?? "");
+    setFavoriteGenres(profile.favoriteGenres ?? []);
+    setAvatarPreview(profile.avatar ?? "");
+    setInitialized(true);
+  }
+
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      // Upload avatar if changed
+      if (avatarFile) {
+        await fetch("/api/profile/settings", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(avatarFile),
+        });
+      }
+
+      // Update profile fields
+      const res = await fetch("/api/profile/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          display_name: displayName,
+          bio,
+          favorite_genres: favoriteGenres,
+        }),
+      });
+
+      if (!res.ok) {
+        const json = await res.json();
+        throw new Error(json.error ?? "Failed to save");
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["user", user?.username] });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    },
+  });
+
+  const handleAvatarChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      alert("Image must be under 2MB");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      setAvatarPreview(result);
+      // Extract base64 data
+      const base64 = result.split(",")[1];
+      setAvatarFile({ base64, contentType: file.type });
+    };
+    reader.readAsDataURL(file);
+  }, []);
+
+  const toggleGenre = (g: string) => {
+    setFavoriteGenres(prev =>
+      prev.includes(g) ? prev.filter(x => x !== g) : [...prev, g]
+    );
+  };
+
+  if (!user) {
+    return (
+      <div className="max-w-2xl mx-auto px-4 py-12 text-center">
+        <p className="text-secondary">Please sign in to edit your profile.</p>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="max-w-2xl mx-auto px-4 py-8 space-y-6">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className="h-16 rounded-xl bg-surface animate-pulse" />
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-2xl mx-auto px-4 py-6 sm:py-8 space-y-8">
+      <div>
+        <h1 className="text-2xl font-bold text-foreground">Profile Settings</h1>
+        <p className="text-sm text-secondary mt-1">Customize how others see you on Verdict</p>
+      </div>
+
+      {/* Avatar */}
+      <div className="rounded-2xl border border-border bg-surface p-5 sm:p-6 space-y-4">
+        <h2 className="text-sm font-bold text-foreground uppercase tracking-wider">Avatar</h2>
+        <div className="flex items-center gap-5">
+          <div className="relative group">
+            <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-border">
+              {avatarPreview ? (
+                <Image src={avatarPreview} alt="Avatar" width={80} height={80} className="object-cover w-full h-full" />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-accent/40 to-pixel-cyan/30 flex items-center justify-center">
+                  <span className="text-2xl font-bold text-white">
+                    {(displayName || user.username || "?").charAt(0).toUpperCase()}
+                  </span>
+                </div>
+              )}
+            </div>
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="absolute inset-0 rounded-full bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
+            >
+              <span className="text-white text-xs font-medium">Change</span>
+            </button>
+          </div>
+          <div className="space-y-1">
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="text-sm font-medium text-accent hover:text-accent-hover transition-colors"
+            >
+              Upload new photo
+            </button>
+            <p className="text-[10px] text-tertiary">JPG, PNG or WebP. Max 2MB.</p>
+          </div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            onChange={handleAvatarChange}
+            className="hidden"
+          />
+        </div>
+      </div>
+
+      {/* Profile Info */}
+      <div className="rounded-2xl border border-border bg-surface p-5 sm:p-6 space-y-5">
+        <h2 className="text-sm font-bold text-foreground uppercase tracking-wider">Profile Info</h2>
+
+        <div>
+          <label className="block text-xs font-medium text-secondary mb-1.5">Display Name</label>
+          <input
+            value={displayName}
+            onChange={e => setDisplayName(e.target.value)}
+            maxLength={50}
+            placeholder="Your display name"
+            className="w-full rounded-xl bg-surface-2 border border-border px-4 py-2.5 text-sm text-foreground placeholder:text-tertiary focus:border-accent focus:outline-none transition-colors"
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-medium text-secondary mb-1.5">Bio</label>
+          <textarea
+            value={bio}
+            onChange={e => setBio(e.target.value)}
+            maxLength={250}
+            rows={3}
+            placeholder="Tell other gamers about yourself..."
+            className="w-full rounded-xl bg-surface-2 border border-border px-4 py-2.5 text-sm text-foreground placeholder:text-tertiary focus:border-accent focus:outline-none transition-colors resize-none"
+          />
+          <p className="text-right text-[10px] text-tertiary mt-1">{bio.length}/250</p>
+        </div>
+      </div>
+
+      {/* Favorite Genres */}
+      <div className="rounded-2xl border border-border bg-surface p-5 sm:p-6 space-y-4">
+        <div>
+          <h2 className="text-sm font-bold text-foreground uppercase tracking-wider">Favorite Genres</h2>
+          <p className="text-xs text-tertiary mt-0.5">Select genres you enjoy — they&apos;ll appear as badges on your profile.</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {GENRE_OPTIONS.map(g => (
+            <button
+              key={g}
+              type="button"
+              onClick={() => toggleGenre(g)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
+                favoriteGenres.includes(g)
+                  ? "bg-accent/20 border-accent/40 text-accent"
+                  : "bg-surface-2 border-border text-tertiary hover:text-secondary"
+              }`}
+            >
+              {g}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Save */}
+      <div className="flex items-center gap-4">
+        <button
+          onClick={() => saveMutation.mutate()}
+          disabled={saveMutation.isPending}
+          className="px-6 py-2.5 rounded-xl bg-accent text-white font-medium text-sm hover:bg-accent-hover transition-colors disabled:opacity-50 shadow-lg shadow-accent/20"
+        >
+          {saveMutation.isPending ? "Saving..." : "Save Changes"}
+        </button>
+        <button
+          onClick={() => router.push(`/profile/${user.username}`)}
+          className="px-6 py-2.5 rounded-xl border border-border text-secondary text-sm font-medium hover:text-foreground hover:border-border-hover transition-colors"
+        >
+          View Profile
+        </button>
+        {saved && (
+          <span className="text-sm text-success font-medium animate-pulse">✓ Saved!</span>
+        )}
+        {saveMutation.isError && (
+          <span className="text-sm text-danger">{(saveMutation.error as Error).message}</span>
+        )}
+      </div>
+    </div>
+  );
+}

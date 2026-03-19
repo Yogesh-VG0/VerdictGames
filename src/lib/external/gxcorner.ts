@@ -299,7 +299,7 @@ export async function getGXNewsFeed(): Promise<GXNewsArticle[]> {
     const params = new URLSearchParams({
       country: "us",
       language: "en-US",
-      category: "ga,te",
+      category: "ga",
       timezone: "+00:00",
       LANG: "en",
       COUNTRY: "US",

@@ -79,23 +79,70 @@ export async function ingestGame(options: IngestOptions): Promise<IngestResult> 
   }
 
   // Pick the best match. When an expectedSlug is provided (e.g. from a GX link),
-  // strongly prefer results whose RAWG slug matches it. This prevents e.g.
-  // "grand-theft-auto-vi" from resolving to GTA V.
+  // strongly prefer results whose RAWG slug matches it.
+  // CRITICAL: Do NOT give partial credit for substring containment.
+  // That causes title families (GTA V/VI, Cooking Sim/Sim 2) to drift.
   const normalizeForCompare = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+
+  // Extract trailing numeral from slug for sequel detection (e.g. "vi", "2", "iii")
+  const extractTrailingNumeral = (s: string): string | null => {
+    const normalized = s.toLowerCase().replace(/[^a-z0-9-]/g, "");
+    const match = normalized.match(/[-]?(vi{0,3}|iv|ix|[0-9]+)$/);
+    return match ? match[1] : null;
+  };
+
   const expectedNorm = expectedSlug ? normalizeForCompare(expectedSlug) : null;
+  const expectedNumeral = expectedSlug ? extractTrailingNumeral(expectedSlug) : null;
 
   const bestMatch = searchResults.results.reduce((best, cur) => {
     const scoreOf = (r: typeof best) => {
       let s = (r.released ? 3 : 0) + (r.rating ? 2 : 0) + Math.min((r.ratings_count ?? 0) / 1000, 5);
       if (expectedNorm) {
         const rSlug = normalizeForCompare(r.slug ?? r.name);
+        // Exact slug match = very high confidence
         if (rSlug === expectedNorm) s += 100;
-        else if (rSlug.includes(expectedNorm) || expectedNorm.includes(rSlug)) s += 30;
+        // Exact normalized title match
+        else if (normalizeForCompare(r.name) === expectedNorm) s += 80;
+
+        // Sequel guard: if expected slug has a trailing numeral, the RAWG result
+        // must have the same numeral. Otherwise reject it heavily.
+        if (expectedNumeral) {
+          const resultNumeral = extractTrailingNumeral(r.slug ?? r.name);
+          if (resultNumeral !== expectedNumeral) s -= 200;
+        }
       }
       return s;
     };
     return scoreOf(cur) > scoreOf(best) ? cur : best;
   }, searchResults.results[0]);
+
+  // Confidence check: if no high-confidence match found, signal low confidence
+  // so the caller can create a provisional page instead of the wrong game
+  const bestScore = (() => {
+    let s = (bestMatch.released ? 3 : 0) + (bestMatch.rating ? 2 : 0) + Math.min((bestMatch.ratings_count ?? 0) / 1000, 5);
+    if (expectedNorm) {
+      const rSlug = normalizeForCompare(bestMatch.slug ?? bestMatch.name);
+      if (rSlug === expectedNorm) s += 100;
+      else if (normalizeForCompare(bestMatch.name) === expectedNorm) s += 80;
+      if (expectedNumeral) {
+        const resultNumeral = extractTrailingNumeral(bestMatch.slug ?? bestMatch.name);
+        if (resultNumeral !== expectedNumeral) s -= 200;
+      }
+    }
+    return s;
+  })();
+
+  if (expectedNorm && bestScore < 50) {
+    return {
+      success: false,
+      gameId: null,
+      slug: null,
+      message: `No high-confidence match for "${query}" (best score: ${bestScore}). Create a provisional page instead.`,
+      alreadyExisted: false,
+      lowConfidence: true,
+    } as IngestResult & { lowConfidence: true };
+  }
+
   const slug = slugify(bestMatch.name);
 
   // ── Step 2: Check if game already exists ──

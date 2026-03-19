@@ -55,6 +55,12 @@ export default function AdminGamesPage() {
             {games.data?.total ? `${games.data.total.toLocaleString()} games in database` : "Loading..."}
           </p>
         </div>
+        <Link
+          href="/admin/games/new"
+          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-accent text-white text-sm font-medium hover:bg-accent-hover transition-colors"
+        >
+          ➕ Add Game
+        </Link>
       </div>
 
       {/* Search */}

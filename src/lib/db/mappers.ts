@@ -62,9 +62,13 @@ function displayScore(score: number, reviewCount: number): number {
 
 /** Map a games row to the frontend Game interface. */
 export function mapGameRow(row: GameRow): Game {
+  const isProvisional = (row as GameRow & { is_provisional?: boolean }).is_provisional ?? false;
+  const releaseStatus = (row as GameRow & { release_status?: string | null }).release_status ?? undefined;
+
+  // Provisional games bypass score smoothing — show 0 / COMING SOON instead
   const rawScore = row.score ?? 0;
   const reviewCount = row.review_count ?? 0;
-  const score = displayScore(rawScore, reviewCount);
+  const score = isProvisional ? 0 : displayScore(rawScore, reviewCount);
 
   return {
     id: row.id,
@@ -82,8 +86,8 @@ export function mapGameRow(row: GameRow): Game {
     releaseDate: row.release_date ?? "",
     description: row.description,
     score,
-    verdictLabel: scoreToVerdict(score) as VerdictLabel,
-    verdictSummary: row.verdict_summary,
+    verdictLabel: isProvisional ? "COMING SOON" as import("@/lib/types").VerdictLabel : scoreToVerdict(score) as VerdictLabel,
+    verdictSummary: isProvisional ? "This game is awaiting data enrichment." : row.verdict_summary,
     pros: row.pros,
     cons: row.cons,
     monetization: row.monetization as MonetizationType,
@@ -134,6 +138,10 @@ export function mapGameRow(row: GameRow): Game {
 
     // Momentum
     momentum: row.momentum ?? undefined,
+
+    // Provisional/upcoming
+    isProvisional,
+    releaseStatus,
   };
 }
 

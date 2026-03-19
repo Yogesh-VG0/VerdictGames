@@ -23,7 +23,7 @@ export type MonetizationType =
   | "Free with Ads"
   | "Subscription";
 
-export type VerdictLabel = "MUST PLAY" | "WORTH IT" | "MIXED" | "SKIP";
+export type VerdictLabel = "MUST PLAY" | "WORTH IT" | "MIXED" | "SKIP" | "COMING SOON";
 
 export type SortOption = "relevance" | "newest" | "top-rated" | "trending";
 
@@ -119,6 +119,10 @@ export interface Game {
 
   // Momentum (rate of player count change)
   momentum?: number;
+
+  // Provisional / upcoming game
+  isProvisional?: boolean;
+  releaseStatus?: string; // 'upcoming' | 'tba' | 'announced'
 }
 
 export interface Review {

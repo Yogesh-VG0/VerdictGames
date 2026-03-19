@@ -10,6 +10,7 @@ import {
   getPersonalizedGames,
   getRecommendations,
   getGXPopularNews,
+  getGXNewsFeed,
   getGXFreeToPlay,
 } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
@@ -82,8 +83,23 @@ export default function HomePage() {
     enabled: discoverTab === "free",
   });
   const gxNews = useQuery({
-    queryKey: ["gx-news"],
-    queryFn: () => getGXPopularNews(),
+    queryKey: ["gx-news-merged"],
+    queryFn: async () => {
+      const [popular, feed] = await Promise.all([getGXPopularNews(), getGXNewsFeed()]);
+      // Dedupe by normalized title, popular items first
+      const seen = new Set<string>();
+      const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+      const merged = [] as typeof popular;
+      for (const a of [...popular, ...feed]) {
+        const key = normalize(a.title);
+        if (!seen.has(key)) {
+          seen.add(key);
+          merged.push(a);
+        }
+        if (merged.length >= 10) break;
+      }
+      return merged;
+    },
     staleTime: 5 * 60 * 1000,
   });
 
@@ -376,19 +392,107 @@ export default function HomePage() {
                   icon="📰"
                   subtitle="Trending stories from top gaming outlets"
                 />
-                <HorizontalScroll>
-                  {gxNews.data.slice(0, 10).map((article, i) => (
+                {/* 2-column editorial layout: featured hero + compact stack */}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                  {/* Featured hero article */}
+                  {gxNews.data[0] && (
                     <motion.div
-                      key={article.id}
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: i * 0.05, duration: 0.4 }}
-                      className="shrink-0 w-64 sm:w-72 md:w-80"
+                      transition={{ duration: 0.5 }}
+                      className="lg:col-span-5"
                     >
-                      <GXNewsCard article={article} />
+                      <a
+                        href={gxNews.data[0].url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="group block rounded-2xl border border-border bg-surface overflow-hidden hover:border-accent/30 transition-all h-full"
+                      >
+                        <div className="relative aspect-video overflow-hidden">
+                          {gxNews.data[0].image ? (
+                            <Image
+                              src={gxNews.data[0].image}
+                              alt={gxNews.data[0].title}
+                              fill
+                              className="object-cover group-hover:scale-105 transition-transform duration-500"
+                              sizes="(max-width: 1024px) 100vw, 40vw"
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-gradient-to-br from-accent/20 to-pixel-cyan/20 flex items-center justify-center">
+                              <span className="text-4xl">📰</span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="p-4 space-y-2">
+                          <h3 className="text-base font-bold text-foreground line-clamp-2 group-hover:text-accent transition-colors">
+                            {gxNews.data[0].title}
+                          </h3>
+                          <div className="flex items-center gap-2">
+                            {gxNews.data[0].publisherFavicon && (
+                              <Image
+                                src={gxNews.data[0].publisherFavicon}
+                                alt=""
+                                width={14}
+                                height={14}
+                                className="rounded-sm"
+                              />
+                            )}
+                            <span className="text-xs text-tertiary">{gxNews.data[0].publisherName}</span>
+                          </div>
+                        </div>
+                      </a>
                     </motion.div>
-                  ))}
-                </HorizontalScroll>
+                  )}
+
+                  {/* Compact stacked articles */}
+                  <div className="lg:col-span-7 space-y-2">
+                    {gxNews.data.slice(1, 10).map((article, i) => (
+                      <motion.a
+                        key={article.id}
+                        href={article.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: i * 0.04, duration: 0.3 }}
+                        className="group flex items-center gap-3 rounded-xl border border-border bg-surface p-2.5 hover:border-accent/30 hover:bg-surface-2 transition-all"
+                      >
+                        <div className="relative w-20 h-14 shrink-0 rounded-lg overflow-hidden">
+                          {article.image ? (
+                            <Image
+                              src={article.image}
+                              alt=""
+                              fill
+                              className="object-cover"
+                              sizes="80px"
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-gradient-to-br from-accent/10 to-pixel-cyan/10 flex items-center justify-center">
+                              <span className="text-lg">📰</span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-foreground line-clamp-2 group-hover:text-accent transition-colors">
+                            {article.title}
+                          </p>
+                          <div className="flex items-center gap-1.5 mt-1">
+                            {article.publisherFavicon && (
+                              <Image
+                                src={article.publisherFavicon}
+                                alt=""
+                                width={12}
+                                height={12}
+                                className="rounded-sm"
+                              />
+                            )}
+                            <span className="text-[10px] text-tertiary">{article.publisherName}</span>
+                          </div>
+                        </div>
+                      </motion.a>
+                    ))}
+                  </div>
+                </div>
               </FadeInSection>
             </div>
           </section>

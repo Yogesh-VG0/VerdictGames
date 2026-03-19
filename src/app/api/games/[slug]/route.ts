@@ -31,23 +31,18 @@ export async function GET(
 
     if (error) throw error;
 
-    // If not found, try fuzzy slug match first (handles minor slug differences)
-    if (!data) {
-      const { data: fuzzy } = await supabase
-        .from("games")
-        .select("*")
-        .ilike("slug", slug)
-        .maybeSingle() as { data: GameRow | null };
-      if (fuzzy) data = fuzzy;
-    }
+    // REMOVED: fuzzy ilike slug matching — this caused wrong-game resolution
+    // (e.g. "grand-theft-auto-vi" matching "grand-theft-auto-v")
 
-    // If still not found, try on-demand ingestion.
+    // If not found, try on-demand ingestion.
     // Pass the original slug as a hint so ingest can verify the RAWG result.
     if (!data) {
       try {
         const { ingestGame } = await import("@/lib/services/ingest");
         const queryTitle = slug.replace(/-/g, " ");
-        const result = await ingestGame({ query: queryTitle, expectedSlug: slug });
+        const result = await ingestGame({ query: queryTitle, expectedSlug: slug }) as 
+          import("@/lib/services/ingest").IngestResult & { lowConfidence?: boolean };
+
         if (result.success && result.gameId) {
           const refetch = await supabase
             .from("games")
@@ -55,6 +50,52 @@ export async function GET(
             .eq("id", result.gameId)
             .maybeSingle() as { data: GameRow | null };
           data = refetch.data;
+        } else if ((result as { lowConfidence?: boolean }).lowConfidence) {
+          // Low confidence match — create a provisional placeholder page
+          // instead of returning 404 or mapping to a wrong game
+          const provisionalRecord = {
+            slug,
+            title: queryTitle.replace(/\b\w/g, c => c.toUpperCase()),
+            subtitle: null,
+            cover_image: "",
+            header_image: "",
+            screenshots: [] as string[],
+            platforms: [] as string[],
+            genres: [] as string[],
+            tags: [] as string[],
+            developer: "",
+            publisher: "",
+            release_date: null,
+            description: "This game page is awaiting data enrichment. Information will be updated automatically when source data becomes available.",
+            score: 0,
+            verdict_label: "COMING SOON",
+            verdict_summary: "",
+            pros: [] as string[],
+            cons: [] as string[],
+            monetization: "",
+            performance_notes: "",
+            monetization_notes: "",
+            review_count: 0,
+            featured: false,
+            trending: false,
+            score_source: "provisional",
+            enrichment_sources: [] as string[],
+            price_currency: "USD",
+            is_free: false,
+            is_provisional: true,
+            release_status: "upcoming",
+          };
+
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const { data: inserted, error: insertErr } = await (supabase
+            .from("games") as any)
+            .insert(provisionalRecord)
+            .select("*")
+            .single() as { data: GameRow | null; error: { message: string } | null };
+
+          if (!insertErr && inserted) {
+            data = inserted;
+          }
         }
       } catch (ingestErr) {
         console.warn(`[API] /games/${slug} on-demand ingest failed:`, ingestErr);

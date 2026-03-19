@@ -83,6 +83,10 @@ export interface Database {
           // Momentum tracking (migration 002)
           momentum: number;
 
+          // Provisional/upcoming fields (migration 008)
+          is_provisional: boolean;
+          release_status: string | null;
+
           created_at: string;
           updated_at: string;
         };
@@ -149,6 +153,8 @@ export interface Database {
           hltb_last_fetched?: string | null;
           franchise?: string | null;
           momentum?: number;
+          is_provisional?: boolean;
+          release_status?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -217,8 +223,43 @@ export interface Database {
           hltb_last_fetched?: string | null;
           franchise?: string | null;
           momentum?: number;
+          is_provisional?: boolean;
+          release_status?: string | null;
           created_at?: string;
           updated_at?: string;
+        };
+        Relationships: [];
+      };
+      admin_audit_log: {
+        Row: {
+          id: string;
+          entity_type: string;
+          entity_id: string;
+          action: string;
+          field_changes: Json;
+          edited_by: string | null;
+          edited_at: string;
+          reason: string | null;
+        };
+        Insert: {
+          id?: string;
+          entity_type: string;
+          entity_id: string;
+          action: string;
+          field_changes?: Json;
+          edited_by?: string | null;
+          edited_at?: string;
+          reason?: string | null;
+        };
+        Update: {
+          id?: string;
+          entity_type?: string;
+          entity_id?: string;
+          action?: string;
+          field_changes?: Json;
+          edited_by?: string | null;
+          edited_at?: string;
+          reason?: string | null;
         };
         Relationships: [];
       };
@@ -561,3 +602,5 @@ export type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
 export type GameSourceRow = Database["public"]["Tables"]["game_sources"]["Row"];
 export type UserGameRow = Database["public"]["Tables"]["user_games"]["Row"];
 export type FollowRow = Database["public"]["Tables"]["follows"]["Row"];
+export type AuditLogRow = Database["public"]["Tables"]["admin_audit_log"]["Row"];
+export type AuditLogInsert = Database["public"]["Tables"]["admin_audit_log"]["Insert"];

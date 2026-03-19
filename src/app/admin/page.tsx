@@ -9,6 +9,17 @@ interface AdminStats {
   totalUsers: number;
 }
 
+interface AuditEntry {
+  id: string;
+  entity_type: string;
+  entity_id: string;
+  action: string;
+  field_changes: Record<string, { old: unknown; new: unknown }>;
+  edited_by: string;
+  edited_at: string;
+  reason: string | null;
+}
+
 async function fetchAdminStats(): Promise<AdminStats> {
   const res = await fetch("/api/admin/stats");
   const json = await res.json();
@@ -16,10 +27,42 @@ async function fetchAdminStats(): Promise<AdminStats> {
   throw new Error(json.error ?? "Failed to fetch stats");
 }
 
+async function fetchRecentActivity(): Promise<AuditEntry[]> {
+  const res = await fetch("/api/admin/audit");
+  const json = await res.json();
+  if (json.success) return json.data;
+  return [];
+}
+
+function formatTimeAgo(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  return `${days}d ago`;
+}
+
+function formatAction(entry: AuditEntry): string {
+  const fields = Object.keys(entry.field_changes || {});
+  if (entry.action === "create") return `Created ${entry.entity_type}`;
+  if (fields.length === 0) return `Updated ${entry.entity_type}`;
+  if (fields.length <= 2) return `Updated ${fields.join(", ")}`;
+  return `Updated ${fields.length} fields`;
+}
+
 export default function AdminDashboard() {
   const stats = useQuery({
     queryKey: ["admin-stats"],
     queryFn: fetchAdminStats,
+    staleTime: 30_000,
+  });
+
+  const activity = useQuery({
+    queryKey: ["admin-activity"],
+    queryFn: fetchRecentActivity,
     staleTime: 30_000,
   });
 
@@ -33,27 +76,9 @@ export default function AdminDashboard() {
       {/* Stats Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
         {[
-          {
-            label: "Total Games",
-            value: stats.data?.totalGames,
-            icon: "🎮",
-            color: "text-pixel-cyan",
-            href: "/admin/games",
-          },
-          {
-            label: "Total Reviews",
-            value: stats.data?.totalReviews,
-            icon: "📝",
-            color: "text-pixel-green",
-            href: "/admin/reviews",
-          },
-          {
-            label: "Total Users",
-            value: stats.data?.totalUsers,
-            icon: "👥",
-            color: "text-accent",
-            href: "#",
-          },
+          { label: "Total Games", value: stats.data?.totalGames, icon: "🎮", color: "text-pixel-cyan", href: "/admin/games" },
+          { label: "Total Reviews", value: stats.data?.totalReviews, icon: "📝", color: "text-pixel-green", href: "/admin/reviews" },
+          { label: "Total Users", value: stats.data?.totalUsers, icon: "👥", color: "text-accent", href: "/admin/users" },
         ].map((stat) => (
           <Link
             key={stat.label}
@@ -78,32 +103,90 @@ export default function AdminDashboard() {
         ))}
       </div>
 
-      {/* Quick Actions */}
-      <div className="space-y-3">
-        <h2 className="text-lg font-bold text-foreground">Quick Actions</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <Link
-            href="/admin/games"
-            className="rounded-2xl border border-border bg-surface p-4 hover:border-accent/30 transition-all group"
-          >
-            <h3 className="text-sm font-semibold text-foreground group-hover:text-accent transition-colors">
-              Edit Game Pages
-            </h3>
-            <p className="text-xs text-tertiary mt-1">
-              Update descriptions, verdicts, pros/cons, and media for any game
-            </p>
-          </Link>
-          <Link
-            href="/admin/reviews"
-            className="rounded-2xl border border-border bg-surface p-4 hover:border-accent/30 transition-all group"
-          >
-            <h3 className="text-sm font-semibold text-foreground group-hover:text-accent transition-colors">
-              Write Reviews
-            </h3>
-            <p className="text-xs text-tertiary mt-1">
-              Create editorial reviews or moderate community reviews
-            </p>
-          </Link>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Quick Actions */}
+        <div className="space-y-3">
+          <h2 className="text-lg font-bold text-foreground">Quick Actions</h2>
+          <div className="space-y-3">
+            <Link
+              href="/admin/games/new"
+              className="block rounded-2xl border border-accent/20 bg-accent/5 p-4 hover:border-accent/40 hover:bg-accent/10 transition-all group"
+            >
+              <h3 className="text-sm font-semibold text-accent group-hover:text-accent-hover transition-colors">
+                ➕ Add New Game
+              </h3>
+              <p className="text-xs text-tertiary mt-1">
+                Create via title lookup, source URL, or manual provisional entry
+              </p>
+            </Link>
+            {[
+              { href: "/admin/games", label: "Edit Game Pages", desc: "Update descriptions, verdicts, pros/cons, and media" },
+              { href: "/admin/reviews", label: "Write Reviews", desc: "Create editorial reviews or moderate community reviews" },
+              { href: "/admin/users", label: "👥 Manage Users", desc: "View profiles, review counts, library activity" },
+            ].map(q => (
+              <Link
+                key={q.href}
+                href={q.href}
+                className="block rounded-2xl border border-border bg-surface p-4 hover:border-accent/30 transition-all group"
+              >
+                <h3 className="text-sm font-semibold text-foreground group-hover:text-accent transition-colors">
+                  {q.label}
+                </h3>
+                <p className="text-xs text-tertiary mt-1">{q.desc}</p>
+              </Link>
+            ))}
+          </div>
+        </div>
+
+        {/* Recent Admin Activity */}
+        <div className="space-y-3">
+          <h2 className="text-lg font-bold text-foreground">Recent Activity</h2>
+          <div className="rounded-2xl border border-border bg-surface overflow-hidden">
+            {activity.isLoading ? (
+              <div className="p-4 space-y-3">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="h-12 rounded-lg bg-surface-2 animate-pulse" />
+                ))}
+              </div>
+            ) : !activity.data || activity.data.length === 0 ? (
+              <div className="p-8 text-center">
+                <p className="text-sm text-tertiary">No admin activity logged yet.</p>
+                <p className="text-xs text-tertiary mt-1">Edits to games will appear here.</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-border">
+                {activity.data.slice(0, 10).map((entry) => (
+                  <div key={entry.id} className="px-4 py-3 hover:bg-surface-2 transition-colors">
+                    <div className="flex items-start gap-3">
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 text-sm ${
+                        entry.action === "create" ? "bg-success/10 text-success" : "bg-accent/10 text-accent"
+                      }`}>
+                        {entry.action === "create" ? "+" : "✏️"}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-foreground font-medium">
+                          {formatAction(entry)}
+                        </p>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className="text-[10px] text-tertiary">{entry.edited_by}</span>
+                          <span className="text-[10px] text-tertiary">·</span>
+                          <span className="text-[10px] text-tertiary">{formatTimeAgo(entry.edited_at)}</span>
+                        </div>
+                      </div>
+                      {entry.entity_type === "game" && (
+                        <Link
+                          href={`/admin/games/${entry.entity_id}`}
+                          className="text-[10px] text-accent hover:text-accent-hover shrink-0"
+                        >
+                          View →
+                        </Link>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

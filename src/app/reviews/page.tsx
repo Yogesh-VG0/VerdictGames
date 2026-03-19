@@ -90,19 +90,70 @@ export default function ReviewsPage() {
             </motion.div>
           ))
         ) : (
-          <div className="text-center py-16 space-y-4">
-            <div className="text-4xl">📝</div>
-            <p className="text-foreground font-semibold text-lg">No community reviews yet</p>
-            <p className="text-sm text-secondary max-w-md mx-auto">
-              Be the first to share your verdict! Browse games and write a review to help other players make better choices.
-            </p>
-            <div className="flex justify-center gap-3 pt-2">
-              <Link href="/search?sort=top-rated" className="px-4 py-2 text-sm font-medium text-accent border border-accent rounded-full hover:bg-accent/10 transition-colors">
-                Browse Games
-              </Link>
-              <Link href="/search?sort=trending" className="px-4 py-2 text-sm font-medium text-white bg-accent rounded-full hover:bg-accent-hover transition-colors">
-                See Trending
-              </Link>
+          <div className="space-y-8">
+            {/* Enhanced empty state */}
+            <div className="text-center py-10 space-y-4 rounded-2xl border border-border bg-surface">
+              <div className="text-5xl">✍️</div>
+              <h2 className="text-xl font-bold text-foreground">Be the First to Share Your Verdict</h2>
+              <p className="text-sm text-secondary max-w-lg mx-auto leading-relaxed">
+                Our community reviews section is brand new. Your review could be the first one others read when deciding what to play next.
+              </p>
+              <div className="flex flex-col sm:flex-row justify-center gap-3 pt-2">
+                <Link
+                  href="/search?sort=trending"
+                  className="inline-flex items-center justify-center gap-2 px-6 py-3 text-sm font-semibold text-white bg-accent rounded-xl hover:bg-accent-hover transition-colors shadow-lg shadow-accent/20"
+                >
+                  🔥 Review a Trending Game
+                </Link>
+                <Link
+                  href="/search?sort=top-rated"
+                  className="inline-flex items-center justify-center gap-2 px-6 py-3 text-sm font-medium text-accent border border-accent/30 rounded-xl hover:bg-accent/10 transition-colors"
+                >
+                  Browse Top Rated
+                </Link>
+              </div>
+            </div>
+
+            {/* Editorial picks as fallback content */}
+            <div className="space-y-3">
+              <h3 className="text-sm font-bold text-foreground uppercase tracking-wider flex items-center gap-2">
+                <span className="text-accent">⭐</span>
+                Staff Picks — Games Worth Reviewing
+              </h3>
+              <p className="text-xs text-tertiary">
+                These highly-rated games are waiting for community verdicts. Pick one and share your thoughts!
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {[
+                  { title: "Elden Ring", genre: "Action RPG", slug: "elden-ring", score: 95 },
+                  { title: "Baldur's Gate 3", genre: "RPG", slug: "baldurs-gate-3", score: 96 },
+                  { title: "Hades", genre: "Roguelike", slug: "hades", score: 93 },
+                  { title: "Celeste", genre: "Platformer", slug: "celeste", score: 92 },
+                  { title: "Hollow Knight", genre: "Metroidvania", slug: "hollow-knight", score: 90 },
+                  { title: "The Witcher 3", genre: "Action RPG", slug: "the-witcher-3-wild-hunt", score: 92 },
+                ].map((pick) => (
+                  <Link
+                    key={pick.slug}
+                    href={`/game/${pick.slug}`}
+                    className="group flex items-center gap-3 rounded-xl border border-border bg-surface p-3 hover:border-accent/30 hover:bg-surface-2 transition-all"
+                  >
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-base font-bold shrink-0 ${
+                      pick.score >= 90 ? "bg-score-great/10 text-score-great" : "bg-score-good/10 text-score-good"
+                    }`}>
+                      {pick.score}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground group-hover:text-accent transition-colors truncate">
+                        {pick.title}
+                      </p>
+                      <p className="text-[10px] text-tertiary">{pick.genre}</p>
+                    </div>
+                    <span className="text-xs text-accent opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                      Review →
+                    </span>
+                  </Link>
+                ))}
+              </div>
             </div>
           </div>
         )}
