@@ -392,107 +392,119 @@ export default function HomePage() {
                   icon="📰"
                   subtitle="Trending stories from top gaming outlets"
                 />
-                {/* 2-column editorial layout: featured hero + compact stack */}
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-                  {/* Featured hero article */}
-                  {gxNews.data[0] && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.5 }}
-                      className="lg:col-span-5"
-                    >
-                      <a
-                        href={gxNews.data[0].url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="group block rounded-2xl border border-border bg-surface overflow-hidden hover:border-accent/30 transition-all h-full"
-                      >
-                        <div className="relative aspect-video overflow-hidden">
-                          {gxNews.data[0].image ? (
-                            <Image
-                              src={gxNews.data[0].image}
-                              alt={gxNews.data[0].title}
-                              fill
-                              className="object-cover group-hover:scale-105 transition-transform duration-500"
-                              sizes="(max-width: 1024px) 100vw, 40vw"
-                            />
-                          ) : (
-                            <div className="w-full h-full bg-gradient-to-br from-accent/20 to-pixel-cyan/20 flex items-center justify-center">
-                              <span className="text-4xl">📰</span>
-                            </div>
-                          )}
-                        </div>
-                        <div className="p-4 space-y-2">
-                          <h3 className="text-base font-bold text-foreground line-clamp-2 group-hover:text-accent transition-colors">
-                            {gxNews.data[0].title}
-                          </h3>
-                          <div className="flex items-center gap-2">
-                            {gxNews.data[0].publisherFavicon && (
-                              <Image
-                                src={gxNews.data[0].publisherFavicon}
-                                alt=""
-                                width={14}
-                                height={14}
-                                className="rounded-sm"
-                              />
-                            )}
-                            <span className="text-xs text-tertiary">{gxNews.data[0].publisherName}</span>
-                          </div>
-                        </div>
-                      </a>
-                    </motion.div>
-                  )}
+                {/* 2-column editorial layout: 2 featured + compact stack */}
+                {(() => {
+                  const articles = gxNews.data;
+                  const featured = articles.slice(0, 2);
+                  const rest = articles.slice(2, 10);
 
-                  {/* Compact stacked articles */}
-                  <div className="lg:col-span-7 space-y-2">
-                    {gxNews.data.slice(1, 10).map((article, i) => (
-                      <motion.a
-                        key={article.id}
-                        href={article.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        initial={{ opacity: 0, x: 20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: i * 0.04, duration: 0.3 }}
-                        className="group flex items-center gap-3 rounded-xl border border-border bg-surface p-2.5 hover:border-accent/30 hover:bg-surface-2 transition-all"
-                      >
-                        <div className="relative w-20 h-14 shrink-0 rounded-lg overflow-hidden">
-                          {article.image ? (
-                            <Image
-                              src={article.image}
-                              alt=""
-                              fill
-                              className="object-cover"
-                              sizes="80px"
-                            />
-                          ) : (
-                            <div className="w-full h-full bg-gradient-to-br from-accent/10 to-pixel-cyan/10 flex items-center justify-center">
-                              <span className="text-lg">📰</span>
-                            </div>
-                          )}
+                  return (
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                      {/* Left column: 1–2 featured hero articles */}
+                      <div className={`lg:col-span-5 ${featured.length === 1 ? "flex items-center" : "space-y-4"}`}>
+                        {featured.map((article, idx) => (
+                          <motion.div
+                            key={article.id}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.5, delay: idx * 0.1 }}
+                          >
+                            <a
+                              href={article.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="group block rounded-2xl border border-border bg-surface overflow-hidden hover:border-accent/30 transition-all"
+                            >
+                              <div className="relative aspect-video overflow-hidden">
+                                {article.image ? (
+                                  <Image
+                                    src={article.image}
+                                    alt={article.title}
+                                    fill
+                                    className="object-cover group-hover:scale-105 transition-transform duration-500"
+                                    sizes="(max-width: 1024px) 100vw, 40vw"
+                                  />
+                                ) : (
+                                  <div className="w-full h-full bg-gradient-to-br from-accent/20 to-pixel-cyan/20 flex items-center justify-center">
+                                    <span className="text-4xl">📰</span>
+                                  </div>
+                                )}
+                              </div>
+                              <div className="p-4 space-y-2">
+                                <h3 className="text-base font-bold text-foreground line-clamp-2 group-hover:text-accent transition-colors">
+                                  {article.title}
+                                </h3>
+                                <div className="flex items-center gap-2">
+                                  {article.publisherFavicon && (
+                                    <Image
+                                      src={article.publisherFavicon}
+                                      alt=""
+                                      width={14}
+                                      height={14}
+                                      className="rounded-sm"
+                                    />
+                                  )}
+                                  <span className="text-xs text-tertiary">{article.publisherName}</span>
+                                </div>
+                              </div>
+                            </a>
+                          </motion.div>
+                        ))}
+                      </div>
+
+                      {/* Right column: compact stacked articles */}
+                      {rest.length > 0 && (
+                        <div className="lg:col-span-7 space-y-2">
+                          {rest.map((article, i) => (
+                            <motion.a
+                              key={article.id}
+                              href={article.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              initial={{ opacity: 0, x: 20 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ delay: i * 0.04, duration: 0.3 }}
+                              className="group flex items-center gap-3 rounded-xl border border-border bg-surface p-2.5 hover:border-accent/30 hover:bg-surface-2 transition-all"
+                            >
+                              <div className="relative w-20 h-14 shrink-0 rounded-lg overflow-hidden">
+                                {article.image ? (
+                                  <Image
+                                    src={article.image}
+                                    alt=""
+                                    fill
+                                    className="object-cover"
+                                    sizes="80px"
+                                  />
+                                ) : (
+                                  <div className="w-full h-full bg-gradient-to-br from-accent/10 to-pixel-cyan/10 flex items-center justify-center">
+                                    <span className="text-lg">📰</span>
+                                  </div>
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-foreground line-clamp-2 group-hover:text-accent transition-colors">
+                                  {article.title}
+                                </p>
+                                <div className="flex items-center gap-1.5 mt-1">
+                                  {article.publisherFavicon && (
+                                    <Image
+                                      src={article.publisherFavicon}
+                                      alt=""
+                                      width={12}
+                                      height={12}
+                                      className="rounded-sm"
+                                    />
+                                  )}
+                                  <span className="text-[10px] text-tertiary">{article.publisherName}</span>
+                                </div>
+                              </div>
+                            </motion.a>
+                          ))}
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-foreground line-clamp-2 group-hover:text-accent transition-colors">
-                            {article.title}
-                          </p>
-                          <div className="flex items-center gap-1.5 mt-1">
-                            {article.publisherFavicon && (
-                              <Image
-                                src={article.publisherFavicon}
-                                alt=""
-                                width={12}
-                                height={12}
-                                className="rounded-sm"
-                              />
-                            )}
-                            <span className="text-[10px] text-tertiary">{article.publisherName}</span>
-                          </div>
-                        </div>
-                      </motion.a>
-                    ))}
-                  </div>
-                </div>
+                      )}
+                    </div>
+                  );
+                })()}
               </FadeInSection>
             </div>
           </section>

@@ -11,6 +11,7 @@ import SortDropdown from "@/components/ui/SortDropdown";
 import { ReviewCardSkeleton } from "@/components/ui/Skeleton";
 import type { Platform } from "@/lib/types";
 import { platformShort } from "@/lib/utils";
+import { platformFilterIcon } from "@/components/ui/PlatformIcon";
 
 const listItem = {
   hidden: { opacity: 0, y: 16 },
@@ -55,6 +56,7 @@ export default function ReviewsPage() {
             selected={platform}
             onChange={setPlatform}
             labelFn={(v) => v === "All" ? "All" : platformShort(v as Platform)}
+            iconFn={(v) => platformFilterIcon(v)}
           />
         </div>
         <div className="space-y-1 ml-auto">

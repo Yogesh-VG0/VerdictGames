@@ -1,5 +1,7 @@
 import { type ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import type { Platform } from "@/lib/types";
+import { platformShort } from "@/lib/utils";
 
 interface PlatformIconProps {
   platform: string;
@@ -7,6 +9,7 @@ interface PlatformIconProps {
   className?: string;
 }
 
+/* ── SVG icon renderers (single source of truth) ── */
 const ICONS: Record<string, (s: number) => ReactNode> = {
   PC: (s) => (
     <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -66,7 +69,7 @@ const ICONS: Record<string, (s: number) => ReactNode> = {
   ),
 };
 
-const COLOR_MAP: Record<string, string> = {
+export const PLATFORM_COLOR_MAP: Record<string, string> = {
   PC: "text-accent",
   macOS: "text-accent",
   Linux: "text-accent",
@@ -80,17 +83,50 @@ const COLOR_MAP: Record<string, string> = {
   iOS: "text-secondary",
 };
 
+/* ── Shared filter options (same order/labels everywhere) ── */
+export const PLATFORM_FILTER_OPTIONS: { label: string; value: Platform | "All" }[] = [
+  { label: "All", value: "All" },
+  { label: "PC", value: "PC" },
+  { label: "PS5", value: "PlayStation 5" },
+  { label: "Xbox", value: "Xbox Series X|S" },
+  { label: "Switch", value: "Nintendo Switch" },
+  { label: "Mobile", value: "Android" },
+];
+
+/** Get a platform icon as a ReactNode at specified size. Falls back to text abbreviation. */
+export function getPlatformIcon(platform: string, size = 14): ReactNode {
+  const render = ICONS[platform];
+  if (!render) {
+    return (
+      <span className="text-[9px] font-bold text-secondary uppercase">
+        {platformShort(platform)}
+      </span>
+    );
+  }
+  return (
+    <span className={PLATFORM_COLOR_MAP[platform] ?? "text-secondary"}>
+      {render(size)}
+    </span>
+  );
+}
+
+/** Helper for FilterChips iconFn — returns a ReactNode for known platforms, null for "All". */
+export function platformFilterIcon(value: string): ReactNode | null {
+  if (value === "All") return null;
+  return getPlatformIcon(value, 14);
+}
+
 export default function PlatformIcon({ platform, size = 14, className }: PlatformIconProps) {
   const render = ICONS[platform];
   if (!render) {
     return (
       <span className={cn("text-[9px] font-bold text-secondary uppercase", className)} title={platform}>
-        {platform.slice(0, 3)}
+        {platformShort(platform)}
       </span>
     );
   }
   return (
-    <span className={cn(COLOR_MAP[platform] ?? "text-secondary", className)} title={platform}>
+    <span className={cn(PLATFORM_COLOR_MAP[platform] ?? "text-secondary", className)} title={platform}>
       {render(size)}
     </span>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
@@ -9,6 +9,12 @@ import { getCalendarGames, getGXCalendar, gxCalendarToGame } from "@/lib/api";
 import FadeInSection from "@/components/FadeInSection";
 import SectionHeader from "@/components/SectionHeader";
 import { Skeleton } from "@/components/ui/Skeleton";
+import PlatformIcon, {
+  PLATFORM_FILTER_OPTIONS,
+  PLATFORM_COLOR_MAP,
+  getPlatformIcon,
+  platformFilterIcon,
+} from "@/components/ui/PlatformIcon";
 import { platformShort } from "@/lib/utils";
 import type { Game, Platform } from "@/lib/types";
 import type { GXCalendarGame } from "@/lib/types";
@@ -22,29 +28,36 @@ function monthKey(date: Date): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
 }
 
-/* ── Platform icons (SVG inline for crisp rendering) ── */
-const PLATFORM_ICONS: Record<string, { icon: string; color: string }> = {
-  "PC":                 { icon: "🖥️", color: "text-pixel-cyan" },
-  "PlayStation 5":      { icon: "🎮", color: "text-blue-400" },
-  "PlayStation 4":      { icon: "🎮", color: "text-blue-300" },
-  "Xbox Series X|S":    { icon: "🟢", color: "text-green-400" },
-  "Xbox One":           { icon: "🟢", color: "text-green-300" },
-  "Nintendo Switch":    { icon: "🔴", color: "text-red-400" },
-  "Nintendo Switch 2":  { icon: "🔴", color: "text-red-300" },
-  "Android":            { icon: "🤖", color: "text-green-400" },
-  "iOS":                { icon: "🍎", color: "text-gray-300" },
-  "macOS":              { icon: "🍎", color: "text-gray-400" },
-  "Linux":              { icon: "🐧", color: "text-yellow-400" },
-};
+/* ── Centralized release-status helper ── */
+function getCalendarStatus(game: Game): { label: string; className: string } {
+  const now = new Date();
+  const today = now.toISOString().slice(0, 10);
 
-const PLATFORM_FILTERS: { label: string; value: Platform | "All"; icon: string }[] = [
-  { label: "All", value: "All", icon: "🌐" },
-  { label: "PC", value: "PC", icon: "🖥️" },
-  { label: "PS5", value: "PlayStation 5", icon: "🎮" },
-  { label: "Xbox", value: "Xbox Series X|S", icon: "🟢" },
-  { label: "Switch", value: "Nintendo Switch", icon: "🔴" },
-  { label: "Mobile", value: "Android", icon: "📱" },
-];
+  // If the game has a real score, show it directly (handled in JSX)
+  // This helper only covers badge-type statuses.
+
+  if (game.isProvisional || game.verdictLabel === "COMING SOON") {
+    return { label: "Coming Soon", className: "text-accent bg-accent/10" };
+  }
+
+  if (game.score > 0) {
+    // Has a score — defer to score display (not used as badge)
+    return { label: "", className: "" };
+  }
+
+  // No score — decide based on release date
+  if (!game.releaseDate) {
+    return { label: "TBA", className: "text-tertiary bg-surface-2" };
+  }
+
+  const releaseDay = game.releaseDate.slice(0, 10);
+  if (releaseDay > today) {
+    return { label: "Coming Soon", className: "text-accent bg-accent/10" };
+  }
+
+  // Release date is today or in the past, but no score yet
+  return { label: "Released", className: "text-score-good bg-score-good/10" };
+}
 
 export default function CalendarPage() {
   const now = new Date();
@@ -52,6 +65,39 @@ export default function CalendarPage() {
   const [selectedPlatform, setSelectedPlatform] = useState<Platform | "All">("All");
   const [collapsedDays, setCollapsedDays] = useState<Set<string>>(new Set());
   const monthNavRef = useRef<HTMLDivElement>(null);
+
+  /* ── Drag-to-scroll state ── */
+  const isDragging = useRef(false);
+  const dragStartX = useRef(0);
+  const scrollStartX = useRef(0);
+  const hasDragged = useRef(false);
+
+  const handlePointerDown = useCallback((e: React.PointerEvent) => {
+    const el = monthNavRef.current;
+    if (!el) return;
+    isDragging.current = true;
+    hasDragged.current = false;
+    dragStartX.current = e.clientX;
+    scrollStartX.current = el.scrollLeft;
+    el.setPointerCapture(e.pointerId);
+    el.style.cursor = "grabbing";
+    el.style.userSelect = "none";
+  }, []);
+
+  const handlePointerMove = useCallback((e: React.PointerEvent) => {
+    if (!isDragging.current || !monthNavRef.current) return;
+    const dx = e.clientX - dragStartX.current;
+    if (Math.abs(dx) > 3) hasDragged.current = true;
+    monthNavRef.current.scrollLeft = scrollStartX.current - dx;
+  }, []);
+
+  const handlePointerUp = useCallback((e: React.PointerEvent) => {
+    if (!monthNavRef.current) return;
+    isDragging.current = false;
+    monthNavRef.current.releasePointerCapture(e.pointerId);
+    monthNavRef.current.style.cursor = "grab";
+    monthNavRef.current.style.userSelect = "";
+  }, []);
 
   // Build 12-month range
   const monthOptions = useMemo(() => {
@@ -126,14 +172,26 @@ export default function CalendarPage() {
 
       {/* ── Sticky Month Nav ── */}
       <div className="sticky top-16 z-30 -mx-4 px-4 py-3 bg-background/80 backdrop-blur-xl border-b border-border">
-        <div ref={monthNavRef} className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
+        <div
+          ref={monthNavRef}
+          className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide cursor-grab"
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerLeave={handlePointerUp}
+        >
           {monthOptions.map((m) => {
             const isCurrent = m.key === monthKey(now);
             return (
               <button
                 key={m.key}
                 data-active={m.key === selectedMonth}
-                onClick={() => { setSelectedMonth(m.key); setCollapsedDays(new Set()); }}
+                onClick={(e) => {
+                  // Don't switch month if user was dragging
+                  if (hasDragged.current) { e.preventDefault(); return; }
+                  setSelectedMonth(m.key);
+                  setCollapsedDays(new Set());
+                }}
                 className={`shrink-0 px-3 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all relative ${
                   m.key === selectedMonth
                     ? "bg-accent text-white shadow-lg shadow-accent/20"
@@ -154,7 +212,7 @@ export default function CalendarPage() {
 
         {/* Platform filter row */}
         <div className="flex gap-1.5 mt-2 overflow-x-auto scrollbar-hide">
-          {PLATFORM_FILTERS.map((t) => (
+          {PLATFORM_FILTER_OPTIONS.map((t) => (
             <button
               key={t.value}
               onClick={() => setSelectedPlatform(t.value)}
@@ -164,7 +222,11 @@ export default function CalendarPage() {
                   : "bg-surface-2 text-tertiary border border-transparent hover:text-secondary hover:border-border"
               }`}
             >
-              <span>{t.icon}</span>
+              {t.value !== "All" && (
+                <span className="shrink-0 w-3.5 h-3.5 flex items-center justify-center">
+                  <PlatformIcon platform={t.value} size={14} />
+                </span>
+              )}
               {t.label}
             </button>
           ))}
@@ -246,85 +308,78 @@ export default function CalendarPage() {
                           className="overflow-hidden"
                         >
                           <div className="divide-y divide-border/50">
-                            {dayGames.map((game) => (
-                              <Link
-                                key={game.id}
-                                href={`/game/${game.slug}`}
-                                className="group flex items-center gap-3 px-4 py-3 hover:bg-surface-2 transition-colors"
-                              >
-                                {/* Cover thumbnail */}
-                                <div className="relative w-12 h-16 sm:w-14 sm:h-[74px] shrink-0 rounded-lg overflow-hidden bg-surface-2">
-                                  {game.coverImage ? (
-                                    <Image
-                                      src={game.coverImage}
-                                      alt={game.title}
-                                      fill
-                                      className="object-cover"
-                                      sizes="56px"
-                                    />
-                                  ) : (
-                                    <div className="w-full h-full flex items-center justify-center text-lg text-tertiary">
-                                      🎮
-                                    </div>
-                                  )}
-                                </div>
+                            {dayGames.map((game) => {
+                              const status = getCalendarStatus(game);
 
-                                {/* Info */}
-                                <div className="flex-1 min-w-0 space-y-1">
-                                  <h4 className="text-sm font-semibold text-foreground line-clamp-1 group-hover:text-accent transition-colors">
-                                    {game.title}
-                                  </h4>
-                                  <div className="flex items-center gap-2 flex-wrap">
-                                    {/* Platform icons */}
-                                    <div className="flex items-center gap-1">
-                                      {game.platforms.slice(0, 4).map((p) => {
-                                        const pi = PLATFORM_ICONS[p];
-                                        return (
-                                          <span
-                                            key={p}
-                                            title={p}
-                                            className={`text-[10px] ${pi?.color ?? "text-tertiary"}`}
-                                          >
-                                            {pi?.icon ?? platformShort(p)}
-                                          </span>
-                                        );
-                                      })}
-                                      {game.platforms.length > 4 && (
-                                        <span className="text-[9px] text-tertiary">+{game.platforms.length - 4}</span>
-                                      )}
-                                    </div>
-                                    {/* Genres */}
-                                    {game.genres.slice(0, 2).map(g => (
-                                      <span key={g} className="text-[10px] text-tertiary bg-surface-2 px-1.5 py-0.5 rounded">
-                                        {g}
-                                      </span>
-                                    ))}
+                              return (
+                                <Link
+                                  key={game.id}
+                                  href={`/game/${game.slug}`}
+                                  className="group flex items-center gap-3 px-4 py-3 hover:bg-surface-2 transition-colors"
+                                >
+                                  {/* Cover thumbnail */}
+                                  <div className="relative w-12 h-16 sm:w-14 sm:h-[74px] shrink-0 rounded-lg overflow-hidden bg-surface-2">
+                                    {game.coverImage ? (
+                                      <Image
+                                        src={game.coverImage}
+                                        alt={game.title}
+                                        fill
+                                        className="object-cover"
+                                        sizes="56px"
+                                      />
+                                    ) : (
+                                      <div className="w-full h-full flex items-center justify-center text-lg text-tertiary">
+                                        🎮
+                                      </div>
+                                    )}
                                   </div>
-                                </div>
 
-                                {/* Score / Status */}
-                                <div className="shrink-0 text-right">
-                                  {game.isProvisional || game.verdictLabel === "COMING SOON" ? (
-                                    <span className="text-[10px] text-accent font-medium bg-accent/10 px-2 py-1 rounded-lg">
-                                      Coming Soon
-                                    </span>
-                                  ) : game.score > 0 ? (
-                                    <div className="text-center">
-                                      <p className={`text-lg font-bold tabular-nums ${
-                                        game.score >= 80 ? "text-score-great" :
-                                        game.score >= 65 ? "text-score-good" :
-                                        game.score >= 45 ? "text-score-mixed" : "text-score-bad"
-                                      }`}>
-                                        {game.score}
-                                      </p>
-                                      <p className="text-[8px] text-tertiary uppercase">Verdict</p>
+                                  {/* Info */}
+                                  <div className="flex-1 min-w-0 space-y-1">
+                                    <h4 className="text-sm font-semibold text-foreground line-clamp-1 group-hover:text-accent transition-colors">
+                                      {game.title}
+                                    </h4>
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      {/* Platform icons — SVG */}
+                                      <div className="flex items-center gap-1">
+                                        {game.platforms.slice(0, 4).map((p) => (
+                                          <PlatformIcon key={p} platform={p} size={12} />
+                                        ))}
+                                        {game.platforms.length > 4 && (
+                                          <span className="text-[9px] text-tertiary">+{game.platforms.length - 4}</span>
+                                        )}
+                                      </div>
+                                      {/* Genres */}
+                                      {game.genres.slice(0, 2).map(g => (
+                                        <span key={g} className="text-[10px] text-tertiary bg-surface-2 px-1.5 py-0.5 rounded">
+                                          {g}
+                                        </span>
+                                      ))}
                                     </div>
-                                  ) : (
-                                    <span className="text-[10px] text-tertiary">Awaiting</span>
-                                  )}
-                                </div>
-                              </Link>
-                            ))}
+                                  </div>
+
+                                  {/* Score / Status */}
+                                  <div className="shrink-0 text-right">
+                                    {game.score > 0 ? (
+                                      <div className="text-center">
+                                        <p className={`text-lg font-bold tabular-nums ${
+                                          game.score >= 80 ? "text-score-great" :
+                                          game.score >= 65 ? "text-score-good" :
+                                          game.score >= 45 ? "text-score-mixed" : "text-score-bad"
+                                        }`}>
+                                          {game.score}
+                                        </p>
+                                        <p className="text-[8px] text-tertiary uppercase">Verdict</p>
+                                      </div>
+                                    ) : (
+                                      <span className={`text-[10px] font-medium px-2 py-1 rounded-lg ${status.className}`}>
+                                        {status.label}
+                                      </span>
+                                    )}
+                                  </div>
+                                </Link>
+                              );
+                            })}
                           </div>
                         </motion.div>
                       )}

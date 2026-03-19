@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getUserProfile } from "@/lib/api";
@@ -31,27 +32,38 @@ export default function SettingsPage() {
   const [favoriteGenres, setFavoriteGenres] = useState<string[]>([]);
   const [avatarPreview, setAvatarPreview] = useState("");
   const [avatarFile, setAvatarFile] = useState<{ base64: string; contentType: string } | null>(null);
-  const [initialized, setInitialized] = useState(false);
   const [saved, setSaved] = useState(false);
 
-  // Initialize form from profile data
-  if (profile && !initialized) {
-    setDisplayName(profile.displayName ?? "");
-    setBio(profile.bio ?? "");
-    setFavoriteGenres(profile.favoriteGenres ?? []);
-    setAvatarPreview(profile.avatar ?? "");
-    setInitialized(true);
-  }
+  // Initialize form from profile data — moved to useEffect
+  useEffect(() => {
+    if (profile) {
+      setDisplayName(profile.displayName ?? "");
+      setBio(profile.bio ?? "");
+      setFavoriteGenres(profile.favoriteGenres ?? []);
+      setAvatarPreview(profile.avatar ?? "");
+    }
+  }, [profile]);
 
   const saveMutation = useMutation({
     mutationFn: async () => {
       // Upload avatar if changed
       if (avatarFile) {
-        await fetch("/api/profile/settings", {
+        const uploadRes = await fetch("/api/profile/settings", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(avatarFile),
+          body: JSON.stringify({ avatar: avatarFile.base64, contentType: avatarFile.contentType }),
         });
+
+        if (!uploadRes.ok) {
+          const errJson = await uploadRes.json().catch(() => ({}));
+          throw new Error(errJson.error ?? "Avatar upload failed");
+        }
+
+        // Use the returned avatar URL
+        const uploadData = await uploadRes.json();
+        if (uploadData.data?.avatarUrl) {
+          setAvatarPreview(uploadData.data.avatarUrl);
+        }
       }
 
       // Update profile fields
@@ -72,6 +84,7 @@ export default function SettingsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["user", user?.username] });
+      setAvatarFile(null); // Clear pending upload
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     },
@@ -102,6 +115,15 @@ export default function SettingsPage() {
     );
   };
 
+  const handleBack = () => {
+    // Try to go back, fallback to home if no history
+    if (window.history.length > 1) {
+      router.back();
+    } else {
+      router.push("/");
+    }
+  };
+
   if (!user) {
     return (
       <div className="max-w-2xl mx-auto px-4 py-12 text-center">
@@ -122,7 +144,17 @@ export default function SettingsPage() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 sm:py-8 space-y-8">
-      <div>
+      {/* Back button + header */}
+      <div className="space-y-1">
+        <button
+          onClick={handleBack}
+          className="inline-flex items-center gap-1.5 text-sm text-secondary hover:text-foreground transition-colors mb-2 group"
+        >
+          <svg className="w-4 h-4 transition-transform group-hover:-translate-x-0.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+          </svg>
+          Back
+        </button>
         <h1 className="text-2xl font-bold text-foreground">Profile Settings</h1>
         <p className="text-sm text-secondary mt-1">Customize how others see you on Verdict</p>
       </div>
