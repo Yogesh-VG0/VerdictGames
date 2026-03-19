@@ -9,6 +9,41 @@ import { jsonOk, jsonNotFound } from "@/lib/api/response";
 import { mapGameRow } from "@/lib/db/mappers";
 import type { GameRow } from "@/lib/supabase/types";
 
+function provisionalRecordForSlug(slug: string) {
+  const queryTitle = slug.replace(/-/g, " ");
+  return {
+    slug,
+    title: queryTitle.replace(/\b\w/g, (c) => c.toUpperCase()),
+    subtitle: null,
+    cover_image: "",
+    header_image: "",
+    screenshots: [] as string[],
+    platforms: [] as string[],
+    genres: [] as string[],
+    tags: [] as string[],
+    developer: "",
+    publisher: "",
+    release_date: null,
+    description:
+      "This game page is awaiting data enrichment. Information will be updated automatically when source data becomes available.",
+    score: 0,
+    verdict_label: "COMING SOON",
+    verdict_summary: "",
+    pros: [] as string[],
+    cons: [] as string[],
+    monetization: "",
+    performance_notes: "",
+    monetization_notes: "",
+    review_count: 0,
+    featured: false,
+    trending: false,
+    score_source: "provisional",
+    enrichment_sources: [] as string[],
+    price_currency: "USD",
+    is_free: false,
+  };
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
@@ -34,13 +69,23 @@ export async function GET(
     // REMOVED: fuzzy ilike slug matching — this caused wrong-game resolution
     // (e.g. "grand-theft-auto-vi" matching "grand-theft-auto-v")
 
-    // If not found, try on-demand ingestion.
-    // Pass the original slug as a hint so ingest can verify the RAWG result.
+    // IGDB first — GX/calendar slugs often exist on IGDB before RAWG; also avoids wrong RAWG matches.
+    if (!data) {
+      try {
+        const { tryInsertGameFromIgdbSlug } = await import("@/lib/services/igdbBootstrap");
+        const bootstrapped = await tryInsertGameFromIgdbSlug(slug, getServerSupabase());
+        if (bootstrapped) data = bootstrapped;
+      } catch (igdbErr) {
+        console.warn(`[API] /games/${slug} IGDB bootstrap failed:`, igdbErr);
+      }
+    }
+
+    // RAWG multi-source ingest (must return this exact URL slug — never swap in another game).
     if (!data) {
       try {
         const { ingestGame } = await import("@/lib/services/ingest");
         const queryTitle = slug.replace(/-/g, " ");
-        const result = await ingestGame({ query: queryTitle, expectedSlug: slug }) as 
+        const result = await ingestGame({ query: queryTitle, expectedSlug: slug }) as
           import("@/lib/services/ingest").IngestResult & { lowConfidence?: boolean };
 
         if (result.success && result.gameId) {
@@ -49,47 +94,18 @@ export async function GET(
             .select("*")
             .eq("id", result.gameId)
             .maybeSingle() as { data: GameRow | null };
-          data = refetch.data;
+          const row = refetch.data;
+          if (row?.slug === slug) {
+            data = row;
+          } else if (row) {
+            console.warn(
+              `[API] /games/${slug} ingest resolved to different slug "${row.slug}" — ignoring to avoid wrong page`
+            );
+          }
         } else if ((result as { lowConfidence?: boolean }).lowConfidence) {
-          // Low confidence match — create a provisional placeholder page
-          // instead of returning 404 or mapping to a wrong game
-          const provisionalRecord = {
-            slug,
-            title: queryTitle.replace(/\b\w/g, c => c.toUpperCase()),
-            subtitle: null,
-            cover_image: "",
-            header_image: "",
-            screenshots: [] as string[],
-            platforms: [] as string[],
-            genres: [] as string[],
-            tags: [] as string[],
-            developer: "",
-            publisher: "",
-            release_date: null,
-            description: "This game page is awaiting data enrichment. Information will be updated automatically when source data becomes available.",
-            score: 0,
-            verdict_label: "COMING SOON",
-            verdict_summary: "",
-            pros: [] as string[],
-            cons: [] as string[],
-            monetization: "",
-            performance_notes: "",
-            monetization_notes: "",
-            review_count: 0,
-            featured: false,
-            trending: false,
-            score_source: "provisional",
-            enrichment_sources: [] as string[],
-            price_currency: "USD",
-            is_free: false,
-            is_provisional: true,
-            release_status: "upcoming",
-          };
-
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const { data: inserted, error: insertErr } = await (supabase
-            .from("games") as any)
-            .insert(provisionalRecord)
+          const { data: inserted, error: insertErr } = await (supabase.from("games") as any)
+            .insert(provisionalRecordForSlug(slug))
             .select("*")
             .single() as { data: GameRow | null; error: { message: string } | null };
 
@@ -102,14 +118,20 @@ export async function GET(
       }
     }
 
-    // RAWG often lags new releases; IGDB may already list the game (same slug as calendar links).
-    if (!data) {
+    // Last resort: stub page for valid slugs (calendar links, Twitch/IGDB missing on host, etc.)
+    if (!data && /^[a-z0-9-]{1,100}$/i.test(slug)) {
       try {
-        const { tryInsertGameFromIgdbSlug } = await import("@/lib/services/igdbBootstrap");
-        const bootstrapped = await tryInsertGameFromIgdbSlug(slug, getServerSupabase());
-        if (bootstrapped) data = bootstrapped;
-      } catch (igdbErr) {
-        console.warn(`[API] /games/${slug} IGDB bootstrap failed:`, igdbErr);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: inserted, error: insertErr } = await (supabase.from("games") as any)
+          .insert(provisionalRecordForSlug(slug))
+          .select("*")
+          .single() as { data: GameRow | null; error: { message: string } | null };
+
+        if (!insertErr && inserted) {
+          data = inserted;
+        }
+      } catch (stubErr) {
+        console.warn(`[API] /games/${slug} provisional stub failed:`, stubErr);
       }
     }
 

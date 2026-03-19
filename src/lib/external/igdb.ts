@@ -189,9 +189,6 @@ export async function searchIgdb(
 }
 
 /**
- * Get a single IGDB game by its ID with full details.
- */
-/**
  * Exact IGDB slug lookup (e.g. "scott-pilgrim-ex").
  * Used when RAWG has no match but IGDB lists the title.
  */
@@ -215,6 +212,81 @@ export async function getIgdbGameBySlug(slug: string): Promise<IgdbGame | null> 
   );
 
   return results?.[0] ?? null;
+}
+
+/** Compare slugs ignoring punctuation (GX `rhythmstrike` vs IGDB `rhythm-strike`). */
+function normalizeSlugKey(s: string): string {
+  return s.toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+/**
+ * Resolve an IGDB game for a site URL slug from GX/calendar.
+ * GX slugs often differ from IGDB (`rhythmstrike` vs `rhythm-strike`), so we
+ * exact-match first, then search + normalized slug / name heuristics.
+ */
+export async function resolveIgdbGameForExternalSlug(urlSlug: string): Promise<IgdbGame | null> {
+  if (!isIgdbConfigured()) return null;
+
+  const trimmed = urlSlug.trim().toLowerCase();
+  if (!trimmed || !/^[a-z0-9-]+$/.test(trimmed)) return null;
+
+  const targetKey = normalizeSlugKey(trimmed);
+
+  const byExact = await getIgdbGameBySlug(trimmed);
+  if (byExact) {
+    const full = await getIgdbGame(byExact.id);
+    return full ?? byExact;
+  }
+
+  const searchQueries = new Set<string>();
+  searchQueries.add(trimmed.replace(/-/g, " "));
+  if (trimmed.includes("-")) {
+    searchQueries.add(trimmed.replace(/-/g, ""));
+  }
+  // e.g. rhythmstrike → try splitting implied words is unreliable; IGDB search handles fuzzy match
+
+  const merged = new Map<number, IgdbGame>();
+  for (const q of searchQueries) {
+    const t = q.trim();
+    if (t.length < 2) continue;
+    const hits = await searchIgdb(t, 20);
+    for (const h of hits ?? []) merged.set(h.id, h);
+  }
+
+  const candidates = [...merged.values()];
+  if (candidates.length === 0) return null;
+
+  let best: IgdbGame | null = null;
+  for (const g of candidates) {
+    if (normalizeSlugKey(g.slug) === targetKey) {
+      best = g;
+      break;
+    }
+  }
+  if (!best) {
+    for (const g of candidates) {
+      const gk = normalizeSlugKey(g.slug);
+      if (gk.includes(targetKey) || targetKey.includes(gk)) {
+        best = g;
+        break;
+      }
+    }
+  }
+  if (!best) {
+    const words = trimmed.replace(/-/g, " ").split(/\s+/).filter((w) => w.length > 0);
+    for (const g of candidates) {
+      const nl = g.name.toLowerCase();
+      if (words.length && words.every((w) => nl.includes(w))) {
+        best = g;
+        break;
+      }
+    }
+  }
+
+  if (!best) return null;
+
+  const full = await getIgdbGame(best.id);
+  return full ?? best;
 }
 
 export async function getIgdbGame(igdbId: number): Promise<IgdbGame | null> {

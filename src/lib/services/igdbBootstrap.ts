@@ -6,7 +6,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, GameRow } from "../supabase/types";
 import {
-  getIgdbGameBySlug,
+  resolveIgdbGameForExternalSlug,
   extractIgdbEnrichment,
   igdbImageUrl,
   isIgdbConfigured,
@@ -26,7 +26,7 @@ export async function tryInsertGameFromIgdbSlug(
     .maybeSingle();
   if (existing) return existing as GameRow;
 
-  const igdb = await getIgdbGameBySlug(urlSlug);
+  const igdb = await resolveIgdbGameForExternalSlug(urlSlug);
   if (!igdb) return null;
 
   const enrich = extractIgdbEnrichment(igdb);
@@ -106,9 +106,6 @@ export async function tryInsertGameFromIgdbSlug(
     score_source: "igdb",
     last_enriched_at: new Date().toISOString(),
     enrichment_sources: ["igdb"],
-    is_provisional: false,
-    release_status:
-      releaseDate && releaseDate > today ? "upcoming" : ("released" as string | null),
     momentum: 0,
   };
 
