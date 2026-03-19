@@ -23,7 +23,7 @@ export default function FilterChips<T extends string>({
   return (
     <div
       className={cn(
-        "flex gap-2 overflow-x-auto scrollbar-hide pb-1 sm:flex-wrap sm:overflow-visible sm:pb-0",
+        "flex gap-1.5 overflow-x-auto scrollbar-hide pb-1 max-w-full sm:flex-wrap sm:overflow-visible sm:pb-0",
         className
       )}
       role="radiogroup"
@@ -39,10 +39,10 @@ export default function FilterChips<T extends string>({
             role="radio"
             aria-checked={isActive}
             className={cn(
-              "relative px-3.5 py-1.5 text-xs font-medium rounded-full border transition-all duration-200 flex items-center gap-1.5",
+              "relative shrink-0 px-3 py-1.5 text-xs font-medium rounded-full border transition-all duration-200 flex items-center gap-1.5 whitespace-nowrap",
               isActive
                 ? "bg-accent text-white border-accent shadow-[0_0_12px_-3px_rgba(168,85,247,0.4)]"
-                : "bg-white/5 text-secondary border-white/10 hover:border-white/20 hover:text-foreground hover:bg-white/10"
+                : "bg-surface-2 text-secondary border-border hover:border-border-hover hover:text-foreground hover:bg-elevated"
             )}
           >
             {icon && <span className="shrink-0">{icon}</span>}

@@ -46,22 +46,46 @@ export async function POST(request: NextRequest) {
   // Mode 1: Ingest via title lookup
   if (body.mode === "lookup" && body.title) {
     const { ingestGame } = await import("@/lib/services/ingest");
-    const result = await ingestGame({ query: body.title });
+    const result = await ingestGame({ query: body.title, expectedSlug: slugify(body.title) });
     if (result.success) {
       return jsonOk({ gameId: result.gameId, slug: result.slug, message: result.message });
+    }
+    // Surface low-confidence warning to the admin UI
+    if ((result as { lowConfidence?: boolean }).lowConfidence) {
+      return jsonError(result.message, 422);
     }
     return jsonError(result.message, 400);
   }
 
   // Mode 2: Ingest via source URL (extract title from URL slug)
   if (body.mode === "url" && body.url) {
-    const urlSlug = new URL(body.url).pathname.split("/").pop() ?? "";
-    const title = urlSlug.replace(/-/g, " ").replace(/_/g, " ");
+    const parsedUrl = new URL(body.url);
+    const urlSlug = parsedUrl.pathname.split("/").filter(Boolean).pop() ?? "";
+    // Domain-specific title extraction
+    let title = "";
+    const host = parsedUrl.hostname.toLowerCase();
+    if (host.includes("store.steampowered.com")) {
+      // Steam URL: /app/123456/Game_Name/ → extract last segment
+      const segments = parsedUrl.pathname.split("/").filter(Boolean);
+      title = (segments[segments.length - 1] ?? "").replace(/_/g, " ");
+    } else if (host.includes("rawg.io")) {
+      // RAWG URL: /games/game-slug
+      title = urlSlug.replace(/-/g, " ");
+    } else if (host.includes("igdb.com")) {
+      // IGDB URL: /games/game-slug
+      title = urlSlug.replace(/-/g, " ").replace(/--/g, ": ");
+    } else {
+      title = urlSlug.replace(/[-_]/g, " ");
+    }
+    title = title.trim();
     if (!title) return jsonError("Could not extract title from URL", 400);
     const { ingestGame } = await import("@/lib/services/ingest");
-    const result = await ingestGame({ query: title });
+    const result = await ingestGame({ query: title, expectedSlug: slugify(title) });
     if (result.success) {
       return jsonOk({ gameId: result.gameId, slug: result.slug, message: result.message });
+    }
+    if ((result as { lowConfidence?: boolean }).lowConfidence) {
+      return jsonError(result.message, 422);
     }
     return jsonError(result.message, 400);
   }

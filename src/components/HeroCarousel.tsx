@@ -9,6 +9,7 @@ import VerdictBadge from "@/components/ui/VerdictBadge";
 import ScoreRing from "@/components/ui/ScoreRing";
 import PixelButton from "@/components/ui/PixelButton";
 import PlatformIcon from "@/components/ui/PlatformIcon";
+import { collapsePlatforms } from "@/lib/utils/platform";
 import { cn } from "@/lib/utils";
 
 interface HeroCarouselProps {
@@ -102,6 +103,18 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
 
   if (!game) return null;
 
+  // Context-aware reason label per slide
+  const getReasonLabel = (g: Game): string => {
+    if (g.isFeaturedManual) return "Editor's Pick";
+    if (g.isProvisional || (g.releaseDate && new Date(g.releaseDate) > new Date())) return "Coming Soon";
+    if (g.isTrendingManual || g.trending) return "Trending Now";
+    if (g.score >= 90) return "Top Rated";
+    if (g.priceCurrent === 0 || g.isFree) return "Free to Play";
+    if (g.priceLowest && g.priceCurrent && g.priceCurrent < g.priceLowest) return "On Sale";
+    if (g.featured) return "Featured";
+    return "Spotlight";
+  };
+
   return (
     <section
       className="relative overflow-hidden group touch-pan-y"
@@ -160,10 +173,10 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
             exit="exit"
             className="space-y-2.5 sm:space-y-3"
           >
-            {/* Featured label */}
+            {/* Reason label */}
             <span className="inline-flex items-center gap-2 text-[10px] sm:text-xs font-bold uppercase tracking-[0.15em] text-accent">
               <span className="w-1.5 h-1.5 bg-accent rounded-full animate-pixel-pulse" />
-              Featured
+              {getReasonLabel(game)}
               <span className="h-px w-6 bg-accent/40" />
             </span>
 
@@ -178,12 +191,19 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
               <ScoreRing score={game.score} size={56} strokeWidth={3} className="hidden sm:block" />
               <VerdictBadge label={game.verdictLabel} size="lg" />
               <div className="hidden sm:flex items-center gap-2.5 flex-wrap">
-                {game.platforms.slice(0, 5).map((p) => (
-                  <PlatformIcon key={p} platform={p} size={18} className="drop-shadow-md brightness-0 invert opacity-90" />
-                ))}
-                {game.platforms.length > 5 && (
-                  <span className="text-xs hero-overlay-text-muted">+{game.platforms.length - 5}</span>
-                )}
+                {(() => {
+                  const { visible, overflow } = collapsePlatforms(game.platforms, 4);
+                  return (
+                    <>
+                      {visible.map((p) => (
+                        <PlatformIcon key={p} platform={p} size={18} className="drop-shadow-md brightness-0 invert opacity-90" />
+                      ))}
+                      {overflow > 0 && (
+                        <span className="text-xs hero-overlay-text-muted">+{overflow}</span>
+                      )}
+                    </>
+                  );
+                })()}
                 {game.releaseDate && (
                   <span className="text-xs hero-overlay-text-muted font-medium">
                     {new Date(game.releaseDate).getFullYear()}
@@ -197,11 +217,47 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
               {game.verdictSummary}
             </p>
 
-            {/* CTA */}
-            <div className="flex gap-3 pt-0.5 sm:pt-1">
+            {/* Metadata row */}
+            <div className="hidden sm:flex items-center gap-2 text-xs hero-overlay-text-muted flex-wrap">
+              {game.genres.slice(0, 2).map((g, i) => (
+                <span key={g}>
+                  {i > 0 && <span className="mr-2">·</span>}
+                  {g}
+                </span>
+              ))}
+              {game.hltbMain && (
+                <>
+                  <span>·</span>
+                  <span>{Math.round(game.hltbMain)}h main story</span>
+                </>
+              )}
+              {game.currentPlayers && game.currentPlayers > 1000 && (
+                <>
+                  <span>·</span>
+                  <span>{(game.currentPlayers / 1000).toFixed(1)}K playing</span>
+                </>
+              )}
+            </div>
+
+            {/* CTAs */}
+            <div className="flex gap-3 pt-0.5 sm:pt-1 flex-wrap">
               <Link href={`/game/${game.slug}`} onClick={(e) => { if (isSwiping.current) e.preventDefault(); }}>
                 <PixelButton size="md">Read Verdict</PixelButton>
               </Link>
+              {game.trailerUrl && (
+                <a
+                  href={game.trailerUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => { if (isSwiping.current) e.preventDefault(); }}
+                  className="hidden sm:inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/20 transition-all"
+                >
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M8 5v14l11-7z" />
+                  </svg>
+                  Trailer
+                </a>
+              )}
             </div>
           </motion.div>
         </AnimatePresence>

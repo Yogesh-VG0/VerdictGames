@@ -26,7 +26,7 @@ export type MonetizationType =
 
 export type VerdictLabel = "MUST PLAY" | "WORTH IT" | "MIXED" | "SKIP" | "COMING SOON";
 
-export type SortOption = "relevance" | "newest" | "top-rated" | "trending";
+export type SortOption = "relevance" | "newest" | "upcoming" | "recently-added" | "top-rated" | "trending";
 
 export type LibraryStatus = "wishlist" | "playing" | "completed" | "dropped" | "paused";
 

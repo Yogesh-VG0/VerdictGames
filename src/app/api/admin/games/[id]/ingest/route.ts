@@ -25,8 +25,9 @@ export async function POST(
 
     const { ingestGame } = await import("@/lib/services/ingest");
     const result = await ingestGame({
-      query: (game as { title: string }).title,
+      query: (game as { title: string; slug: string }).title,
       forceRefresh: true,
+      expectedSlug: (game as { title: string; slug: string }).slug,
     });
 
     return jsonOk(result);

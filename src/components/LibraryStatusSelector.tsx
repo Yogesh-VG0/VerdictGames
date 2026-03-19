@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { updateLibraryGame, removeFromLibrary, getLibrary } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
-import type { LibraryStatus } from "@/lib/types";
+import type { LibraryStatus, UserGame } from "@/lib/types";
 
 interface LibraryStatusSelectorProps {
   gameId: string;
@@ -25,33 +25,73 @@ export default function LibraryStatusSelector({ gameId, onAuthRequired }: Librar
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
+  const [toast, setToast] = useState<{ message: string; status: LibraryStatus } | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Check if game is in library
+  // Check if game is in library — use cached library data if available
   const { data: library } = useQuery({
     queryKey: ["library"],
     queryFn: () => getLibrary(),
     enabled: !!user,
+    staleTime: 30_000,
   });
 
   const currentEntry = library?.find((ug) => ug.gameId === gameId);
   const currentStatus = currentEntry?.status;
 
+  const showToast = useCallback((status: LibraryStatus) => {
+    const label = STATUS_OPTIONS.find(o => o.value === status)?.label ?? status;
+    setToast({ message: `Added to ${label}`, status });
+    setTimeout(() => setToast(null), 3000);
+  }, []);
+
   const updateMutation = useMutation({
     mutationFn: (status: LibraryStatus) => updateLibraryGame({ gameId, status }),
-    onSuccess: () => {
+    // Optimistic update: immediately update cached library
+    onMutate: async (newStatus) => {
+      await queryClient.cancelQueries({ queryKey: ["library"] });
+      const prev = queryClient.getQueryData<UserGame[]>(["library"]);
+      queryClient.setQueryData<UserGame[]>(["library"], (old) => {
+        if (!old) return old;
+        const idx = old.findIndex(ug => ug.gameId === gameId);
+        if (idx >= 0) {
+          const updated = [...old];
+          updated[idx] = { ...updated[idx], status: newStatus };
+          return updated;
+        }
+        // New entry — add a placeholder
+        return [...old, { id: `optimistic-${gameId}`, userId: "", gameId, status: newStatus, hoursPlayed: 0, notes: "", createdAt: new Date().toISOString() }];
+      });
+      setOpen(false);
+      showToast(newStatus);
+      return { prev };
+    },
+    onError: (_err, _status, context) => {
+      if (context?.prev) queryClient.setQueryData(["library"], context.prev);
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["library"] });
       queryClient.invalidateQueries({ queryKey: ["libraryStats"] });
-      setOpen(false);
     },
   });
 
   const removeMutation = useMutation({
     mutationFn: () => removeFromLibrary(gameId),
-    onSuccess: () => {
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: ["library"] });
+      const prev = queryClient.getQueryData<UserGame[]>(["library"]);
+      queryClient.setQueryData<UserGame[]>(["library"], (old) =>
+        old ? old.filter(ug => ug.gameId !== gameId) : old
+      );
+      setOpen(false);
+      return { prev };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.prev) queryClient.setQueryData(["library"], context.prev);
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["library"] });
       queryClient.invalidateQueries({ queryKey: ["libraryStats"] });
-      setOpen(false);
     },
   });
 
@@ -78,15 +118,19 @@ export default function LibraryStatusSelector({ gameId, onAuthRequired }: Librar
     ? STATUS_OPTIONS.find((s) => s.value === currentStatus)
     : null;
 
+  const isPending = updateMutation.isPending || removeMutation.isPending;
+
   return (
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={handleClick}
+        disabled={isPending}
         className={cn(
           "flex items-center gap-2 w-full h-11 px-4 rounded-xl text-sm font-medium transition-all border",
           currentStatus
             ? "bg-accent/10 border-accent/30 text-accent hover:bg-accent/20"
-            : "bg-white/5 border-white/[0.08] text-foreground hover:border-accent/40 hover:bg-accent/5"
+            : "bg-surface-2 border-border text-foreground hover:border-accent/40 hover:bg-accent/5",
+          isPending && "opacity-60 pointer-events-none"
         )}
       >
         <span className="text-base">{currentOption?.icon ?? "+"}</span>
@@ -111,18 +155,18 @@ export default function LibraryStatusSelector({ gameId, onAuthRequired }: Librar
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -4, scale: 0.95 }}
             transition={{ duration: 0.15 }}
-            className="absolute top-full mt-1 left-0 right-0 z-50 rounded-xl bg-surface border border-white/[0.08] shadow-2xl overflow-hidden"
+            className="absolute top-full mt-1 left-0 right-0 z-50 rounded-xl bg-surface border border-border shadow-2xl overflow-hidden"
           >
             {STATUS_OPTIONS.map((opt) => (
               <button
                 key={opt.value}
                 onClick={() => updateMutation.mutate(opt.value)}
-                disabled={updateMutation.isPending}
+                disabled={isPending}
                 className={cn(
                   "flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-left transition-colors",
                   opt.value === currentStatus
                     ? "bg-accent/10 text-accent"
-                    : "text-secondary hover:text-foreground hover:bg-white/5"
+                    : "text-secondary hover:text-foreground hover:bg-surface-2"
                 )}
               >
                 <span>{opt.icon}</span>
@@ -136,10 +180,10 @@ export default function LibraryStatusSelector({ gameId, onAuthRequired }: Librar
             ))}
             {currentStatus && (
               <>
-                <div className="border-t border-white/[0.06]" />
+                <div className="border-t border-border" />
                 <button
                   onClick={() => removeMutation.mutate()}
-                  disabled={removeMutation.isPending}
+                  disabled={isPending}
                   className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-danger hover:bg-danger/5 transition-colors"
                 >
                   <span>🗑️</span>
@@ -147,6 +191,27 @@ export default function LibraryStatusSelector({ gameId, onAuthRequired }: Librar
                 </button>
               </>
             )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Toast notification */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 8 }}
+            transition={{ duration: 0.2 }}
+            className="absolute top-full mt-2 left-0 right-0 z-50 rounded-xl bg-surface border border-accent/30 shadow-lg px-3 py-2.5 flex items-center justify-between gap-2"
+          >
+            <span className="text-xs font-medium text-foreground">{toast.message}</span>
+            <a
+              href={`/library?status=${toast.status}`}
+              className="text-[10px] font-semibold text-accent hover:underline whitespace-nowrap"
+            >
+              View Library
+            </a>
           </motion.div>
         )}
       </AnimatePresence>

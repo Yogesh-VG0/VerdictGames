@@ -143,21 +143,33 @@ function SearchContent() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
-      {/* Search header */}
+      {/* Search header — contextual based on active sort */}
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
         className="space-y-1"
       >
-        <h1 className="text-2xl font-bold text-foreground">Search Games</h1>
+        <h1 className="text-2xl font-bold text-foreground">
+          {sort === "trending" ? "Trending Games" :
+           sort === "top-rated" ? "Top Rated Games" :
+           sort === "newest" ? "New Releases" :
+           sort === "upcoming" ? "Upcoming Games" :
+           sort === "recently-added" ? "Recently Added" :
+           "Search Games"}
+        </h1>
         <p className="text-sm text-secondary">
-          Discover and filter games across all platforms.
+          {sort === "trending" ? "Games gaining momentum right now based on player activity." :
+           sort === "top-rated" ? "Highest Verdict scores across all platforms." :
+           sort === "newest" ? "The latest released games, sorted by release date." :
+           sort === "upcoming" ? "Unreleased games arriving soonest." :
+           sort === "recently-added" ? "The newest additions to our database." :
+           "Discover and filter games across all platforms."}
         </p>
       </motion.div>
 
       {/* Sticky search bar */}
-      <div className="sticky top-12 md:top-20 z-40 bg-background/80 backdrop-blur-xl py-3 -mx-4 px-4 border-b border-white/[0.06]">
+      <div className="sticky top-12 md:top-20 z-40 bg-background/80 backdrop-blur-xl py-3 -mx-4 px-4 border-b border-border">
         <div className="relative">
           <svg
             className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-tertiary"
@@ -173,7 +185,7 @@ function SearchContent() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search by title, genre, developer..."
-            className="w-full h-11 pl-10 pr-4 text-sm rounded-xl border border-white/10 bg-white/5 text-foreground placeholder:text-tertiary focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/20 transition-all"
+            className="w-full h-11 pl-10 pr-4 text-sm rounded-xl border border-border bg-surface-2 text-foreground placeholder:text-tertiary focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/20 transition-all"
             autoFocus
           />
           {/* Typing indicator */}
@@ -221,7 +233,7 @@ function SearchContent() {
                 setGenre(e.target.value);
                 setPage(1);
               }}
-              className="h-8 px-2 text-xs rounded-xl border border-white/10 bg-white/5 text-foreground focus:outline-none focus:border-accent/50"
+              className="h-8 px-2 text-xs rounded-xl border border-border bg-surface-2 text-foreground focus:outline-none focus:border-accent/50"
             >
               <option value="">All Genres</option>
               {allGenres.map((g) => (
@@ -243,7 +255,7 @@ function SearchContent() {
                 setYear(e.target.value);
                 setPage(1);
               }}
-              className="h-8 px-2 text-xs rounded-xl border border-white/10 bg-white/5 text-foreground focus:outline-none focus:border-accent/50"
+              className="h-8 px-2 text-xs rounded-xl border border-border bg-surface-2 text-foreground focus:outline-none focus:border-accent/50"
             >
               <option value="">All Years</option>
               {allYears.map((y) => (
@@ -262,7 +274,9 @@ function SearchContent() {
             <SortDropdown
               options={[
                 { label: "Relevance", value: "relevance" as SortOption },
-                { label: "Newest", value: "newest" as SortOption },
+                { label: "Newest Released", value: "newest" as SortOption },
+                { label: "Upcoming", value: "upcoming" as SortOption },
+                { label: "Recently Added", value: "recently-added" as SortOption },
                 { label: "Top Rated", value: "top-rated" as SortOption },
                 { label: "Trending", value: "trending" as SortOption },
               ]}

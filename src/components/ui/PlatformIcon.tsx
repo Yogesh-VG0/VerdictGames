@@ -84,20 +84,25 @@ export const PLATFORM_COLOR_MAP: Record<string, string> = {
 };
 
 /* ── Shared filter options (same order/labels everywhere) ── */
-export const PLATFORM_FILTER_OPTIONS: { label: string; value: Platform | "All" }[] = [
+/* Collapsed by family: PS4+PS5→PlayStation, Xbox One+Series→Xbox, Switch+Switch2→Switch */
+export const PLATFORM_FILTER_OPTIONS: { label: string; value: Platform | "All"; family?: Platform[] }[] = [
   { label: "All", value: "All" },
   { label: "PC", value: "PC" },
-  { label: "PS5", value: "PlayStation 5" },
-  { label: "PS4", value: "PlayStation 4" },
-  { label: "Xbox X|S", value: "Xbox Series X|S" },
-  { label: "Xbox One", value: "Xbox One" },
-  { label: "Switch", value: "Nintendo Switch" },
-  { label: "Switch 2", value: "Nintendo Switch 2" },
+  { label: "PlayStation", value: "PlayStation 5", family: ["PlayStation 5", "PlayStation 4"] },
+  { label: "Xbox", value: "Xbox Series X|S", family: ["Xbox Series X|S", "Xbox One"] },
+  { label: "Switch", value: "Nintendo Switch", family: ["Nintendo Switch", "Nintendo Switch 2"] },
   { label: "Android", value: "Android" },
   { label: "iOS", value: "iOS" },
   { label: "Mac", value: "macOS" },
   { label: "Linux", value: "Linux" },
 ];
+
+/** Get all platform values that a filter option covers (for family-grouped filters). */
+export function getFilterPlatforms(value: Platform | "All"): Platform[] {
+  if (value === "All") return [];
+  const opt = PLATFORM_FILTER_OPTIONS.find(o => o.value === value);
+  return opt?.family ?? [value];
+}
 
 /** Get a platform icon as a ReactNode at specified size. Falls back to text abbreviation. */
 export function getPlatformIcon(platform: string, size = 14): ReactNode {

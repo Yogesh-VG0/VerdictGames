@@ -78,11 +78,11 @@ export async function ingestGame(options: IngestOptions): Promise<IngestResult> 
     };
   }
 
-  // Pick the best match. When an expectedSlug is provided (e.g. from a GX link),
-  // strongly prefer results whose RAWG slug matches it.
-  // CRITICAL: Do NOT give partial credit for substring containment.
-  // That causes title families (GTA V/VI, Cooking Sim/Sim 2) to drift.
+  // Pick the best match using title-first scoring.
+  // CRITICAL: Title similarity MUST outweigh popularity/rating.
+  // This prevents "CLASH ROYAL" from drifting to "Persona 5 Royal".
   const normalizeForCompare = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+  const tokenize = (s: string) => s.toLowerCase().replace(/[^a-z0-9\s]/g, "").split(/\s+/).filter(Boolean);
 
   // Extract trailing numeral from slug for sequel detection (e.g. "vi", "2", "iii")
   const extractTrailingNumeral = (s: string): string | null => {
@@ -91,48 +91,56 @@ export async function ingestGame(options: IngestOptions): Promise<IngestResult> 
     return match ? match[1] : null;
   };
 
-  const expectedNorm = expectedSlug ? normalizeForCompare(expectedSlug) : null;
-  const expectedNumeral = expectedSlug ? extractTrailingNumeral(expectedSlug) : null;
+  // Token overlap: what fraction of query tokens appear in the result
+  const tokenOverlap = (queryTokens: string[], resultTitle: string): number => {
+    const resultTokens = new Set(tokenize(resultTitle));
+    if (queryTokens.length === 0) return 0;
+    const matched = queryTokens.filter(t => resultTokens.has(t)).length;
+    return matched / queryTokens.length;
+  };
+
+  const queryNorm = normalizeForCompare(query);
+  const queryTokens = tokenize(query);
+  const expectedNorm = expectedSlug ? normalizeForCompare(expectedSlug) : queryNorm;
+  const expectedNumeral = expectedSlug ? extractTrailingNumeral(expectedSlug) : extractTrailingNumeral(query);
+
+  const scoreOf = (r: typeof searchResults.results[0]) => {
+    // Base: small popularity bonus (max ~5 points, never enough to override title)
+    let s = (r.released ? 1 : 0) + (r.rating ? 1 : 0) + Math.min((r.ratings_count ?? 0) / 5000, 3);
+
+    const rSlug = normalizeForCompare(r.slug ?? r.name);
+    const rTitleNorm = normalizeForCompare(r.name);
+
+    // === Title matching (heavily weighted) ===
+    // Exact normalized slug match
+    if (rSlug === expectedNorm) s += 100;
+    // Exact normalized title match
+    else if (rTitleNorm === expectedNorm) s += 90;
+    // startsWith match (query is prefix of result or vice versa)
+    else if (rTitleNorm.startsWith(expectedNorm) || expectedNorm.startsWith(rTitleNorm)) s += 60;
+    else {
+      // Token overlap scoring (0-50 points)
+      const overlap = tokenOverlap(queryTokens, r.name);
+      s += Math.round(overlap * 50);
+    }
+
+    // Sequel guard: mismatched trailing numeral is a hard reject
+    if (expectedNumeral) {
+      const resultNumeral = extractTrailingNumeral(r.slug ?? r.name);
+      if (resultNumeral !== expectedNumeral) s -= 200;
+    }
+
+    return s;
+  };
 
   const bestMatch = searchResults.results.reduce((best, cur) => {
-    const scoreOf = (r: typeof best) => {
-      let s = (r.released ? 3 : 0) + (r.rating ? 2 : 0) + Math.min((r.ratings_count ?? 0) / 1000, 5);
-      if (expectedNorm) {
-        const rSlug = normalizeForCompare(r.slug ?? r.name);
-        // Exact slug match = very high confidence
-        if (rSlug === expectedNorm) s += 100;
-        // Exact normalized title match
-        else if (normalizeForCompare(r.name) === expectedNorm) s += 80;
-
-        // Sequel guard: if expected slug has a trailing numeral, the RAWG result
-        // must have the same numeral. Otherwise reject it heavily.
-        if (expectedNumeral) {
-          const resultNumeral = extractTrailingNumeral(r.slug ?? r.name);
-          if (resultNumeral !== expectedNumeral) s -= 200;
-        }
-      }
-      return s;
-    };
     return scoreOf(cur) > scoreOf(best) ? cur : best;
   }, searchResults.results[0]);
 
   // Confidence check: if no high-confidence match found, signal low confidence
-  // so the caller can create a provisional page instead of the wrong game
-  const bestScore = (() => {
-    let s = (bestMatch.released ? 3 : 0) + (bestMatch.rating ? 2 : 0) + Math.min((bestMatch.ratings_count ?? 0) / 1000, 5);
-    if (expectedNorm) {
-      const rSlug = normalizeForCompare(bestMatch.slug ?? bestMatch.name);
-      if (rSlug === expectedNorm) s += 100;
-      else if (normalizeForCompare(bestMatch.name) === expectedNorm) s += 80;
-      if (expectedNumeral) {
-        const resultNumeral = extractTrailingNumeral(bestMatch.slug ?? bestMatch.name);
-        if (resultNumeral !== expectedNumeral) s -= 200;
-      }
-    }
-    return s;
-  })();
+  const bestScore = scoreOf(bestMatch);
 
-  if (expectedNorm && bestScore < 50) {
+  if (bestScore < 30) {
     return {
       success: false,
       gameId: null,

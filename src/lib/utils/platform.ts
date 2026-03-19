@@ -119,3 +119,64 @@ export function normalizePlatforms(rawPlatforms: string[]): Platform[] {
   }
   return result;
 }
+
+/* ═══════════════════════════════════════════════════
+   Platform Family Grouping (for compact card display)
+   ═══════════════════════════════════════════════════ */
+
+export type PlatformFamily = "PC" | "PlayStation" | "Xbox" | "Nintendo" | "Mobile" | "Desktop";
+
+const PLATFORM_TO_FAMILY: Record<Platform, PlatformFamily> = {
+  "PC": "PC",
+  "PlayStation 5": "PlayStation",
+  "PlayStation 4": "PlayStation",
+  "Xbox Series X|S": "Xbox",
+  "Xbox One": "Xbox",
+  "Nintendo Switch": "Nintendo",
+  "Nintendo Switch 2": "Nintendo",
+  "Android": "Mobile",
+  "iOS": "Mobile",
+  "macOS": "Desktop",
+  "Linux": "Desktop",
+};
+
+/** Representative platform to show icon for each family */
+const FAMILY_REPRESENTATIVE: Record<PlatformFamily, Platform> = {
+  "PC": "PC",
+  "PlayStation": "PlayStation 5",
+  "Xbox": "Xbox Series X|S",
+  "Nintendo": "Nintendo Switch",
+  "Mobile": "Android",
+  "Desktop": "macOS",
+};
+
+/**
+ * Collapse a list of platforms into family groups for compact display.
+ * Returns representative platforms (one per family) + overflow count.
+ * 
+ * @param platforms Full platform list
+ * @param maxVisible Maximum icons to show (default: 3)
+ */
+export function collapsePlatforms(
+  platforms: Platform[],
+  maxVisible = 3
+): { visible: Platform[]; overflow: number } {
+  const seenFamilies = new Set<PlatformFamily>();
+  const representatives: Platform[] = [];
+
+  for (const p of platforms) {
+    const family = PLATFORM_TO_FAMILY[p];
+    if (!family || seenFamilies.has(family)) continue;
+    seenFamilies.add(family);
+    representatives.push(FAMILY_REPRESENTATIVE[family]);
+  }
+
+  if (representatives.length <= maxVisible) {
+    return { visible: representatives, overflow: 0 };
+  }
+
+  return {
+    visible: representatives.slice(0, maxVisible),
+    overflow: representatives.length - maxVisible,
+  };
+}

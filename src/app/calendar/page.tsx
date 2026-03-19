@@ -14,6 +14,7 @@ import PlatformIcon, {
   PLATFORM_COLOR_MAP,
   getPlatformIcon,
   platformFilterIcon,
+  getFilterPlatforms,
 } from "@/components/ui/PlatformIcon";
 import { platformShort } from "@/lib/utils";
 import type { Game, Platform } from "@/lib/types";
@@ -146,9 +147,11 @@ export default function CalendarPage() {
 
       const merged = [...(dbGames ?? []), ...gxOnly];
 
-      // Apply platform filter
+      // Apply platform filter (supports family grouping)
+      if (selectedPlatform === "All") return merged;
+      const familyPlatforms = getFilterPlatforms(selectedPlatform);
       return merged.filter((g: Game) =>
-        selectedPlatform === "All" ? true : g.platforms.includes(selectedPlatform)
+        familyPlatforms.some(p => g.platforms.includes(p))
       );
     },
     staleTime: 5 * 60 * 1000,

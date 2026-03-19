@@ -2,7 +2,6 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -16,7 +15,7 @@ const GENRE_OPTIONS = [
 ];
 
 export default function SettingsPage() {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const router = useRouter();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -84,11 +83,13 @@ export default function SettingsPage() {
         throw new Error(json.error ?? "Failed to save");
       }
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       queryClient.invalidateQueries({ queryKey: ["user", user?.username] });
       setAvatarFile(null); // Clear pending upload
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
+      // Refresh auth context so navbar/profile updates immediately
+      await refreshUser();
     },
   });
 
@@ -168,12 +169,8 @@ export default function SettingsPage() {
           <div className="relative group">
             <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-border">
               {avatarPreview ? (
-                avatarPreview.startsWith("data:") ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={avatarPreview} alt="Avatar" width={80} height={80} className="object-cover w-full h-full" />
-                ) : (
-                  <Image src={avatarPreview} alt="Avatar" width={80} height={80} className="object-cover w-full h-full" />
-                )
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={avatarPreview} alt="Avatar" width={80} height={80} className="object-cover w-full h-full" />
               ) : (
                 <div className="w-full h-full bg-gradient-to-br from-accent/40 to-pixel-cyan/30 flex items-center justify-center">
                   <span className="text-2xl font-bold text-white">

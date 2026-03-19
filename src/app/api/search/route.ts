@@ -46,9 +46,19 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Platform filter
+    // Platform filter — supports family grouping (e.g. PlayStation = PS4 + PS5)
     if (platform && platform !== "All") {
-      query = query.contains("platforms", [platform]);
+      const PLATFORM_FAMILIES: Record<string, string[]> = {
+        "PlayStation 5": ["PlayStation 5", "PlayStation 4"],
+        "Xbox Series X|S": ["Xbox Series X|S", "Xbox One"],
+        "Nintendo Switch": ["Nintendo Switch", "Nintendo Switch 2"],
+      };
+      const family = PLATFORM_FAMILIES[platform];
+      if (family) {
+        query = query.or(family.map(p => `platforms.cs.{${p}}`).join(","));
+      } else {
+        query = query.contains("platforms", [platform]);
+      }
     }
 
     // Genre filter
@@ -69,9 +79,21 @@ export async function GET(request: NextRequest) {
     }
 
     // Sorting (tie-break on `id` for stable pagination across pages)
+    const today = new Date().toISOString().slice(0, 10);
     switch (sort) {
       case "newest":
-        query = query.order("release_date", { ascending: false }).order("id", { ascending: true });
+        // Only released games, newest first
+        query = query.lte("release_date", today)
+          .order("release_date", { ascending: false }).order("id", { ascending: true });
+        break;
+      case "upcoming":
+        // Only unreleased games, soonest first
+        query = query.gt("release_date", today)
+          .order("release_date", { ascending: true }).order("id", { ascending: true });
+        break;
+      case "recently-added":
+        // Newest DB entries
+        query = query.order("created_at", { ascending: false }).order("id", { ascending: true });
         break;
       case "top-rated":
         query = query.order("score", { ascending: false }).order("id", { ascending: true });
@@ -84,8 +106,13 @@ export async function GET(request: NextRequest) {
           .order("id", { ascending: true });
         break;
       default:
-        // relevance — if there's a query, DB handles ranking; otherwise newest
-        query = query.order("release_date", { ascending: false }).order("id", { ascending: true });
+        // relevance — if there's a query, DB handles ranking; otherwise newest released
+        if (q) {
+          query = query.order("release_date", { ascending: false }).order("id", { ascending: true });
+        } else {
+          query = query.lte("release_date", today)
+            .order("release_date", { ascending: false }).order("id", { ascending: true });
+        }
         break;
     }
 

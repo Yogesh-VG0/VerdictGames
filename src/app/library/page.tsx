@@ -2,7 +2,8 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
-import { useState } from "react";
+import { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { getLibrary, getLibraryStats, updateLibraryGame, removeFromLibrary } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
 import AuthModal from "@/components/AuthModal";
@@ -21,11 +22,20 @@ const STATUS_TABS: { key: string; label: string; icon: string }[] = [
   { key: "dropped", label: "Dropped", icon: "❌" },
 ];
 
-export default function LibraryPage() {
+function LibraryContent() {
   const { user, loading: authLoading } = useAuth();
+  const searchParams = useSearchParams();
   const [authOpen, setAuthOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("all");
   const queryClient = useQueryClient();
+
+  // Read status from URL params (e.g. /library?status=wishlist from toast link)
+  useEffect(() => {
+    const urlStatus = searchParams.get("status");
+    if (urlStatus && STATUS_TABS.some(t => t.key === urlStatus)) {
+      setActiveTab(urlStatus);
+    }
+  }, [searchParams]);
 
   const library = useQuery({
     queryKey: ["library", activeTab],
@@ -96,7 +106,7 @@ export default function LibraryPage() {
               ]).map((stat) => (
                 <div
                   key={stat.label}
-                  className="rounded-xl border border-white/[0.08] bg-surface p-3 text-center"
+                  className="rounded-xl border border-border bg-surface p-3 text-center"
                 >
                   <p className={cn("text-xl font-bold tabular-nums", stat.color)}>{stat.value}</p>
                   <p className="text-[10px] text-tertiary uppercase tracking-wider">{stat.label}</p>
@@ -117,7 +127,7 @@ export default function LibraryPage() {
               "flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all",
               activeTab === tab.key
                 ? "bg-accent text-white"
-                : "bg-white/5 text-secondary hover:text-foreground hover:bg-white/10"
+                : "bg-surface-2 text-secondary hover:text-foreground hover:bg-elevated border border-border"
             )}
           >
             <span>{tab.icon}</span>
@@ -152,7 +162,7 @@ export default function LibraryPage() {
                     <select
                       value={item.status}
                       onChange={(e) => statusMutation.mutate({ gameId: item.gameId, status: e.target.value as LibraryStatus })}
-                      className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-lg bg-black/70 backdrop-blur-sm text-white border border-white/20 cursor-pointer"
+                      className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-lg bg-black/70 backdrop-blur-sm text-white border border-white/20 cursor-pointer appearance-none"
                     >
                       <option value="playing">🎮 Playing</option>
                       <option value="completed">✅ Completed</option>
@@ -165,7 +175,7 @@ export default function LibraryPage() {
                   {/* Remove button */}
                   <button
                     onClick={() => removeMutation.mutate(item.gameId)}
-                    className="absolute top-2 right-2 z-10 w-6 h-6 rounded-full bg-black/70 backdrop-blur-sm text-white/60 hover:text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="absolute top-2 right-2 z-10 w-6 h-6 rounded-full bg-black/70 backdrop-blur-sm text-white/60 hover:text-danger flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                     title="Remove from library"
                   >
                     ×
@@ -194,5 +204,21 @@ export default function LibraryPage() {
         </motion.div>
       </AnimatePresence>
     </div>
+  );
+}
+
+export default function LibraryPage() {
+  return (
+    <Suspense fallback={
+      <div className="max-w-6xl mx-auto px-4 py-8">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="aspect-[3/4] rounded-2xl bg-surface animate-pulse" />
+          ))}
+        </div>
+      </div>
+    }>
+      <LibraryContent />
+    </Suspense>
   );
 }

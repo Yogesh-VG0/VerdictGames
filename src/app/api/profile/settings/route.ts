@@ -31,16 +31,27 @@ export async function PATCH(request: NextRequest) {
     return jsonError("No valid fields to update", 400);
   }
 
+  // Resolve profile row: try auth_id first, fallback to legacy id
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error } = await (supabase.from("profiles") as any)
+  const { data: profileByAuth } = await (supabase.from("profiles") as any)
+    .select("id")
+    .eq("auth_id", user.id)
+    .maybeSingle();
+
+  const profileId = profileByAuth?.id ?? user.id;
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: updated, error } = await (supabase.from("profiles") as any)
     .update(updates)
-    .eq("id", user.id);
+    .eq("id", profileId)
+    .select("id, username, display_name, bio, avatar_url, favorite_genres")
+    .single();
 
   if (error) {
     return jsonError("Failed to update profile: " + (error as Error).message, 500);
   }
 
-  return jsonOk({ message: "Profile updated" });
+  return jsonOk({ message: "Profile updated", profile: updated });
 }
 
 /**
@@ -61,15 +72,29 @@ export async function POST(request: NextRequest) {
     return jsonError("avatar (base64) and contentType are required", 400);
   }
 
+  // Validate mime type server-side
+  const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+  if (!allowedTypes.includes(body.contentType)) {
+    return jsonError("Only JPEG, PNG, and WebP images are allowed", 400);
+  }
+
   // Decode base64
   const buffer = Buffer.from(body.avatar, "base64");
+
+  // Validate size server-side (2MB)
+  if (buffer.length > 2 * 1024 * 1024) {
+    return jsonError("Image must be under 2MB", 400);
+  }
+
   const ext = body.contentType.split("/")[1] ?? "png";
-  const path = `avatars/${user.id}.${ext}`;
+  const filePath = `${user.id}.${ext}`;
+
+  const AVATAR_BUCKET = process.env.SUPABASE_AVATAR_BUCKET ?? "avatars";
 
   // Upload to storage
   const { error: uploadErr } = await supabase.storage
-    .from("public")
-    .upload(path, buffer, {
+    .from(AVATAR_BUCKET)
+    .upload(filePath, buffer, {
       contentType: body.contentType,
       upsert: true,
     });
@@ -80,16 +105,25 @@ export async function POST(request: NextRequest) {
 
   // Get public URL
   const { data: urlData } = supabase.storage
-    .from("public")
-    .getPublicUrl(path);
+    .from(AVATAR_BUCKET)
+    .getPublicUrl(filePath);
 
   const avatarUrl = urlData.publicUrl;
+
+  // Resolve profile row: try auth_id first, fallback to legacy id
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: profileByAuth } = await (supabase.from("profiles") as any)
+    .select("id")
+    .eq("auth_id", user.id)
+    .maybeSingle();
+
+  const profileId = profileByAuth?.id ?? user.id;
 
   // Update profile
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   await (supabase.from("profiles") as any)
     .update({ avatar_url: avatarUrl })
-    .eq("id", user.id);
+    .eq("id", profileId);
 
   return jsonOk({ avatarUrl });
 }

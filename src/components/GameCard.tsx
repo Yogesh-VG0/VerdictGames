@@ -6,6 +6,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { Game } from "@/lib/types";
 import { scoreColor, cn } from "@/lib/utils";
+import { collapsePlatforms } from "@/lib/utils/platform";
 import VerdictBadge from "@/components/ui/VerdictBadge";
 import PlatformIcon from "@/components/ui/PlatformIcon";
 
@@ -137,19 +138,24 @@ export default function GameCard({
             </div>
 
           <div className="absolute bottom-0 left-0 right-0 p-4 space-y-2 z-[1]">
-            <div className="flex items-center gap-1.5 flex-wrap">
-              {game.platforms.slice(0, 5).map((p) => (
-                <PlatformIcon key={p} platform={p} size={14} className="drop-shadow-md brightness-0 invert opacity-80" />
-              ))}
-              {game.platforms.length > 5 && (
-                <span className="text-[9px] text-white/40">+{game.platforms.length - 5}</span>
-              )}
-              {yearFromDate(game.releaseDate) && (
-                <span className="text-[10px] text-white/50 font-medium ml-auto">
-                  {yearFromDate(game.releaseDate)}
-                </span>
-              )}
-            </div>
+            {(() => {
+              const { visible, overflow } = collapsePlatforms(game.platforms, 3);
+              return (
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {visible.map((p) => (
+                    <PlatformIcon key={p} platform={p} size={14} className="drop-shadow-md brightness-0 invert opacity-80" />
+                  ))}
+                  {overflow > 0 && (
+                    <span className="text-[9px] text-white/40">+{overflow}</span>
+                  )}
+                  {yearFromDate(game.releaseDate) && (
+                    <span className="text-[10px] text-white/50 font-medium ml-auto">
+                      {yearFromDate(game.releaseDate)}
+                    </span>
+                  )}
+                </div>
+              );
+            })()}
             <h3 className="text-base font-bold text-white leading-tight line-clamp-2 group-hover:text-accent transition-colors drop-shadow-md">
               {game.title}
             </h3>
@@ -213,14 +219,19 @@ export default function GameCard({
             </div>
           )}
 
-          <div className="absolute bottom-2.5 left-2.5 flex items-center gap-1.5">
-            {game.platforms.slice(0, 4).map((p) => (
-              <PlatformIcon key={p} platform={p} size={14} className="drop-shadow-md brightness-0 invert opacity-80" />
-            ))}
-            {game.platforms.length > 4 && (
-              <span className="text-[9px] text-white/50 font-medium">+{game.platforms.length - 4}</span>
-            )}
-          </div>
+          {(() => {
+            const { visible, overflow } = collapsePlatforms(game.platforms, 3);
+            return (
+              <div className="absolute bottom-2.5 left-2.5 flex items-center gap-1.5">
+                {visible.map((p) => (
+                  <PlatformIcon key={p} platform={p} size={14} className="drop-shadow-md brightness-0 invert opacity-80" />
+                ))}
+                {overflow > 0 && (
+                  <span className="text-[9px] text-white/50 font-medium">+{overflow}</span>
+                )}
+              </div>
+            );
+          })()}
 
           {yearFromDate(game.releaseDate) && (
             <div className="absolute top-2.5 left-2.5">

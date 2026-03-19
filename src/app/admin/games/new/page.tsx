@@ -81,7 +81,12 @@ export default function AdminAddGamePage() {
       const json = await res.json();
 
       if (!res.ok) {
-        setError(json.error || "Failed to create game");
+        // 422 = low confidence match — offer to create provisional instead
+        if (res.status === 422) {
+          setError(`⚠️ ${json.error || "Low confidence match."} You can try creating a Provisional page instead.`);
+        } else {
+          setError(json.error || "Failed to create game");
+        }
       } else {
         setSuccess(json.data?.message || "Game created!");
         setTimeout(() => {

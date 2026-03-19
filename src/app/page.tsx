@@ -132,6 +132,7 @@ export default function HomePage() {
                 <SectionHeader
                   title="Trending Right Now"
                   href="/search?sort=trending"
+                  linkLabel="See all trending"
                   icon="🔥"
                   subtitle="Based on recent player activity & community signals"
                 />
@@ -205,7 +206,8 @@ export default function HomePage() {
             <FadeInSection>
               <SectionHeader
                 title="Discover"
-                href="/search"
+                href="/search?sort=newest"
+                linkLabel="Browse all"
                 icon="🎮"
                 subtitle="Find your next obsession"
               />
@@ -218,7 +220,7 @@ export default function HomePage() {
                       "px-4 py-2 rounded-xl text-sm font-medium transition-all whitespace-nowrap flex items-center gap-2",
                       discoverTab === tab.value
                         ? "bg-accent text-white shadow-sm shadow-accent/20"
-                        : "bg-white/5 text-secondary hover:text-foreground hover:bg-white/10 border border-white/10"
+                        : "bg-surface-2 text-secondary hover:text-foreground hover:bg-elevated border border-border"
                     )}
                   >
                     <span>{tab.icon}</span>
@@ -354,6 +356,7 @@ export default function HomePage() {
                   <SectionHeader
                     title="Top Rated"
                     href="/search?sort=top-rated"
+                    linkLabel="See all top rated"
                     icon="🏆"
                     subtitle="Highest Verdict scores across all platforms"
                   />
