@@ -41,6 +41,9 @@ export async function PATCH(
     "pros", "cons", "monetization", "performance_notes", "monetization_notes",
     "featured", "trending", "genres", "tags", "platforms",
     "cover_image", "header_image", "steam_url", "trailer_url",
+    "screenshots", "trailer_thumbnail", "developer", "publisher",
+    "release_date", "franchise", "website_url", "wikipedia_url",
+    "metacritic_url", "reddit_url", "igdb_url", "play_store_url",
   ];
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

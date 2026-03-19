@@ -147,6 +147,37 @@ export default function GameDetailPage({ params }: Props) {
 
   return (
     <div className="space-y-0">
+      {/* JSON-LD Structured Data — VideoGame schema for SEO */}
+      <script
+        type="application/ld+json"
+        suppressHydrationWarning
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "VideoGame",
+            name: game.title,
+            description: game.description,
+            image: game.headerImage || game.coverImage,
+            genre: game.genres,
+            gamePlatform: game.platforms,
+            datePublished: game.releaseDate || undefined,
+            author: game.developer ? { "@type": "Organization", name: game.developer } : undefined,
+            publisher: game.publisher ? { "@type": "Organization", name: game.publisher } : undefined,
+            aggregateRating: game.score > 0
+              ? {
+                  "@type": "AggregateRating",
+                  ratingValue: game.score,
+                  bestRating: 100,
+                  worstRating: 0,
+                  ratingCount: game.reviewCount || 1,
+                }
+              : undefined,
+            offers: game.isFree
+              ? { "@type": "Offer", price: 0, priceCurrency: "USD", availability: "https://schema.org/InStock" }
+              : undefined,
+          }),
+        }}
+      />
       {/* ═══════════════ HERO ═══════════════ */}
       <section className="relative">
         <div className="relative h-[50vh] md:h-[60vh] min-h-[320px] max-h-[600px] overflow-hidden">

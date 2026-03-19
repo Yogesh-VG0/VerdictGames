@@ -76,7 +76,8 @@ export async function GET(request: NextRequest) {
         break;
       case "trending":
         query = query
-          .order("trending", { ascending: false })
+          .order("momentum", { ascending: false, nullsFirst: false })
+          .order("current_players", { ascending: false, nullsFirst: false })
           .order("score", { ascending: false });
         break;
       default:

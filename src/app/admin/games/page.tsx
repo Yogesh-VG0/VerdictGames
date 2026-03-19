@@ -73,81 +73,131 @@ export default function AdminGamesPage() {
         )}
       </div>
 
-      {/* Games Table */}
+      {/* Games — Mobile Cards / Desktop Table */}
       <div className="rounded-2xl border border-border bg-surface overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border">
-                <th className="text-left px-4 py-3 text-xs font-semibold text-secondary uppercase tracking-wider">Game</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-secondary uppercase tracking-wider hidden md:table-cell">Score</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-secondary uppercase tracking-wider hidden lg:table-cell">Status</th>
-                <th className="text-right px-4 py-3 text-xs font-semibold text-secondary uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {games.isLoading ? (
-                Array.from({ length: 8 }).map((_, i) => (
-                  <tr key={i}>
-                    <td colSpan={4} className="px-4 py-3">
-                      <div className="h-10 bg-white/5 rounded-lg animate-pulse" />
-                    </td>
-                  </tr>
-                ))
-              ) : games.data?.games.length ? (
-                games.data.games.map((game) => (
-                  <tr key={game.id} className="hover:bg-white/[0.02] transition-colors">
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-14 rounded-lg overflow-hidden bg-surface-2 shrink-0 relative">
-                          {game.coverImage && (
-                            <Image src={game.coverImage} alt="" fill className="object-cover" sizes="40px" />
-                          )}
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-sm font-medium text-foreground truncate">{game.title}</p>
-                          <p className="text-[11px] text-tertiary">{game.developer} • {game.releaseDate?.split("-")[0]}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 hidden md:table-cell">
-                      <span className="text-sm font-bold tabular-nums">{game.score}</span>
-                      <span className="text-[10px] text-tertiary ml-1">{game.verdictLabel}</span>
-                    </td>
-                    <td className="px-4 py-3 hidden lg:table-cell">
-                      <div className="flex items-center gap-1.5">
-                        {game.trending && (
-                          <span className="text-[10px] bg-pixel-orange/20 text-pixel-orange px-1.5 py-0.5 rounded font-medium">
-                            Trending
-                          </span>
-                        )}
-                        {game.featured && (
-                          <span className="text-[10px] bg-accent/20 text-accent px-1.5 py-0.5 rounded font-medium">
-                            Featured
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <Link
-                        href={`/admin/games/${game.id}`}
-                        className="text-xs text-accent hover:text-accent-hover font-medium transition-colors"
-                      >
-                        Edit
-                      </Link>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={4} className="px-4 py-12 text-center text-secondary text-sm">
-                    No games found
+
+        {/* ── Mobile/Tablet: Stacked Cards ── */}
+        <div className="md:hidden divide-y divide-border">
+          {games.isLoading ? (
+            Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="p-4">
+                <div className="h-16 bg-white/5 rounded-xl animate-pulse" />
+              </div>
+            ))
+          ) : games.data?.games.length ? (
+            games.data.games.map((game) => (
+              <Link
+                key={game.id}
+                href={`/admin/games/${game.id}`}
+                className="flex items-center gap-3 p-4 hover:bg-white/[0.02] transition-colors active:bg-white/[0.04]"
+              >
+                <div className="w-12 h-16 rounded-lg overflow-hidden bg-surface-2 shrink-0 relative">
+                  {game.coverImage && (
+                    <Image src={game.coverImage} alt="" fill className="object-cover" sizes="48px" />
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground truncate">{game.title}</p>
+                  <p className="text-[11px] text-tertiary mt-0.5">{game.developer} • {game.releaseDate?.split("-")[0]}</p>
+                  <div className="flex items-center gap-2 mt-1.5">
+                    <span className="text-xs font-bold tabular-nums text-foreground">{game.score}</span>
+                    <span className="text-[10px] text-tertiary">{game.verdictLabel}</span>
+                    {game.trending && (
+                      <span className="text-[9px] bg-pixel-orange/20 text-pixel-orange px-1.5 py-0.5 rounded font-medium">
+                        Trending
+                      </span>
+                    )}
+                    {game.featured && (
+                      <span className="text-[9px] bg-accent/20 text-accent px-1.5 py-0.5 rounded font-medium">
+                        Featured
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <svg className="w-4 h-4 text-tertiary shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                </svg>
+              </Link>
+            ))
+          ) : (
+            <div className="px-4 py-12 text-center text-secondary text-sm">
+              No games found
+            </div>
+          )}
+        </div>
+
+        {/* ── Desktop: Table ── */}
+        <table className="hidden md:table w-full text-sm">
+          <thead>
+            <tr className="border-b border-border">
+              <th className="text-left px-4 py-3 text-xs font-semibold text-secondary uppercase tracking-wider">Game</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-secondary uppercase tracking-wider">Score</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-secondary uppercase tracking-wider hidden lg:table-cell">Status</th>
+              <th className="text-right px-4 py-3 text-xs font-semibold text-secondary uppercase tracking-wider">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border">
+            {games.isLoading ? (
+              Array.from({ length: 8 }).map((_, i) => (
+                <tr key={i}>
+                  <td colSpan={4} className="px-4 py-3">
+                    <div className="h-10 bg-white/5 rounded-lg animate-pulse" />
                   </td>
                 </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+              ))
+            ) : games.data?.games.length ? (
+              games.data.games.map((game) => (
+                <tr key={game.id} className="hover:bg-white/[0.02] transition-colors">
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-14 rounded-lg overflow-hidden bg-surface-2 shrink-0 relative">
+                        {game.coverImage && (
+                          <Image src={game.coverImage} alt="" fill className="object-cover" sizes="40px" />
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-foreground truncate">{game.title}</p>
+                        <p className="text-[11px] text-tertiary">{game.developer} • {game.releaseDate?.split("-")[0]}</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className="text-sm font-bold tabular-nums">{game.score}</span>
+                    <span className="text-[10px] text-tertiary ml-1">{game.verdictLabel}</span>
+                  </td>
+                  <td className="px-4 py-3 hidden lg:table-cell">
+                    <div className="flex items-center gap-1.5">
+                      {game.trending && (
+                        <span className="text-[10px] bg-pixel-orange/20 text-pixel-orange px-1.5 py-0.5 rounded font-medium">
+                          Trending
+                        </span>
+                      )}
+                      {game.featured && (
+                        <span className="text-[10px] bg-accent/20 text-accent px-1.5 py-0.5 rounded font-medium">
+                          Featured
+                        </span>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <Link
+                      href={`/admin/games/${game.id}`}
+                      className="text-xs text-accent hover:text-accent-hover font-medium transition-colors"
+                    >
+                      Edit
+                    </Link>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={4} className="px-4 py-12 text-center text-secondary text-sm">
+                  No games found
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
 
       {/* Pagination */}

@@ -31,6 +31,11 @@ export const metadata: Metadata = {
   },
   description:
     "Your trusted source for honest game reviews across all platforms. Discover verdicts, curated lists, and a community that cares about gaming.",
+  keywords: [
+    "game reviews", "verdict games", "PC game reviews", "PlayStation reviews",
+    "Xbox reviews", "Nintendo Switch reviews", "game ratings", "game verdicts",
+    "honest game reviews", "gaming community",
+  ],
   icons: {
     icon: [
       { url: "/icon-192.png", type: "image/png", sizes: "192x192" },

@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -39,12 +39,172 @@ async function postReview(data: {
   if (!json.success) throw new Error(json.error ?? "Failed to post review");
 }
 
+/* ── Game search picker helper ── */
+interface GamePickerResult {
+  id: string;
+  title: string;
+  coverImage?: string;
+  developer?: string;
+  score?: number;
+}
+
+async function searchGamesForPicker(q: string): Promise<GamePickerResult[]> {
+  if (!q || q.length < 2) return [];
+  const res = await fetch(`/api/admin/games?q=${encodeURIComponent(q)}&page=1`);
+  const json = await res.json();
+  if (!json.success) return [];
+  return (json.data.games ?? []).slice(0, 8).map((g: GamePickerResult) => ({
+    id: g.id,
+    title: g.title,
+    coverImage: g.coverImage,
+    developer: g.developer,
+    score: g.score,
+  }));
+}
+
+function GameSearchPicker({
+  selectedId,
+  selectedTitle,
+  selectedCover,
+  onSelect,
+  onClear,
+}: {
+  selectedId: string;
+  selectedTitle: string;
+  selectedCover?: string;
+  onSelect: (game: GamePickerResult) => void;
+  onClear: () => void;
+}) {
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<GamePickerResult[]>([]);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [searching, setSearching] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  // Debounced search
+  useEffect(() => {
+    if (!query || query.length < 2) {
+      setResults([]);
+      return;
+    }
+    setSearching(true);
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(async () => {
+      const res = await searchGamesForPicker(query);
+      setResults(res);
+      setShowDropdown(true);
+      setSearching(false);
+    }, 350);
+    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
+  }, [query]);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+        setShowDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  if (selectedId) {
+    return (
+      <div className="flex items-center gap-3 rounded-xl border border-accent/30 bg-accent/5 px-4 py-3">
+        {selectedCover && (
+          <div className="w-8 h-11 rounded-lg overflow-hidden bg-surface-2 shrink-0 relative">
+            <Image src={selectedCover} alt="" fill className="object-cover" sizes="32px" />
+          </div>
+        )}
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium text-foreground truncate">{selectedTitle}</p>
+          <p className="text-[10px] text-tertiary font-mono">{selectedId}</p>
+        </div>
+        <button
+          onClick={onClear}
+          className="text-xs text-tertiary hover:text-danger transition-colors px-2"
+        >
+          ✕
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div ref={wrapperRef} className="relative">
+      <div className="relative">
+        <svg
+          className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-tertiary"
+          fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+        </svg>
+        <input
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onFocus={() => results.length > 0 && setShowDropdown(true)}
+          placeholder="Search for a game by title..."
+          className="w-full rounded-xl border border-border bg-background pl-10 pr-4 py-2.5 text-sm text-foreground placeholder:text-tertiary focus:outline-none focus:border-accent/50 transition-all"
+        />
+        {searching && (
+          <div className="absolute right-3 top-1/2 -translate-y-1/2">
+            <div className="w-4 h-4 border-2 border-accent/30 border-t-accent rounded-full animate-spin" />
+          </div>
+        )}
+      </div>
+
+      {/* Dropdown */}
+      {showDropdown && results.length > 0 && (
+        <div className="absolute z-50 top-full mt-1 w-full rounded-xl border border-border bg-surface shadow-xl max-h-64 overflow-y-auto">
+          {results.map((game) => (
+            <button
+              key={game.id}
+              onClick={() => {
+                onSelect(game);
+                setQuery("");
+                setShowDropdown(false);
+              }}
+              className="flex items-center gap-3 w-full text-left px-4 py-3 hover:bg-white/[0.05] transition-colors border-b border-border/50 last:border-b-0"
+            >
+              {game.coverImage && (
+                <div className="w-8 h-11 rounded-lg overflow-hidden bg-surface-2 shrink-0 relative">
+                  <Image src={game.coverImage} alt="" fill className="object-cover" sizes="32px" />
+                </div>
+              )}
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-foreground truncate">{game.title}</p>
+                <p className="text-[10px] text-tertiary">{game.developer}</p>
+              </div>
+              {game.score != null && (
+                <span className="text-xs font-bold tabular-nums text-secondary">{game.score}</span>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {showDropdown && !searching && query.length >= 2 && results.length === 0 && (
+        <div className="absolute z-50 top-full mt-1 w-full rounded-xl border border-border bg-surface shadow-xl px-4 py-6 text-center">
+          <p className="text-sm text-secondary">No games found for &ldquo;{query}&rdquo;</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Main Page ── */
+
 export default function AdminReviewsPage() {
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
     gameId: "",
+    gameTitle: "",
+    gameCover: "",
     rating: 75,
     title: "",
     bodyText: "",
@@ -76,7 +236,7 @@ export default function AdminReviewsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-reviews"] });
       setShowForm(false);
-      setFormData({ gameId: "", rating: 75, title: "", bodyText: "", pros: "", cons: "" });
+      setFormData({ gameId: "", gameTitle: "", gameCover: "", rating: 75, title: "", bodyText: "", pros: "", cons: "" });
     },
   });
 
@@ -103,15 +263,33 @@ export default function AdminReviewsPage() {
       {showForm && (
         <div className="rounded-2xl border border-accent/20 bg-surface p-5 space-y-4">
           <h2 className="text-sm font-bold text-foreground">New Review</h2>
+
+          {/* Game picker + Rating */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-secondary uppercase tracking-wider">Game ID</label>
-              <input
-                type="text"
-                value={formData.gameId}
-                onChange={(e) => setFormData((f) => ({ ...f, gameId: e.target.value }))}
-                placeholder="UUID of the game"
-                className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm text-foreground placeholder:text-tertiary focus:outline-none focus:border-accent/50 transition-all"
+              <label className="text-xs font-semibold text-secondary uppercase tracking-wider">
+                Game
+              </label>
+              <GameSearchPicker
+                selectedId={formData.gameId}
+                selectedTitle={formData.gameTitle}
+                selectedCover={formData.gameCover}
+                onSelect={(game) =>
+                  setFormData((f) => ({
+                    ...f,
+                    gameId: game.id,
+                    gameTitle: game.title,
+                    gameCover: game.coverImage ?? "",
+                  }))
+                }
+                onClear={() =>
+                  setFormData((f) => ({
+                    ...f,
+                    gameId: "",
+                    gameTitle: "",
+                    gameCover: "",
+                  }))
+                }
               />
             </div>
             <div className="space-y-1.5">
@@ -248,3 +426,4 @@ export default function AdminReviewsPage() {
     </div>
   );
 }
+

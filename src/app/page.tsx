@@ -117,7 +117,7 @@ export default function HomePage() {
                   title="Trending Right Now"
                   href="/search?sort=trending"
                   icon="🔥"
-                  subtitle="Ranked by real-time player activity & community signals"
+                  subtitle="Based on recent player activity & community signals"
                 />
                 <HorizontalScroll>
                   {trending.data.slice(0, 10).map((game, i) => (
@@ -377,7 +377,7 @@ export default function HomePage() {
                   subtitle="Trending stories from top gaming outlets"
                 />
                 <HorizontalScroll>
-                  {gxNews.data.slice(0, 6).map((article, i) => (
+                  {gxNews.data.slice(0, 10).map((article, i) => (
                     <motion.div
                       key={article.id}
                       initial={{ opacity: 0, y: 20 }}

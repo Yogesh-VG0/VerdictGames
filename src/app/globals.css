@@ -614,3 +614,18 @@ h1, h2, h3 {
     min-width: calc(100vw - 3rem);
   }
 }
+
+/* ═══════════════════════════════════════════════════
+   Native Select / Option Dark Mode Fix
+   ═══════════════════════════════════════════════════ */
+
+select option {
+  background-color: #1a1a2e;
+  color: #f0f2f5;
+}
+
+.light select option {
+  background-color: #ffffff;
+  color: #0f172a;
+}
+

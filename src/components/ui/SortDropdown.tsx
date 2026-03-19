@@ -24,6 +24,7 @@ export default function SortDropdown<T extends string>({
         "px-4 py-2 pr-8 rounded-xl border border-white/10",
         "focus:outline-none focus:border-accent/50",
         "cursor-pointer transition-all hover:bg-white/10",
+        "[&_option]:bg-[#1a1a2e] [&_option]:text-[#f0f2f5]",
         className
       )}
       style={{
