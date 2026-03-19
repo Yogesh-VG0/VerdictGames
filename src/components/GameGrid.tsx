@@ -17,20 +17,6 @@ const colMap = {
   4: "grid-cols-2 sm:grid-cols-3 md:grid-cols-4",
 };
 
-const container = {
-  hidden: {},
-  show: {
-    transition: {
-      staggerChildren: 0.06,
-    },
-  },
-};
-
-const item = {
-  hidden: { opacity: 0, y: 20 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.35, ease: "easeOut" as const } },
-};
-
 export default function GameGrid({
   games,
   columns = 4,
@@ -44,19 +30,19 @@ export default function GameGrid({
     );
   }
 
+  /* Animate on mount only — not whileInView — so "Load more" rows are visible immediately below the fold */
   return (
-    <motion.div
-      variants={container}
-      initial="hidden"
-      whileInView="show"
-      viewport={{ once: true, margin: "-50px" }}
-      className={cn("grid gap-4", colMap[columns], className)}
-    >
+    <div className={cn("grid gap-4", colMap[columns], className)}>
       {games.map((game, i) => (
-        <motion.div key={game.id} variants={item}>
+        <motion.div
+          key={game.id}
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, ease: "easeOut", delay: Math.min(i * 0.04, 0.48) }}
+        >
           <GameCard game={game} priority={i < 4} />
         </motion.div>
       ))}
-    </motion.div>
+    </div>
   );
 }

@@ -1,19 +1,20 @@
 import { NextRequest } from "next/server";
 import { jsonOk, jsonError } from "@/lib/api/response";
 import { getServerSupabase } from "@/lib/supabase/server";
+import { getAuthSupabase } from "@/lib/supabase/auth";
 
 /**
  * PATCH /api/profile/settings
  * Update current user's profile (display_name, bio, avatar_url, favorite_genres)
  */
 export async function PATCH(request: NextRequest) {
-  const supabase = getServerSupabase();
-
-  // Get current auth user
-  const { data: { user } } = await supabase.auth.getUser();
+  const authClient = await getAuthSupabase();
+  const { data: { user } } = await authClient.auth.getUser();
   if (!user) {
     return jsonError("Unauthorized", 401);
   }
+
+  const supabase = getServerSupabase();
 
   const body = await request.json();
   const allowed = ["display_name", "bio", "avatar_url", "favorite_genres"];
@@ -47,12 +48,13 @@ export async function PATCH(request: NextRequest) {
  * Upload avatar — accepts base64 image, stores in Supabase Storage
  */
 export async function POST(request: NextRequest) {
-  const supabase = getServerSupabase();
-
-  const { data: { user } } = await supabase.auth.getUser();
+  const authClient = await getAuthSupabase();
+  const { data: { user } } = await authClient.auth.getUser();
   if (!user) {
     return jsonError("Unauthorized", 401);
   }
+
+  const supabase = getServerSupabase();
 
   const body = await request.json();
   if (!body.avatar || !body.contentType) {

@@ -267,7 +267,10 @@ function SearchContent() {
                 { label: "Trending", value: "trending" as SortOption },
               ]}
               selected={sort}
-              onChange={(v) => setSort(v)}
+              onChange={(v) => {
+                setSort(v);
+                setPage(1);
+              }}
             />
           </div>
         </div>

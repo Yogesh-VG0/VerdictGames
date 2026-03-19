@@ -50,6 +50,7 @@ export default function SettingsPage() {
       if (avatarFile) {
         const uploadRes = await fetch("/api/profile/settings", {
           method: "POST",
+          credentials: "include",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ avatar: avatarFile.base64, contentType: avatarFile.contentType }),
         });
@@ -69,6 +70,7 @@ export default function SettingsPage() {
       // Update profile fields
       const res = await fetch("/api/profile/settings", {
         method: "PATCH",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           display_name: displayName,
@@ -166,7 +168,12 @@ export default function SettingsPage() {
           <div className="relative group">
             <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-border">
               {avatarPreview ? (
-                <Image src={avatarPreview} alt="Avatar" width={80} height={80} className="object-cover w-full h-full" />
+                avatarPreview.startsWith("data:") ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={avatarPreview} alt="Avatar" width={80} height={80} className="object-cover w-full h-full" />
+                ) : (
+                  <Image src={avatarPreview} alt="Avatar" width={80} height={80} className="object-cover w-full h-full" />
+                )
               ) : (
                 <div className="w-full h-full bg-gradient-to-br from-accent/40 to-pixel-cyan/30 flex items-center justify-center">
                   <span className="text-2xl font-bold text-white">

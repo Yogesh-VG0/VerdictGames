@@ -191,6 +191,32 @@ export async function searchIgdb(
 /**
  * Get a single IGDB game by its ID with full details.
  */
+/**
+ * Exact IGDB slug lookup (e.g. "scott-pilgrim-ex").
+ * Used when RAWG has no match but IGDB lists the title.
+ */
+export async function getIgdbGameBySlug(slug: string): Promise<IgdbGame | null> {
+  const safe = slug.trim().toLowerCase();
+  if (!safe || !/^[a-z0-9-]+$/.test(safe)) return null;
+
+  const results = await igdbQuery<IgdbGame>(
+    "games",
+    `where slug = "${safe}";
+     fields name, slug, summary, storyline,
+            aggregated_rating, aggregated_rating_count,
+            rating, rating_count, total_rating, total_rating_count,
+            first_release_date, url, cover.image_id,
+            screenshots.image_id,
+            genres.name, platforms.name, platforms.abbreviation,
+            involved_companies.company.name, involved_companies.developer, involved_companies.publisher,
+            videos.video_id, videos.name,
+            websites.url, websites.category;
+     limit 1;`
+  );
+
+  return results?.[0] ?? null;
+}
+
 export async function getIgdbGame(igdbId: number): Promise<IgdbGame | null> {
   const results = await igdbQuery<IgdbGame>(
     "games",

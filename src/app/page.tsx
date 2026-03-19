@@ -396,7 +396,8 @@ export default function HomePage() {
                 {(() => {
                   const articles = gxNews.data;
                   const featured = articles.slice(0, 2);
-                  const rest = articles.slice(2, 10);
+                  /* 9 compact items on the right to visually balance the 2 tall featured cards */
+                  const rest = articles.slice(2, 11);
 
                   return (
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">

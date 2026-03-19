@@ -19,7 +19,8 @@ import {
   GXDeal,
 } from "./types";
 
-const PAGE_SIZE = 12;
+/** Must match `PAGE_SIZE` in `src/app/api/search/route.ts` */
+const PAGE_SIZE = 24;
 
 const EMPTY_PAGE = <T,>(): PaginatedResponse<T> => ({
   items: [],
@@ -46,6 +47,7 @@ async function apiFetch<T>(
 ): Promise<T | null> {
   try {
     const res = await fetch(`${getBaseUrl()}${path}`, {
+      credentials: "include",
       ...options,
       headers: {
         "Content-Type": "application/json",

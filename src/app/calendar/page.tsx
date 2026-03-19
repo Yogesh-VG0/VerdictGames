@@ -75,6 +75,8 @@ export default function CalendarPage() {
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
     const el = monthNavRef.current;
     if (!el) return;
+    /* Don't capture scroll-drag when the user is clicking a month button */
+    if ((e.target as HTMLElement).closest("button")) return;
     isDragging.current = true;
     hasDragged.current = false;
     dragStartX.current = e.clientX;

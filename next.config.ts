@@ -1,5 +1,15 @@
 import type { NextConfig } from "next";
 
+function supabaseImageHosts(): { protocol: "https"; hostname: string }[] {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!url) return [];
+  try {
+    return [{ protocol: "https", hostname: new URL(url).hostname }];
+  } catch {
+    return [];
+  }
+}
+
 const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
@@ -15,6 +25,7 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "proxy.gxcorner.games" },
       { protocol: "https", hostname: "assets.news.gxcorner.games" },
       { protocol: "https", hostname: "play.gx.games" },
+      ...supabaseImageHosts(),
     ],
   },
 };

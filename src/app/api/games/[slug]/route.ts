@@ -23,11 +23,11 @@ export async function GET(
     const { getServerSupabase } = await import("@/lib/supabase/server");
     const supabase = getServerSupabase();
 
-    let { data, error } = await supabase
+    let { data, error } = (await supabase
       .from("games")
       .select("*")
       .eq("slug", slug)
-      .maybeSingle() as { data: GameRow | null; error: unknown };
+      .maybeSingle()) as { data: GameRow | null; error: unknown };
 
     if (error) throw error;
 
@@ -99,6 +99,17 @@ export async function GET(
         }
       } catch (ingestErr) {
         console.warn(`[API] /games/${slug} on-demand ingest failed:`, ingestErr);
+      }
+    }
+
+    // RAWG often lags new releases; IGDB may already list the game (same slug as calendar links).
+    if (!data) {
+      try {
+        const { tryInsertGameFromIgdbSlug } = await import("@/lib/services/igdbBootstrap");
+        const bootstrapped = await tryInsertGameFromIgdbSlug(slug, getServerSupabase());
+        if (bootstrapped) data = bootstrapped;
+      } catch (igdbErr) {
+        console.warn(`[API] /games/${slug} IGDB bootstrap failed:`, igdbErr);
       }
     }
 

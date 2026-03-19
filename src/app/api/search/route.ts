@@ -66,23 +66,24 @@ export async function GET(request: NextRequest) {
       query = query.eq("monetization", monetization);
     }
 
-    // Sorting
+    // Sorting (tie-break on `id` for stable pagination across pages)
     switch (sort) {
       case "newest":
-        query = query.order("release_date", { ascending: false });
+        query = query.order("release_date", { ascending: false }).order("id", { ascending: true });
         break;
       case "top-rated":
-        query = query.order("score", { ascending: false });
+        query = query.order("score", { ascending: false }).order("id", { ascending: true });
         break;
       case "trending":
         query = query
           .order("momentum", { ascending: false, nullsFirst: false })
           .order("current_players", { ascending: false, nullsFirst: false })
-          .order("score", { ascending: false });
+          .order("score", { ascending: false })
+          .order("id", { ascending: true });
         break;
       default:
         // relevance — if there's a query, DB handles ranking; otherwise newest
-        query = query.order("release_date", { ascending: false });
+        query = query.order("release_date", { ascending: false }).order("id", { ascending: true });
         break;
     }
 
