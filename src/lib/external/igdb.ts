@@ -372,13 +372,15 @@ export function extractIgdbEnrichment(game: IgdbGame): {
   websiteUrl: string | null;
   redditUrl: string | null;
 } {
-  // Extract YouTube trailer from videos
+  // Extract YouTube trailer from videos — pick best by confidence
   let trailerUrl: string | null = null;
   let trailerThumbnail: string | null = null;
   if (game.videos?.length) {
-    const videoId = game.videos[0].video_id;
-    trailerUrl = `https://www.youtube.com/watch?v=${videoId}`;
-    trailerThumbnail = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+    const bestVideo = pickBestTrailer(game.videos, game.name);
+    if (bestVideo) {
+      trailerUrl = `https://www.youtube.com/watch?v=${bestVideo.video_id}`;
+      trailerThumbnail = `https://img.youtube.com/vi/${bestVideo.video_id}/hqdefault.jpg`;
+    }
   }
 
   // Extract URLs from websites
@@ -540,6 +542,74 @@ export async function getTrendingFromIgdb(
       const g = gameMap.get(id)!;
       return { igdbId: id, name: g.name, slug: g.slug, popScore };
     });
+}
+
+/* ───────── Trailer Selection ───────── */
+
+/** Preferred trailer title keywords, ordered by priority. */
+const TRAILER_KEYWORDS = [
+  "official trailer",
+  "launch trailer",
+  "announcement trailer",
+  "reveal trailer",
+  "gameplay trailer",
+  "cinematic trailer",
+  "trailer",
+  "official",
+];
+
+/**
+ * Pick the best trailer video from IGDB videos list.
+ * Scores each video by title similarity to the game name and presence of
+ * preferred keywords. Returns null if no video has sufficient confidence.
+ */
+function pickBestTrailer(
+  videos: { id: number; video_id: string; name: string }[],
+  gameName: string
+): { video_id: string; name: string } | null {
+  if (!videos.length) return null;
+
+  const gameWords = gameName.toLowerCase().replace(/[^a-z0-9\s]/g, "").split(/\s+/);
+
+  let bestScore = -1;
+  let bestVideo: (typeof videos)[0] | null = null;
+
+  for (const video of videos) {
+    const vName = (video.name ?? "").toLowerCase();
+    let score = 0;
+
+    // Keyword bonus: preferred trailer types get higher scores
+    for (let i = 0; i < TRAILER_KEYWORDS.length; i++) {
+      if (vName.includes(TRAILER_KEYWORDS[i])) {
+        score += (TRAILER_KEYWORDS.length - i) * 10;
+        break;
+      }
+    }
+
+    // Title similarity: how many game-name words appear in the video title
+    const matchingWords = gameWords.filter((w) => w.length > 2 && vName.includes(w));
+    score += matchingWords.length * 5;
+
+    // Penalize videos that look unrelated (no game words AND no trailer keywords)
+    if (matchingWords.length === 0 && !TRAILER_KEYWORDS.some((k) => vName.includes(k))) {
+      score -= 20;
+    }
+
+    if (score > bestScore) {
+      bestScore = score;
+      bestVideo = video;
+    }
+  }
+
+  // Only return if we have some confidence (score > 0), otherwise skip
+  // A score of 0 means no keywords matched and no game-name words matched
+  if (bestScore <= 0 && videos.length > 0) {
+    // Fallback: if there's only one video, use it (likely correct)
+    if (videos.length === 1) return videos[0];
+    return null;
+  }
+
+  return bestVideo;
 }
 
 /* ───────── Utilities ───────── */

@@ -11,7 +11,7 @@ import SortDropdown from "@/components/ui/SortDropdown";
 import { ReviewCardSkeleton } from "@/components/ui/Skeleton";
 import type { Platform } from "@/lib/types";
 import { platformShort } from "@/lib/utils";
-import { platformFilterIcon } from "@/components/ui/PlatformIcon";
+import { PLATFORM_FILTER_OPTIONS, platformFilterIcon } from "@/components/ui/PlatformIcon";
 
 const listItem = {
   hidden: { opacity: 0, y: 16 },
@@ -52,10 +52,10 @@ export default function ReviewsPage() {
             Platform
           </label>
           <FilterChips
-            options={["All", "PC", "PlayStation 5", "Xbox Series X|S", "Nintendo Switch", "Android"] as ("All" | Platform)[]}
+            options={PLATFORM_FILTER_OPTIONS.map((o) => o.value)}
             selected={platform}
             onChange={setPlatform}
-            labelFn={(v) => v === "All" ? "All" : platformShort(v as Platform)}
+            labelFn={(v) => PLATFORM_FILTER_OPTIONS.find((o) => o.value === v)?.label ?? v}
             iconFn={(v) => platformFilterIcon(v)}
           />
         </div>

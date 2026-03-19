@@ -1,4 +1,4 @@
--- Migration 004: Admin role support
+-- Migration 005: Admin role support
 -- Adds a role column to profiles for admin dashboard access control
 
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS role TEXT NOT NULL DEFAULT 'user';

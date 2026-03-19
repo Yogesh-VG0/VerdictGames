@@ -1,5 +1,5 @@
 -- ═══════════════════════════════════════════════════════════════
--- Migration 003: User Features
+-- Migration 004: User Features
 -- Auth, Library, Follows, Review Comments, Votes, Wishlists, HLTB
 -- ═══════════════════════════════════════════════════════════════
 

@@ -1,4 +1,4 @@
--- Migration 005: Admin manual override fields
+-- Migration 006: Admin manual override fields
 -- Allows admins to pin games as featured/trending and override algorithmic score
 
 ALTER TABLE games ADD COLUMN IF NOT EXISTS is_featured_manual BOOLEAN NOT NULL DEFAULT false;

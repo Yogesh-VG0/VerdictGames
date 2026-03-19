@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { searchGames } from "@/lib/api";
 import type { Game, SearchFilters, SortOption, MonetizationType, Platform } from "@/lib/types";
 import { platformShort } from "@/lib/utils";
-import { platformFilterIcon } from "@/components/ui/PlatformIcon";
+import { PLATFORM_FILTER_OPTIONS, platformFilterIcon } from "@/components/ui/PlatformIcon";
 
 const allGenres: string[] = [
   "Action", "Action RPG", "Adventure", "Battle Royale", "Card Game",
@@ -197,13 +197,13 @@ function SearchContent() {
               Platform
             </label>
             <FilterChips
-              options={["All", "PC", "PlayStation 5", "Xbox Series X|S", "Nintendo Switch", "Android"] as (Platform | "All")[]}
+              options={PLATFORM_FILTER_OPTIONS.map((o) => o.value)}
               selected={platform}
               onChange={(v) => {
                 setPlatform(v);
                 setPage(1);
               }}
-              labelFn={(v) => v === "All" ? "All" : platformShort(v as Platform)}
+              labelFn={(v) => PLATFORM_FILTER_OPTIONS.find((o) => o.value === v)?.label ?? v}
               iconFn={(v) => platformFilterIcon(v)}
             />
           </div>
@@ -292,11 +292,6 @@ function SearchContent() {
                   <div className="w-4 h-4 border-2 border-accent border-t-transparent rounded-full animate-spin" />
                   <p className="text-xs text-tertiary">
                     Searching for &ldquo;{debouncedQuery}&rdquo;...
-                    {debouncedQuery.length >= 2 && (
-                      <span className="ml-1 text-accent">
-                        (may auto-discover new games)
-                      </span>
-                    )}
                   </p>
                 </div>
               )}

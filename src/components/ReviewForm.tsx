@@ -5,8 +5,9 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { submitReview } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
-import { cn, platformShort } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import PixelButton from "@/components/ui/PixelButton";
+import PlatformIcon from "@/components/ui/PlatformIcon";
 
 interface ReviewFormProps {
   gameId: string;
@@ -138,20 +139,21 @@ export default function ReviewForm({ gameId, gameSlug, onAuthRequired, onSuccess
             {/* Platform */}
             <div className="space-y-1.5">
               <label className="text-xs text-secondary font-medium">Platform</label>
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
                 {PLATFORMS.map((p) => (
                   <button
                     key={p}
                     type="button"
                     onClick={() => setPlatform(p)}
                     className={cn(
-                      "px-3 py-1.5 rounded-lg text-xs font-medium transition-all border",
+                      "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all border",
                       platform === p
                         ? "bg-accent/10 border-accent/30 text-accent"
                         : "bg-white/5 border-white/[0.08] text-secondary hover:text-foreground"
                     )}
                   >
-                    {platformShort(p)}
+                    <PlatformIcon platform={p} size={14} />
+                    {p === "Xbox Series X|S" ? "Xbox" : p === "Nintendo Switch" ? "Switch" : p}
                   </button>
                 ))}
               </div>

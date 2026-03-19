@@ -83,7 +83,7 @@ export default function AboutPage() {
         <h2 className="text-lg font-semibold text-foreground">Tech stack</h2>
         <p className="text-sm text-secondary leading-relaxed">
           Built with Next.js, TypeScript, Tailwind CSS, and Supabase. Data sourced from RAWG, Steam, IGDB,
-          CheapShark, and Wikipedia. Designed mobile-first with a cinematic dark glass aesthetic.
+          CheapShark, Wikipedia, HLTB, and GX Corner. Designed mobile-first with a cinematic dark glass aesthetic.
         </p>
       </section>
     </div>

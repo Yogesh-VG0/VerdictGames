@@ -8,6 +8,7 @@ import VerdictBadge from "@/components/ui/VerdictBadge";
 import ScoreRing from "@/components/ui/ScoreRing";
 import PixelBadge from "@/components/ui/PixelBadge";
 import PixelButton from "@/components/ui/PixelButton";
+import PlatformIcon from "@/components/ui/PlatformIcon";
 
 interface FeaturedHeroProps {
   game: Game;
@@ -18,14 +19,20 @@ export default function FeaturedHero({ game }: FeaturedHeroProps) {
     <section className="relative rounded-sm overflow-hidden border border-border scanlines group">
       {/* Background image */}
       <div className="relative aspect-[16/9] sm:aspect-[16/9] md:aspect-[21/9]">
-        <Image
-          src={game.headerImage}
-          alt={game.title}
-          fill
-          sizes="100vw"
-          className="object-cover transition-transform duration-700 group-hover:scale-[1.02]"
-          priority
-        />
+        {game.headerImage ? (
+          <Image
+            src={game.headerImage}
+            alt={game.title}
+            fill
+            sizes="100vw"
+            className="object-cover transition-transform duration-700 group-hover:scale-[1.02]"
+            priority
+          />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-br from-accent/20 via-surface to-pixel-cyan/10 flex items-center justify-center">
+            <span className="text-7xl opacity-30">🎮</span>
+          </div>
+        )}
 
         {/* Multi-layer gradient overlays — always dark */}
         <div className="absolute inset-0 hero-gradient-bottom" />
@@ -66,10 +73,10 @@ export default function FeaturedHero({ game }: FeaturedHeroProps) {
         >
           <ScoreRing score={game.score} size={56} strokeWidth={3} className="relative" />
           <VerdictBadge label={game.verdictLabel} size="lg" />
-          {game.platforms.map((p) => (
-            <PixelBadge key={p} variant={p === "PC" ? "muted" : "success"} size="md">
-              {p}
-            </PixelBadge>
+          {game.platforms.slice(0, 4).map((p) => (
+            <span key={p} className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-black/40 backdrop-blur-sm border border-white/15 text-xs font-medium text-white/90">
+              <PlatformIcon platform={p} size={14} />
+            </span>
           ))}
           {game.releaseDate && (
             <span className="text-xs text-tertiary font-medium">

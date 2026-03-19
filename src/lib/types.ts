@@ -21,7 +21,8 @@ export type MonetizationType =
   | "Paid"
   | "Free with IAP"
   | "Free with Ads"
-  | "Subscription";
+  | "Subscription"
+  | "Unknown";
 
 export type VerdictLabel = "MUST PLAY" | "WORTH IT" | "MIXED" | "SKIP" | "COMING SOON";
 

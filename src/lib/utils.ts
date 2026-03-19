@@ -1,12 +1,7 @@
 import { VerdictLabel } from "./types";
 
-/** Map a 0–100 score to its verdict label. */
-export function scoreToVerdict(score: number): VerdictLabel {
-  if (score >= 90) return "MUST PLAY";
-  if (score >= 75) return "WORTH IT";
-  if (score >= 50) return "MIXED";
-  return "SKIP";
-}
+/** Re-export from utils/score.ts — single source of truth */
+export { scoreToVerdict } from "./utils/score";
 
 /** Return the Tailwind text-color class for a given score. */
 export function scoreColor(score: number): string {

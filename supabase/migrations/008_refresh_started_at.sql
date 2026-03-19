@@ -1,5 +1,5 @@
 -- ═══════════════════════════════════════════════════════════════
--- VERDICT.GAMES — Migration 007: Lock TTL via refresh_started_at
+-- VERDICT.GAMES — Migration 008: Lock TTL via refresh_started_at
 -- Cleaner separation: lock expiry based on refresh start, not updated_at
 -- ═══════════════════════════════════════════════════════════════
 

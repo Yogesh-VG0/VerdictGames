@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Review } from "@/lib/types";
 import { scoreColor, formatDate, cn } from "@/lib/utils";
+import PlatformIcon from "@/components/ui/PlatformIcon";
 
 interface ReviewCardProps {
   review: Review;
@@ -30,15 +31,19 @@ export default function ReviewCard({
         {showGame && (
           <Link
             href={`/game/${review.gameSlug}`}
-            className="shrink-0 relative w-10 h-14 rounded-lg overflow-hidden border border-white/[0.08]"
+            className="shrink-0 relative w-10 h-14 rounded-lg overflow-hidden border border-white/[0.08] bg-surface-2"
           >
-            <Image
-              src={review.gameCover}
-              alt={review.gameTitle}
-              fill
-              sizes="40px"
-              className="object-cover"
-            />
+            {review.gameCover ? (
+              <Image
+                src={review.gameCover}
+                alt={review.gameTitle}
+                fill
+                sizes="40px"
+                className="object-cover"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-xs text-tertiary">🎮</div>
+            )}
           </Link>
         )}
 
@@ -62,7 +67,10 @@ export default function ReviewCard({
             <span className="text-tertiary">·</span>
             <time dateTime={review.createdAt}>{formatDate(review.createdAt)}</time>
             <span className="text-tertiary">·</span>
-            <span className="uppercase text-[10px] tracking-wider">{review.platform}</span>
+            <span className="inline-flex items-center gap-1">
+              <PlatformIcon platform={review.platform} size={12} />
+              <span className="text-[10px] tracking-wider">{review.platform}</span>
+            </span>
           </div>
         </div>
 

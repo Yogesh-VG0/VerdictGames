@@ -23,7 +23,7 @@ export default function FilterChips<T extends string>({
   return (
     <div
       className={cn(
-        "flex flex-wrap gap-2",
+        "flex gap-2 overflow-x-auto scrollbar-hide pb-1 sm:flex-wrap sm:overflow-visible sm:pb-0",
         className
       )}
       role="radiogroup"

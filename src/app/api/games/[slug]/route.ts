@@ -139,44 +139,22 @@ export async function GET(
       return jsonNotFound("Game");
     }
 
-    // On-demand re-enrichment: if data is stale (>24h), try to acquire lock and refresh
+    // Mark stale games for re-enrichment by the cron job (/api/cron/re-enrich).
+    // Previously this fired a background promise here, which was unreliable and
+    // could cause request timeouts. Now the cron picks up stale rows in batch.
     if (data.last_enriched_at) {
       const ageMs = Date.now() - new Date(data.last_enriched_at).getTime();
       const STALE_THRESHOLD = 24 * 60 * 60 * 1000;
-      if (ageMs > STALE_THRESHOLD) {
-        const gameId = data.id;
-        const gameTitle = data.title;
-        let acquired = false;
+      if (ageMs > STALE_THRESHOLD && !data.is_refreshing) {
+        // Reset refresh_started_at so the cron picks this game up sooner
         try {
-          const cutoff = new Date(Date.now() - STALE_THRESHOLD).toISOString();
-          const lockCutoff = new Date(Date.now() - 10 * 60 * 1000).toISOString();
-          const now = new Date().toISOString();
-          const { data: locked } = await supabase
+          await supabase
             .from("games")
-            .update({ is_refreshing: true, refresh_started_at: now })
-            .eq("id", gameId)
-            .or(`is_refreshing.eq.false,refresh_started_at.is.null,refresh_started_at.lt.${lockCutoff}`)
-            .lt("last_enriched_at", cutoff)
-            .select("id")
-            .maybeSingle();
-          acquired = !!locked;
+            .update({ refresh_started_at: null })
+            .eq("id", data.id)
+            .eq("is_refreshing", false);
         } catch {
-          acquired = true;
-        }
-        if (acquired) {
-          import("@/lib/services/ingest").then(async ({ ingestGame }) => {
-            try {
-              await ingestGame({ query: gameTitle, forceRefresh: true });
-            } catch (e) {
-              console.warn(`[API] /games/${slug} background re-enrichment failed:`, e);
-            } finally {
-              try {
-                await getServerSupabase().from("games").update({ is_refreshing: false, refresh_started_at: null }).eq("id", gameId);
-              } catch {
-                /* column may not exist before migration */
-              }
-            }
-          });
+          /* column may not exist before migration */
         }
       }
     }

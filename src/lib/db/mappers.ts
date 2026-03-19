@@ -8,6 +8,7 @@
 import type { Game, Review, ReviewComment, User, GameList, UserGame, Platform, MonetizationType, VerdictLabel, LibraryStatus } from "../types";
 import type { GameRow, ReviewRow, ProfileRow, ListRow, UserGameRow, ReviewCommentRow } from "../supabase/types";
 import { scoreToVerdict } from "../utils/score";
+import { normalizePlatforms } from "../utils/platform";
 
 function computeTrendingReason(row: GameRow): string | undefined {
   const r = row as GameRow & { is_trending_manual?: boolean; is_featured_manual?: boolean };
@@ -83,7 +84,7 @@ export function mapGameRow(row: GameRow): Game {
     coverImage: row.cover_image,
     headerImage: row.header_image,
     screenshots: row.screenshots,
-    platforms: row.platforms as Platform[],
+    platforms: normalizePlatforms(row.platforms as string[]),
     genres: row.genres,
     tags: row.tags,
     developer: row.developer,

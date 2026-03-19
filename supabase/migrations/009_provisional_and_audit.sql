@@ -1,4 +1,4 @@
--- Migration 008: Provisional games + admin audit log
+-- Migration 009: Provisional games + admin audit log
 -- Adds is_provisional and release_status to games table
 -- Creates admin_audit_log table for tracking manual changes
 

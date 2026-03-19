@@ -1,8 +1,8 @@
 /**
- * Apply migration 003: User Features
+ * Apply migration 004: User Features
  * (Auth profiles link, user_games, follows, review_comments, review_votes, HLTB columns)
  *
- * Run: node scripts/apply-migration-003.mjs
+ * Run: node scripts/apply-migration-003.mjs (applies migration 004)
  */
 
 import postgres from "postgres";
@@ -35,12 +35,12 @@ const sql = postgres(databaseUrl, { ssl: "require" });
 
 async function run() {
   try {
-    const migrationPath = resolve(__dirname, "../supabase/migrations/003_user_features.sql");
+    const migrationPath = resolve(__dirname, "../supabase/migrations/004_user_features.sql");
     const migrationSql = readFileSync(migrationPath, "utf-8");
 
-    console.log("🔄 Applying migration 003: User Features...");
+    console.log("🔄 Applying migration 004: User Features...");
     await sql.unsafe(migrationSql);
-    console.log("✅ Migration 003 applied successfully!");
+    console.log("✅ Migration 004 applied successfully!");
 
     // Verify new tables exist
     const tables = await sql`

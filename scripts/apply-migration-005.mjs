@@ -1,7 +1,7 @@
 /**
- * Apply migration 005: Admin manual override fields on games table
+ * Apply migration 006: Admin manual override fields on games table
  *
- * Run: node scripts/apply-migration-005.mjs
+ * Run: node scripts/apply-migration-005.mjs (applies migration 006)
  */
 
 import postgres from "postgres";
@@ -33,12 +33,12 @@ const sql = postgres(databaseUrl, { ssl: "require" });
 
 async function run() {
   try {
-    const migrationPath = resolve(__dirname, "../supabase/migrations/005_admin_overrides.sql");
+    const migrationPath = resolve(__dirname, "../supabase/migrations/006_admin_overrides.sql");
     const migrationSql = readFileSync(migrationPath, "utf-8");
 
-    console.log("🔄 Applying migration 005: Admin Override Fields...");
+    console.log("🔄 Applying migration 006: Admin Override Fields...");
     await sql.unsafe(migrationSql);
-    console.log("✅ Migration 005 applied successfully!");
+    console.log("✅ Migration 006 applied successfully!");
 
     const cols = await sql`
       SELECT column_name, data_type, column_default

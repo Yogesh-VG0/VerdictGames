@@ -88,9 +88,15 @@ export const PLATFORM_FILTER_OPTIONS: { label: string; value: Platform | "All" }
   { label: "All", value: "All" },
   { label: "PC", value: "PC" },
   { label: "PS5", value: "PlayStation 5" },
-  { label: "Xbox", value: "Xbox Series X|S" },
+  { label: "PS4", value: "PlayStation 4" },
+  { label: "Xbox X|S", value: "Xbox Series X|S" },
+  { label: "Xbox One", value: "Xbox One" },
   { label: "Switch", value: "Nintendo Switch" },
-  { label: "Mobile", value: "Android" },
+  { label: "Switch 2", value: "Nintendo Switch 2" },
+  { label: "Android", value: "Android" },
+  { label: "iOS", value: "iOS" },
+  { label: "Mac", value: "macOS" },
+  { label: "Linux", value: "Linux" },
 ];
 
 /** Get a platform icon as a ReactNode at specified size. Falls back to text abbreviation. */

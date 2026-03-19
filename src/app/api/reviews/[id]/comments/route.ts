@@ -28,7 +28,7 @@ export async function GET(
 
     if (error) throw error;
 
-    const flat = (data ?? []).map((row: Record<string, unknown>) =>
+    const flat = (data ?? []).map((row: unknown) =>
       mapCommentRow(row as ReviewCommentRow & { profile: { username: string; avatar_url: string } })
     );
 
@@ -89,7 +89,7 @@ export async function POST(
 
     if (error) throw error;
 
-    return jsonOk(mapCommentRow(data as ReviewCommentRow & { profile: { username: string; avatar_url: string } }));
+    return jsonOk(mapCommentRow(data as unknown as ReviewCommentRow & { profile: { username: string; avatar_url: string } }));
   } catch (err) {
     console.error("[API] /reviews/[id]/comments POST error:", err);
     return jsonError("Failed to add comment");

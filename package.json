@@ -13,7 +13,10 @@
     "lint": "eslint",
     "heroku-postbuild": "next build",
     "scheduler:trending": "node scripts/heroku-refresh-trending.mjs",
-    "scheduler:discover": "node scripts/heroku-discover-games.mjs"
+    "scheduler:discover": "node scripts/heroku-discover-games.mjs",
+    "scheduler:re-enrich": "node scripts/heroku-re-enrich.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@supabase/ssr": "^0.9.0",
@@ -23,6 +26,7 @@
     "@vercel/speed-insights": "^1.3.1",
     "framer-motion": "^12.34.4",
     "next": "16.1.6",
+    "postgres": "^3.4.8",
     "react": "19.2.3",
     "react-dom": "19.2.3"
   },
@@ -31,11 +35,12 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^6.0.1",
     "dotenv": "^17.3.1",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
-    "postgres": "^3.4.8",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.0"
   }
 }

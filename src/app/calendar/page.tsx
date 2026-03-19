@@ -125,17 +125,31 @@ export default function CalendarPage() {
   }, [selectedMonth]);
 
   const { data: games, isLoading } = useQuery<Game[]>({
-    queryKey: ["calendar", "gx", selectedMonth, selectedPlatform],
+    queryKey: ["calendar", "merged", selectedMonth, selectedPlatform],
     queryFn: async () => {
-      const gx = await getGXCalendar();
-      const gxGames = (gx ?? [])
-        .filter((g: GXCalendarGame) => (g.releaseDate ?? "").slice(0, 7) === selectedMonth)
-        .map((g: GXCalendarGame) => gxCalendarToGame(g))
-        .filter((g: Game) => selectedPlatform === "All" ? true : g.platforms.includes(selectedPlatform));
+      // Fetch both GX and DB in parallel, then merge — DB-enriched rows take priority
+      const [gxRaw, dbGames] = await Promise.all([
+        getGXCalendar(),
+        getCalendarGames(selectedMonth),
+      ]);
 
-      if (gxGames.length > 0) return gxGames;
-      const db = await getCalendarGames(selectedMonth);
-      return (db ?? []).filter((g: Game) => selectedPlatform === "All" ? true : g.platforms.includes(selectedPlatform));
+      const gxGames = (gxRaw ?? [])
+        .filter((g: GXCalendarGame) => (g.releaseDate ?? "").slice(0, 7) === selectedMonth)
+        .map((g: GXCalendarGame) => gxCalendarToGame(g));
+
+      // Merge: prefer DB row over GX placeholder when both exist (by slug/title)
+      const dbSlugs = new Set((dbGames ?? []).map((g: Game) => g.slug));
+      const dbTitles = new Set((dbGames ?? []).map((g: Game) => g.title.toLowerCase()));
+      const gxOnly = gxGames.filter(
+        (g: Game) => !dbSlugs.has(g.slug) && !dbTitles.has(g.title.toLowerCase())
+      );
+
+      const merged = [...(dbGames ?? []), ...gxOnly];
+
+      // Apply platform filter
+      return merged.filter((g: Game) =>
+        selectedPlatform === "All" ? true : g.platforms.includes(selectedPlatform)
+      );
     },
     staleTime: 5 * 60 * 1000,
   });

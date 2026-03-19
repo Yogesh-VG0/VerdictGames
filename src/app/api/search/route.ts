@@ -18,7 +18,9 @@ const PAGE_SIZE = 24;
 
 export async function GET(request: NextRequest) {
   const params = request.nextUrl.searchParams;
-  const q = params.get("q") ?? "";
+  const rawQ = params.get("q") ?? "";
+  // Sanitize: strip characters that could break PostgREST .or() syntax
+  const q = rawQ.replace(/[%_(),.;'"\\]/g, "").trim();
   const platform = params.get("platform") ?? "All";
   const genre = params.get("genre") ?? "";
   const year = params.get("year") ?? "";
@@ -145,26 +147,8 @@ export async function GET(request: NextRequest) {
           total = games.length;
         }
 
-        // Layer 3: Background ingest for full enrichment (non-blocking)
-        const { ingestGame } = await import("@/lib/services/ingest");
-        const result = await ingestGame({ query: q });
-        if (result.success && result.gameId) {
-          const alreadyHave = games.some((g) => g.id === result.gameId);
-          if (!alreadyHave) {
-            const { data: freshData } = await supabase
-              .from("games")
-              .select("*")
-              .eq("id", result.gameId) as unknown as { data: GameRow[] | null };
-            if (freshData?.length) {
-              // Replace RAWG preview with full enriched version if it exists
-              const enriched = freshData.map(mapGameRow);
-              const enrichedTitle = normalizeTitle(enriched[0].title);
-              games = games.filter((g) => normalizeTitle(g.title) !== enrichedTitle);
-              games = [...enriched, ...games];
-              total = games.length;
-            }
-          }
-        }
+        // Layer 3 REMOVED: no auto-ingest from search typing.
+        // Ingest only happens on explicit game page visit or admin action.
       } catch (ingestErr) {
         console.warn("[API] /search on-demand ingest failed:", ingestErr);
       }

@@ -1,5 +1,5 @@
 -- ═══════════════════════════════════════════════════════════════
--- Migration 002: Security lint fixes
+-- Migration 003: Security lint fixes
 -- Fixes Supabase linter warnings:
 --   • function_search_path_mutable  — pin search_path on trigger fn
 --   • rls_policy_always_true        — scope service policies to service_role

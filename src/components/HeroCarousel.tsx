@@ -128,15 +128,19 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
             exit="exit"
             className="absolute inset-0"
           >
-            <Image
-              src={game.headerImage || game.coverImage}
-              alt={game.title}
-              fill
-              sizes="100vw"
-              className="object-cover"
-              priority={currentIndex === 0}
-              quality={90}
-            />
+            {(game.headerImage || game.coverImage) ? (
+              <Image
+                src={game.headerImage || game.coverImage}
+                alt={game.title}
+                fill
+                sizes="100vw"
+                className="object-cover"
+                priority={currentIndex === 0}
+                quality={90}
+              />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-accent/20 via-surface to-pixel-cyan/10" />
+            )}
           </motion.div>
         </AnimatePresence>
 

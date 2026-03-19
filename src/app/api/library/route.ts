@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
     const { data, error } = await query;
     if (error) throw error;
 
-    const items = (data ?? []).map((row: Record<string, unknown>) =>
+    const items = (data ?? []).map((row: unknown) =>
       mapUserGameRow(row as UserGameRow & { game: GameRow })
     );
 
@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
 
     if (error) throw error;
 
-    return jsonOk(mapUserGameRow(data as UserGameRow & { game: GameRow }));
+    return jsonOk(mapUserGameRow(data as unknown as UserGameRow & { game: GameRow }));
   } catch (err) {
     console.error("[API] /library POST error:", err);
     return jsonError("Failed to update library");

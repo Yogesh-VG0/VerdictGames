@@ -271,10 +271,12 @@ h1, h2, h3 {
    ═══════════════════════════════════════════════════ */
 
 /* Hide scrollbar but keep scrolling */
-.no-scrollbar::-webkit-scrollbar {
+.no-scrollbar::-webkit-scrollbar,
+.scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
-.no-scrollbar {
+.no-scrollbar,
+.scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
@@ -603,6 +605,27 @@ h1, h2, h3 {
 }
 .snap-x > * {
   scroll-snap-align: start;
+}
+
+/* ═══════════════════════════════════════════════════
+   Light Mode — Border & Surface Fixes
+   Hard-coded white-alpha borders are invisible in light mode.
+   These overrides use the theme border token instead.
+   ═══════════════════════════════════════════════════ */
+
+.light [class*="border-white/"] {
+  border-color: var(--vg-border);
+}
+.light [class*="bg-white/[0.03]"],
+.light [class*="bg-white/[0.02]"] {
+  background-color: var(--vg-surface-2);
+}
+.light [class*="bg-white/5"],
+.light [class*="bg-white/[0.05]"] {
+  background-color: rgba(0, 0, 0, 0.03);
+}
+.light [class*="divide-white/"] {
+  border-color: var(--vg-border);
 }
 
 /* ═══════════════════════════════════════════════════

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
@@ -8,6 +8,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { compareGames, searchGames } from "@/lib/api";
 import { scoreColor, cn, formatDate } from "@/lib/utils";
+import PlatformIcon from "@/components/ui/PlatformIcon";
 import ScoreRing from "@/components/ui/ScoreRing";
 import VerdictBadge from "@/components/ui/VerdictBadge";
 import PixelBadge from "@/components/ui/PixelBadge";
@@ -82,8 +83,12 @@ function GameSearchInput({ value, onSelect, placeholder }: {
               }}
               className="flex items-center gap-3 w-full px-3 py-2.5 text-left hover:bg-white/5 transition-colors"
             >
-              <div className="relative w-8 h-11 rounded-lg overflow-hidden shrink-0">
-                <Image src={g.coverImage} alt={g.title} fill sizes="32px" className="object-cover" />
+              <div className="relative w-8 h-11 rounded-lg overflow-hidden shrink-0 bg-surface-2">
+                {g.coverImage ? (
+                  <Image src={g.coverImage} alt={g.title} fill sizes="32px" className="object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-xs text-tertiary">🎮</div>
+                )}
               </div>
               <div className="min-w-0">
                 <p className="text-sm font-medium text-foreground truncate">{g.title}</p>
@@ -107,8 +112,12 @@ function scoreHigher(a?: number, b?: number): "left" | "right" | "none" {
 function GameHeader({ game }: { game: Game }) {
   return (
     <Link href={`/game/${game.slug}`} className="flex flex-col items-center gap-3 group">
-      <div className="relative w-24 h-32 sm:w-28 sm:h-36 rounded-xl overflow-hidden border border-white/[0.08] group-hover:border-accent/40 transition-colors">
-        <Image src={game.coverImage} alt={game.title} fill sizes="112px" className="object-cover" />
+      <div className="relative w-24 h-32 sm:w-28 sm:h-36 rounded-xl overflow-hidden border border-white/[0.08] group-hover:border-accent/40 transition-colors bg-surface-2">
+        {game.coverImage ? (
+          <Image src={game.coverImage} alt={game.title} fill sizes="112px" className="object-cover" />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-2xl text-tertiary">🎮</div>
+        )}
       </div>
       <h3 className="text-sm font-bold text-foreground text-center group-hover:text-accent transition-colors line-clamp-2">
         {game.title}
@@ -117,7 +126,7 @@ function GameHeader({ game }: { game: Game }) {
   );
 }
 
-export default function ComparePage() {
+function CompareContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const g1 = searchParams.get("g1") ?? "";
@@ -275,8 +284,22 @@ export default function ComparePage() {
             />
             <CompareCell
               label="Platforms"
-              v1={game1.platforms.join(", ")}
-              v2={game2.platforms.join(", ")}
+              v1={
+                <span className="inline-flex items-center gap-1.5 flex-wrap justify-end">
+                  {game1.platforms.slice(0, 4).map((p) => (
+                    <span key={p} title={p}><PlatformIcon platform={p} size={14} /></span>
+                  ))}
+                  {game1.platforms.length > 4 && <span className="text-[10px] text-tertiary">+{game1.platforms.length - 4}</span>}
+                </span>
+              }
+              v2={
+                <span className="inline-flex items-center gap-1.5 flex-wrap">
+                  {game2.platforms.slice(0, 4).map((p) => (
+                    <span key={p} title={p}><PlatformIcon platform={p} size={14} /></span>
+                  ))}
+                  {game2.platforms.length > 4 && <span className="text-[10px] text-tertiary">+{game2.platforms.length - 4}</span>}
+                </span>
+              }
             />
             {(game1.hltbMain || game2.hltbMain) && (
               <CompareCell
@@ -298,5 +321,23 @@ export default function ComparePage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function ComparePage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="max-w-4xl mx-auto px-4 py-8 space-y-8">
+          <Skeleton className="h-10 w-64 mx-auto" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Skeleton className="h-11 rounded-xl" />
+            <Skeleton className="h-11 rounded-xl" />
+          </div>
+        </div>
+      }
+    >
+      <CompareContent />
+    </Suspense>
   );
 }

@@ -73,7 +73,7 @@ export interface Database {
           refresh_started_at?: string | null;
           enrichment_sources: string[];
 
-          // HLTB fields (migration 003)
+          // HLTB fields (migration 004)
           hltb_main: number | null;
           hltb_extras: number | null;
           hltb_completionist: number | null;
@@ -83,7 +83,12 @@ export interface Database {
           // Momentum tracking (migration 002)
           momentum: number;
 
-          // Provisional/upcoming fields (migration 008)
+          // Admin overrides (migration 006)
+          is_featured_manual: boolean;
+          is_trending_manual: boolean;
+          manual_score: number | null;
+
+          // Provisional/upcoming fields (migration 009)
           is_provisional: boolean;
           release_status: string | null;
 
@@ -153,6 +158,9 @@ export interface Database {
           hltb_last_fetched?: string | null;
           franchise?: string | null;
           momentum?: number;
+          is_featured_manual?: boolean;
+          is_trending_manual?: boolean;
+          manual_score?: number | null;
           is_provisional?: boolean;
           release_status?: string | null;
           created_at?: string;
@@ -223,6 +231,9 @@ export interface Database {
           hltb_last_fetched?: string | null;
           franchise?: string | null;
           momentum?: number;
+          is_featured_manual?: boolean;
+          is_trending_manual?: boolean;
+          manual_score?: number | null;
           is_provisional?: boolean;
           release_status?: string | null;
           created_at?: string;
@@ -585,7 +596,12 @@ export interface Database {
       };
     };
     Views: Record<string, never>;
-    Functions: Record<string, never>;
+    Functions: {
+      auth_profile_id: {
+        Args: Record<string, never>;
+        Returns: string;
+      };
+    };
     Enums: Record<string, never>;
   };
 }

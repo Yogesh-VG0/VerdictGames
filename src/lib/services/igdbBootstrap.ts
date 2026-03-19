@@ -12,6 +12,7 @@ import {
   isIgdbConfigured,
 } from "../external/igdb";
 import { scoreToVerdict } from "../utils/score";
+import { normalizePlatforms } from "../utils/platform";
 
 export async function tryInsertGameFromIgdbSlug(
   urlSlug: string,
@@ -47,7 +48,7 @@ export async function tryInsertGameFromIgdbSlug(
   const publisher =
     igdb.involved_companies?.find((c) => c.publisher)?.company?.name ?? developer;
 
-  const platforms = (igdb.platforms ?? []).map((p) => p.name).filter(Boolean);
+  const platforms = normalizePlatforms((igdb.platforms ?? []).map((p) => p.name).filter(Boolean));
   const genres = (igdb.genres ?? []).map((g) => g.name);
 
   const releaseDate =
@@ -79,7 +80,7 @@ export async function tryInsertGameFromIgdbSlug(
     verdict_summary: `${igdb.name} — sourced from IGDB.`,
     pros: [] as string[],
     cons: [] as string[],
-    monetization: "Paid",
+    monetization: "Unknown",
     performance_notes: "",
     monetization_notes: "",
     steam_url: null as string | null,

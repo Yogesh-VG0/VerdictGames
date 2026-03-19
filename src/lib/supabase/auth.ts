@@ -41,21 +41,36 @@ export async function getCurrentUser() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return null;
 
+    // Try fetching with `role` column first (migration 004); fall back without it.
+    let resolvedProfile: (ProfileRow & { role?: string }) | null = null;
+
     const { data: profile, error: profileErr } = await supabase
       .from("profiles")
-      // NOTE: `role` may not exist in some deployed DBs yet (would cause PostgREST 400).
-      .select("id, username, display_name, avatar_url")
+      .select("id, username, display_name, avatar_url, role")
       .eq("auth_id", user.id)
-      .maybeSingle() as { data: ProfileRow | null; error: unknown };
+      .maybeSingle() as { data: (ProfileRow & { role?: string }) | null; error: unknown };
 
-    let resolvedProfile = profile;
-    if (profileErr) {
-      const { data: profileById } = await supabase
+    if (!profileErr && profile) {
+      resolvedProfile = profile;
+    } else {
+      // Fallback: role column may not exist, or auth_id lookup failed
+      const { data: profileFallback } = await supabase
         .from("profiles")
         .select("id, username, display_name, avatar_url")
-        .eq("id", user.id)
+        .eq("auth_id", user.id)
         .maybeSingle() as { data: ProfileRow | null };
-      resolvedProfile = profileById;
+
+      if (!profileFallback) {
+        // Try by id (legacy schema)
+        const { data: profileById } = await supabase
+          .from("profiles")
+          .select("id, username, display_name, avatar_url")
+          .eq("id", user.id)
+          .maybeSingle() as { data: ProfileRow | null };
+        resolvedProfile = profileById;
+      } else {
+        resolvedProfile = profileFallback;
+      }
     }
 
     if (!resolvedProfile) return null;
@@ -67,7 +82,7 @@ export async function getCurrentUser() {
       username: resolvedProfile.username,
       displayName: resolvedProfile.display_name,
       avatar: resolvedProfile.avatar_url,
-      role: "user",
+      role: (resolvedProfile.role as "user" | "admin") ?? "user",
     };
   } catch {
     return null;

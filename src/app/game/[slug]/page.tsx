@@ -7,7 +7,8 @@ import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { getGameBySlug, getGameReviews, getRelatedGames, getGameNews, getGameAchievements } from "@/lib/api";
 import type { SteamNewsArticle, SteamAchievementItem } from "@/lib/api";
-import { formatDate, scoreColor, cn, platformShort, platformVariant } from "@/lib/utils";
+import { formatDate, scoreColor, cn } from "@/lib/utils";
+import PlatformIcon from "@/components/ui/PlatformIcon";
 import ScoreRing from "@/components/ui/ScoreRing";
 import VerdictBadge from "@/components/ui/VerdictBadge";
 import PixelBadge from "@/components/ui/PixelBadge";
@@ -182,14 +183,20 @@ export default function GameDetailPage({ params }: Props) {
       {/* ═══════════════ HERO ═══════════════ */}
       <section className="relative">
         <div className="relative h-[50vh] md:h-[60vh] min-h-[320px] max-h-[600px] overflow-hidden">
-          <Image
-            src={game.headerImage}
-            alt={game.title}
-            fill
-            sizes="100vw"
-            className="object-cover"
-            priority
-          />
+          {game.headerImage ? (
+            <Image
+              src={game.headerImage}
+              alt={game.title}
+              fill
+              sizes="100vw"
+              className="object-cover"
+              priority
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-accent/20 via-surface to-pixel-cyan/10 flex items-center justify-center">
+              <span className="text-7xl opacity-30">🎮</span>
+            </div>
+          )}
           {/* Multi-layer gradients — always dark so images stay vibrant */}
           <div className="absolute inset-0 hero-gradient-bottom" />
           <div className="absolute inset-0 hero-gradient-right" />
@@ -208,9 +215,10 @@ export default function GameDetailPage({ params }: Props) {
               {/* Platform + Year */}
               <div className="flex flex-wrap gap-2 items-center">
                 {game.platforms.map((p) => (
-                  <PixelBadge key={p} variant={platformVariant(p)} size="md">
-                    {platformShort(p)}
-                  </PixelBadge>
+                  <span key={p} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-black/40 backdrop-blur-sm border border-white/15 text-xs font-medium text-white/90">
+                    <PlatformIcon platform={p} size={14} />
+                    {p}
+                  </span>
                 ))}
                 {game.isFree && (
                   <PixelBadge variant="success" size="md">Free to Play</PixelBadge>
@@ -431,7 +439,11 @@ export default function GameDetailPage({ params }: Props) {
                     {game.performanceNotes || (
                       game.platforms.includes("PC")
                         ? "Runs well on modern hardware. Check Steam page for system requirements."
-                        : "Optimized for mobile devices. Performance varies by device."
+                        : game.platforms.some((p) => p.startsWith("PlayStation") || p.startsWith("Xbox") || p.startsWith("Nintendo"))
+                          ? "Performance details not available yet."
+                          : game.platforms.some((p) => p === "Android" || p === "iOS")
+                            ? "Optimized for mobile devices. Performance varies by device."
+                            : "Performance details not available yet."
                     )}
                   </p>
                 </section>
@@ -572,8 +584,8 @@ export default function GameDetailPage({ params }: Props) {
                   Community Reviews
                 </h3>
 
-                {/* Steam Review Summary Card — always show if data exists */}
-                {(game.reviewCount > 0 || game.userScore) && (
+                {/* Steam Review Summary Card — only show when we have actual Steam data */}
+                {(game.reviewCount > 0 || game.userScore) && (game.steamUrl || game.scoreSource === "steam" || game.steamRatingLabel) && (
                   <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] p-4 space-y-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
@@ -887,7 +899,7 @@ export default function GameDetailPage({ params }: Props) {
                         )}
                       </div>
                     )}
-                    {game.reviewCount > 0 && (
+                    {game.reviewCount > 0 && (game.steamUrl || game.scoreSource === "steam" || game.steamRatingLabel) && (
                       <div className="flex items-baseline justify-between text-sm">
                         <span className="text-xs text-tertiary">Steam Reviews</span>
                         <span className="font-bold text-foreground tabular-nums">
@@ -955,7 +967,7 @@ export default function GameDetailPage({ params }: Props) {
         <FadeInSection>
           <div className="text-[10px] text-tertiary border-t border-white/[0.06] pt-4 mt-8 space-y-1">
             <p>
-              Data sourced from RAWG, Steam, IGDB, CheapShark, and Wikipedia.
+              Data sourced from RAWG, Steam, IGDB, CheapShark, Wikipedia, HLTB, and GX Corner.
               {game.enrichmentSources && game.enrichmentSources.length > 0 && (
                 <> Sources: {game.enrichmentSources.join(", ")}.</>
               )}
