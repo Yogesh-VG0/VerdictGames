@@ -17,6 +17,15 @@ interface GameCardProps {
   variant?: "default" | "spotlight";
 }
 
+function sourceLabel(source?: string): string | null {
+  if (!source || source === "blended") return null;
+  if (source === "steam") return "Steam";
+  if (source === "igdb") return "IGDB";
+  if (source === "metacritic") return "Critic";
+  if (source === "rawg") return "RAWG";
+  return null;
+}
+
 function scoreGlowClass(score: number) {
   if (score >= 80) return "score-glow-great";
   if (score >= 65) return "score-glow-good";
@@ -119,8 +128,10 @@ export default function GameCard({
                 )}
                 title={`Verdict Score: ${game.score} (source: ${game.scoreSource ?? "blended"})`}
               >
-                <span className="text-[9px] opacity-50 font-medium">V</span>
                 {game.score}
+                {sourceLabel(game.scoreSource) && (
+                  <span className="text-[8px] opacity-50 font-medium uppercase">{sourceLabel(game.scoreSource)}</span>
+                )}
               </div>
             ) : isUnreleased(game) ? (
               <div className="absolute top-3 right-3 rounded-xl px-2.5 py-1 bg-accent/70 backdrop-blur-md border border-white/10 text-[10px] font-bold text-white">
@@ -209,8 +220,10 @@ export default function GameCard({
               )}
               title={`Verdict ${game.score} (${game.scoreSource ?? "blended"})`}
             >
-              <span className="text-[8px] opacity-40">V</span>
               {game.score}
+              {sourceLabel(game.scoreSource) && (
+                <span className="text-[7px] opacity-40 font-medium uppercase">{sourceLabel(game.scoreSource)}</span>
+              )}
             </div>
           )}
           {isUnreleased(game) && (
@@ -250,19 +263,17 @@ export default function GameCard({
           )}
         </div>
 
-        <div className="p-3 space-y-1.5">
-          <h3 className="text-sm font-semibold text-foreground leading-tight line-clamp-1 group-hover:text-accent transition-colors">
+        <div className="p-3.5 space-y-2">
+          <h3 className="text-sm font-semibold text-foreground leading-snug line-clamp-2 group-hover:text-accent transition-colors">
             {game.title}
           </h3>
 
           {hasRealScore(game) && <VerdictBadge label={game.verdictLabel} size="sm" />}
 
-          <div className="flex flex-wrap gap-1.5">
-            {game.genres.slice(0, 2).map((g) => (
-              <span
-                key={g}
-                className="text-[10px] text-tertiary font-medium"
-              >
+          <div className="flex items-center gap-1 text-[10px] text-tertiary font-medium">
+            {game.genres.slice(0, 2).map((g, i) => (
+              <span key={g}>
+                {i > 0 && <span className="mx-0.5 opacity-40">&middot;</span>}
                 {g}
               </span>
             ))}

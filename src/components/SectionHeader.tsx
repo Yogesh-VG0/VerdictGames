@@ -20,24 +20,24 @@ export default function SectionHeader({
   className,
 }: SectionHeaderProps) {
   return (
-    <div className={cn("mb-6", className)}>
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg md:text-xl font-bold text-foreground flex items-center gap-2">
-          {icon && <span className="text-accent opacity-70 flex items-center">{icon}</span>}
+    <div className={cn("mb-8", className)}>
+      <div className="flex items-center justify-between gap-4">
+        <h2 className="text-xl md:text-2xl font-bold text-foreground flex items-center gap-2.5 tracking-tight">
+          {icon && <span className="text-accent opacity-80 flex items-center">{icon}</span>}
           {title}
         </h2>
         {href && (
           <Link
             href={href}
-            className="text-xs text-accent hover:text-accent-hover font-medium transition-colors flex items-center gap-1"
+            className="text-xs text-accent hover:text-accent-hover font-semibold transition-colors flex items-center gap-1.5 shrink-0"
           >
             {linkLabel}
-            <span className="text-[10px]">→</span>
+            <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 3l5 5-5 5" /></svg>
           </Link>
         )}
       </div>
       {subtitle && (
-        <p className="text-xs text-tertiary mt-1">
+        <p className="text-sm text-secondary mt-1.5">
           {subtitle}
         </p>
       )}

@@ -34,7 +34,7 @@ import {
 
 type DiscoverTab = "new" | "deals" | "free";
 
-const CARD_WIDTH = "shrink-0 w-44 sm:w-48 md:w-52 lg:w-56";
+const CARD_WIDTH = "shrink-0 w-44 sm:w-52 md:w-56 lg:w-60";
 
 const DISCOVER_TABS: { label: string; value: DiscoverTab; icon: React.ReactNode }[] = [
   { label: "New Releases", value: "new", icon: <Sparkles className="w-4 h-4" /> },
@@ -70,9 +70,12 @@ export default function HomePage() {
     isLoading: homepage.isLoading,
   };
   // Build hero from trending, prioritizing featured games, then high-score, then recent
+  // Quality gate: hero games must score ≥ 75 and have a real header/cover image
   const featured = useMemo(() => {
     if (!trending.data) return [];
-    const pool = [...trending.data];
+    const pool = [...trending.data].filter(
+      (g) => g.score >= 75 && (g.headerImage || g.coverImage)
+    );
     // Sort: featured first, then by score desc, then by releaseDate desc
     pool.sort((a, b) => {
       if (a.featured && !b.featured) return -1;
@@ -138,7 +141,7 @@ export default function HomePage() {
       </section>
 
       {/* ── 2. Trending Now ── */}
-      <section className="relative py-10">
+      <section className="relative py-12 sm:py-16">
         <div className="absolute inset-0 mesh-gradient opacity-50 pointer-events-none" />
         <div className="max-w-7xl mx-auto px-4 relative">
           <FadeInSection>
@@ -187,7 +190,7 @@ export default function HomePage() {
       </div>
 
       {/* ── 3. For You ── */}
-      <section className="py-12">
+      <section className="py-12 sm:py-16">
         <div className="max-w-7xl mx-auto px-4">
           <FadeInSection>
             {personalized.isLoading ? (
@@ -227,7 +230,7 @@ export default function HomePage() {
 
       {/* ── 4. Discover — tabbed ── */}
       <LazySection minHeight="400px">
-        <section className="relative py-12">
+        <section className="relative py-12 sm:py-16">
           <div className="absolute inset-0 mesh-gradient opacity-30 pointer-events-none" />
           <div className="max-w-7xl mx-auto px-4 relative">
             <FadeInSection>
@@ -238,7 +241,7 @@ export default function HomePage() {
                 icon={<Gamepad2 className="w-5 h-5" />}
                 subtitle="Find your next obsession"
               />
-              <div className="flex items-center gap-2 mb-6 overflow-x-auto no-scrollbar pb-1">
+              <div className="flex items-center gap-2.5 mb-8 overflow-x-auto no-scrollbar pb-1">
                 {DISCOVER_TABS.map((tab) => (
                   <button
                     key={tab.value}
@@ -369,7 +372,7 @@ export default function HomePage() {
 
       {/* ── 5. Top Rated ── */}
       <LazySection minHeight="400px">
-        <section className="relative py-12">
+        <section className="relative py-12 sm:py-16">
           <div className="absolute inset-0 mesh-gradient opacity-30 pointer-events-none" />
           <div className="max-w-7xl mx-auto px-4 relative">
             <FadeInSection>

@@ -271,11 +271,15 @@ function CompareContent() {
               label="Price"
               v1={
                 game1.isFree ? "Free" :
-                game1.priceCurrent != null ? `$${(game1.priceCurrent / 100).toFixed(2)}` : "—"
+                game1.priceCurrent != null && game1.priceCurrency
+                  ? new Intl.NumberFormat("en-US", { style: "currency", currency: game1.priceCurrency, minimumFractionDigits: 2 }).format(game1.priceCurrent / 100)
+                  : game1.priceDealUrl ? "View deal" : "—"
               }
               v2={
                 game2.isFree ? "Free" :
-                game2.priceCurrent != null ? `$${(game2.priceCurrent / 100).toFixed(2)}` : "—"
+                game2.priceCurrent != null && game2.priceCurrency
+                  ? new Intl.NumberFormat("en-US", { style: "currency", currency: game2.priceCurrency, minimumFractionDigits: 2 }).format(game2.priceCurrent / 100)
+                  : game2.priceDealUrl ? "View deal" : "—"
               }
             />
             <CompareCell

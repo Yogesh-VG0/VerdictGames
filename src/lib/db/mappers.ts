@@ -17,16 +17,16 @@ function computeTrendingReason(row: GameRow): string | undefined {
   const currentPlayers = row.current_players ?? 0;
   const reviewCount = row.review_count ?? 0;
 
-  // Priority order: movement > money > quality > status
+  // Priority: manual > momentum > recency > quality > popularity > deals > fallback
 
-  // 1. Momentum signals (most important)
+  // 1. Manual overrides (highest intent)
+  if (r.is_trending_manual || r.is_featured_manual) return "⭐ Editor's Pick";
+
+  // 2. Momentum signals
   if (momentum > 0.2) return "🔥 Trending Up";
   if (momentum < -0.2) return "📉 Falling";
 
-  // 2. Deals (high conversion)
-  if (row.price_deal_url && row.price_lowest != null) return "💰 On Sale";
-
-  // 3. Quality + recency
+  // 3. Recency signals
   if (row.release_date) {
     const age = Date.now() - new Date(row.release_date).getTime();
     if (age < 0) return "🗓️ Coming Soon";
@@ -41,8 +41,8 @@ function computeTrendingReason(row: GameRow): string | undefined {
   // 5. Popularity
   if (currentPlayers > 10000) return "🎮 Popular Now";
 
-  // 6. Manual overrides
-  if (r.is_trending_manual || r.is_featured_manual) return "⭐ Editor's Pick";
+  // 6. Deals (moved below quality/popularity so the rail doesn't look like a storefront)
+  if (row.price_deal_url && row.price_lowest != null) return "💰 On Sale";
 
   // 7. Generic fallback
   if (row.trending) return "🔥 Trending";
@@ -50,8 +50,8 @@ function computeTrendingReason(row: GameRow): string | undefined {
 }
 
 const MIN_REVIEWS_FOR_RAW_SCORE = 50;
-const BAYESIAN_PRIOR_WEIGHT = 500;
-const BAYESIAN_PRIOR_SCORE = 80;
+const BAYESIAN_PRIOR_WEIGHT = 50;
+const BAYESIAN_PRIOR_SCORE = 75;
 
 function displayScore(score: number, reviewCount: number): number {
   if (reviewCount >= MIN_REVIEWS_FOR_RAW_SCORE) return score;

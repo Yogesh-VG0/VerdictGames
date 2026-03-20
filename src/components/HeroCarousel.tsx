@@ -12,6 +12,15 @@ import PlatformIcon from "@/components/ui/PlatformIcon";
 import { collapsePlatforms } from "@/lib/utils/platform";
 import { cn } from "@/lib/utils";
 
+function sourceLabel(source?: string): string | null {
+  if (!source || source === "blended") return null;
+  if (source === "steam") return "Steam";
+  if (source === "igdb") return "IGDB";
+  if (source === "metacritic") return "Critic";
+  if (source === "rawg") return "RAWG";
+  return null;
+}
+
 interface HeroCarouselProps {
   games: Game[];
   /** Auto-advance interval in ms (default: 6000) */
@@ -187,8 +196,15 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
 
             {/* Score + Verdict + Platforms */}
             <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-              <ScoreRing score={game.score} size={40} strokeWidth={3} className="sm:hidden" />
-              <ScoreRing score={game.score} size={56} strokeWidth={3} className="hidden sm:block" />
+              <div className="flex flex-col items-center gap-0.5">
+                <ScoreRing score={game.score} size={40} strokeWidth={3} className="sm:hidden" />
+                <ScoreRing score={game.score} size={56} strokeWidth={3} className="hidden sm:block" />
+                {sourceLabel(game.scoreSource) && (
+                  <span className="text-[9px] font-medium hero-overlay-text-muted uppercase tracking-wider opacity-70">
+                    {sourceLabel(game.scoreSource)}
+                  </span>
+                )}
+              </div>
               <VerdictBadge label={game.verdictLabel} size="lg" />
               <div className="hidden sm:flex items-center gap-2.5 flex-wrap">
                 {(() => {
