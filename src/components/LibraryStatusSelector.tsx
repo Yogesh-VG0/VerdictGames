@@ -7,18 +7,22 @@ import { updateLibraryGame, removeFromLibrary, getLibrary } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import type { LibraryStatus, UserGame } from "@/lib/types";
+import {
+  Star, Gamepad2, CheckCircle2, Pause, XCircle, Trash2, Plus, ChevronDown,
+} from "lucide-react";
+import type { ReactNode } from "react";
 
 interface LibraryStatusSelectorProps {
   gameId: string;
   onAuthRequired: () => void;
 }
 
-const STATUS_OPTIONS: { value: LibraryStatus; label: string; icon: string }[] = [
-  { value: "wishlist", label: "Wishlist", icon: "💫" },
-  { value: "playing", label: "Playing", icon: "🎮" },
-  { value: "completed", label: "Completed", icon: "✅" },
-  { value: "paused", label: "Paused", icon: "⏸️" },
-  { value: "dropped", label: "Dropped", icon: "❌" },
+const STATUS_OPTIONS: { value: LibraryStatus; label: string; icon: ReactNode }[] = [
+  { value: "wishlist", label: "Wishlist", icon: <Star className="w-4 h-4" /> },
+  { value: "playing", label: "Playing", icon: <Gamepad2 className="w-4 h-4" /> },
+  { value: "completed", label: "Completed", icon: <CheckCircle2 className="w-4 h-4" /> },
+  { value: "paused", label: "Paused", icon: <Pause className="w-4 h-4" /> },
+  { value: "dropped", label: "Dropped", icon: <XCircle className="w-4 h-4" /> },
 ];
 
 export default function LibraryStatusSelector({ gameId, onAuthRequired }: LibraryStatusSelectorProps) {
@@ -133,19 +137,11 @@ export default function LibraryStatusSelector({ gameId, onAuthRequired }: Librar
           isPending && "opacity-60 pointer-events-none"
         )}
       >
-        <span className="text-base">{currentOption?.icon ?? "+"}</span>
+        <span className="flex items-center">{currentOption?.icon ?? <Plus className="w-4 h-4" />}</span>
         <span className="flex-1 text-left">
           {currentOption?.label ?? "Add to Library"}
         </span>
-        <svg
-          className={cn("w-4 h-4 transition-transform", open && "rotate-180")}
-          fill="none"
-          viewBox="0 0 24 24"
-          strokeWidth={2}
-          stroke="currentColor"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-        </svg>
+        <ChevronDown className={cn("w-4 h-4 transition-transform", open && "rotate-180")} />
       </button>
 
       <AnimatePresence>
@@ -186,7 +182,7 @@ export default function LibraryStatusSelector({ gameId, onAuthRequired }: Librar
                   disabled={isPending}
                   className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-danger hover:bg-danger/5 transition-colors"
                 >
-                  <span>🗑️</span>
+                  <Trash2 className="w-4 h-4" />
                   <span>Remove from Library</span>
                 </button>
               </>

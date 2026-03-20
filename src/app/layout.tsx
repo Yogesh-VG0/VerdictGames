@@ -38,10 +38,10 @@ export const metadata: Metadata = {
   ],
   icons: {
     icon: [
-      { url: "/icon-192.png", type: "image/png", sizes: "192x192" },
+      { url: "/VERDICT_LOGO_main.png", type: "image/png", sizes: "192x192" },
     ],
-    shortcut: "/icon-192.png",
-    apple: { url: "/icon-192.png", type: "image/png", sizes: "192x192" },
+    shortcut: "/VERDICT_LOGO_main.png",
+    apple: { url: "/VERDICT_LOGO_main.png", type: "image/png", sizes: "192x192" },
   },
   openGraph: {
     title: "verdict.games",

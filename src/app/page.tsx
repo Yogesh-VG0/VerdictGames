@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
@@ -22,22 +22,24 @@ import GameCard from "@/components/GameCard";
 import HorizontalScroll from "@/components/HorizontalScroll";
 import SectionHeader from "@/components/SectionHeader";
 import GXDealCard from "@/components/GXDealCard";
-import GXNewsCard from "@/components/GXNewsCard";
 import LazySection from "@/components/LazySection";
 import {
   HeroSkeleton,
   GameGridSkeleton,
   SectionHeaderSkeleton,
 } from "@/components/ui/Skeleton";
+import {
+  Flame, Gem, Gamepad2, Trophy, Newspaper, Sparkles, Tag, Gift,
+} from "lucide-react";
 
 type DiscoverTab = "new" | "deals" | "free";
 
 const CARD_WIDTH = "shrink-0 w-44 sm:w-48 md:w-52 lg:w-56";
 
-const DISCOVER_TABS: { label: string; value: DiscoverTab; icon: string }[] = [
-  { label: "New Releases", value: "new", icon: "✨" },
-  { label: "Deals", value: "deals", icon: "💰" },
-  { label: "Free to Play", value: "free", icon: "🆓" },
+const DISCOVER_TABS: { label: string; value: DiscoverTab; icon: React.ReactNode }[] = [
+  { label: "New Releases", value: "new", icon: <Sparkles className="w-4 h-4" /> },
+  { label: "Deals", value: "deals", icon: <Tag className="w-4 h-4" /> },
+  { label: "Free to Play", value: "free", icon: <Gift className="w-4 h-4" /> },
 ];
 
 export default function HomePage() {
@@ -67,9 +69,27 @@ export default function HomePage() {
     data: homepage.data?.deals,
     isLoading: homepage.isLoading,
   };
-  const featured = trending.data
-    ? [...trending.data.filter((g) => g.featured), ...trending.data.filter((g) => !g.featured)].slice(0, 4)
-    : [];
+  // Build hero from trending, prioritizing featured games, then high-score, then recent
+  const featured = useMemo(() => {
+    if (!trending.data) return [];
+    const pool = [...trending.data];
+    // Sort: featured first, then by score desc, then by releaseDate desc
+    pool.sort((a, b) => {
+      if (a.featured && !b.featured) return -1;
+      if (!a.featured && b.featured) return 1;
+      if (a.isFeaturedManual && !b.isFeaturedManual) return -1;
+      if (!a.isFeaturedManual && b.isFeaturedManual) return 1;
+      if (a.score !== b.score) return b.score - a.score;
+      return (b.releaseDate ?? "").localeCompare(a.releaseDate ?? "");
+    });
+    // Take up to 6 for variety, use a daily shuffle seed so it changes each day
+    const candidates = pool.slice(0, 12);
+    const daySeed = Math.floor(new Date().setHours(0, 0, 0, 0) / 86400000);
+    const shuffled = candidates.map((g, i) => ({ g, sort: Math.sin(daySeed * (i + 1) * 9301) }));
+    shuffled.sort((a, b) => a.sort - b.sort);
+    return shuffled.map((s) => s.g).slice(0, 6);
+  }, [trending.data]);
+  const heroIds = new Set(featured.map((g) => g.id));
   const personalized = useQuery({
     queryKey: ["personalized", !!user, trending.data?.length],
     queryFn: () => (user ? getRecommendations(12) : getPersonalizedGames(12, trending.data ?? undefined)),
@@ -133,11 +153,18 @@ export default function HomePage() {
                   title="Trending Right Now"
                   href="/search?sort=trending"
                   linkLabel="See all trending"
-                  icon="🔥"
+                  icon={<Flame className="w-5 h-5" />}
                   subtitle="Based on recent player activity & community signals"
                 />
                 <HorizontalScroll>
-                  {trending.data.slice(0, 10).map((game, i) => (
+                  {(() => {
+                    const deduped = trending.data!.filter((g) => !heroIds.has(g.id));
+                    // If dedup leaves too few, backfill with hero games so rail is always full
+                    const rail = deduped.length >= 10
+                      ? deduped.slice(0, 10)
+                      : [...deduped, ...trending.data!.filter((g) => heroIds.has(g.id))].slice(0, 10);
+                    return rail;
+                  })().map((game, i) => (
                     <div key={game.id} className={CARD_WIDTH}>
                       <motion.div
                         initial={{ opacity: 0, y: 20 }}
@@ -172,7 +199,7 @@ export default function HomePage() {
               <>
                 <SectionHeader
                   title={user ? "Recommended For You" : "You Might Enjoy"}
-                  icon="💎"
+                  icon={<Gem className="w-5 h-5" />}
                   subtitle={user ? "Based on your library & play history" : "Curated picks across diverse genres"}
                 />
                 <HorizontalScroll>
@@ -208,7 +235,7 @@ export default function HomePage() {
                 title="Discover"
                 href="/search?sort=newest"
                 linkLabel="Browse all"
-                icon="🎮"
+                icon={<Gamepad2 className="w-5 h-5" />}
                 subtitle="Find your next obsession"
               />
               <div className="flex items-center gap-2 mb-6 overflow-x-auto no-scrollbar pb-1">
@@ -357,7 +384,7 @@ export default function HomePage() {
                     title="Top Rated"
                     href="/search?sort=top-rated"
                     linkLabel="See all top rated"
-                    icon="🏆"
+                    icon={<Trophy className="w-5 h-5" />}
                     subtitle="Highest Verdict scores across all platforms"
                   />
                   <HorizontalScroll>
@@ -392,7 +419,7 @@ export default function HomePage() {
               <FadeInSection>
                 <SectionHeader
                   title="Gaming News"
-                  icon="📰"
+                  icon={<Newspaper className="w-5 h-5" />}
                   subtitle="Trending stories from top gaming outlets"
                 />
                 {/* 2-column editorial layout: 2 featured + compact stack */}
@@ -430,7 +457,7 @@ export default function HomePage() {
                                   />
                                 ) : (
                                   <div className="w-full h-full bg-gradient-to-br from-accent/20 to-pixel-cyan/20 flex items-center justify-center">
-                                    <span className="text-4xl">📰</span>
+                                    <Newspaper className="w-8 h-8 text-accent/60" />
                                   </div>
                                 )}
                               </div>
@@ -481,7 +508,7 @@ export default function HomePage() {
                                   />
                                 ) : (
                                   <div className="w-full h-full bg-gradient-to-br from-accent/10 to-pixel-cyan/10 flex items-center justify-center">
-                                    <span className="text-lg">📰</span>
+                                    <Newspaper className="w-5 h-5 text-accent/60" />
                                   </div>
                                 )}
                               </div>

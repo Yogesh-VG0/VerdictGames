@@ -2,6 +2,8 @@
 
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
+import { Gamepad2, FileText, Users, Plus, PenLine, Pencil } from "lucide-react";
+import type { ReactNode } from "react";
 
 interface AdminStats {
   totalGames: number;
@@ -76,9 +78,9 @@ export default function AdminDashboard() {
       {/* Stats Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
         {[
-          { label: "Total Games", value: stats.data?.totalGames, icon: "🎮", color: "text-pixel-cyan", href: "/admin/games" },
-          { label: "Total Reviews", value: stats.data?.totalReviews, icon: "📝", color: "text-pixel-green", href: "/admin/reviews" },
-          { label: "Total Users", value: stats.data?.totalUsers, icon: "👥", color: "text-accent", href: "/admin/users" },
+          { label: "Total Games", value: stats.data?.totalGames, icon: <Gamepad2 className="w-5 h-5" /> as ReactNode, color: "text-pixel-cyan", href: "/admin/games" },
+          { label: "Total Reviews", value: stats.data?.totalReviews, icon: <FileText className="w-5 h-5" /> as ReactNode, color: "text-pixel-green", href: "/admin/reviews" },
+          { label: "Total Users", value: stats.data?.totalUsers, icon: <Users className="w-5 h-5" /> as ReactNode, color: "text-accent", href: "/admin/users" },
         ].map((stat) => (
           <Link
             key={stat.label}
@@ -86,7 +88,7 @@ export default function AdminDashboard() {
             className="rounded-2xl border border-border bg-surface p-4 sm:p-5 hover:border-border-hover hover:shadow-lg transition-all group"
           >
             <div className="flex items-center justify-between mb-3">
-              <span className="text-2xl">{stat.icon}</span>
+              <span className="text-accent">{stat.icon}</span>
               <span className="text-[10px] text-tertiary uppercase tracking-wider font-medium group-hover:text-accent transition-colors">
                 View →
               </span>
@@ -112,25 +114,25 @@ export default function AdminDashboard() {
               href="/admin/games/new"
               className="block rounded-2xl border border-accent/20 bg-accent/5 p-4 hover:border-accent/40 hover:bg-accent/10 transition-all group"
             >
-              <h3 className="text-sm font-semibold text-accent group-hover:text-accent-hover transition-colors">
-                ➕ Add New Game
+              <h3 className="text-sm font-semibold text-accent group-hover:text-accent-hover transition-colors flex items-center gap-2">
+                <Plus className="w-4 h-4" /> Add New Game
               </h3>
               <p className="text-xs text-tertiary mt-1">
                 Create via title lookup, source URL, or manual provisional entry
               </p>
             </Link>
             {[
-              { href: "/admin/games", label: "Edit Game Pages", desc: "Update descriptions, verdicts, pros/cons, and media" },
-              { href: "/admin/reviews", label: "Write Reviews", desc: "Create editorial reviews or moderate community reviews" },
-              { href: "/admin/users", label: "👥 Manage Users", desc: "View profiles, review counts, library activity" },
+              { href: "/admin/games", label: "Edit Game Pages", desc: "Update descriptions, verdicts, pros/cons, and media", icon: <PenLine className="w-4 h-4 inline mr-1.5 opacity-60" /> as ReactNode },
+              { href: "/admin/reviews", label: "Write Reviews", desc: "Create editorial reviews or moderate community reviews", icon: <FileText className="w-4 h-4 inline mr-1.5 opacity-60" /> as ReactNode },
+              { href: "/admin/users", label: "Manage Users", desc: "View profiles, review counts, library activity", icon: <Users className="w-4 h-4 inline mr-1.5 opacity-60" /> as ReactNode },
             ].map(q => (
               <Link
                 key={q.href}
                 href={q.href}
                 className="block rounded-2xl border border-border bg-surface p-4 hover:border-accent/30 transition-all group"
               >
-                <h3 className="text-sm font-semibold text-foreground group-hover:text-accent transition-colors">
-                  {q.label}
+                <h3 className="text-sm font-semibold text-foreground group-hover:text-accent transition-colors flex items-center">
+                  {(q as { icon?: ReactNode }).icon}{q.label}
                 </h3>
                 <p className="text-xs text-tertiary mt-1">{q.desc}</p>
               </Link>
@@ -158,10 +160,10 @@ export default function AdminDashboard() {
                 {activity.data.slice(0, 10).map((entry) => (
                   <div key={entry.id} className="px-4 py-3 hover:bg-surface-2 transition-colors">
                     <div className="flex items-start gap-3">
-                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 text-sm ${
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
                         entry.action === "create" ? "bg-success/10 text-success" : "bg-accent/10 text-accent"
                       }`}>
-                        {entry.action === "create" ? "+" : "✏️"}
+                        {entry.action === "create" ? <Plus className="w-4 h-4" /> : <Pencil className="w-3.5 h-3.5" />}
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm text-foreground font-medium">

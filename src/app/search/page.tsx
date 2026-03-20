@@ -6,7 +6,6 @@ import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { searchGames } from "@/lib/api";
 import type { Game, SearchFilters, SortOption, MonetizationType, Platform } from "@/lib/types";
-import { platformShort } from "@/lib/utils";
 import { PLATFORM_FILTER_OPTIONS, platformFilterIcon } from "@/components/ui/PlatformIcon";
 
 const allGenres: string[] = [

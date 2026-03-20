@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import type { ReactNode } from "react";
 
 interface SectionHeaderProps {
   title: string;
   href?: string;
   linkLabel?: string;
-  icon?: string;
+  icon?: ReactNode;
   subtitle?: string;
   className?: string;
 }
@@ -22,7 +23,7 @@ export default function SectionHeader({
     <div className={cn("mb-6", className)}>
       <div className="flex items-center justify-between">
         <h2 className="text-lg md:text-xl font-bold text-foreground flex items-center gap-2.5">
-          {icon && <span className="text-xl">{icon}</span>}
+          {icon && <span className="text-accent opacity-80 flex items-center">{icon}</span>}
           <span className="w-1 h-5 bg-accent rounded-full" />
           {title}
         </h2>

@@ -10,8 +10,8 @@ import FilterChips from "@/components/ui/FilterChips";
 import SortDropdown from "@/components/ui/SortDropdown";
 import { ReviewCardSkeleton } from "@/components/ui/Skeleton";
 import type { Platform } from "@/lib/types";
-import { platformShort } from "@/lib/utils";
 import { PLATFORM_FILTER_OPTIONS, platformFilterIcon } from "@/components/ui/PlatformIcon";
+import { PenLine, Star } from "lucide-react";
 
 const listItem = {
   hidden: { opacity: 0, y: 16 },
@@ -95,7 +95,7 @@ export default function ReviewsPage() {
           <div className="space-y-8">
             {/* Enhanced empty state */}
             <div className="text-center py-10 space-y-4 rounded-2xl border border-border bg-surface">
-              <div className="text-5xl">✍️</div>
+              <PenLine className="w-10 h-10 text-accent mx-auto" />
               <h2 className="text-xl font-bold text-foreground">Be the First to Share Your Verdict</h2>
               <p className="text-sm text-secondary max-w-lg mx-auto leading-relaxed">
                 Our community reviews section is brand new. Your review could be the first one others read when deciding what to play next.
@@ -105,7 +105,7 @@ export default function ReviewsPage() {
                   href="/search?sort=trending"
                   className="inline-flex items-center justify-center gap-2 px-6 py-3 text-sm font-semibold text-white bg-accent rounded-xl hover:bg-accent-hover transition-colors shadow-lg shadow-accent/20"
                 >
-                  🔥 Review a Trending Game
+                  Review a Trending Game
                 </Link>
                 <Link
                   href="/search?sort=top-rated"
@@ -119,7 +119,7 @@ export default function ReviewsPage() {
             {/* Editorial picks as fallback content */}
             <div className="space-y-3">
               <h3 className="text-sm font-bold text-foreground uppercase tracking-wider flex items-center gap-2">
-                <span className="text-accent">⭐</span>
+                <Star className="w-4 h-4 text-accent" />
                 Staff Picks — Games Worth Reviewing
               </h3>
               <p className="text-xs text-tertiary">

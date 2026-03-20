@@ -12,14 +12,18 @@ import FadeInSection from "@/components/FadeInSection";
 import SectionHeader from "@/components/SectionHeader";
 import { cn } from "@/lib/utils";
 import type { LibraryStatus } from "@/lib/types";
+import {
+  BookOpen, Gamepad2, CheckCircle2, Star, Pause, XCircle,
+} from "lucide-react";
+import type { ReactNode } from "react";
 
-const STATUS_TABS: { key: string; label: string; icon: string }[] = [
-  { key: "all", label: "All", icon: "📚" },
-  { key: "playing", label: "Playing", icon: "🎮" },
-  { key: "completed", label: "Completed", icon: "✅" },
-  { key: "wishlist", label: "Wishlist", icon: "⭐" },
-  { key: "paused", label: "Paused", icon: "⏸️" },
-  { key: "dropped", label: "Dropped", icon: "❌" },
+const STATUS_TABS: { key: string; label: string; icon: ReactNode }[] = [
+  { key: "all", label: "All", icon: <BookOpen className="w-3.5 h-3.5" /> },
+  { key: "playing", label: "Playing", icon: <Gamepad2 className="w-3.5 h-3.5" /> },
+  { key: "completed", label: "Completed", icon: <CheckCircle2 className="w-3.5 h-3.5" /> },
+  { key: "wishlist", label: "Wishlist", icon: <Star className="w-3.5 h-3.5" /> },
+  { key: "paused", label: "Paused", icon: <Pause className="w-3.5 h-3.5" /> },
+  { key: "dropped", label: "Dropped", icon: <XCircle className="w-3.5 h-3.5" /> },
 ];
 
 function LibraryContent() {
@@ -71,7 +75,7 @@ function LibraryContent() {
   if (!user) {
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center text-center space-y-4 px-4">
-        <div className="text-5xl">📚</div>
+        <BookOpen className="w-12 h-12 text-accent mx-auto" />
         <h2 className="text-xl font-bold text-foreground">Your Game Library</h2>
         <p className="text-sm text-secondary max-w-md">
           Track what you&apos;re playing, build your backlog, and never forget a great game.
@@ -92,7 +96,7 @@ function LibraryContent() {
       {/* Header + Stats */}
       <FadeInSection>
         <div className="space-y-4">
-          <SectionHeader title="My Library" icon="📚" subtitle="Track your gaming journey" />
+          <SectionHeader title="My Library" icon={<BookOpen className="w-5 h-5" />} subtitle="Track your gaming journey" />
 
           {stats.data && (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
@@ -164,11 +168,11 @@ function LibraryContent() {
                       onChange={(e) => statusMutation.mutate({ gameId: item.gameId, status: e.target.value as LibraryStatus })}
                       className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-lg bg-black/70 backdrop-blur-sm text-white border border-white/20 cursor-pointer appearance-none"
                     >
-                      <option value="playing">🎮 Playing</option>
-                      <option value="completed">✅ Completed</option>
-                      <option value="wishlist">⭐ Wishlist</option>
-                      <option value="paused">⏸️ Paused</option>
-                      <option value="dropped">❌ Dropped</option>
+                      <option value="playing">Playing</option>
+                      <option value="completed">Completed</option>
+                      <option value="wishlist">Wishlist</option>
+                      <option value="paused">Paused</option>
+                      <option value="dropped">Dropped</option>
                     </select>
                   </div>
 
@@ -192,7 +196,7 @@ function LibraryContent() {
             </div>
           ) : (
             <div className="text-center py-16 space-y-3">
-              <div className="text-4xl">🎮</div>
+              <Gamepad2 className="w-10 h-10 text-accent mx-auto" />
               <p className="text-secondary font-medium">
                 {activeTab === "all" ? "Your library is empty" : `No ${activeTab} games yet`}
               </p>

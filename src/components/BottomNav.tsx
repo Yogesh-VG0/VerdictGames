@@ -70,7 +70,7 @@ export default function BottomNav() {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-black/60 backdrop-blur-2xl border-t border-white/[0.06] safe-area-bottom">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-background/80 backdrop-blur-2xl border-t border-border safe-area-bottom">
       <div className="flex items-center justify-around h-16 px-2">
         {links.map((link) => {
           const isActive =

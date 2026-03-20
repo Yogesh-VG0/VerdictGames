@@ -7,7 +7,7 @@ import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
 import { compareGames, searchGames } from "@/lib/api";
-import { scoreColor, cn, formatDate } from "@/lib/utils";
+import { cn, formatDate } from "@/lib/utils";
 import PlatformIcon from "@/components/ui/PlatformIcon";
 import ScoreRing from "@/components/ui/ScoreRing";
 import VerdictBadge from "@/components/ui/VerdictBadge";
@@ -15,6 +15,7 @@ import PixelBadge from "@/components/ui/PixelBadge";
 import FadeInSection from "@/components/FadeInSection";
 import { Skeleton } from "@/components/ui/Skeleton";
 import type { Game } from "@/lib/types";
+import { Swords, Gamepad2 } from "lucide-react";
 
 function CompareCell({ label, v1, v2, higher = "none" }: {
   label: string;
@@ -23,7 +24,7 @@ function CompareCell({ label, v1, v2, higher = "none" }: {
   higher?: "left" | "right" | "none";
 }) {
   return (
-    <div className="grid grid-cols-3 gap-2 py-3 border-b border-white/[0.06] last:border-0 items-center">
+    <div className="grid grid-cols-3 gap-2 py-3 border-b border-border last:border-0 items-center">
       <div className={cn(
         "text-sm font-medium text-right pr-2",
         higher === "left" ? "text-accent" : "text-foreground"
@@ -69,10 +70,10 @@ function GameSearchInput({ value, onSelect, placeholder }: {
         }}
         onFocus={() => setOpen(true)}
         placeholder={placeholder}
-        className="w-full h-11 px-4 text-sm rounded-xl bg-surface border border-white/[0.08] text-foreground placeholder:text-tertiary focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/20 transition-all"
+        className="w-full h-11 px-4 text-sm rounded-xl bg-surface border border-border text-foreground placeholder:text-tertiary focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/20 transition-all"
       />
       {open && results && results.items.length > 0 && (
-        <div className="absolute top-full mt-1 left-0 right-0 z-50 max-h-60 overflow-auto rounded-xl bg-surface border border-white/[0.08] shadow-2xl">
+        <div className="absolute top-full mt-1 left-0 right-0 z-50 max-h-60 overflow-auto rounded-xl bg-surface border border-border shadow-2xl">
           {results.items.slice(0, 6).map((g) => (
             <button
               key={g.id}
@@ -81,13 +82,13 @@ function GameSearchInput({ value, onSelect, placeholder }: {
                 setQuery(g.title);
                 setOpen(false);
               }}
-              className="flex items-center gap-3 w-full px-3 py-2.5 text-left hover:bg-white/5 transition-colors"
+              className="flex items-center gap-3 w-full px-3 py-2.5 text-left hover:bg-surface-2 transition-colors"
             >
               <div className="relative w-8 h-11 rounded-lg overflow-hidden shrink-0 bg-surface-2">
                 {g.coverImage ? (
                   <Image src={g.coverImage} alt={g.title} fill sizes="32px" className="object-cover" />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-xs text-tertiary">🎮</div>
+                  <div className="w-full h-full flex items-center justify-center text-tertiary"><Gamepad2 className="w-3.5 h-3.5" /></div>
                 )}
               </div>
               <div className="min-w-0">
@@ -112,11 +113,11 @@ function scoreHigher(a?: number, b?: number): "left" | "right" | "none" {
 function GameHeader({ game }: { game: Game }) {
   return (
     <Link href={`/game/${game.slug}`} className="flex flex-col items-center gap-3 group">
-      <div className="relative w-24 h-32 sm:w-28 sm:h-36 rounded-xl overflow-hidden border border-white/[0.08] group-hover:border-accent/40 transition-colors bg-surface-2">
+      <div className="relative w-24 h-32 sm:w-28 sm:h-36 rounded-xl overflow-hidden border border-border group-hover:border-accent/40 transition-colors bg-surface-2">
         {game.coverImage ? (
           <Image src={game.coverImage} alt={game.title} fill sizes="112px" className="object-cover" />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-2xl text-tertiary">🎮</div>
+          <div className="w-full h-full flex items-center justify-center text-tertiary"><Gamepad2 className="w-6 h-6" /></div>
         )}
       </div>
       <h3 className="text-sm font-bold text-foreground text-center group-hover:text-accent transition-colors line-clamp-2">
@@ -157,8 +158,8 @@ function CompareContent() {
     <div className="max-w-4xl mx-auto px-4 py-8 space-y-8 page-enter">
       <FadeInSection>
         <div className="text-center space-y-2">
-          <h1 className="text-2xl md:text-3xl font-bold text-foreground">
-            ⚔️ Game Comparison
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground flex items-center justify-center gap-3">
+            <Swords className="w-6 h-6 text-accent" /> Game Comparison
           </h1>
           <p className="text-sm text-secondary">
             Compare two games side-by-side
@@ -226,7 +227,7 @@ function CompareContent() {
           </div>
 
           {/* Detail comparison table */}
-          <div className="rounded-2xl border border-white/[0.08] bg-surface p-4 md:p-6">
+          <div className="rounded-2xl border border-border bg-surface p-4 md:p-6">
             <CompareCell
               label="Developer"
               v1={game1.developer || "—"}
@@ -314,7 +315,7 @@ function CompareContent() {
 
       {!slug1 && !slug2 && (
         <div className="text-center py-16 space-y-3">
-          <div className="text-5xl">🎮</div>
+          <Gamepad2 className="w-10 h-10 text-accent mx-auto" />
           <p className="text-secondary text-sm">
             Search for two games above to compare them
           </p>

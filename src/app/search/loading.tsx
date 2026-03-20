@@ -1,5 +1,4 @@
-import { GameGridSkeleton, SectionHeaderSkeleton } from "@/components/ui/Skeleton";
-import { Skeleton } from "@/components/ui/Skeleton";
+import { GameGridSkeleton, Skeleton } from "@/components/ui/Skeleton";
 
 export default function SearchLoading() {
   return (

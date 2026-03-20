@@ -1,18 +1,19 @@
 "use client";
 
 import { use, useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getUserProfile, getUserReviews, toggleFollow } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
-import { formatDate, cn } from "@/lib/utils";
+import { formatDate } from "@/lib/utils";
 import ReviewCard from "@/components/ReviewCard";
 import PixelBadge from "@/components/ui/PixelBadge";
 import PixelButton from "@/components/ui/PixelButton";
 import Tabs from "@/components/ui/Tabs";
 import AuthModal from "@/components/AuthModal";
-import { Skeleton, ReviewCardSkeleton } from "@/components/ui/Skeleton";
+import { Skeleton } from "@/components/ui/Skeleton";
+import UserAvatar from "@/components/UserAvatar";
+import { UserX, PenLine, List, BookOpen, Star, Pencil } from "lucide-react";
 
 interface Props {
   params: Promise<{ username: string }>;
@@ -66,7 +67,7 @@ export default function ProfilePage({ params }: Props) {
   if (!user) {
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center text-center space-y-4">
-        <div className="text-5xl">👤</div>
+        <UserX className="w-10 h-10 text-accent" />
         <h2 className="text-xl font-bold text-foreground">User not found</h2>
         <p className="text-sm text-secondary">
           This profile doesn&apos;t exist.
@@ -90,8 +91,8 @@ export default function ProfilePage({ params }: Props) {
                 key={item.id}
                 className="flex items-center gap-3 text-sm py-2 border-b border-border last:border-0"
               >
-                <span className="text-lg">
-                  {item.type === "review" ? "📝" : item.type === "list" ? "📋" : item.type === "library" ? "📚" : "⭐"}
+                <span className="text-accent opacity-70">
+                  {item.type === "review" ? <PenLine className="w-4 h-4" /> : item.type === "list" ? <List className="w-4 h-4" /> : item.type === "library" ? <BookOpen className="w-4 h-4" /> : <Star className="w-4 h-4" />}
                 </span>
                 <div className="flex-1 min-w-0">
                   {item.type === "review" && (
@@ -177,23 +178,7 @@ export default function ProfilePage({ params }: Props) {
     <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
       {/* Profile header */}
       <div className="flex items-start gap-4 md:gap-6">
-        <div className="relative w-20 h-20 md:w-24 md:h-24 rounded-full overflow-hidden border-2 border-border shrink-0">
-          {user.avatar ? (
-            <Image
-              src={user.avatar}
-              alt={user.displayName}
-              fill
-              sizes="96px"
-              className="object-cover"
-            />
-          ) : (
-            <div className="w-full h-full bg-gradient-to-br from-accent/40 to-pixel-cyan/30 flex items-center justify-center">
-              <span className="text-2xl md:text-3xl font-bold text-white">
-                {(user.displayName || user.username || "?").charAt(0).toUpperCase()}
-              </span>
-            </div>
-          )}
-        </div>
+        <UserAvatar src={user.avatar} displayName={user.displayName} size="xl" className="md:w-24 md:h-24 md:text-3xl" />
         <div className="space-y-1.5 flex-1">
           <div className="flex items-center gap-3 flex-wrap">
             <h1 className="text-xl md:text-2xl font-bold text-foreground">
@@ -204,7 +189,7 @@ export default function ProfilePage({ params }: Props) {
                 href="/settings"
                 className="px-3 py-1 rounded-lg text-xs font-medium bg-surface-2 border border-border text-secondary hover:text-foreground hover:border-border-hover transition-all"
               >
-                ✏️ Edit Profile
+                <Pencil className="w-3 h-3 inline mr-1" /> Edit Profile
               </Link>
             ) : (
               <button

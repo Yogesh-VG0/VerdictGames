@@ -11,14 +11,11 @@ import SectionHeader from "@/components/SectionHeader";
 import { Skeleton } from "@/components/ui/Skeleton";
 import PlatformIcon, {
   PLATFORM_FILTER_OPTIONS,
-  PLATFORM_COLOR_MAP,
-  getPlatformIcon,
-  platformFilterIcon,
   getFilterPlatforms,
 } from "@/components/ui/PlatformIcon";
-import { platformShort } from "@/lib/utils";
 import type { Game, Platform } from "@/lib/types";
 import type { GXCalendarGame } from "@/lib/types";
+import { CalendarDays, Gamepad2, CalendarX } from "lucide-react";
 
 const MONTHS = [
   "January", "February", "March", "April", "May", "June",
@@ -184,7 +181,7 @@ export default function CalendarPage() {
       <FadeInSection>
         <SectionHeader
           title="Release Calendar"
-          icon="📅"
+          icon={<CalendarDays className="w-5 h-5" />}
           subtitle="Upcoming and recent game launches"
         />
       </FadeInSection>
@@ -347,8 +344,8 @@ export default function CalendarPage() {
                                         sizes="56px"
                                       />
                                     ) : (
-                                      <div className="w-full h-full flex items-center justify-center text-lg text-tertiary">
-                                        🎮
+                                      <div className="w-full h-full flex items-center justify-center text-tertiary">
+                                        <Gamepad2 className="w-5 h-5" />
                                       </div>
                                     )}
                                   </div>
@@ -416,7 +413,7 @@ export default function CalendarPage() {
             exit={{ opacity: 0 }}
             className="text-center py-16 space-y-4"
           >
-            <div className="text-5xl">📭</div>
+            <CalendarX className="w-10 h-10 text-accent mx-auto" />
             <p className="text-foreground font-semibold text-lg">No releases found for this month</p>
             <p className="text-secondary text-sm max-w-md mx-auto">
               Try selecting a different month, or browse games that are already available.

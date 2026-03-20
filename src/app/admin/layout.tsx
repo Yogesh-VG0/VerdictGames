@@ -3,15 +3,16 @@
 import { useAuth } from "@/hooks/useAuth";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { isAdminEmail } from "@/lib/adminEmails";
+import { LayoutDashboard, Gamepad2, FileText, Users } from "lucide-react";
 
-const NAV_ITEMS = [
-  { href: "/admin", label: "Dashboard", icon: "📊" },
-  { href: "/admin/games", label: "Games", icon: "🎮" },
-  { href: "/admin/reviews", label: "Reviews", icon: "📝" },
-  { href: "/admin/users", label: "Users", icon: "👥" },
+const NAV_ITEMS: { href: string; label: string; icon: ReactNode }[] = [
+  { href: "/admin", label: "Dashboard", icon: <LayoutDashboard className="w-4 h-4" /> },
+  { href: "/admin/games", label: "Games", icon: <Gamepad2 className="w-4 h-4" /> },
+  { href: "/admin/reviews", label: "Reviews", icon: <FileText className="w-4 h-4" /> },
+  { href: "/admin/users", label: "Users", icon: <Users className="w-4 h-4" /> },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
