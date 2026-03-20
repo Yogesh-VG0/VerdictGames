@@ -28,42 +28,39 @@ interface HeroCarouselProps {
 }
 
 const slideVariants: Variants = {
-  enter: (direction: number) => ({
-    x: direction > 0 ? "60%" : "-60%",
+  enter: () => ({
     opacity: 0,
-    scale: 0.95,
+    scale: 1.04,
   }),
   center: {
-    x: 0,
     opacity: 1,
     scale: 1,
     transition: {
-      duration: 0.6,
-      ease: [0.25, 0.46, 0.45, 0.94] as [number, number, number, number],
+      opacity: { duration: 0.8, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
+      scale: { duration: 1.2, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
     },
   },
-  exit: (direction: number) => ({
-    x: direction < 0 ? "60%" : "-60%",
+  exit: () => ({
     opacity: 0,
-    scale: 0.95,
+    scale: 1.02,
     transition: {
-      duration: 0.5,
-      ease: [0.25, 0.46, 0.45, 0.94] as [number, number, number, number],
+      opacity: { duration: 0.5, ease: "easeIn" as const },
+      scale: { duration: 0.5, ease: "easeIn" as const },
     },
   }),
 };
 
 const contentVariants: Variants = {
-  enter: { opacity: 0, y: 30 },
+  enter: { opacity: 0, y: 24 },
   center: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.5, delay: 0.2, ease: "easeOut" as const },
+    transition: { duration: 0.6, delay: 0.3, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
   },
   exit: {
     opacity: 0,
-    y: -20,
-    transition: { duration: 0.3, ease: "easeIn" as const },
+    y: -16,
+    transition: { duration: 0.25, ease: "easeIn" as const },
   },
 };
 
@@ -133,7 +130,7 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
 
       {/* Background images with swipe support */}
       <motion.div
-        className="relative aspect-[3/4] sm:aspect-[16/9] md:aspect-[2.2/1] overflow-hidden cursor-grab active:cursor-grabbing"
+        className="relative aspect-[3/4] sm:aspect-[16/9] md:aspect-[2.35/1] min-h-[360px] sm:min-h-[420px] md:min-h-[520px] overflow-hidden cursor-grab active:cursor-grabbing"
         drag="x"
         dragConstraints={{ left: 0, right: 0 }}
         dragElastic={0.15}
@@ -166,8 +163,9 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
           </motion.div>
         </AnimatePresence>
 
-        {/* Minimal gradient for text readability — no heavy blur */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent z-[1]" />
+        {/* Cinematic gradient overlay — stronger left-to-right + bottom-to-top for text readability */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-black/10 z-[1]" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-transparent z-[1]" />
       </motion.div>
 
       {/* Content overlay */}

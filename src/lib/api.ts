@@ -152,38 +152,16 @@ export async function getRelatedGames(slug: string, limit = 4): Promise<Game[]> 
   return [];
 }
 
-/** "Because you viewed…" personalized — genre-diverse picks. */
-export async function getPersonalizedGames(limit = 6, trendingCache?: Game[]): Promise<Game[]> {
-  const pool = await getTopRated(30);
-  const trending = trendingCache ?? (await getTrendingGames());
-  const trendingIds = new Set(trending.map((g) => g.id));
-
-  // Filter out games already in trending to avoid duplicates
-  const candidates = pool.filter((g) => !trendingIds.has(g.id));
-
-  // Pick one game per genre for diversity
-  const seenGenres = new Set<string>();
-  const picks: Game[] = [];
-
-  for (const game of candidates) {
-    if (picks.length >= limit) break;
-    const primaryGenre = game.genres[0] ?? "unknown";
-    if (!seenGenres.has(primaryGenre) || seenGenres.size >= 6) {
-      seenGenres.add(primaryGenre);
-      picks.push(game);
-    }
+/** "You Might Enjoy" — recent high-quality genre-diverse picks (anonymous users). */
+export async function getPersonalizedGames(limit = 12, trendingCache?: Game[]): Promise<Game[]> {
+  // Use the recommendations endpoint which now has recency gates
+  const recs = await getRecommendations(limit);
+  if (recs.length > 0) {
+    const trending = trendingCache ?? [];
+    const trendingIds = new Set(trending.map((g) => g.id));
+    return recs.filter((g) => !trendingIds.has(g.id)).slice(0, limit);
   }
-
-  // If we still need more, fill from remaining
-  if (picks.length < limit) {
-    const pickIds = new Set(picks.map((p) => p.id));
-    for (const game of candidates) {
-      if (picks.length >= limit) break;
-      if (!pickIds.has(game.id)) picks.push(game);
-    }
-  }
-
-  return picks;
+  return recs;
 }
 
 /* ═══════════════════════════════════════════════════

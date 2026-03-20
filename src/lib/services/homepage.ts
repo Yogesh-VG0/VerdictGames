@@ -13,6 +13,36 @@ import type { GameRow } from "@/lib/supabase/types";
 import type { Game, GXDeal } from "@/lib/types";
 
 /* ═══════════════════════════════════════════════════
+   Homepage Recency Helpers
+   Keep home feeling current — old classics belong on
+   explore/search/top-rated pages, not the homepage.
+   ═══════════════════════════════════════════════════ */
+
+const HOMEPAGE_TRENDING_MONTHS = 18;
+const HOMEPAGE_TRENDING_PLAYER_OVERRIDE = 50_000; // allow old games with massive player counts
+const HOMEPAGE_TOP_RATED_MONTHS = 24;
+const HOMEPAGE_TOP_RATED_FALLBACK_MONTHS = 36;
+const HOMEPAGE_REC_MONTHS = 36;
+
+function monthsAgoISO(months: number): string {
+  const d = new Date();
+  d.setMonth(d.getMonth() - months);
+  return d.toISOString().slice(0, 10);
+}
+
+function isRecentEnoughForHome(row: GameRow, months: number): boolean {
+  if (!row.release_date) return false;
+  return row.release_date >= monthsAgoISO(months);
+}
+
+function isHomepageTrendingEligible(row: GameRow): boolean {
+  // Allow any game with massive current player count (live-service staples)
+  if ((row.current_players ?? 0) >= HOMEPAGE_TRENDING_PLAYER_OVERRIDE) return true;
+  // Otherwise require recency
+  return isRecentEnoughForHome(row, HOMEPAGE_TRENDING_MONTHS);
+}
+
+/* ═══════════════════════════════════════════════════
    Trending logic (extracted from /api/games/trending)
    ═══════════════════════════════════════════════════ */
 
@@ -49,7 +79,7 @@ function trendingRank(g: GameRow, minPlayers: number, maxPlayers: number): numbe
   return (score * 0.25) + (playerScore * 0.35) + (recency * 0.25) + (momentumBoost * 0.15);
 }
 
-export async function fetchTrendingGames(limit = 10): Promise<Game[]> {
+export async function fetchTrendingGames(limit = 10, homepageOnly = true): Promise<Game[]> {
   const supabase = getServerSupabase();
 
   const { data, error } = await supabase
@@ -63,10 +93,16 @@ export async function fetchTrendingGames(limit = 10): Promise<Game[]> {
   if (data && data.length >= 3) {
     const deduped = deduplicateBySteamAppId(data);
     const filtered = filterQualityGames(deduped, { section: "trending", minResults: 3 });
-    const players = filtered.map((g) => g.current_players ?? 0);
+    // Homepage recency gate: prefer recent games, allow old only with huge player counts
+    let homeFiltered = homepageOnly
+      ? filtered.filter(isHomepageTrendingEligible)
+      : filtered;
+    // If recency filter leaves too few, relax gradually
+    if (homeFiltered.length < 3) homeFiltered = filtered;
+    const players = homeFiltered.map((g) => g.current_players ?? 0);
     const minPlayers = Math.min(...players);
     const maxPlayers = Math.max(1, ...players);
-    const ranked = [...filtered].sort((a, b) => trendingRank(b, minPlayers, maxPlayers) - trendingRank(a, minPlayers, maxPlayers));
+    const ranked = [...homeFiltered].sort((a, b) => trendingRank(b, minPlayers, maxPlayers) - trendingRank(a, minPlayers, maxPlayers));
     return ranked.slice(0, limit).map(mapGameRow);
   }
 
@@ -161,6 +197,10 @@ export async function fetchNewReleases(limit = 16): Promise<Game[]> {
    Top Rated (extracted from /api/games/top-rated)
    ═══════════════════════════════════════════════════ */
 
+/**
+ * All-time top rated — used by /api/games/top-rated and explore pages.
+ * No recency filter.
+ */
 export async function fetchTopRated(limit = 10): Promise<Game[]> {
   const supabase = getServerSupabase();
   const fetchLimit = limit * 2;
@@ -175,6 +215,94 @@ export async function fetchTopRated(limit = 10): Promise<Game[]> {
 
   const filtered = filterQualityGames(data ?? [], { section: "topRated", minResults: 4 });
   return filtered.slice(0, limit).map(mapGameRow);
+}
+
+/**
+ * Homepage top rated — "Top Rated Right Now".
+ * Only recent releases (24mo, fallback 36mo) so the homepage feels current.
+ */
+export async function fetchHomepageTopRated(limit = 10): Promise<Game[]> {
+  const supabase = getServerSupabase();
+  const fetchLimit = limit * 3;
+  const cutoff = monthsAgoISO(HOMEPAGE_TOP_RATED_MONTHS);
+
+  let { data, error } = await supabase
+    .from("games")
+    .select("*")
+    .not("release_date", "is", null)
+    .gte("release_date", cutoff)
+    .lte("release_date", new Date().toISOString().slice(0, 10))
+    .order("score", { ascending: false })
+    .limit(fetchLimit) as { data: GameRow[] | null; error: unknown };
+
+  if (error) throw error;
+
+  let filtered = filterQualityGames(data ?? [], { section: "topRated", minResults: 4 });
+
+  // Fallback: widen to 36 months if not enough
+  if (filtered.length < limit) {
+    const widerCutoff = monthsAgoISO(HOMEPAGE_TOP_RATED_FALLBACK_MONTHS);
+    const fallback = await supabase
+      .from("games")
+      .select("*")
+      .not("release_date", "is", null)
+      .gte("release_date", widerCutoff)
+      .lte("release_date", new Date().toISOString().slice(0, 10))
+      .order("score", { ascending: false })
+      .limit(fetchLimit) as { data: GameRow[] | null; error: unknown };
+
+    if (!fallback.error && fallback.data) {
+      filtered = filterQualityGames(fallback.data, { section: "topRated", minResults: 4 });
+    }
+  }
+
+  return filtered.slice(0, limit).map(mapGameRow);
+}
+
+/**
+ * Homepage recommendations — recent high-quality picks for anonymous users.
+ * Avoids all-time classics dominating the homepage.
+ */
+export async function fetchHomepageRecommendations(limit = 12): Promise<Game[]> {
+  const supabase = getServerSupabase();
+  const fetchLimit = limit * 4;
+  const cutoff = monthsAgoISO(HOMEPAGE_REC_MONTHS);
+
+  const { data, error } = await supabase
+    .from("games")
+    .select("*")
+    .not("release_date", "is", null)
+    .gte("release_date", cutoff)
+    .lte("release_date", new Date().toISOString().slice(0, 10))
+    .gte("score", 75)
+    .order("score", { ascending: false })
+    .limit(fetchLimit) as { data: GameRow[] | null; error: unknown };
+
+  if (error) throw error;
+
+  const filtered = filterQualityGames(data ?? [], { section: "topRated", minResults: 4 });
+
+  // Genre diversity: pick one per primary genre first
+  const seen = new Set<string>();
+  const picks: GameRow[] = [];
+  for (const row of filtered) {
+    if (picks.length >= limit) break;
+    const primary = (row.genres?.[0] ?? "unknown").toLowerCase();
+    if (!seen.has(primary) || seen.size >= 8) {
+      seen.add(primary);
+      picks.push(row);
+    }
+  }
+  // Fill remaining
+  if (picks.length < limit) {
+    const pickIds = new Set(picks.map((p) => p.id));
+    for (const row of filtered) {
+      if (picks.length >= limit) break;
+      if (!pickIds.has(row.id)) picks.push(row);
+    }
+  }
+
+  return picks.map(mapGameRow);
 }
 
 /* ═══════════════════════════════════════════════════
@@ -217,8 +345,8 @@ export interface HomepageData {
 
 export async function fetchHomepageData(): Promise<HomepageData> {
   const [trending, topRated, newReleases, deals] = await Promise.all([
-    fetchTrendingGames(10).catch(() => [] as Game[]),
-    fetchTopRated(10).catch(() => [] as Game[]),
+    fetchTrendingGames(10, true).catch(() => [] as Game[]),
+    fetchHomepageTopRated(10).catch(() => [] as Game[]),
     fetchNewReleases(16).catch(() => [] as Game[]),
     fetchDeals().catch(() => [] as GXDeal[]),
   ]);

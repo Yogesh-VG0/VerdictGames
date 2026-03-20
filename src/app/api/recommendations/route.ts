@@ -61,12 +61,21 @@ export async function GET(request: NextRequest) {
       // Not authenticated — that's ok, fall through to generic recommendations
     }
 
+    // Recency gate: only recommend games from the last 3 years on homepage
+    const cutoffDate = new Date();
+    cutoffDate.setMonth(cutoffDate.getMonth() - 36);
+    const cutoffStr = cutoffDate.toISOString().slice(0, 10);
+
     // Build recommendation query
     let query = supabase
       .from("games")
       .select("*")
+      .not("release_date", "is", null)
+      .gte("release_date", cutoffStr)
+      .lte("release_date", new Date().toISOString().slice(0, 10))
+      .gte("score", 70)
       .order("score", { ascending: false })
-      .limit(limit * 3); // Over-fetch for filtering
+      .limit(limit * 4); // Over-fetch for filtering
 
     // If user has preferred genres, filter by them
     if (userGenres.length > 0) {

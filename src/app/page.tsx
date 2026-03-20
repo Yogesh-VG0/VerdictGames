@@ -70,18 +70,44 @@ export default function HomePage() {
     isLoading: homepage.isLoading,
   };
   // Build hero from trending, prioritizing featured games, then high-score, then recent
-  // Quality gate: hero games must score ≥ 75 and have a real header/cover image
+  // Quality gate: hero games must score ≥ 72, have hero art, and be recent (24mo, fallback 36mo)
   const featured = useMemo(() => {
     if (!trending.data) return [];
-    const pool = [...trending.data].filter(
-      (g) => g.score >= 75 && (g.headerImage || g.coverImage)
+    const now = Date.now();
+    const MONTHS_24 = 24 * 30 * 86400000;
+    const MONTHS_36 = 36 * 30 * 86400000;
+
+    const isRecentEnough = (g: typeof trending.data[0], maxAge: number) => {
+      if (!g.releaseDate) return false;
+      const age = now - new Date(g.releaseDate).getTime();
+      return age >= 0 && age <= maxAge; // released and within window
+    };
+
+    // Primary pool: recent 24 months
+    let pool = trending.data.filter(
+      (g) => g.score >= 72 && (g.headerImage || g.coverImage) && isRecentEnough(g, MONTHS_24)
     );
-    // Sort: featured first, then by score desc, then by releaseDate desc
+
+    // Fallback: widen to 36 months if not enough
+    if (pool.length < 4) {
+      pool = trending.data.filter(
+        (g) => g.score >= 72 && (g.headerImage || g.coverImage) && isRecentEnough(g, MONTHS_36)
+      );
+    }
+
+    // Last resort: allow any game with art and score (but this should rarely trigger)
+    if (pool.length < 2) {
+      pool = trending.data.filter(
+        (g) => g.score >= 72 && (g.headerImage || g.coverImage)
+      );
+    }
+
+    // Sort: manual featured first, then by score desc, then by releaseDate desc
     pool.sort((a, b) => {
-      if (a.featured && !b.featured) return -1;
-      if (!a.featured && b.featured) return 1;
       if (a.isFeaturedManual && !b.isFeaturedManual) return -1;
       if (!a.isFeaturedManual && b.isFeaturedManual) return 1;
+      if (a.featured && !b.featured) return -1;
+      if (!a.featured && b.featured) return 1;
       if (a.score !== b.score) return b.score - a.score;
       return (b.releaseDate ?? "").localeCompare(a.releaseDate ?? "");
     });
@@ -384,11 +410,11 @@ export default function HomePage() {
               ) : topRated.data && topRated.data.length > 0 ? (
                 <>
                   <SectionHeader
-                    title="Top Rated"
+                    title="Top Rated Right Now"
                     href="/search?sort=top-rated"
                     linkLabel="See all top rated"
                     icon={<Trophy className="w-5 h-5" />}
-                    subtitle="Highest Verdict scores across all platforms"
+                    subtitle="Highest-scoring recent releases"
                   />
                   <HorizontalScroll>
                     {topRated.data.slice(0, 10).map((game, i) => (
