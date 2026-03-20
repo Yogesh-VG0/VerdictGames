@@ -64,7 +64,13 @@ const contentVariants: Variants = {
   },
 };
 
-const SWIPE_THRESHOLD = 50;
+const SWIPE_THRESHOLD_DESKTOP = 120;
+const SWIPE_THRESHOLD_MOBILE = 60;
+
+function isTouchDevice(): boolean {
+  if (typeof window === "undefined") return false;
+  return "ontouchstart" in window || navigator.maxTouchPoints > 0;
+}
 
 export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselProps) {
   const [[page, direction], setPage] = useState([0, 0]);
@@ -82,12 +88,13 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
     []
   );
 
-  // Touch/swipe handler
+  // Touch/swipe handler with device-aware thresholds
   const handleDragEnd = useCallback(
     (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
       const { offset, velocity } = info;
-      // Swipe if offset or velocity exceeds threshold
-      if (Math.abs(offset.x) > SWIPE_THRESHOLD || Math.abs(velocity.x) > 300) {
+      const threshold = isTouchDevice() ? SWIPE_THRESHOLD_MOBILE : SWIPE_THRESHOLD_DESKTOP;
+      // Swipe only if offset or velocity exceeds threshold
+      if (Math.abs(offset.x) > threshold || Math.abs(velocity.x) > 500) {
         if (offset.x < 0) {
           paginate(1);  // swipe left → next
         } else {
@@ -124,8 +131,6 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
   return (
     <section
       className="relative overflow-hidden group touch-pan-y"
-      onMouseEnter={() => setIsPaused(true)}
-      onMouseLeave={() => setIsPaused(false)}
     >
 
       {/* Background images with swipe support */}
@@ -133,7 +138,7 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
         className="relative aspect-[3/4] sm:aspect-[16/9] md:aspect-[2.35/1] min-h-[360px] sm:min-h-[420px] md:min-h-[520px] overflow-hidden cursor-grab active:cursor-grabbing"
         drag="x"
         dragConstraints={{ left: 0, right: 0 }}
-        dragElastic={0.15}
+        dragElastic={0.08}
         onDragStart={() => { isSwiping.current = true; }}
         onDragEnd={handleDragEnd}
       >
@@ -345,6 +350,30 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
       {/* Accent line on pause */}
       {slideCount > 1 && isPaused && (
         <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-accent to-transparent opacity-50 z-[3]" />
+      )}
+
+      {/* Pause/Play toggle for accessibility */}
+      {slideCount > 1 && (
+        <button
+          onClick={() => setIsPaused((p) => !p)}
+          className="absolute top-3 right-3 sm:top-4 sm:right-4 z-[4] w-8 h-8 rounded-full
+                     bg-black/40 backdrop-blur-sm border border-white/15
+                     flex items-center justify-center text-white/70
+                     hover:bg-black/60 hover:text-white transition-all
+                     opacity-0 group-hover:opacity-100 focus:opacity-100"
+          aria-label={isPaused ? "Resume autoplay" : "Pause autoplay"}
+        >
+          {isPaused ? (
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+              <path d="M2 1l9 5-9 5V1z" />
+            </svg>
+          ) : (
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+              <rect x="1" y="1" width="3.5" height="10" rx="0.5" />
+              <rect x="7.5" y="1" width="3.5" height="10" rx="0.5" />
+            </svg>
+          )}
+        </button>
       )}
     </section>
   );

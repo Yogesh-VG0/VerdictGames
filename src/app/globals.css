@@ -482,8 +482,8 @@ h1, h2, h3 {
 }
 .hero-gradient-vignette {
   background:
-    radial-gradient(ellipse at 25% 100%, rgba(168, 85, 247, 0.15) 0%, transparent 55%),
-    radial-gradient(ellipse at 75% 0%, rgba(34, 211, 238, 0.06) 0%, transparent 50%);
+    radial-gradient(ellipse at 25% 100%, rgba(3, 7, 18, 0.25) 0%, transparent 55%),
+    radial-gradient(ellipse at 75% 0%, rgba(3, 7, 18, 0.08) 0%, transparent 50%);
 }
 /* Force light text inside hero overlay areas (both modes) */
 .hero-overlay-text {

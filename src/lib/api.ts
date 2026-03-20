@@ -261,6 +261,44 @@ export async function getGlobalReviews(options?: {
 }
 
 /* ═══════════════════════════════════════════════════
+   STEAM PLAYER REVIEWS
+   ═══════════════════════════════════════════════════ */
+
+export interface SteamPlayerReview {
+  id: string;
+  recommendationId: string;
+  votedUp: boolean;
+  reviewText: string;
+  playtimeAtReview: number;
+  playtimeForever: number;
+  authorSteamId: string | null;
+  authoredAt: string | null;
+  votesUp: number;
+  votesFunny: number;
+  weightedVoteScore: number;
+  steamPurchase: boolean;
+}
+
+export interface SteamReviewsData {
+  reviews: SteamPlayerReview[];
+  total: number;
+  steamAppId: number | null;
+  source?: string;
+  message?: string;
+}
+
+/** Get top Steam player reviews for a game. */
+export async function getSteamReviews(
+  slug: string,
+  limit = 3
+): Promise<SteamReviewsData> {
+  const data = await apiFetch<SteamReviewsData>(
+    `/api/games/${encodeURIComponent(slug)}/steam-reviews?limit=${limit}`
+  );
+  return data ?? { reviews: [], total: 0, steamAppId: null };
+}
+
+/* ═══════════════════════════════════════════════════
    LIST QUERIES
    ═══════════════════════════════════════════════════ */
 

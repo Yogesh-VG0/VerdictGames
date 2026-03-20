@@ -145,7 +145,7 @@ export default function HomePage() {
           seen.add(key);
           merged.push(a);
         }
-        if (merged.length >= 10) break;
+        if (merged.length >= 11) break;
       }
       return merged;
     },

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { getGameBySlug, getGameReviews, getRelatedGames, getGameNews, getGameAchievements } from "@/lib/api";
+import SteamReviews from "@/components/SteamReviews";
 import type { SteamNewsArticle, SteamAchievementItem } from "@/lib/api";
 import { formatDate, scoreColor, cn } from "@/lib/utils";
 import PlatformIcon from "@/components/ui/PlatformIcon";
@@ -681,6 +682,13 @@ export default function GameDetailPage({ params }: Props) {
                   gameSlug={slug}
                   onAuthRequired={() => setAuthModalOpen(true)}
                 />
+              </section>
+            </FadeInSection>
+
+            {/* ── Steam Player Reviews ── */}
+            <FadeInSection>
+              <section className="rounded-2xl border border-border bg-surface p-5 md:p-6">
+                <SteamReviews slug={slug} />
               </section>
             </FadeInSection>
           </div>

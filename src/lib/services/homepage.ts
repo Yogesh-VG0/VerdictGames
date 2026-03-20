@@ -18,8 +18,9 @@ import type { Game, GXDeal } from "@/lib/types";
    explore/search/top-rated pages, not the homepage.
    ═══════════════════════════════════════════════════ */
 
-const HOMEPAGE_TRENDING_MONTHS = 18;
-const HOMEPAGE_TRENDING_PLAYER_OVERRIDE = 50_000; // allow old games with massive player counts
+const HOMEPAGE_TRENDING_MONTHS = 24;
+const HOMEPAGE_TRENDING_FALLBACK_MONTHS = 36;
+const HOMEPAGE_TRENDING_LAST_RESORT_MONTHS = 60;
 const HOMEPAGE_TOP_RATED_MONTHS = 24;
 const HOMEPAGE_TOP_RATED_FALLBACK_MONTHS = 36;
 const HOMEPAGE_REC_MONTHS = 36;
@@ -36,9 +37,7 @@ function isRecentEnoughForHome(row: GameRow, months: number): boolean {
 }
 
 function isHomepageTrendingEligible(row: GameRow): boolean {
-  // Allow any game with massive current player count (live-service staples)
-  if ((row.current_players ?? 0) >= HOMEPAGE_TRENDING_PLAYER_OVERRIDE) return true;
-  // Otherwise require recency
+  // Strict recency — no evergreen/player-count override on homepage
   return isRecentEnoughForHome(row, HOMEPAGE_TRENDING_MONTHS);
 }
 
@@ -93,11 +92,19 @@ export async function fetchTrendingGames(limit = 10, homepageOnly = true): Promi
   if (data && data.length >= 3) {
     const deduped = deduplicateBySteamAppId(data);
     const filtered = filterQualityGames(deduped, { section: "trending", minResults: 3 });
-    // Homepage recency gate: prefer recent games, allow old only with huge player counts
+    // Homepage recency gate: strict recency, graduated fallback
     let homeFiltered = homepageOnly
       ? filtered.filter(isHomepageTrendingEligible)
       : filtered;
-    // If recency filter leaves too few, relax gradually
+    // Fallback: widen to 36mo if too few
+    if (homeFiltered.length < 3) {
+      homeFiltered = filtered.filter((r) => isRecentEnoughForHome(r, HOMEPAGE_TRENDING_FALLBACK_MONTHS));
+    }
+    // Last resort: widen to 60mo
+    if (homeFiltered.length < 3) {
+      homeFiltered = filtered.filter((r) => isRecentEnoughForHome(r, HOMEPAGE_TRENDING_LAST_RESORT_MONTHS));
+    }
+    // If still too few, use all (should be rare)
     if (homeFiltered.length < 3) homeFiltered = filtered;
     const players = homeFiltered.map((g) => g.current_players ?? 0);
     const minPlayers = Math.min(...players);
