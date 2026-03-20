@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { getGlobalReviews } from "@/lib/api";
+import { getGlobalReviews, getTopRated } from "@/lib/api";
 import ReviewCard from "@/components/ReviewCard";
 import FilterChips from "@/components/ui/FilterChips";
 import SortDropdown from "@/components/ui/SortDropdown";
@@ -29,6 +29,13 @@ export default function ReviewsPage() {
         sort,
         platform: platform === "All" ? "All" : platform,
       }),
+  });
+
+  const { data: topGames } = useQuery({
+    queryKey: ["topRatedPicks"],
+    queryFn: () => getTopRated(6),
+    enabled: !isLoading && (!data || data.items.length === 0),
+    staleTime: 60_000,
   });
 
   return (
@@ -116,47 +123,42 @@ export default function ReviewsPage() {
               </div>
             </div>
 
-            {/* Editorial picks as fallback content */}
-            <div className="space-y-3">
-              <h3 className="text-sm font-bold text-foreground uppercase tracking-wider flex items-center gap-2">
-                <Star className="w-4 h-4 text-accent" />
-                Staff Picks — Games Worth Reviewing
-              </h3>
-              <p className="text-xs text-tertiary">
-                These highly-rated games are waiting for community verdicts. Pick one and share your thoughts!
-              </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {[
-                  { title: "Elden Ring", genre: "Action RPG", slug: "elden-ring", score: 95 },
-                  { title: "Baldur's Gate 3", genre: "RPG", slug: "baldurs-gate-3", score: 96 },
-                  { title: "Hades", genre: "Roguelike", slug: "hades", score: 93 },
-                  { title: "Celeste", genre: "Platformer", slug: "celeste", score: 92 },
-                  { title: "Hollow Knight", genre: "Metroidvania", slug: "hollow-knight", score: 90 },
-                  { title: "The Witcher 3", genre: "Action RPG", slug: "the-witcher-3-wild-hunt", score: 92 },
-                ].map((pick) => (
-                  <Link
-                    key={pick.slug}
-                    href={`/game/${pick.slug}`}
-                    className="group flex items-center gap-3 rounded-xl border border-border bg-surface p-3 hover:border-accent/30 hover:bg-surface-2 transition-all"
-                  >
-                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-base font-bold shrink-0 ${
-                      pick.score >= 90 ? "bg-score-great/10 text-score-great" : "bg-score-good/10 text-score-good"
-                    }`}>
-                      {pick.score}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-foreground group-hover:text-accent transition-colors truncate">
-                        {pick.title}
-                      </p>
-                      <p className="text-[10px] text-tertiary">{pick.genre}</p>
-                    </div>
-                    <span className="text-xs text-accent opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                      Review →
-                    </span>
-                  </Link>
-                ))}
+            {/* Dynamic top-rated games as review suggestions */}
+            {topGames && topGames.length > 0 && (
+              <div className="space-y-3">
+                <h3 className="text-sm font-bold text-foreground uppercase tracking-wider flex items-center gap-2">
+                  <Star className="w-4 h-4 text-accent" />
+                  Top Rated — Games Worth Reviewing
+                </h3>
+                <p className="text-xs text-tertiary">
+                  These highly-rated games are waiting for community verdicts. Pick one and share your thoughts!
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {topGames.map((game) => (
+                    <Link
+                      key={game.slug}
+                      href={`/game/${game.slug}`}
+                      className="group flex items-center gap-3 rounded-xl border border-border bg-surface p-3 hover:border-accent/30 hover:bg-surface-2 transition-all"
+                    >
+                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-base font-bold shrink-0 ${
+                        game.score >= 90 ? "bg-score-great/10 text-score-great" : "bg-score-good/10 text-score-good"
+                      }`}>
+                        {game.score}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-foreground group-hover:text-accent transition-colors truncate">
+                          {game.title}
+                        </p>
+                        <p className="text-[10px] text-tertiary">{game.genres?.[0] ?? ""}</p>
+                      </div>
+                      <span className="text-xs text-accent opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                        Review →
+                      </span>
+                    </Link>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
           </div>
         )}
       </motion.div>

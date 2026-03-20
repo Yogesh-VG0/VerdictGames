@@ -25,6 +25,7 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "proxy.gxcorner.games" },
       { protocol: "https", hostname: "assets.news.gxcorner.games" },
       { protocol: "https", hostname: "play.gx.games" },
+      { protocol: "https", hostname: "lh3.googleusercontent.com" },
       ...supabaseImageHosts(),
     ],
   },

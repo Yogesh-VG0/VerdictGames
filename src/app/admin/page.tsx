@@ -1,8 +1,8 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
-import { Gamepad2, FileText, Users, Plus, PenLine, Pencil } from "lucide-react";
+import { Gamepad2, FileText, Users, Plus, PenLine, Pencil, ListPlus, Loader2, Database } from "lucide-react";
 import type { ReactNode } from "react";
 
 interface AdminStats {
@@ -56,6 +56,8 @@ function formatAction(entry: AuditEntry): string {
 }
 
 export default function AdminDashboard() {
+  const queryClient = useQueryClient();
+
   const stats = useQuery({
     queryKey: ["admin-stats"],
     queryFn: fetchAdminStats,
@@ -65,7 +67,22 @@ export default function AdminDashboard() {
   const activity = useQuery({
     queryKey: ["admin-activity"],
     queryFn: fetchRecentActivity,
-    staleTime: 30_000,
+    staleTime: 5_000,
+    refetchOnMount: "always",
+  });
+
+  const seedListsMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch("/api/admin/seed-lists", { method: "POST" });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error ?? "Seed failed");
+      return json.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-activity"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-stats"] });
+      queryClient.invalidateQueries({ queryKey: ["lists"] });
+    },
   });
 
   return (
@@ -189,6 +206,46 @@ export default function AdminDashboard() {
               </div>
             )}
           </div>
+        </div>
+      </div>
+
+      {/* Seed Content */}
+      <div className="space-y-3">
+        <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+          <Database className="w-5 h-5 text-accent" /> Seed Content
+        </h2>
+        <p className="text-xs text-tertiary">Populate your site with starter content for launch.</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <button
+            onClick={() => seedListsMutation.mutate()}
+            disabled={seedListsMutation.isPending}
+            className="rounded-2xl border border-border bg-surface p-4 hover:border-accent/30 transition-all text-left disabled:opacity-50"
+          >
+            <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+              {seedListsMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <ListPlus className="w-4 h-4 text-accent" />}
+              {seedListsMutation.isPending ? "Seeding Lists..." : "Seed Editorial Lists"}
+            </h3>
+            <p className="text-xs text-tertiary mt-1">
+              Creates 10 curated lists from your existing game database.
+            </p>
+            {seedListsMutation.isSuccess && (
+              <p className="text-xs text-pixel-green mt-2">Done! Check the Lists page.</p>
+            )}
+            {seedListsMutation.isError && (
+              <p className="text-xs text-danger mt-2">Failed — check console for details.</p>
+            )}
+          </button>
+          <Link
+            href="/admin/reviews"
+            className="rounded-2xl border border-border bg-surface p-4 hover:border-accent/30 transition-all"
+          >
+            <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+              <PenLine className="w-4 h-4 text-accent" /> Create Community Reviews
+            </h3>
+            <p className="text-xs text-tertiary mt-1">
+              Write editorial reviews to populate the Reviews page.
+            </p>
+          </Link>
         </div>
       </div>
     </div>

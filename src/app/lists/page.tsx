@@ -3,12 +3,13 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { getCuratedLists } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
 import PixelBadge from "@/components/ui/PixelBadge";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { ListPlus, Loader2 } from "lucide-react";
 
 const gridItem = {
   hidden: { opacity: 0, y: 20 },
@@ -17,11 +18,24 @@ const gridItem = {
 
 export default function ListsPage() {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [tab, setTab] = useState<"all" | "mine">("all");
 
   const { data: lists, isLoading } = useQuery({
     queryKey: ["lists"],
     queryFn: getCuratedLists,
+  });
+
+  const seedMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch("/api/admin/seed-lists", { method: "POST" });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error ?? "Seed failed");
+      return json.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["lists"] });
+    },
   });
 
   const myLists = lists?.filter((l) => l.ownerId === user?.profileId) ?? [];
@@ -54,7 +68,7 @@ export default function ListsPage() {
               className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
                 tab === t.id
                   ? "bg-accent text-white shadow-lg shadow-accent/20"
-                  : "bg-surface border border-white/[0.08] text-secondary hover:text-foreground"
+                  : "bg-surface border border-border text-secondary hover:text-foreground"
               }`}
             >
               {t.label}
@@ -66,7 +80,7 @@ export default function ListsPage() {
       {isLoading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="rounded-2xl border border-white/[0.08] overflow-hidden">
+            <div key={i} className="rounded-2xl border border-border overflow-hidden">
               <Skeleton className="aspect-video w-full" />
               <div className="p-4 space-y-2">
                 <Skeleton className="h-5 w-3/4" />
@@ -87,16 +101,22 @@ export default function ListsPage() {
             <motion.div key={list.id} variants={gridItem}>
             <Link
               href={`/lists/${list.slug}`}
-              className="group rounded-2xl border border-white/[0.08] bg-surface overflow-hidden hover:border-white/[0.15] hover:shadow-lg hover:shadow-accent/5 transition-all duration-300 block"
+              className="group rounded-2xl border border-border bg-surface overflow-hidden hover:border-border-hover hover:shadow-lg hover:shadow-accent/5 transition-all duration-300 block"
             >
               <div className="relative aspect-video overflow-hidden">
-                <Image
-                  src={list.coverImage}
-                  alt={list.title}
-                  fill
-                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                  className="object-cover transition-transform duration-300 group-hover:scale-105"
-                />
+                {list.coverImage ? (
+                  <Image
+                    src={list.coverImage}
+                    alt={list.title}
+                    fill
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                    className="object-cover transition-transform duration-300 group-hover:scale-105"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-surface-2 flex items-center justify-center">
+                    <ListPlus className="w-8 h-8 text-tertiary" />
+                  </div>
+                )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
                 <div className="absolute bottom-2 left-2">
                   <PixelBadge variant="accent" size="sm">
@@ -128,20 +148,39 @@ export default function ListsPage() {
           ))}
         </motion.div>
       ) : (
-        <div className="text-center py-16 space-y-4">
-          <div className="text-4xl">📋</div>
-          <p className="text-foreground font-semibold text-lg">Curated Lists Coming Soon</p>
+        <div className="text-center py-16 space-y-4 rounded-2xl border border-border bg-surface">
+          <ListPlus className="w-10 h-10 text-accent mx-auto" />
+          <p className="text-foreground font-semibold text-lg">No Lists Yet</p>
           <p className="text-sm text-secondary max-w-md mx-auto">
-            Our editors are putting together hand-picked game collections. In the meantime, explore games by genre or platform.
+            Editorial collections will appear here once curated. Explore games by genre or platform in the meantime.
           </p>
-          <div className="flex justify-center gap-3 pt-2">
-            <Link href="/search?sort=top-rated" className="px-4 py-2 text-sm font-medium text-accent border border-accent rounded-full hover:bg-accent/10 transition-colors">
+          <div className="flex flex-col sm:flex-row justify-center gap-3 pt-2">
+            <Link href="/search?sort=top-rated" className="px-4 py-2 text-sm font-medium text-accent border border-accent/30 rounded-xl hover:bg-accent/10 transition-colors">
               Browse Top Rated
             </Link>
-            <Link href="/search?sort=trending" className="px-4 py-2 text-sm font-medium text-white bg-accent rounded-full hover:bg-accent-hover transition-colors">
+            <Link href="/search?sort=trending" className="px-4 py-2 text-sm font-medium text-white bg-accent rounded-xl hover:bg-accent-hover transition-colors">
               Explore Trending
             </Link>
           </div>
+          {/* Admin-only seed button */}
+          {user?.role === "admin" && (
+            <div className="pt-4 border-t border-border mt-4 mx-auto max-w-xs">
+              <button
+                onClick={() => seedMutation.mutate()}
+                disabled={seedMutation.isPending}
+                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium bg-pixel-cyan/10 text-pixel-cyan border border-pixel-cyan/20 rounded-xl hover:bg-pixel-cyan/20 transition-all disabled:opacity-50"
+              >
+                {seedMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <ListPlus className="w-4 h-4" />}
+                {seedMutation.isPending ? "Seeding..." : "Seed Editorial Lists"}
+              </button>
+              {seedMutation.isSuccess && (
+                <p className="text-xs text-pixel-green mt-2">Lists seeded! Refreshing...</p>
+              )}
+              {seedMutation.isError && (
+                <p className="text-xs text-danger mt-2">Failed to seed lists.</p>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>

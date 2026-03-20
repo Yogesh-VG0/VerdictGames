@@ -22,9 +22,8 @@ export default function SectionHeader({
   return (
     <div className={cn("mb-6", className)}>
       <div className="flex items-center justify-between">
-        <h2 className="text-lg md:text-xl font-bold text-foreground flex items-center gap-2.5">
-          {icon && <span className="text-accent opacity-80 flex items-center">{icon}</span>}
-          <span className="w-1 h-5 bg-accent rounded-full" />
+        <h2 className="text-lg md:text-xl font-bold text-foreground flex items-center gap-2">
+          {icon && <span className="text-accent opacity-70 flex items-center">{icon}</span>}
           {title}
         </h2>
         {href && (
@@ -38,7 +37,7 @@ export default function SectionHeader({
         )}
       </div>
       {subtitle && (
-        <p className="text-xs text-tertiary mt-1.5 ml-[calc(1.25rem+0.625rem+0.25rem+0.625rem)]">
+        <p className="text-xs text-tertiary mt-1">
           {subtitle}
         </p>
       )}

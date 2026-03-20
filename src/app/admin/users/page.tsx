@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import Image from "next/image";
+import UserAvatar from "@/components/UserAvatar";
 
 interface AdminUser {
   id: string;
@@ -95,15 +95,7 @@ export default function AdminUsersPage() {
                   <tr key={u.id} className="hover:bg-surface-2 transition-colors">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
-                        <div className="relative w-8 h-8 rounded-full overflow-hidden bg-surface-2 shrink-0">
-                          {u.avatar ? (
-                            <Image src={u.avatar} alt="" fill className="object-cover" sizes="32px" />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center text-xs text-tertiary">
-                              {u.username[0]?.toUpperCase()}
-                            </div>
-                          )}
-                        </div>
+                        <UserAvatar src={u.avatar} displayName={u.displayName || u.username} size="sm" />
                         <div>
                           <p className="text-sm font-medium text-foreground">{u.displayName || u.username}</p>
                           <p className="text-[10px] text-tertiary">@{u.username}</p>
@@ -123,7 +115,7 @@ export default function AdminUsersPage() {
                     <td className="px-4 py-3 text-center tabular-nums text-foreground">{u.libraryCount}</td>
                     <td className="px-4 py-3">
                       <Link
-                        href={`/user/${u.username}`}
+                        href={`/profile/${u.username}`}
                         className="text-xs text-accent hover:text-accent-hover transition-colors"
                       >
                         View Profile →
@@ -140,15 +132,7 @@ export default function AdminUsersPage() {
             {users.map(u => (
               <div key={u.id} className="rounded-xl border border-border bg-surface p-4 space-y-3">
                 <div className="flex items-center gap-3">
-                  <div className="relative w-10 h-10 rounded-full overflow-hidden bg-surface-2 shrink-0">
-                    {u.avatar ? (
-                      <Image src={u.avatar} alt="" fill className="object-cover" sizes="40px" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-sm text-tertiary">
-                        {u.username[0]?.toUpperCase()}
-                      </div>
-                    )}
-                  </div>
+                  <UserAvatar src={u.avatar} displayName={u.displayName || u.username} size="md" />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-foreground truncate">{u.displayName || u.username}</p>
                     <p className="text-[10px] text-tertiary">@{u.username}</p>
@@ -178,7 +162,7 @@ export default function AdminUsersPage() {
                   </div>
                 </div>
                 <Link
-                  href={`/user/${u.username}`}
+                  href={`/profile/${u.username}`}
                   className="block text-center text-xs text-accent hover:text-accent-hover py-1.5 border-t border-border mt-2 pt-2 transition-colors"
                 >
                   View Profile →

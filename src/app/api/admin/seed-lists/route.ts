@@ -1,6 +1,7 @@
 import { jsonOk, jsonError } from "@/lib/api/response";
 import { requireAdmin } from "@/lib/admin";
 import { getServerSupabase } from "@/lib/supabase/server";
+import { writeAuditLog } from "@/lib/auditLog";
 import type { GameRow } from "@/lib/supabase/types";
 
 /* ── 10 editorial list definitions ── */
@@ -78,7 +79,7 @@ const SEED_LISTS = [
 ];
 
 export async function POST() {
-  const { error: authErr } = await requireAdmin();
+  const { user, error: authErr } = await requireAdmin();
   if (authErr) return authErr;
 
   const supabase = getServerSupabase();
@@ -161,6 +162,14 @@ export async function POST() {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (supabase.from("list_items") as any).insert(items);
+
+    await writeAuditLog({
+      entity_type: "list",
+      entity_id: newList.id,
+      action: "create",
+      field_changes: { title: { old: null, new: seed.title }, game_count: { old: null, new: finalGames.length } },
+      edited_by: user?.email ?? "unknown",
+    });
 
     results.push(`✅ Created "${seed.title}" with ${finalGames.length} games`);
   }

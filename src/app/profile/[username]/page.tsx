@@ -3,7 +3,7 @@
 import { use, useState } from "react";
 import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getUserProfile, getUserReviews, toggleFollow } from "@/lib/api";
+import { getUserProfile, getUserReviews, toggleFollow, getCuratedLists } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
 import { formatDate } from "@/lib/utils";
 import ReviewCard from "@/components/ReviewCard";
@@ -35,6 +35,15 @@ export default function ProfilePage({ params }: Props) {
     queryFn: () => getUserReviews(username),
     enabled: !!user,
   });
+
+  const { data: allLists } = useQuery({
+    queryKey: ["lists"],
+    queryFn: getCuratedLists,
+    enabled: !!user,
+  });
+  const userLists = (allLists ?? []).filter(
+    (l) => l.ownerId === user?.id || l.curatedBy === user?.username
+  );
 
   const followMutation = useMutation({
     mutationFn: (action: "follow" | "unfollow") => toggleFollow(user?.id ?? "", action),
@@ -167,9 +176,33 @@ export default function ProfilePage({ params }: Props) {
       id: "lists",
       label: "Lists",
       content: (
-        <p className="text-secondary text-sm text-center py-8">
-          Lists feature coming soon.
-        </p>
+        <div className="space-y-3">
+          {userLists.length > 0 ? (
+            userLists.map((list) => (
+              <Link
+                key={list.id}
+                href={`/lists/${list.slug}`}
+                className="flex items-center gap-3 rounded-xl border border-border bg-surface p-3 hover:border-accent/30 hover:bg-surface-2 transition-all group"
+              >
+                <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center shrink-0">
+                  <List className="w-5 h-5 text-accent" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground group-hover:text-accent transition-colors truncate">
+                    {list.title}
+                  </p>
+                  <p className="text-[10px] text-tertiary">
+                    {list.gameCount} games · {list.tags.slice(0, 2).join(", ")}
+                  </p>
+                </div>
+              </Link>
+            ))
+          ) : (
+            <p className="text-secondary text-sm text-center py-8">
+              No lists created yet.
+            </p>
+          )}
+        </div>
       ),
     },
   ];

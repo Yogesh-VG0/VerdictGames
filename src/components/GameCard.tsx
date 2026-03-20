@@ -69,10 +69,10 @@ function hasRealScore(game: Game): boolean {
 }
 
 function scoreGlowBorder(score: number): string {
-  if (score >= 80) return "hover:shadow-[0_0_30px_-8px_rgba(74,222,128,0.25)]";
-  if (score >= 65) return "hover:shadow-[0_0_30px_-8px_rgba(163,230,53,0.25)]";
-  if (score >= 45) return "hover:shadow-[0_0_30px_-8px_rgba(250,204,21,0.25)]";
-  return "hover:shadow-[0_0_30px_-8px_rgba(248,113,113,0.25)]";
+  if (score >= 80) return "hover:shadow-[0_0_20px_-8px_rgba(74,222,128,0.15)]";
+  if (score >= 65) return "hover:shadow-[0_0_20px_-8px_rgba(163,230,53,0.15)]";
+  if (score >= 45) return "hover:shadow-[0_0_20px_-8px_rgba(250,204,21,0.15)]";
+  return "hover:shadow-[0_0_20px_-8px_rgba(248,113,113,0.15)]";
 }
 
 export default function GameCard({
@@ -85,12 +85,12 @@ export default function GameCard({
     return (
       <Link href={`/game/${game.slug}`} className={cn("block group", className)}>
         <motion.article
-          whileHover={{ y: -4 }}
+          whileHover={{ y: -2 }}
           whileTap={{ scale: 0.98 }}
           transition={{ duration: 0.3, ease: "easeOut" }}
           className={cn(
             "relative rounded-2xl border border-border bg-surface overflow-hidden card-shimmer h-full hover:border-accent/30 transition-all duration-500",
-            hasRealScore(game) ? scoreGlowBorder(game.score) : "hover:shadow-[0_0_40px_-8px_rgba(168,85,247,0.2)]"
+            hasRealScore(game) ? scoreGlowBorder(game.score) : "hover:shadow-[0_0_20px_-8px_rgba(168,85,247,0.12)]"
           )}
         >
           <div className="relative aspect-[3/4] overflow-hidden">
@@ -174,12 +174,12 @@ export default function GameCard({
   return (
     <Link href={`/game/${game.slug}`} className={cn("block group", className)}>
       <motion.article
-        whileHover={{ y: -6 }}
+        whileHover={{ y: -3 }}
         whileTap={{ scale: 0.98 }}
         transition={{ duration: 0.3, ease: "easeOut" }}
         className={cn(
           "relative rounded-2xl border border-border bg-surface overflow-hidden card-shimmer h-full hover:border-accent/30 transition-all duration-500",
-          hasRealScore(game) ? scoreGlowBorder(game.score) : "hover:shadow-[0_0_30px_-8px_rgba(168,85,247,0.15)]"
+          hasRealScore(game) ? scoreGlowBorder(game.score) : "hover:shadow-[0_0_20px_-8px_rgba(168,85,247,0.1)]"
         )}
       >
         <div className="relative aspect-[3/4] overflow-hidden">

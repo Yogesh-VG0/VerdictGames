@@ -1,7 +1,7 @@
 /**
  * GET /api/profile/[username]
  *
- * Returns a user profile with stats.
+ * Returns a user profile with stats, counts, and recent activity.
  */
 
 import { NextRequest } from "next/server";
@@ -35,22 +35,85 @@ export async function GET(
       return jsonNotFound("Profile");
     }
 
-    // Get review count
-    const { count: reviewCount } = await supabase
-      .from("reviews")
-      .select("id", { count: "exact", head: true })
-      .eq("profile_id", profile.id) as { count: number | null };
+    // Run all count queries in parallel
+    const [reviewRes, listsRes, libraryRes, followerRes, followingRes] = await Promise.all([
+      supabase.from("reviews").select("id", { count: "exact", head: true }).eq("profile_id", profile.id),
+      supabase.from("lists").select("id", { count: "exact", head: true }).eq("owner_id", profile.id),
+      supabase.from("user_games").select("id", { count: "exact", head: true }).eq("user_id", profile.id),
+      supabase.from("follows").select("id", { count: "exact", head: true }).eq("following_id", profile.id),
+      supabase.from("follows").select("id", { count: "exact", head: true }).eq("follower_id", profile.id),
+    ]);
 
-    // Get lists count — lists created by username
-    const { count: listsCount } = await supabase
-      .from("lists")
-      .select("id", { count: "exact", head: true })
-      .eq("curated_by", username);
+    const reviewCount = reviewRes.count ?? 0;
+    const listsCount = listsRes.count ?? 0;
+    const libraryCount = libraryRes.count ?? 0;
+    const followerCount = followerRes.count ?? 0;
+    const followingCount = followingRes.count ?? 0;
+
+    // Build recent activity from reviews + library events
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const recentActivity: any[] = [];
+
+    // Recent reviews
+    const { data: recentReviews } = await supabase
+      .from("reviews")
+      .select("id, rating, created_at, game:games!inner(slug, title)")
+      .eq("profile_id", profile.id)
+      .order("created_at", { ascending: false })
+      .limit(10);
+
+    if (recentReviews) {
+      for (const r of recentReviews) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const game = r.game as any;
+        recentActivity.push({
+          id: `review-${r.id}`,
+          type: "review",
+          gameSlug: game?.slug ?? "",
+          gameTitle: game?.title ?? "",
+          rating: r.rating,
+          createdAt: r.created_at,
+        });
+      }
+    }
+
+    // Recent library additions
+    const { data: recentLibrary } = await supabase
+      .from("user_games")
+      .select("id, status, personal_rating, created_at, game:games!inner(slug, title)")
+      .eq("user_id", profile.id)
+      .order("created_at", { ascending: false })
+      .limit(10);
+
+    if (recentLibrary) {
+      for (const ug of recentLibrary) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const game = ug.game as any;
+        recentActivity.push({
+          id: `library-${ug.id}`,
+          type: ug.personal_rating ? "rating" : "library",
+          gameSlug: game?.slug ?? "",
+          gameTitle: game?.title ?? "",
+          rating: ug.personal_rating ?? undefined,
+          createdAt: ug.created_at,
+        });
+      }
+    }
+
+    // Sort merged activity by date, take most recent 15
+    recentActivity.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    const trimmedActivity = recentActivity.slice(0, 15);
 
     const user = mapProfileRow(profile, {
-      gamesReviewed: reviewCount ?? 0,
-      listsCreated: listsCount ?? 0,
+      gamesReviewed: reviewCount,
+      listsCreated: listsCount,
+      libraryCount,
+      followerCount,
+      followingCount,
     });
+
+    // Override the hardcoded empty array with real activity
+    user.recentActivity = trimmedActivity;
 
     return jsonOk(user);
   } catch (err) {

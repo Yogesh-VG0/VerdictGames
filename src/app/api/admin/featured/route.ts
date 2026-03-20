@@ -2,9 +2,10 @@ import { NextRequest } from "next/server";
 import { jsonOk, jsonError } from "@/lib/api/response";
 import { requireAdmin } from "@/lib/admin";
 import { getServerSupabase } from "@/lib/supabase/server";
+import { writeAuditLog } from "@/lib/auditLog";
 
 export async function POST(request: NextRequest) {
-  const { error } = await requireAdmin();
+  const { user, error } = await requireAdmin();
   if (error) return error;
 
   const { gameId, featured, trending, manualScore } = await request.json();
@@ -37,6 +38,20 @@ export async function POST(request: NextRequest) {
   if (updateErr) {
     return jsonError("Update failed: " + updateErr.message, 500);
   }
+
+  // Audit log
+  const fieldChanges: Record<string, { old: unknown; new: unknown }> = {};
+  if (typeof featured === "boolean") fieldChanges.featured = { old: null, new: featured };
+  if (typeof trending === "boolean") fieldChanges.trending = { old: null, new: trending };
+  if (typeof manualScore === "number") fieldChanges.manual_score = { old: null, new: manualScore };
+
+  await writeAuditLog({
+    entity_type: "game",
+    entity_id: gameId,
+    action: "update",
+    field_changes: fieldChanges,
+    edited_by: user?.email ?? "unknown",
+  });
 
   return jsonOk({ updated: true });
 }

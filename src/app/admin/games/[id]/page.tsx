@@ -217,6 +217,10 @@ export default function AdminGameEditor({ params }: { params: Promise<{ id: stri
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-game", id] });
+      queryClient.invalidateQueries({ queryKey: ["admin-activity"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-games"] });
+      queryClient.invalidateQueries({ queryKey: ["homepage"] });
+      queryClient.invalidateQueries({ queryKey: ["game", game.data?.slug] });
       setSaveMsg("Saved successfully!");
       setTimeout(() => setSaveMsg(""), 3000);
     },
@@ -229,6 +233,9 @@ export default function AdminGameEditor({ params }: { params: Promise<{ id: stri
     mutationFn: () => reingestGame(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-game", id] });
+      queryClient.invalidateQueries({ queryKey: ["admin-activity"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-games"] });
+      queryClient.invalidateQueries({ queryKey: ["homepage"] });
       setSaveMsg("Re-ingested successfully!");
       setTimeout(() => setSaveMsg(""), 3000);
     },
@@ -238,6 +245,9 @@ export default function AdminGameEditor({ params }: { params: Promise<{ id: stri
     mutationFn: (flags: { featured?: boolean; trending?: boolean }) => toggleFlags(id, flags),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-game", id] });
+      queryClient.invalidateQueries({ queryKey: ["admin-activity"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-games"] });
+      queryClient.invalidateQueries({ queryKey: ["homepage"] });
     },
   });
 
