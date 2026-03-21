@@ -42,7 +42,7 @@ export default function ListsPage() {
   const displayLists = tab === "mine" ? myLists : lists;
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-6 space-y-6">
+    <div className="max-w-[1400px] mx-auto px-4 py-6 space-y-6 overflow-x-hidden">
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}

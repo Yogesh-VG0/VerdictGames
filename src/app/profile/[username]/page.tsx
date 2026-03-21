@@ -56,7 +56,7 @@ export default function ProfilePage({ params }: Props) {
 
   if (isLoading) {
     return (
-      <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
+      <div className="max-w-5xl mx-auto px-4 py-6 space-y-6">
         <div className="flex items-center gap-4">
           <Skeleton className="w-20 h-20 rounded-full" />
           <div className="space-y-2">
@@ -208,7 +208,7 @@ export default function ProfilePage({ params }: Props) {
   ];
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
+    <div className="max-w-5xl mx-auto px-4 py-6 space-y-6">
       {/* Profile header */}
       <div className="flex items-start gap-4 md:gap-6">
         <UserAvatar src={user.avatar} displayName={user.displayName} size="xl" className="md:w-24 md:h-24 md:text-3xl" />

@@ -264,7 +264,7 @@ export default function GameCard({
         </div>
 
         <div className="p-3.5 space-y-2">
-          <h3 className="text-sm font-semibold text-foreground leading-snug line-clamp-2 group-hover:text-accent transition-colors">
+          <h3 className="text-sm font-semibold text-foreground leading-snug line-clamp-1 group-hover:text-accent transition-colors h-5">
             {game.title}
           </h3>
 

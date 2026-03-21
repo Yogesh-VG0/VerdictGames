@@ -34,7 +34,7 @@ import {
 
 type DiscoverTab = "new" | "deals" | "free";
 
-const CARD_WIDTH = "shrink-0 w-44 sm:w-52 md:w-56 lg:w-60";
+const CARD_WIDTH = "shrink-0 w-44 sm:w-52 md:w-56 lg:w-60 h-full";
 
 const DISCOVER_TABS: { label: string; value: DiscoverTab; icon: React.ReactNode }[] = [
   { label: "New Releases", value: "new", icon: <Sparkles className="w-4 h-4" /> },
@@ -130,7 +130,7 @@ export default function HomePage() {
         <div className="absolute inset-0 hero-spotlight pointer-events-none" />
         <FadeInSection>
           {heroPool.isLoading ? (
-            <div className="max-w-7xl mx-auto px-4 pt-4 sm:pt-6 pb-8"><HeroSkeleton /></div>
+            <div className="max-w-[1400px] mx-auto px-4 pt-4 sm:pt-6 pb-8"><HeroSkeleton /></div>
           ) : featured.length > 0 ? (
             <HeroCarousel games={featured} interval={7000} />
           ) : null}
@@ -140,7 +140,7 @@ export default function HomePage() {
       {/* ── 2. Trending Now ── */}
       <section className="relative py-12 sm:py-16">
         <div className="absolute inset-0 mesh-gradient opacity-50 pointer-events-none" />
-        <div className="max-w-7xl mx-auto px-4 relative">
+        <div className="max-w-[1400px] mx-auto px-4 relative">
           <FadeInSection>
             {trending.isLoading ? (
               <>
@@ -175,13 +175,13 @@ export default function HomePage() {
         </div>
       </section>
 
-      <div className="max-w-7xl mx-auto px-4">
+      <div className="max-w-[1400px] mx-auto px-4">
         <hr className="border-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
       </div>
 
       {/* ── 3. For You ── */}
       <section className="py-12 sm:py-16">
-        <div className="max-w-7xl mx-auto px-4">
+        <div className="max-w-[1400px] mx-auto px-4">
           <FadeInSection>
             {personalized.isLoading ? (
               <>
@@ -214,7 +214,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <div className="max-w-7xl mx-auto px-4">
+      <div className="max-w-[1400px] mx-auto px-4">
         <hr className="border-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
       </div>
 
@@ -222,7 +222,7 @@ export default function HomePage() {
       <LazySection minHeight="400px">
         <section className="relative py-12 sm:py-16">
           <div className="absolute inset-0 mesh-gradient opacity-30 pointer-events-none" />
-          <div className="max-w-7xl mx-auto px-4 relative">
+          <div className="max-w-[1400px] mx-auto px-4 relative">
             <FadeInSection>
               <SectionHeader
                 title="Discover"
@@ -356,7 +356,7 @@ export default function HomePage() {
         </section>
       </LazySection>
 
-      <div className="max-w-7xl mx-auto px-4">
+      <div className="max-w-[1400px] mx-auto px-4">
         <hr className="border-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
       </div>
 
@@ -364,7 +364,7 @@ export default function HomePage() {
       <LazySection minHeight="400px">
         <section className="relative py-12 sm:py-16">
           <div className="absolute inset-0 mesh-gradient opacity-30 pointer-events-none" />
-          <div className="max-w-7xl mx-auto px-4 relative">
+          <div className="max-w-[1400px] mx-auto px-4 relative">
             <FadeInSection>
               {topRated.isLoading ? (
                 <>
@@ -400,7 +400,7 @@ export default function HomePage() {
         </section>
       </LazySection>
 
-      <div className="max-w-7xl mx-auto px-4">
+      <div className="max-w-[1400px] mx-auto px-4">
         <hr className="border-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
       </div>
 
@@ -408,7 +408,7 @@ export default function HomePage() {
       <LazySection minHeight="300px">
         {gxNews.data && gxNews.data.length > 0 && (
           <section className="py-12">
-            <div className="max-w-7xl mx-auto px-4">
+            <div className="max-w-[1400px] mx-auto px-4">
               <FadeInSection>
                 <SectionHeader
                   title="Gaming News"
@@ -537,7 +537,7 @@ export default function HomePage() {
 
       {/* ── Data Sources Banner ── */}
       <section className="border-t border-b border-border bg-surface/30">
-        <div className="max-w-7xl mx-auto px-4 py-10">
+        <div className="max-w-[1400px] mx-auto px-4 py-10">
           <FadeInSection>
             <div className="text-center space-y-4">
               <h2 className="text-xl sm:text-2xl font-bold">
@@ -570,7 +570,7 @@ export default function HomePage() {
 
       {/* ── Footer ── */}
       <footer className="border-t border-border bg-surface/50">
-        <div className="max-w-7xl mx-auto px-4 py-12">
+        <div className="max-w-[1400px] mx-auto px-4 py-12">
           <FadeInSection>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
               <div className="md:col-span-1">

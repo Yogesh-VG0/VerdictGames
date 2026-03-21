@@ -141,7 +141,7 @@ function SearchContent() {
   const isInitialLoad = isLoading && page === 1;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
+    <div className="max-w-[1400px] mx-auto px-4 py-6 space-y-6 overflow-x-hidden">
       {/* Search header — contextual based on active sort */}
       <motion.div
         initial={{ opacity: 0, y: 16 }}
@@ -185,7 +185,7 @@ function SearchContent() {
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search by title, genre, developer..."
             className="w-full h-11 pl-10 pr-4 text-sm rounded-xl border border-border bg-surface-2 text-foreground placeholder:text-tertiary focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/20 transition-all"
-            autoFocus
+            autoFocus={false}
           />
           {/* Typing indicator */}
           {query !== debouncedQuery && (
@@ -385,7 +385,7 @@ export default function SearchPage() {
   return (
     <Suspense
       fallback={
-        <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
+        <div className="max-w-[1400px] mx-auto px-4 py-6 space-y-6">
           <GameGridSkeleton count={8} />
         </div>
       }

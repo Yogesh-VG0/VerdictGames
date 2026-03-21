@@ -47,7 +47,7 @@ export default function ListDetailPage({ params }: Props) {
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-6 space-y-6 animate-fade-in-up">
+    <div className="max-w-[1400px] mx-auto px-4 py-6 space-y-6 animate-fade-in-up overflow-x-hidden">
       {/* Header */}
       <div className="space-y-3">
         <Link
@@ -56,14 +56,14 @@ export default function ListDetailPage({ params }: Props) {
         >
           ← Back to Lists
         </Link>
-        <h1 className="text-2xl md:text-3xl font-bold text-foreground">
+        <h1 className="text-2xl md:text-3xl font-bold text-foreground break-words">
           {list.title}
         </h1>
-        <p className="text-sm text-secondary max-w-2xl leading-relaxed">
+        <p className="text-sm text-secondary max-w-2xl leading-relaxed break-words">
           {list.description}
         </p>
-        <div className="flex items-center gap-3 text-xs text-tertiary">
-          <span>
+        <div className="flex items-center gap-2 text-xs text-tertiary flex-wrap">
+          <span className="shrink-0">
             Curated by{" "}
             <Link
               href={`/profile/${list.curatedBy}`}
@@ -72,11 +72,10 @@ export default function ListDetailPage({ params }: Props) {
               {list.curatedBy}
             </Link>
           </span>
-          <span>·</span>
-          <span>{list.gameCount} games</span>
-          <span>·</span>
-          <div className="flex gap-1">
-            {list.tags.map((tag) => (
+          <span className="hidden sm:inline">·</span>
+          <span className="shrink-0">{list.gameCount} games</span>
+          <div className="flex gap-1 flex-wrap basis-full sm:basis-auto">
+            {list.tags.slice(0, 3).map((tag) => (
               <PixelBadge key={tag} variant="muted" size="sm">
                 {tag}
               </PixelBadge>

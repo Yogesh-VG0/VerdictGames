@@ -24,6 +24,7 @@ export default function NavbarTop() {
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [signOutConfirmOpen, setSignOutConfirmOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const { user, signOut } = useAuth();
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
@@ -58,14 +59,21 @@ export default function NavbarTop() {
     { href: "/", label: "Home", icon: <Home className="w-4 h-4" /> },
     { href: "/search", label: "Explore", icon: <Search className="w-4 h-4" /> },
     { href: "/search?sort=trending", label: "Trending", icon: <Flame className="w-4 h-4" /> },
-    { href: "/search?sort=newest", label: "New Releases", icon: <Sparkles className="w-4 h-4" /> },
-    { href: "/search?sort=top-rated", label: "Top Rated", icon: <Trophy className="w-4 h-4" /> },
     { href: "/calendar", label: "Calendar", icon: <CalendarDays className="w-4 h-4" /> },
     { href: "/reviews", label: "Reviews", icon: <Star className="w-4 h-4" /> },
     { href: "/lists", label: "Lists", icon: <List className="w-4 h-4" /> },
-    { href: "/compare", label: "Compare", icon: <Scale className="w-4 h-4" /> },
-    { href: "/about", label: "About", icon: <Info className="w-4 h-4" /> },
   ];
+
+  const handleSignOut = useCallback(() => {
+    setSignOutConfirmOpen(true);
+  }, []);
+
+  const confirmSignOut = useCallback(async () => {
+    await signOut();
+    setSignOutConfirmOpen(false);
+    setSidebarOpen(false);
+    setProfileDropdownOpen(false);
+  }, [signOut]);
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
@@ -180,15 +188,20 @@ export default function NavbarTop() {
 
               {/* User section */}
               {user ? (
-                <div className="px-4 py-4 border-b border-border">
+                <Link
+                  href={`/profile/${user.username}`}
+                  onClick={() => setSidebarOpen(false)}
+                  className="block px-4 py-4 border-b border-border hover:bg-surface-2 transition-colors"
+                >
                   <div className="flex items-center gap-3">
                     <UserAvatar src={user.avatar} displayName={user.displayName} size="md" />
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex-1">
                       <p className="text-sm font-semibold text-foreground truncate">{user.displayName}</p>
-                      <p className="text-[11px] text-tertiary truncate">{user.email}</p>
+                      <p className="text-[11px] text-tertiary truncate">@{user.username}</p>
                     </div>
+                    <ChevronDown className="w-3.5 h-3.5 text-tertiary -rotate-90 shrink-0" />
                   </div>
-                </div>
+                </Link>
               ) : (
                 <div className="px-4 py-4 border-b border-border">
                   <button
@@ -243,7 +256,7 @@ export default function NavbarTop() {
                     </Link>
                   )}
                   <button
-                    onClick={() => { signOut(); setSidebarOpen(false); }}
+                    onClick={handleSignOut}
                     className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-danger hover:bg-danger/5 transition-colors"
                   >
                     <LogOut className="w-4 h-4 opacity-70" /> Sign Out
@@ -257,7 +270,7 @@ export default function NavbarTop() {
 
       {/* ── Desktop navbar ── */}
       <header className="sticky top-0 z-50 hidden md:block bg-background/80 backdrop-blur-xl border-b border-border">
-        <nav className="flex items-center gap-2 px-4 h-14 max-w-7xl mx-auto">
+        <nav className="flex items-center gap-2 px-4 h-14 max-w-[1400px] mx-auto">
           {/* Logo */}
           <Link href="/" className="shrink-0 flex items-center gap-3 pl-3 group">
             <Image
@@ -386,7 +399,7 @@ export default function NavbarTop() {
                       </div>
                       <div className="border-t border-border">
                         <button
-                          onClick={() => { signOut(); closeDropdown(); }}
+                          onClick={handleSignOut}
                           className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-danger hover:bg-danger/5 transition-colors"
                         >
                           <LogOut className="w-4 h-4 opacity-60" />
@@ -412,6 +425,48 @@ export default function NavbarTop() {
 
       {/* Auth Modal */}
       <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} />
+
+      {/* Sign Out Confirmation Dialog */}
+      <AnimatePresence>
+        {signOutConfirmOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[70] bg-black/50 backdrop-blur-sm"
+              onClick={() => setSignOutConfirmOpen(false)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.15 }}
+              className="fixed z-[71] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-sm rounded-2xl bg-surface border border-border shadow-2xl p-6 space-y-4"
+            >
+              <div className="text-center space-y-2">
+                <LogOut className="w-8 h-8 text-danger mx-auto" />
+                <h3 className="text-lg font-bold text-foreground">Sign Out?</h3>
+                <p className="text-sm text-secondary">Are you sure you want to sign out of your account?</p>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setSignOutConfirmOpen(false)}
+                  className="flex-1 px-4 py-2.5 rounded-xl text-sm font-medium bg-surface-2 border border-border text-secondary hover:text-foreground hover:bg-elevated transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmSignOut}
+                  className="flex-1 px-4 py-2.5 rounded-xl text-sm font-medium bg-danger text-white hover:bg-danger/90 transition-colors"
+                >
+                  Sign Out
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </>
   );
 }

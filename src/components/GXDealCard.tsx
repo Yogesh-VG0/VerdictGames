@@ -14,6 +14,21 @@ interface GXDealCardProps {
 export default function GXDealCard({ deal }: GXDealCardProps) {
   const hasDiscount = deal.discount && deal.discount > 0;
   const gameHref = `/game/${slugify(deal.title)}`;
+  // Bundle deals go directly to the store — they have no meaningful internal page
+  const isBundle = deal.badge?.toLowerCase().includes("bundle") ||
+    deal.badge?.toLowerCase().includes("collection") ||
+    deal.title.toLowerCase().includes("bundle") ||
+    deal.title.toLowerCase().includes("collection");
+  const cardHref = isBundle && deal.buyUrl ? deal.buyUrl : gameHref;
+  const isExternal = isBundle && !!deal.buyUrl;
+
+  const CardWrapper = isExternal
+    ? ({ children, className }: { children: React.ReactNode; className?: string }) => (
+        <a href={cardHref} target="_blank" rel="noopener noreferrer" className={className}>{children}</a>
+      )
+    : ({ children, className }: { children: React.ReactNode; className?: string }) => (
+        <Link href={cardHref} className={className}>{children}</Link>
+      );
 
   return (
     <motion.div
@@ -22,7 +37,7 @@ export default function GXDealCard({ deal }: GXDealCardProps) {
       transition={{ duration: 0.3, ease: "easeOut" }}
       className="block group rounded-2xl border border-border bg-surface overflow-hidden card-shimmer hover:border-accent/30 hover:shadow-[0_0_30px_-8px_rgba(168,85,247,0.15)] transition-all duration-500"
     >
-      <Link href={gameHref} className="block">
+      <CardWrapper className="block">
         <div className="relative aspect-[3/4] overflow-hidden">
         {deal.cover ? (
           <Image
@@ -53,27 +68,15 @@ export default function GXDealCard({ deal }: GXDealCardProps) {
           </div>
         )}
         </div>
-      </Link>
+      </CardWrapper>
 
       <div className="p-3.5 space-y-2">
         <div className="flex items-start justify-between gap-2">
-          <Link
-            href={gameHref}
+          <CardWrapper
             className="text-sm font-semibold text-foreground leading-tight line-clamp-1 group-hover:text-accent transition-colors"
           >
             {deal.title}
-          </Link>
-          {deal.buyUrl && (
-            <a
-              href={deal.buyUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="shrink-0 text-[10px] font-bold px-2 py-1 rounded-lg bg-surface-2 border border-border text-secondary hover:text-foreground hover:bg-elevated transition-colors"
-              title="Open store deal"
-            >
-              Store →
-            </a>
-          )}
+          </CardWrapper>
         </div>
 
         <div className="flex items-center justify-between">

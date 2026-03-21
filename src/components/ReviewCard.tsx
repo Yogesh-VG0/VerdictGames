@@ -31,15 +31,15 @@ export default function ReviewCard({
         {showGame && (
           <Link
             href={`/game/${review.gameSlug}`}
-            className="shrink-0 relative w-10 h-14 rounded-lg overflow-hidden border border-white/[0.08] bg-surface-2"
+            className="shrink-0 relative w-16 h-20 sm:w-20 sm:h-28 rounded-xl overflow-hidden border border-border bg-surface-2 group/cover"
           >
             {review.gameCover ? (
               <Image
                 src={review.gameCover}
                 alt={review.gameTitle}
                 fill
-                sizes="40px"
-                className="object-cover"
+                sizes="80px"
+                className="object-cover group-hover/cover:scale-105 transition-transform duration-300"
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-xs text-tertiary">🎮</div>
@@ -57,7 +57,7 @@ export default function ReviewCard({
               {review.gameTitle}
             </Link>
           )}
-          <div className="flex items-center gap-2 text-xs text-secondary">
+          <div className="flex items-center gap-2 text-xs text-secondary flex-wrap">
             <Link
               href={`/profile/${review.username}`}
               className="hover:text-accent transition-colors font-medium"
@@ -72,6 +72,15 @@ export default function ReviewCard({
               <span className="text-[10px] tracking-wider">{review.platform}</span>
             </span>
           </div>
+          {/* Quick link to game page */}
+          {showGame && (
+            <Link
+              href={`/game/${review.gameSlug}`}
+              className="inline-flex items-center gap-1 mt-1.5 text-[10px] text-accent hover:text-accent-hover transition-colors font-medium"
+            >
+              View game page →
+            </Link>
+          )}
         </div>
 
         {/* Score */}

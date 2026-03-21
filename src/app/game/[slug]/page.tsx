@@ -263,7 +263,7 @@ export default function GameDetailPage({ params }: Props) {
       </section>
 
       {/* ═══════════════ MAIN CONTENT ═══════════════ */}
-      <div className="max-w-6xl mx-auto px-4 py-8">
+      <div className="max-w-[1400px] mx-auto px-4 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
 
           {/* ─── LEFT COLUMN (Main Content) ─── */}
@@ -444,14 +444,26 @@ export default function GameDetailPage({ params }: Props) {
                   <p className="text-secondary text-sm leading-relaxed">
                     {game.performanceNotes || (
                       game.platforms.includes("PC")
-                        ? "Runs well on modern hardware. Check Steam page for system requirements."
+                        ? "Runs well on modern hardware."
                         : game.platforms.some((p) => p.startsWith("PlayStation") || p.startsWith("Xbox") || p.startsWith("Nintendo"))
-                          ? "Performance details not available yet."
+                          ? "Optimized for console hardware. Performance may vary by model."
                           : game.platforms.some((p) => p === "Android" || p === "iOS")
                             ? "Optimized for mobile devices. Performance varies by device."
                             : "Performance details not available yet."
                     )}
                   </p>
+                  {/* System requirements link — point to Steam if available */}
+                  {game.platforms.includes("PC") && game.steamUrl && (
+                    <a
+                      href={`${game.steamUrl}#sysreq_content`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 text-xs text-pixel-cyan hover:text-pixel-cyan/80 transition-colors font-medium"
+                    >
+                      <Smartphone className="w-3.5 h-3.5" />
+                      View system requirements on Steam →
+                    </a>
+                  )}
                 </section>
                 <section className="rounded-2xl border border-border bg-surface p-5 space-y-3">
                   <h3 className="text-sm font-bold text-foreground uppercase tracking-wider flex items-center gap-2">

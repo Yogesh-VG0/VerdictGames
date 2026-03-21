@@ -13,6 +13,7 @@ import PlatformIcon, {
   PLATFORM_FILTER_OPTIONS,
   getFilterPlatforms,
 } from "@/components/ui/PlatformIcon";
+import { collapsePlatforms } from "@/lib/utils/platform";
 import type { Game, Platform } from "@/lib/types";
 import type { GXCalendarGame } from "@/lib/types";
 import { CalendarDays, Gamepad2, CalendarX } from "lucide-react";
@@ -176,7 +177,7 @@ export default function CalendarPage() {
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-6 sm:py-8 space-y-6 page-enter">
+    <div className="max-w-[1400px] mx-auto px-4 py-6 sm:py-8 space-y-6 page-enter overflow-x-hidden">
       {/* Header */}
       <FadeInSection>
         <SectionHeader
@@ -356,14 +357,21 @@ export default function CalendarPage() {
                                       {game.title}
                                     </h4>
                                     <div className="flex items-center gap-2 flex-wrap">
-                                      {/* Platform icons — SVG */}
+                                      {/* Platform icons — deduplicated by family */}
                                       <div className="flex items-center gap-1">
-                                        {game.platforms.slice(0, 4).map((p) => (
-                                          <PlatformIcon key={p} platform={p} size={12} />
-                                        ))}
-                                        {game.platforms.length > 4 && (
-                                          <span className="text-[9px] text-tertiary">+{game.platforms.length - 4}</span>
-                                        )}
+                                        {(() => {
+                                          const { visible, overflow } = collapsePlatforms(game.platforms, 4);
+                                          return (
+                                            <>
+                                              {visible.map((p) => (
+                                                <PlatformIcon key={p} platform={p} size={12} />
+                                              ))}
+                                              {overflow > 0 && (
+                                                <span className="text-[9px] text-tertiary">+{overflow}</span>
+                                              )}
+                                            </>
+                                          );
+                                        })()}
                                       </div>
                                       {/* Genres */}
                                       {game.genres.slice(0, 2).map(g => (

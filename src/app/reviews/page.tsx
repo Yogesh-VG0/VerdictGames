@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { getGlobalReviews, getTopRated, getSteamReviews } from "@/lib/api";
+import { getGlobalReviews, getTopRated, getSteamReviews, searchGames } from "@/lib/api";
 import type { SteamPlayerReview } from "@/lib/api";
 import ReviewCard from "@/components/ReviewCard";
 import FilterChips from "@/components/ui/FilterChips";
@@ -67,6 +67,22 @@ export default function ReviewsPage() {
   const [platform, setPlatform] = useState<"All" | Platform>("All");
   const [steamGameQuery, setSteamGameQuery] = useState("");
   const [steamGameSlug, setSteamGameSlug] = useState<string | null>(null);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [debouncedSteamQuery, setDebouncedSteamQuery] = useState("");
+
+  // Debounce steam game query for suggestions
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSteamQuery(steamGameQuery), 300);
+    return () => clearTimeout(timer);
+  }, [steamGameQuery]);
+
+  const suggestionsQuery = useQuery({
+    queryKey: ["gameSuggestions", debouncedSteamQuery],
+    queryFn: () => searchGames({ query: debouncedSteamQuery, page: 1 }),
+    enabled: debouncedSteamQuery.length >= 2 && showSuggestions,
+    staleTime: 30_000,
+  });
 
   const { data, isLoading } = useQuery({
     queryKey: ["globalReviews", sort, platform],
@@ -92,7 +108,7 @@ export default function ReviewsPage() {
   });
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
+    <div className="max-w-5xl mx-auto px-4 py-6 space-y-6 overflow-x-hidden">
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
@@ -154,10 +170,38 @@ export default function ReviewsPage() {
               <input
                 type="text"
                 value={steamGameQuery}
-                onChange={(e) => setSteamGameQuery(e.target.value)}
+                onChange={(e) => { setSteamGameQuery(e.target.value); setShowSuggestions(true); }}
+                onFocus={() => setShowSuggestions(true)}
+                onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
                 placeholder="Enter a game title e.g. Elden Ring…"
                 className="w-full pl-9 pr-4 py-2.5 text-sm rounded-xl border border-border bg-surface-2 text-foreground placeholder:text-tertiary focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/50"
               />
+              {/* Suggestions dropdown */}
+              {showSuggestions && suggestionsQuery.data && suggestionsQuery.data.items.length > 0 && (
+                <div className="absolute top-full left-0 right-0 mt-1 z-50 rounded-xl border border-border bg-surface shadow-xl max-h-48 overflow-y-auto">
+                  {suggestionsQuery.data.items.slice(0, 6).map((game) => (
+                    <button
+                      key={game.id}
+                      type="button"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => {
+                        setSteamGameQuery(game.title);
+                        setSteamGameSlug(game.slug);
+                        setShowSuggestions(false);
+                      }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-surface-2 transition-colors text-sm"
+                    >
+                      {game.coverImage && (
+                        <Image src={game.coverImage} alt="" width={24} height={32} className="rounded object-cover shrink-0" />
+                      )}
+                      <span className="text-foreground truncate">{game.title}</span>
+                      {game.score > 0 && (
+                        <span className="ml-auto text-[10px] text-tertiary shrink-0">{game.score}</span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
             <button
               type="submit"

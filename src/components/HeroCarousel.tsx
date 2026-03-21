@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { motion, AnimatePresence, type Variants, type PanInfo } from "framer-motion";
+import { motion, AnimatePresence, type Variants } from "framer-motion";
 import { Game } from "@/lib/types";
 import VerdictBadge from "@/components/ui/VerdictBadge";
 import ScoreRing from "@/components/ui/ScoreRing";
@@ -28,24 +28,34 @@ interface HeroCarouselProps {
 }
 
 const slideVariants: Variants = {
-  enter: () => ({
+  enter: (dir: number) => ({
     opacity: 0,
-    scale: 1.04,
+    x: dir > 0 ? "8%" : "-8%",
+    scale: 1.02,
+    rotateY: dir > 0 ? 3 : -3,
   }),
   center: {
     opacity: 1,
+    x: 0,
     scale: 1,
+    rotateY: 0,
     transition: {
-      opacity: { duration: 0.8, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
-      scale: { duration: 1.2, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
+      opacity: { duration: 0.7, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
+      x: { duration: 0.8, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
+      scale: { duration: 1, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
+      rotateY: { duration: 0.8, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
     },
   },
-  exit: () => ({
+  exit: (dir: number) => ({
     opacity: 0,
-    scale: 1.02,
+    x: dir > 0 ? "-6%" : "6%",
+    scale: 0.98,
+    rotateY: dir > 0 ? -2 : 2,
     transition: {
-      opacity: { duration: 0.5, ease: "easeIn" as const },
+      opacity: { duration: 0.45, ease: "easeIn" as const },
+      x: { duration: 0.5, ease: "easeIn" as const },
       scale: { duration: 0.5, ease: "easeIn" as const },
+      rotateY: { duration: 0.5, ease: "easeIn" as const },
     },
   }),
 };
@@ -64,18 +74,15 @@ const contentVariants: Variants = {
   },
 };
 
-const SWIPE_THRESHOLD_DESKTOP = 120;
-const SWIPE_THRESHOLD_MOBILE = 60;
-
-function isTouchDevice(): boolean {
-  if (typeof window === "undefined") return false;
-  return "ontouchstart" in window || navigator.maxTouchPoints > 0;
-}
+const SWIPE_THRESHOLD = 40;
+const SWIPE_VELOCITY = 300;
 
 export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselProps) {
   const [[page, direction], setPage] = useState([0, 0]);
   const [isPaused, setIsPaused] = useState(false);
   const isSwiping = useRef(false);
+  const touchStart = useRef<{ x: number; y: number; time: number } | null>(null);
+  const containerRef = useRef<HTMLElement>(null);
 
   const slideCount = games.length;
   const currentIndex = ((page % slideCount) + slideCount) % slideCount;
@@ -88,24 +95,50 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
     []
   );
 
-  // Touch/swipe handler with device-aware thresholds
-  const handleDragEnd = useCallback(
-    (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-      const { offset, velocity } = info;
-      const threshold = isTouchDevice() ? SWIPE_THRESHOLD_MOBILE : SWIPE_THRESHOLD_DESKTOP;
-      // Swipe only if offset or velocity exceeds threshold
-      if (Math.abs(offset.x) > threshold || Math.abs(velocity.x) > 500) {
-        if (offset.x < 0) {
-          paginate(1);  // swipe left → next
-        } else {
-          paginate(-1); // swipe right → prev
-        }
-      }
-      // Reset swiping flag after a tick
-      setTimeout(() => { isSwiping.current = false; }, 100);
-    },
-    [paginate]
-  );
+  // Touch handlers for mobile swipe — applied to entire hero section
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    touchStart.current = { x: touch.clientX, y: touch.clientY, time: Date.now() };
+    isSwiping.current = false;
+  }, []);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (!touchStart.current) return;
+    const dx = Math.abs(e.touches[0].clientX - touchStart.current.x);
+    const dy = Math.abs(e.touches[0].clientY - touchStart.current.y);
+    // Mark as swiping if horizontal movement dominates
+    if (dx > 10 && dx > dy) {
+      isSwiping.current = true;
+    }
+  }, []);
+
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    if (!touchStart.current) return;
+    const touch = e.changedTouches[0];
+    const dx = touch.clientX - touchStart.current.x;
+    const dy = Math.abs(touch.clientY - touchStart.current.y);
+    const dt = Date.now() - touchStart.current.time;
+    const velocity = Math.abs(dx) / (dt || 1) * 1000;
+
+    // Only count horizontal swipes (not vertical scroll)
+    if (Math.abs(dx) > dy && (Math.abs(dx) > SWIPE_THRESHOLD || velocity > SWIPE_VELOCITY)) {
+      if (dx < 0) paginate(1);
+      else paginate(-1);
+    }
+    touchStart.current = null;
+    // Delay clearing swipe flag so click handlers can check it
+    setTimeout(() => { isSwiping.current = false; }, 150);
+  }, [paginate]);
+
+  // Click-to-pause/play (for non-interactive areas)
+  const handleHeroClick = useCallback((e: React.MouseEvent) => {
+    // Don't toggle pause if user was swiping
+    if (isSwiping.current) return;
+    // Don't toggle if clicking a button, link, or interactive element
+    const target = e.target as HTMLElement;
+    if (target.closest("a, button, [role='button'], input, [data-interactive]")) return;
+    setIsPaused((p) => !p);
+  }, []);
 
   // Auto-advance
   useEffect(() => {
@@ -130,17 +163,18 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
 
   return (
     <section
-      className="relative overflow-hidden group touch-pan-y"
+      ref={containerRef}
+      className="relative overflow-hidden group"
+      style={{ perspective: "1200px" }}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      onClick={handleHeroClick}
     >
 
-      {/* Background images with swipe support */}
-      <motion.div
-        className="relative aspect-[3/4] sm:aspect-[16/9] md:aspect-[2.35/1] min-h-[360px] sm:min-h-[420px] md:min-h-[520px] overflow-hidden cursor-grab active:cursor-grabbing"
-        drag="x"
-        dragConstraints={{ left: 0, right: 0 }}
-        dragElastic={0.08}
-        onDragStart={() => { isSwiping.current = true; }}
-        onDragEnd={handleDragEnd}
+      {/* Background images */}
+      <div
+        className="relative aspect-[3/4] sm:aspect-[16/9] md:aspect-[2.35/1] min-h-[360px] sm:min-h-[420px] md:min-h-[520px] overflow-hidden"
       >
         <AnimatePresence initial={false} custom={direction} mode="popLayout">
           <motion.div
@@ -151,6 +185,7 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
             animate="center"
             exit="exit"
             className="absolute inset-0"
+            style={{ transformStyle: "preserve-3d" }}
           >
             {(game.headerImage || game.coverImage) ? (
               <Image
@@ -158,7 +193,7 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
                 alt={game.title}
                 fill
                 sizes="100vw"
-                className="object-cover"
+                className="object-cover object-center"
                 priority={currentIndex === 0}
                 quality={90}
               />
@@ -171,11 +206,11 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
         {/* Cinematic gradient overlay — stronger left-to-right + bottom-to-top for text readability */}
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-black/10 z-[1]" />
         <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-transparent z-[1]" />
-      </motion.div>
+      </div>
 
-      {/* Content overlay */}
+      {/* Content overlay — receives touch events for swipe */}
       <div className="absolute bottom-0 left-0 right-0 z-[2]">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 pb-6 sm:pb-8 md:pb-12">
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 pb-6 sm:pb-8 md:pb-12">
         <AnimatePresence mode="wait">
           <motion.div
             key={`content-${currentIndex}`}
@@ -259,7 +294,7 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
             </div>
 
             {/* CTAs */}
-            <div className="flex gap-3 pt-0.5 sm:pt-1 flex-wrap">
+            <div className="flex gap-3 pt-0.5 sm:pt-1 flex-wrap" data-interactive>
               <Link href={`/game/${game.slug}`} onClick={(e) => { if (isSwiping.current) e.preventDefault(); }}>
                 <PixelButton size="md">Read Verdict</PixelButton>
               </Link>
@@ -317,7 +352,7 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
 
       {/* Dot indicators */}
       {slideCount > 1 && (
-        <div className="absolute bottom-4 sm:bottom-5 left-1/2 -translate-x-1/2 sm:left-auto sm:translate-x-0 sm:right-6 md:right-10 z-[3] flex items-center gap-1.5 sm:gap-2 bg-black/30 backdrop-blur-sm rounded-full px-2 py-1.5">
+        <div className="absolute bottom-4 sm:bottom-5 left-1/2 -translate-x-1/2 sm:left-auto sm:translate-x-0 sm:right-6 md:right-10 z-[3] flex items-center gap-1.5 sm:gap-2 bg-black/30 backdrop-blur-sm rounded-full px-2 py-1.5" data-interactive>
           {games.map((_, i) => (
             <button
               key={i}
@@ -347,33 +382,15 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
         </div>
       )}
 
-      {/* Accent line on pause */}
+      {/* Accent line on pause + subtle pause indicator */}
       {slideCount > 1 && isPaused && (
-        <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-accent to-transparent opacity-50 z-[3]" />
-      )}
-
-      {/* Pause/Play toggle for accessibility */}
-      {slideCount > 1 && (
-        <button
-          onClick={() => setIsPaused((p) => !p)}
-          className="absolute top-3 right-3 sm:top-4 sm:right-4 z-[4] w-8 h-8 rounded-full
-                     bg-black/40 backdrop-blur-sm border border-white/15
-                     flex items-center justify-center text-white/70
-                     hover:bg-black/60 hover:text-white transition-all
-                     opacity-0 group-hover:opacity-100 focus:opacity-100"
-          aria-label={isPaused ? "Resume autoplay" : "Pause autoplay"}
-        >
-          {isPaused ? (
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
-              <path d="M2 1l9 5-9 5V1z" />
-            </svg>
-          ) : (
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
-              <rect x="1" y="1" width="3.5" height="10" rx="0.5" />
-              <rect x="7.5" y="1" width="3.5" height="10" rx="0.5" />
-            </svg>
-          )}
-        </button>
+        <>
+          <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-accent to-transparent opacity-50 z-[3]" />
+          <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-[4] flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/40 backdrop-blur-sm border border-white/15 text-white/60 text-[10px] font-medium pointer-events-none">
+            <svg width="8" height="8" viewBox="0 0 12 12" fill="currentColor"><rect x="1" y="1" width="3.5" height="10" rx="0.5" /><rect x="7.5" y="1" width="3.5" height="10" rx="0.5" /></svg>
+            Paused
+          </div>
+        </>
       )}
     </section>
   );

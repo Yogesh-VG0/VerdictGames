@@ -227,12 +227,18 @@ export function mapListRow(
   row: ListRow,
   games: Game[]
 ): GameList {
+  // Use list's own cover, or fall back to the first game with a cover image
+  const coverImage = row.cover_image
+    || games.find((g) => g.coverImage)?.coverImage
+    || games.find((g) => g.headerImage)?.headerImage
+    || "";
+
   return {
     id: row.id,
     slug: row.slug,
     title: row.title,
     description: row.description,
-    coverImage: row.cover_image,
+    coverImage,
     gameCount: games.length,
     games,
     curatedBy: row.curated_by,
