@@ -32,13 +32,16 @@ export async function GET(
     // Look up the game by slug to get steam_app_id
     const { data: game } = await supabase
       .from("games")
-      .select("id, steam_app_id, title")
+      .select("id, steam_app_id, title, cover_image, header_image")
       .eq("slug", slug)
       .single();
 
     if (!game?.steam_app_id) {
-      return jsonOk({ reviews: [], total: 0, steamAppId: null, message: "No Steam App ID" });
+      return jsonOk({ reviews: [], total: 0, steamAppId: null, message: "No Steam App ID", gameTitle: game?.title ?? null, coverImage: null });
     }
+
+    const gameTitle = game.title ?? null;
+    const coverImage = game.header_image || game.cover_image || null;
 
     // Check cache freshness
     const { data: cached } = await supabase
@@ -58,6 +61,8 @@ export async function GET(
         reviews: cached.map(mapSteamReview),
         total: cached.length,
         steamAppId: game.steam_app_id,
+        gameTitle,
+        coverImage,
         source: "cache",
       });
     }
@@ -77,10 +82,12 @@ export async function GET(
           reviews: cached.map(mapSteamReview),
           total: cached.length,
           steamAppId: game.steam_app_id,
+          gameTitle,
+          coverImage,
           source: "stale-cache",
         });
       }
-      return jsonOk({ reviews: [], total: 0, steamAppId: game.steam_app_id });
+      return jsonOk({ reviews: [], total: 0, steamAppId: game.steam_app_id, gameTitle, coverImage });
     }
 
     const data = await res.json();
@@ -91,6 +98,8 @@ export async function GET(
         reviews: (cached ?? []).map(mapSteamReview),
         total: cached?.length ?? 0,
         steamAppId: game.steam_app_id,
+        gameTitle,
+        coverImage,
       });
     }
 
@@ -129,6 +138,8 @@ export async function GET(
       reviews: sorted.map(mapSteamReviewRow),
       total: steamReviews.length,
       steamAppId: game.steam_app_id,
+      gameTitle,
+      coverImage,
       source: "fresh",
     });
   } catch (err) {

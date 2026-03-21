@@ -152,7 +152,8 @@ export async function fetchHeroCandidates(limit = 12): Promise<Game[]> {
 export async function fetchTrendingGames(limit = 12, homepageOnly = true): Promise<Game[]> {
   const supabase = getServerSupabase();
 
-  const { data, error } = await supabase
+  // Step 1: Load manually-flagged trending seeds (these get priority slots in the rail)
+  const { data: flagged, error } = await supabase
     .from("games")
     .select("*")
     .eq("trending", true)
@@ -160,68 +161,58 @@ export async function fetchTrendingGames(limit = 12, homepageOnly = true): Promi
 
   if (error) throw error;
 
-  if (data && data.length >= 3) {
-    const deduped = deduplicateBySteamAppId(data);
-    const filtered = filterQualityGames(deduped, { section: "trending", minResults: 3 });
-    // Homepage recency gate: strict recency, graduated fallback
-    let homeFiltered = homepageOnly
-      ? filtered.filter(isHomepageTrendingEligible)
-      : filtered;
-    // Fallback: widen to 36mo if too few
-    if (homeFiltered.length < 3) {
-      homeFiltered = filtered.filter((r) => isRecentEnoughForHome(r, HOMEPAGE_TRENDING_FALLBACK_MONTHS));
-    }
-    // Last resort: widen to 60mo
-    if (homeFiltered.length < 3) {
-      homeFiltered = filtered.filter((r) => isRecentEnoughForHome(r, HOMEPAGE_TRENDING_LAST_RESORT_MONTHS));
-    }
-    // If still too few, use all (should be rare)
-    if (homeFiltered.length < 3) homeFiltered = filtered;
-    const players = homeFiltered.map((g) => g.current_players ?? 0);
-    const minPlayers = Math.min(...players);
-    const maxPlayers = Math.max(1, ...players);
-    const ranked = [...homeFiltered].sort((a, b) => trendingRank(b, minPlayers, maxPlayers) - trendingRank(a, minPlayers, maxPlayers));
-    return ranked.slice(0, limit).map(mapGameRow);
-  }
+  // Step 2: Always load a scoring-based pool to fill remaining slots
+  // Over-fetch 4× limit so quality filtering + dedup still leaves enough
+  const cutoff4yr = monthsAgoISO(48);
+  const today = new Date().toISOString().slice(0, 10);
 
-  // Fallback: recency-weighted scoring from recent games pool
-  const cutoff = new Date();
-  cutoff.setFullYear(cutoff.getFullYear() - 4);
-  const cutoffStr = cutoff.toISOString().slice(0, 10);
-
-  const { data: pool, error: poolErr } = await supabase
+  const { data: pool } = await supabase
     .from("games")
     .select("*")
     .not("release_date", "is", null)
-    .gte("release_date", cutoffStr)
-    .lte("release_date", new Date().toISOString().slice(0, 10))
+    .gte("release_date", cutoff4yr)
+    .lte("release_date", today)
     .gt("score", 0)
-    .order("release_date", { ascending: false })
-    .limit(100) as { data: GameRow[] | null; error: unknown };
+    .order("score", { ascending: false })
+    .limit(limit * 6) as { data: GameRow[] | null };
 
-  if (poolErr) throw poolErr;
+  // Step 3: Build combined candidate set — flagged first, then scored pool
+  const flaggedIds = new Set((flagged ?? []).map((g) => g.id));
+  const poolDeduped = (pool ?? []).filter((g) => !flaggedIds.has(g.id));
+  const allCandidates = deduplicateBySteamAppId([...(flagged ?? []), ...poolDeduped]);
 
-  if (!pool || pool.length === 0) {
-    return (data ?? []).map(mapGameRow);
+  // Step 4: Quality filter
+  const qualified = filterQualityGames(allCandidates, { section: "trending", minResults: 4 });
+
+  // Step 5: Apply recency gate (graduated) — but only for homepage
+  let recencyFiltered: GameRow[];
+  if (homepageOnly) {
+    recencyFiltered = qualified.filter(isHomepageTrendingEligible);
+    if (recencyFiltered.length < limit) {
+      recencyFiltered = qualified.filter((r) => isRecentEnoughForHome(r, HOMEPAGE_TRENDING_FALLBACK_MONTHS));
+    }
+    if (recencyFiltered.length < limit) {
+      recencyFiltered = qualified.filter((r) => isRecentEnoughForHome(r, HOMEPAGE_TRENDING_LAST_RESORT_MONTHS));
+    }
+    if (recencyFiltered.length < 4) recencyFiltered = qualified;
+  } else {
+    recencyFiltered = qualified;
   }
 
-  const allForMax = [...(data ?? []), ...pool];
-  const players = allForMax.map((g) => g.current_players ?? 0);
-  const minPlayers = Math.min(...players);
-  const maxPlayers = Math.max(1, ...players);
-  const scored = pool.map((g) => ({ row: g, rank: trendingRank(g, minPlayers, maxPlayers) }));
-  scored.sort((a, b) => b.rank - a.rank);
+  // Step 6: Rank by trending score — flagged games get a fixed boost
+  const players = recencyFiltered.map((g) => g.current_players ?? 0);
+  const minP = Math.min(...players);
+  const maxP = Math.max(1, ...players);
 
-  const alreadyIncluded = new Set((data ?? []).map((d) => d.id));
-  const fallbackGames = scored
-    .filter((s) => !alreadyIncluded.has(s.row.id))
-    .slice(0, limit - (data?.length ?? 0))
-    .map((s) => s.row);
+  const ranked = [...recencyFiltered].sort((a, b) => {
+    // Flagged games float to the top regardless of raw score
+    const aFlagged = (a as GameRow & { trending?: boolean }).trending ? 1 : 0;
+    const bFlagged = (b as GameRow & { trending?: boolean }).trending ? 1 : 0;
+    if (bFlagged !== aFlagged) return bFlagged - aFlagged;
+    return trendingRank(b, minP, maxP) - trendingRank(a, minP, maxP);
+  });
 
-  const combined = deduplicateBySteamAppId([...(data ?? []), ...fallbackGames]);
-  const filtered = filterQualityGames(combined, { section: "trending", minResults: 3 });
-  const reranked = filtered.sort((a, b) => trendingRank(b, minPlayers, maxPlayers) - trendingRank(a, minPlayers, maxPlayers));
-  return reranked.slice(0, limit).map(mapGameRow);
+  return ranked.slice(0, limit).map(mapGameRow);
 }
 
 /* ═══════════════════════════════════════════════════

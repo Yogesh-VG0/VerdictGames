@@ -374,7 +374,7 @@ export default function HomePage() {
               ) : topRated.data && topRated.data.length > 0 ? (
                 <>
                   <SectionHeader
-                    title="Top Rated Right Now"
+                    title="Top Rated"
                     href="/search?sort=top-rated"
                     linkLabel="See all top rated"
                     icon={<Trophy className="w-5 h-5" />}

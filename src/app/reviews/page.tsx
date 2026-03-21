@@ -13,6 +13,7 @@ import { ReviewCardSkeleton } from "@/components/ui/Skeleton";
 import type { Platform } from "@/lib/types";
 import { PLATFORM_FILTER_OPTIONS, platformFilterIcon } from "@/components/ui/PlatformIcon";
 import { PenLine, Star, ThumbsUp, ThumbsDown, Search } from "lucide-react";
+import Image from "next/image";
 import { slugify } from "@/lib/utils/slugify";
 import { cn } from "@/lib/utils";
 
@@ -175,16 +176,33 @@ export default function ReviewsPage() {
               )}
               {!steamReviewsQuery.isLoading && steamReviewsQuery.data && steamReviewsQuery.data.reviews.length > 0 && (
                 <>
-                  <div className="flex items-center justify-between">
-                    <p className="text-xs text-tertiary">
-                      Showing top {steamReviewsQuery.data.reviews.length} of {steamReviewsQuery.data.total} Steam reviews
-                    </p>
+                  {/* Game identity header */}
+                  <div className="flex items-center gap-3 rounded-xl border border-border bg-surface-2 p-3">
+                    {steamReviewsQuery.data.coverImage && (
+                      <div className="relative w-14 h-9 rounded-lg overflow-hidden shrink-0">
+                        <Image
+                          src={steamReviewsQuery.data.coverImage}
+                          alt={steamReviewsQuery.data.gameTitle ?? "Game"}
+                          fill
+                          className="object-cover"
+                          sizes="56px"
+                        />
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-foreground truncate">
+                        {steamReviewsQuery.data.gameTitle ?? steamGameQuery}
+                      </p>
+                      <p className="text-[10px] text-tertiary">
+                        Showing top {steamReviewsQuery.data.reviews.length} of {steamReviewsQuery.data.total} Steam reviews
+                      </p>
+                    </div>
                     {steamReviewsQuery.data.steamAppId && (
                       <a
                         href={`https://store.steampowered.com/app/${steamReviewsQuery.data.steamAppId}#app_reviews_hash`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-xs text-pixel-cyan hover:underline"
+                        className="text-xs text-pixel-cyan hover:underline shrink-0"
                       >
                         View all on Steam →
                       </a>

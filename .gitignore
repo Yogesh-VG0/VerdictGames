@@ -28,6 +28,9 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# backfill pipeline checkpoint (local state, not committed)
+.backfill-checkpoint.json
 .pnpm-debug.log*
 
 # env files (can opt-in for committing if needed)

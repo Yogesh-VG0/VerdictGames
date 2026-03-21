@@ -284,6 +284,8 @@ export interface SteamReviewsData {
   reviews: SteamPlayerReview[];
   total: number;
   steamAppId: number | null;
+  gameTitle?: string | null;
+  coverImage?: string | null;
   source?: string;
   message?: string;
 }

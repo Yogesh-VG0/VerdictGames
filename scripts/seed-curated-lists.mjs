@@ -3,21 +3,25 @@
 /**
  * VERDICT.GAMES — Seed Curated Lists
  *
- * Generates system/editorial curated lists from existing game metadata.
- * Run manually or as part of the ingest pipeline:
+ * Generates 10 orthogonal editorial lists from existing game metadata.
+ * Run manually or scheduled via Heroku Scheduler (daily at 2:00 AM UTC):
  *   node scripts/seed-curated-lists.mjs
  *
- * Lists created:
- *  1. Must-Play Games of 2024–2025
- *  2. Best RPGs Right Now
- *  3. Top Indie Picks
- *  4. Best Shooters
- *  5. Best Strategy Games
- *  6. Top Action-Adventure Games
- *  7. Upcoming This Year
- *  8. Best Free-to-Play Games
- *  9. Hidden Gems (score ≥ 85, reviewCount < 100)
- * 10. Best of the Last 2 Years
+ * Overlap rules enforced:
+ *  - No game appears in more than 2 lists globally
+ *  - Any two lists must be at least 50% different (pairwise Jaccard check)
+ *
+ * Lists:
+ *  1. Best Recent Single-Player RPGs
+ *  2. Best Co-op Games Right Now
+ *  3. Best Recent Horror Games
+ *  4. Best Strategy & Builder Games
+ *  5. Best Story-Driven Adventures
+ *  6. Best Indie Games Under 20 Hours
+ *  7. Best Competitive Multiplayer Games
+ *  8. Most Wanted Upcoming <current year> Games
+ *  9. Best Deckbuilders & Turn-Based Games
+ * 10. Hidden Gems Since 2024
  */
 
 import postgres from "postgres";
@@ -37,10 +41,6 @@ try {
 
 const sql = postgres(process.env.DATABASE_URL, { ssl: { rejectUnauthorized: false } });
 
-function slugify(str) {
-  return str.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
-}
-
 function yearsAgoISO(years) {
   const d = new Date();
   d.setFullYear(d.getFullYear() - years);
@@ -51,25 +51,40 @@ const SYSTEM_CURATOR = "editorial";
 
 // Define list blueprints — each contains SQL criteria to pick games
 // ── Overlap enforcement ──
-// No game should appear in more than 2 editorial lists.
-// Any 2 lists must differ by at least 50%.
+// Rule 1: No game in more than 2 lists globally.
+// Rule 2: Any two lists must be ≥ 50% different (Jaccard dissimilarity).
 const gameAppearanceCount = new Map();
+const seededListSets = {}; // slug → Set<id>
 
 function enforceOverlapConstraints(ids, maxPerGame = 2) {
   const result = [];
   for (const id of ids) {
     const count = gameAppearanceCount.get(id) ?? 0;
-    if (count < maxPerGame) {
-      result.push(id);
-    }
+    if (count < maxPerGame) result.push(id);
   }
   return result;
 }
 
-function recordAppearances(ids) {
+function recordAppearances(slug, ids) {
+  seededListSets[slug] = new Set(ids);
   for (const id of ids) {
     gameAppearanceCount.set(id, (gameAppearanceCount.get(id) ?? 0) + 1);
   }
+}
+
+// Returns true if the proposed list is ≥ 50% different from ALL already-seeded lists.
+// Jaccard similarity = |A ∩ B| / |A ∪ B|; we require similarity < 0.5.
+function passesPairwiseOverlap(proposedIds) {
+  const proposed = new Set(proposedIds);
+  for (const [otherSlug, otherSet] of Object.entries(seededListSets)) {
+    const intersection = [...proposed].filter((id) => otherSet.has(id)).length;
+    const union = new Set([...proposed, ...otherSet]).size;
+    const similarity = union > 0 ? intersection / union : 0;
+    if (similarity >= 0.5) {
+      return { ok: false, conflictSlug: otherSlug, similarity: (similarity * 100).toFixed(0) };
+    }
+  }
+  return { ok: true };
 }
 
 const LIST_BLUEPRINTS = [
@@ -201,18 +216,21 @@ const LIST_BLUEPRINTS = [
     `,
   },
   {
-    slug: "most-wanted-2026",
-    title: "Most Wanted Upcoming 2026 Games",
-    description: "The most anticipated games releasing in 2026. Add them to your watchlist now.",
-    tags: ["editorial", "upcoming", "2026", "wishlist"],
-    query: async () => sql`
-      SELECT id FROM games
-      WHERE release_date >= '2026-01-01'
-        AND release_date <= '2026-12-31'
-        AND cover_image IS NOT NULL AND cover_image != ''
-      ORDER BY score DESC NULLS LAST, release_date ASC
-      LIMIT 20
-    `,
+    slug: `most-wanted-${new Date().getFullYear()}`,
+    title: `Most Wanted Upcoming ${new Date().getFullYear()} Games`,
+    description: `The most anticipated games releasing in ${new Date().getFullYear()}. Add them to your watchlist now.`,
+    tags: ["editorial", "upcoming", String(new Date().getFullYear()), "wishlist"],
+    query: async () => {
+      const yearStr = String(new Date().getFullYear());
+      return sql`
+        SELECT id FROM games
+        WHERE release_date >= ${yearStr + "-01-01"}
+          AND release_date <= ${yearStr + "-12-31"}
+          AND cover_image IS NOT NULL AND cover_image != ''
+        ORDER BY score DESC NULLS LAST, release_date ASC
+        LIMIT 20
+      `;
+    },
   },
   {
     slug: "best-deckbuilders-turn-based",
@@ -287,6 +305,22 @@ for (const blueprint of LIST_BLUEPRINTS) {
     continue;
   }
 
+  // Pairwise 50% overlap check: this list must be ≥50% different from every other seeded list
+  const pairwiseCheck = passesPairwiseOverlap(constrainedIds);
+  if (!pairwiseCheck.ok) {
+    console.log(`  ⚠ Pairwise overlap too high with "${pairwiseCheck.conflictSlug}" (${pairwiseCheck.similarity}% similar). Trying with tighter constraint...`);
+    // Try again with a stricter per-game appearance limit (1 instead of 2)
+    const stricterIds = enforceOverlapConstraints(allIds, 1).slice(0, 12);
+    const recheckPairwise = passesPairwiseOverlap(stricterIds);
+    if (!recheckPairwise.ok || stricterIds.length < 4) {
+      console.log(`  ⚠ Still too similar after strict enforcement. Skipping "${blueprint.title}"`);
+      skipped++;
+      continue;
+    }
+    constrainedIds.length = 0;
+    constrainedIds.push(...stricterIds);
+  }
+
   console.log(`  ✓ ${gameRows.length} raw → ${constrainedIds.length} after overlap enforcement`);
 
   // Get cover image from first game for the list cover
@@ -352,8 +386,8 @@ for (const blueprint of LIST_BLUEPRINTS) {
     `;
   }
 
-  // Record these games as used (overlap tracking)
-  recordAppearances(constrainedIds);
+  // Record these games as used (global + pairwise overlap tracking)
+  recordAppearances(blueprint.slug, constrainedIds);
 
   console.log(`  ✓ Inserted ${items.length} games into list`);
 }
