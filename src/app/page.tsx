@@ -53,6 +53,11 @@ export default function HomePage() {
     staleTime: 60 * 1000,
     refetchInterval: 2 * 60 * 1000,
   });
+  // Hero pool — separate from trending rail (deduped server-side)
+  const heroPool = {
+    data: homepage.data?.hero,
+    isLoading: homepage.isLoading,
+  };
   const trending = {
     data: homepage.data?.trending,
     isLoading: homepage.isLoading,
@@ -69,55 +74,21 @@ export default function HomePage() {
     data: homepage.data?.deals,
     isLoading: homepage.isLoading,
   };
-  // Build hero from trending, prioritizing featured games, then high-score, then recent
-  // Quality gate: hero games must score ≥ 72, have hero art, and be recent (24mo, fallback 36mo)
+
+  // Hero carousel: daily-shuffled subset of the dedicated hero pool
+  // (server already filtered for: header_image, score≥72, recency)
   const featured = useMemo(() => {
-    if (!trending.data) return [];
-    const now = Date.now();
-    const MONTHS_24 = 24 * 30 * 86400000;
-    const MONTHS_36 = 36 * 30 * 86400000;
-
-    const isRecentEnough = (g: typeof trending.data[0], maxAge: number) => {
-      if (!g.releaseDate) return false;
-      const age = now - new Date(g.releaseDate).getTime();
-      return age >= 0 && age <= maxAge; // released and within window
-    };
-
-    // Primary pool: recent 24 months
-    let pool = trending.data.filter(
-      (g) => g.score >= 72 && (g.headerImage || g.coverImage) && isRecentEnough(g, MONTHS_24)
-    );
-
-    // Fallback: widen to 36 months if not enough
-    if (pool.length < 4) {
-      pool = trending.data.filter(
-        (g) => g.score >= 72 && (g.headerImage || g.coverImage) && isRecentEnough(g, MONTHS_36)
-      );
-    }
-
-    // Last resort: allow any game with art and score (but this should rarely trigger)
-    if (pool.length < 2) {
-      pool = trending.data.filter(
-        (g) => g.score >= 72 && (g.headerImage || g.coverImage)
-      );
-    }
-
-    // Sort: manual featured first, then by score desc, then by releaseDate desc
-    pool.sort((a, b) => {
-      if (a.isFeaturedManual && !b.isFeaturedManual) return -1;
-      if (!a.isFeaturedManual && b.isFeaturedManual) return 1;
-      if (a.featured && !b.featured) return -1;
-      if (!a.featured && b.featured) return 1;
-      if (a.score !== b.score) return b.score - a.score;
-      return (b.releaseDate ?? "").localeCompare(a.releaseDate ?? "");
-    });
-    // Take up to 6 for variety, use a daily shuffle seed so it changes each day
-    const candidates = pool.slice(0, 12);
+    const pool = heroPool.data ?? [];
+    if (pool.length === 0) return [];
+    // Daily shuffle so the carousel order changes each day but stays stable within a session
     const daySeed = Math.floor(new Date().setHours(0, 0, 0, 0) / 86400000);
-    const shuffled = candidates.map((g, i) => ({ g, sort: Math.sin(daySeed * (i + 1) * 9301) }));
+    const shuffled = pool.slice(0, 12).map((g, i) => ({ g, sort: Math.sin(daySeed * (i + 1) * 9301) }));
     shuffled.sort((a, b) => a.sort - b.sort);
     return shuffled.map((s) => s.g).slice(0, 6);
-  }, [trending.data]);
+  }, [heroPool.data]);
+
+  // heroIds used to prevent the same game appearing in the trending rail
+  // (server deduplicates hero top-4 already; this catches the carousel pick)
   const heroIds = new Set(featured.map((g) => g.id));
   const personalized = useQuery({
     queryKey: ["personalized", !!user, trending.data?.length],
@@ -158,7 +129,7 @@ export default function HomePage() {
       <section className="relative">
         <div className="absolute inset-0 hero-spotlight pointer-events-none" />
         <FadeInSection>
-          {trending.isLoading ? (
+          {heroPool.isLoading ? (
             <div className="max-w-7xl mx-auto px-4 pt-4 sm:pt-6 pb-8"><HeroSkeleton /></div>
           ) : featured.length > 0 ? (
             <HeroCarousel games={featured} interval={7000} />
@@ -186,14 +157,7 @@ export default function HomePage() {
                   subtitle="Based on recent player activity & community signals"
                 />
                 <HorizontalScroll>
-                  {(() => {
-                    const deduped = trending.data!.filter((g) => !heroIds.has(g.id));
-                    // If dedup leaves too few, backfill with hero games so rail is always full
-                    const rail = deduped.length >= 10
-                      ? deduped.slice(0, 10)
-                      : [...deduped, ...trending.data!.filter((g) => heroIds.has(g.id))].slice(0, 10);
-                    return rail;
-                  })().map((game, i) => (
+                  {trending.data!.filter((g) => !heroIds.has(g.id)).slice(0, 12).map((game, i) => (
                     <div key={game.id} className={CARD_WIDTH}>
                       <motion.div
                         initial={{ opacity: 0, y: 20 }}

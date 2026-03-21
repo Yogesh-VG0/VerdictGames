@@ -78,7 +78,78 @@ function trendingRank(g: GameRow, minPlayers: number, maxPlayers: number): numbe
   return (score * 0.25) + (playerScore * 0.35) + (recency * 0.25) + (momentumBoost * 0.15);
 }
 
-export async function fetchTrendingGames(limit = 10, homepageOnly = true): Promise<Game[]> {
+/* ═══════════════════════════════════════════════════
+   Hero Candidates — independent pool for the carousel
+   Different from trending rail: requires header art,
+   higher score gate, and ordered by editorial intent.
+   ═══════════════════════════════════════════════════ */
+
+export async function fetchHeroCandidates(limit = 12): Promise<Game[]> {
+  const supabase = getServerSupabase();
+
+  // Step 1: Manually featured games (editorial priority) — no age limit
+  const { data: manualFeatured } = await supabase
+    .from("games")
+    .select("*")
+    .eq("is_featured_manual", true)
+    .not("header_image", "is", null)
+    .neq("header_image", "")
+    .gte("score", 72)
+    .gt("score", 0)
+    .order("score", { ascending: false })
+    .limit(6) as { data: GameRow[] | null };
+
+  // Step 2: Auto-selected recent high-quality games with header art
+  const cutoff24 = monthsAgoISO(24);
+  const cutoff36 = monthsAgoISO(36);
+  const today = new Date().toISOString().slice(0, 10);
+
+  let { data: autoPool } = await supabase
+    .from("games")
+    .select("*")
+    .not("header_image", "is", null)
+    .neq("header_image", "")
+    .gte("score", 76)
+    .gt("score", 0)
+    .gte("release_date", cutoff24)
+    .lte("release_date", today)
+    .order("score", { ascending: false })
+    .limit(40) as { data: GameRow[] | null };
+
+  // Widen to 36mo if pool is thin
+  if (!autoPool || autoPool.length < 6) {
+    const wider = await supabase
+      .from("games")
+      .select("*")
+      .not("header_image", "is", null)
+      .neq("header_image", "")
+      .gte("score", 72)
+      .gt("score", 0)
+      .gte("release_date", cutoff36)
+      .lte("release_date", today)
+      .order("score", { ascending: false })
+      .limit(40) as { data: GameRow[] | null };
+    autoPool = wider.data;
+  }
+
+  const manualIds = new Set((manualFeatured ?? []).map((g) => g.id));
+  const autoDeduped = (autoPool ?? []).filter((g) => !manualIds.has(g.id));
+  const combined = deduplicateBySteamAppId([...(manualFeatured ?? []), ...autoDeduped]);
+
+  // Sort: manual featured → score → release date
+  combined.sort((a, b) => {
+    if (a.is_featured_manual && !b.is_featured_manual) return -1;
+    if (!a.is_featured_manual && b.is_featured_manual) return 1;
+    if (a.featured && !b.featured) return -1;
+    if (!a.featured && b.featured) return 1;
+    if ((a.score ?? 0) !== (b.score ?? 0)) return (b.score ?? 0) - (a.score ?? 0);
+    return (b.release_date ?? "").localeCompare(a.release_date ?? "");
+  });
+
+  return combined.slice(0, limit).map(mapGameRow);
+}
+
+export async function fetchTrendingGames(limit = 12, homepageOnly = true): Promise<Game[]> {
   const supabase = getServerSupabase();
 
   const { data, error } = await supabase
@@ -344,19 +415,26 @@ export async function fetchDeals(): Promise<GXDeal[]> {
    ═══════════════════════════════════════════════════ */
 
 export interface HomepageData {
-  trending: Game[];
+  hero: Game[];        // carousel candidates — distinct from trending rail
+  trending: Game[];    // trending rail — pre-deduped against hero
   topRated: Game[];
   newReleases: Game[];
   deals: GXDeal[];
 }
 
 export async function fetchHomepageData(): Promise<HomepageData> {
-  const [trending, topRated, newReleases, deals] = await Promise.all([
-    fetchTrendingGames(10, true).catch(() => [] as Game[]),
+  const [hero, trending, topRated, newReleases, deals] = await Promise.all([
+    fetchHeroCandidates(12).catch(() => [] as Game[]),
+    fetchTrendingGames(12, true).catch(() => [] as Game[]),
     fetchHomepageTopRated(10).catch(() => [] as Game[]),
     fetchNewReleases(16).catch(() => [] as Game[]),
     fetchDeals().catch(() => [] as GXDeal[]),
   ]);
 
-  return { trending, topRated, newReleases, deals };
+  // Pre-deduplicate trending rail against hero pool
+  // Hero top-4 candidates must not appear in the trending rail
+  const heroTopIds = new Set(hero.slice(0, 4).map((g) => g.id));
+  const trendingDeduped = trending.filter((g) => !heroTopIds.has(g.id));
+
+  return { hero, trending: trendingDeduped, topRated, newReleases, deals };
 }

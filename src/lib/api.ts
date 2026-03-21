@@ -104,7 +104,8 @@ export async function getTopRated(limit = 8): Promise<Game[]> {
    ═══════════════════════════════════════════════════ */
 
 export interface HomepageData {
-  trending: Game[];
+  hero: Game[];        // carousel candidates — distinct from trending rail
+  trending: Game[];    // trending rail — pre-deduped against hero server-side
   topRated: Game[];
   newReleases: Game[];
   deals: GXDeal[];
@@ -113,7 +114,7 @@ export interface HomepageData {
 /** Fetch all homepage sections in a single call. */
 export async function getHomepageData(): Promise<HomepageData> {
   const data = await apiFetch<HomepageData>("/api/homepage");
-  return data ?? { trending: [], topRated: [], newReleases: [], deals: [] };
+  return data ?? { hero: [], trending: [], topRated: [], newReleases: [], deals: [] };
 }
 
 /** Search games with filters and pagination. */

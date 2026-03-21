@@ -50,168 +50,203 @@ function yearsAgoISO(years) {
 const SYSTEM_CURATOR = "editorial";
 
 // Define list blueprints — each contains SQL criteria to pick games
+// ── Overlap enforcement ──
+// No game should appear in more than 2 editorial lists.
+// Any 2 lists must differ by at least 50%.
+const gameAppearanceCount = new Map();
+
+function enforceOverlapConstraints(ids, maxPerGame = 2) {
+  const result = [];
+  for (const id of ids) {
+    const count = gameAppearanceCount.get(id) ?? 0;
+    if (count < maxPerGame) {
+      result.push(id);
+    }
+  }
+  return result;
+}
+
+function recordAppearances(ids) {
+  for (const id of ids) {
+    gameAppearanceCount.set(id, (gameAppearanceCount.get(id) ?? 0) + 1);
+  }
+}
+
 const LIST_BLUEPRINTS = [
   {
-    slug: "must-play-2024-2025",
-    title: "Must-Play Games of 2024–2025",
-    description: "The highest-rated games released in 2024 and 2025 — the cream of the crop.",
-    tags: ["editorial", "2024", "2025", "top-rated"],
-    query: async () => sql`
-      SELECT id FROM games
-      WHERE release_date >= '2024-01-01'
-        AND release_date <= CURRENT_DATE
-        AND score >= 88
-        AND cover_image IS NOT NULL AND cover_image != ''
-        AND score > 0 AND verdict_label != 'COMING SOON'
-      ORDER BY score DESC, review_count DESC
-      LIMIT 12
-    `,
-  },
-  {
-    slug: "best-rpgs-right-now",
-    title: "Best RPGs Right Now",
-    description: "Top-rated RPGs from the last 3 years. Epic worlds, deep stories, unforgettable characters.",
-    tags: ["editorial", "rpg", "genre"],
+    slug: "best-single-player-rpgs",
+    title: "Best Recent Single-Player RPGs",
+    description: "Deep, solo RPG experiences from the last 4 years — rich worlds, complex systems, unforgettable stories.",
+    tags: ["editorial", "rpg", "single-player"],
     query: async () => sql`
       SELECT id FROM games
       WHERE genres && ARRAY['RPG']
-        AND release_date >= ${yearsAgoISO(3)}
-        AND release_date <= CURRENT_DATE
-        AND score >= 78
-        AND cover_image IS NOT NULL AND cover_image != ''
-        AND score > 0 AND verdict_label != 'COMING SOON'
-      ORDER BY score DESC
-      LIMIT 12
-    `,
-  },
-  {
-    slug: "top-indie-picks",
-    title: "Top Indie Picks",
-    description: "The best indie games proving that small studios make some of the most memorable experiences.",
-    tags: ["editorial", "indie", "genre"],
-    query: async () => sql`
-      SELECT id FROM games
-      WHERE (genres && ARRAY['Indie'] OR tags && ARRAY['Indie'])
-        AND release_date >= ${yearsAgoISO(3)}
-        AND release_date <= CURRENT_DATE
-        AND score >= 80
-        AND cover_image IS NOT NULL AND cover_image != ''
-        AND score > 0 AND verdict_label != 'COMING SOON'
-      ORDER BY score DESC
-      LIMIT 12
-    `,
-  },
-  {
-    slug: "best-shooters",
-    title: "Best Shooters",
-    description: "First-person and third-person shooters worth your time — from tactical to fast-paced.",
-    tags: ["editorial", "shooter", "genre"],
-    query: async () => sql`
-      SELECT id FROM games
-      WHERE genres && ARRAY['Shooter']
-        AND release_date >= ${yearsAgoISO(4)}
-        AND release_date <= CURRENT_DATE
-        AND score >= 75
-        AND cover_image IS NOT NULL AND cover_image != ''
-        AND score > 0 AND verdict_label != 'COMING SOON'
-      ORDER BY score DESC
-      LIMIT 12
-    `,
-  },
-  {
-    slug: "best-strategy-games",
-    title: "Best Strategy Games",
-    description: "Turn-based and real-time strategy games that will keep your brain busy for hours.",
-    tags: ["editorial", "strategy", "genre"],
-    query: async () => sql`
-      SELECT id FROM games
-      WHERE genres && ARRAY['Strategy']
+        AND NOT (genres && ARRAY['Massively Multiplayer'])
         AND release_date >= ${yearsAgoISO(4)}
         AND release_date <= CURRENT_DATE
         AND score >= 78
         AND cover_image IS NOT NULL AND cover_image != ''
         AND score > 0 AND verdict_label != 'COMING SOON'
       ORDER BY score DESC
-      LIMIT 12
+      LIMIT 20
     `,
   },
   {
-    slug: "best-action-adventure",
-    title: "Top Action-Adventure Games",
-    description: "The best action-adventure experiences — exploration, combat, and compelling worlds.",
-    tags: ["editorial", "action", "adventure", "genre"],
+    slug: "best-co-op-games",
+    title: "Best Co-op Games Right Now",
+    description: "Games built for playing together — local or online co-op that reward teamwork.",
+    tags: ["editorial", "co-op", "multiplayer"],
     query: async () => sql`
       SELECT id FROM games
-      WHERE genres && ARRAY['Action', 'Adventure']
-        AND release_date >= ${yearsAgoISO(3)}
+      WHERE (tags && ARRAY['Co-op', 'Online Co-Op', 'Local Co-Op', 'Co-op Campaign', 'Multiplayer', 'Local Multiplayer']
+             OR genres && ARRAY['Massively Multiplayer'])
+        AND release_date >= ${yearsAgoISO(4)}
         AND release_date <= CURRENT_DATE
-        AND score >= 80
-        AND cover_image IS NOT NULL AND cover_image != ''
-        AND score > 0 AND verdict_label != 'COMING SOON'
-      ORDER BY score DESC
-      LIMIT 12
-    `,
-  },
-  {
-    slug: "upcoming-this-year",
-    title: "Upcoming This Year",
-    description: "Highly anticipated games releasing soon — add them to your wishlist now.",
-    tags: ["editorial", "upcoming", "2025", "2026"],
-    query: async () => sql`
-      SELECT id FROM games
-      WHERE release_date > CURRENT_DATE
-        AND release_date <= (CURRENT_DATE + INTERVAL '12 months')
-        AND cover_image IS NOT NULL AND cover_image != ''
-      ORDER BY release_date ASC, score DESC
-      LIMIT 12
-    `,
-  },
-  {
-    slug: "best-free-to-play",
-    title: "Best Free-to-Play Games",
-    description: "Zero cost, maximum fun. The best free-to-play games worth your time.",
-    tags: ["editorial", "free-to-play", "f2p"],
-    query: async () => sql`
-      SELECT id FROM games
-      WHERE (is_free = true OR monetization ILIKE '%Free%')
-        AND score >= 70
+        AND score >= 74
         AND cover_image IS NOT NULL AND cover_image != ''
         AND score > 0 AND verdict_label != 'COMING SOON'
       ORDER BY score DESC, current_players DESC NULLS LAST
-      LIMIT 12
+      LIMIT 20
     `,
   },
   {
-    slug: "hidden-gems",
-    title: "Hidden Gems",
-    description: "Critically acclaimed games that flew under the radar. High scores, low noise.",
-    tags: ["editorial", "hidden-gems", "underrated"],
+    slug: "best-horror-games",
+    title: "Best Recent Horror Games",
+    description: "Survival horror, psychological terror, and atmospheric dread — the best horror games since 2021.",
+    tags: ["editorial", "horror", "genre"],
     query: async () => sql`
       SELECT id FROM games
-      WHERE score >= 85
-        AND review_count < 500
+      WHERE (genres && ARRAY['Horror'] OR tags && ARRAY['Horror', 'Survival Horror', 'Psychological Horror', 'Atmospheric'])
+        AND release_date >= ${yearsAgoISO(5)}
+        AND release_date <= CURRENT_DATE
+        AND score >= 72
+        AND cover_image IS NOT NULL AND cover_image != ''
+        AND score > 0 AND verdict_label != 'COMING SOON'
+      ORDER BY score DESC
+      LIMIT 20
+    `,
+  },
+  {
+    slug: "best-strategy-builder-games",
+    title: "Best Strategy & Builder Games",
+    description: "Grand strategy, 4X, city builders, and RTS games that demand your full attention.",
+    tags: ["editorial", "strategy", "builder", "4x"],
+    query: async () => sql`
+      SELECT id FROM games
+      WHERE (genres && ARRAY['Strategy'] OR tags && ARRAY['City Builder', 'Base Building', '4X', 'Grand Strategy', 'RTS', 'Turn-Based Strategy'])
+        AND NOT (genres && ARRAY['RPG'])
+        AND release_date >= ${yearsAgoISO(5)}
+        AND release_date <= CURRENT_DATE
+        AND score >= 76
+        AND cover_image IS NOT NULL AND cover_image != ''
+        AND score > 0 AND verdict_label != 'COMING SOON'
+      ORDER BY score DESC
+      LIMIT 20
+    `,
+  },
+  {
+    slug: "best-story-driven-adventures",
+    title: "Best Story-Driven Adventures",
+    description: "Games where narrative is the star — cinematic storytelling, branching choices, emotional impact.",
+    tags: ["editorial", "story", "narrative", "adventure"],
+    query: async () => sql`
+      SELECT id FROM games
+      WHERE (tags && ARRAY['Story Rich', 'Choices Matter', 'Narrative', 'Cinematic', 'Visual Novel', 'Interactive Fiction']
+             OR genres && ARRAY['Adventure'])
+        AND NOT (genres && ARRAY['RPG', 'Strategy', 'Shooter'])
         AND release_date >= ${yearsAgoISO(4)}
+        AND release_date <= CURRENT_DATE
+        AND score >= 78
+        AND cover_image IS NOT NULL AND cover_image != ''
+        AND score > 0 AND verdict_label != 'COMING SOON'
+      ORDER BY score DESC
+      LIMIT 20
+    `,
+  },
+  {
+    slug: "best-indie-under-20-hours",
+    title: "Best Indie Games Under 20 Hours",
+    description: "Tight, focused indie experiences you can finish in a weekend. No filler, all killer.",
+    tags: ["editorial", "indie", "short", "accessible"],
+    query: async () => sql`
+      SELECT id FROM games
+      WHERE (genres && ARRAY['Indie'] OR tags && ARRAY['Indie'])
+        AND (hltb_main IS NULL OR hltb_main <= 20)
+        AND release_date >= ${yearsAgoISO(4)}
+        AND release_date <= CURRENT_DATE
+        AND score >= 80
+        AND cover_image IS NOT NULL AND cover_image != ''
+        AND score > 0 AND verdict_label != 'COMING SOON'
+      ORDER BY score DESC
+      LIMIT 20
+    `,
+  },
+  {
+    slug: "best-competitive-multiplayer",
+    title: "Best Competitive Multiplayer Games",
+    description: "Shooters, fighters, MOBAs, and sports games with active ranked scenes and deep skill ceilings.",
+    tags: ["editorial", "competitive", "multiplayer", "pvp"],
+    query: async () => sql`
+      SELECT id FROM games
+      WHERE (tags && ARRAY['PvP', 'Competitive', 'eSports', 'Battle Royale', 'Arena Shooter', 'MOBA', 'Fighting', 'First-Person Shooter']
+             OR genres && ARRAY['Shooter', 'Fighting', 'Sports'])
+        AND NOT (genres && ARRAY['RPG', 'Adventure'])
+        AND release_date >= ${yearsAgoISO(5)}
+        AND release_date <= CURRENT_DATE
+        AND score >= 72
+        AND cover_image IS NOT NULL AND cover_image != ''
+        AND score > 0 AND verdict_label != 'COMING SOON'
+      ORDER BY score DESC, current_players DESC NULLS LAST
+      LIMIT 20
+    `,
+  },
+  {
+    slug: "most-wanted-2026",
+    title: "Most Wanted Upcoming 2026 Games",
+    description: "The most anticipated games releasing in 2026. Add them to your watchlist now.",
+    tags: ["editorial", "upcoming", "2026", "wishlist"],
+    query: async () => sql`
+      SELECT id FROM games
+      WHERE release_date >= '2026-01-01'
+        AND release_date <= '2026-12-31'
+        AND cover_image IS NOT NULL AND cover_image != ''
+      ORDER BY score DESC NULLS LAST, release_date ASC
+      LIMIT 20
+    `,
+  },
+  {
+    slug: "best-deckbuilders-turn-based",
+    title: "Best Deckbuilders & Turn-Based Games",
+    description: "Roguelike deckbuilders, tactical turn-based RPGs, and deep card-game hybrids.",
+    tags: ["editorial", "deckbuilder", "turn-based", "roguelike"],
+    query: async () => sql`
+      SELECT id FROM games
+      WHERE (tags && ARRAY['Deckbuilder', 'Card Game', 'Turn-Based', 'Turn-Based Combat', 'Roguelike', 'Roguelite', 'Turn-Based Tactics']
+             OR genres && ARRAY['Card Game'])
+        AND release_date >= ${yearsAgoISO(5)}
+        AND release_date <= CURRENT_DATE
+        AND score >= 76
+        AND cover_image IS NOT NULL AND cover_image != ''
+        AND score > 0 AND verdict_label != 'COMING SOON'
+      ORDER BY score DESC
+      LIMIT 20
+    `,
+  },
+  {
+    slug: "hidden-gems-since-2024",
+    title: "Hidden Gems Since 2024",
+    description: "Critically acclaimed games since 2024 that didn't get the spotlight they deserved. High scores, low hype.",
+    tags: ["editorial", "hidden-gems", "underrated", "2024"],
+    query: async () => sql`
+      SELECT id FROM games
+      WHERE score >= 82
+        AND review_count < 1000
+        AND release_date >= '2024-01-01'
         AND release_date <= CURRENT_DATE
         AND cover_image IS NOT NULL AND cover_image != ''
         AND score > 0 AND verdict_label != 'COMING SOON'
       ORDER BY score DESC, review_count ASC
-      LIMIT 12
-    `,
-  },
-  {
-    slug: "best-of-last-2-years",
-    title: "Best of the Last 2 Years",
-    description: "The highest-scoring games released in the past 24 months. Your definitive shortlist.",
-    tags: ["editorial", "recent", "top-rated"],
-    query: async () => sql`
-      SELECT id FROM games
-      WHERE release_date >= ${yearsAgoISO(2)}
-        AND release_date <= CURRENT_DATE
-        AND score >= 82
-        AND cover_image IS NOT NULL AND cover_image != ''
-        AND score > 0 AND verdict_label != 'COMING SOON'
-      ORDER BY score DESC
-      LIMIT 12
+      LIMIT 20
     `,
   },
 ];
@@ -242,11 +277,21 @@ for (const blueprint of LIST_BLUEPRINTS) {
     continue;
   }
 
-  console.log(`  ✓ Found ${gameRows.length} games`);
+  // Apply overlap constraint: no game in more than 2 lists
+  const allIds = gameRows.map((r) => r.id);
+  const constrainedIds = enforceOverlapConstraints(allIds, 2).slice(0, 12);
+
+  if (constrainedIds.length < 4) {
+    console.log(`  ⚠ Only ${constrainedIds.length} games after overlap enforcement (min 4 required), skipping`);
+    skipped++;
+    continue;
+  }
+
+  console.log(`  ✓ ${gameRows.length} raw → ${constrainedIds.length} after overlap enforcement`);
 
   // Get cover image from first game for the list cover
   const firstGame = await sql`
-    SELECT cover_image, header_image FROM games WHERE id = ${gameRows[0].id} LIMIT 1
+    SELECT cover_image, header_image FROM games WHERE id = ${constrainedIds[0]} LIMIT 1
   `;
   const coverImage = firstGame[0]?.header_image || firstGame[0]?.cover_image || "";
 
@@ -293,9 +338,9 @@ for (const blueprint of LIST_BLUEPRINTS) {
   // Delete existing items for this list and re-insert fresh
   await sql`DELETE FROM list_items WHERE list_id = ${listId}`;
 
-  const items = gameRows.map((row, i) => ({
+  const items = constrainedIds.map((id, i) => ({
     list_id: listId,
-    game_id: row.id,
+    game_id: id,
     position: i + 1,
   }));
 
@@ -306,6 +351,9 @@ for (const blueprint of LIST_BLUEPRINTS) {
       ON CONFLICT DO NOTHING
     `;
   }
+
+  // Record these games as used (overlap tracking)
+  recordAppearances(constrainedIds);
 
   console.log(`  ✓ Inserted ${items.length} games into list`);
 }

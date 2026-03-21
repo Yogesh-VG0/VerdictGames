@@ -4,7 +4,9 @@
  * Homepage aggregator — returns all homepage sections in a single call.
  * Eliminates 5+ separate API calls from the frontend.
  *
- * Returns: { trending, topRated, newReleases, deals }
+ * Returns: { hero, trending, topRated, newReleases, deals }
+ * hero and trending are distinct pools — hero feeds the carousel,
+ * trending feeds the rail. They are pre-deduped server-side.
  */
 
 import { jsonOk } from "@/lib/api/response";
