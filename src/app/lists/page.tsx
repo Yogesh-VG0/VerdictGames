@@ -95,7 +95,7 @@ export default function ListsPage() {
           initial="hidden"
           animate="show"
           variants={{ show: { transition: { staggerChildren: 0.07 } } }}
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 [&>*:last-child:nth-child(3n-2)]:sm:col-start-1 [&>*:last-child:nth-child(3n-2)]:lg:col-start-2"
         >
           {displayLists.map((list) => (
             <motion.div key={list.id} variants={gridItem}>

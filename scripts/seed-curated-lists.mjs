@@ -55,6 +55,7 @@ const SYSTEM_CURATOR = "editorial";
 // Rule 2: Any two lists must be ≥ 50% different (Jaccard dissimilarity).
 const gameAppearanceCount = new Map();
 const seededListSets = {}; // slug → Set<id>
+const usedCoverImages = new Set(); // Track cover images to avoid duplicates across lists
 
 function enforceOverlapConstraints(ids, maxPerGame = 2) {
   const result = [];
@@ -323,11 +324,22 @@ for (const blueprint of LIST_BLUEPRINTS) {
 
   console.log(`  ✓ ${gameRows.length} raw → ${constrainedIds.length} after overlap enforcement`);
 
-  // Get cover image from first game for the list cover
-  const firstGame = await sql`
-    SELECT cover_image, header_image FROM games WHERE id = ${constrainedIds[0]} LIMIT 1
-  `;
-  const coverImage = firstGame[0]?.header_image || firstGame[0]?.cover_image || "";
+  // Get a unique cover image for this list (avoid duplicates across lists)
+  let coverImage = "";
+  for (const gid of constrainedIds) {
+    const [g] = await sql`SELECT cover_image, header_image FROM games WHERE id = ${gid} LIMIT 1`;
+    const img = g?.header_image || g?.cover_image || "";
+    if (img && !usedCoverImages.has(img)) {
+      coverImage = img;
+      usedCoverImages.add(img);
+      break;
+    }
+  }
+  // Fallback: use first game's image even if duplicate
+  if (!coverImage) {
+    const [g] = await sql`SELECT cover_image, header_image FROM games WHERE id = ${constrainedIds[0]} LIMIT 1`;
+    coverImage = g?.header_image || g?.cover_image || "";
+  }
 
   // Upsert the list
   const [existingList] = await sql`

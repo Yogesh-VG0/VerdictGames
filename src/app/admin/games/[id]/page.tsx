@@ -242,11 +242,8 @@ export default function AdminGameEditor({ params }: { params: Promise<{ id: stri
       queryClient.invalidateQueries({ queryKey: ["admin-activity"] });
       queryClient.invalidateQueries({ queryKey: ["admin-games"] });
       queryClient.invalidateQueries({ queryKey: ["homepage"] });
-      if (result?.preview) {
-        setSaveMsg(`Preview from ${result.source}: ${result.message}`);
-      } else {
-        setSaveMsg("Re-ingested successfully!");
-      }
+      queryClient.invalidateQueries({ queryKey: ["game", game.data?.slug] });
+      setSaveMsg(result?.message ?? "Re-ingested successfully!");
       setTimeout(() => setSaveMsg(""), 5000);
     },
   });

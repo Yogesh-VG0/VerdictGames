@@ -221,36 +221,49 @@ export default function ReviewsPage() {
               {!steamReviewsQuery.isLoading && steamReviewsQuery.data && steamReviewsQuery.data.reviews.length > 0 && (
                 <>
                   {/* Game identity header */}
-                  <div className="flex items-center gap-3 rounded-xl border border-border bg-surface-2 p-3">
-                    {steamReviewsQuery.data.coverImage && (
-                      <div className="relative w-14 h-9 rounded-lg overflow-hidden shrink-0">
-                        <Image
-                          src={steamReviewsQuery.data.coverImage}
-                          alt={steamReviewsQuery.data.gameTitle ?? "Game"}
-                          fill
-                          className="object-cover"
-                          sizes="56px"
-                        />
+                  <div className="rounded-xl border border-border bg-surface-2 p-4">
+                    <div className="flex items-center gap-4">
+                      {steamReviewsQuery.data.coverImage && (
+                        <Link href={`/game/${steamGameSlug}`} className="relative w-16 h-20 rounded-lg overflow-hidden shrink-0 group">
+                          <Image
+                            src={steamReviewsQuery.data.coverImage}
+                            alt={steamReviewsQuery.data.gameTitle ?? "Game"}
+                            fill
+                            className="object-cover group-hover:scale-105 transition-transform"
+                            sizes="64px"
+                          />
+                        </Link>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <Link
+                          href={`/game/${steamGameSlug}`}
+                          className="text-sm font-semibold text-foreground hover:text-accent transition-colors truncate block"
+                        >
+                          {steamReviewsQuery.data.gameTitle ?? steamGameQuery}
+                        </Link>
+                        <p className="text-[10px] text-tertiary mt-1">
+                          Showing top {steamReviewsQuery.data.reviews.length} of {steamReviewsQuery.data.total} Steam reviews
+                        </p>
+                        <div className="flex items-center gap-3 mt-2">
+                          <Link
+                            href={`/game/${steamGameSlug}`}
+                            className="text-[10px] text-accent hover:text-accent-hover font-medium"
+                          >
+                            View on Verdict.games →
+                          </Link>
+                          {steamReviewsQuery.data.steamAppId && (
+                            <a
+                              href={`https://store.steampowered.com/app/${steamReviewsQuery.data.steamAppId}#app_reviews_hash`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[10px] text-pixel-cyan hover:underline font-medium"
+                            >
+                              View all on Steam →
+                            </a>
+                          )}
+                        </div>
                       </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-foreground truncate">
-                        {steamReviewsQuery.data.gameTitle ?? steamGameQuery}
-                      </p>
-                      <p className="text-[10px] text-tertiary">
-                        Showing top {steamReviewsQuery.data.reviews.length} of {steamReviewsQuery.data.total} Steam reviews
-                      </p>
                     </div>
-                    {steamReviewsQuery.data.steamAppId && (
-                      <a
-                        href={`https://store.steampowered.com/app/${steamReviewsQuery.data.steamAppId}#app_reviews_hash`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-xs text-pixel-cyan hover:underline shrink-0"
-                      >
-                        View all on Steam →
-                      </a>
-                    )}
                   </div>
                   {steamReviewsQuery.data.reviews.map((r) => (
                     <SteamReviewCard key={r.recommendationId} review={r} />

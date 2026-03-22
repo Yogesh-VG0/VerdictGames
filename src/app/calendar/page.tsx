@@ -98,6 +98,8 @@ export default function CalendarPage() {
     monthNavRef.current.releasePointerCapture(e.pointerId);
     monthNavRef.current.style.cursor = "grab";
     monthNavRef.current.style.userSelect = "";
+    // Reset hasDragged after a tick so the current click is still blocked but next clicks work
+    setTimeout(() => { hasDragged.current = false; }, 100);
   }, []);
 
   // Build 12-month range
@@ -191,7 +193,7 @@ export default function CalendarPage() {
       <div className="sticky top-16 z-30 -mx-4 px-4 py-3 bg-background/80 backdrop-blur-xl border-b border-border">
         <div
           ref={monthNavRef}
-          className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide cursor-grab"
+          className="flex gap-1.5 overflow-x-auto py-1.5 scrollbar-hide cursor-grab"
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
@@ -220,7 +222,7 @@ export default function CalendarPage() {
                 <span className="hidden sm:inline">{m.label}</span>
                 <span className="sm:hidden">{m.shortLabel}</span>
                 {isCurrent && m.key !== selectedMonth && (
-                  <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-accent" />
+                  <span className="absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-accent ring-2 ring-background" />
                 )}
               </button>
             );
@@ -384,7 +386,7 @@ export default function CalendarPage() {
 
                                   {/* Score / Status */}
                                   <div className="shrink-0 text-right">
-                                    {game.score > 0 ? (
+                                    {game.score > 0 && !(game.releaseDate && game.releaseDate.slice(0, 10) > now.toISOString().slice(0, 10)) ? (
                                       <div className="text-center">
                                         <p className={`text-lg font-bold tabular-nums ${
                                           game.score >= 80 ? "text-score-great" :

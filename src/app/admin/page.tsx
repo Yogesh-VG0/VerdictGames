@@ -2,8 +2,8 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
-import { Gamepad2, FileText, Users, Plus, PenLine, Pencil, ListPlus, Loader2, Database } from "lucide-react";
-import type { ReactNode } from "react";
+import { Gamepad2, FileText, Users, Plus, PenLine, Pencil, ListPlus, Loader2, Database, ChevronDown } from "lucide-react";
+import { useState, type ReactNode } from "react";
 
 interface AdminStats {
   totalGames: number;
@@ -53,6 +53,84 @@ function formatAction(entry: AuditEntry): string {
   if (fields.length === 0) return `Updated ${entry.entity_type}`;
   if (fields.length <= 2) return `Updated ${fields.join(", ")}`;
   return `Updated ${fields.length} fields`;
+}
+
+function formatFieldValue(val: unknown): string {
+  if (val === null || val === undefined || val === "") return "(empty)";
+  if (Array.isArray(val)) return val.length === 0 ? "(empty)" : val.join(", ");
+  if (typeof val === "boolean") return val ? "Yes" : "No";
+  const str = String(val);
+  return str.length > 80 ? str.slice(0, 80) + "…" : str;
+}
+
+function AuditEntryRow({ entry }: { entry: AuditEntry }) {
+  const [expanded, setExpanded] = useState(false);
+  const fields = Object.keys(entry.field_changes || {});
+  const hasChanges = fields.length > 0;
+
+  return (
+    <div className="hover:bg-surface-2 transition-colors">
+      <div
+        className={`px-4 py-3 flex items-start gap-3 ${hasChanges ? "cursor-pointer" : ""}`}
+        onClick={() => hasChanges && setExpanded(!expanded)}
+      >
+        <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+          entry.action === "create" ? "bg-success/10 text-success" : "bg-accent/10 text-accent"
+        }`}>
+          {entry.action === "create" ? <Plus className="w-4 h-4" /> : <Pencil className="w-3.5 h-3.5" />}
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm text-foreground font-medium">
+            {formatAction(entry)}
+          </p>
+          {hasChanges && (
+            <p className="text-[10px] text-tertiary mt-0.5">
+              Changed: {fields.map(f => f.replace(/_/g, " ")).join(", ")}
+            </p>
+          )}
+          <div className="flex items-center gap-2 mt-0.5">
+            <span className="text-[10px] text-tertiary">{entry.edited_by}</span>
+            <span className="text-[10px] text-tertiary">·</span>
+            <span className="text-[10px] text-tertiary">{formatTimeAgo(entry.edited_at)}</span>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          {entry.entity_type === "game" && (
+            <Link
+              href={`/admin/games/${entry.entity_id}`}
+              onClick={(e) => e.stopPropagation()}
+              className="text-[10px] text-accent hover:text-accent-hover"
+            >
+              Edit →
+            </Link>
+          )}
+          {hasChanges && (
+            <ChevronDown className={`w-3.5 h-3.5 text-tertiary transition-transform ${expanded ? "rotate-180" : ""}`} />
+          )}
+        </div>
+      </div>
+      {expanded && hasChanges && (
+        <div className="px-4 pb-3 pl-15">
+          <div className="ml-11 rounded-lg border border-border bg-surface-2 overflow-hidden text-[11px]">
+            {fields.map((field) => {
+              const change = entry.field_changes[field];
+              return (
+                <div key={field} className="flex border-b border-border/50 last:border-0">
+                  <div className="w-28 shrink-0 px-2.5 py-1.5 bg-surface font-medium text-secondary capitalize">
+                    {field.replace(/_/g, " ")}
+                  </div>
+                  <div className="flex-1 px-2.5 py-1.5 space-y-0.5">
+                    <div className="text-danger/70 line-through">{formatFieldValue(change.old)}</div>
+                    <div className="text-pixel-green">{formatFieldValue(change.new)}</div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default function AdminDashboard() {
@@ -175,33 +253,7 @@ export default function AdminDashboard() {
             ) : (
               <div className="divide-y divide-border">
                 {activity.data.slice(0, 10).map((entry) => (
-                  <div key={entry.id} className="px-4 py-3 hover:bg-surface-2 transition-colors">
-                    <div className="flex items-start gap-3">
-                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
-                        entry.action === "create" ? "bg-success/10 text-success" : "bg-accent/10 text-accent"
-                      }`}>
-                        {entry.action === "create" ? <Plus className="w-4 h-4" /> : <Pencil className="w-3.5 h-3.5" />}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm text-foreground font-medium">
-                          {formatAction(entry)}
-                        </p>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          <span className="text-[10px] text-tertiary">{entry.edited_by}</span>
-                          <span className="text-[10px] text-tertiary">·</span>
-                          <span className="text-[10px] text-tertiary">{formatTimeAgo(entry.edited_at)}</span>
-                        </div>
-                      </div>
-                      {entry.entity_type === "game" && (
-                        <Link
-                          href={`/admin/games/${entry.entity_id}`}
-                          className="text-[10px] text-accent hover:text-accent-hover shrink-0"
-                        >
-                          View →
-                        </Link>
-                      )}
-                    </div>
-                  </div>
+                  <AuditEntryRow key={entry.id} entry={entry} />
                 ))}
               </div>
             )}

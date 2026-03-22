@@ -26,6 +26,7 @@ import LazySection from "@/components/LazySection";
 import {
   HeroSkeleton,
   GameGridSkeleton,
+  HorizontalScrollSkeleton,
   SectionHeaderSkeleton,
 } from "@/components/ui/Skeleton";
 import GradientText from "@/components/ui/GradientText";
@@ -146,7 +147,7 @@ export default function HomePage() {
             {trending.isLoading ? (
               <>
                 <SectionHeaderSkeleton />
-                <GameGridSkeleton count={4} />
+                <HorizontalScrollSkeleton count={6} />
               </>
             ) : trending.data && trending.data.length > 0 ? (
               <>
@@ -188,7 +189,7 @@ export default function HomePage() {
             {personalized.isLoading ? (
               <>
                 <SectionHeaderSkeleton />
-                <GameGridSkeleton count={4} />
+                <HorizontalScrollSkeleton count={6} />
               </>
             ) : personalized.data && personalized.data.length > 0 ? (
               <>
@@ -256,7 +257,7 @@ export default function HomePage() {
               {discoverTab === "new" && (
                 <>
                   {newReleases.isLoading ? (
-                    <GameGridSkeleton count={4} />
+                    <HorizontalScrollSkeleton count={6} />
                   ) : newReleases.data && newReleases.data.length > 0 ? (
                     <HorizontalScroll>
                       {newReleases.data.map((game, i) => (
@@ -280,7 +281,7 @@ export default function HomePage() {
               {discoverTab === "deals" && (
                 <>
                   {gxDeals.isLoading ? (
-                    <GameGridSkeleton count={4} />
+                    <HorizontalScrollSkeleton count={6} />
                   ) : gxDeals.data && gxDeals.data.length > 0 ? (
                     <HorizontalScroll>
                       {gxDeals.data.slice(0, 20).map((deal, i) => (
@@ -304,7 +305,7 @@ export default function HomePage() {
               {discoverTab === "free" && (
                 <>
                   {gxFreeToPlay.isLoading ? (
-                    <GameGridSkeleton count={4} />
+                    <HorizontalScrollSkeleton count={6} />
                   ) : gxFreeToPlay.data && gxFreeToPlay.data.length > 0 ? (
                     <HorizontalScroll>
                       {gxFreeToPlay.data.slice(0, 20).map((game, i) => (
@@ -373,7 +374,7 @@ export default function HomePage() {
               {topRated.isLoading ? (
                 <>
                   <SectionHeaderSkeleton />
-                  <GameGridSkeleton count={4} />
+                  <HorizontalScrollSkeleton count={6} />
                 </>
               ) : topRated.data && topRated.data.length > 0 ? (
                 <>

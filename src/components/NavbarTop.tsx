@@ -217,7 +217,21 @@ export default function NavbarTop() {
               <div className="py-2">
                 <p className="px-4 py-2 text-[10px] uppercase tracking-wider text-tertiary font-medium">Browse</p>
                 {allNavLinks.map((link) => {
-                  const isActive = link.href === "/" ? pathname === "/" : pathname.startsWith(link.href.split("?")[0]);
+                  let isActive: boolean;
+                  if (link.href === "/") {
+                    isActive = pathname === "/";
+                  } else if (link.href.includes("?")) {
+                    // Links with query params: match both pathname and query
+                    const [basePath, qs] = link.href.split("?");
+                    isActive = pathname === basePath && typeof window !== "undefined" && window.location.search === `?${qs}`;
+                  } else {
+                    // Links without query params: match pathname prefix but NOT if the URL also has query params that match another link
+                    isActive = pathname.startsWith(link.href);
+                    // If we're on /search with a sort=trending query, don't highlight the plain /search Explore link
+                    if (link.href === "/search" && typeof window !== "undefined" && window.location.search.includes("sort=trending")) {
+                      isActive = false;
+                    }
+                  }
                   return (
                     <Link
                       key={link.href + link.label}
