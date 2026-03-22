@@ -20,31 +20,47 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const router = useRouter();
   const pathname = usePathname();
   const [authChecked, setAuthChecked] = useState(false);
+  const [denied, setDenied] = useState(false);
 
   useEffect(() => {
-    // Wait until auth has fully resolved (loading finishes)
+    // Don't check until auth has fully resolved
     if (loading) return;
 
-    // Give a brief moment for the auth state to stabilize after hydration
+    // Once loading is done, wait a generous amount for Supabase session restore
+    // On refresh, Supabase may take 200-500ms to restore the session from cookies
     const timer = setTimeout(() => {
-      if (!user || !isAdminEmail(user.email)) {
-        router.replace("/");
-      }
       setAuthChecked(true);
-    }, 100);
+      if (!user || !isAdminEmail(user.email)) {
+        setDenied(true);
+      }
+    }, 500);
 
     return () => clearTimeout(timer);
-  }, [user, loading, router]);
+  }, [user, loading]);
 
-  if (loading || (!authChecked && !user)) {
+  // Also react when user becomes available after authChecked
+  useEffect(() => {
+    if (authChecked && user && isAdminEmail(user.email)) {
+      setDenied(false);
+    }
+  }, [user, authChecked]);
+
+  // Redirect only when we're sure auth is denied
+  useEffect(() => {
+    if (denied && authChecked) {
+      router.replace("/");
+    }
+  }, [denied, authChecked, router]);
+
+  if (!authChecked || loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="animate-pulse text-secondary">Loading...</div>
+        <div className="animate-pulse text-secondary">Loading admin panel...</div>
       </div>
     );
   }
 
-  if (!user || !isAdminEmail(user.email)) {
+  if (denied || !user || !isAdminEmail(user.email)) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center space-y-4">

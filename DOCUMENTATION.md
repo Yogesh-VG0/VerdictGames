@@ -1,6 +1,6 @@
 # verdict.games — Complete Project Documentation
 
-> **The Verdict on Every Game** — A premium game reviews and discovery platform built for players who want honest, data-driven opinions on games across all major platforms (PC, PlayStation, Xbox, Nintendo Switch, Android, iOS, and more). Think of it as a Letterboxd for games, enriched with data from 5+ external APIs.
+> **The Verdict on Every Game** — A premium game reviews and discovery platform built for players who want honest, data-driven opinions on games across all major platforms (PC, PlayStation, Xbox, Nintendo Switch, Android, iOS, and more). Think of it as a Letterboxd for games, enriched with data from 7 external APIs (RAWG, Steam, IGDB, CheapShark, Wikipedia, HowLongToBeat, GX Corner).
 
 ---
 
@@ -83,7 +83,7 @@
 
 **verdict.games** is a full-stack, production-ready game reviews platform that aggregates data from multiple external APIs to provide comprehensive game profiles with:
 
-- **293+ games** in the database with data from RAWG, Steam, IGDB, CheapShark, and Wikipedia
+- **1,484+ games** in the database with data from RAWG, Steam, IGDB, CheapShark, Wikipedia, HowLongToBeat, and GX Corner
 - **Auto-discovery** — cron endpoints that find and ingest trending, new, and top-rated games automatically (~320 games/standard run, ~700+ games/deep run)
 - **Rich game pages** — multi-source scoring, verdict badges, pros/cons, pricing, media, external links, achievements, news
 - **Search & filter** — by platform (PC, PS5, PS4, Xbox, Switch, Android, iOS, Linux), genre, year, monetization, with full-text search and on-demand ingestion
@@ -807,7 +807,7 @@ RLS is enabled on **all 6 tables**. Policies:
 | `searchIgdb(query, limit)` | Search games by name |
 | `getIgdbGame(igdbId)` | Full game details by ID |
 | `findIgdbMatch(title, releaseYear)` | Best match for ingestion |
-| `extractIgdbEnrichment(game)` | Extract trailer URL, Wikipedia URL, Reddit, official site |
+| `extractIgdbEnrichment(game)` | Extract trailer URL, Wikipedia URL, Reddit, official site, cover image, screenshots |
 | `getPopularByType(popularityType, limit)` | PopScore primitives (visits, want-to-play, playing, Steam peak) |
 | `getIgdbGamesByIds(ids, limit)` | Batch game lookup by IDs |
 | `getTrendingFromIgdb(limit)` | Combined PopScore trending (weighted: visits 25%, want-to-play 30%, playing 30%, Steam peak 15%) |
@@ -1226,19 +1226,18 @@ The ingestion pipeline is the core data enrichment engine. It follows a 13-step 
 **File**: `src/app/page.tsx` (Client Component)
 
 Sections displayed in order:
-1. **Hero Carousel** — Auto-advancing (7s interval) carousel of featured/trending games with swipe support, gradient overlays, score rings, verdict badges, score chips, CTA button
-2. **Most Played Right Now** — Spotlight card (3/4 aspect ratio) for #1 trending game + 2–4 column grid for remaining trending games, ordered by concurrent players
-3. **Hot Right Now** — Horizontal scroll of most anticipated games (powered by GX Top Liked)
-4. **New Releases** — 4-column GameGrid of newest releases
-5. **Best Deals** — Horizontal scroll of discounted games with discount %, store badges, prices (powered by GX Super Deals, uses `GXDealCard`)
-6. **Top Verdict Scores** — 4-column GameGrid of highest-scored games
-7. **Free to Play** — Horizontal scroll of free-to-play titles with platform badges (powered by GX Free-to-Play)
-8. **On PS Plus & Game Pass** — Horizontal scroll with service filter tabs and `GXServiceBadge` components (powered by GX Top Games)
-9. **Recommended For You** — Horizontal scroll of genre-diverse picks (filters out trending duplicates)
-10. **Gaming News** — Grid of trending gaming news articles with publisher info (powered by GX Popular News, uses `GXNewsCard`)
-11. **Footer** — Links to About, Privacy, Terms + data attribution
+1. **Hero Carousel** — Auto-advancing (7s interval) carousel of 6 featured games (daily-shuffled from hero pool), cinematic crossfade transitions, gradient overlays, score rings, verdict badges, CTA buttons. Desktop min-height 560px/600px.
+2. **Trending Right Now** — HorizontalScroll of up to 20 trending games with animated GradientText section titles. Deduped from hero pool.
+3. **Recommended For You / You Might Enjoy** — HorizontalScroll of 20 personalized picks (authenticated: library-based recommendations; anonymous: genre-diverse curated picks)
+4. **Discover** — Tabbed section with New Releases, Deals, and Free to Play tabs. Each shows up to 20 items in HorizontalScroll.
+5. **Top Rated** — HorizontalScroll of 20 highest-scoring recent releases with GradientText header.
+6. **Gaming News** — 2-column editorial layout: 2 featured hero articles (left) + 9 compact stacked articles (right). Powered by GX Popular News + GX News Feed (deduped).
+7. **Multi-Source Game Intelligence** — Data sources banner showing all 7 API sources.
+8. **Footer** — Browse links, platform links, about links + data attribution.
 
-**Data fetching**: React Query with 5-minute stale times. Shows skeleton states (`HeroSkeleton`, `GameGridSkeleton`, `SectionHeaderSkeleton`) while loading.
+**Each section has unique animated gradient text** via GradientText component with framer-motion.
+
+**Data fetching**: Single `getHomepageData()` aggregator call via React Query (60s stale, 2min refetch). Shows skeleton states (`HeroSkeleton`, `HorizontalScrollSkeleton`, `SectionHeaderSkeleton`) that match actual horizontal card layout.
 
 ### 10.2 Game Detail Page
 **File**: `src/app/game/[slug]/page.tsx` (Client Component)
@@ -1346,21 +1345,30 @@ A full admin interface for managing games, reviews, and featured content. Access
 - Role guard — redirects non-admin users away
 
 **Dashboard**: `src/app/admin/page.tsx`
-- Stats overview (total games, reviews, users)
-- Quick actions for common admin tasks
+- Stats overview (total games, reviews, users) with links to detail pages
+- Quick actions for common admin tasks (Add Game, Edit Pages, Write Reviews, Manage Users)
+- **Recent Activity** — Expandable audit log entries showing old→new field change diffs with color-coded values. Click to expand/collapse. "Edit →" links to game editor.
+- Seed Content section for editorial lists and community reviews
 
 **Games List**: `src/app/admin/games/page.tsx`
 - Searchable, paginated table of all games in the database
 - Links to individual game editor pages
 
 **Game Editor**: `src/app/admin/games/[id]/page.tsx`
-- Full form for editing all game fields (metadata, scores, flags, media)
-- "Force Re-ingest" button to re-fetch data from external sources
-- Toggle featured/trending flags
+- Full form for editing all game fields organized in tabs: Overview, Editorial, Media, Store/Links, Diagnostics
+- **Source-specific Re-ingest**: dropdown to choose Full Pipeline / RAWG Only / IGDB Only
+  - IGDB reingest fetches cover images, screenshots, trailer, description, ratings, URLs and applies them directly to the database
+  - RAWG reingest fetches cover, platforms, genres, release date, description, developer, publisher, screenshots
+  - Success message shows which specific fields were updated
+- Toggle featured/trending flags with immediate save
+- **Audit logging**: all field changes are recorded with old/new values (empty→empty changes are filtered out)
 
 **Reviews**: `src/app/admin/reviews/page.tsx`
 - Review moderation: view, delete existing reviews
 - Write new editorial reviews
+
+**Users**: `src/app/admin/users/page.tsx`
+- View all user profiles with review counts and library activity
 
 ---
 
@@ -1445,10 +1453,13 @@ Multi-source score display with two variants:
 - Fallback: Shows "Verdict {score}" if no source-specific scores exist
 
 #### `HorizontalScroll`
-- Scrollable container with gradient edge fades
-- Navigation arrows (desktop only, visible on hover)
+- Mouse-only drag-to-scroll (touch devices use native smooth overflow scrolling)
+- Momentum-based scrolling with velocity tracking
+- Click-through for game cards (drag vs click distinguished by movement threshold)
+- Navigation arrows (desktop only, visible on group hover)
 - Smooth scroll by 60% of container width per click
 - Hidden scrollbar (`no-scrollbar` class)
+- No pointer capture (allows native click events to pass through)
 
 ### 11.3 UI Primitives
 
@@ -1482,7 +1493,8 @@ Multi-source score display with two variants:
 
 #### `Skeleton`
 - Base shimmer animation using gradient background
-- Pre-built variants: `GameCardSkeleton`, `ReviewCardSkeleton`, `HeroSkeleton`, `SectionHeaderSkeleton`, `GameGridSkeleton`
+- Pre-built variants: `GameCardSkeleton`, `ReviewCardSkeleton`, `HeroSkeleton`, `SectionHeaderSkeleton`, `GameGridSkeleton`, `HorizontalScrollSkeleton`
+- All skeletons match actual component layouts (horizontal card rows, proper aspect ratios, rounded corners)
 
 #### `SortDropdown<T>`
 - Styled `<select>` dropdown with custom arrow SVG
@@ -2211,4 +2223,96 @@ Each game gets a `trendingReason` string computed from its data:
 
 ---
 
-*This documentation covers every file, function, component, database table, API route, external integration, design token, animation, and configuration in the verdict.games codebase. Generated from a complete line-by-line review of the entire project.*
+---
+
+## 24. Recent Changes Log
+
+### UI Overhaul (March 2026)
+
+**Homepage:**
+- Increased all sections to 20 games each (trending, top rated, new releases, recommendations, deals, free-to-play)
+- Created `GradientText` component with animated gradient text using framer-motion
+- Each section header has a unique animated gradient
+- Reorganized homepage into: Hero → Trending → For You → Discover (tabbed) → Top Rated → News → Footer
+- Added `HorizontalScrollSkeleton` matching actual card layout
+
+**HorizontalScroll Component:**
+- Complete rewrite: mouse-only drag (touch uses native smooth scrolling)
+- Removed `setPointerCapture` which was blocking desktop clicks on game cards
+- Momentum-based scrolling with velocity tracking
+- Removed drag zone div below cards
+
+**Hero Carousel:**
+- Desktop min-height increased to 560px/600px (md/lg)
+- Mobile image uses `object-top` instead of `object-center` to fix zoom
+- Cinematic crossfade transitions (opacity+scale)
+
+**Calendar Page:**
+- Bigger game cards (w-14 h-[74px] sm:w-[72px] sm:h-24)
+- Month click after drag fixed (hasDragged reset in pointerUp)
+- Current month indicator uses ring-2 ring-background (not clipped)
+- Unreleased games no longer show verdict scores
+- Merged GX + DB calendar data (DB rows take priority)
+
+**Reviews Page:**
+- Bigger game image in Steam review header (w-16 h-20)
+- Added link to verdict.games game page
+- Source tabs: Community Reviews / Steam Player Reviews
+- Platform filter scrollbar hidden
+
+**Lists Page:**
+- 10th orphan item centered in grid
+- Seed script avoids duplicate cover images across lists
+
+**Search Page:**
+- Platform filter scrollbar hidden
+- Relevance sort fixed: sorts by score desc (then release_date) instead of being identical to newest
+
+**Navigation:**
+- Mobile sidebar: Explore and Trending no longer both highlighted on `/search?sort=trending`
+- Mobile sidebar uses proper URL+query matching for active state
+
+**Skeleton Loading (all pages):**
+- All loading skeletons updated to match actual page layouts
+- Homepage: horizontal card rows instead of grids
+- Calendar: month nav + platform filters + day groups
+- Reviews: source tabs + filter row
+- Game detail: hero banner + title bar + content grid
+- Search: filter sections at correct max-width
+
+### Admin Dashboard Improvements
+
+**Reingest System:**
+- Source selection dropdown: Full Pipeline / RAWG Only / IGDB Only
+- IGDB reingest now does full `getIgdbGame()` call after search match to get all expanded fields
+- IGDB reingest applies: cover image, screenshots, header image, trailer, description, ratings, URLs directly to database
+- RAWG reingest applies: cover, platforms, genres, release date, description, developer, publisher, screenshots
+- Success message shows which specific fields were updated
+
+**Audit Log:**
+- Created `admin_audit_log` table in Supabase with UUID PK, JSONB field_changes, RLS policy, indexes
+- Dashboard shows expandable audit entries with old→new field change diffs
+- Color-coded values (red strikethrough for old, green for new)
+- Empty→empty changes filtered out
+- Shared `writeAuditLog` helper used across all admin routes
+
+**Auth Guard:**
+- Fixed admin page redirect on refresh: 500ms timer with split effects for denied/auth state
+- Separate effect handles user becoming available after initial check
+
+### Data & Backend
+
+- `extractIgdbEnrichment` now returns `coverImageUrl` and `screenshotUrls` from IGDB
+- `findIgdbMatch` query expanded to include `screenshots.image_id`
+- Homepage recency filters: trending 18mo, top rated 24mo (fallback 36mo), recommendations 36mo
+- `igdbImageUrl()` helper for building IGDB image URLs with size variants
+- IGDB PopScore trending: weighted composite (visits 25%, want-to-play 30%, playing 30%, Steam peak 15%)
+
+### Security
+
+- `.mcp.json` removed from git tracking and added to `.gitignore` (contained API keys)
+- Admin audit log records all game edits with field-level diffs
+
+---
+
+*This documentation covers every file, function, component, database table, API route, external integration, design token, animation, and configuration in the verdict.games codebase. Last updated: March 2026.*

@@ -243,8 +243,10 @@ export default function AdminGameEditor({ params }: { params: Promise<{ id: stri
       queryClient.invalidateQueries({ queryKey: ["admin-games"] });
       queryClient.invalidateQueries({ queryKey: ["homepage"] });
       queryClient.invalidateQueries({ queryKey: ["game", game.data?.slug] });
-      setSaveMsg(result?.message ?? "Re-ingested successfully!");
-      setTimeout(() => setSaveMsg(""), 5000);
+      const fields = (result?.data as Record<string, unknown>)?.fieldsUpdated as string[] | undefined;
+      const fieldList = fields?.length ? `\nFields: ${fields.join(", ")}` : "";
+      setSaveMsg((result?.message ?? "Re-ingested successfully!") + fieldList);
+      setTimeout(() => setSaveMsg(""), 8000);
     },
   });
 
@@ -335,7 +337,7 @@ export default function AdminGameEditor({ params }: { params: Promise<{ id: stri
 
       {/* Status message */}
       {saveMsg && (
-        <div className={`rounded-xl px-4 py-2 text-sm font-medium ${saveMsg.startsWith("Error") ? "bg-danger/10 text-danger" : "bg-pixel-green/10 text-pixel-green"}`}>
+        <div className={`rounded-xl px-4 py-2 text-sm font-medium whitespace-pre-line ${saveMsg.startsWith("Error") ? "bg-danger/10 text-danger" : "bg-pixel-green/10 text-pixel-green"}`}>
           {saveMsg}
         </div>
       )}

@@ -35,13 +35,16 @@ export async function POST(
 
     // Source-specific enrichment: fetch data and apply to the game record
     if (source === "igdb") {
-      const { findIgdbMatch, extractIgdbEnrichment, isIgdbConfigured } = await import("@/lib/external/igdb");
+      const { findIgdbMatch, extractIgdbEnrichment, isIgdbConfigured, getIgdbGame } = await import("@/lib/external/igdb");
       if (!isIgdbConfigured()) return jsonError("IGDB not configured (missing API keys)", 400);
 
       const igdbMatch = await findIgdbMatch(typedGame.title);
       if (!igdbMatch) return jsonOk({ success: false, message: "No IGDB match found", source: "igdb" });
 
-      const enrichment = extractIgdbEnrichment(igdbMatch);
+      // Do a full game fetch to get all expanded fields (screenshots, cover, etc.)
+      // Search results often don't include nested expansions properly
+      const fullGame = await getIgdbGame(igdbMatch.id);
+      const enrichment = extractIgdbEnrichment(fullGame ?? igdbMatch);
 
       // Build update payload from IGDB data (only non-empty fields)
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
