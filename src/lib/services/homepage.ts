@@ -8,7 +8,7 @@
 
 import { getServerSupabase } from "@/lib/supabase/server";
 import { mapGameRow } from "@/lib/db/mappers";
-import { filterQualityGames } from "@/lib/utils/quality";
+import { filterQualityGames, confidenceWeightedScore } from "@/lib/utils/quality";
 import type { GameRow } from "@/lib/supabase/types";
 import type { Game, GXDeal } from "@/lib/types";
 
@@ -136,17 +136,19 @@ export async function fetchHeroCandidates(limit = 12): Promise<Game[]> {
   const autoDeduped = (autoPool ?? []).filter((g) => !manualIds.has(g.id));
   const combined = deduplicateBySteamAppId([...(manualFeatured ?? []), ...autoDeduped]);
 
-  // Sort: manual featured → score → release date
-  combined.sort((a, b) => {
+  // Quality filter: hero needs well-known games (100+ reviews, good description)
+  const qualityFiltered = filterQualityGames(combined, { section: "hero", minResults: 4 });
+
+  // Sort: manual featured first → then by confidence-weighted score (penalizes few-review games)
+  qualityFiltered.sort((a, b) => {
     if (a.is_featured_manual && !b.is_featured_manual) return -1;
     if (!a.is_featured_manual && b.is_featured_manual) return 1;
     if (a.featured && !b.featured) return -1;
     if (!a.featured && b.featured) return 1;
-    if ((a.score ?? 0) !== (b.score ?? 0)) return (b.score ?? 0) - (a.score ?? 0);
-    return (b.release_date ?? "").localeCompare(a.release_date ?? "");
+    return confidenceWeightedScore(b) - confidenceWeightedScore(a);
   });
 
-  return combined.slice(0, limit).map(mapGameRow);
+  return qualityFiltered.slice(0, limit).map(mapGameRow);
 }
 
 export async function fetchTrendingGames(limit = 20, homepageOnly = true): Promise<Game[]> {
@@ -292,7 +294,7 @@ export async function fetchTopRated(limit = 10): Promise<Game[]> {
  */
 export async function fetchHomepageTopRated(limit = 20): Promise<Game[]> {
   const supabase = getServerSupabase();
-  const fetchLimit = limit * 3;
+  const fetchLimit = limit * 4;
   const cutoff = monthsAgoISO(HOMEPAGE_TOP_RATED_MONTHS);
 
   let { data, error } = await supabase
@@ -324,6 +326,9 @@ export async function fetchHomepageTopRated(limit = 20): Promise<Game[]> {
       filtered = filterQualityGames(fallback.data, { section: "topRated", minResults: 4 });
     }
   }
+
+  // Sort by confidence-weighted score so games with few reviews don't dominate
+  filtered.sort((a, b) => confidenceWeightedScore(b) - confidenceWeightedScore(a));
 
   return filtered.slice(0, limit).map(mapGameRow);
 }
