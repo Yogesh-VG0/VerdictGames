@@ -1,12 +1,13 @@
 import { NextRequest } from "next/server";
 import { jsonOk, jsonError } from "@/lib/api/response";
 import { requireAdmin } from "@/lib/admin";
+import { writeAuditLog } from "@/lib/auditLog";
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { error } = await requireAdmin();
+  const { user, error } = await requireAdmin();
   if (error) return error;
 
   const { id } = await params;
@@ -66,11 +67,37 @@ export async function POST(
       const fieldsToUpdate = Object.keys(igdbUpdates).filter(k => k !== "updated_at");
 
       if (Object.keys(igdbUpdates).length > 0) {
+        // Fetch old values for audit diff
+        const { data: oldGame } = await supabase.from("games").select("*").eq("id", id).maybeSingle();
+
         igdbUpdates.updated_at = new Date().toISOString();
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { error: updateError } = await (supabase.from("games") as any).update(igdbUpdates).eq("id", id);
         if (updateError) {
           return jsonError(`IGDB data fetched but DB update failed: ${updateError.message}`, 500);
+        }
+
+        // Write audit log for reingest changes
+        if (oldGame) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const fieldChanges: Record<string, { old: any; new: any }> = {};
+          for (const key of fieldsToUpdate) {
+            const oldVal = (oldGame as Record<string, unknown>)[key];
+            const newVal = igdbUpdates[key];
+            if (JSON.stringify(oldVal) !== JSON.stringify(newVal)) {
+              fieldChanges[key] = { old: oldVal, new: newVal };
+            }
+          }
+          if (Object.keys(fieldChanges).length > 0) {
+            await writeAuditLog({
+              entity_type: "game",
+              entity_id: id,
+              action: "update",
+              field_changes: fieldChanges,
+              edited_by: user?.email ?? "unknown",
+              reason: `IGDB reingest: ${igdbMatch.name}`,
+            });
+          }
         }
       }
 
@@ -123,11 +150,37 @@ export async function POST(
       const rawgFieldsToUpdate = Object.keys(rawgUpdates).filter(k => k !== "updated_at");
 
       if (Object.keys(rawgUpdates).length > 0) {
+        // Fetch old values for audit diff
+        const { data: oldGame } = await supabase.from("games").select("*").eq("id", id).maybeSingle();
+
         rawgUpdates.updated_at = new Date().toISOString();
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { error: updateError } = await (supabase.from("games") as any).update(rawgUpdates).eq("id", id);
         if (updateError) {
           return jsonError(`RAWG data fetched but DB update failed: ${updateError.message}`, 500);
+        }
+
+        // Write audit log for reingest changes
+        if (oldGame) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const fieldChanges: Record<string, { old: any; new: any }> = {};
+          for (const key of rawgFieldsToUpdate) {
+            const oldVal = (oldGame as Record<string, unknown>)[key];
+            const newVal = rawgUpdates[key];
+            if (JSON.stringify(oldVal) !== JSON.stringify(newVal)) {
+              fieldChanges[key] = { old: oldVal, new: newVal };
+            }
+          }
+          if (Object.keys(fieldChanges).length > 0) {
+            await writeAuditLog({
+              entity_type: "game",
+              entity_id: id,
+              action: "update",
+              field_changes: fieldChanges,
+              edited_by: user?.email ?? "unknown",
+              reason: `RAWG reingest: ${best.name}`,
+            });
+          }
         }
       }
 

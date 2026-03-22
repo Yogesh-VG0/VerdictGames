@@ -3,7 +3,7 @@ import type { MetadataRoute } from "next";
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://www.verdict.games";
 
 /** Fixed build date for static pages — avoids crawler churn from new Date() every run */
-const BUILD_DATE = "2026-03-03T00:00:00Z";
+const BUILD_DATE = "2026-03-22T00:00:00Z";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Static pages
@@ -28,20 +28,35 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const { getServerSupabase } = await import("@/lib/supabase/server");
     const supabase = getServerSupabase();
 
+    // Fetch all games (up to 5000) for sitemap
     const { data: games } = await supabase
       .from("games")
-      .select("slug, updated_at")
+      .select("slug, updated_at, score")
       .order("score", { ascending: false })
-      .limit(1000);
+      .limit(5000);
 
-    const gamePages: MetadataRoute.Sitemap = ((games as { slug: string; updated_at: string }[] | null) ?? []).map((game) => ({
+    const gamePages: MetadataRoute.Sitemap = ((games as { slug: string; updated_at: string; score: number }[] | null) ?? []).map((game) => ({
       url: `${SITE_URL}/game/${game.slug}`,
       lastModified: new Date(game.updated_at),
       changeFrequency: "weekly" as const,
-      priority: 0.9,
+      // Higher-scored games get higher priority
+      priority: game.score >= 80 ? 0.9 : game.score >= 50 ? 0.8 : 0.7,
     }));
 
-    return [...staticPages, ...gamePages];
+    // Fetch curated lists for sitemap
+    const { data: lists } = await supabase
+      .from("lists")
+      .select("slug, updated_at")
+      .eq("is_public", true);
+
+    const listPages: MetadataRoute.Sitemap = ((lists as { slug: string; updated_at: string }[] | null) ?? []).map((list) => ({
+      url: `${SITE_URL}/lists/${list.slug}`,
+      lastModified: new Date(list.updated_at),
+      changeFrequency: "weekly" as const,
+      priority: 0.7,
+    }));
+
+    return [...staticPages, ...gamePages, ...listPages];
   } catch {
     return staticPages;
   }
