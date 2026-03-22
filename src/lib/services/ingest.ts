@@ -306,13 +306,22 @@ export async function ingestGame(options: IngestOptions): Promise<IngestResult> 
   const developer = fullGame.developers?.[0]?.name ?? "";
   const publisher = fullGame.publishers?.[0]?.name ?? "";
 
+  // Prefer IGDB images over RAWG (higher quality, more consistent)
+  const igdbCover = igdbEnrichment?.coverImageUrl ?? null;
+  const igdbScreenshots = igdbEnrichment?.screenshotUrls ?? [];
+  const finalCover = igdbCover || fullGame.background_image || "";
+  const finalScreenshots = igdbScreenshots.length > 0 ? igdbScreenshots : screenshotUrls;
+  const finalHeader = igdbScreenshots.length > 0
+    ? igdbScreenshots[0]
+    : (fullGame.background_image_additional ?? fullGame.background_image ?? "");
+
   const gameRecord = {
     slug,
     title: fullGame.name,
     subtitle: null,
-    cover_image: fullGame.background_image ?? "",
-    header_image: fullGame.background_image_additional ?? fullGame.background_image ?? "",
-    screenshots: screenshotUrls,
+    cover_image: finalCover,
+    header_image: finalHeader,
+    screenshots: finalScreenshots,
     platforms,
     genres,
     tags,
@@ -530,10 +539,45 @@ function generateVerdictSummary(
   genres: string[]
 ): string {
   const genreStr = genres.slice(0, 2).join("/") || "game";
-  if (score >= 90) return `${title} is an exceptional ${genreStr} experience that sets a new standard.`;
-  if (score >= 75) return `${title} is a solid ${genreStr} worth your time and attention.`;
-  if (score >= 50) return `${title} has moments of brilliance but inconsistent execution holds it back.`;
-  return `${title} struggles to deliver on its ${genreStr} promises.`;
+  const g1 = genres[0]?.toLowerCase() ?? "game";
+  // Use title hash for deterministic variety
+  const hash = title.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
+  const variant = hash % 4;
+
+  if (score >= 90) {
+    const options = [
+      `${title} is an exceptional ${genreStr} that raises the bar for the genre.`,
+      `A masterclass in ${g1} design, ${title} delivers an unforgettable experience from start to finish.`,
+      `${title} stands out as one of the best ${genreStr} titles in recent memory.`,
+      `With near-perfect execution, ${title} is a must-play for any ${g1} fan.`,
+    ];
+    return options[variant];
+  }
+  if (score >= 75) {
+    const options = [
+      `${title} is a strong ${genreStr} that delivers where it counts.`,
+      `A well-crafted ${g1} experience, ${title} is well worth your time.`,
+      `${title} confidently hits its marks as a quality ${genreStr} title.`,
+      `Fans of the ${g1} genre will find plenty to enjoy in ${title}.`,
+    ];
+    return options[variant];
+  }
+  if (score >= 50) {
+    const options = [
+      `${title} has interesting ideas but inconsistent execution holds it back.`,
+      `A mixed bag, ${title} shows flashes of brilliance alongside notable shortcomings.`,
+      `${title} offers a decent ${genreStr} experience but doesn't quite reach its potential.`,
+      `There's fun to be had in ${title}, though it may not appeal to everyone.`,
+    ];
+    return options[variant];
+  }
+  const options = [
+    `${title} struggles to deliver on its ${genreStr} ambitions.`,
+    `Despite some effort, ${title} falls short of expectations in key areas.`,
+    `${title} has fundamental issues that make it difficult to recommend.`,
+    `Only for the most dedicated ${g1} fans — ${title} needs significant improvements.`,
+  ];
+  return options[variant];
 }
 
 /**

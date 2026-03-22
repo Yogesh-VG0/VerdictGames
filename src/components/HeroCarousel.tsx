@@ -176,7 +176,7 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
       <div
         className="relative aspect-[3/4] sm:aspect-[16/9] md:aspect-[2.35/1] min-h-[360px] sm:min-h-[420px] md:min-h-[560px] lg:min-h-[600px] overflow-hidden"
       >
-        <AnimatePresence initial={false} custom={direction} mode="popLayout">
+        <AnimatePresence initial={false} custom={direction} mode="sync">
           <motion.div
             key={page}
             custom={direction}
@@ -266,9 +266,11 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
               </div>
             </div>
 
-            {/* Summary - hidden on very small screens */}
+            {/* Summary - prefer actual description over template verdict summary */}
             <p className="hidden sm:block text-sm md:text-base hero-overlay-text-secondary max-w-2xl line-clamp-2">
-              {game.verdictSummary}
+              {(game.description && game.description.length > 20 && !game.description.includes("is an exceptional") && !game.description.includes("is a solid") && !game.description.includes("has moments of brilliance") && !game.description.includes("struggles to deliver"))
+                ? game.description.slice(0, 200) + (game.description.length > 200 ? "…" : "")
+                : game.verdictSummary}
             </p>
 
             {/* Metadata row */}
