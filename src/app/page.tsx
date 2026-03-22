@@ -12,6 +12,7 @@ import {
   getGXPopularNews,
   getGXNewsFeed,
   getGXFreeToPlay,
+  getRawgList,
 } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
 import { slugify } from "@/lib/utils/slugify";
@@ -31,7 +32,7 @@ import {
 } from "@/components/ui/Skeleton";
 import GradientText from "@/components/ui/GradientText";
 import {
-  Flame, Gem, Gamepad2, Trophy, Newspaper, Sparkles, Tag, Gift,
+  Flame, Gem, Gamepad2, Trophy, Newspaper, Sparkles, Tag, Gift, Rocket,
 } from "lucide-react";
 
 type DiscoverTab = "new" | "deals" | "free";
@@ -104,6 +105,12 @@ export default function HomePage() {
     staleTime: 5 * 60 * 1000,
     enabled: discoverTab === "free",
   });
+  const anticipated = useQuery({
+    queryKey: ["rawg-anticipated"],
+    queryFn: () => getRawgList("best-of-year", { pageSize: 12 }),
+    staleTime: 10 * 60 * 1000,
+  });
+
   const gxNews = useQuery({
     queryKey: ["gx-news-merged"],
     queryFn: async () => {
@@ -177,6 +184,70 @@ export default function HomePage() {
           </FadeInSection>
         </div>
       </section>
+
+      <div className="max-w-[1400px] mx-auto px-4">
+        <hr className="border-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
+      </div>
+
+      {/* ── 2b. Most Anticipated ── */}
+      {anticipated.data && anticipated.data.items.length > 0 && (
+        <section className="py-12 sm:py-16">
+          <div className="max-w-[1400px] mx-auto px-4">
+            <FadeInSection>
+              <SectionHeader
+                title="Most Anticipated"
+                href="/explore"
+                linkLabel="See all"
+                icon={<Rocket className="w-5 h-5" />}
+                subtitle="The most hyped upcoming games based on community interest"
+                gradient="linear-gradient(90deg, #06b6d4 0%, #3b82f6 25%, #8b5cf6 50%, #06b6d4 75%, #3b82f6 100%)"
+              />
+              <HorizontalScroll>
+                {anticipated.data.items.map((game, i) => (
+                  <div key={game.rawgId} className={CARD_WIDTH}>
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.04, duration: 0.4 }}
+                    >
+                      <Link href={`/game/${game.slug}`} className="block group">
+                        <div className="relative aspect-[3/4] rounded-2xl overflow-hidden border border-border bg-surface-2 group-hover:border-accent/40 transition-all">
+                          {game.image ? (
+                            <Image
+                              src={game.image}
+                              alt={game.name}
+                              fill
+                              sizes="(max-width:640px) 45vw, 240px"
+                              className="object-cover group-hover:scale-105 transition-transform duration-500"
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-gradient-to-br from-accent/10 to-pixel-cyan/10" />
+                          )}
+                          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-3 pt-12">
+                            <p className="text-xs font-bold text-white line-clamp-2 drop-shadow-lg">{game.name}</p>
+                            <div className="flex items-center gap-2 mt-1">
+                              {game.genres.slice(0, 2).map((g) => (
+                                <span key={g} className="text-[9px] text-white/60">{g}</span>
+                              ))}
+                            </div>
+                            <div className="flex items-center gap-2 mt-1 text-[9px]">
+                              <span className="text-accent font-medium">{game.added.toLocaleString()} wishlisted</span>
+                              {game.released && !game.tba && (
+                                <span className="text-white/40">{game.released}</span>
+                              )}
+                              {game.tba && <span className="text-yellow-400">TBA</span>}
+                            </div>
+                          </div>
+                        </div>
+                      </Link>
+                    </motion.div>
+                  </div>
+                ))}
+              </HorizontalScroll>
+            </FadeInSection>
+          </div>
+        </section>
+      )}
 
       <div className="max-w-[1400px] mx-auto px-4">
         <hr className="border-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />

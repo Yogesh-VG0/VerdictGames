@@ -57,7 +57,8 @@ export default function NavbarTop() {
 
   const allNavLinks = [
     { href: "/", label: "Home", icon: <Home className="w-4 h-4" /> },
-    { href: "/search", label: "Explore", icon: <Search className="w-4 h-4" /> },
+    { href: "/explore", label: "Explore", icon: <Flame className="w-4 h-4" /> },
+    { href: "/search", label: "Search", icon: <Search className="w-4 h-4" /> },
     { href: "/search?sort=trending", label: "Trending", icon: <Flame className="w-4 h-4" /> },
     { href: "/calendar", label: "Calendar", icon: <CalendarDays className="w-4 h-4" /> },
     { href: "/reviews", label: "Reviews", icon: <Star className="w-4 h-4" /> },
