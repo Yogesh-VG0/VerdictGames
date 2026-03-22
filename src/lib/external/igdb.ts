@@ -319,11 +319,12 @@ export async function findIgdbMatch(
   title: string,
   releaseYear?: number
 ): Promise<IgdbGame | null> {
-  // Search with title
+  // Search with title — include cover, screenshots, and videos for enrichment
   let query = `search "${escapeQuotes(title)}";
      fields name, slug, summary, storyline,
             aggregated_rating, rating, total_rating,
             first_release_date, url, cover.image_id,
+            screenshots.image_id,
             genres.name, platforms.name,
             videos.video_id, videos.name,
             websites.url, websites.category;
@@ -371,6 +372,8 @@ export function extractIgdbEnrichment(game: IgdbGame): {
   wikipediaUrl: string | null;
   websiteUrl: string | null;
   redditUrl: string | null;
+  coverImageUrl: string | null;
+  screenshotUrls: string[];
 } {
   // Extract YouTube trailer from videos — pick best by confidence
   let trailerUrl: string | null = null;
@@ -404,6 +407,16 @@ export function extractIgdbEnrichment(game: IgdbGame): {
     }
   }
 
+  // Extract cover image
+  const coverImageUrl = game.cover?.image_id
+    ? igdbImageUrl(game.cover.image_id, "cover_big_2x")
+    : null;
+
+  // Extract screenshots
+  const screenshotUrls = (game.screenshots ?? [])
+    .slice(0, 6)
+    .map((s) => igdbImageUrl(s.image_id, "screenshot_big"));
+
   return {
     igdbId: game.id,
     igdbUrl: game.url ?? null,
@@ -416,6 +429,8 @@ export function extractIgdbEnrichment(game: IgdbGame): {
     wikipediaUrl,
     websiteUrl,
     redditUrl,
+    coverImageUrl,
+    screenshotUrls,
   };
 }
 

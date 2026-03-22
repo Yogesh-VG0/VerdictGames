@@ -88,6 +88,10 @@ export async function PATCH(
       const oldVal = (oldGame as Record<string, unknown>)[key];
       const newVal = updates[key];
       if (JSON.stringify(oldVal) !== JSON.stringify(newVal)) {
+        // Skip logging fields where both old and new are empty/null
+        const oldEmpty = oldVal === null || oldVal === undefined || oldVal === "" || (Array.isArray(oldVal) && oldVal.length === 0);
+        const newEmpty = newVal === null || newVal === undefined || newVal === "" || (Array.isArray(newVal) && newVal.length === 0);
+        if (oldEmpty && newEmpty) continue;
         fieldChanges[key] = { old: oldVal, new: newVal };
       }
     }

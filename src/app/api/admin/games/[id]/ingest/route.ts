@@ -54,6 +54,11 @@ export async function POST(
       if (enrichment.websiteUrl) igdbUpdates.website_url = enrichment.websiteUrl;
       if (enrichment.wikipediaUrl) igdbUpdates.wikipedia_url = enrichment.wikipediaUrl;
       if (enrichment.redditUrl) igdbUpdates.reddit_url = enrichment.redditUrl;
+      if (enrichment.coverImageUrl) igdbUpdates.cover_image = enrichment.coverImageUrl;
+      if (enrichment.screenshotUrls.length > 0) {
+        igdbUpdates.screenshots = enrichment.screenshotUrls;
+        igdbUpdates.header_image = enrichment.screenshotUrls[0];
+      }
 
       if (Object.keys(igdbUpdates).length > 0) {
         igdbUpdates.updated_at = new Date().toISOString();
@@ -74,6 +79,8 @@ export async function POST(
           websiteUrl: enrichment.websiteUrl,
           wikipediaUrl: enrichment.wikipediaUrl,
           redditUrl: enrichment.redditUrl,
+          coverImage: enrichment.coverImageUrl,
+          screenshots: enrichment.screenshotUrls,
           fieldsUpdated: Object.keys(igdbUpdates).filter(k => k !== "updated_at"),
         },
       });

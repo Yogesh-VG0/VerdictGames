@@ -119,15 +119,42 @@ export default function GameDetailPage({ params }: Props) {
 
   if (isLoading) {
     return (
-      <div className="max-w-6xl mx-auto px-4 py-6 space-y-8">
-        <Skeleton className="aspect-[21/9] w-full rounded-2xl" />
-        <div className="space-y-3">
-          <Skeleton className="h-10 w-64" />
-          <Skeleton className="h-5 w-96" />
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Skeleton className="h-64 col-span-2 rounded-2xl" />
-          <Skeleton className="h-64 rounded-2xl" />
+      <div className="space-y-0">
+        <Skeleton className="w-full aspect-[21/9] md:aspect-[3/1] min-h-[200px] md:min-h-[360px]" />
+        <div className="max-w-6xl mx-auto px-4 -mt-16 relative z-10 space-y-6 pb-12">
+          <div className="flex items-end gap-4">
+            <Skeleton className="w-20 h-20 rounded-2xl shrink-0" />
+            <div className="flex-1 space-y-2">
+              <Skeleton className="h-8 w-64 rounded-lg" />
+              <Skeleton className="h-4 w-96 max-w-full rounded-lg" />
+            </div>
+          </div>
+          <div className="flex gap-3">
+            <Skeleton className="h-10 w-36 rounded-xl" />
+            <Skeleton className="h-10 w-28 rounded-xl" />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="md:col-span-2 space-y-6">
+              <div className="rounded-2xl border border-border bg-surface p-5 space-y-3">
+                <Skeleton className="h-5 w-32 rounded-lg" />
+                <Skeleton className="h-4 w-full rounded-lg" />
+                <Skeleton className="h-4 w-full rounded-lg" />
+                <Skeleton className="h-4 w-3/4 rounded-lg" />
+              </div>
+              <Skeleton className="aspect-video w-full rounded-2xl" />
+            </div>
+            <div className="space-y-4">
+              <div className="rounded-2xl border border-border bg-surface p-5 space-y-3">
+                <Skeleton className="h-5 w-24 rounded-lg" />
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="flex justify-between">
+                    <Skeleton className="h-3 w-20 rounded" />
+                    <Skeleton className="h-3 w-24 rounded" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );

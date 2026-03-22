@@ -206,7 +206,7 @@ function SearchContent() {
           <label className="text-[10px] uppercase tracking-wider text-tertiary font-medium block">
             Platform
           </label>
-          <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+          <div className="overflow-x-auto scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
             <FilterChips
               options={PLATFORM_FILTER_OPTIONS.map((o) => o.value)}
               selected={platform}
