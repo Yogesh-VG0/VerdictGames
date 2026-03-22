@@ -159,6 +159,166 @@ export async function getRawgStoreLinks(gameId: number): Promise<RawgStoreLink[]
   return data.results ?? [];
 }
 
+/* ───────── Curated Lists ───────── */
+
+/** RAWG curated list item (from /games/lists/* endpoints) */
+export interface RawgListItem {
+  id: number;
+  slug: string;
+  name: string;
+  released: string | null;
+  tba: boolean;
+  background_image: string | null;
+  rating: number;
+  rating_top: number;
+  ratings_count: number;
+  added: number;
+  added_by_status: {
+    yet?: number;
+    owned?: number;
+    beaten?: number;
+    toplay?: number;
+    dropped?: number;
+    playing?: number;
+  };
+  metacritic: number | null;
+  playtime: number;
+  platforms: { platform: { id: number; name: string; slug: string } }[] | null;
+  genres: { id: number; name: string; slug: string }[] | null;
+  short_screenshots: { id: number; image: string }[] | null;
+  clip: { video: string; preview: string } | null;
+  tags: { id: number; name: string; slug: string }[] | null;
+  esrb_rating: { id: number; name: string; slug: string } | null;
+}
+
+export interface RawgListResponse {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: RawgListItem[];
+}
+
+/**
+ * Fetch RAWG "Best of the Year" (most anticipated/popular games of current year).
+ * Ordered by community adds — a proxy for real-world hype/interest.
+ */
+export async function getRawgBestOfYear(page = 1, pageSize = 20): Promise<RawgListResponse> {
+  const params = new URLSearchParams({
+    key: getApiKey(),
+    discover: "true",
+    ordering: "-added",
+    page: String(page),
+    page_size: String(pageSize),
+  });
+
+  const res = await fetch(`${RAWG_BASE}/games/lists/greatest?${params}`, {
+    next: { revalidate: 3600 },
+  });
+
+  if (!res.ok) throw new Error(`RAWG Best of Year failed: ${res.status}`);
+  return res.json();
+}
+
+/**
+ * Fetch RAWG "Popular in {year}" — top games from a specific year.
+ */
+export async function getRawgPopularInYear(year: number, page = 1, pageSize = 20): Promise<RawgListResponse> {
+  const params = new URLSearchParams({
+    key: getApiKey(),
+    discover: "true",
+    ordering: "-added",
+    year: String(year),
+    page: String(page),
+    page_size: String(pageSize),
+  });
+
+  const res = await fetch(`${RAWG_BASE}/games/lists/greatest?${params}`, {
+    next: { revalidate: 3600 },
+  });
+
+  if (!res.ok) throw new Error(`RAWG Popular in ${year} failed: ${res.status}`);
+  return res.json();
+}
+
+/**
+ * Fetch RAWG "All Time Top 250" — greatest games ever by community consensus.
+ */
+export async function getRawgAllTimeTop(page = 1, pageSize = 20): Promise<RawgListResponse> {
+  const params = new URLSearchParams({
+    key: getApiKey(),
+    discover: "true",
+    page: String(page),
+    page_size: String(pageSize),
+  });
+
+  const res = await fetch(`${RAWG_BASE}/games/lists/popular?${params}`, {
+    next: { revalidate: 3600 },
+  });
+
+  if (!res.ok) throw new Error(`RAWG All Time Top failed: ${res.status}`);
+  return res.json();
+}
+
+/**
+ * Fetch RAWG "Recent Releases" — new games from the past 30 days, ordered by popularity.
+ */
+export async function getRawgRecentReleases(page = 1, pageSize = 20): Promise<RawgListResponse> {
+  const params = new URLSearchParams({
+    key: getApiKey(),
+    discover: "true",
+    ordering: "-added",
+    page: String(page),
+    page_size: String(pageSize),
+  });
+
+  const res = await fetch(`${RAWG_BASE}/games/lists/recent-games-past?${params}`, {
+    next: { revalidate: 1800 },
+  });
+
+  if (!res.ok) throw new Error(`RAWG Recent Releases failed: ${res.status}`);
+  return res.json();
+}
+
+/**
+ * Fetch RAWG release calendar for a specific month.
+ */
+export async function getRawgCalendar(year: number, month: number, page = 1, pageSize = 20): Promise<RawgListResponse> {
+  const params = new URLSearchParams({
+    key: getApiKey(),
+    ordering: "-released",
+    popular: "true",
+    page: String(page),
+    page_size: String(pageSize),
+  });
+
+  const res = await fetch(`${RAWG_BASE}/games/calendar/${year}/${month}?${params}`, {
+    next: { revalidate: 3600 },
+  });
+
+  if (!res.ok) throw new Error(`RAWG Calendar failed: ${res.status}`);
+  return res.json();
+}
+
+/**
+ * Fetch RAWG games by genre with community sorting.
+ */
+export async function getRawgByGenre(genreSlug: string, page = 1, pageSize = 20): Promise<RawgListResponse> {
+  const params = new URLSearchParams({
+    key: getApiKey(),
+    genres: genreSlug,
+    ordering: "-added",
+    page: String(page),
+    page_size: String(pageSize),
+  });
+
+  const res = await fetch(`${RAWG_BASE}/games?${params}`, {
+    next: { revalidate: 3600 },
+  });
+
+  if (!res.ok) throw new Error(`RAWG genre browse failed: ${res.status}`);
+  return res.json();
+}
+
 /* ───────── Helpers ───────── */
 
 /**

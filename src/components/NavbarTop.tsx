@@ -85,7 +85,7 @@ export default function NavbarTop() {
 
   const navLinks = [
     { href: "/", label: "Home" },
-    { href: "/search", label: "Explore" },
+    { href: "/explore", label: "Explore" },
     { href: "/reviews", label: "Reviews" },
     { href: "/calendar", label: "Calendar" },
     { href: "/lists", label: "Lists" },

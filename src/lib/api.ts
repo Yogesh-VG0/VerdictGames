@@ -615,3 +615,52 @@ export async function getGXTopLiked(): Promise<GXMostLiked[]> {
 export async function getGXCalendar(): Promise<GXCalendarGame[]> {
   return (await apiFetch<GXCalendarGame[]>("/api/gx/calendar")) ?? [];
 }
+
+/* ═══════════════════════════════════════════════════
+   RAWG CURATED LISTS
+   ═══════════════════════════════════════════════════ */
+
+export interface RawgListGameItem {
+  rawgId: number;
+  slug: string;
+  name: string;
+  released: string | null;
+  tba: boolean;
+  image: string | null;
+  rating: number;
+  ratingsCount: number;
+  metacritic: number | null;
+  added: number;
+  toplay: number;
+  playing: number;
+  owned: number;
+  platforms: string[];
+  genres: string[];
+  screenshots: string[];
+  clip: string | null;
+}
+
+export interface RawgListResponse {
+  count: number;
+  page: number;
+  pageSize: number;
+  hasNext: boolean;
+  items: RawgListGameItem[];
+}
+
+export type RawgListType = "best-of-year" | "popular-in-year" | "all-time" | "recent" | "genre";
+
+export async function getRawgList(
+  type: RawgListType,
+  opts: { page?: number; pageSize?: number; year?: number; genre?: string } = {}
+): Promise<RawgListResponse> {
+  const params = new URLSearchParams({ type });
+  if (opts.page) params.set("page", String(opts.page));
+  if (opts.pageSize) params.set("pageSize", String(opts.pageSize));
+  if (opts.year) params.set("year", String(opts.year));
+  if (opts.genre) params.set("genre", opts.genre);
+
+  return (await apiFetch<RawgListResponse>(`/api/rawg/lists?${params}`)) ?? {
+    count: 0, page: 1, pageSize: 20, hasNext: false, items: [],
+  };
+}
