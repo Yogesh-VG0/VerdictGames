@@ -320,7 +320,8 @@ export async function findIgdbMatch(
   releaseYear?: number
 ): Promise<IgdbGame | null> {
   // Search with title — include cover, screenshots, and videos for enrichment
-  let query = `search "${escapeQuotes(title)}";
+  // Filter to main games only (game_type 0 = main_game) to avoid DLC/mods
+  const query = `search "${escapeQuotes(title)}";
      fields name, slug, summary, storyline,
             aggregated_rating, rating, total_rating,
             first_release_date, url, cover.image_id,
@@ -328,31 +329,48 @@ export async function findIgdbMatch(
             genres.name, platforms.name,
             videos.video_id, videos.name,
             websites.url, websites.category;
-     limit 5;`;
+     where game_type = 0;
+     limit 10;`;
 
   const results = await igdbQuery<IgdbGame>("games", query);
   if (!results?.length) return null;
 
-  // Try to find best match by name similarity and release year
+  // Score each result for best match
   const normalizedTitle = title.toLowerCase().trim();
 
   let bestMatch = results[0];
+  let bestScore = -Infinity;
+
   for (const game of results) {
+    let score = 0;
     const gameName = game.name.toLowerCase().trim();
 
-    // Exact name match is best
+    // Exact name match gets highest score
     if (gameName === normalizedTitle) {
-      bestMatch = game;
-      break;
+      score += 100;
+    } else if (gameName.includes(normalizedTitle) || normalizedTitle.includes(gameName)) {
+      score += 50;
     }
 
-    // Check release year if provided
+    // Release year matching (critical for disambiguation)
     if (releaseYear && game.first_release_date) {
       const gameYear = new Date(game.first_release_date * 1000).getFullYear();
       if (gameYear === releaseYear) {
-        bestMatch = game;
-        // Don't break — exact name match is still better
+        score += 80; // Strong match
+      } else if (Math.abs(gameYear - releaseYear) === 1) {
+        score += 30; // Close year (off by 1)
+      } else if (Math.abs(gameYear - releaseYear) > 5) {
+        score -= 40; // Penalize very different years
       }
+    }
+
+    // Prefer games with cover images and screenshots (more complete data)
+    if (game.cover?.image_id) score += 10;
+    if (game.screenshots?.length) score += 5;
+
+    if (score > bestScore) {
+      bestScore = score;
+      bestMatch = game;
     }
   }
 

@@ -238,7 +238,7 @@ export default function AdminDashboard() {
         {/* Recent Admin Activity */}
         <div className="space-y-3">
           <h2 className="text-lg font-bold text-foreground">Recent Activity</h2>
-          <div className="rounded-2xl border border-border bg-surface overflow-hidden">
+          <div className="rounded-2xl border border-border bg-surface overflow-hidden max-h-[500px] overflow-y-auto scrollbar-hide">
             {activity.isLoading ? (
               <div className="p-4 space-y-3">
                 {Array.from({ length: 5 }).map((_, i) => (
@@ -252,7 +252,7 @@ export default function AdminDashboard() {
               </div>
             ) : (
               <div className="divide-y divide-border">
-                {activity.data.slice(0, 10).map((entry) => (
+                {activity.data.slice(0, 20).map((entry) => (
                   <AuditEntryRow key={entry.id} entry={entry} />
                 ))}
               </div>

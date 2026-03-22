@@ -26,20 +26,21 @@ export async function POST(
 
     const { data: game } = await supabase
       .from("games")
-      .select("title, slug")
+      .select("title, slug, release_date")
       .eq("id", id)
       .maybeSingle();
 
     if (!game) return jsonError("Game not found", 404);
 
-    const typedGame = game as { title: string; slug: string };
+    const typedGame = game as { title: string; slug: string; release_date: string | null };
+    const releaseYear = typedGame.release_date ? new Date(typedGame.release_date).getFullYear() : undefined;
 
     // Source-specific enrichment: fetch data and apply to the game record
     if (source === "igdb") {
       const { findIgdbMatch, extractIgdbEnrichment, isIgdbConfigured, getIgdbGame } = await import("@/lib/external/igdb");
       if (!isIgdbConfigured()) return jsonError("IGDB not configured (missing API keys)", 400);
 
-      const igdbMatch = await findIgdbMatch(typedGame.title);
+      const igdbMatch = await findIgdbMatch(typedGame.title, releaseYear);
       if (!igdbMatch) return jsonOk({ success: false, message: "No IGDB match found", source: "igdb" });
 
       // Do a full game fetch to get all expanded fields (screenshots, cover, etc.)

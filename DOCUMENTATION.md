@@ -83,7 +83,7 @@
 
 **verdict.games** is a full-stack, production-ready game reviews platform that aggregates data from multiple external APIs to provide comprehensive game profiles with:
 
-- **1,484+ games** in the database with data from RAWG, Steam, IGDB, CheapShark, Wikipedia, HowLongToBeat, and GX Corner
+- **1000+ games** in the database with data from RAWG, Steam, IGDB, CheapShark, Wikipedia, HowLongToBeat, and GX Corner
 - **Auto-discovery** — cron endpoints that find and ingest trending, new, and top-rated games automatically (~320 games/standard run, ~700+ games/deep run)
 - **Rich game pages** — multi-source scoring, verdict badges, pros/cons, pricing, media, external links, achievements, news
 - **Search & filter** — by platform (PC, PS5, PS4, Xbox, Switch, Android, iOS, Linux), genre, year, monetization, with full-text search and on-demand ingestion
