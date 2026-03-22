@@ -12,7 +12,7 @@
 
 ## Features
 
-- **1,484+ games** with multi-source data from RAWG, Steam, IGDB, CheapShark, Wikipedia, HowLongToBeat & GX Corner
+- **1000+ games** with multi-source data from RAWG, Steam, IGDB, CheapShark, Wikipedia, HowLongToBeat & GX Corner
 - **Auto-discovery** — Heroku scheduler discovers trending, new, and top-rated games daily
 - **Rich game pages** — multi-source scoring (Verdict/Steam/IGDB/Metacritic), verdict badges, pros/cons, pricing, media, achievements, news
 - **Search & filter** — 11 platforms (PC, PS5, PS4, Xbox, Switch, Android, iOS, Mac, Linux), genre, year, monetization, with full-text + RAWG fallback search

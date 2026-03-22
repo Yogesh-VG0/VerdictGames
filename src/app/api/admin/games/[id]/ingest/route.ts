@@ -49,7 +49,7 @@ export async function POST(
       // Build update payload from IGDB data (only non-empty fields)
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const igdbUpdates: Record<string, any> = {};
-      if (enrichment.igdbRating && enrichment.igdbRating > 0) igdbUpdates.igdb_score = enrichment.igdbRating;
+      if (enrichment.igdbRating && enrichment.igdbRating > 0) igdbUpdates.igdb_rating = enrichment.igdbRating;
       if (enrichment.igdbUrl) igdbUpdates.igdb_url = enrichment.igdbUrl;
       if (enrichment.trailerUrl) igdbUpdates.trailer_url = enrichment.trailerUrl;
       if (enrichment.trailerThumbnail) igdbUpdates.trailer_thumbnail = enrichment.trailerThumbnail;
@@ -63,16 +63,21 @@ export async function POST(
         igdbUpdates.header_image = enrichment.screenshotUrls[0];
       }
 
+      const fieldsToUpdate = Object.keys(igdbUpdates).filter(k => k !== "updated_at");
+
       if (Object.keys(igdbUpdates).length > 0) {
         igdbUpdates.updated_at = new Date().toISOString();
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await (supabase.from("games") as any).update(igdbUpdates).eq("id", id);
+        const { error: updateError } = await (supabase.from("games") as any).update(igdbUpdates).eq("id", id);
+        if (updateError) {
+          return jsonError(`IGDB data fetched but DB update failed: ${updateError.message}`, 500);
+        }
       }
 
       return jsonOk({
         success: true,
         source: "igdb",
-        message: `Applied IGDB data from: ${igdbMatch.name} (${Object.keys(igdbUpdates).length - 1} fields updated)`,
+        message: `Applied IGDB data from: ${igdbMatch.name} (${fieldsToUpdate.length} fields updated)`,
         data: {
           igdbRating: enrichment.igdbRating,
           igdbUrl: enrichment.igdbUrl,
@@ -84,7 +89,7 @@ export async function POST(
           redditUrl: enrichment.redditUrl,
           coverImage: enrichment.coverImageUrl,
           screenshots: enrichment.screenshotUrls,
-          fieldsUpdated: Object.keys(igdbUpdates).filter(k => k !== "updated_at"),
+          fieldsUpdated: fieldsToUpdate,
         },
       });
     }
@@ -104,7 +109,7 @@ export async function POST(
       if (best.platforms) rawgUpdates.platforms = mapRawgPlatforms(best.platforms);
       if (best.genres?.length) rawgUpdates.genres = best.genres.map((g: { name: string }) => g.name);
       if (best.released) rawgUpdates.release_date = best.released;
-      if (best.metacritic) rawgUpdates.metacritic_score = best.metacritic;
+      if (best.metacritic) rawgUpdates.rawg_metacritic = best.metacritic;
       if (detail?.description_raw) rawgUpdates.description = detail.description_raw.slice(0, 2000);
       if (detail?.developers?.[0]?.name) rawgUpdates.developer = detail.developers[0].name;
       if (detail?.publishers?.[0]?.name) rawgUpdates.publisher = detail.publishers[0].name;
@@ -115,16 +120,21 @@ export async function POST(
         rawgUpdates.screenshots = best.short_screenshots.slice(1, 7).map((s) => s.image);
       }
 
+      const rawgFieldsToUpdate = Object.keys(rawgUpdates).filter(k => k !== "updated_at");
+
       if (Object.keys(rawgUpdates).length > 0) {
         rawgUpdates.updated_at = new Date().toISOString();
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await (supabase.from("games") as any).update(rawgUpdates).eq("id", id);
+        const { error: updateError } = await (supabase.from("games") as any).update(rawgUpdates).eq("id", id);
+        if (updateError) {
+          return jsonError(`RAWG data fetched but DB update failed: ${updateError.message}`, 500);
+        }
       }
 
       return jsonOk({
         success: true,
         source: "rawg",
-        message: `Applied RAWG data from: ${best.name} (${Object.keys(rawgUpdates).length - 1} fields updated)`,
+        message: `Applied RAWG data from: ${best.name} (${rawgFieldsToUpdate.length} fields updated)`,
         data: {
           coverImage: best.background_image,
           platforms: rawgUpdates.platforms,
