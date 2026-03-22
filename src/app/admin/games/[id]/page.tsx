@@ -28,10 +28,15 @@ async function updateGame(id: string, data: Record<string, any>): Promise<Game> 
   throw new Error(json.error ?? "Failed to update game");
 }
 
-async function reingestGame(id: string): Promise<void> {
-  const res = await fetch(`/api/admin/games/${id}/ingest`, { method: "POST" });
+async function reingestGame(id: string, source?: string): Promise<{ preview?: boolean; source?: string; message?: string; data?: Record<string, unknown> }> {
+  const res = await fetch(`/api/admin/games/${id}/ingest`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(source ? { source } : {}),
+  });
   const json = await res.json();
-  if (!json.success) throw new Error(json.error ?? "Re-ingest failed");
+  if (!json.success && !json.data?.preview) throw new Error(json.error ?? "Re-ingest failed");
+  return json.data ?? {};
 }
 
 async function toggleFlags(id: string, flags: { featured?: boolean; trending?: boolean }): Promise<void> {
@@ -127,6 +132,7 @@ export default function AdminGameEditor({ params }: { params: Promise<{ id: stri
   const [screenshotInput, setScreenshotInput] = useState("");
   const [genresText, setGenresText] = useState("");
   const [tagsText, setTagsText] = useState("");
+  const [reingestSource, setReingestSource] = useState<string>("all");
   const [platformsText, setPlatformsText] = useState("");
 
   // ── Sync form state from server data ──
@@ -230,14 +236,18 @@ export default function AdminGameEditor({ params }: { params: Promise<{ id: stri
   });
 
   const reingestMutation = useMutation({
-    mutationFn: () => reingestGame(id),
-    onSuccess: () => {
+    mutationFn: (source?: string) => reingestGame(id, source === "all" ? undefined : source),
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["admin-game", id] });
       queryClient.invalidateQueries({ queryKey: ["admin-activity"] });
       queryClient.invalidateQueries({ queryKey: ["admin-games"] });
       queryClient.invalidateQueries({ queryKey: ["homepage"] });
-      setSaveMsg("Re-ingested successfully!");
-      setTimeout(() => setSaveMsg(""), 3000);
+      if (result?.preview) {
+        setSaveMsg(`Preview from ${result.source}: ${result.message}`);
+      } else {
+        setSaveMsg("Re-ingested successfully!");
+      }
+      setTimeout(() => setSaveMsg(""), 5000);
     },
   });
 
@@ -299,13 +309,22 @@ export default function AdminGameEditor({ params }: { params: Promise<{ id: stri
             <p className="text-xs text-tertiary">{game.data.slug} • Score: {game.data.score}</p>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
+          <select
+            value={reingestSource}
+            onChange={(e) => setReingestSource(e.target.value)}
+            className="h-9 px-2 text-xs rounded-xl border border-border bg-surface-2 text-foreground focus:outline-none focus:border-accent/50"
+          >
+            <option value="all">Full Pipeline</option>
+            <option value="rawg">RAWG Only</option>
+            <option value="igdb">IGDB Only</option>
+          </select>
           <button
-            onClick={() => reingestMutation.mutate()}
+            onClick={() => reingestMutation.mutate(reingestSource)}
             disabled={reingestMutation.isPending}
             className="px-3 py-2 rounded-xl text-xs font-medium bg-pixel-cyan/10 text-pixel-cyan border border-pixel-cyan/20 hover:bg-pixel-cyan/20 transition-all disabled:opacity-50"
           >
-            {reingestMutation.isPending ? "Re-ingesting..." : "Re-ingest Data"}
+            {reingestMutation.isPending ? "Re-ingesting..." : reingestSource === "all" ? "Re-ingest Data" : `Fetch from ${reingestSource.toUpperCase()}`}
           </button>
           <button
             onClick={() => saveMutation.mutate()}
@@ -612,9 +631,18 @@ export default function AdminGameEditor({ params }: { params: Promise<{ id: stri
                 <input type="text" value="See Metacritic URL" readOnly className={readOnlyClass} />
               </Field>
             </div>
-            <div className="pt-4">
+            <div className="pt-4 flex items-center gap-2">
+              <select
+                value={reingestSource}
+                onChange={(e) => setReingestSource(e.target.value)}
+                className="h-9 px-2 text-xs rounded-xl border border-border bg-surface-2 text-foreground focus:outline-none focus:border-accent/50"
+              >
+                <option value="all">Full Pipeline</option>
+                <option value="rawg">RAWG Only</option>
+                <option value="igdb">IGDB Only</option>
+              </select>
               <button
-                onClick={() => reingestMutation.mutate()}
+                onClick={() => reingestMutation.mutate(reingestSource)}
                 disabled={reingestMutation.isPending}
                 className="px-4 py-2.5 rounded-xl text-xs font-medium bg-pixel-cyan/10 text-pixel-cyan border border-pixel-cyan/20 hover:bg-pixel-cyan/20 transition-all disabled:opacity-50"
               >

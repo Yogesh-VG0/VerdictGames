@@ -201,12 +201,12 @@ function SearchContent() {
       </div>
 
       {/* Filters */}
-      <div className="space-y-3">
-        <div className="flex flex-wrap items-center gap-4">
-          <div className="space-y-1">
-            <label className="text-[10px] uppercase tracking-wider text-tertiary font-medium">
-              Platform
-            </label>
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <label className="text-[10px] uppercase tracking-wider text-tertiary font-medium block">
+            Platform
+          </label>
+          <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
             <FilterChips
               options={PLATFORM_FILTER_OPTIONS.map((o) => o.value)}
               selected={platform}
@@ -220,9 +220,9 @@ function SearchContent() {
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-4">
+        <div className="flex flex-wrap items-end gap-4">
           {/* Genre select */}
-          <div className="space-y-1">
+          <div className="space-y-2">
             <label className="text-[10px] uppercase tracking-wider text-tertiary font-medium">
               Genre
             </label>
@@ -244,7 +244,7 @@ function SearchContent() {
           </div>
 
           {/* Year select */}
-          <div className="space-y-1">
+          <div className="space-y-2">
             <label className="text-[10px] uppercase tracking-wider text-tertiary font-medium">
               Year
             </label>

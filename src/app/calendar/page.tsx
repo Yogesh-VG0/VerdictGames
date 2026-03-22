@@ -332,17 +332,17 @@ export default function CalendarPage() {
                                 <Link
                                   key={game.id}
                                   href={`/game/${game.slug}`}
-                                  className="group flex items-center gap-3 px-4 py-3 hover:bg-surface-2 transition-colors"
+                                  className="group flex items-center gap-3 sm:gap-4 px-4 py-3.5 hover:bg-surface-2 transition-colors"
                                 >
                                   {/* Cover thumbnail */}
-                                  <div className="relative w-12 h-16 sm:w-14 sm:h-[74px] shrink-0 rounded-lg overflow-hidden bg-surface-2">
+                                  <div className="relative w-14 h-[74px] sm:w-[72px] sm:h-24 shrink-0 rounded-lg overflow-hidden bg-surface-2">
                                     {game.coverImage ? (
                                       <Image
                                         src={game.coverImage}
                                         alt={game.title}
                                         fill
                                         className="object-cover"
-                                        sizes="56px"
+                                        sizes="72px"
                                       />
                                     ) : (
                                       <div className="w-full h-full flex items-center justify-center text-tertiary">

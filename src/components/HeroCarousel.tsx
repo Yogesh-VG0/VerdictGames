@@ -174,7 +174,7 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
 
       {/* Background images */}
       <div
-        className="relative aspect-[3/4] sm:aspect-[16/9] md:aspect-[2.35/1] min-h-[360px] sm:min-h-[420px] md:min-h-[520px] overflow-hidden"
+        className="relative aspect-[3/4] sm:aspect-[16/9] md:aspect-[2.35/1] min-h-[360px] sm:min-h-[420px] md:min-h-[560px] lg:min-h-[600px] overflow-hidden"
       >
         <AnimatePresence initial={false} custom={direction} mode="popLayout">
           <motion.div
@@ -193,7 +193,7 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
                 alt={game.title}
                 fill
                 sizes="100vw"
-                className="object-cover object-center"
+                className="object-cover object-top sm:object-center"
                 priority={currentIndex === 0}
                 quality={90}
               />

@@ -282,31 +282,35 @@ export default function ReviewsPage() {
       {source === "community" && (
         <>
       {/* Filters */}
-      <div className="flex flex-wrap items-end gap-4 border-b border-border pb-4">
-        <div className="space-y-1">
-          <label className="text-[10px] uppercase tracking-wider text-tertiary font-medium">
+      <div className="space-y-4 border-b border-border pb-4">
+        <div className="space-y-2">
+          <label className="text-[10px] uppercase tracking-wider text-tertiary font-medium block">
             Platform
           </label>
-          <FilterChips
-            options={PLATFORM_FILTER_OPTIONS.map((o) => o.value)}
-            selected={platform}
-            onChange={setPlatform}
-            labelFn={(v) => PLATFORM_FILTER_OPTIONS.find((o) => o.value === v)?.label ?? v}
-            iconFn={(v) => platformFilterIcon(v)}
-          />
+          <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+            <FilterChips
+              options={PLATFORM_FILTER_OPTIONS.map((o) => o.value)}
+              selected={platform}
+              onChange={setPlatform}
+              labelFn={(v) => PLATFORM_FILTER_OPTIONS.find((o) => o.value === v)?.label ?? v}
+              iconFn={(v) => platformFilterIcon(v)}
+            />
+          </div>
         </div>
-        <div className="space-y-1 ml-auto">
-          <label className="text-[10px] uppercase tracking-wider text-tertiary font-medium">
-            Sort
-          </label>
-          <SortDropdown
-            options={[
-              { label: "Newest First", value: "newest" as const },
-              { label: "Most Helpful", value: "helpful" as const },
-            ]}
-            selected={sort}
-            onChange={setSort}
-          />
+        <div className="flex items-end gap-4">
+          <div className="space-y-2 ml-auto">
+            <label className="text-[10px] uppercase tracking-wider text-tertiary font-medium">
+              Sort
+            </label>
+            <SortDropdown
+              options={[
+                { label: "Newest First", value: "newest" as const },
+                { label: "Most Helpful", value: "helpful" as const },
+              ]}
+              selected={sort}
+              onChange={setSort}
+            />
+          </div>
         </div>
       </div>
 

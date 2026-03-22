@@ -28,6 +28,7 @@ import {
   GameGridSkeleton,
   SectionHeaderSkeleton,
 } from "@/components/ui/Skeleton";
+import GradientText from "@/components/ui/GradientText";
 import {
   Flame, Gem, Gamepad2, Trophy, Newspaper, Sparkles, Tag, Gift,
 } from "lucide-react";
@@ -92,7 +93,7 @@ export default function HomePage() {
   const heroIds = new Set(featured.map((g) => g.id));
   const personalized = useQuery({
     queryKey: ["personalized", !!user, trending.data?.length],
-    queryFn: () => (user ? getRecommendations(12) : getPersonalizedGames(12, trending.data ?? undefined)),
+    queryFn: () => (user ? getRecommendations(20) : getPersonalizedGames(20, trending.data ?? undefined)),
     enabled: !!user || !!trending.data,
     staleTime: 5 * 60 * 1000,
   });
@@ -155,9 +156,10 @@ export default function HomePage() {
                   linkLabel="See all trending"
                   icon={<Flame className="w-5 h-5" />}
                   subtitle="Based on recent player activity & community signals"
+                  gradient="linear-gradient(90deg, #f97316 0%, #ef4444 25%, #f97316 50%, #eab308 75%, #f97316 100%)"
                 />
                 <HorizontalScroll>
-                  {trending.data!.filter((g) => !heroIds.has(g.id)).slice(0, 12).map((game, i) => (
+                  {trending.data!.filter((g) => !heroIds.has(g.id)).slice(0, 20).map((game, i) => (
                     <div key={game.id} className={CARD_WIDTH}>
                       <motion.div
                         initial={{ opacity: 0, y: 20 }}
@@ -194,6 +196,7 @@ export default function HomePage() {
                   title={user ? "Recommended For You" : "You Might Enjoy"}
                   icon={<Gem className="w-5 h-5" />}
                   subtitle={user ? "Based on your library & play history" : "Curated picks across diverse genres"}
+                  gradient="linear-gradient(90deg, #a855f7 0%, #6366f1 25%, #ec4899 50%, #a855f7 75%, #6366f1 100%)"
                 />
                 <HorizontalScroll>
                   {personalized.data.map((game, i) => (
@@ -230,6 +233,7 @@ export default function HomePage() {
                 linkLabel="Browse all"
                 icon={<Gamepad2 className="w-5 h-5" />}
                 subtitle="Find your next obsession"
+                gradient="linear-gradient(90deg, #06b6d4 0%, #3b82f6 25%, #8b5cf6 50%, #3b82f6 75%, #06b6d4 100%)"
               />
               <div className="flex items-center gap-2.5 mb-8 overflow-x-auto no-scrollbar pb-1">
                 {DISCOVER_TABS.map((tab) => (
@@ -279,7 +283,7 @@ export default function HomePage() {
                     <GameGridSkeleton count={4} />
                   ) : gxDeals.data && gxDeals.data.length > 0 ? (
                     <HorizontalScroll>
-                      {gxDeals.data.slice(0, 12).map((deal, i) => (
+                      {gxDeals.data.slice(0, 20).map((deal, i) => (
                         <motion.div
                           key={deal.id}
                           initial={{ opacity: 0, y: 20 }}
@@ -303,7 +307,7 @@ export default function HomePage() {
                     <GameGridSkeleton count={4} />
                   ) : gxFreeToPlay.data && gxFreeToPlay.data.length > 0 ? (
                     <HorizontalScroll>
-                      {gxFreeToPlay.data.slice(0, 12).map((game, i) => (
+                      {gxFreeToPlay.data.slice(0, 20).map((game, i) => (
                         <motion.div
                           key={game.id}
                           initial={{ opacity: 0, y: 20 }}
@@ -379,9 +383,10 @@ export default function HomePage() {
                     linkLabel="See all top rated"
                     icon={<Trophy className="w-5 h-5" />}
                     subtitle="Highest-scoring recent releases"
+                    gradient="linear-gradient(90deg, #facc15 0%, #f97316 25%, #eab308 50%, #22c55e 75%, #facc15 100%)"
                   />
                   <HorizontalScroll>
-                    {topRated.data.slice(0, 10).map((game, i) => (
+                    {topRated.data.slice(0, 20).map((game, i) => (
                       <div key={game.id} className={CARD_WIDTH}>
                         <motion.div
                           initial={{ opacity: 0, y: 20 }}
@@ -414,6 +419,7 @@ export default function HomePage() {
                   title="Gaming News"
                   icon={<Newspaper className="w-5 h-5" />}
                   subtitle="Trending stories from top gaming outlets"
+                  gradient="linear-gradient(90deg, #14b8a6 0%, #06b6d4 25%, #3b82f6 50%, #06b6d4 75%, #14b8a6 100%)"
                 />
                 {/* 2-column editorial layout: 2 featured + compact stack */}
                 {(() => {

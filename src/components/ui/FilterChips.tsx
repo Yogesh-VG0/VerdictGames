@@ -23,10 +23,11 @@ export default function FilterChips<T extends string>({
   return (
     <div
       className={cn(
-        "flex gap-1.5 overflow-x-auto scrollbar-hide pb-1 max-w-full sm:flex-wrap sm:overflow-visible sm:pb-0",
+        "flex gap-1.5 overflow-x-auto scrollbar-hide pb-1 -mx-1 px-1 sm:flex-wrap sm:pb-0",
         className
       )}
       role="radiogroup"
+      style={{ WebkitOverflowScrolling: "touch" }}
     >
       {options.map((option) => {
         const isActive = option === selected;

@@ -149,7 +149,7 @@ export async function fetchHeroCandidates(limit = 12): Promise<Game[]> {
   return combined.slice(0, limit).map(mapGameRow);
 }
 
-export async function fetchTrendingGames(limit = 12, homepageOnly = true): Promise<Game[]> {
+export async function fetchTrendingGames(limit = 20, homepageOnly = true): Promise<Game[]> {
   const supabase = getServerSupabase();
 
   // Step 1: Load manually-flagged trending seeds (these get priority slots in the rail)
@@ -225,7 +225,7 @@ function dateCutoff(yearsBack: number): string {
   return d.toISOString().slice(0, 10);
 }
 
-export async function fetchNewReleases(limit = 16): Promise<Game[]> {
+export async function fetchNewReleases(limit = 20): Promise<Game[]> {
   const supabase = getServerSupabase();
   const fetchLimit = limit * 2; // over-fetch for quality filtering
 
@@ -290,7 +290,7 @@ export async function fetchTopRated(limit = 10): Promise<Game[]> {
  * Homepage top rated — "Top Rated Right Now".
  * Only recent releases (24mo, fallback 36mo) so the homepage feels current.
  */
-export async function fetchHomepageTopRated(limit = 10): Promise<Game[]> {
+export async function fetchHomepageTopRated(limit = 20): Promise<Game[]> {
   const supabase = getServerSupabase();
   const fetchLimit = limit * 3;
   const cutoff = monthsAgoISO(HOMEPAGE_TOP_RATED_MONTHS);
@@ -332,7 +332,7 @@ export async function fetchHomepageTopRated(limit = 10): Promise<Game[]> {
  * Homepage recommendations — recent high-quality picks for anonymous users.
  * Avoids all-time classics dominating the homepage.
  */
-export async function fetchHomepageRecommendations(limit = 12): Promise<Game[]> {
+export async function fetchHomepageRecommendations(limit = 20): Promise<Game[]> {
   const supabase = getServerSupabase();
   const fetchLimit = limit * 4;
   const cutoff = monthsAgoISO(HOMEPAGE_REC_MONTHS);
@@ -416,9 +416,9 @@ export interface HomepageData {
 export async function fetchHomepageData(): Promise<HomepageData> {
   const [hero, trending, topRated, newReleases, deals] = await Promise.all([
     fetchHeroCandidates(12).catch(() => [] as Game[]),
-    fetchTrendingGames(12, true).catch(() => [] as Game[]),
-    fetchHomepageTopRated(10).catch(() => [] as Game[]),
-    fetchNewReleases(16).catch(() => [] as Game[]),
+    fetchTrendingGames(20, true).catch(() => [] as Game[]),
+    fetchHomepageTopRated(20).catch(() => [] as Game[]),
+    fetchNewReleases(20).catch(() => [] as Game[]),
     fetchDeals().catch(() => [] as GXDeal[]),
   ]);
 

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import type { ReactNode } from "react";
+import GradientText from "@/components/ui/GradientText";
 
 interface SectionHeaderProps {
   title: string;
@@ -9,6 +10,7 @@ interface SectionHeaderProps {
   icon?: ReactNode;
   subtitle?: string;
   className?: string;
+  gradient?: string;
 }
 
 export default function SectionHeader({
@@ -18,13 +20,18 @@ export default function SectionHeader({
   icon,
   subtitle,
   className,
+  gradient,
 }: SectionHeaderProps) {
   return (
     <div className={cn("mb-8", className)}>
       <div className="flex items-center justify-between gap-4">
         <h2 className="text-xl md:text-2xl font-bold text-foreground flex items-center gap-2.5 tracking-tight">
           {icon && <span className="text-accent opacity-80 flex items-center">{icon}</span>}
-          {title}
+          {gradient ? (
+            <GradientText text={title} gradient={gradient} className="font-bold" />
+          ) : (
+            title
+          )}
         </h2>
         {href && (
           <Link

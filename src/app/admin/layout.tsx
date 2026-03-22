@@ -3,7 +3,7 @@
 import { useAuth } from "@/hooks/useAuth";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { isAdminEmail } from "@/lib/adminEmails";
 import { LayoutDashboard, Gamepad2, FileText, Users } from "lucide-react";
@@ -19,14 +19,24 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const { user, loading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+  const [authChecked, setAuthChecked] = useState(false);
 
   useEffect(() => {
-    if (!loading && (!user || !isAdminEmail(user.email))) {
-      router.replace("/");
-    }
+    // Wait until auth has fully resolved (loading finishes)
+    if (loading) return;
+
+    // Give a brief moment for the auth state to stabilize after hydration
+    const timer = setTimeout(() => {
+      if (!user || !isAdminEmail(user.email)) {
+        router.replace("/");
+      }
+      setAuthChecked(true);
+    }, 100);
+
+    return () => clearTimeout(timer);
   }, [user, loading, router]);
 
-  if (loading) {
+  if (loading || (!authChecked && !user)) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="animate-pulse text-secondary">Loading...</div>
