@@ -227,10 +227,10 @@ export function mapListRow(
   row: ListRow,
   games: Game[]
 ): GameList {
-  // Use list's own cover, or fall back to the first game with a cover image
+  // Use list's own cover, or fall back to a game's header image (landscape, better for thumbnails)
   const coverImage = row.cover_image
-    || games.find((g) => g.coverImage)?.coverImage
     || games.find((g) => g.headerImage)?.headerImage
+    || games.find((g) => g.coverImage)?.coverImage
     || "";
 
   return {

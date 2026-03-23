@@ -94,45 +94,57 @@ export async function POST() {
       .maybeSingle();
 
     if (existing) {
-      results.push(`⏭️ "${seed.title}" already exists`);
-      continue;
+      // Delete existing list and its items so we can re-seed with better data
+      await supabase.from("list_items").delete().eq("list_id", existing.id);
+      await supabase.from("lists").delete().eq("id", existing.id);
+      results.push(`🔄 Re-seeding "${seed.title}"`);
     }
 
     // Fetch top-rated games with matching tags/genres
     const { data: gamesData } = await supabase
       .from("games")
       .select("*")
+      .gt("score", 0)
       .order("score", { ascending: false })
-      .limit(100) as { data: GameRow[] | null };
+      .limit(200) as { data: GameRow[] | null };
 
     if (!gamesData || gamesData.length === 0) {
       results.push(`⚠️ No games found for "${seed.title}"`);
       continue;
     }
 
-    // Filter and pick best matches (by genre/tag overlap with query)
-    const queryLower = seed.query.toLowerCase();
+    // Filter and pick best matches (by genre/tag overlap with query keywords)
+    const queryWords = seed.query.toLowerCase().split(/\s+/);
     const scored = gamesData
       .map(g => {
         let match = 0;
         const genresLower = (g.genres ?? []).map(x => x.toLowerCase());
         const tagsLower = (g.tags ?? []).map(x => x.toLowerCase());
-        if (genresLower.some(x => x.includes(queryLower))) match += 3;
-        if (tagsLower.some(x => x.includes(queryLower))) match += 2;
-        if ((g.description ?? "").toLowerCase().includes(queryLower)) match += 1;
+        const descLower = (g.description ?? "").toLowerCase();
+        for (const word of queryWords) {
+          if (genresLower.some(x => x.includes(word))) match += 3;
+          if (tagsLower.some(x => x.includes(word))) match += 2;
+          if (descLower.includes(word)) match += 1;
+        }
+        // Bonus for having a header image (better for list thumbnail)
+        if (g.header_image) match += 0.5;
+        // Bonus for high review count (well-known games)
+        if ((g.review_count ?? 0) > 1000) match += 1;
         return { game: g, match };
       })
       .filter(x => x.match > 0)
       .sort((a, b) => b.match - a.match || (b.game.score ?? 0) - (a.game.score ?? 0))
-      .slice(0, 8);
+      .slice(0, 12);
 
     // If we don't have enough matches, just take top-rated games
     const finalGames = scored.length >= 4
       ? scored.map(s => s.game)
-      : gamesData.slice(0, 8);
+      : gamesData.slice(0, 12);
 
-    // Create the list
-    const coverImage = finalGames[0]?.header_image || finalGames[0]?.cover_image || "";
+    // Pick a unique cover image — prefer a game with a good header_image
+    const coverGame = finalGames.find(g => g.header_image && g.header_image.length > 10)
+      ?? finalGames[0];
+    const coverImage = coverGame?.header_image || coverGame?.cover_image || "";
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: newList, error: listErr } = await (supabase.from("lists") as any)
