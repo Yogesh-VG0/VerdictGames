@@ -10,6 +10,7 @@ import SteamReviews from "@/components/SteamReviews";
 import type { SteamNewsArticle, SteamAchievementItem } from "@/lib/api";
 import { formatDate, scoreColor, cn } from "@/lib/utils";
 import PlatformIcon from "@/components/ui/PlatformIcon";
+import HeroImage from "@/components/ui/HeroImage";
 import ScoreRing from "@/components/ui/ScoreRing";
 import VerdictBadge from "@/components/ui/VerdictBadge";
 import PixelBadge from "@/components/ui/PixelBadge";
@@ -217,14 +218,10 @@ export default function GameDetailPage({ params }: Props) {
       <section className="relative">
         <div className="relative h-[50vh] md:h-[60vh] min-h-[320px] max-h-[600px] overflow-hidden">
           {game.headerImage ? (
-            <Image
+            <HeroImage
               src={game.headerImage}
               alt={game.title}
-              fill
-              className="object-cover"
-              sizes="100vw"
               priority
-              quality={85}
             />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-accent/20 via-surface to-pixel-cyan/10 flex items-center justify-center">

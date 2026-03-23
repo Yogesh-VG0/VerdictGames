@@ -159,7 +159,10 @@ export function mapGameRow(row: GameRow): Game {
     ? row.release_date > new Date().toISOString().slice(0, 10)
     : false;
 
-  const effectiveProvisional = flagProvisional || isComingSoonLabel || isFutureRelease;
+  // Games with 0 reviews should not display real verdicts — their score is just a RAWG rating guess
+  const hasNoReviews = (row.review_count ?? 0) === 0;
+
+  const effectiveProvisional = flagProvisional || isComingSoonLabel || isFutureRelease || hasNoReviews;
 
   // Provisional / coming-soon rows bypass Bayesian smoothing — show 0 and preserve COMING SOON
   const rawScore = row.score ?? 0;

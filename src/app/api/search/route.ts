@@ -125,11 +125,16 @@ export async function GET(request: NextRequest) {
         break;
       default:
         // relevance — if there's a query, rank by release_date (most relevant recent first)
-        // if no query, use a blended browse rank: momentum + score + recency
+        // if no query, use a blended browse rank with quality floor
         if (q) {
           query = query.order("release_date", { ascending: false }).order("id", { ascending: true });
         } else {
+          // Quality floor for no-query browsing: require minimum 10 reviews + cover image
+          // so tiny-review junk doesn't surface first when momentum is 0 everywhere
           query = query
+            .gte("review_count", 10)
+            .not("cover_image", "is", null)
+            .neq("cover_image", "")
             .order("momentum", { ascending: false, nullsFirst: false })
             .order("score", { ascending: false })
             .order("release_date", { ascending: false })

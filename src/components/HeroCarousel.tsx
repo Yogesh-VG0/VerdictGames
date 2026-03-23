@@ -2,13 +2,13 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 import { Game } from "@/lib/types";
 import VerdictBadge from "@/components/ui/VerdictBadge";
 import ScoreRing from "@/components/ui/ScoreRing";
 import PixelButton from "@/components/ui/PixelButton";
 import PlatformIcon from "@/components/ui/PlatformIcon";
+import HeroImage from "@/components/ui/HeroImage";
 import { collapsePlatforms } from "@/lib/utils/platform";
 import { cn } from "@/lib/utils";
 
@@ -192,14 +192,11 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
             style={{ transformStyle: "preserve-3d" }}
           >
             {(game.headerImage || game.coverImage) ? (
-              <Image
+              <HeroImage
                 src={game.headerImage || game.coverImage}
                 alt={game.title}
-                fill
-                className="object-cover object-top sm:object-center"
-                sizes="100vw"
+                className="object-top sm:object-center"
                 priority={currentIndex === 0}
-                quality={85}
               />
             ) : (
               <div className="w-full h-full bg-gradient-to-br from-accent/20 via-surface to-pixel-cyan/10" />
