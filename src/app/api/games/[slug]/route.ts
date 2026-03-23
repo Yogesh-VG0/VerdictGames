@@ -44,11 +44,38 @@ function provisionalRecordForSlug(slug: string) {
   };
 }
 
+/**
+ * Slug redirect map — fixes known RAWG typos and duplicates.
+ * When a user visits /game/bad-slug, we redirect to the correct slug.
+ */
+const SLUG_REDIRECTS: Record<string, string> = {
+  "grand-theft-aito-vi": "grand-theft-auto-vi",  // RAWG typo for GTA VI
+};
+
+/**
+ * Blocked slugs — never auto-provision these.
+ * Must match the blocklist in ingest.ts.
+ */
+const BLOCKED_SLUGS = new Set(Object.keys(SLUG_REDIRECTS));
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
 ) {
   const { slug } = await params;
+
+  // Redirect known bad slugs to their correct version
+  const redirect = SLUG_REDIRECTS[slug];
+  if (redirect) {
+    const url = new URL(request.url);
+    url.pathname = `/api/games/${redirect}`;
+    const res = await fetch(url.toString(), { headers: request.headers });
+    const json = await res.json();
+    return new Response(JSON.stringify(json), {
+      status: res.status,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
 
   try {
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
