@@ -183,8 +183,8 @@ export default function ExplorePage() {
       {/* Header */}
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold text-foreground flex items-center gap-3">
-          <TrendingUp className="w-7 h-7 text-accent" />
-          Explore Games
+          <TrendingUp className="w-7 h-7 text-pink-500" />
+          <span className="bg-gradient-to-r from-pink-500 via-rose-400 to-amber-400 bg-clip-text text-transparent">Explore Games</span>
         </h1>
         <p className="text-sm text-secondary mt-1">
           Discover the most popular, anticipated, and highest-rated games.

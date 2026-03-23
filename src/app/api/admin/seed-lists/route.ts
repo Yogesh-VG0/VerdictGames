@@ -85,8 +85,10 @@ export async function POST() {
   const supabase = getServerSupabase();
   const results: string[] = [];
 
-  // Clean up ALL old versions of seeded lists (handles slug matches + old "editorial" curated_by)
+  // Clean up ALL editorial-seeded lists (by slug match OR by curated_by pattern)
   const seedSlugs = SEED_LISTS.map(s => s.slug);
+
+  // 1. Delete by matching slug
   for (const slug of seedSlugs) {
     const { data: oldLists } = await supabase
       .from("lists")
@@ -97,8 +99,20 @@ export async function POST() {
         await supabase.from("list_items").delete().eq("list_id", old.id);
         await supabase.from("lists").delete().eq("id", old.id);
       }
-      results.push(`�️ Cleaned up ${oldLists.length} old version(s) of "${slug}"`);
     }
+  }
+
+  // 2. Delete any remaining lists created by the editorial seed (catches old slugs)
+  const { data: editorialLists } = await supabase
+    .from("lists")
+    .select("id")
+    .or("curated_by.eq.editorial,curated_by.eq.Verdict.games Editorial");
+  if (editorialLists && editorialLists.length > 0) {
+    for (const old of editorialLists) {
+      await supabase.from("list_items").delete().eq("list_id", old.id);
+      await supabase.from("lists").delete().eq("id", old.id);
+    }
+    results.push(`🗑️ Cleaned up ${editorialLists.length} old editorial list(s)`);
   }
 
   for (const seed of SEED_LISTS) {

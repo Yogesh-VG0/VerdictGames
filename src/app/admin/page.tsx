@@ -3,7 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { Gamepad2, FileText, Users, Plus, PenLine, Pencil, ListPlus, Loader2, Database, ChevronDown } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { useState, useCallback, type ReactNode } from "react";
 
 interface AdminStats {
   totalGames: number;
@@ -61,6 +61,55 @@ function formatFieldValue(val: unknown): string {
   if (typeof val === "boolean") return val ? "Yes" : "No";
   const str = String(val);
   return str.length > 80 ? str.slice(0, 80) + "…" : str;
+}
+
+function ActivityLog({ entries, isLoading }: { entries: AuditEntry[]; isLoading: boolean }) {
+  const [visibleCount, setVisibleCount] = useState(15);
+
+  if (isLoading) {
+    return (
+      <div className="rounded-2xl border border-border bg-surface overflow-hidden p-4 space-y-3">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className="h-12 rounded-lg bg-surface-2 animate-pulse" />
+        ))}
+      </div>
+    );
+  }
+
+  if (entries.length === 0) {
+    return (
+      <div className="rounded-2xl border border-border bg-surface p-8 text-center">
+        <p className="text-sm text-tertiary">No admin activity logged yet.</p>
+        <p className="text-xs text-tertiary mt-1">Edits to games will appear here.</p>
+      </div>
+    );
+  }
+
+  const visible = entries.slice(0, visibleCount);
+  const hasMore = entries.length > visibleCount;
+
+  return (
+    <div className="rounded-2xl border border-border bg-surface overflow-hidden">
+      <div className="divide-y divide-border">
+        {visible.map((entry) => (
+          <AuditEntryRow key={entry.id} entry={entry} />
+        ))}
+      </div>
+      {hasMore && (
+        <button
+          onClick={() => setVisibleCount((c) => c + 15)}
+          className="w-full px-4 py-3 text-xs font-medium text-accent hover:text-accent-hover hover:bg-surface-2 transition-colors border-t border-border"
+        >
+          Load more ({entries.length - visibleCount} remaining)
+        </button>
+      )}
+      {!hasMore && entries.length > 15 && (
+        <div className="px-4 py-2 text-center border-t border-border">
+          <span className="text-[10px] text-tertiary">Showing all {entries.length} entries</span>
+        </div>
+      )}
+    </div>
+  );
 }
 
 function AuditEntryRow({ entry }: { entry: AuditEntry }) {
@@ -238,31 +287,7 @@ export default function AdminDashboard() {
         {/* Recent Admin Activity */}
         <div className="space-y-3">
           <h2 className="text-lg font-bold text-foreground">Recent Activity</h2>
-          <div className="rounded-2xl border border-border bg-surface overflow-hidden max-h-[600px] overflow-y-auto scrollbar-hide">
-            {activity.isLoading ? (
-              <div className="p-4 space-y-3">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="h-12 rounded-lg bg-surface-2 animate-pulse" />
-                ))}
-              </div>
-            ) : !activity.data || activity.data.length === 0 ? (
-              <div className="p-8 text-center">
-                <p className="text-sm text-tertiary">No admin activity logged yet.</p>
-                <p className="text-xs text-tertiary mt-1">Edits to games will appear here.</p>
-              </div>
-            ) : (
-              <div className="divide-y divide-border">
-                {activity.data.slice(0, 30).map((entry) => (
-                  <AuditEntryRow key={entry.id} entry={entry} />
-                ))}
-                {activity.data.length > 30 && (
-                  <div className="px-4 py-3 text-center">
-                    <span className="text-xs text-tertiary">Showing 30 of {activity.data.length} entries</span>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
+          <ActivityLog entries={activity.data ?? []} isLoading={activity.isLoading} />
         </div>
       </div>
 
