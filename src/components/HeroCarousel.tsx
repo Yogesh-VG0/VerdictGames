@@ -83,9 +83,19 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
       if (isAnimating.current) return;
       isAnimating.current = true;
       setPage(([p]) => [p + newDirection, newDirection]);
-      setTimeout(() => { isAnimating.current = false; }, 900);
+      setTimeout(() => { isAnimating.current = false; }, 1200);
     },
     []
+  );
+
+  const goToSlide = useCallback(
+    (targetIndex: number) => {
+      if (isAnimating.current) return;
+      isAnimating.current = true;
+      setPage(([, ]) => [targetIndex, targetIndex > currentIndex ? 1 : -1]);
+      setTimeout(() => { isAnimating.current = false; }, 1200);
+    },
+    [currentIndex]
   );
 
   // Touch handlers for mobile swipe — applied to entire hero section
@@ -349,7 +359,7 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
           {games.map((_, i) => (
             <button
               key={i}
-              onClick={() => setPage([i, i > currentIndex ? 1 : -1])}
+              onClick={() => goToSlide(i)}
               className={cn(
                 "transition-all duration-300 rounded-full",
                 i === currentIndex

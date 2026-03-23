@@ -204,40 +204,47 @@ export default function HomePage() {
               />
               <HorizontalScroll>
                 {anticipated.data.items.map((game, i) => (
-                  <div key={game.rawgId} className={CARD_WIDTH}>
+                  <div key={game.rawgId} className="shrink-0 w-64 sm:w-72 md:w-80 h-full">
                     <motion.div
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: i * 0.04, duration: 0.4 }}
                     >
                       <Link href={`/game/${game.slug}`} className="block group">
-                        <div className="relative aspect-[3/4] rounded-2xl overflow-hidden border border-border bg-surface-2 group-hover:border-accent/40 transition-all">
+                        <div className="relative aspect-[16/9] rounded-2xl overflow-hidden border border-border bg-surface-2 group-hover:border-accent/40 transition-all">
                           {game.image ? (
-                            <Image
+                            /* eslint-disable-next-line @next/next/no-img-element */
+                            <img
                               src={game.image}
                               alt={game.name}
-                              fill
-                              sizes="(max-width:640px) 45vw, 240px"
-                              className="object-cover group-hover:scale-105 transition-transform duration-500"
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                              loading="lazy"
                             />
                           ) : (
                             <div className="w-full h-full bg-gradient-to-br from-accent/10 to-pixel-cyan/10" />
                           )}
-                          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-3 pt-12">
-                            <p className="text-xs font-bold text-white line-clamp-2 drop-shadow-lg">{game.name}</p>
+                          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent p-3 pt-8">
+                            <p className="text-sm font-bold text-white line-clamp-1 drop-shadow-lg">{game.name}</p>
                             <div className="flex items-center gap-2 mt-1">
-                              {game.genres.slice(0, 2).map((g) => (
-                                <span key={g} className="text-[9px] text-white/60">{g}</span>
+                              {game.genres.slice(0, 2).map((g, gi) => (
+                                <span key={g} className="text-[10px] text-white/60">
+                                  {gi > 0 && <span className="mr-1">·</span>}{g}
+                                </span>
                               ))}
-                            </div>
-                            <div className="flex items-center gap-2 mt-1 text-[9px]">
-                              <span className="text-accent font-medium">{game.added.toLocaleString()} wishlisted</span>
-                              {game.released && !game.tba && (
-                                <span className="text-white/40">{game.released}</span>
-                              )}
-                              {game.tba && <span className="text-yellow-400">TBA</span>}
+                              <span className="ml-auto text-[10px] font-medium">
+                                {game.tba ? (
+                                  <span className="text-yellow-400">TBA</span>
+                                ) : game.released ? (
+                                  <span className="text-white/50">{new Date(game.released).getFullYear()}</span>
+                                ) : null}
+                              </span>
                             </div>
                           </div>
+                        </div>
+                        <div className="flex items-center gap-3 mt-2 px-1 text-[10px] text-secondary">
+                          <span className="text-accent font-medium">{game.added.toLocaleString()} wishlisted</span>
+                          {game.toplay > 0 && <span>{game.toplay.toLocaleString()} want</span>}
+                          {game.playing > 0 && <span className="text-accent">{game.playing} playing</span>}
                         </div>
                       </Link>
                     </motion.div>

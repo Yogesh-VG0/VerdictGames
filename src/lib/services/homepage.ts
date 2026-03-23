@@ -8,7 +8,7 @@
 
 import { getServerSupabase } from "@/lib/supabase/server";
 import { mapGameRow } from "@/lib/db/mappers";
-import { filterQualityGames, confidenceWeightedScore } from "@/lib/utils/quality";
+import { filterQualityGames, confidenceWeightedScore, isQualityGame } from "@/lib/utils/quality";
 import type { GameRow } from "@/lib/supabase/types";
 import type { Game, GXDeal } from "@/lib/types";
 
@@ -137,7 +137,12 @@ export async function fetchHeroCandidates(limit = 12): Promise<Game[]> {
   const combined = deduplicateBySteamAppId([...(manualFeatured ?? []), ...autoDeduped]);
 
   // Quality filter: hero needs well-known games (100+ reviews, good description)
-  const qualityFiltered = filterQualityGames(combined, { section: "hero", minResults: 4 });
+  // Don't use the default fallback (which returns ALL unfiltered) — instead, always
+  // sort by confidence and take the best available even if fewer than minResults pass.
+  const strictFiltered = combined.filter((r) => isQualityGame(r, "hero"));
+  const qualityFiltered = strictFiltered.length >= 4
+    ? strictFiltered
+    : [...combined].sort((a, b) => confidenceWeightedScore(b) - confidenceWeightedScore(a)).slice(0, 12);
 
   // Sort: manual featured first → then by confidence-weighted score (penalizes few-review games)
   qualityFiltered.sort((a, b) => {
@@ -274,7 +279,7 @@ export async function fetchNewReleases(limit = 20): Promise<Game[]> {
  */
 export async function fetchTopRated(limit = 10): Promise<Game[]> {
   const supabase = getServerSupabase();
-  const fetchLimit = limit * 2;
+  const fetchLimit = limit * 4;
 
   const { data, error } = await supabase
     .from("games")
@@ -285,6 +290,8 @@ export async function fetchTopRated(limit = 10): Promise<Game[]> {
   if (error) throw error;
 
   const filtered = filterQualityGames(data ?? [], { section: "topRated", minResults: 4 });
+  // Sort by confidence-weighted score so tiny-sample 100% games don't dominate
+  filtered.sort((a, b) => confidenceWeightedScore(b) - confidenceWeightedScore(a));
   return filtered.slice(0, limit).map(mapGameRow);
 }
 
@@ -421,7 +428,7 @@ export interface HomepageData {
 export async function fetchHomepageData(): Promise<HomepageData> {
   const [hero, trending, topRated, newReleases, deals] = await Promise.all([
     fetchHeroCandidates(12).catch(() => [] as Game[]),
-    fetchTrendingGames(20, true).catch(() => [] as Game[]),
+    fetchTrendingGames(26, true).catch(() => [] as Game[]),
     fetchHomepageTopRated(20).catch(() => [] as Game[]),
     fetchNewReleases(20).catch(() => [] as Game[]),
     fetchDeals().catch(() => [] as GXDeal[]),
