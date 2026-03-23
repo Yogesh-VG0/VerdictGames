@@ -59,7 +59,6 @@ export default function NavbarTop() {
     { href: "/", label: "Home", icon: <Home className="w-4 h-4" /> },
     { href: "/explore", label: "Explore", icon: <Sparkles className="w-4 h-4" /> },
     { href: "/search?sort=trending", label: "Browse", icon: <Flame className="w-4 h-4" /> },
-    { href: "/search", label: "Search", icon: <Search className="w-4 h-4" /> },
     { href: "/calendar", label: "Calendar", icon: <CalendarDays className="w-4 h-4" /> },
     { href: "/reviews", label: "Reviews", icon: <Star className="w-4 h-4" /> },
     { href: "/lists", label: "Lists", icon: <List className="w-4 h-4" /> },

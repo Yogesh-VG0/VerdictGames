@@ -89,7 +89,7 @@ function AuditEntryRow({ entry }: { entry: AuditEntry }) {
             </p>
           )}
           <div className="flex items-center gap-2 mt-0.5">
-            <span className="text-[10px] text-tertiary">{entry.edited_by}</span>
+            <span className="text-[10px] text-tertiary">{entry.edited_by.includes("@") ? entry.edited_by.split("@")[0] : entry.edited_by}</span>
             <span className="text-[10px] text-tertiary">·</span>
             <span className="text-[10px] text-tertiary">{formatTimeAgo(entry.edited_at)}</span>
           </div>
@@ -238,7 +238,7 @@ export default function AdminDashboard() {
         {/* Recent Admin Activity */}
         <div className="space-y-3">
           <h2 className="text-lg font-bold text-foreground">Recent Activity</h2>
-          <div className="rounded-2xl border border-border bg-surface overflow-hidden max-h-[500px] overflow-y-auto scrollbar-hide">
+          <div className="rounded-2xl border border-border bg-surface overflow-hidden max-h-[600px] overflow-y-auto scrollbar-hide">
             {activity.isLoading ? (
               <div className="p-4 space-y-3">
                 {Array.from({ length: 5 }).map((_, i) => (
@@ -252,9 +252,14 @@ export default function AdminDashboard() {
               </div>
             ) : (
               <div className="divide-y divide-border">
-                {activity.data.slice(0, 20).map((entry) => (
+                {activity.data.slice(0, 30).map((entry) => (
                   <AuditEntryRow key={entry.id} entry={entry} />
                 ))}
+                {activity.data.length > 30 && (
+                  <div className="px-4 py-3 text-center">
+                    <span className="text-xs text-tertiary">Showing 30 of {activity.data.length} entries</span>
+                  </div>
+                )}
               </div>
             )}
           </div>

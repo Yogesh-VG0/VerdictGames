@@ -23,7 +23,9 @@ const allYears: string[] = [
 import GameGrid from "@/components/GameGrid";
 import FilterChips from "@/components/ui/FilterChips";
 import SortDropdown from "@/components/ui/SortDropdown";
+import GradientText from "@/components/ui/GradientText";
 import { GameGridSkeleton } from "@/components/ui/Skeleton";
+import { Flame, Trophy, Sparkles, Calendar, Clock, Search as SearchIcon } from "lucide-react";
 
 /* Platform icons imported from shared PlatformIcon component */
 
@@ -149,13 +151,13 @@ function SearchContent() {
         transition={{ duration: 0.4 }}
         className="space-y-1"
       >
-        <h1 className="text-2xl font-bold text-foreground">
-          {sort === "trending" ? "Trending Games" :
-           sort === "top-rated" ? "Top Rated Games" :
-           sort === "newest" ? "New Releases" :
-           sort === "upcoming" ? "Upcoming Games" :
-           sort === "recently-added" ? "Recently Added" :
-           "Search Games"}
+        <h1 className="text-2xl font-bold text-foreground flex items-center gap-3">
+          {sort === "trending" ? <><Flame className="w-6 h-6 text-orange-500" /><GradientText text="Trending Games" gradient="linear-gradient(90deg, #f97316, #ef4444, #f97316)" /></> :
+           sort === "top-rated" ? <><Trophy className="w-6 h-6 text-yellow-500" /><GradientText text="Top Rated Games" gradient="linear-gradient(90deg, #facc15, #f97316, #22c55e)" /></> :
+           sort === "newest" ? <><Sparkles className="w-6 h-6 text-cyan-500" /><GradientText text="New Releases" gradient="linear-gradient(90deg, #06b6d4, #3b82f6, #8b5cf6)" /></> :
+           sort === "upcoming" ? <><Calendar className="w-6 h-6 text-purple-500" /><GradientText text="Upcoming Games" gradient="linear-gradient(90deg, #a855f7, #6366f1, #ec4899)" /></> :
+           sort === "recently-added" ? <><Clock className="w-6 h-6 text-blue-500" /><GradientText text="Recently Added" gradient="linear-gradient(90deg, #3b82f6, #06b6d4, #3b82f6)" /></> :
+           <><SearchIcon className="w-6 h-6 text-accent" />Search Games</>}
         </h1>
         <p className="text-sm text-secondary">
           {sort === "trending" ? "Games gaining momentum right now based on player activity." :
