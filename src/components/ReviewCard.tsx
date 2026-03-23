@@ -34,12 +34,11 @@ export default function ReviewCard({
             className="shrink-0 relative w-16 h-20 sm:w-20 sm:h-28 rounded-xl overflow-hidden border border-border bg-surface-2 group/cover"
           >
             {review.gameCover ? (
-              <Image
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img
                 src={review.gameCover}
                 alt={review.gameTitle}
-                fill
-                sizes="80px"
-                className="object-cover group-hover/cover:scale-105 transition-transform duration-300"
+                className="w-full h-full object-cover group-hover/cover:scale-105 transition-transform duration-300"
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-xs text-tertiary">🎮</div>

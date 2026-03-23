@@ -33,8 +33,8 @@ function scoreGlowClass(score: number) {
   return "score-glow-bad";
 }
 
-function BlurImage({ src, alt, sizes, priority, className }: {
-  src: string; alt: string; sizes: string; priority?: boolean; className?: string;
+function BlurImage({ src, alt, priority, className }: {
+  src: string; alt: string; sizes?: string; priority?: boolean; className?: string;
 }) {
   const [loaded, setLoaded] = useState(false);
   return (
@@ -43,17 +43,16 @@ function BlurImage({ src, alt, sizes, priority, className }: {
         "absolute inset-0 bg-surface-2 transition-opacity duration-500",
         loaded ? "opacity-0" : "opacity-100"
       )} />
-      <Image
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
         src={src}
         alt={alt}
-        fill
-        sizes={sizes}
         className={cn(
-          "transition-all duration-700",
+          "absolute inset-0 w-full h-full object-cover transition-all duration-700",
           loaded ? "opacity-100 scale-100" : "opacity-0 scale-105 blur-sm",
           className
         )}
-        priority={priority}
+        loading={priority ? "eager" : "lazy"}
         onLoad={() => setLoaded(true)}
       />
     </>

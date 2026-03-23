@@ -34,12 +34,11 @@ export default function MediaCarousel({
             transition={{ duration: 0.2 }}
             className="relative w-full h-full"
           >
-            <Image
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
               src={images[active]}
               alt={`${alt} screenshot ${active + 1}`}
-              fill
-              sizes="(max-width: 768px) 100vw, 800px"
-              className="object-cover"
+              className="w-full h-full object-cover"
             />
           </motion.div>
         </AnimatePresence>
@@ -82,12 +81,11 @@ export default function MediaCarousel({
                   : "border-white/10 opacity-60 hover:opacity-100"
               )}
             >
-              <Image
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
                 src={src}
                 alt={`Thumbnail ${i + 1}`}
-                fill
-                sizes="80px"
-                className="object-cover"
+                className="w-full h-full object-cover"
               />
             </button>
           ))}
