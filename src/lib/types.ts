@@ -134,6 +134,7 @@ export interface Review {
   gameCover: string;
   userId: string;
   username: string;
+  displayName: string;
   userAvatar: string;
   rating: number; // 0–100
   title: string;

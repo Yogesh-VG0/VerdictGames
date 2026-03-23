@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getUserProfile } from "@/lib/api";
+import GradientText from "@/components/ui/GradientText";
+import { Settings } from "lucide-react";
 
 const GENRE_OPTIONS = [
   "Action", "Adventure", "RPG", "Strategy", "Simulation",
@@ -157,7 +159,10 @@ export default function SettingsPage() {
           </svg>
           Back
         </button>
-        <h1 className="text-2xl font-bold text-foreground">Profile Settings</h1>
+        <h1 className="text-2xl font-bold text-foreground flex items-center gap-3">
+          <Settings className="w-6 h-6 text-teal-500" />
+          <GradientText text="Profile Settings" gradient="linear-gradient(90deg, #14b8a6 0%, #2dd4bf 25%, #5eead4 50%, #2dd4bf 75%, #14b8a6 100%)" />
+        </h1>
         <p className="text-sm text-secondary mt-1">Customize how others see you on Verdict</p>
       </div>
 

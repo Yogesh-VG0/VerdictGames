@@ -61,7 +61,7 @@ export default function ReviewCard({
               href={`/profile/${review.username}`}
               className="hover:text-accent transition-colors font-medium"
             >
-              {review.username}
+              {review.displayName || review.username}
             </Link>
             <span className="text-tertiary">·</span>
             <time dateTime={review.createdAt}>{formatDate(review.createdAt)}</time>

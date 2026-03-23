@@ -159,7 +159,7 @@ export function mapGameRow(row: GameRow): Game {
 export function mapReviewRow(
   row: ReviewRow & {
     game?: { slug: string; title: string; cover_image: string } | null;
-    profile?: { username: string; avatar_url: string } | null;
+    profile?: { username: string; display_name?: string; avatar_url: string } | null;
   }
 ): Review {
   return {
@@ -170,6 +170,7 @@ export function mapReviewRow(
     gameCover: row.game?.cover_image ?? "",
     userId: row.profile_id,
     username: row.profile?.username ?? "",
+    displayName: row.profile?.display_name || row.profile?.username || "",
     userAvatar: row.profile?.avatar_url ?? "",
     rating: row.rating,
     title: row.title,

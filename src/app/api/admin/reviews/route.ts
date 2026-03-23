@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
 
   const { data, count } = await supabase
     .from("reviews")
-    .select("*, profiles!inner(username, avatar_url), games!inner(title, slug, cover_image)", { count: "exact" })
+    .select("*, profiles!inner(username, display_name, avatar_url), games!inner(title, slug, cover_image)", { count: "exact" })
     .order("created_at", { ascending: false })
     .range(offset, offset + limit - 1);
 

@@ -157,7 +157,7 @@ function SearchContent() {
            sort === "newest" ? <><Sparkles className="w-6 h-6 text-cyan-500" /><GradientText text="New Releases" gradient="linear-gradient(90deg, #06b6d4, #3b82f6, #8b5cf6)" /></> :
            sort === "upcoming" ? <><Calendar className="w-6 h-6 text-purple-500" /><GradientText text="Upcoming Games" gradient="linear-gradient(90deg, #a855f7, #6366f1, #ec4899)" /></> :
            sort === "recently-added" ? <><Clock className="w-6 h-6 text-blue-500" /><GradientText text="Recently Added" gradient="linear-gradient(90deg, #3b82f6, #06b6d4, #3b82f6)" /></> :
-           <><SearchIcon className="w-6 h-6 text-accent" />Search Games</>}
+           <><SearchIcon className="w-6 h-6 text-accent" /><GradientText text="Search Games" gradient="linear-gradient(90deg, #6366f1 0%, #8b5cf6 25%, #a78bfa 50%, #8b5cf6 75%, #6366f1 100%)" /></>}
         </h1>
         <p className="text-sm text-secondary">
           {sort === "trending" ? "Games gaining momentum right now based on player activity." :

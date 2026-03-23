@@ -50,7 +50,7 @@ export async function GET(
         `
         *,
         game:games!inner(slug, title, cover_image),
-        profile:profiles!inner(username, avatar_url)
+        profile:profiles!inner(username, display_name, avatar_url)
         `,
         { count: "exact" }
       )

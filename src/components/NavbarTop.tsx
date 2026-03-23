@@ -311,7 +311,15 @@ export default function NavbarTop() {
           {/* Nav links */}
           <div className="flex items-center gap-1">
             {navLinks.map((link) => {
-              const isActive = link.href === "/" ? pathname === "/" : pathname.startsWith(link.href);
+              let isActive: boolean;
+              if (link.href === "/") {
+                isActive = pathname === "/";
+              } else if (link.href.includes("?")) {
+                const [basePath] = link.href.split("?");
+                isActive = pathname === basePath && typeof window !== "undefined" && window.location.search === `?${link.href.split("?")[1]}`;
+              } else {
+                isActive = pathname.startsWith(link.href);
+              }
               return (
                 <Link
                   key={link.href}

@@ -96,7 +96,7 @@ function LibraryContent() {
       {/* Header + Stats */}
       <FadeInSection>
         <div className="space-y-4">
-          <SectionHeader title="My Library" icon={<BookOpen className="w-5 h-5" />} subtitle="Track your gaming journey" />
+          <SectionHeader title="My Library" icon={<BookOpen className="w-5 h-5" />} subtitle="Track your gaming journey" gradient="linear-gradient(90deg, #8b5cf6 0%, #a78bfa 25%, #c4b5fd 50%, #a78bfa 75%, #8b5cf6 100%)" />
 
           {stats.data && (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
