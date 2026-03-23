@@ -27,36 +27,26 @@ interface HeroCarouselProps {
 }
 
 const slideVariants: Variants = {
-  enter: (dir: number) => ({
+  enter: {
     opacity: 0,
-    x: dir > 0 ? "8%" : "-8%",
-    scale: 1.02,
-    rotateY: dir > 0 ? 3 : -3,
-  }),
+    scale: 1.04,
+  },
   center: {
     opacity: 1,
-    x: 0,
     scale: 1,
-    rotateY: 0,
     transition: {
-      opacity: { duration: 0.7, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
-      x: { duration: 0.8, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
-      scale: { duration: 1, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
-      rotateY: { duration: 0.8, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
+      opacity: { duration: 0.8, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
+      scale: { duration: 1.2, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
     },
   },
-  exit: (dir: number) => ({
+  exit: {
     opacity: 0,
-    x: dir > 0 ? "-6%" : "6%",
-    scale: 0.98,
-    rotateY: dir > 0 ? -2 : 2,
+    scale: 0.97,
     transition: {
-      opacity: { duration: 0.45, ease: "easeIn" as const },
-      x: { duration: 0.5, ease: "easeIn" as const },
+      opacity: { duration: 0.5, ease: "easeIn" as const },
       scale: { duration: 0.5, ease: "easeIn" as const },
-      rotateY: { duration: 0.5, ease: "easeIn" as const },
     },
-  }),
+  },
 };
 
 const contentVariants: Variants = {
@@ -80,6 +70,7 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
   const [[page, direction], setPage] = useState([0, 0]);
   const [isPaused, setIsPaused] = useState(false);
   const isSwiping = useRef(false);
+  const isAnimating = useRef(false);
   const touchStart = useRef<{ x: number; y: number; time: number } | null>(null);
   const containerRef = useRef<HTMLElement>(null);
 
@@ -89,7 +80,10 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
 
   const paginate = useCallback(
     (newDirection: number) => {
+      if (isAnimating.current) return;
+      isAnimating.current = true;
       setPage(([p]) => [p + newDirection, newDirection]);
+      setTimeout(() => { isAnimating.current = false; }, 900);
     },
     []
   );
@@ -191,7 +185,7 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
               <img
                 src={game.headerImage || game.coverImage}
                 alt={game.title}
-                className="absolute inset-0 w-full h-full object-cover object-top sm:object-center"
+                className="absolute inset-0 w-full h-full object-cover object-center"
                 fetchPriority={currentIndex === 0 ? "high" : "auto"}
               />
             ) : (

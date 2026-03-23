@@ -6,7 +6,7 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { getRawgList, type RawgListGameItem, type RawgListType } from "@/lib/api";
 import PlatformIcon from "@/components/ui/PlatformIcon";
-import { Flame, Trophy, Clock, Star, Gamepad2, ChevronRight, Users, TrendingUp, Search } from "lucide-react";
+import { Flame, Trophy, Clock, Star, Gamepad2, ChevronRight, Users, TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const TABS = [
@@ -181,23 +181,14 @@ export default function ExplorePage() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-foreground flex items-center gap-3">
-            <TrendingUp className="w-7 h-7 text-accent" />
-            Explore Games
-          </h1>
-          <p className="text-sm text-secondary mt-1">
-            Discover the most popular, anticipated, and highest-rated games.
-          </p>
-        </div>
-        <Link
-          href="/search"
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium bg-surface border border-border text-secondary hover:text-foreground hover:border-accent/40 transition-all w-fit"
-        >
-          <Search className="w-4 h-4" />
-          Search Games
-        </Link>
+      <div>
+        <h1 className="text-2xl sm:text-3xl font-bold text-foreground flex items-center gap-3">
+          <TrendingUp className="w-7 h-7 text-accent" />
+          Explore Games
+        </h1>
+        <p className="text-sm text-secondary mt-1">
+          Discover the most popular, anticipated, and highest-rated games.
+        </p>
       </div>
 
       {/* Tab navigation */}
