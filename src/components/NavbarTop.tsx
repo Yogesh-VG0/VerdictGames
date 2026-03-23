@@ -316,7 +316,7 @@ export default function NavbarTop() {
                 isActive = pathname === "/";
               } else if (link.href.includes("?")) {
                 const [basePath] = link.href.split("?");
-                isActive = pathname === basePath && typeof window !== "undefined" && window.location.search === `?${link.href.split("?")[1]}`;
+                isActive = pathname === basePath;
               } else {
                 isActive = pathname.startsWith(link.href);
               }
