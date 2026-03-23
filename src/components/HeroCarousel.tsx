@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 import { Game } from "@/lib/types";
@@ -188,14 +187,12 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
             style={{ transformStyle: "preserve-3d" }}
           >
             {(game.headerImage || game.coverImage) ? (
-              <Image
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img
                 src={game.headerImage || game.coverImage}
                 alt={game.title}
-                fill
-                sizes="100vw"
-                className="object-cover object-top sm:object-center"
-                priority={currentIndex === 0}
-                quality={90}
+                className="absolute inset-0 w-full h-full object-cover object-top sm:object-center"
+                fetchPriority={currentIndex === 0 ? "high" : "auto"}
               />
             ) : (
               <div className="w-full h-full bg-gradient-to-br from-accent/20 via-surface to-pixel-cyan/10" />
