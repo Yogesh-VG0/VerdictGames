@@ -130,27 +130,31 @@ export default function NavbarTop() {
             </motion.button>
           </div>
         </div>
-        {/* Mobile search dropdown */}
+        {/* Mobile search dropdown — click outside to close */}
         <AnimatePresence>
           {mobileSearchOpen && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="overflow-hidden border-t border-border"
-            >
-              <form onSubmit={handleSearch} className="px-4 py-3">
-                <input
-                  type="search"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Search games..."
-                  className="w-full h-10 px-4 text-sm rounded-xl bg-surface-2 border border-border text-foreground placeholder:text-tertiary focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/20 transition-all"
-                  autoFocus
-                />
-              </form>
-            </motion.div>
+            <>
+              {/* Invisible backdrop to catch outside clicks */}
+              <div className="fixed inset-0 z-[39]" onClick={() => setMobileSearchOpen(false)} />
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="overflow-hidden border-t border-border relative z-[40]"
+              >
+                <form onSubmit={handleSearch} className="px-4 py-3">
+                  <input
+                    type="search"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder="Search games..."
+                    className="w-full h-10 px-4 text-sm rounded-xl bg-surface-2 border border-border text-foreground placeholder:text-tertiary focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/20 transition-all"
+                    autoFocus
+                  />
+                </form>
+              </motion.div>
+            </>
           )}
         </AnimatePresence>
       </header>

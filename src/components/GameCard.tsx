@@ -269,13 +269,13 @@ export default function GameCard({
 
           {hasRealScore(game) && <VerdictBadge label={game.verdictLabel} size="sm" />}
 
-          <div className="flex items-center gap-1 text-[10px] text-tertiary font-medium">
-            {game.genres.slice(0, 2).map((g, i) => (
+          <div className="flex items-center gap-1 text-[10px] text-tertiary font-medium min-h-[16px]">
+            {game.genres.length > 0 ? game.genres.slice(0, 2).map((g, i) => (
               <span key={g}>
                 {i > 0 && <span className="mx-0.5 opacity-40">&middot;</span>}
                 {g}
               </span>
-            ))}
+            )) : <span className="opacity-0">—</span>}
           </div>
         </div>
       </motion.article>

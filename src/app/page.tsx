@@ -125,7 +125,7 @@ export default function HomePage() {
           seen.add(key);
           merged.push(a);
         }
-        if (merged.length >= 11) break;
+        if (merged.length >= 12) break;
       }
       return merged;
     },
@@ -244,7 +244,6 @@ export default function HomePage() {
                         <div className="flex items-center gap-3 mt-2 px-1 text-[10px] text-secondary">
                           <span className="text-accent font-medium">{game.added.toLocaleString()} wishlisted</span>
                           {game.toplay > 0 && <span>{game.toplay.toLocaleString()} want</span>}
-                          {game.playing > 0 && <span className="text-accent">{game.playing} playing</span>}
                         </div>
                       </Link>
                     </motion.div>
@@ -504,8 +503,8 @@ export default function HomePage() {
                 {(() => {
                   const articles = gxNews.data;
                   const featured = articles.slice(0, 2);
-                  /* 9 compact items on the right to visually balance the 2 tall featured cards */
-                  const rest = articles.slice(2, 11);
+                  /* 10 compact items on the right to visually balance the 2 tall featured cards */
+                  const rest = articles.slice(2, 12);
 
                   return (
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
@@ -561,9 +560,9 @@ export default function HomePage() {
                         ))}
                       </div>
 
-                      {/* Right column: compact stacked articles */}
+                      {/* Right column: compact stacked articles — hide overflow on mobile via CSS */}
                       {rest.length > 0 && (
-                        <div className="lg:col-span-7 space-y-2">
+                        <div className="lg:col-span-7 space-y-2 max-h-[320px] lg:max-h-none overflow-hidden">
                           {rest.map((article, i) => (
                             <motion.a
                               key={article.id}

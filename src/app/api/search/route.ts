@@ -108,13 +108,13 @@ export async function GET(request: NextRequest) {
         break;
       default:
         // relevance — if there's a query, rank by release_date (most relevant recent first)
-        // if no query, use score-weighted ordering (different from "newest" which is purely date-based)
+        // if no query, use recency-weighted ordering (recent high-quality games first)
         if (q) {
           query = query.order("release_date", { ascending: false }).order("id", { ascending: true });
         } else {
           query = query
-            .order("score", { ascending: false })
             .order("release_date", { ascending: false })
+            .order("score", { ascending: false })
             .order("id", { ascending: true });
         }
         break;
