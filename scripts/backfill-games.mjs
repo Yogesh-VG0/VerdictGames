@@ -25,6 +25,7 @@
 
 import postgres from "postgres";
 import { readFileSync, writeFileSync, existsSync } from "fs";
+import { startRun, finishRun, acquireLock, releaseLock } from './lib/scheduler-logger.mjs';
 
 // ── Load .env for local dev ──
 try {
@@ -139,6 +140,13 @@ console.log("  VERDICT.GAMES — Game Backfill Pipeline");
 console.log(`  Years: ${YEAR_FROM}–${YEAR_TO} | Limit: ${LIMIT} | Concurrency: ${CONCURRENCY} | Delay: ${DELAY_MS}ms${DRY_RUN ? " | DRY RUN" : ""}`);
 console.log(`  ${new Date().toISOString()}`);
 console.log("═══════════════════════════════════════════\n");
+
+// Anti-overlap: advisory lock prevents concurrent backfill runs
+if (!DRY_RUN) {
+  const locked = await acquireLock(sql, 'backfill-games');
+  if (!locked) { await sql.end(); process.exit(0); }
+}
+const schedulerRun = !DRY_RUN ? await startRun(sql, 'backfill-games', { yearFrom: YEAR_FROM, yearTo: YEAR_TO, limit: LIMIT }) : { id: null };
 
 // Load or init checkpoint
 const checkpoint = loadCheckpoint() ?? {};
@@ -293,4 +301,13 @@ if (DRY_RUN) console.log("  ⚠ DRY RUN — no games were actually ingested");
 console.log("  ✅ Done!");
 console.log("═══════════════════════════════════════════\n");
 
+if (!DRY_RUN) {
+  await finishRun(sql, schedulerRun.id, {
+    rows_scanned: fetched,
+    rows_created: ingested,
+    rows_skipped: skipped,
+    metadata: { errors, yearFrom: YEAR_FROM, yearTo: YEAR_TO },
+  });
+  await releaseLock(sql, 'backfill-games');
+}
 await sql.end();

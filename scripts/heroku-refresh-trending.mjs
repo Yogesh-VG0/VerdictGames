@@ -20,7 +20,7 @@
  */
 
 import postgres from "postgres";
-import { startRun, finishRun } from './lib/scheduler-logger.mjs';
+import { startRun, finishRun, acquireLock, releaseLock } from './lib/scheduler-logger.mjs';
 
 // Load .env for local dev; Heroku has Config Vars
 try {
@@ -101,6 +101,8 @@ console.log("  VERDICT.GAMES — Trending & Featured Sync");
 console.log(`  ${new Date().toISOString()}`);
 console.log("═══════════════════════════════════════════\n");
 
+const locked = await acquireLock(sql, 'refresh-trending');
+if (!locked) { await sql.end(); process.exit(0); }
 const run = await startRun(sql, 'refresh-trending');
 const trendingIds = [];
 const matched = [];
@@ -318,5 +320,6 @@ await finishRun(sql, run.id, {
   rows_updated: playerUpdates + uniqueIds.length,
   metadata: { totalGames: Number(count), trending: Number(tc), elapsed },
 });
+await releaseLock(sql, 'refresh-trending');
 await sql.end();
 console.log("✅ Done!");

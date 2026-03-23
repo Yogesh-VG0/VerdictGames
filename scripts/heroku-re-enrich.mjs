@@ -30,11 +30,16 @@ try {
   // .env not found — running on Heroku, env vars already set
 }
 
+import postgres from "postgres";
+import { startRun, finishRun, acquireLock, releaseLock } from './lib/scheduler-logger.mjs';
+
 const SITE_URL = process.env.SITE_URL || "https://www.verdict.games";
 const CRON_SECRET = process.env.CRON_SECRET || "";
 const LIMIT = process.argv.includes("--limit")
   ? process.argv[process.argv.indexOf("--limit") + 1]
   : "20";
+
+const sql = process.env.DATABASE_URL ? postgres(process.env.DATABASE_URL, { ssl: { rejectUnauthorized: false } }) : null;
 
 const start = Date.now();
 console.log("═══════════════════════════════════════════");
@@ -47,6 +52,13 @@ const params = new URLSearchParams();
 if (CRON_SECRET) params.set("secret", CRON_SECRET);
 params.set("limit", LIMIT);
 const url = `${SITE_URL}/api/cron/re-enrich?${params}`;
+let run = null;
+if (sql) {
+  const locked = await acquireLock(sql, 're-enrich');
+  if (!locked) { await sql.end(); process.exit(0); }
+  run = await startRun(sql, 're-enrich', { limit: LIMIT });
+}
+
 console.log(`🌐 Calling ${SITE_URL}/api/cron/re-enrich ...`);
 
 try {
@@ -81,7 +93,22 @@ try {
 
   const elapsed = ((Date.now() - start) / 1000).toFixed(1);
   console.log(`\n⏱ Time: ${elapsed}s`);
+
+  if (sql) {
+    await finishRun(sql, run?.id, {
+      rows_scanned: data.total ?? 0,
+      rows_updated: data.refreshed ?? 0,
+      metadata: { elapsed, failed: data.failed ?? 0, limit: LIMIT },
+    });
+    await releaseLock(sql, 're-enrich');
+    await sql.end();
+  }
 } catch (err) {
   console.error(`❌ Failed to call re-enrich endpoint:`, err.message);
+  if (sql) {
+    await finishRun(sql, run?.id, { error_message: err.message });
+    await releaseLock(sql, 're-enrich');
+    await sql.end();
+  }
   process.exit(1);
 }

@@ -25,6 +25,7 @@
  */
 
 import postgres from "postgres";
+import { startRun, finishRun } from './lib/scheduler-logger.mjs';
 
 try {
   const { readFileSync } = await import("fs");
@@ -277,6 +278,8 @@ console.log("  VERDICT.GAMES — Seed Curated Lists");
 console.log(`  ${new Date().toISOString()}`);
 console.log("═══════════════════════════════════════════\n");
 
+const run = await startRun(sql, 'seed-curated-lists');
+
 let created = 0;
 let updated = 0;
 let skipped = 0;
@@ -409,4 +412,10 @@ console.log(`  Created: ${created} | Updated: ${updated} | Skipped: ${skipped}`)
 console.log("  ✅ Done!");
 console.log("═══════════════════════════════════════════\n");
 
+await finishRun(sql, run.id, {
+  rows_created: created,
+  rows_updated: updated,
+  rows_skipped: skipped,
+  rows_scanned: LIST_BLUEPRINTS.length,
+});
 await sql.end();

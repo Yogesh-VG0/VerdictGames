@@ -31,9 +31,14 @@ try {
   // .env not found — running on Heroku, env vars already set
 }
 
+import postgres from "postgres";
+import { startRun, finishRun } from './lib/scheduler-logger.mjs';
+
 const SITE_URL = process.env.SITE_URL || "https://www.verdict.games";
 const CRON_SECRET = process.env.CRON_SECRET || "";
 const DEEP = process.argv.includes("--deep");
+
+const sql = process.env.DATABASE_URL ? postgres(process.env.DATABASE_URL, { ssl: { rejectUnauthorized: false } }) : null;
 
 const start = Date.now();
 console.log("═══════════════════════════════════════════");
@@ -88,7 +93,23 @@ try {
 
   const elapsed = ((Date.now() - start) / 1000).toFixed(1);
   console.log(`\n⏱ Time: ${elapsed}s`);
+
+  if (sql) {
+    const run = await startRun(sql, 'discover-games');
+    await finishRun(sql, run.id, {
+      rows_scanned: data.discovered ?? 0,
+      rows_created: data.newGamesIngested ?? 0,
+      rows_skipped: data.alreadyExisted ?? 0,
+      metadata: { elapsed, failed: data.failed ?? 0, deep: DEEP },
+    });
+    await sql.end();
+  }
 } catch (err) {
   console.error(`❌ Failed to call discover endpoint:`, err.message);
+  if (sql) {
+    const run = await startRun(sql, 'discover-games');
+    await finishRun(sql, run.id, { error_message: err.message });
+    await sql.end();
+  }
   process.exit(1);
 }

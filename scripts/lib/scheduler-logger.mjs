@@ -1,15 +1,58 @@
 /**
- * Scheduler observability helper.
+ * Scheduler observability + anti-overlap helper.
  * Records job runs to the scheduler_runs table for monitoring.
+ * Provides Postgres advisory locks to prevent overlapping runs.
  *
  * Usage in scheduler scripts:
- *   import { startRun, finishRun } from './lib/scheduler-logger.mjs';
+ *   import { startRun, finishRun, acquireLock, releaseLock } from './lib/scheduler-logger.mjs';
+ *   const locked = await acquireLock(sql, 'refresh-trending');
+ *   if (!locked) { console.log('Another instance running, skipping'); process.exit(0); }
  *   const run = await startRun(sql, 'refresh-trending');
  *   // ... do work ...
  *   await finishRun(sql, run.id, { rows_scanned: 100, rows_updated: 5 });
- *   // or on error:
- *   await finishRun(sql, run.id, { error_message: err.message });
+ *   await releaseLock(sql, 'refresh-trending');
  */
+
+// Stable hash for advisory lock keys (Postgres advisory locks use bigint keys)
+function jobNameToLockId(jobName) {
+  let hash = 0;
+  for (let i = 0; i < jobName.length; i++) {
+    hash = ((hash << 5) - hash + jobName.charCodeAt(i)) | 0;
+  }
+  // Use a namespace prefix (0xVG = 86, 71) to avoid collisions with other lock users
+  return Math.abs(hash) + 86710000;
+}
+
+/**
+ * Try to acquire a Postgres advisory lock (non-blocking).
+ * Returns true if lock acquired, false if another instance holds it.
+ * Use this to prevent overlapping scheduler runs.
+ */
+export async function acquireLock(sql, jobName) {
+  const lockId = jobNameToLockId(jobName);
+  try {
+    const [{ acquired }] = await sql`SELECT pg_try_advisory_lock(${lockId}) AS acquired`;
+    if (!acquired) {
+      console.log(`🔒 Advisory lock ${lockId} (${jobName}) already held — another instance is running. Skipping.`);
+    }
+    return acquired;
+  } catch (err) {
+    console.warn(`⚠ Advisory lock check failed: ${err.message}. Proceeding anyway.`);
+    return true; // fail-open: if locking fails, proceed rather than skip
+  }
+}
+
+/**
+ * Release a previously acquired advisory lock.
+ */
+export async function releaseLock(sql, jobName) {
+  const lockId = jobNameToLockId(jobName);
+  try {
+    await sql`SELECT pg_advisory_unlock(${lockId})`;
+  } catch (err) {
+    console.warn(`⚠ Advisory lock release failed: ${err.message}`);
+  }
+}
 
 /**
  * Start a scheduler run. Returns { id } for the new run row.
@@ -23,7 +66,6 @@ export async function startRun(sql, jobName, metadata = {}) {
     `;
     return { id: row.id, startedAt: row.started_at };
   } catch (err) {
-    // Table might not exist yet — gracefully degrade
     console.warn(`⚠ scheduler_runs logging failed (table may not exist): ${err.message}`);
     return { id: null, startedAt: new Date().toISOString() };
   }
@@ -40,7 +82,7 @@ export async function finishRun(sql, runId, {
   error_message = null,
   metadata = null,
 } = {}) {
-  if (!runId) return; // logging was skipped (table doesn't exist)
+  if (!runId) return;
 
   const status = error_message ? 'error' : 'success';
   try {
