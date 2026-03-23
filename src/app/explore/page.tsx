@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import Image from "next/image";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { getRawgList, type RawgListGameItem, type RawgListType } from "@/lib/api";
-import { Flame, Trophy, Clock, Star, Gamepad2, ChevronRight, Users, Calendar, TrendingUp } from "lucide-react";
+import PlatformIcon from "@/components/ui/PlatformIcon";
+import { Flame, Trophy, Clock, Star, Gamepad2, ChevronRight, Users, TrendingUp, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const TABS = [
@@ -37,24 +37,41 @@ function formatNumber(n: number): string {
   return String(n);
 }
 
+/** Map RAWG platform names to our PlatformIcon-compatible names */
+function mapPlatform(name: string): string | null {
+  const n = name.toLowerCase();
+  if (n.includes("pc")) return "PC";
+  if (n.includes("playstation 5")) return "PlayStation 5";
+  if (n.includes("playstation 4")) return "PlayStation 4";
+  if (n.includes("xbox series")) return "Xbox Series X|S";
+  if (n.includes("xbox one")) return "Xbox One";
+  if (n.includes("switch")) return "Nintendo Switch";
+  if (n.includes("android")) return "Android";
+  if (n.includes("ios")) return "iOS";
+  if (n.includes("linux")) return "Linux";
+  if (n.includes("macos") || n.includes("macintosh")) return "macOS";
+  return null;
+}
+
 function GameCard({ game, rank }: { game: RawgListGameItem; rank?: number }) {
-  // Check if this game exists in our DB by trying to link to it
-  const slug = game.slug;
+  const platforms = game.platforms.map(mapPlatform).filter(Boolean) as string[];
+  // Dedupe
+  const uniquePlatforms = [...new Set(platforms)].slice(0, 4);
 
   return (
     <Link
-      href={`/game/${slug}`}
+      href={`/game/${game.slug}`}
       className="group relative rounded-2xl border border-border bg-surface overflow-hidden hover:border-accent/40 hover:shadow-lg transition-all duration-300"
     >
       {/* Image */}
       <div className="relative aspect-[16/9] overflow-hidden bg-surface-2">
         {game.image ? (
-          <Image
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
             src={game.image}
             alt={game.name}
-            fill
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-            className="object-cover group-hover:scale-105 transition-transform duration-500"
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            loading="lazy"
           />
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-accent/10 to-pixel-cyan/10 flex items-center justify-center">
@@ -64,69 +81,62 @@ function GameCard({ game, rank }: { game: RawgListGameItem; rank?: number }) {
 
         {/* Rank badge */}
         {rank && (
-          <div className="absolute top-2 left-2 w-8 h-8 rounded-lg bg-black/70 backdrop-blur-sm flex items-center justify-center text-xs font-bold text-white border border-white/10">
+          <div className="absolute top-2 left-2 w-7 h-7 rounded-lg bg-black/70 backdrop-blur-sm flex items-center justify-center text-[10px] font-bold text-white border border-white/10">
             #{rank}
           </div>
         )}
 
-        {/* Metacritic / Rating badge */}
-        {(game.metacritic || game.rating > 0) && (
-          <div className={cn(
-            "absolute top-2 right-2 px-2 py-0.5 rounded-lg text-xs font-bold backdrop-blur-sm border",
-            game.metacritic && game.metacritic >= 80
-              ? "bg-green-500/20 text-green-400 border-green-500/30"
-              : game.metacritic && game.metacritic >= 60
-              ? "bg-yellow-500/20 text-yellow-400 border-yellow-500/30"
-              : "bg-white/10 text-white/80 border-white/20"
-          )}>
-            {game.metacritic ? `${game.metacritic}` : `${game.rating.toFixed(1)}★`}
-          </div>
-        )}
-
         {/* Gradient overlay */}
-        <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/80 to-transparent" />
+        <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
 
         {/* Bottom info on image */}
-        <div className="absolute bottom-2 left-2 right-2">
+        <div className="absolute bottom-0 left-0 right-0 p-3">
           <h3 className="text-sm font-bold text-white line-clamp-1 drop-shadow-lg">{game.name}</h3>
-          <div className="flex items-center gap-2 mt-0.5">
-            {game.genres.slice(0, 2).map((g) => (
-              <span key={g} className="text-[10px] text-white/70">{g}</span>
+          <div className="flex items-center gap-1.5 mt-1">
+            {game.genres.slice(0, 2).map((g, i) => (
+              <span key={g} className="text-[10px] text-white/60">
+                {i > 0 && <span className="mr-1">·</span>}{g}
+              </span>
             ))}
-            {game.released && !game.tba && (
-              <span className="text-[10px] text-white/50 ml-auto">{new Date(game.released).getFullYear()}</span>
-            )}
-            {game.tba && (
-              <span className="text-[10px] text-accent ml-auto">TBA</span>
-            )}
+            <span className="ml-auto text-[10px] font-medium">
+              {game.tba ? (
+                <span className="text-yellow-400">TBA</span>
+              ) : game.released ? (
+                <span className="text-white/50">{new Date(game.released).getFullYear()}</span>
+              ) : null}
+            </span>
           </div>
         </div>
       </div>
 
-      {/* Stats bar */}
-      <div className="px-3 py-2 flex items-center gap-3 text-[10px] text-secondary">
-        {game.added > 0 && (
-          <span className="flex items-center gap-1">
-            <Users className="w-3 h-3" />
-            {formatNumber(game.added)} added
-          </span>
-        )}
-        {game.toplay > 0 && (
-          <span className="flex items-center gap-1">
-            <Clock className="w-3 h-3" />
-            {formatNumber(game.toplay)} want
-          </span>
-        )}
-        {game.playing > 0 && (
-          <span className="flex items-center gap-1 text-accent">
-            <Gamepad2 className="w-3 h-3" />
-            {formatNumber(game.playing)}
-          </span>
-        )}
-        {game.platforms.length > 0 && (
-          <span className="ml-auto text-tertiary truncate max-w-[100px]">
-            {game.platforms.slice(0, 2).join(" · ")}
-          </span>
+      {/* Stats + Platforms bar */}
+      <div className="px-3 py-2 flex items-center justify-between">
+        <div className="flex items-center gap-2.5 text-[10px] text-secondary">
+          {game.added > 0 && (
+            <span className="flex items-center gap-1">
+              <Users className="w-3 h-3 text-tertiary" />
+              {formatNumber(game.added)}
+            </span>
+          )}
+          {game.toplay > 0 && (
+            <span className="flex items-center gap-1">
+              <Clock className="w-3 h-3 text-tertiary" />
+              {formatNumber(game.toplay)}
+            </span>
+          )}
+          {game.playing > 0 && (
+            <span className="flex items-center gap-1 text-accent">
+              <Gamepad2 className="w-3 h-3" />
+              {formatNumber(game.playing)}
+            </span>
+          )}
+        </div>
+        {uniquePlatforms.length > 0 && (
+          <div className="flex items-center gap-1.5">
+            {uniquePlatforms.map((p) => (
+              <PlatformIcon key={p} platform={p} size={12} className="text-tertiary opacity-70" />
+            ))}
+          </div>
         )}
       </div>
     </Link>
@@ -171,14 +181,23 @@ export default function ExplorePage() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-foreground flex items-center gap-3">
-          <TrendingUp className="w-7 h-7 text-accent" />
-          Explore Games
-        </h1>
-        <p className="text-sm text-secondary mt-1">
-          Discover the most popular, anticipated, and highest-rated games — powered by RAWG community data.
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground flex items-center gap-3">
+            <TrendingUp className="w-7 h-7 text-accent" />
+            Explore Games
+          </h1>
+          <p className="text-sm text-secondary mt-1">
+            Discover the most popular, anticipated, and highest-rated games.
+          </p>
+        </div>
+        <Link
+          href="/search"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium bg-surface border border-border text-secondary hover:text-foreground hover:border-accent/40 transition-all w-fit"
+        >
+          <Search className="w-4 h-4" />
+          Search Games
+        </Link>
       </div>
 
       {/* Tab navigation */}

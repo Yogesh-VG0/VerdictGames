@@ -508,8 +508,9 @@ export default function AdminGameEditor({ params }: { params: Promise<{ id: stri
               <input type="url" value={form.cover_image} onChange={(e) => setField("cover_image", e.target.value)} className={inputClass} placeholder="https://..." />
             </Field>
             {form.cover_image && (
-              <div className="w-24 h-32 rounded-xl overflow-hidden bg-surface-2 relative">
-                <Image src={form.cover_image} alt="Cover preview" fill className="object-cover" sizes="96px" />
+              <div className="w-24 h-32 rounded-xl overflow-hidden bg-surface-2">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={form.cover_image} alt="Cover preview" className="w-full h-full object-cover" />
               </div>
             )}
 
@@ -517,8 +518,9 @@ export default function AdminGameEditor({ params }: { params: Promise<{ id: stri
               <input type="url" value={form.header_image} onChange={(e) => setField("header_image", e.target.value)} className={inputClass} placeholder="https://..." />
             </Field>
             {form.header_image && (
-              <div className="aspect-[21/9] max-w-lg rounded-xl overflow-hidden bg-surface-2 relative">
-                <Image src={form.header_image} alt="Header preview" fill className="object-cover" sizes="512px" />
+              <div className="aspect-[21/9] max-w-lg rounded-xl overflow-hidden bg-surface-2">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={form.header_image} alt="Header preview" className="w-full h-full object-cover" />
               </div>
             )}
 
