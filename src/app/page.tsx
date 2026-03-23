@@ -160,7 +160,7 @@ export default function HomePage() {
               <>
                 <SectionHeader
                   title="Trending Right Now"
-                  href="/search?sort=trending"
+                  href="/browse?sort=trending"
                   linkLabel="See all trending"
                   icon={<Flame className="w-5 h-5" />}
                   subtitle="Based on recent player activity & community signals"
@@ -307,7 +307,7 @@ export default function HomePage() {
             <FadeInSection>
               <SectionHeader
                 title="Discover"
-                href="/search?sort=newest"
+                href="/browse?sort=newest"
                 linkLabel="Browse all"
                 icon={<Gamepad2 className="w-5 h-5" />}
                 subtitle="Find your next obsession"
@@ -457,7 +457,7 @@ export default function HomePage() {
                 <>
                   <SectionHeader
                     title="Top Rated"
-                    href="/search?sort=top-rated"
+                    href="/browse?sort=top-rated"
                     linkLabel="See all top rated"
                     icon={<Trophy className="w-5 h-5" />}
                     subtitle="Highest-scoring recent releases"
@@ -669,9 +669,9 @@ export default function HomePage() {
               <div>
                 <h4 className="text-xs font-semibold text-secondary uppercase tracking-wider mb-3">Browse</h4>
                 <ul className="space-y-2 text-sm text-tertiary">
-                  <li><Link href="/search?sort=trending" className="hover:text-accent transition-colors">Trending</Link></li>
-                  <li><Link href="/search?sort=newest" className="hover:text-accent transition-colors">New Releases</Link></li>
-                  <li><Link href="/search?sort=top-rated" className="hover:text-accent transition-colors">Top Rated</Link></li>
+                  <li><Link href="/browse?sort=trending" className="hover:text-accent transition-colors">Trending</Link></li>
+                  <li><Link href="/browse?sort=newest" className="hover:text-accent transition-colors">New Releases</Link></li>
+                  <li><Link href="/browse?sort=top-rated" className="hover:text-accent transition-colors">Top Rated</Link></li>
                   <li><Link href="/calendar" className="hover:text-accent transition-colors">Upcoming</Link></li>
                   <li><Link href="/lists" className="hover:text-accent transition-colors">Curated Lists</Link></li>
                 </ul>
