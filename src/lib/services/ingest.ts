@@ -60,6 +60,12 @@ export interface IngestOptions {
   expectedSlug?: string;
 }
 
+/* ───────── Slug Blocklist ───────── */
+// Games that should never be ingested (typo entries, duplicates, spam)
+const BLOCKED_SLUGS = new Set([
+  "grand-theft-aito-vi",   // typo duplicate of grand-theft-auto-vi
+]);
+
 /* ───────── Main Ingestion Function ───────── */
 
 export async function ingestGame(options: IngestOptions): Promise<IngestResult> {
@@ -152,6 +158,17 @@ export async function ingestGame(options: IngestOptions): Promise<IngestResult> 
   }
 
   const slug = slugify(bestMatch.name);
+
+  // ── Block known-bad slugs from being re-ingested ──
+  if (BLOCKED_SLUGS.has(slug)) {
+    return {
+      success: false,
+      gameId: null,
+      slug: null,
+      message: `Slug "${slug}" is blocklisted and will not be ingested.`,
+      alreadyExisted: false,
+    };
+  }
 
   // ── Step 2: Check if game already exists ──
   const { data: existing } = await supabase
