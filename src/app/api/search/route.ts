@@ -11,6 +11,7 @@
 import { NextRequest } from "next/server";
 import { jsonOk } from "@/lib/api/response";
 import { mapGameRow } from "@/lib/db/mappers";
+import { confidenceWeightedScore } from "@/lib/utils/quality";
 import type { Game, PaginatedResponse, SortOption, Platform } from "@/lib/types";
 import type { GameRow } from "@/lib/supabase/types";
 
@@ -119,15 +120,26 @@ export async function GET(request: NextRequest) {
         break;
     }
 
-    // Pagination
-    const start = (page - 1) * PAGE_SIZE;
-    query = query.range(start, start + PAGE_SIZE - 1);
+    // For top-rated, over-fetch so we can re-sort by confidence-weighted score in JS
+    const isTopRated = sort === "top-rated";
+    const fetchSize = isTopRated ? PAGE_SIZE * 4 : PAGE_SIZE;
+    const start = (page - 1) * (isTopRated ? PAGE_SIZE * 4 : PAGE_SIZE);
+    query = query.range(isTopRated ? 0 : start, isTopRated ? fetchSize - 1 : start + PAGE_SIZE - 1);
 
     const { data, error, count } = await query as unknown as { data: GameRow[] | null; error: unknown; count: number | null };
 
     if (error) throw error;
 
-    let games = (data ?? []).map(mapGameRow);
+    let rows = data ?? [];
+
+    // Re-sort top-rated by confidence-weighted score so tiny-sample 100% games don't dominate
+    if (isTopRated && rows.length > 0) {
+      rows.sort((a, b) => confidenceWeightedScore(b) - confidenceWeightedScore(a));
+      const trStart = (page - 1) * PAGE_SIZE;
+      rows = rows.slice(trStart, trStart + PAGE_SIZE);
+    }
+
+    let games = rows.map(mapGameRow);
     let total = count ?? 0;
 
     // ── 3-layer search: DB → RAWG instant preview → background ingest ──
