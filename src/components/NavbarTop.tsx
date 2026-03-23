@@ -57,9 +57,9 @@ export default function NavbarTop() {
 
   const allNavLinks = [
     { href: "/", label: "Home", icon: <Home className="w-4 h-4" /> },
-    { href: "/explore", label: "Explore", icon: <Flame className="w-4 h-4" /> },
+    { href: "/explore", label: "Explore", icon: <Sparkles className="w-4 h-4" /> },
+    { href: "/search?sort=trending", label: "Browse", icon: <Flame className="w-4 h-4" /> },
     { href: "/search", label: "Search", icon: <Search className="w-4 h-4" /> },
-    { href: "/search?sort=trending", label: "Trending", icon: <Flame className="w-4 h-4" /> },
     { href: "/calendar", label: "Calendar", icon: <CalendarDays className="w-4 h-4" /> },
     { href: "/reviews", label: "Reviews", icon: <Star className="w-4 h-4" /> },
     { href: "/lists", label: "Lists", icon: <List className="w-4 h-4" /> },
@@ -87,6 +87,7 @@ export default function NavbarTop() {
   const navLinks = [
     { href: "/", label: "Home" },
     { href: "/explore", label: "Explore" },
+    { href: "/search?sort=trending", label: "Browse" },
     { href: "/reviews", label: "Reviews" },
     { href: "/calendar", label: "Calendar" },
     { href: "/lists", label: "Lists" },
@@ -101,9 +102,9 @@ export default function NavbarTop() {
             <Image
               src="/VERDICT_LOGO_main.png"
               alt="Verdict Games"
-              width={40}
-              height={40}
-              className="h-9 w-9 rounded-lg drop-shadow-lg"
+              width={44}
+              height={44}
+              className="h-10 w-10 rounded-lg drop-shadow-lg"
               priority
             />
             <span className="font-bold text-lg tracking-tight text-foreground">
@@ -295,9 +296,9 @@ export default function NavbarTop() {
             <Image
               src="/VERDICT_LOGO_main.png"
               alt="Verdict Games"
-              width={44}
-              height={44}
-              className="h-9 w-9 rounded-lg drop-shadow-lg"
+              width={48}
+              height={48}
+              className="h-10 w-10 rounded-lg drop-shadow-lg"
               priority
             />
             <span className="font-bold text-lg tracking-tight text-foreground">
