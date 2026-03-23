@@ -186,6 +186,7 @@ export default function CalendarPage() {
           title="Release Calendar"
           icon={<CalendarDays className="w-5 h-5" />}
           subtitle="Upcoming and recent game launches"
+          gradient="linear-gradient(90deg, #f59e0b 0%, #f97316 25%, #ef4444 50%, #f97316 75%, #f59e0b 100%)"
         />
       </FadeInSection>
 

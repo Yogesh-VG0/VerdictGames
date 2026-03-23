@@ -12,7 +12,7 @@ export async function GET() {
   const { data } = await (supabase.from("admin_audit_log") as any)
     .select("*")
     .order("edited_at", { ascending: false })
-    .limit(15) as { data: Array<{
+    .limit(50) as { data: Array<{
       id: string;
       entity_type: string;
       entity_id: string;

@@ -64,8 +64,6 @@ function formatFieldValue(val: unknown): string {
 }
 
 function ActivityLog({ entries, isLoading }: { entries: AuditEntry[]; isLoading: boolean }) {
-  const [visibleCount, setVisibleCount] = useState(15);
-
   if (isLoading) {
     return (
       <div className="rounded-2xl border border-border bg-surface overflow-hidden p-4 space-y-3">
@@ -85,29 +83,16 @@ function ActivityLog({ entries, isLoading }: { entries: AuditEntry[]; isLoading:
     );
   }
 
-  const visible = entries.slice(0, visibleCount);
-  const hasMore = entries.length > visibleCount;
-
   return (
-    <div className="rounded-2xl border border-border bg-surface overflow-hidden">
-      <div className="divide-y divide-border">
-        {visible.map((entry) => (
+    <div className="rounded-2xl border border-border bg-surface overflow-hidden flex flex-col" style={{ maxHeight: "480px" }}>
+      <div className="divide-y divide-border overflow-y-auto flex-1 scrollbar-hide">
+        {entries.map((entry) => (
           <AuditEntryRow key={entry.id} entry={entry} />
         ))}
       </div>
-      {hasMore && (
-        <button
-          onClick={() => setVisibleCount((c) => c + 15)}
-          className="w-full px-4 py-3 text-xs font-medium text-accent hover:text-accent-hover hover:bg-surface-2 transition-colors border-t border-border"
-        >
-          Load more ({entries.length - visibleCount} remaining)
-        </button>
-      )}
-      {!hasMore && entries.length > 15 && (
-        <div className="px-4 py-2 text-center border-t border-border">
-          <span className="text-[10px] text-tertiary">Showing all {entries.length} entries</span>
-        </div>
-      )}
+      <div className="px-4 py-2 text-center border-t border-border shrink-0 bg-surface">
+        <span className="text-[10px] text-tertiary">{entries.length} entries</span>
+      </div>
     </div>
   );
 }
@@ -309,7 +294,7 @@ export default function AdminDashboard() {
               {seedListsMutation.isPending ? "Seeding Lists..." : "Seed Editorial Lists"}
             </h3>
             <p className="text-xs text-tertiary mt-1">
-              Creates 10 curated lists from your existing game database.
+              Creates 12 curated lists from your existing game database.
             </p>
             {seedListsMutation.isSuccess && (
               <p className="text-xs text-pixel-green mt-2">Done! Check the Lists page.</p>

@@ -16,6 +16,7 @@ import FadeInSection from "@/components/FadeInSection";
 import { Skeleton } from "@/components/ui/Skeleton";
 import type { Game } from "@/lib/types";
 import { Swords, Gamepad2 } from "lucide-react";
+import GradientText from "@/components/ui/GradientText";
 
 function CompareCell({ label, v1, v2, higher = "none" }: {
   label: string;
@@ -159,7 +160,8 @@ function CompareContent() {
       <FadeInSection>
         <div className="text-center space-y-2">
           <h1 className="text-2xl md:text-3xl font-bold text-foreground flex items-center justify-center gap-3">
-            <Swords className="w-6 h-6 text-accent" /> Game Comparison
+            <Swords className="w-6 h-6 text-sky-500" />
+            <GradientText text="Game Comparison" gradient="linear-gradient(90deg, #0ea5e9 0%, #38bdf8 25%, #7dd3fc 50%, #38bdf8 75%, #0ea5e9 100%)" />
           </h1>
           <p className="text-sm text-secondary">
             Compare two games side-by-side

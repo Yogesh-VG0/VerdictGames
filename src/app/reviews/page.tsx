@@ -12,7 +12,8 @@ import SortDropdown from "@/components/ui/SortDropdown";
 import { ReviewCardSkeleton } from "@/components/ui/Skeleton";
 import type { Platform } from "@/lib/types";
 import { PLATFORM_FILTER_OPTIONS, platformFilterIcon } from "@/components/ui/PlatformIcon";
-import { PenLine, Star, ThumbsUp, ThumbsDown, Search } from "lucide-react";
+import { PenLine, Star, ThumbsUp, ThumbsDown, Search, MessageSquare } from "lucide-react";
+import GradientText from "@/components/ui/GradientText";
 import Image from "next/image";
 import { slugify } from "@/lib/utils/slugify";
 import { cn } from "@/lib/utils";
@@ -115,7 +116,10 @@ export default function ReviewsPage() {
         transition={{ duration: 0.4 }}
         className="space-y-1"
       >
-        <h1 className="text-2xl font-bold text-foreground">Reviews</h1>
+        <h1 className="text-2xl font-bold text-foreground flex items-center gap-3">
+          <MessageSquare className="w-6 h-6 text-rose-500" />
+          <GradientText text="Reviews" gradient="linear-gradient(90deg, #f43f5e 0%, #e879f9 25%, #c084fc 50%, #e879f9 75%, #f43f5e 100%)" />
+        </h1>
         <p className="text-sm text-secondary">
           Community verdicts and official Steam player reviews.
         </p>

@@ -4,7 +4,7 @@ import { getServerSupabase } from "@/lib/supabase/server";
 import { writeAuditLog } from "@/lib/auditLog";
 import type { GameRow } from "@/lib/supabase/types";
 
-/* ── 10 editorial list definitions ── */
+/* ── 12 editorial list definitions ── */
 const SEED_LISTS = [
   {
     slug: "best-action-rpgs",
@@ -76,6 +76,20 @@ const SEED_LISTS = [
     tags: ["roguelike", "roguelite"],
     query: "roguelike",
   },
+  {
+    slug: "best-platformers",
+    title: "Best Platformers",
+    description: "From precision jumps to collectathons — the finest platforming experiences across every era.",
+    tags: ["platformer", "2d"],
+    query: "platformer",
+  },
+  {
+    slug: "sci-fi-epics",
+    title: "Sci-Fi Epics",
+    description: "Explore the cosmos, battle alien threats, and unravel futuristic mysteries in these stellar sci-fi adventures.",
+    tags: ["sci-fi", "space"],
+    query: "sci-fi",
+  },
 ];
 
 export async function POST() {
@@ -84,6 +98,7 @@ export async function POST() {
 
   const supabase = getServerSupabase();
   const results: string[] = [];
+  const usedCoverImages = new Set<string>();
 
   // Clean up ALL editorial-seeded lists (by slug match OR by curated_by pattern)
   const seedSlugs = SEED_LISTS.map(s => s.slug);
@@ -158,10 +173,13 @@ export async function POST() {
       ? scored.map(s => s.game)
       : gamesData.slice(0, 12);
 
-    // Pick a unique cover image — prefer a game with a good header_image
-    const coverGame = finalGames.find(g => g.header_image && g.header_image.length > 10)
+    // Pick a unique cover image — prefer a game with a header_image not yet used by another list
+    const coverGame = finalGames.find(g => g.header_image && g.header_image.length > 10 && !usedCoverImages.has(g.header_image))
+      ?? finalGames.find(g => g.header_image && g.header_image.length > 10)
+      ?? finalGames.find(g => g.cover_image && !usedCoverImages.has(g.cover_image ?? ""))
       ?? finalGames[0];
     const coverImage = coverGame?.header_image || coverGame?.cover_image || "";
+    if (coverImage) usedCoverImages.add(coverImage);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: newList, error: listErr } = await (supabase.from("lists") as any)
@@ -211,7 +229,7 @@ export async function GET() {
   if (error) return error;
 
   return jsonOk({
-    message: "POST to this endpoint to seed 10 editorial curated lists",
+    message: "POST to this endpoint to seed 12 editorial curated lists",
     lists: SEED_LISTS.map(l => ({ slug: l.slug, title: l.title })),
   });
 }

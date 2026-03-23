@@ -9,7 +9,8 @@ import { getCuratedLists } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
 import PixelBadge from "@/components/ui/PixelBadge";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { ListPlus, Loader2 } from "lucide-react";
+import { ListPlus, Loader2, BookOpen } from "lucide-react";
+import GradientText from "@/components/ui/GradientText";
 
 const gridItem = {
   hidden: { opacity: 0, y: 20 },
@@ -49,7 +50,10 @@ export default function ListsPage() {
         transition={{ duration: 0.4 }}
         className="space-y-1"
       >
-        <h1 className="text-2xl font-bold text-foreground">Curated Lists</h1>
+        <h1 className="text-2xl font-bold text-foreground flex items-center gap-3">
+          <BookOpen className="w-6 h-6 text-emerald-500" />
+          <GradientText text="Curated Lists" gradient="linear-gradient(90deg, #10b981 0%, #34d399 25%, #6ee7b7 50%, #34d399 75%, #10b981 100%)" />
+        </h1>
         <p className="text-sm text-secondary">
           Hand-picked collections by the community. Discover your next game through thoughtfully organized lists.
         </p>
