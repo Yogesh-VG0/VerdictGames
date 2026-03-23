@@ -85,20 +85,23 @@ export async function POST() {
   const supabase = getServerSupabase();
   const results: string[] = [];
 
-  for (const seed of SEED_LISTS) {
-    // Check if already exists
-    const { data: existing } = await supabase
+  // Clean up ALL old versions of seeded lists (handles slug matches + old "editorial" curated_by)
+  const seedSlugs = SEED_LISTS.map(s => s.slug);
+  for (const slug of seedSlugs) {
+    const { data: oldLists } = await supabase
       .from("lists")
       .select("id")
-      .eq("slug", seed.slug)
-      .maybeSingle();
-
-    if (existing) {
-      // Delete existing list and its items so we can re-seed with better data
-      await supabase.from("list_items").delete().eq("list_id", existing.id);
-      await supabase.from("lists").delete().eq("id", existing.id);
-      results.push(`🔄 Re-seeding "${seed.title}"`);
+      .eq("slug", slug);
+    if (oldLists && oldLists.length > 0) {
+      for (const old of oldLists) {
+        await supabase.from("list_items").delete().eq("list_id", old.id);
+        await supabase.from("lists").delete().eq("id", old.id);
+      }
+      results.push(`�️ Cleaned up ${oldLists.length} old version(s) of "${slug}"`);
     }
+  }
+
+  for (const seed of SEED_LISTS) {
 
     // Fetch top-rated games with matching tags/genres
     const { data: gamesData } = await supabase
