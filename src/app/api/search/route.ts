@@ -48,17 +48,29 @@ export async function GET(request: NextRequest) {
     }
 
     // Platform filter — supports family grouping (e.g. PlayStation = PS4 + PS5)
+    // Also handles friendly URL slugs like "PlayStation" or "Xbox" or "Switch"
     if (platform && platform !== "All") {
       const PLATFORM_FAMILIES: Record<string, string[]> = {
         "PlayStation 5": ["PlayStation 5", "PlayStation 4"],
         "Xbox Series X|S": ["Xbox Series X|S", "Xbox One"],
         "Nintendo Switch": ["Nintendo Switch", "Nintendo Switch 2"],
       };
-      const family = PLATFORM_FAMILIES[platform];
+      // Friendly aliases for hand-edited URLs
+      const PLATFORM_ALIASES: Record<string, string> = {
+        "playstation": "PlayStation 5",
+        "ps5": "PlayStation 5",
+        "ps4": "PlayStation 5",
+        "xbox": "Xbox Series X|S",
+        "switch": "Nintendo Switch",
+        "mac": "macOS",
+        "macos": "macOS",
+      };
+      const resolved = PLATFORM_ALIASES[platform.toLowerCase()] ?? platform;
+      const family = PLATFORM_FAMILIES[resolved];
       if (family) {
         query = query.or(family.map(p => `platforms.cs.{${p}}`).join(","));
       } else {
-        query = query.contains("platforms", [platform]);
+        query = query.contains("platforms", [resolved]);
       }
     }
 
@@ -83,8 +95,10 @@ export async function GET(request: NextRequest) {
     const today = new Date().toISOString().slice(0, 10);
     switch (sort) {
       case "newest":
-        // Only released games, newest first
+        // Only released games, newest first — require cover image + title for public-readiness
         query = query.lte("release_date", today)
+          .not("cover_image", "is", null)
+          .neq("cover_image", "")
           .order("release_date", { ascending: false }).order("id", { ascending: true });
         break;
       case "upcoming":
@@ -93,8 +107,11 @@ export async function GET(request: NextRequest) {
           .order("release_date", { ascending: true }).order("id", { ascending: true });
         break;
       case "recently-added":
-        // Newest DB entries
-        query = query.order("created_at", { ascending: false }).order("id", { ascending: true });
+        // Newest DB entries — require cover image for public-readiness
+        query = query
+          .not("cover_image", "is", null)
+          .neq("cover_image", "")
+          .order("created_at", { ascending: false }).order("id", { ascending: true });
         break;
       case "top-rated":
         query = query.order("score", { ascending: false }).order("id", { ascending: true });
@@ -108,23 +125,31 @@ export async function GET(request: NextRequest) {
         break;
       default:
         // relevance — if there's a query, rank by release_date (most relevant recent first)
-        // if no query, use recency-weighted ordering (recent high-quality games first)
+        // if no query, use a blended browse rank: momentum + score + recency
         if (q) {
           query = query.order("release_date", { ascending: false }).order("id", { ascending: true });
         } else {
           query = query
-            .order("release_date", { ascending: false })
+            .order("momentum", { ascending: false, nullsFirst: false })
             .order("score", { ascending: false })
+            .order("release_date", { ascending: false })
             .order("id", { ascending: true });
         }
         break;
     }
 
-    // For top-rated, over-fetch so we can re-sort by confidence-weighted score in JS
+    // For top-rated, we need to over-fetch a larger window so we can re-sort by
+    // confidence-weighted score in JS. Fetch enough rows to cover the requested page
+    // after re-ranking (fetch up to page*4 rows, re-rank, then slice the correct page).
     const isTopRated = sort === "top-rated";
-    const fetchSize = isTopRated ? PAGE_SIZE * 4 : PAGE_SIZE;
-    const start = (page - 1) * (isTopRated ? PAGE_SIZE * 4 : PAGE_SIZE);
-    query = query.range(isTopRated ? 0 : start, isTopRated ? fetchSize - 1 : start + PAGE_SIZE - 1);
+    const start = (page - 1) * PAGE_SIZE;
+    if (isTopRated) {
+      // Fetch enough rows to cover at least `page * PAGE_SIZE` after re-ranking
+      const trFetchEnd = Math.max(page * PAGE_SIZE * 4, 200);
+      query = query.range(0, trFetchEnd - 1);
+    } else {
+      query = query.range(start, start + PAGE_SIZE - 1);
+    }
 
     const { data, error, count } = await query as unknown as { data: GameRow[] | null; error: unknown; count: number | null };
 
@@ -135,8 +160,7 @@ export async function GET(request: NextRequest) {
     // Re-sort top-rated by confidence-weighted score so tiny-sample 100% games don't dominate
     if (isTopRated && rows.length > 0) {
       rows.sort((a, b) => confidenceWeightedScore(b) - confidenceWeightedScore(a));
-      const trStart = (page - 1) * PAGE_SIZE;
-      rows = rows.slice(trStart, trStart + PAGE_SIZE);
+      rows = rows.slice(start, start + PAGE_SIZE);
     }
 
     let games = rows.map(mapGameRow);

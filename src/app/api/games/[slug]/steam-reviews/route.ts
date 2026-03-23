@@ -55,11 +55,19 @@ export async function GET(
       ? Date.now() - new Date(cached[0].fetched_at).getTime()
       : Infinity;
 
+    // Get the actual total review count from the games table (not just cached rows)
+    const { data: gameStats } = await supabase
+      .from("games")
+      .select("review_count")
+      .eq("id", game.id)
+      .single();
+    const trueTotal = gameStats?.review_count ?? cached?.length ?? 0;
+
     // If cache is fresh enough, return it
     if (cached && cached.length >= limit && cacheAge < CACHE_TTL_MS) {
       return jsonOk({
         reviews: cached.map(mapSteamReview),
-        total: cached.length,
+        total: trueTotal,
         steamAppId: game.steam_app_id,
         gameTitle,
         coverImage,

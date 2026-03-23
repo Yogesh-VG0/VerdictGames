@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 import { Game } from "@/lib/types";
 import VerdictBadge from "@/components/ui/VerdictBadge";
@@ -177,7 +178,7 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
 
       {/* Background images */}
       <div
-        className="relative aspect-[3/4] sm:aspect-[16/9] md:aspect-[2.35/1] min-h-[360px] sm:min-h-[420px] md:min-h-[560px] lg:min-h-[600px] overflow-hidden"
+        className="relative aspect-[4/5] sm:aspect-[16/9] md:aspect-[2.35/1] min-h-[400px] sm:min-h-[440px] md:min-h-[580px] lg:min-h-[640px] overflow-hidden"
       >
         <AnimatePresence initial={false} custom={direction} mode="sync">
           <motion.div
@@ -191,12 +192,14 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
             style={{ transformStyle: "preserve-3d" }}
           >
             {(game.headerImage || game.coverImage) ? (
-              /* eslint-disable-next-line @next/next/no-img-element */
-              <img
+              <Image
                 src={game.headerImage || game.coverImage}
                 alt={game.title}
-                className="absolute inset-0 w-full h-full object-cover object-center"
-                fetchPriority={currentIndex === 0 ? "high" : "auto"}
+                fill
+                className="object-cover object-top sm:object-center"
+                sizes="100vw"
+                priority={currentIndex === 0}
+                quality={85}
               />
             ) : (
               <div className="w-full h-full bg-gradient-to-br from-accent/20 via-surface to-pixel-cyan/10" />

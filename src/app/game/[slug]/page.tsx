@@ -217,11 +217,14 @@ export default function GameDetailPage({ params }: Props) {
       <section className="relative">
         <div className="relative h-[50vh] md:h-[60vh] min-h-[320px] max-h-[600px] overflow-hidden">
           {game.headerImage ? (
-            /* eslint-disable-next-line @next/next/no-img-element */
-            <img
+            <Image
               src={game.headerImage}
               alt={game.title}
-              className="absolute inset-0 w-full h-full object-cover"
+              fill
+              className="object-cover"
+              sizes="100vw"
+              priority
+              quality={85}
             />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-accent/20 via-surface to-pixel-cyan/10 flex items-center justify-center">

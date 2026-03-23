@@ -346,7 +346,7 @@ export async function fetchHomepageTopRated(limit = 20): Promise<Game[]> {
  */
 export async function fetchHomepageRecommendations(limit = 20): Promise<Game[]> {
   const supabase = getServerSupabase();
-  const fetchLimit = limit * 4;
+  const fetchLimit = limit * 8;
   const cutoff = monthsAgoISO(HOMEPAGE_REC_MONTHS);
 
   const { data, error } = await supabase
@@ -356,12 +356,26 @@ export async function fetchHomepageRecommendations(limit = 20): Promise<Game[]> 
     .gte("release_date", cutoff)
     .lte("release_date", new Date().toISOString().slice(0, 10))
     .gte("score", 75)
+    .gte("review_count", 20)              // minimum review threshold
+    .not("cover_image", "is", null)       // must have cover image
     .order("score", { ascending: false })
     .limit(fetchLimit) as { data: GameRow[] | null; error: unknown };
 
   if (error) throw error;
 
-  const filtered = filterQualityGames(data ?? [], { section: "topRated", minResults: 4 });
+  // Quality filter: require 50+ reviews, image, description
+  let filtered = filterQualityGames(data ?? [], { section: "topRated", minResults: 4 });
+
+  // Exclude provisional / coming soon
+  filtered = filtered.filter((r) => {
+    if ((r as GameRow & { is_provisional?: boolean }).is_provisional) return false;
+    if (r.verdict_label === "COMING SOON") return false;
+    if (r.release_date && r.release_date > new Date().toISOString().slice(0, 10)) return false;
+    return true;
+  });
+
+  // Sort by confidence-weighted score so low-review 100% games don't dominate
+  filtered.sort((a, b) => confidenceWeightedScore(b) - confidenceWeightedScore(a));
 
   // Genre diversity: pick one per primary genre first
   const seen = new Set<string>();

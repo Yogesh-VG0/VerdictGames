@@ -10,6 +10,90 @@ import type { GameRow, ReviewRow, ProfileRow, ListRow, UserGameRow, ReviewCommen
 import { scoreToVerdict } from "../utils/score";
 import { normalizePlatforms } from "../utils/platform";
 
+/**
+ * Regenerate verdict summary from display score + title + genres.
+ * This ensures the summary text matches the Bayesian-smoothed score
+ * shown to the user, not the raw ingest-time score.
+ */
+function regenerateVerdictSummary(
+  title: string,
+  displayScore: number,
+  genres: string[],
+  storedSummary: string | null,
+): string {
+  const genreStr = genres.slice(0, 2).join("/") || "game";
+  const g1 = genres[0]?.toLowerCase() ?? "game";
+  const hash = title.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
+  const variant = hash % 4;
+
+  if (displayScore >= 90) {
+    const options = [
+      `${title} is an exceptional ${genreStr} that raises the bar for the genre.`,
+      `A masterclass in ${g1} design, ${title} delivers an unforgettable experience from start to finish.`,
+      `${title} stands out as one of the best ${genreStr} titles in recent memory.`,
+      `With near-perfect execution, ${title} is a must-play for any ${g1} fan.`,
+    ];
+    return options[variant];
+  }
+  if (displayScore >= 75) {
+    const options = [
+      `${title} is a strong ${genreStr} that delivers where it counts.`,
+      `A well-crafted ${g1} experience, ${title} is well worth your time.`,
+      `${title} confidently hits its marks as a quality ${genreStr} title.`,
+      `Fans of the ${g1} genre will find plenty to enjoy in ${title}.`,
+    ];
+    return options[variant];
+  }
+  if (displayScore >= 50) {
+    const options = [
+      `${title} has interesting ideas but inconsistent execution holds it back.`,
+      `A mixed bag, ${title} shows flashes of brilliance alongside notable shortcomings.`,
+      `${title} offers a decent ${genreStr} experience but doesn't quite reach its potential.`,
+      `There's fun to be had in ${title}, though it may not appeal to everyone.`,
+    ];
+    return options[variant];
+  }
+  if (displayScore > 0) {
+    const options = [
+      `${title} struggles to deliver on its ${genreStr} ambitions.`,
+      `Despite some effort, ${title} falls short of expectations in key areas.`,
+      `${title} has fundamental issues that make it difficult to recommend.`,
+      `Only for the most dedicated ${g1} fans — ${title} needs significant improvements.`,
+    ];
+    return options[variant];
+  }
+  // Score 0 or no score
+  return storedSummary || `${title} is awaiting more reviews for a full verdict.`;
+}
+
+/**
+ * Sanitize stored pros text at read time to fix legacy "0K reviews" bug
+ * and ensure review count text matches actual data.
+ */
+function sanitizePros(pros: string[], reviewCount: number): string[] {
+  return pros.map((p) => {
+    // Fix "from 0K reviews" → use actual count
+    if (p.includes("from 0K reviews")) {
+      const countStr = reviewCount >= 1000
+        ? `${(reviewCount / 1000).toFixed(reviewCount >= 10000 ? 0 : 1)}K`
+        : String(reviewCount);
+      return p.replace("from 0K reviews", `from ${countStr} reviews`);
+    }
+    // Fix any other bad "XK reviews" where X is wrong (e.g. stored count differs from current)
+    const match = p.match(/(\d+) user reviews on Steam \((\d+)% positive from (\d+)K? reviews\)/);
+    if (match) {
+      const storedCount = parseInt(match[1]);
+      if (storedCount !== reviewCount && reviewCount > 0) {
+        const countStr = reviewCount >= 1000
+          ? `${(reviewCount / 1000).toFixed(reviewCount >= 10000 ? 0 : 1)}K`
+          : String(reviewCount);
+        return p.replace(/\d+ user reviews on Steam/, `${countStr} user reviews on Steam`);
+      }
+    }
+    return p;
+  });
+}
+
 function computeTrendingReason(row: GameRow): string | undefined {
   const r = row as GameRow & { is_trending_manual?: boolean; is_featured_manual?: boolean };
   const momentum = row.momentum ?? 0;
@@ -69,7 +153,13 @@ export function mapGameRow(row: GameRow): Game {
   /* Stubs may set verdict_label to COMING SOON without is_provisional (e.g. migration 008 not applied). */
   const rowVerdict = row.verdict_label as VerdictLabel | undefined;
   const isComingSoonLabel = rowVerdict === "COMING SOON";
-  const effectiveProvisional = flagProvisional || isComingSoonLabel;
+
+  // Force future/unreleased games into Coming Soon state — no real verdicts until released
+  const isFutureRelease = row.release_date
+    ? row.release_date > new Date().toISOString().slice(0, 10)
+    : false;
+
+  const effectiveProvisional = flagProvisional || isComingSoonLabel || isFutureRelease;
 
   // Provisional / coming-soon rows bypass Bayesian smoothing — show 0 and preserve COMING SOON
   const rawScore = row.score ?? 0;
@@ -97,8 +187,8 @@ export function mapGameRow(row: GameRow): Game {
       : (scoreToVerdict(score) as VerdictLabel),
     verdictSummary: effectiveProvisional
       ? "This game is awaiting data enrichment."
-      : row.verdict_summary,
-    pros: row.pros,
+      : regenerateVerdictSummary(row.title, score, row.genres, row.verdict_summary),
+    pros: sanitizePros(row.pros, reviewCount),
     cons: row.cons,
     monetization: row.monetization as MonetizationType,
     performanceNotes: row.performance_notes,

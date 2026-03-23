@@ -8,6 +8,7 @@
 import { NextRequest } from "next/server";
 import { jsonOk } from "@/lib/api/response";
 import { mapGameRow } from "@/lib/db/mappers";
+import { confidenceWeightedScore, isQualityGame } from "@/lib/utils/quality";
 import type { GameRow } from "@/lib/supabase/types";
 
 export async function GET(request: NextRequest) {
@@ -65,17 +66,23 @@ export async function GET(request: NextRequest) {
     const cutoffDate = new Date();
     cutoffDate.setMonth(cutoffDate.getMonth() - 36);
     const cutoffStr = cutoffDate.toISOString().slice(0, 10);
+    const today = new Date().toISOString().slice(0, 10);
 
-    // Build recommendation query
+    // Over-fetch substantially so quality filtering + genre diversity still leaves enough
+    const fetchLimit = limit * 8;
+
+    // Build recommendation query — require minimum review count at DB level
     let query = supabase
       .from("games")
       .select("*")
       .not("release_date", "is", null)
       .gte("release_date", cutoffStr)
-      .lte("release_date", new Date().toISOString().slice(0, 10))
+      .lte("release_date", today)           // exclude unreleased/future games
       .gte("score", 70)
+      .gte("review_count", 20)              // minimum review threshold — no tiny-sample games
+      .not("cover_image", "is", null)       // must have a cover image
       .order("score", { ascending: false })
-      .limit(limit * 4); // Over-fetch for filtering
+      .limit(fetchLimit);
 
     // If user has preferred genres, filter by them
     if (userGenres.length > 0) {
@@ -85,35 +92,46 @@ export async function GET(request: NextRequest) {
     const { data, error } = await query as { data: GameRow[] | null; error: unknown };
     if (error) throw error;
 
-    let candidates = (data ?? []).map(mapGameRow);
+    // Quality filter: require image, decent description, non-provisional
+    let rows = (data ?? []).filter((r) => {
+      // Exclude provisional / coming soon
+      if ((r as GameRow & { is_provisional?: boolean }).is_provisional) return false;
+      if (r.verdict_label === "COMING SOON") return false;
+      // Quality gate (uses "topRated" thresholds: 50+ reviews, image, description)
+      return isQualityGame(r, "topRated");
+    });
+
+    // Sort by confidence-weighted score so low-review 100% games don't dominate
+    rows.sort((a, b) => confidenceWeightedScore(b) - confidenceWeightedScore(a));
 
     // Exclude games already in user's library
     if (userGameIds.length > 0) {
-      candidates = candidates.filter((g) => !userGameIds.includes(g.id));
+      const excludeSet = new Set(userGameIds);
+      rows = rows.filter((r) => !excludeSet.has(r.id));
     }
 
-    // Ensure genre diversity
+    // Ensure genre diversity: pick one per primary genre first
     const seen = new Set<string>();
-    const picks = [];
-    for (const game of candidates) {
+    const picks: GameRow[] = [];
+    for (const row of rows) {
       if (picks.length >= limit) break;
-      const primary = game.genres[0] ?? "unknown";
-      if (!seen.has(primary) || seen.size >= limit) {
+      const primary = (row.genres?.[0] ?? "unknown").toLowerCase();
+      if (!seen.has(primary) || seen.size >= 8) {
         seen.add(primary);
-        picks.push(game);
+        picks.push(row);
       }
     }
 
-    // Fill remaining
+    // Fill remaining slots
     if (picks.length < limit) {
       const pickIds = new Set(picks.map((p) => p.id));
-      for (const game of candidates) {
+      for (const row of rows) {
         if (picks.length >= limit) break;
-        if (!pickIds.has(game.id)) picks.push(game);
+        if (!pickIds.has(row.id)) picks.push(row);
       }
     }
 
-    return jsonOk(picks);
+    return jsonOk(picks.map(mapGameRow));
   } catch (err) {
     console.error("[API] /recommendations error:", err);
     return jsonOk([]);

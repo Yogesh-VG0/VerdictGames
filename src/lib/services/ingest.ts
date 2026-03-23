@@ -650,8 +650,11 @@ function generateSmartPros(
   // Steam review sentiment
   if (steamReview) {
     const pct = Math.round((steamReview.total_positive / steamReview.total_reviews) * 100);
-    if (pct >= 90) pros.push(`${steamReview.review_score_desc} on Steam (${pct}% positive from ${(steamReview.total_reviews / 1000).toFixed(0)}K reviews)`);
-    else if (pct >= 75) pros.push(`${steamReview.review_score_desc} Steam reviews (${pct}% positive)`);
+    if (pct >= 90) {
+      const total = steamReview.total_reviews;
+      const countStr = total >= 1000 ? `${(total / 1000).toFixed(total >= 10000 ? 0 : 1)}K` : String(total);
+      pros.push(`${steamReview.review_score_desc} on Steam (${pct}% positive from ${countStr} reviews)`);
+    } else if (pct >= 75) pros.push(`${steamReview.review_score_desc} Steam reviews (${pct}% positive)`);
   }
 
   // Active playerbase
