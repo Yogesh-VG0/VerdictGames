@@ -269,7 +269,8 @@ export default function AdminDashboard() {
       {/* Seed Content */}
       <div className="space-y-3">
         <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
-          <Database className="w-5 h-5 text-accent" /> Seed Content
+          <Database className="w-5 h-5 text-emerald-500" />
+          <span className="bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 bg-clip-text text-transparent">Seed Content</span>
         </h2>
         <p className="text-xs text-tertiary">Populate your site with starter content for launch.</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
