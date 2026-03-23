@@ -73,7 +73,9 @@ function isUnreleased(game: Game): boolean {
 function hasRealScore(game: Game): boolean {
   if (isUnreleased(game)) return false;
   if (game.score === 0 && game.scoreSource === "gx") return false;
-  return true;
+  if (game.verdictLabel === "JUST RELEASED") return false;
+  if (game.verdictLabel === "COMING SOON") return false;
+  return game.score > 0;
 }
 
 function scoreGlowBorder(score: number): string {
@@ -135,6 +137,10 @@ export default function GameCard({
             ) : isUnreleased(game) ? (
               <div className="absolute top-3 right-3 rounded-xl px-2.5 py-1 bg-accent/70 backdrop-blur-md border border-white/10 text-[10px] font-bold text-white">
                 Coming Soon
+              </div>
+            ) : game.verdictLabel === "JUST RELEASED" ? (
+              <div className="absolute top-3 right-3 rounded-xl px-2.5 py-1 bg-pixel-cyan/70 backdrop-blur-md border border-white/10 text-[10px] font-bold text-white">
+                Just Released
               </div>
               ) : null}
 
@@ -228,6 +234,11 @@ export default function GameCard({
           {isUnreleased(game) && (
             <div className="absolute top-2.5 right-2.5 rounded-xl px-2 py-1 bg-accent/70 backdrop-blur-md border border-white/10 text-[10px] font-bold text-white">
               Coming Soon
+            </div>
+          )}
+          {!isUnreleased(game) && game.verdictLabel === "JUST RELEASED" && (
+            <div className="absolute top-2.5 right-2.5 rounded-xl px-2 py-1 bg-pixel-cyan/70 backdrop-blur-md border border-white/10 text-[10px] font-bold text-white">
+              Just Released
             </div>
           )}
 

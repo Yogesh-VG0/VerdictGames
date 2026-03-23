@@ -45,35 +45,79 @@ export async function GET(request: NextRequest) {
   const cutoff = new Date(Date.now() - STALE_HOURS * 60 * 60 * 1000).toISOString();
   const lockCutoff = new Date(Date.now() - 10 * 60 * 1000).toISOString(); // 10 min lock TTL
 
-  // ── 1. Find stale games that need re-enrichment ──
-  // Prioritize: games marked needs_enrichment first, then oldest enrichment, then provisional games
-  const { data: staleGames, error: fetchErr } = await supabase
+  // ── 1a. FAST-PATH: Prioritize recently released games that are under-enriched ──
+  // Games released in the last 14 days with few reviews are likely major launches
+  // that need post-launch enrichment ASAP (e.g. Crimson Desert: released with 61K
+  // Steam reviews but our DB only had 6 from pre-launch IGDB data).
+  const recentReleaseCutoff = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const today = new Date().toISOString().slice(0, 10);
+
+  const { data: recentReleases } = await supabase
     .from("games")
-    .select("id, title, slug, last_enriched_at, is_refreshing, refresh_started_at, is_provisional")
-    .or(`last_enriched_at.lt.${cutoff},last_enriched_at.is.null`)
+    .select("id, title, slug, last_enriched_at, is_refreshing, refresh_started_at, is_provisional, review_count, release_date")
+    .gte("release_date", recentReleaseCutoff)
+    .lte("release_date", today)
+    .lt("review_count", 100)               // under-enriched: fewer than 100 reviews in our DB
     .or(`is_refreshing.eq.false,is_refreshing.is.null,refresh_started_at.lt.${lockCutoff},refresh_started_at.is.null`)
-    .order("last_enriched_at", { ascending: true, nullsFirst: true })
-    .limit(batchLimit) as {
-      data: { id: string; title: string; slug: string; last_enriched_at: string | null; is_refreshing: boolean; refresh_started_at: string | null; is_provisional: boolean }[] | null;
+    .order("release_date", { ascending: false })
+    .limit(Math.min(batchLimit, 10)) as {
+      data: { id: string; title: string; slug: string; last_enriched_at: string | null; is_refreshing: boolean; refresh_started_at: string | null; is_provisional: boolean; review_count: number; release_date: string }[] | null;
       error: { message: string } | null;
     };
 
-  if (fetchErr) {
-    return jsonError(`Failed to query stale games: ${fetchErr.message}`, 500);
+  const fastPathIds = new Set<string>();
+  const fastPathGames = (recentReleases ?? []).map(g => {
+    fastPathIds.add(g.id);
+    return g;
+  });
+
+  if (fastPathGames.length > 0) {
+    log.push(`🚀 Fast-path: ${fastPathGames.length} recently released games prioritized for re-enrichment`);
+    for (const g of fastPathGames) {
+      log.push(`  ⚡ ${g.title} (released ${g.release_date}, ${g.review_count} reviews in DB)`);
+    }
   }
 
-  if (!staleGames || staleGames.length === 0) {
+  // ── 1b. Find remaining stale games (standard re-enrichment) ──
+  const remainingSlots = batchLimit - fastPathGames.length;
+
+  let staleGames: { id: string; title: string; slug: string; last_enriched_at: string | null; is_refreshing: boolean; refresh_started_at: string | null; is_provisional: boolean }[] = [];
+
+  if (remainingSlots > 0) {
+    const { data: staleData, error: fetchErr } = await supabase
+      .from("games")
+      .select("id, title, slug, last_enriched_at, is_refreshing, refresh_started_at, is_provisional")
+      .or(`last_enriched_at.lt.${cutoff},last_enriched_at.is.null`)
+      .or(`is_refreshing.eq.false,is_refreshing.is.null,refresh_started_at.lt.${lockCutoff},refresh_started_at.is.null`)
+      .order("last_enriched_at", { ascending: true, nullsFirst: true })
+      .limit(remainingSlots) as {
+        data: typeof staleGames | null;
+        error: { message: string } | null;
+      };
+
+    if (fetchErr) {
+      return jsonError(`Failed to query stale games: ${fetchErr.message}`, 500);
+    }
+
+    // Exclude games already in the fast-path batch
+    staleGames = (staleData ?? []).filter(g => !fastPathIds.has(g.id));
+  }
+
+  // Merge: fast-path games first, then standard stale games
+  const allGames = [...fastPathGames, ...staleGames];
+
+  if (allGames.length === 0) {
     return jsonOk({ message: "No stale games found", refreshed: 0, log: [] });
   }
 
-  log.push(`Found ${staleGames.length} stale games to re-enrich`);
+  log.push(`Found ${allGames.length} games to re-enrich (${fastPathGames.length} fast-path + ${staleGames.length} standard)`);
 
   // ── 2. Process each game ──
   const { ingestGame } = await import("@/lib/services/ingest");
   let successCount = 0;
   let failCount = 0;
 
-  for (const game of staleGames) {
+  for (const game of allGames) {
     const now = new Date().toISOString();
 
     // Acquire lock

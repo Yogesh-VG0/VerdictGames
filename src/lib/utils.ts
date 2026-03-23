@@ -32,6 +32,8 @@ export function verdictBgClass(label: VerdictLabel): string {
       return "bg-score-bad/20 text-score-bad border-score-bad/30";
     case "COMING SOON":
       return "bg-accent/20 text-accent border-accent/30";
+    case "JUST RELEASED":
+      return "bg-pixel-cyan/20 text-pixel-cyan border-pixel-cyan/30";
     default:
       return "bg-surface-2 text-secondary border-border";
   }

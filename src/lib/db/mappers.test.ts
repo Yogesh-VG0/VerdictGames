@@ -221,4 +221,51 @@ describe("mapGameRow", () => {
     expect(game.verdictLabel).toBe("COMING SOON");
     expect(game.score).toBe(0);
   });
+
+  // ── JUST RELEASED state ──
+
+  it("recently released game with few reviews shows JUST RELEASED, not a fake verdict", () => {
+    // Crimson Desert scenario: released 5 days ago, only 6 reviews in DB (stale enrichment)
+    const fiveDaysAgo = new Date();
+    fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
+    const game = mapGameRow(makeGameRow({
+      title: "Crimson Desert",
+      score: 76,
+      review_count: 6,
+      release_date: fiveDaysAgo.toISOString().slice(0, 10),
+      score_source: "igdb",
+    }));
+    expect(game.verdictLabel).toBe("JUST RELEASED");
+    expect(game.score).toBe(0);
+    expect(game.verdictSummary).toContain("just launched");
+  });
+
+  it("recently released game with enough reviews gets a real verdict", () => {
+    // Game released 3 days ago but already has 500 reviews — enrichment worked fine
+    const threeDaysAgo = new Date();
+    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+    const game = mapGameRow(makeGameRow({
+      title: "Well-Enriched Game",
+      score: 92,
+      review_count: 500,
+      release_date: threeDaysAgo.toISOString().slice(0, 10),
+      score_source: "steam",
+    }));
+    expect(game.verdictLabel).toBe("MUST PLAY");
+    expect(game.score).toBe(92);
+  });
+
+  it("game released 20 days ago with few reviews gets a real verdict (past JUST RELEASED window)", () => {
+    const twentyDaysAgo = new Date();
+    twentyDaysAgo.setDate(twentyDaysAgo.getDate() - 20);
+    const game = mapGameRow(makeGameRow({
+      title: "Older Release",
+      score: 80,
+      review_count: 8,
+      release_date: twentyDaysAgo.toISOString().slice(0, 10),
+    }));
+    // Past the 14-day window, so it gets a real verdict even with few reviews
+    expect(game.verdictLabel).not.toBe("JUST RELEASED");
+    expect(game.verdictLabel).not.toBe("COMING SOON");
+  });
 });

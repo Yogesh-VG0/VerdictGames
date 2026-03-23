@@ -155,19 +155,37 @@ export function mapGameRow(row: GameRow): Game {
   const isComingSoonLabel = rowVerdict === "COMING SOON";
 
   // Force future/unreleased games into Coming Soon state — no real verdicts until released
+  const today = new Date().toISOString().slice(0, 10);
   const isFutureRelease = row.release_date
-    ? row.release_date > new Date().toISOString().slice(0, 10)
+    ? row.release_date > today
     : false;
 
   // Games with 0 reviews should not display real verdicts — their score is just a RAWG rating guess
-  const hasNoReviews = (row.review_count ?? 0) === 0;
+  const reviewCount = row.review_count ?? 0;
+  const hasNoReviews = reviewCount === 0;
+
+  // "Just Released" detection: released within the last 14 days but has fewer than 20 reviews.
+  // These games are real launches, not junk — they just haven't been fully enriched yet.
+  // Crimson Desert is the canonical example: released March 19, but DB only has 6 reviews
+  // while Steam actually has 61K. Show "JUST RELEASED" instead of a fake verdict from weak data.
+  const JUST_RELEASED_DAYS = 14;
+  const JUST_RELEASED_MIN_REVIEWS = 20;
+  const isRecentRelease = row.release_date
+    ? (() => {
+        const releaseMs = new Date(row.release_date + "T00:00:00").getTime();
+        const todayMs = new Date(today + "T00:00:00").getTime();
+        const daysSinceRelease = (todayMs - releaseMs) / (1000 * 60 * 60 * 24);
+        return daysSinceRelease >= 0 && daysSinceRelease <= JUST_RELEASED_DAYS;
+      })()
+    : false;
+  const isJustReleased = isRecentRelease && reviewCount < JUST_RELEASED_MIN_REVIEWS && !hasNoReviews;
 
   const effectiveProvisional = flagProvisional || isComingSoonLabel || isFutureRelease || hasNoReviews;
 
   // Provisional / coming-soon rows bypass Bayesian smoothing — show 0 and preserve COMING SOON
+  // "Just Released" rows also bypass — they show a temporary label with no finalized score
   const rawScore = row.score ?? 0;
-  const reviewCount = row.review_count ?? 0;
-  const score = effectiveProvisional ? 0 : displayScore(rawScore, reviewCount);
+  const score = (effectiveProvisional || isJustReleased) ? 0 : displayScore(rawScore, reviewCount);
 
   return {
     id: row.id,
@@ -187,10 +205,14 @@ export function mapGameRow(row: GameRow): Game {
     score,
     verdictLabel: effectiveProvisional
       ? ("COMING SOON" as VerdictLabel)
-      : (scoreToVerdict(score) as VerdictLabel),
+      : isJustReleased
+        ? ("JUST RELEASED" as VerdictLabel)
+        : (scoreToVerdict(score) as VerdictLabel),
     verdictSummary: effectiveProvisional
       ? "This game is awaiting data enrichment."
-      : regenerateVerdictSummary(row.title, score, row.genres, row.verdict_summary),
+      : isJustReleased
+        ? `${row.title} just launched — verdict pending as review data comes in.`
+        : regenerateVerdictSummary(row.title, score, row.genres, row.verdict_summary),
     pros: sanitizePros(row.pros, reviewCount),
     cons: row.cons,
     monetization: row.monetization as MonetizationType,
