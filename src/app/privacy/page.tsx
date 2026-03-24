@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://www.verdict.games";
+
 export const metadata: Metadata = {
   title: "Privacy Policy",
-  description: "Privacy policy for verdict.games.",
+  description: "Privacy policy for verdict.games — how we handle your data and protect your privacy.",
+  alternates: { canonical: `${SITE_URL}/privacy` },
 };
 
 export default function PrivacyPage() {

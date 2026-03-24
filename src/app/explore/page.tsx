@@ -277,11 +277,11 @@ export default function ExplorePage() {
         )}
       </div>
 
-      {/* Pagination */}
+      {/* Pagination — RAWG API caps at ~500 pages (10,000 results) */}
       {query.data && query.data.count > 0 && (
         <Pagination
           currentPage={page}
-          totalPages={Math.ceil(query.data.count / 20)}
+          totalPages={Math.min(Math.ceil(query.data.count / 20), 500)}
           onPageChange={(p) => { setPage(p); window.scrollTo({ top: 0, behavior: "smooth" }); }}
         />
       )}

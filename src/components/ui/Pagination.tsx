@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
 
@@ -11,8 +12,8 @@ interface PaginationProps {
 }
 
 /**
- * Smart pagination with page numbers, ellipsis, and responsive design.
- * Shows first/last, prev/next, and a window of nearby pages.
+ * Smart pagination with page numbers, ellipsis, manual page input, and responsive design.
+ * Shows first/last, prev/next, a window of nearby pages, and a "Go to" input.
  */
 export default function Pagination({
   currentPage,
@@ -20,84 +21,127 @@ export default function Pagination({
   onPageChange,
   className,
 }: PaginationProps) {
+  const [goToValue, setGoToValue] = useState("");
+  const [showGoTo, setShowGoTo] = useState(false);
+
   if (totalPages <= 1) return null;
 
-  // Build the list of page numbers to display
   const pages = buildPageNumbers(currentPage, totalPages);
 
+  const handleGoTo = () => {
+    const num = parseInt(goToValue, 10);
+    if (!isNaN(num) && num >= 1 && num <= totalPages) {
+      onPageChange(num);
+      setGoToValue("");
+      setShowGoTo(false);
+    }
+  };
+
   return (
-    <nav
-      aria-label="Pagination"
-      className={cn("flex items-center justify-center gap-1 sm:gap-1.5 pt-4", className)}
-    >
-      {/* First page */}
-      <button
-        onClick={() => onPageChange(1)}
-        disabled={currentPage <= 1}
-        aria-label="First page"
-        className={cn(navBtnClass, "hidden sm:flex")}
+    <div className={cn("flex flex-col items-center gap-2 pt-4", className)}>
+      <nav
+        aria-label="Pagination"
+        className="flex items-center gap-1 sm:gap-1.5"
       >
-        <ChevronsLeft className="w-4 h-4" />
-      </button>
+        {/* First page */}
+        <button
+          onClick={() => onPageChange(1)}
+          disabled={currentPage <= 1}
+          aria-label="First page"
+          className={cn(navBtnClass, "hidden sm:flex")}
+        >
+          <ChevronsLeft className="w-4 h-4" />
+        </button>
 
-      {/* Previous */}
-      <button
-        onClick={() => onPageChange(currentPage - 1)}
-        disabled={currentPage <= 1}
-        aria-label="Previous page"
-        className={navBtnClass}
-      >
-        <ChevronLeft className="w-4 h-4" />
-      </button>
+        {/* Previous */}
+        <button
+          onClick={() => onPageChange(currentPage - 1)}
+          disabled={currentPage <= 1}
+          aria-label="Previous page"
+          className={navBtnClass}
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </button>
 
-      {/* Page numbers */}
-      <div className="flex items-center gap-1">
-        {pages.map((p, i) =>
-          p === "..." ? (
-            <span
-              key={`ellipsis-${i}`}
-              className="w-8 h-8 flex items-center justify-center text-xs text-tertiary select-none"
-            >
-              &hellip;
-            </span>
-          ) : (
-            <button
-              key={p}
-              onClick={() => onPageChange(p as number)}
-              aria-current={p === currentPage ? "page" : undefined}
-              className={cn(
-                "min-w-[2rem] h-8 px-1.5 rounded-lg text-xs font-medium tabular-nums transition-all",
-                p === currentPage
-                  ? "bg-accent text-white shadow-sm shadow-accent/20"
-                  : "text-secondary hover:text-foreground hover:bg-surface-2"
-              )}
-            >
-              {p}
-            </button>
-          )
-        )}
-      </div>
+        {/* Page numbers */}
+        <div className="flex items-center gap-1">
+          {pages.map((p, i) =>
+            p === "..." ? (
+              <button
+                key={`ellipsis-${i}`}
+                onClick={() => setShowGoTo((v) => !v)}
+                className="w-8 h-8 flex items-center justify-center text-xs text-tertiary hover:text-secondary transition-colors cursor-pointer"
+                aria-label="Go to page"
+                title="Click to jump to a page"
+              >
+                &hellip;
+              </button>
+            ) : (
+              <button
+                key={p}
+                onClick={() => onPageChange(p as number)}
+                aria-current={p === currentPage ? "page" : undefined}
+                className={cn(
+                  "min-w-[2rem] h-8 px-1.5 rounded-lg text-xs font-medium tabular-nums transition-all",
+                  p === currentPage
+                    ? "bg-accent text-white shadow-sm shadow-accent/20"
+                    : "text-secondary hover:text-foreground hover:bg-surface-2"
+                )}
+              >
+                {p}
+              </button>
+            )
+          )}
+        </div>
 
-      {/* Next */}
-      <button
-        onClick={() => onPageChange(currentPage + 1)}
-        disabled={currentPage >= totalPages}
-        aria-label="Next page"
-        className={navBtnClass}
-      >
-        <ChevronRight className="w-4 h-4" />
-      </button>
+        {/* Next */}
+        <button
+          onClick={() => onPageChange(currentPage + 1)}
+          disabled={currentPage >= totalPages}
+          aria-label="Next page"
+          className={navBtnClass}
+        >
+          <ChevronRight className="w-4 h-4" />
+        </button>
 
-      {/* Last page */}
-      <button
-        onClick={() => onPageChange(totalPages)}
-        disabled={currentPage >= totalPages}
-        aria-label="Last page"
-        className={cn(navBtnClass, "hidden sm:flex")}
-      >
-        <ChevronsRight className="w-4 h-4" />
-      </button>
-    </nav>
+        {/* Last page */}
+        <button
+          onClick={() => onPageChange(totalPages)}
+          disabled={currentPage >= totalPages}
+          aria-label="Last page"
+          className={cn(navBtnClass, "hidden sm:flex")}
+        >
+          <ChevronsRight className="w-4 h-4" />
+        </button>
+      </nav>
+
+      {/* Go-to-page input */}
+      {showGoTo && (
+        <form
+          onSubmit={(e) => { e.preventDefault(); handleGoTo(); }}
+          className="flex items-center gap-2 animate-fade-in"
+        >
+          <span className="text-xs text-secondary">Go to</span>
+          <input
+            type="number"
+            min={1}
+            max={totalPages}
+            value={goToValue}
+            onChange={(e) => setGoToValue(e.target.value)}
+            placeholder={String(currentPage)}
+            className="w-20 h-7 px-2 text-xs text-center rounded-lg border border-border bg-surface-2 text-foreground placeholder:text-tertiary focus:outline-none focus:ring-1 focus:ring-accent/40 tabular-nums [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+            autoFocus
+          />
+          <span className="text-xs text-tertiary">of {totalPages.toLocaleString()}</span>
+          <button
+            type="submit"
+            className="h-7 px-3 text-xs font-medium rounded-lg bg-accent text-white hover:bg-accent-hover transition-colors"
+          >
+            Go
+          </button>
+        </form>
+      )}
+    </div>
   );
 }
 

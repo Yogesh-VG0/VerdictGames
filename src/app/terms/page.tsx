@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://www.verdict.games";
+
 export const metadata: Metadata = {
   title: "Terms of Service",
-  description: "Terms of service for verdict.games.",
+  description: "Terms of service for verdict.games — your trusted source for honest game reviews.",
+  alternates: { canonical: `${SITE_URL}/terms` },
 };
 
 export default function TermsPage() {

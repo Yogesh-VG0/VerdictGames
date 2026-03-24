@@ -1,10 +1,3 @@
-import type { Metadata } from "next";
-
-export const metadata: Metadata = {
-  title: "About",
-  description: "Learn about verdict.games — your trusted source for honest game reviews across all platforms.",
-};
-
 const beliefs = [
   "Players deserve honest reviews, not sponsored hype.",
   "Monetization practices should be transparent and called out.",

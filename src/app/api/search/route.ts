@@ -15,7 +15,7 @@ import { confidenceWeightedScore } from "@/lib/utils/quality";
 import type { Game, PaginatedResponse, SortOption, Platform } from "@/lib/types";
 import type { GameRow } from "@/lib/supabase/types";
 
-const PAGE_SIZE = 24;
+const PAGE_SIZE = 25;
 
 export async function GET(request: NextRequest) {
   const params = request.nextUrl.searchParams;

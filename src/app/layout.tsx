@@ -23,8 +23,10 @@ const spaceGrotesk = Space_Grotesk({
   weight: ["400", "500", "600", "700"],
 });
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://www.verdict.games";
+
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://www.verdict.games"),
+  metadataBase: new URL(SITE_URL),
   title: {
     default: "verdict.games — The Verdict on Every Game",
     template: "%s | verdict.games",
@@ -34,28 +36,38 @@ export const metadata: Metadata = {
   keywords: [
     "game reviews", "verdict games", "PC game reviews", "PlayStation reviews",
     "Xbox reviews", "Nintendo Switch reviews", "game ratings", "game verdicts",
-    "honest game reviews", "gaming community",
+    "honest game reviews", "gaming community", "Steam reviews", "game scores",
   ],
-  icons: {
-    icon: [
-      { url: "/VERDICT_LOGO_main.png", type: "image/png", sizes: "192x192" },
-    ],
-    shortcut: "/VERDICT_LOGO_main.png",
-    apple: { url: "/VERDICT_LOGO_main.png", type: "image/png", sizes: "192x192" },
-  },
+  /* Icons handled by Next.js file conventions:
+     src/app/favicon.ico, src/app/icon.png, src/app/apple-icon.png */
+  alternates: { canonical: SITE_URL },
+  category: "gaming",
   openGraph: {
     title: "verdict.games",
     description: "Honest verdicts for games across all platforms.",
     siteName: "verdict.games",
+    locale: "en_US",
     type: "website",
-    images: [{ url: "/og-default.png", width: 1200, height: 630 }],
+    url: SITE_URL,
+    images: [{ url: "/og-default.png", width: 1200, height: 630, alt: "verdict.games — The Verdict on Every Game" }],
   },
   manifest: "/manifest.json",
   twitter: {
     card: "summary_large_image",
     title: "verdict.games",
     description: "Honest verdicts for games across all platforms.",
-    images: ["/og-default.png"],
+    images: [{ url: "/og-default.png", alt: "verdict.games" }],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
   },
 };
 
@@ -64,8 +76,31 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "verdict.games",
+    url: SITE_URL,
+    description:
+      "Your trusted source for honest game reviews across all platforms.",
+    potentialAction: {
+      "@type": "SearchAction",
+      target: {
+        "@type": "EntryPoint",
+        urlTemplate: `${SITE_URL}/search?q={search_term_string}`,
+      },
+      "query-input": "required name=search_term_string",
+    },
+  };
+
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${spaceGrotesk.variable} antialiased bg-background text-foreground`}
       >
