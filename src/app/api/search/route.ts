@@ -140,7 +140,12 @@ export async function GET(request: NextRequest) {
           .order("created_at", { ascending: false }).order("id", { ascending: true });
         break;
       case "top-rated":
-        query = query.order("score", { ascending: false }).order("id", { ascending: true });
+        // Require minimum reviews so tiny-sample games don't enter the re-ranking pool
+        query = query
+          .gte("review_count", 10)
+          .not("cover_image", "is", null)
+          .neq("cover_image", "")
+          .order("score", { ascending: false }).order("id", { ascending: true });
         break;
       case "trending":
         query = query
