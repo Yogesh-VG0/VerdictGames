@@ -85,11 +85,35 @@ export async function GET(
     const { getServerSupabase } = await import("@/lib/supabase/server");
     const supabase = getServerSupabase();
 
-    let { data, error } = (await supabase
-      .from("games")
-      .select("*")
-      .eq("slug", slug)
-      .maybeSingle()) as { data: GameRow | null; error: unknown };
+    // ── rawgId resolution: RAWG slugs often differ from our DB slugs ──
+    // e.g. RAWG "god-of-war-2" = "God of War (2018)" but our DB has that as "god-of-war-2018"
+    const rawgIdParam = request.nextUrl.searchParams.get("rawgId");
+    const rawgId = rawgIdParam ? Number(rawgIdParam) : null;
+
+    let data: GameRow | null = null;
+    let error: unknown = null;
+
+    if (rawgId && !isNaN(rawgId)) {
+      // Prioritize rawg_id lookup — avoids slug collisions entirely
+      const result = await supabase
+        .from("games")
+        .select("*")
+        .eq("rawg_id", rawgId)
+        .maybeSingle() as { data: GameRow | null; error: unknown };
+      data = result.data;
+      error = result.error;
+    }
+
+    // Fall back to slug lookup if rawgId not provided or didn't match
+    if (!data && !error) {
+      const result = await supabase
+        .from("games")
+        .select("*")
+        .eq("slug", slug)
+        .maybeSingle() as { data: GameRow | null; error: unknown };
+      data = result.data;
+      error = result.error;
+    }
 
     if (error) throw error;
 
@@ -122,14 +146,17 @@ export async function GET(
             .eq("id", result.gameId)
             .maybeSingle() as { data: GameRow | null };
           const row = refetch.data;
-          if (row?.slug === slug) {
+          // Accept if slug matches OR if the rawg_id matches the requested rawgId
+          if (row?.slug === slug || (rawgId && row?.rawg_id === rawgId)) {
             data = row;
           } else if (row) {
             console.warn(
               `[API] /games/${slug} ingest resolved to different slug "${row.slug}" — ignoring to avoid wrong page`
             );
           }
-        } else if ((result as { lowConfidence?: boolean }).lowConfidence) {
+        } else if ((result as { lowConfidence?: boolean }).lowConfidence && !rawgId) {
+          // Only create provisional stubs for organic slug visits (calendar links, etc.)
+          // Never create stubs when rawgId is provided — the RAWG slug doesn't belong to us
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const { data: inserted, error: insertErr } = await (supabase.from("games") as any)
             .insert(provisionalRecordForSlug(slug))
@@ -146,7 +173,8 @@ export async function GET(
     }
 
     // Last resort: stub page for valid slugs (calendar links, Twitch/IGDB missing on host, etc.)
-    if (!data && /^[a-z0-9-]{1,100}$/i.test(slug)) {
+    // Skip when rawgId is provided — prevents creating wrong slug squatters from RAWG links.
+    if (!data && !rawgId && /^[a-z0-9-]{1,100}$/i.test(slug)) {
       try {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data: inserted, error: insertErr } = await (supabase.from("games") as any)

@@ -210,7 +210,7 @@ export default function HomePage() {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: i * 0.04, duration: 0.4 }}
                     >
-                      <Link href={`/game/${game.slug}`} className="block group">
+                      <Link href={`/game/${game.slug}?rawgId=${game.rawgId}`} className="block group">
                         <div className="relative aspect-[16/9] rounded-2xl overflow-hidden border border-border bg-surface-2 group-hover:border-accent/40 transition-all">
                           {game.image ? (
                             /* eslint-disable-next-line @next/next/no-img-element */

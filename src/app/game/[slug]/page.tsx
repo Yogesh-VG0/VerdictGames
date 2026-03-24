@@ -3,6 +3,7 @@
 import { use, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { getGameBySlug, getGameReviews, getRelatedGames, getGameNews, getGameAchievements } from "@/lib/api";
@@ -87,11 +88,13 @@ function StatBar({ value, max, label, color }: { value: number; max: number; lab
 
 export default function GameDetailPage({ params }: Props) {
   const { slug } = use(params);
+  const searchParams = useSearchParams();
+  const rawgId = searchParams.get("rawgId") ? Number(searchParams.get("rawgId")) : undefined;
   const [authModalOpen, setAuthModalOpen] = useState(false);
 
   const { data: game, isLoading } = useQuery({
-    queryKey: ["game", slug],
-    queryFn: () => getGameBySlug(slug),
+    queryKey: ["game", slug, rawgId],
+    queryFn: () => getGameBySlug(slug, rawgId),
   });
 
   const { data: reviewsData } = useQuery({

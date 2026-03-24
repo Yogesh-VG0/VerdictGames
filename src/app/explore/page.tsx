@@ -60,7 +60,7 @@ function GameCard({ game, rank }: { game: RawgListGameItem; rank?: number }) {
 
   return (
     <Link
-      href={`/game/${game.slug}`}
+      href={`/game/${game.slug}?rawgId=${game.rawgId}`}
       className="group relative rounded-2xl border border-border bg-surface overflow-hidden hover:border-accent/40 hover:shadow-lg transition-all duration-300"
     >
       {/* Image */}

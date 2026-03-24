@@ -136,9 +136,10 @@ export async function searchGames(
   return data ?? EMPTY_PAGE<Game>();
 }
 
-/** Get a single game by slug. */
-export async function getGameBySlug(slug: string): Promise<Game | null> {
-  return apiFetch<Game>(`/api/games/${encodeURIComponent(slug)}`);
+/** Get a single game by slug. Pass rawgId for RAWG-sourced links to avoid slug collisions. */
+export async function getGameBySlug(slug: string, rawgId?: number): Promise<Game | null> {
+  const params = rawgId ? `?rawgId=${rawgId}` : "";
+  return apiFetch<Game>(`/api/games/${encodeURIComponent(slug)}${params}`);
 }
 
 /** Get related games for a given game slug. */
