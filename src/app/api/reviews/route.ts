@@ -90,6 +90,10 @@ export async function POST(request: NextRequest) {
     if (!gameId) return jsonBadRequest("gameId is required");
     if (rating === undefined || rating < 0 || rating > 100) return jsonBadRequest("rating must be 0–100");
     if (!title || title.length < 3) return jsonBadRequest("title must be at least 3 characters");
+    if (title.length > 200) return jsonBadRequest("title must be 200 characters or less");
+    if (bodyText && bodyText.length > 10000) return jsonBadRequest("review body must be 10,000 characters or less");
+    if (Array.isArray(pros) && pros.length > 10) return jsonBadRequest("max 10 pros");
+    if (Array.isArray(cons) && cons.length > 10) return jsonBadRequest("max 10 cons");
 
     const { getServerSupabase } = await import("@/lib/supabase/server");
     const supabase = getServerSupabase();

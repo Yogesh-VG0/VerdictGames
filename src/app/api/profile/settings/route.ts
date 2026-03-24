@@ -31,6 +31,17 @@ export async function PATCH(request: NextRequest) {
     return jsonError("No valid fields to update", 400);
   }
 
+  // Input length validation
+  if (updates.display_name && updates.display_name.length > 100) {
+    return jsonError("Display name must be 100 characters or less", 400);
+  }
+  if (updates.bio && updates.bio.length > 1000) {
+    return jsonError("Bio must be 1,000 characters or less", 400);
+  }
+  if (Array.isArray(updates.favorite_genres) && updates.favorite_genres.length > 20) {
+    return jsonError("Max 20 favorite genres", 400);
+  }
+
   // Resolve profile row: try auth_id first, fallback to legacy id
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: profileByAuth } = await (supabase.from("profiles") as any)
@@ -48,7 +59,8 @@ export async function PATCH(request: NextRequest) {
     .single();
 
   if (error) {
-    return jsonError("Failed to update profile: " + (error as Error).message, 500);
+    console.error("[API] /profile/settings PATCH error:", error);
+    return jsonError("Failed to update profile", 500);
   }
 
   return jsonOk({ message: "Profile updated", profile: updated });

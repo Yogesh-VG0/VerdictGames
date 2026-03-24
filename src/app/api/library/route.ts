@@ -53,6 +53,7 @@ export async function POST(request: NextRequest) {
     const { gameId, status, personalRating, hoursPlayed, notes, startedAt, completedAt } = body;
 
     if (!gameId) return jsonBadRequest("gameId is required");
+    if (notes && typeof notes === "string" && notes.length > 5000) return jsonBadRequest("notes must be 5,000 characters or less");
 
     const validStatuses = ["wishlist", "playing", "completed", "dropped", "paused"];
     if (status && !validStatuses.includes(status)) {
