@@ -75,6 +75,35 @@ export async function GET(request: NextRequest) {
       clip: item.clip?.video ? `https://www.youtube.com/watch?v=${item.clip.video}` : null,
     }));
 
+    // ── Resolve DB slugs: RAWG slugs often differ from our DB slugs ──
+    // e.g. RAWG "god-of-war-2" = "God of War (2018)" but our DB has "god-of-war-2018"
+    // Cross-reference all rawg_ids with our DB in a single query and swap slugs.
+    try {
+      const rawgIds = items.map((i) => i.rawgId).filter(Boolean);
+      if (rawgIds.length > 0) {
+        const { getServerSupabase } = await import("@/lib/supabase/server");
+        const supabase = getServerSupabase();
+        const { data: dbGames } = await supabase
+          .from("games")
+          .select("rawg_id, slug")
+          .in("rawg_id", rawgIds);
+
+        if (dbGames && dbGames.length > 0) {
+          const slugMap = new Map<number, string>();
+          for (const g of dbGames) {
+            if (g.rawg_id) slugMap.set(g.rawg_id, g.slug);
+          }
+          for (const item of items) {
+            const dbSlug = slugMap.get(item.rawgId);
+            if (dbSlug) item.slug = dbSlug;
+          }
+        }
+      }
+    } catch (slugErr) {
+      // Non-fatal — fall back to RAWG slugs if DB lookup fails
+      console.warn("[RAWG lists] DB slug resolution failed:", slugErr);
+    }
+
     return jsonOk({
       count: data.count,
       page,

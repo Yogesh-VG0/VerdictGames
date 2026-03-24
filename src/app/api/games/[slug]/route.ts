@@ -131,7 +131,8 @@ export async function GET(
       }
     }
 
-    // RAWG multi-source ingest (must return this exact URL slug — never swap in another game).
+    // RAWG multi-source ingest — find the real game even if its DB slug differs from the URL slug.
+    let ingestFoundRealGame = false;
     if (!data) {
       try {
         const { ingestGame } = await import("@/lib/services/ingest");
@@ -146,25 +147,11 @@ export async function GET(
             .eq("id", result.gameId)
             .maybeSingle() as { data: GameRow | null };
           const row = refetch.data;
-          // Accept if slug matches OR if the rawg_id matches the requested rawgId
-          if (row?.slug === slug || (rawgId && row?.rawg_id === rawgId)) {
+          if (row) {
+            // Always return the real game — even if our DB slug differs from the URL slug.
+            // e.g. URL slug "god-of-war-2" → DB game "god-of-war-2018" (God of War 2018)
             data = row;
-          } else if (row) {
-            console.warn(
-              `[API] /games/${slug} ingest resolved to different slug "${row.slug}" — ignoring to avoid wrong page`
-            );
-          }
-        } else if ((result as { lowConfidence?: boolean }).lowConfidence && !rawgId) {
-          // Only create provisional stubs for organic slug visits (calendar links, etc.)
-          // Never create stubs when rawgId is provided — the RAWG slug doesn't belong to us
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const { data: inserted, error: insertErr } = await (supabase.from("games") as any)
-            .insert(provisionalRecordForSlug(slug))
-            .select("*")
-            .single() as { data: GameRow | null; error: { message: string } | null };
-
-          if (!insertErr && inserted) {
-            data = inserted;
+            ingestFoundRealGame = true;
           }
         }
       } catch (ingestErr) {
@@ -172,9 +159,11 @@ export async function GET(
       }
     }
 
-    // Last resort: stub page for valid slugs (calendar links, Twitch/IGDB missing on host, etc.)
-    // Skip when rawgId is provided — prevents creating wrong slug squatters from RAWG links.
-    if (!data && !rawgId && /^[a-z0-9-]{1,100}$/i.test(slug)) {
+    // Last resort: stub page for valid slugs (calendar links, IGDB missing, etc.)
+    // NEVER create stubs if:
+    //   - rawgId was provided (RAWG slug ≠ our slug; stub would be wrong)
+    //   - ingest already found a real game (we already have data)
+    if (!data && !rawgId && !ingestFoundRealGame && /^[a-z0-9-]{1,100}$/i.test(slug)) {
       try {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data: inserted, error: insertErr } = await (supabase.from("games") as any)
