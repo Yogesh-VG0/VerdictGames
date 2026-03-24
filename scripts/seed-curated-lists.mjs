@@ -24,8 +24,8 @@
  * 10. Hidden Gems Since 2024
  */
 
-import postgres from "postgres";
 import { startRun, finishRun } from './lib/scheduler-logger.mjs';
+import { connectDb } from './lib/db-connect.mjs';
 
 try {
   const { readFileSync } = await import("fs");
@@ -40,7 +40,7 @@ try {
   }
 } catch { /* Heroku uses Config Vars */ }
 
-const sql = postgres(process.env.DATABASE_URL, { ssl: { rejectUnauthorized: false } });
+const sql = connectDb("seed-curated-lists");
 
 function yearsAgoISO(years) {
   const d = new Date();

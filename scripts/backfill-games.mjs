@@ -23,9 +23,9 @@
  * Required env: DATABASE_URL, RAWG_API_KEY, CRON_SECRET, API_URL or NEXT_PUBLIC_SITE_URL
  */
 
-import postgres from "postgres";
 import { readFileSync, writeFileSync, existsSync } from "fs";
 import { startRun, finishRun, acquireLock, releaseLock } from './lib/scheduler-logger.mjs';
+import { connectDb } from './lib/db-connect.mjs';
 
 // ── Load .env for local dev ──
 try {
@@ -71,7 +71,7 @@ const MIN_RATINGS_COUNT  = 20;
 if (!RAWG_KEY) { console.error("✗ RAWG_API_KEY not set"); process.exit(1); }
 if (!CRON_SECRET && !DRY_RUN) { console.error("✗ CRON_SECRET not set"); process.exit(1); }
 
-const sql = postgres(process.env.DATABASE_URL, { ssl: { rejectUnauthorized: false } });
+const sql = connectDb("backfill-games");
 
 // ── Helpers ──
 

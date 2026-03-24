@@ -1,0 +1,73 @@
+/**
+ * Shared database connection helper for scheduler scripts.
+ *
+ * Resolves DATABASE_URL from multiple sources:
+ *   1. DATABASE_URL env var (standard Heroku Postgres or explicit Supabase URI)
+ *   2. SUPABASE_DB_URL env var (explicit Supabase pooler URI)
+ *   3. Falls back to constructing from NEXT_PUBLIC_SUPABASE_URL + SUPABASE_DB_PASSWORD
+ *
+ * NEVER silently falls back to localhost. Fails fast with a clear error.
+ */
+
+import postgres from "postgres";
+
+export function getDbUrl() {
+  // Priority 1: Explicit DATABASE_URL
+  if (process.env.DATABASE_URL) {
+    return process.env.DATABASE_URL;
+  }
+
+  // Priority 2: Explicit Supabase DB URL
+  if (process.env.SUPABASE_DB_URL) {
+    return process.env.SUPABASE_DB_URL;
+  }
+
+  // Priority 3: Construct from Supabase project URL + password
+  if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_DB_PASSWORD) {
+    const projectRef = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).hostname.split(".")[0];
+    const password = process.env.SUPABASE_DB_PASSWORD;
+    // Use the transaction pooler (port 6543) for short-lived connections like schedulers
+    return `postgresql://postgres.${projectRef}:${password}@aws-0-eu-central-1.pooler.supabase.com:6543/postgres`;
+  }
+
+  return null;
+}
+
+/**
+ * Create a postgres connection with proper error handling.
+ * Fails immediately if no DATABASE_URL can be resolved.
+ */
+export function connectDb(scriptName = "scheduler") {
+  const dbUrl = getDbUrl();
+
+  if (!dbUrl) {
+    console.error("═══════════════════════════════════════════");
+    console.error(`  ❌ FATAL: No database connection URL found`);
+    console.error(`  Script: ${scriptName}`);
+    console.error("");
+    console.error("  Expected one of these Heroku Config Vars:");
+    console.error("    DATABASE_URL           — Full Postgres connection string");
+    console.error("    SUPABASE_DB_URL        — Supabase pooler connection string");
+    console.error("");
+    console.error("  You can find this in:");
+    console.error("    Supabase Dashboard → Project Settings → Database → Connection string → URI");
+    console.error("");
+    console.error("  Current env vars available:");
+    console.error(`    DATABASE_URL:           ${process.env.DATABASE_URL ? "SET" : "NOT SET"}`);
+    console.error(`    SUPABASE_DB_URL:        ${process.env.SUPABASE_DB_URL ? "SET" : "NOT SET"}`);
+    console.error(`    NEXT_PUBLIC_SUPABASE_URL: ${process.env.NEXT_PUBLIC_SUPABASE_URL ? "SET" : "NOT SET"}`);
+    console.error(`    SUPABASE_DB_PASSWORD:   ${process.env.SUPABASE_DB_PASSWORD ? "SET" : "NOT SET"}`);
+    console.error("═══════════════════════════════════════════");
+    process.exit(1);
+  }
+
+  // Log sanitized connection target (hostname only, no credentials)
+  try {
+    const url = new URL(dbUrl);
+    console.log(`🔗 DB target: ${url.hostname}:${url.port || 5432} (${scriptName})`);
+  } catch {
+    console.log(`🔗 DB target: [could not parse URL] (${scriptName})`);
+  }
+
+  return postgres(dbUrl, { ssl: { rejectUnauthorized: false } });
+}

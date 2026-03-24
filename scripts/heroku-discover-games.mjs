@@ -31,14 +31,14 @@ try {
   // .env not found — running on Heroku, env vars already set
 }
 
-import postgres from "postgres";
 import { startRun, finishRun } from './lib/scheduler-logger.mjs';
+import { connectDb, getDbUrl } from './lib/db-connect.mjs';
 
 const SITE_URL = process.env.SITE_URL || "https://www.verdict.games";
 const CRON_SECRET = process.env.CRON_SECRET || "";
 const DEEP = process.argv.includes("--deep");
 
-const sql = process.env.DATABASE_URL ? postgres(process.env.DATABASE_URL, { ssl: { rejectUnauthorized: false } }) : null;
+const sql = getDbUrl() ? connectDb("discover-games") : null;
 
 const start = Date.now();
 console.log("═══════════════════════════════════════════");

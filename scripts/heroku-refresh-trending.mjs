@@ -19,8 +19,8 @@
  *   CRON_SECRET, API_URL (Vercel deployment URL)
  */
 
-import postgres from "postgres";
 import { startRun, finishRun, acquireLock, releaseLock } from './lib/scheduler-logger.mjs';
+import { connectDb } from './lib/db-connect.mjs';
 
 // Load .env for local dev; Heroku has Config Vars
 try {
@@ -38,7 +38,7 @@ try {
   // .env not found — running on Heroku
 }
 
-const sql = postgres(process.env.DATABASE_URL, { ssl: { rejectUnauthorized: false } });
+const sql = connectDb("refresh-trending");
 const IGDB_BASE = "https://api.igdb.com/v4";
 const TWITCH_TOKEN_URL = "https://id.twitch.tv/oauth2/token";
 const STEAM_API = "https://api.steampowered.com/ISteamUserStats/GetNumberOfCurrentPlayers/v1";
