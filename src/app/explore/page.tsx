@@ -6,7 +6,8 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { getRawgList, type RawgListGameItem, type RawgListType } from "@/lib/api";
 import PlatformIcon from "@/components/ui/PlatformIcon";
-import { Flame, Trophy, Clock, Star, Gamepad2, ChevronRight, Users, TrendingUp } from "lucide-react";
+import { Flame, Trophy, Clock, Star, Gamepad2, Users, TrendingUp } from "lucide-react";
+import Pagination from "@/components/ui/Pagination";
 import { cn } from "@/lib/utils";
 
 const TABS = [
@@ -179,7 +180,7 @@ export default function ExplorePage() {
   const activeTabInfo = TABS.find((t) => t.id === activeTab);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
+    <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6 overflow-x-hidden">
       {/* Header */}
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold text-foreground flex items-center gap-3">
@@ -257,7 +258,7 @@ export default function ExplorePage() {
       </div>
 
       {/* Game grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-4">
         {query.isLoading ? (
           Array.from({ length: 20 }).map((_, i) => <GameCardSkeleton key={i} />)
         ) : query.data?.items.length === 0 ? (
@@ -277,28 +278,12 @@ export default function ExplorePage() {
       </div>
 
       {/* Pagination */}
-      {query.data && (query.data.hasNext || page > 1) && (
-        <div className="flex items-center justify-center gap-3 pt-4">
-          <button
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            disabled={page <= 1}
-            className="px-4 py-2 rounded-xl text-sm font-medium bg-surface border border-border text-secondary hover:text-foreground hover:border-border-hover disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-          >
-            Previous
-          </button>
-          <span className="text-sm text-secondary tabular-nums">
-            Page {page}
-            {query.data.count > 0 && ` of ${Math.ceil(query.data.count / 20)}`}
-          </span>
-          <button
-            onClick={() => setPage((p) => p + 1)}
-            disabled={!query.data.hasNext}
-            className="px-4 py-2 rounded-xl text-sm font-medium bg-surface border border-border text-secondary hover:text-foreground hover:border-border-hover disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center gap-1"
-          >
-            Next
-            <ChevronRight className="w-4 h-4" />
-          </button>
-        </div>
+      {query.data && query.data.count > 0 && (
+        <Pagination
+          currentPage={page}
+          totalPages={Math.ceil(query.data.count / 20)}
+          onPageChange={(p) => { setPage(p); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+        />
       )}
 
       {/* Attribution */}

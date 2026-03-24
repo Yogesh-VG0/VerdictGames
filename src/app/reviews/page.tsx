@@ -109,7 +109,7 @@ export default function ReviewsPage() {
   });
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-6 space-y-6 overflow-x-hidden">
+    <div className="max-w-[1400px] mx-auto px-4 py-6 space-y-6 overflow-x-hidden">
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
@@ -336,7 +336,7 @@ export default function ReviewsPage() {
         initial="hidden"
         animate="show"
         variants={{ show: { transition: { staggerChildren: 0.05 } } }}
-        className="space-y-4"
+        className="space-y-4 max-w-4xl"
       >
         {isLoading ? (
           Array.from({ length: 5 }).map((_, i) => (

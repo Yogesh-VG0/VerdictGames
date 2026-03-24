@@ -23,7 +23,7 @@ export default function ListDetailPage({ params }: Props) {
 
   if (isLoading) {
     return (
-      <div className="max-w-5xl mx-auto px-4 py-6 space-y-6">
+      <div className="max-w-[1400px] mx-auto px-4 py-6 space-y-6">
         <Skeleton className="h-8 w-64" />
         <Skeleton className="h-4 w-full max-w-lg" />
         <GameGridSkeleton count={6} />
@@ -85,7 +85,7 @@ export default function ListDetailPage({ params }: Props) {
       </div>
 
       {/* Games grid */}
-      <GameGrid games={list.games} columns={3} />
+      <GameGrid games={list.games} columns={4} />
     </div>
   );
 }

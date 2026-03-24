@@ -323,7 +323,7 @@ function SearchContent() {
               <p className="text-xs text-tertiary mb-4">
                 Showing {allGames.length} of {totalCount} game{totalCount !== 1 ? "s" : ""}
               </p>
-              <GameGrid games={allGames} />
+              <GameGrid games={allGames} columns={5} />
 
               {/* Load more */}
               {hasMore && (
