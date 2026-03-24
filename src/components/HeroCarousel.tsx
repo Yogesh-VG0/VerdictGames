@@ -44,8 +44,8 @@ const slideVariants: Variants = {
     opacity: 0,
     scale: 0.97,
     transition: {
-      opacity: { duration: 0.5, ease: "easeIn" as const },
-      scale: { duration: 0.5, ease: "easeIn" as const },
+      opacity: { duration: 0.35, ease: "easeIn" as const },
+      scale: { duration: 0.35, ease: "easeIn" as const },
     },
   },
 };
@@ -84,7 +84,7 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
       if (isAnimating.current) return;
       isAnimating.current = true;
       setPage(([p]) => [p + newDirection, newDirection]);
-      setTimeout(() => { isAnimating.current = false; }, 1200);
+      setTimeout(() => { isAnimating.current = false; }, 600);
     },
     []
   );
@@ -94,7 +94,7 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
       if (isAnimating.current) return;
       isAnimating.current = true;
       setPage(([, ]) => [targetIndex, targetIndex > currentIndex ? 1 : -1]);
-      setTimeout(() => { isAnimating.current = false; }, 1200);
+      setTimeout(() => { isAnimating.current = false; }, 600);
     },
     [currentIndex]
   );

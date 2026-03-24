@@ -61,6 +61,7 @@ export interface Game {
   // External links
   steamUrl?: string;
   playStoreUrl?: string;
+  appStoreUrl?: string;
 
   // Metadata
   reviewCount: number;

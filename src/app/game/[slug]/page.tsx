@@ -805,6 +805,18 @@ export default function GameDetailPage({ params }: Props) {
                           <span className="text-xs text-tertiary group-hover:text-success transition-colors">→</span>
                         </a>
                       )}
+                      {game.appStoreUrl && (
+                        <a
+                          href={game.appStoreUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl border border-border bg-surface-2 text-foreground hover:border-secondary hover:bg-elevated transition-all group w-full"
+                        >
+                          <Smartphone className="w-4 h-4 text-secondary" />
+                          <span className="flex-1">App Store</span>
+                          <span className="text-xs text-tertiary group-hover:text-secondary transition-colors">→</span>
+                        </a>
+                      )}
                       {game.priceDealUrl && (
                         <a
                           href={game.priceDealUrl}

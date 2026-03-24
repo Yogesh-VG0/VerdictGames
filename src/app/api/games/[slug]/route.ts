@@ -186,7 +186,31 @@ export async function GET(
       }
     }
 
-    return jsonOk(mapGameRow(data), 200, { cache: true });
+    const game = mapGameRow(data);
+
+    // Enrich with verified mobile store URLs from mobile_store_listings
+    try {
+      const { data: mobileListings } = await supabase
+        .from("mobile_store_listings")
+        .select("store, store_url")
+        .eq("game_id", data.id)
+        .eq("is_verified", true);
+
+      if (mobileListings) {
+        for (const listing of mobileListings) {
+          if (listing.store === "google_play" && listing.store_url && !game.playStoreUrl) {
+            game.playStoreUrl = listing.store_url;
+          }
+          if (listing.store === "app_store" && listing.store_url) {
+            game.appStoreUrl = listing.store_url;
+          }
+        }
+      }
+    } catch {
+      /* mobile_store_listings may not exist yet */
+    }
+
+    return jsonOk(game, 200, { cache: true });
   } catch (err) {
     console.error(`[API] /games/${slug} error:`, err);
     return jsonNotFound("Game");

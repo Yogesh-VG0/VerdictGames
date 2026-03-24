@@ -493,6 +493,17 @@ export async function ingestGame(options: IngestOptions): Promise<IngestResult> 
     );
   }
 
+  // ── Step 14: Verify mobile store listings (non-blocking) ──
+  // If RAWG says the game is on Android/iOS, try to verify via real store lookups.
+  // This runs in the background and doesn't block the ingest response.
+  const hasAndroidTag = platforms.includes("Android");
+  const hasIOSTag = platforms.includes("iOS");
+  if (hasAndroidTag || hasIOSTag) {
+    verifyMobileListings(gameId, fullGame.name, playStoreUrl, hasAndroidTag, hasIOSTag, developer).catch(
+      (err) => console.warn("[ingest] mobile verification failed:", (err as Error).message)
+    );
+  }
+
   return {
     success: true,
     gameId,
@@ -686,6 +697,209 @@ function generateSmartPros(
 
   if (pros.length === 0) pros.push("Unique gameplay concept");
   return pros.slice(0, 4);
+}
+
+/* ───────── Mobile Store Verification ───────── */
+
+/**
+ * Confidence-tiered matching for mobile store results.
+ *
+ * HIGH (auto-attach):
+ *   - Exact store URL / package name match (from RAWG), OR
+ *   - Title similarity ≥ 90%, OR
+ *   - Title similarity ≥ 80% AND developer name overlaps
+ *
+ * SKIP (never auto-attach):
+ *   - Title similarity < 80% without developer match
+ *   - Anything that looks like a different edition (HD, Lite, Free, SE, etc.)
+ *     unless our canonical title also has that suffix
+ */
+function isHighConfidenceMatch(
+  gameTitle: string,
+  gameDev: string,
+  storeTitle: string,
+  storeDev: string,
+  similarity: number,
+): boolean {
+  // Tier 1: very high title similarity — auto-accept
+  if (similarity >= 90) return true;
+
+  // Tier 2: good title similarity + developer cross-check
+  if (similarity >= 80) {
+    const devA = gameDev.toLowerCase().replace(/[^a-z0-9]/g, "");
+    const devB = storeDev.toLowerCase().replace(/[^a-z0-9]/g, "");
+    if (devA && devB && (devA.includes(devB) || devB.includes(devA))) return true;
+    // Also accept if dev names share significant tokens
+    const tokA = new Set(gameDev.toLowerCase().split(/\s+/).filter(t => t.length > 2));
+    const tokB = new Set(storeDev.toLowerCase().split(/\s+/).filter(t => t.length > 2));
+    const overlap = [...tokA].filter(t => tokB.has(t)).length;
+    if (overlap >= 1 && (tokA.size <= 3 || tokB.size <= 3)) return true;
+  }
+
+  return false;
+}
+
+/**
+ * Verify mobile store listings for a game and upsert into mobile_store_listings.
+ * Called as a non-blocking background task during ingest.
+ *
+ * Uses confidence-tiered matching:
+ * - Exact package/URL match → auto-attach
+ * - High title similarity + developer match → auto-attach
+ * - Below threshold → skip (no bad merges)
+ */
+async function verifyMobileListings(
+  gameId: string,
+  gameTitle: string,
+  playStoreUrl: string | null,
+  hasAndroid: boolean,
+  hasIOS: boolean,
+  gameDeveloper = "",
+): Promise<void> {
+  const { getServerSupabase } = await import("../supabase/server");
+  const supabase = getServerSupabase();
+
+  // ── Android verification via google-play-scraper ──
+  if (hasAndroid) {
+    try {
+      const {
+        searchGooglePlay,
+        getGooglePlayApp,
+        extractPackageName,
+        titleSimilarity,
+      } = await import("../external/googleplay");
+
+      let packageName = playStoreUrl ? extractPackageName(playStoreUrl) : null;
+      let appData = packageName ? await getGooglePlayApp(packageName) : null;
+      let matchedViaUrl = !!appData;
+
+      // If no direct package name, search by title with tiered matching
+      if (!appData) {
+        const results = await searchGooglePlay(gameTitle, 5);
+        for (const r of results) {
+          const sim = titleSimilarity(gameTitle, r.title);
+          if (isHighConfidenceMatch(gameTitle, gameDeveloper, r.title, r.developer ?? "", sim)) {
+            packageName = r.appId;
+            appData = await getGooglePlayApp(r.appId);
+            break;
+          }
+        }
+      }
+
+      if (appData && packageName) {
+        // Double-check: if matched via search (not URL), verify the store result
+        // is actually a game and not a utility app with a similar name
+        if (!matchedViaUrl && appData.genreId && !appData.genreId.startsWith("GAME")) {
+          console.warn(`[ingest] Android match for "${gameTitle}" is not a game (${appData.genreId}), skipping`);
+        } else {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          await (supabase.from("mobile_store_listings") as any).upsert(
+            {
+              game_id: gameId,
+              store: "google_play",
+              external_id: packageName,
+              store_url: appData.url,
+              title: appData.title,
+              developer: appData.developer,
+              icon_url: appData.icon,
+              header_image_url: appData.headerImage ?? null,
+              screenshots: appData.screenshots?.slice(0, 8) ?? [],
+              rating_average: appData.score,
+              rating_count: appData.ratings,
+              review_count: appData.reviews,
+              installs: appData.installs,
+              real_installs: appData.realInstalls ?? null,
+              price: appData.price,
+              currency: appData.currency,
+              is_free: appData.free,
+              offers_iap: appData.offersIAP,
+              iap_range: appData.inAppProductPrice ?? null,
+              genre: appData.genre,
+              genre_id: appData.genreId,
+              content_rating: appData.contentRating ?? null,
+              version: appData.version ?? null,
+              released_at: appData.released ?? null,
+              last_updated_at: appData.updated
+                ? new Date(appData.updated * 1000).toISOString()
+                : null,
+              is_verified: true,
+              last_verified_at: new Date().toISOString(),
+              raw_data: appData as unknown as Record<string, unknown>,
+            },
+            { onConflict: "store,external_id" }
+          );
+
+          // Also update the game's play_store_url if we found one
+          if (!playStoreUrl && appData.url) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            await (supabase.from("games") as any)
+              .update({ play_store_url: appData.url })
+              .eq("id", gameId);
+          }
+        }
+      }
+    } catch (err) {
+      console.warn("[ingest] Android verification failed:", (err as Error).message);
+    }
+  }
+
+  // ── iOS verification via Apple iTunes Search API ──
+  if (hasIOS) {
+    try {
+      const { searchAppStore } = await import("../external/appstore");
+      const { titleSimilarity } = await import("../external/googleplay");
+
+      const results = await searchAppStore(gameTitle, 5);
+
+      let bestMatch = null;
+      for (const r of results) {
+        const sim = titleSimilarity(gameTitle, r.trackName);
+        if (isHighConfidenceMatch(gameTitle, gameDeveloper, r.trackName, r.artistName ?? "", sim)) {
+          bestMatch = r;
+          break;
+        }
+      }
+
+      if (bestMatch) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (supabase.from("mobile_store_listings") as any).upsert(
+          {
+            game_id: gameId,
+            store: "app_store",
+            external_id: String(bestMatch.trackId),
+            store_url: bestMatch.trackViewUrl,
+            title: bestMatch.trackName,
+            developer: bestMatch.artistName,
+            icon_url: bestMatch.artworkUrl512 || bestMatch.artworkUrl100,
+            header_image_url: null,
+            screenshots: bestMatch.screenshotUrls?.slice(0, 8) ?? [],
+            rating_average: bestMatch.averageUserRating,
+            rating_count: bestMatch.userRatingCount,
+            review_count: 0,
+            installs: null,
+            real_installs: null,
+            price: bestMatch.price,
+            currency: bestMatch.currency,
+            is_free: bestMatch.price === 0,
+            offers_iap: false,
+            iap_range: null,
+            genre: bestMatch.primaryGenreName,
+            genre_id: null,
+            content_rating: bestMatch.contentAdvisoryRating ?? null,
+            version: bestMatch.version ?? null,
+            released_at: bestMatch.releaseDate ?? null,
+            last_updated_at: bestMatch.currentVersionReleaseDate ?? null,
+            is_verified: true,
+            last_verified_at: new Date().toISOString(),
+            raw_data: bestMatch as unknown as Record<string, unknown>,
+          },
+          { onConflict: "store,external_id" }
+        );
+      }
+    } catch (err) {
+      console.warn("[ingest] iOS verification failed:", (err as Error).message);
+    }
+  }
 }
 
 function generateSmartCons(

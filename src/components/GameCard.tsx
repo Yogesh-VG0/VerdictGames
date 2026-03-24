@@ -278,7 +278,9 @@ export default function GameCard({
             {game.title}
           </h3>
 
-          {hasRealScore(game) && <VerdictBadge label={game.verdictLabel} size="sm" />}
+          <div className="min-h-[20px]">
+            {hasRealScore(game) && <VerdictBadge label={game.verdictLabel} size="sm" />}
+          </div>
 
           <div className="flex items-center gap-1 text-[10px] text-tertiary font-medium min-h-[16px]">
             {game.genres.length > 0 ? game.genres.slice(0, 2).map((g, i) => (

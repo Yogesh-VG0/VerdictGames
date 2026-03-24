@@ -49,13 +49,13 @@ export async function GET(request: NextRequest) {
 
     // Platform filter — supports family grouping (e.g. PlayStation = PS4 + PS5)
     // Also handles friendly URL slugs like "PlayStation" or "Xbox" or "Switch"
+    // For Android/iOS: uses verified mobile_store_listings instead of RAWG platform tags.
     if (platform && platform !== "All") {
       const PLATFORM_FAMILIES: Record<string, string[]> = {
         "PlayStation 5": ["PlayStation 5", "PlayStation 4"],
         "Xbox Series X|S": ["Xbox Series X|S", "Xbox One"],
         "Nintendo Switch": ["Nintendo Switch", "Nintendo Switch 2"],
       };
-      // Friendly aliases for hand-edited URLs
       const PLATFORM_ALIASES: Record<string, string> = {
         "playstation": "PlayStation 5",
         "ps5": "PlayStation 5",
@@ -66,11 +66,37 @@ export async function GET(request: NextRequest) {
         "macos": "macOS",
       };
       const resolved = PLATFORM_ALIASES[platform.toLowerCase()] ?? platform;
-      const family = PLATFORM_FAMILIES[resolved];
-      if (family) {
-        query = query.or(family.map(p => `platforms.cs.{${p}}`).join(","));
+
+      // Mobile platforms: require a verified store listing, not just a RAWG tag
+      const MOBILE_STORE_MAP: Record<string, string> = {
+        "Android": "google_play",
+        "iOS": "app_store",
+      };
+      const storeName = MOBILE_STORE_MAP[resolved];
+
+      if (storeName) {
+        // Subquery: only games with a verified mobile_store_listings row
+        const { data: verifiedIds } = await supabase
+          .from("mobile_store_listings")
+          .select("game_id")
+          .eq("store", storeName)
+          .eq("is_verified", true);
+
+        if (verifiedIds && verifiedIds.length > 0) {
+          const ids = verifiedIds.map((r: { game_id: string }) => r.game_id);
+          query = query.in("id", ids);
+        } else {
+          // No verified listings yet — fall back to platforms array
+          // (graceful degradation until backfill runs)
+          query = query.contains("platforms", [resolved]);
+        }
       } else {
-        query = query.contains("platforms", [resolved]);
+        const family = PLATFORM_FAMILIES[resolved];
+        if (family) {
+          query = query.or(family.map(p => `platforms.cs.{${p}}`).join(","));
+        } else {
+          query = query.contains("platforms", [resolved]);
+        }
       }
     }
 
