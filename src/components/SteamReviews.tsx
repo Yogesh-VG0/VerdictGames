@@ -47,8 +47,8 @@ function ReviewCard({ review }: { review: SteamPlayerReview }) {
         </span>
       </div>
 
-      {/* Review text */}
-      <p className="text-sm text-secondary leading-relaxed line-clamp-6">
+      {/* Review text — fixed height for consistent card sizing across pagination */}
+      <p className="text-sm text-secondary leading-relaxed line-clamp-6 min-h-[8.5rem]">
         {review.reviewText}
       </p>
 

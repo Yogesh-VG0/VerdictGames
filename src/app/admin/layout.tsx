@@ -3,7 +3,7 @@
 import { useAuth } from "@/hooks/useAuth";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { isAdminEmail } from "@/lib/adminEmails";
 import { LayoutDashboard, Gamepad2, FileText, Users } from "lucide-react";
@@ -19,40 +19,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const { user, loading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
-  const [authChecked, setAuthChecked] = useState(false);
-  const [denied, setDenied] = useState(false);
 
+  // Redirect non-admin users once auth has fully resolved
   useEffect(() => {
-    // Don't check until auth has fully resolved
     if (loading) return;
-
-    // Once loading is done, wait a generous amount for Supabase session restore
-    // On refresh, Supabase may take 200-500ms to restore the session from cookies
-    const timer = setTimeout(() => {
-      setAuthChecked(true);
-      if (!user || !isAdminEmail(user.email)) {
-        setDenied(true);
-      }
-    }, 500);
-
-    return () => clearTimeout(timer);
-  }, [user, loading]);
-
-  // Also react when user becomes available after authChecked
-  useEffect(() => {
-    if (authChecked && user && isAdminEmail(user.email)) {
-      setDenied(false);
-    }
-  }, [user, authChecked]);
-
-  // Redirect only when we're sure auth is denied
-  useEffect(() => {
-    if (denied && authChecked) {
+    if (!user || !isAdminEmail(user.email)) {
       router.replace("/");
     }
-  }, [denied, authChecked, router]);
+  }, [user, loading, router]);
 
-  if (!authChecked || loading) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="animate-pulse text-secondary">Loading admin panel...</div>
@@ -60,7 +36,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     );
   }
 
-  if (denied || !user || !isAdminEmail(user.email)) {
+  if (!user || !isAdminEmail(user.email)) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center space-y-4">

@@ -104,15 +104,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!supabase) { setLoading(false); return; }
 
-    // Check initial session
-    supabase.auth.getUser().then(({ data: { user: authUser } }) => {
-      if (authUser) {
-        fetchProfile(authUser.id, authUser.email ?? "");
+    // Use getSession() for instant local check (reads from storage, no network call).
+    // Then await fetchProfile before clearing loading so user is populated first.
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (session?.user) {
+        await fetchProfile(session.user.id, session.user.email ?? "");
       }
       setLoading(false);
     });
 
-    // Listen for auth changes
+    // Listen for auth changes (sign in, sign out, token refresh)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
         fetchProfile(session.user.id, session.user.email ?? "");

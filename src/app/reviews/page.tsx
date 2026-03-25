@@ -50,7 +50,7 @@ function SteamReviewCard({ review }: { review: SteamPlayerReview }) {
         </div>
         <span className="text-[10px] text-tertiary">{formatPlaytime(review.playtimeAtReview)} at review</span>
       </div>
-      <p className="text-sm text-secondary leading-relaxed line-clamp-6">{review.reviewText}</p>
+      <p className="text-sm text-secondary leading-relaxed line-clamp-6 min-h-[8.5rem]">{review.reviewText}</p>
       <div className="flex items-center gap-3 text-[10px] text-tertiary">
         {review.votesUp > 0 && <span>{review.votesUp} found helpful</span>}
         {review.authoredAt && (
