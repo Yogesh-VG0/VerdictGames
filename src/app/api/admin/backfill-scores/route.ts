@@ -37,17 +37,28 @@ export async function POST() {
 
   const supabase = getServerSupabase();
 
-  // Fetch ALL games — we need to recompute scores for every row
-  const { data: games, error } = await supabase
-    .from("games")
-    .select("id, title, score, score_source, review_count, igdb_rating, rawg_metacritic, rawg_rating, steam_app_id, steam_positive_count, steam_total_count, release_date, verdict_label")
-    .order("id");
+  // Fetch ALL games — paginate to bypass Supabase's default 1000 row limit
+  const PAGE_SIZE = 1000;
+  const games: any[] = [];
+  let from = 0;
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  while (true) {
+    const { data, error } = await supabase
+      .from("games")
+      .select("id, title, score, score_source, review_count, igdb_rating, rawg_metacritic, rawg_rating, steam_app_id, steam_positive_count, steam_total_count, release_date, verdict_label")
+      .order("id")
+      .range(from, from + PAGE_SIZE - 1);
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    if (!data || data.length === 0) break;
+    games.push(...data);
+    if (data.length < PAGE_SIZE) break; // last page
+    from += PAGE_SIZE;
   }
 
-  if (!games || games.length === 0) {
+  if (games.length === 0) {
     return NextResponse.json({ message: "No games found", updated: 0 });
   }
 
