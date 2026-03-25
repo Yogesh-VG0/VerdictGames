@@ -451,15 +451,17 @@ export interface HomepageData {
   topRated: Game[];
   newReleases: Game[];
   deals: GXDeal[];
+  recommendations: Game[];  // anonymous recommendations — avoids extra API call
 }
 
 export async function fetchHomepageData(): Promise<HomepageData> {
-  const [hero, trending, topRated, newReleases, deals] = await Promise.all([
+  const [hero, trending, topRated, newReleases, deals, recommendations] = await Promise.all([
     fetchHeroCandidates(12).catch(() => [] as Game[]),
     fetchTrendingGames(26, true).catch(() => [] as Game[]),
     fetchHomepageTopRated(20).catch(() => [] as Game[]),
     fetchNewReleases(20).catch(() => [] as Game[]),
     fetchDeals().catch(() => [] as GXDeal[]),
+    fetchHomepageRecommendations(20).catch(() => [] as Game[]),
   ]);
 
   // Pre-deduplicate trending rail against hero pool
@@ -467,5 +469,5 @@ export async function fetchHomepageData(): Promise<HomepageData> {
   const heroTopIds = new Set(hero.slice(0, 4).map((g) => g.id));
   const trendingDeduped = trending.filter((g) => !heroTopIds.has(g.id));
 
-  return { hero, trending: trendingDeduped, topRated, newReleases, deals };
+  return { hero, trending: trendingDeduped, topRated, newReleases, deals, recommendations };
 }

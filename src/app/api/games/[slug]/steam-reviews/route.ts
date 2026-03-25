@@ -18,7 +18,7 @@ export async function GET(
   const { slug } = await params;
   const limit = Math.min(
     parseInt(request.nextUrl.searchParams.get("limit") ?? "3", 10),
-    20
+    21
   );
 
   try {
@@ -76,7 +76,7 @@ export async function GET(
     }
 
     // Fetch fresh from Steam API
-    const steamUrl = `${STEAM_REVIEWS_API}/${game.steam_app_id}?json=1&language=english&filter=all&review_type=all&purchase_type=all&num_per_page=20&filter_offtopic_activity=1`;
+    const steamUrl = `${STEAM_REVIEWS_API}/${game.steam_app_id}?json=1&language=english&filter=all&review_type=all&purchase_type=all&num_per_page=21&filter_offtopic_activity=1`;
 
     const res = await fetch(steamUrl, {
       signal: AbortSignal.timeout(10000),

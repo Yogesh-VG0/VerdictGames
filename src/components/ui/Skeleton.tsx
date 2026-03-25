@@ -76,18 +76,39 @@ export function ReviewCardSkeleton() {
   );
 }
 
-/** Hero banner skeleton. */
+/** Hero banner skeleton — matches HeroCarousel layout. */
 export function HeroSkeleton() {
   return (
     <div className="relative rounded-2xl border border-border bg-surface overflow-hidden">
-      <Skeleton className="aspect-[16/9] md:aspect-[21/9] w-full min-h-[300px] md:min-h-[480px] lg:min-h-[560px]" />
-      <div className="absolute bottom-0 left-0 right-0 p-6 md:p-10 space-y-3">
-        <Skeleton className="h-8 w-64 rounded-xl" />
-        <Skeleton className="h-4 w-96 max-w-full rounded-lg" />
-        <div className="flex gap-2">
-          <Skeleton className="h-10 w-32 rounded-xl" />
-          <Skeleton className="h-10 w-24 rounded-xl" />
+      <Skeleton className="w-full min-h-[400px] md:min-h-[520px] lg:min-h-[580px] rounded-none" />
+      {/* Bottom gradient overlay feel */}
+      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent">
+        <div className="px-6 md:px-10 pb-8 md:pb-12 pt-24 space-y-4">
+          {/* Platform badges */}
+          <div className="flex gap-2">
+            <Skeleton className="h-7 w-20 rounded-lg bg-white/10" />
+            <Skeleton className="h-7 w-20 rounded-lg bg-white/10" />
+            <Skeleton className="h-7 w-24 rounded-lg bg-white/10" />
+          </div>
+          {/* Title */}
+          <Skeleton className="h-10 md:h-14 w-96 max-w-[70%] rounded-xl bg-white/10" />
+          {/* Subtitle / verdict */}
+          <div className="flex items-center gap-3">
+            <Skeleton className="w-14 h-14 rounded-full bg-white/10 shrink-0" />
+            <div className="space-y-2">
+              <Skeleton className="h-5 w-24 rounded-full bg-white/10" />
+              <Skeleton className="h-3 w-64 max-w-full rounded-lg bg-white/10" />
+            </div>
+          </div>
+          {/* CTA */}
+          <Skeleton className="h-10 w-36 rounded-xl bg-white/10" />
         </div>
+      </div>
+      {/* Dot indicators */}
+      <div className="absolute bottom-3 right-6 flex gap-1.5">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <Skeleton key={i} className={cn("w-2 h-2 rounded-full", i === 0 ? "bg-white/40 w-6" : "bg-white/15")} />
+        ))}
       </div>
     </div>
   );

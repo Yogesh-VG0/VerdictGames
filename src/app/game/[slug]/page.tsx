@@ -244,32 +244,63 @@ export default function GameDetailPage({ params }: Props) {
   if (isLoading) {
     return (
       <div className="space-y-0">
-        <Skeleton className="w-full aspect-[21/9] md:aspect-[3/1] min-h-[200px] md:min-h-[360px]" />
-        <div className="max-w-6xl mx-auto px-4 -mt-16 relative z-10 space-y-6 pb-12">
-          <div className="flex items-end gap-4">
-            <Skeleton className="w-20 h-20 rounded-2xl shrink-0" />
-            <div className="flex-1 space-y-2">
-              <Skeleton className="h-8 w-64 rounded-lg" />
-              <Skeleton className="h-4 w-96 max-w-full rounded-lg" />
-            </div>
-          </div>
-          <div className="flex gap-3">
-            <Skeleton className="h-10 w-36 rounded-xl" />
-            <Skeleton className="h-10 w-28 rounded-xl" />
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="md:col-span-2 space-y-6">
-              <div className="rounded-2xl border border-border bg-surface p-5 space-y-3">
-                <Skeleton className="h-5 w-32 rounded-lg" />
-                <Skeleton className="h-4 w-full rounded-lg" />
-                <Skeleton className="h-4 w-full rounded-lg" />
-                <Skeleton className="h-4 w-3/4 rounded-lg" />
+        <section className="relative">
+          <Skeleton className="w-full h-[50vh] md:h-[60vh] min-h-[320px] max-h-[600px] rounded-none" />
+          <div className="absolute bottom-0 left-0 right-0">
+            <div className="max-w-6xl mx-auto px-4 pb-8 md:pb-12 space-y-3">
+              <div className="flex gap-2">
+                <Skeleton className="h-7 w-20 rounded-lg" />
+                <Skeleton className="h-7 w-20 rounded-lg" />
               </div>
-              <Skeleton className="aspect-video w-full rounded-2xl" />
+              <Skeleton className="h-10 md:h-14 w-80 max-w-full rounded-xl" />
+              <Skeleton className="h-4 w-64 rounded-lg" />
             </div>
-            <div className="space-y-4">
+          </div>
+        </section>
+        <div className="max-w-[1400px] mx-auto px-4 py-8">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <div className="lg:col-span-8 space-y-8">
+              <div className="rounded-2xl border border-border bg-surface overflow-hidden">
+                <div className="p-5 md:p-6">
+                  <div className="flex items-start gap-5">
+                    <Skeleton className="w-[72px] h-[72px] sm:w-[88px] sm:h-[88px] rounded-xl shrink-0" />
+                    <div className="flex-1 space-y-2">
+                      <Skeleton className="h-6 w-28 rounded-full" />
+                      <Skeleton className="h-4 w-full rounded-lg" />
+                      <Skeleton className="h-4 w-3/4 rounded-lg" />
+                    </div>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 divide-x divide-border/30">
+                  {[0, 1].map((col) => (
+                    <div key={col} className="p-5 space-y-2.5">
+                      <Skeleton className="h-4 w-24 rounded-lg" />
+                      <Skeleton className="h-3 w-full rounded" />
+                      <Skeleton className="h-3 w-5/6 rounded" />
+                    </div>
+                  ))}
+                </div>
+              </div>
               <div className="rounded-2xl border border-border bg-surface p-5 space-y-3">
-                <Skeleton className="h-5 w-24 rounded-lg" />
+                <Skeleton className="h-4 w-24 rounded-lg" />
+                <Skeleton className="h-3 w-full rounded" />
+                <Skeleton className="h-3 w-full rounded" />
+                <Skeleton className="h-3 w-3/4 rounded" />
+              </div>
+              <div className="rounded-2xl border border-border bg-surface p-5 space-y-3">
+                <Skeleton className="h-4 w-16 rounded-lg" />
+                <Skeleton className="aspect-video w-full rounded-xl" />
+              </div>
+            </div>
+            <div className="lg:col-span-4 space-y-6">
+              <Skeleton className="h-12 w-full rounded-xl" />
+              <div className="rounded-2xl border border-border bg-surface p-5 space-y-3">
+                <Skeleton className="h-4 w-28 rounded-lg" />
+                <Skeleton className="h-12 w-full rounded-xl" />
+                <Skeleton className="h-12 w-full rounded-xl" />
+              </div>
+              <div className="rounded-2xl border border-border bg-surface p-5 space-y-3">
+                <Skeleton className="h-4 w-16 rounded-lg" />
                 {Array.from({ length: 5 }).map((_, i) => (
                   <div key={i} className="flex justify-between">
                     <Skeleton className="h-3 w-20 rounded" />

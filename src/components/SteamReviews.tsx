@@ -140,7 +140,7 @@ export default function SteamReviews({ slug, className }: SteamReviewsProps) {
 
   const { data, isLoading } = useQuery({
     queryKey: ["steam-reviews", slug],
-    queryFn: () => getSteamReviews(slug, 20),
+    queryFn: () => getSteamReviews(slug, 21),
     staleTime: 30 * 60 * 1000,
   });
 
@@ -188,9 +188,15 @@ export default function SteamReviews({ slug, className }: SteamReviewsProps) {
         )}
       </div>
 
-      {pageReviews.map((review) => (
-        <ReviewCard key={review.recommendationId} review={review} />
-      ))}
+      {/* Always render REVIEWS_PER_PAGE slots to prevent container height changes */}
+      <div className="space-y-3">
+        {Array.from({ length: REVIEWS_PER_PAGE }).map((_, i) => {
+          const review = pageReviews[i];
+          if (review) return <ReviewCard key={review.recommendationId} review={review} />;
+          // Invisible spacer matching card height so container never shrinks
+          return <div key={`spacer-${i}`} className="rounded-xl border border-transparent p-4 space-y-3 invisible"><p className="text-sm leading-relaxed min-h-[8.5rem]" /></div>;
+        })}
+      </div>
 
       <NumberedPagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
 

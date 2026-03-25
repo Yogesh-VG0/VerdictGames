@@ -7,7 +7,6 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import {
   getHomepageData,
-  getPersonalizedGames,
   getRecommendations,
   getGXPopularNews,
   getGXNewsFeed,
@@ -88,12 +87,19 @@ export default function HomePage() {
   // heroIds used to prevent the same game appearing in the trending rail
   // (server deduplicates hero top-4 already; this catches the carousel pick)
   const heroIds = new Set(featured.map((g) => g.id));
+  // For anonymous users, recommendations are already in the homepage aggregator (no extra API call).
+  // For logged-in users, fetch personalized recommendations via separate call.
   const personalized = useQuery({
-    queryKey: ["personalized", !!user, trending.data?.length],
-    queryFn: () => (user ? getRecommendations(20) : getPersonalizedGames(20, trending.data ?? undefined)),
-    enabled: !!user || !!trending.data,
+    queryKey: ["personalized", !!user],
+    queryFn: () => getRecommendations(20),
+    enabled: !!user,
     staleTime: 5 * 60 * 1000,
   });
+  // Merged: use personalized data for logged-in users, aggregator data for anonymous
+  const recommendedGames = user
+    ? personalized.data
+    : homepage.data?.recommendations;
+  const recommendedLoading = user ? personalized.isLoading : homepage.isLoading;
   const gxFreeToPlay = useQuery({
     queryKey: ["gx-free-to-play"],
     queryFn: () => getGXFreeToPlay(),
@@ -258,12 +264,12 @@ export default function HomePage() {
       <section className="py-12 sm:py-16">
         <div className="max-w-[1400px] mx-auto px-4">
           <FadeInSection>
-            {personalized.isLoading ? (
+            {recommendedLoading ? (
               <>
                 <SectionHeaderSkeleton />
                 <HorizontalScrollSkeleton count={6} />
               </>
-            ) : personalized.data && personalized.data.length > 0 ? (
+            ) : recommendedGames && recommendedGames.length > 0 ? (
               <>
                 <SectionHeader
                   title={user ? "Recommended For You" : "You Might Enjoy"}
@@ -272,7 +278,7 @@ export default function HomePage() {
                   gradient="linear-gradient(90deg, #a855f7 0%, #6366f1 25%, #ec4899 50%, #a855f7 75%, #6366f1 100%)"
                 />
                 <HorizontalScroll>
-                  {personalized.data.map((game, i) => (
+                  {recommendedGames.map((game, i) => (
                     <div key={game.id} className={CARD_WIDTH}>
                       <motion.div
                         initial={{ opacity: 0, y: 20 }}

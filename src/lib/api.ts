@@ -109,12 +109,13 @@ export interface HomepageData {
   topRated: Game[];
   newReleases: Game[];
   deals: GXDeal[];
+  recommendations: Game[];  // anonymous recommendations — bundled to avoid extra API call
 }
 
 /** Fetch all homepage sections in a single call. */
 export async function getHomepageData(): Promise<HomepageData> {
   const data = await apiFetch<HomepageData>("/api/homepage");
-  return data ?? { hero: [], trending: [], topRated: [], newReleases: [], deals: [] };
+  return data ?? { hero: [], trending: [], topRated: [], newReleases: [], deals: [], recommendations: [] };
 }
 
 /** Search games with filters and pagination. */
