@@ -27,55 +27,60 @@
    - [GX Corner APIs (8 feeds)](#77-gx-corner-apis)
 8. [Backend — API Routes](#8-backend--api-routes)
    - [Auth Routes](#81-auth-routes)
-   - [Game Routes](#82-game-routes)
-   - [Discovery / Search / Recommendations Routes](#83-discovery--search--recommendations-routes)
-   - [Review Routes (Reviews, Votes, Comments)](#84-review-routes-reviews-votes-comments)
-   - [List Routes](#85-list-routes)
-   - [Profile Routes](#86-profile-routes)
-   - [Library Routes](#87-library-routes)
-   - [Social Routes (Follows)](#88-social-routes-follows)
-   - [Calendar Routes](#89-calendar-routes)
-   - [Compare Routes](#810-compare-routes)
-   - [Developer Routes](#811-developer-routes)
-   - [Ingestion Routes](#812-ingestion-routes)
-   - [Cron Routes](#813-cron-routes)
-   - [GX Corner Proxy Routes](#814-gx-corner-proxy-routes)
-   - [Admin Routes](#815-admin-routes)
-9. [Ingestion Pipeline](#9-ingestion-pipeline)
-10. [Frontend — Pages](#10-frontend--pages)
-    - [Home Page](#101-home-page)
-    - [Game Detail Page](#102-game-detail-page)
-    - [Search Page](#103-search-page)
-    - [Reviews Page](#104-reviews-page)
-    - [Lists Page](#105-lists-page)
-    - [Profile Page](#106-profile-page)
-    - [Library Page](#107-library-page)
-    - [Compare Page](#108-compare-page)
-    - [Release Calendar Page](#109-release-calendar-page)
-    - [Developer Hub Page](#1010-developer-hub-page)
-    - [Static Pages (About, Privacy, Terms)](#1011-static-pages)
-    - [Admin Dashboard](#1012-admin-dashboard)
-11. [Frontend — Components](#11-frontend--components)
-    - [Layout Components](#111-layout-components)
-    - [Display Components](#112-display-components)
-    - [UI Primitives](#113-ui-primitives)
-    - [GX Corner Components](#114-gx-corner-components)
-12. [Design System](#12-design-system)
-    - [Color Tokens](#121-color-tokens)
-    - [Typography](#122-typography)
-    - [Animations & Transitions](#123-animations--transitions)
-    - [Visual Effects](#124-visual-effects)
-13. [State Management & Data Fetching](#13-state-management--data-fetching)
-14. [Theming (Dark / Light Mode)](#14-theming-dark--light-mode)
-15. [Client-Side API Layer](#15-client-side-api-layer)
-16. [TypeScript Types](#16-typescript-types)
-17. [Utility Functions](#17-utility-functions)
-18. [Scripts](#18-scripts)
-19. [SEO & Metadata](#19-seo--metadata)
-20. [Deployment](#20-deployment)
-21. [Security](#21-security)
-22. [Scoring Algorithm](#22-scoring-algorithm)
-23. [Complete File Reference](#23-complete-file-reference)
+   - [Homepage Aggregator](#82-homepage-aggregator)
+   - [Game Routes](#83-game-routes)
+   - [Discovery / Search / Recommendations Routes](#84-discovery--search--recommendations-routes)
+   - [Review Routes](#85-review-routes-reviews-votes-comments)
+   - [List Routes](#86-list-routes)
+   - [Profile Routes](#87-profile-routes)
+   - [Library Routes](#88-library-routes)
+   - [Social Routes (Follows)](#89-social-routes-follows)
+   - [Calendar Routes](#810-calendar-routes)
+   - [Compare Routes](#811-compare-routes)
+   - [Developer Routes](#812-developer-routes)
+   - [Ingestion Routes](#813-ingestion-routes)
+   - [Cron Routes](#814-cron-routes)
+   - [GX Corner Proxy Routes](#815-gx-corner-proxy-routes)
+   - [RAWG Curated Lists](#816-rawg-curated-lists)
+   - [Admin Routes](#817-admin-routes)
+9. [Service Layer](#9-service-layer)
+10. [Ingestion Pipeline](#10-ingestion-pipeline)
+11. [Frontend — Pages](#11-frontend--pages)
+    - [Home Page](#111-home-page)
+    - [Game Detail Page](#112-game-detail-page)
+    - [Search Page](#113-search-page)
+    - [Reviews Page](#114-reviews-page)
+    - [Lists Page](#115-lists-page)
+    - [Profile Page](#116-profile-page)
+    - [Library Page](#117-library-page)
+    - [Compare Page](#118-compare-page)
+    - [Release Calendar Page](#119-release-calendar-page)
+    - [Developer Hub Page](#1110-developer-hub-page)
+    - [Explore Page](#1111-explore-page)
+    - [Static Pages (About, Privacy, Terms)](#1112-static-pages)
+    - [Admin Dashboard](#1113-admin-dashboard)
+12. [Frontend — Components](#12-frontend--components)
+    - [Layout Components](#121-layout-components)
+    - [Display Components](#122-display-components)
+    - [UI Primitives](#123-ui-primitives)
+    - [GX Corner Components](#124-gx-corner-components)
+13. [Design System](#13-design-system)
+    - [Color Tokens](#131-color-tokens)
+    - [Typography](#132-typography)
+    - [Animations & Transitions](#133-animations--transitions)
+    - [Visual Effects](#134-visual-effects)
+14. [State Management & Data Fetching](#14-state-management--data-fetching)
+15. [Theming (Dark / Light Mode)](#15-theming-dark--light-mode)
+16. [Client-Side API Layer](#16-client-side-api-layer)
+17. [TypeScript Types](#17-typescript-types)
+18. [Utility Functions](#18-utility-functions)
+19. [Scripts](#19-scripts)
+20. [SEO & Metadata](#20-seo--metadata)
+21. [Deployment](#21-deployment)
+22. [Security](#22-security)
+23. [Scoring Algorithm](#23-scoring-algorithm)
+24. [Complete File Reference](#24-complete-file-reference)
+25. [Recent Changes Log](#25-recent-changes-log)
 
 ---
 
@@ -196,8 +201,10 @@ verdict-games/
 │   │   │   ├── page.tsx        # Dashboard overview
 │   │   │   ├── games/
 │   │   │   │   ├── page.tsx    # Searchable game table
+│   │   │   │   ├── new/page.tsx  # Create new game
 │   │   │   │   └── [id]/page.tsx # Game editor form
-│   │   │   └── reviews/page.tsx  # Review moderation
+│   │   │   ├── reviews/page.tsx  # Review moderation
+│   │   │   └── users/page.tsx    # User management
 │   │   │
 │   │   ├── api/                # API route handlers
 │   │   │   ├── admin/
@@ -285,6 +292,22 @@ verdict-games/
 │   │   │   ├── loading.tsx
 │   │   │   └── page.tsx
 │   │   │
+│   │   ├── explore/                         # Explore page (RAWG curated lists)
+│   │   │   └── page.tsx
+│   │   │
+│   │   ├── library/                         # User library page
+│   │   │   └── page.tsx
+│   │   │
+│   │   ├── compare/                         # Game comparison page
+│   │   │   └── page.tsx
+│   │   │
+│   │   ├── calendar/                        # Release calendar page
+│   │   │   └── page.tsx
+│   │   │
+│   │   ├── developers/[slug]/              # Developer hub page
+│   │   │   └── page.tsx
+│   │   │
+│   │   ├── settings/page.tsx                # User settings page
 │   │   ├── about/page.tsx                   # About page
 │   │   ├── privacy/page.tsx                 # Privacy policy
 │   │   └── terms/page.tsx                   # Terms of service
@@ -641,6 +664,138 @@ Helpful/unhelpful voting on reviews. Values are `1` or `-1`. A trigger keeps `re
 | `value` | SMALLINT | `-1` or `1` |
 | `created_at` | TIMESTAMPTZ | `now()` |
 
+#### `player_snapshots` (Migration 002)
+Hourly player count snapshots for momentum calculation.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | UUID | PRIMARY KEY |
+| `game_id` | UUID | FK → `games(id)` ON DELETE CASCADE |
+| `player_count` | INTEGER | NOT NULL, default 0 |
+| `recorded_at` | TIMESTAMPTZ | NOT NULL, default `now()` |
+
+**Index**: `(game_id, recorded_at DESC)` for efficient latest-snapshot queries.
+
+#### `steam_reviews` (Migration 012)
+Imported Steam player reviews (separate from community `reviews` table).
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | UUID | PRIMARY KEY |
+| `game_id` | UUID | FK → `games(id)` ON DELETE CASCADE |
+| `steam_app_id` | INTEGER | NOT NULL |
+| `recommendation_id` | TEXT | NOT NULL |
+| `language` | TEXT | Default `'english'` |
+| `voted_up` | BOOLEAN | NOT NULL — true = positive |
+| `review_text` | TEXT | NOT NULL |
+| `playtime_at_review` | INTEGER | Minutes at time of review |
+| `playtime_forever` | INTEGER | Total minutes played |
+| `author_steam_id` | TEXT | Nullable |
+| `authored_at` | TIMESTAMPTZ | When the review was written |
+| `votes_up` | INTEGER | Helpful votes |
+| `votes_funny` | INTEGER | Funny votes |
+| `weighted_vote_score` | REAL | Steam's quality score |
+| `steam_purchase` | BOOLEAN | Default true |
+| `received_for_free` | BOOLEAN | Default false |
+
+**Unique constraint**: `(game_id, recommendation_id)` — prevents duplicate reviews.
+
+#### `ingest_runs` (Migration 012)
+Pipeline execution history for observability.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | UUID | PRIMARY KEY |
+| `run_type` | TEXT | NOT NULL — e.g. `'discover'`, `'backfill'`, `'trending'` |
+| `status` | TEXT | Default `'running'` |
+| `started_at` | TIMESTAMPTZ | NOT NULL, default `now()` |
+| `finished_at` | TIMESTAMPTZ | Nullable |
+| `games_processed` | INTEGER | Default 0 |
+| `games_created` | INTEGER | Default 0 |
+| `games_updated` | INTEGER | Default 0 |
+| `errors` | INTEGER | Default 0 |
+| `error_details` | JSONB | Default `'[]'` |
+| `metadata` | JSONB | Default `'{}'` |
+
+#### `admin_audit_log` (Migration 009)
+Tracks all admin changes for accountability.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | UUID | PRIMARY KEY |
+| `entity_type` | TEXT | NOT NULL — `'game'`, `'review'`, `'list'`, `'profile'` |
+| `entity_id` | TEXT | NOT NULL — ID of modified entity |
+| `action` | TEXT | NOT NULL — `'create'`, `'update'`, `'delete'` |
+| `field_changes` | JSONB | Default `'{}'` — `{ field: { old, new } }` |
+| `edited_by` | TEXT | Profile ID or email of admin |
+| `edited_at` | TIMESTAMPTZ | Default `now()` |
+| `reason` | TEXT | Optional explanation |
+
+#### `mobile_store_listings`
+Verified mobile store listings for Android (Google Play) and iOS (App Store) games.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | UUID | PRIMARY KEY |
+| `game_id` | UUID | FK → `games(id)` ON DELETE CASCADE |
+| `store` | TEXT | `'google_play'` or `'app_store'` |
+| `external_id` | TEXT | Store-specific app ID |
+| `store_url` | TEXT | Full store URL |
+| `store_name` | TEXT | App name as listed in store |
+| `store_developer` | TEXT | Developer as listed in store |
+| `store_rating` | REAL | Store rating |
+| `store_rating_count` | INTEGER | Number of ratings |
+| `store_price` | TEXT | Price string |
+| `is_verified` | BOOLEAN | Default false |
+| `updated_at` | TIMESTAMPTZ | Auto-updated via trigger |
+
+**Unique constraint**: `(store, external_id)` — prevents duplicate listings.
+
+#### `scheduler_runs`
+Tracks Heroku/Vercel scheduler job executions with advisory lock support.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | UUID | PRIMARY KEY |
+| `job_name` | TEXT | NOT NULL — e.g. `'refresh-trending'`, `'re-enrich'` |
+| `status` | TEXT | `'running'`, `'completed'`, `'failed'` |
+| `started_at` | TIMESTAMPTZ | NOT NULL |
+| `finished_at` | TIMESTAMPTZ | Nullable |
+| `metadata` | JSONB | Job-specific output data |
+| `error` | TEXT | Error message if failed |
+
+**Additional `games` columns from later migrations:**
+
+| Column | Migration | Type | Notes |
+|--------|-----------|------|-------|
+| `momentum` | 002 | REAL | Log-based player count momentum |
+| `hltb_main` | 004 | NUMERIC(6,1) | Main story completion hours |
+| `hltb_extras` | 004 | NUMERIC(6,1) | Main + extras hours |
+| `hltb_completionist` | 004 | NUMERIC(6,1) | 100% completion hours |
+| `hltb_last_fetched` | 004 | TIMESTAMPTZ | When HLTB data was last fetched |
+| `franchise` | 004 | TEXT | Game franchise name |
+| `is_featured_manual` | 006 | BOOLEAN | Admin pinned to featured |
+| `is_trending_manual` | 006 | BOOLEAN | Admin pinned to trending |
+| `manual_score` | 006 | INTEGER | Admin score override |
+| `is_refreshing` | 007 | BOOLEAN | Re-enrichment lock |
+| `refresh_started_at` | 008 | TIMESTAMPTZ | Lock start time |
+| `is_provisional` | 009 | BOOLEAN | Provisional/upcoming game flag |
+| `release_status` | 009 | TEXT | Release status string |
+| `steam_positive_count` | 015 | INTEGER | Raw positive review count |
+| `steam_total_count` | 015 | INTEGER | Raw total review count |
+| `community_score` | 015 | REAL | Wilson Lower Bound × 100 |
+| `critic_score` | 015 | REAL | Normalized critic average |
+| `critic_source_count` | 015 | INTEGER | Number of critic sources |
+| `confidence` | 015 | REAL | 0.0–1.0 trust level |
+| `verdict_score` | 015 | REAL | Final blended score 0–100 |
+
+**Additional `profiles` columns:**
+
+| Column | Migration | Type | Notes |
+|--------|-----------|------|-------|
+| `auth_id` | 004 | UUID | FK → `auth.users(id)`, UNIQUE |
+| `role` | 005 | TEXT | `'user'` or `'admin'` |
+
 ### 6.2 Indexes
 
 ```
@@ -695,57 +850,132 @@ The function uses `SET search_path = ''` to prevent search_path injection attack
 
 ### 6.4 Row Level Security (RLS)
 
-RLS is enabled on **all 6 tables**. Policies:
+RLS is enabled on **all 13 tables**:
+`games`, `profiles`, `game_sources`, `reviews`, `lists`, `list_items`, `user_games`, `follows`, `review_comments`, `review_votes`, `player_snapshots`, `steam_reviews`, `ingest_runs`, `admin_audit_log`, `mobile_store_listings`, `scheduler_runs`
 
 **Read policies** (public — `FOR SELECT USING (true)`):
-- All tables permit public reads (games, profiles, reviews, lists, list_items, game_sources)
+- All tables permit public reads
 
-**Write policies** (service_role only — `TO service_role`):
-- INSERT, UPDATE, DELETE restricted to `service_role` (used only in server-side Route Handlers)
-- Anonymous and authenticated users cannot write directly to any table
- 
-**Note (migration 003)**: The current codebase adds authenticated self-management policies for user-owned tables (`user_games`, `follows`, `review_comments`, `review_votes`) and allows authenticated inserts/updates for `reviews`, `lists`, and `profiles` for the owning user. See `supabase/migrations/003_user_features.sql`.
+**Service-role write policies** (`TO service_role`):
+- Full INSERT/UPDATE/DELETE access for server-side API routes
+- Tables: `games`, `game_sources`, `reviews`, `lists`, `list_items`, `player_snapshots`, `steam_reviews`, `ingest_runs`, `admin_audit_log`, `mobile_store_listings`, `scheduler_runs`
+
+**Authenticated user self-management policies** (migration 004, optimized in 010/014):
+- `user_games` — users can insert/update/delete their own entries (scoped by `auth_profile_id()`)
+- `follows` — users can insert/delete their own follows
+- `review_comments` — users can insert/update/delete their own comments
+- `review_votes` — users can insert/update/delete their own votes
+- `reviews` — users can insert/update their own reviews
+- `lists` — users can insert/update their own lists (scoped by `owner_id`)
+- `profiles` — users can update their own profile (scoped by `auth_id = auth.uid()`)
+
+**Performance optimization** (migration 014): All user-scoped policies use `(select public.auth_profile_id())` instead of inline subqueries to prevent per-row re-evaluation.
+
+**Storage RLS** (migration 011): `avatars` bucket — authenticated upload/update, public read.
 
 ### 6.5 Migrations
 
 **Migration 001: `001_multi_source.sql`**
 - Adds 25+ columns to `games` table for multi-source enrichment:
-  - Price & deals (CheapShark + Steam)
-  - Player counts (Steam)
-  - Trailer media (IGDB/YouTube)
-  - IGDB cross-reference (rating, summary, URL)
-  - Wikipedia excerpt and URL
-  - Additional external links (Metacritic, official website, Reddit)
-  - Per-source score columns (Steam rating label, RAWG metacritic, RAWG rating, score_source)
-  - Enrichment tracking (last_enriched_at, enrichment_sources)
+  - Price & deals (CheapShark + Steam): `price_current`, `price_currency`, `price_lowest`, `price_deal_url`, `is_free`
+  - Player counts (Steam): `current_players`, `peak_players_24h`
+  - Trailer media (IGDB/YouTube): `trailer_url`, `trailer_thumbnail`
+  - IGDB cross-reference: `igdb_id`, `igdb_url`, `igdb_rating`, `igdb_summary`
+  - Wikipedia: `wikipedia_url`, `wikipedia_excerpt`
+  - Additional external links: `metacritic_url`, `website_url`, `reddit_url`
+  - CheapShark mapping: `cheapshark_id`
+  - Enrichment tracking: `last_enriched_at`, `enrichment_sources`
 - Creates 5 new partial indexes
 
-**Migration 002: `002_security_lint_fixes.sql`**
+**Migration 002: `002_player_snapshots.sql`**
+- Creates `player_snapshots` table for hourly player count snapshots (momentum calculation)
+- Adds `momentum` column (REAL, default 0) to `games` table — uses `ln(current+1) - ln(previous+1)` formula
+- Index: `idx_games_momentum`, `idx_player_snapshots_game_time`
+- RLS: public read, service_role insert/delete
+
+**Migration 003: `003_security_lint_fixes.sql`**
 - Fixes Supabase linter warnings:
   - `function_search_path_mutable` — pins `search_path = ''` on trigger function
   - `rls_policy_always_true` — rescopes service write policies to `TO service_role`
 
-**Migration 003: `003_user_features.sql`**
+**Migration 004: `004_user_features.sql`**
 - Adds Supabase Auth linkage and user features:
   - `profiles.auth_id` FK → `auth.users`
   - New tables: `user_games`, `follows`, `review_comments`, `review_votes`
   - Adds list ownership/public fields: `lists.owner_id`, `lists.is_public`
   - Adds HLTB + franchise fields to games: `hltb_main`, `hltb_extras`, `hltb_completionist`, `hltb_last_fetched`, `franchise`
-- Adds a trigger on `auth.users` to auto-create a `profiles` row on signup (`handle_new_user()`).
-- Adds a trigger to sync `reviews.helpful` from votes (`sync_review_helpful_count()`).
+- Adds a trigger on `auth.users` to auto-create a `profiles` row on signup (`handle_new_user()`)
+- Adds a trigger to sync `reviews.helpful` from votes (`sync_review_helpful_count()`)
+- Full RLS policies for user-owned tables (insert/update/delete scoped to owning user via `auth.uid()`)
 
-**Migration 004: `004_admin_role.sql`**
+**Migration 005: `005_admin_role.sql`**
 - Adds `role` column to `profiles` table (`TEXT NOT NULL DEFAULT 'user'`)
 - CHECK constraint: `role IN ('user', 'admin')`
 - Partial index: `idx_profiles_role` on `profiles(role) WHERE role = 'admin'` for fast admin lookups
 
-**Migration 005: `005_admin_overrides.sql`**
+**Migration 006: `006_admin_overrides.sql`**
 - Adds manual override fields to `games` table:
   - `is_featured_manual` (BOOLEAN, default false) — admin can pin games to Featured
   - `is_trending_manual` (BOOLEAN, default false) — admin can pin games to Trending
   - `manual_score` (INTEGER, nullable) — admin score override
 - Partial indexes on `is_featured_manual` and `is_trending_manual` for fast lookups
 - The cron `refresh-trending` preserves manual overrides when resetting algorithmic flags
+
+**Migration 007: `007_refresh_lock.sql`**
+- Adds `is_refreshing` (BOOLEAN, default false) to `games` — prevents duplicate on-demand refresh
+
+**Migration 008: `008_refresh_started_at.sql`**
+- Adds `refresh_started_at` (TIMESTAMPTZ) to `games` — lock expiry based on refresh start time
+
+**Migration 009: `009_provisional_and_audit.sql`**
+- Adds `is_provisional` (BOOLEAN, default false) and `release_status` (TEXT) to `games`
+- Creates `admin_audit_log` table for tracking admin changes:
+  - Columns: `entity_type`, `entity_id`, `action`, `field_changes` (JSONB), `edited_by`, `edited_at`, `reason`
+  - Indexes on `(entity_type, entity_id)` and `edited_at DESC`
+
+**Migration 010: `010_rls_refactor.sql`**
+- Creates `auth_profile_id()` helper function (SECURITY DEFINER, pinned search_path) — maps `auth.uid()` → `profiles.id`
+- Enables RLS on `admin_audit_log` with service_role + public read policies
+- Replaces all inline subqueries in user-scoped RLS policies with `auth_profile_id()` for performance
+
+**Migration 011: `011_storage_avatars.sql`**
+- Creates `avatars` storage bucket (public, 2MB limit, jpeg/png/webp only)
+- RLS policies: authenticated users can upload/update own avatar, public read access
+
+**Migration 012: `012_steam_reviews_and_ingest_runs.sql`**
+- Creates `steam_reviews` table for imported Steam player reviews (separate from community reviews):
+  - Columns: `game_id`, `steam_app_id`, `recommendation_id`, `language`, `voted_up`, `review_text`, `playtime_at_review`, `playtime_forever`, `author_steam_id`, `authored_at`, `votes_up`, `votes_funny`, `weighted_vote_score`, `steam_purchase`, `received_for_free`
+  - Unique on `(game_id, recommendation_id)`
+  - Indexes: `game_id`, `steam_app_id`, `(game_id, weighted_vote_score DESC)`
+- Creates `ingest_runs` table for pipeline execution history:
+  - Columns: `run_type`, `status`, `started_at`, `finished_at`, `games_processed`, `games_created`, `games_updated`, `errors`, `error_details` (JSONB), `metadata` (JSONB)
+  - Index: `(run_type, started_at DESC)`
+- RLS: public read, service_role full access on both tables
+
+**Migration 013: `013_mobile_store_listings_rls.sql`**
+- Enables RLS on `mobile_store_listings` table
+- Public read access, service_role write access
+- Note: the table itself is created via the ingest pipeline / backfill script
+
+**Migration 014: `014_comprehensive_security_fix.sql`**
+- **Critical security fix**: 9 "Service" write policies were on `{public}` role instead of `{service_role}` — any anonymous user could INSERT/UPDATE/DELETE games, profiles, reviews, lists, game_sources, list_items, admin_audit_log, steam_reviews, ingest_runs
+- Enables RLS on `scheduler_runs` table
+- Fixes mutable `search_path` on `update_msl_updated_at` and `update_updated_at_column` functions
+- Re-creates `auth_profile_id()` helper
+- Optimizes all user-scoped policies to use `(select auth_profile_id())` (prevents per-row re-evaluation)
+- Adds missing foreign key indexes: `idx_lists_owner_id`, `idx_review_comments_profile_id`, `idx_review_votes_profile_id`
+
+**Migration 015: `015_verdict_scoring.sql`**
+- Adds Verdict Scoring v2 columns to `games`:
+  - `steam_positive_count` (INTEGER) — raw positive review count for Wilson Lower Bound
+  - `steam_total_count` (INTEGER) — raw total review count
+  - `community_score` (REAL) — Wilson Lower Bound × 100, 0-100
+  - `critic_score` (REAL) — normalized average of IGDB + Metacritic, 0-100
+  - `critic_source_count` (INTEGER, default 0) — how many critic sources contributed
+  - `confidence` (REAL, default 0) — 0.0-1.0, trust level in the verdict
+  - `verdict_score` (REAL) — final blended community + critic score, 0-100
+- Indexes: `idx_games_verdict_score`, `idx_games_confidence`, `idx_games_community_score`
+- Composite index: `idx_games_verdict_confidence` on `(verdict_score DESC, confidence DESC) WHERE verdict_score IS NOT NULL`
 
 ---
 
@@ -918,7 +1148,25 @@ All API routes follow a consistent pattern:
 - OAuth callback handler. Exchanges `code` for session cookies and redirects.
 - **Security**: validates `next` is a safe relative path to prevent open redirects.
 
-### 8.2 Game Routes
+#### `POST /api/auth/bootstrap`
+- Ensures a `profiles` row exists for the authenticated Supabase user.
+- Critical for OAuth logins (Google, Discord) when DB triggers haven't been applied.
+- **Auth**: Required (returns 401 if not authenticated).
+- Creates profile from user metadata: username (sanitized), display_name, avatar_url.
+- Handles both `auth_id` (new schema) and `id` (legacy schema) profile lookups.
+- Returns: `{ created: true }` (new profile) or `{ created: false }` (already exists).
+
+### 8.2 Homepage Aggregator
+
+#### `GET /api/homepage`
+- Single aggregator endpoint that returns all homepage sections in one call.
+- Eliminates 5+ separate API calls from the frontend.
+- **ISR**: `revalidate = 60` (60-second cache).
+- Calls `fetchHomepageData()` from `src/lib/services/homepage.ts`.
+- Returns: `{ hero, trending, topRated, newReleases, deals }` — each section contains an array of mapped `Game` objects.
+- **Graceful fallback**: Returns empty arrays if Supabase is not configured or on error.
+
+### 8.3 Game Routes
 
 #### `GET /api/games/trending`
 - Returns games with `trending = true`, ordered by score descending
@@ -962,10 +1210,19 @@ All API routes follow a consistent pattern:
 - **Query params**: `limit` (default: 20, max: 100)
 - Returns: `{ title, steamAppId, total, achievements[] }` sorted by unlock % descending
 
+#### `GET /api/games/[slug]/steam-reviews`
+- Returns top Steam player reviews for a game.
+- Fetches from `steam_reviews` Supabase cache first; if stale (>24h) or empty, refreshes from Steam API.
+- **Query params**: `limit` (default: 3, max: 10)
+- **Cache strategy**: 24-hour TTL; stale cache returned if Steam API fails.
+- Upserts fetched reviews into `steam_reviews` table (conflict key: `game_id,recommendation_id`).
+- Returns: `{ reviews[], total, steamAppId, gameTitle, coverImage, source }` where source is `"cache"`, `"stale-cache"`, or `"fresh"`.
+- Each review includes: recommendationId, votedUp, reviewText, playtimeAtReview, playtimeForever, authorSteamId, authoredAt, votesUp, votesFunny, weightedVoteScore, steamPurchase.
+
 #### `GET /api/games/stats`
 - Returns site-wide counts: `{ totalGames, totalReviews, totalUsers, enrichmentSources }`
 
-### 8.3 Discovery / Search / Recommendations Routes
+### 8.4 Discovery / Search / Recommendations Routes
 
 #### `GET /api/search`
 - Full-text search across games with multi-filter support
@@ -990,7 +1247,7 @@ All API routes follow a consistent pattern:
 - **Authenticated users**: derives preferred genres from `user_games` and excludes games already in library.
 - **Query params**: `limit` (default: 8)
 
-### 8.4 Review Routes (Reviews, Votes, Comments)
+### 8.5 Review Routes (Reviews, Votes, Comments)
 
 #### `GET /api/reviews`
 - Returns the global reviews feed across all games
@@ -1019,7 +1276,7 @@ All API routes follow a consistent pattern:
 - **Auth**: Required.
 - Validates body length (1–2000).
 
-### 8.5 List Routes
+### 8.6 List Routes
 
 #### `GET /api/lists`
 - Returns all curated lists with their games
@@ -1030,14 +1287,30 @@ All API routes follow a consistent pattern:
 - Returns a single list by slug with ordered games
 - Returns 404 if not found
 
-### 8.6 Profile Routes
+### 8.7 Profile Routes
 
 #### `GET /api/profile/[username]`
-- Returns a user profile by username with stats
-- Counts reviews by `profile_id` and lists by `curated_by` username
-- Returns 404 if not found
+- Returns a user profile by username with stats.
+- Returns: libraryCount, followerCount, followingCount via parallel queries.
+- Builds real recentActivity from reviews + user_games (merged, sorted, limited to 15).
+- List count uses `owner_id`.
+- Returns 404 if not found.
 
-### 8.7 Library Routes
+#### `PATCH /api/profile/settings`
+- Updates the current user's profile fields.
+- **Auth**: Required.
+- **Allowed fields**: `display_name` (max 100 chars), `bio` (max 1000 chars), `avatar_url`, `favorite_genres` (max 20).
+- Resolves profile by `auth_id` first, falls back to legacy `id`.
+
+#### `POST /api/profile/settings`
+- Uploads a user avatar via base64 image.
+- **Auth**: Required.
+- Body: `{ avatar: "base64...", contentType: "image/png" }`
+- Validates: MIME type (JPEG/PNG/WebP only), size (max 2MB).
+- Stores in Supabase Storage `avatars` bucket, updates `avatar_url` on profile.
+- Returns: `{ avatarUrl }`
+
+### 8.8 Library Routes
 
 #### `GET /api/library`
 - Returns the current user’s `user_games` joined with full `games` rows.
@@ -1058,7 +1331,7 @@ All API routes follow a consistent pattern:
 - Computes library totals per status, totalHours, averageRating, and genreBreakdown.
 - **Auth**: Required.
 
-### 8.8 Social Routes (Follows)
+### 8.9 Social Routes (Follows)
 
 #### `POST /api/follow`
 - Follow/unfollow a user profile.
@@ -1066,27 +1339,27 @@ All API routes follow a consistent pattern:
 - Body: `{ targetProfileId, action: "follow" | "unfollow" }`
 - Prevents self-follow.
 
-### 8.9 Calendar Routes
+### 8.10 Calendar Routes
 
 #### `GET /api/calendar`
 - Release calendar query over `games.release_date`.
 - **Query params**: `month=YYYY-MM` (optional; defaults to next 3 months), `limit` (default 50).
 - Returns games ordered by release date ascending.
 
-### 8.10 Compare Routes
+### 8.11 Compare Routes
 
 #### `GET /api/compare`
 - Compare two games by slug.
 - **Query params**: `g1` (slug), `g2` (slug).
 - Returns `{ game1, game2 }` or 404 if either missing.
 
-### 8.11 Developer Routes
+### 8.12 Developer Routes
 
 #### `GET /api/developers/[slug]`
 - Developer hub data: case-insensitive match over `games.developer`.
 - Returns `{ name, slug, gameCount, averageScore, games[] }`.
 
-### 8.12 Ingestion Routes
+### 8.13 Ingestion Routes
 
 #### `POST /api/ingest/game`
 - On-demand single game ingestion
@@ -1103,7 +1376,7 @@ All API routes follow a consistent pattern:
 - Maximum 50 games per batch
 - Returns: `{ total, succeeded, failed, alreadyExisted, results[] }`
 
-### 8.13 Cron Routes
+### 8.14 Cron Routes
 
 #### `GET /api/cron/discover`
 - Auto-discovers new games from RAWG across 5 categories:
@@ -1141,7 +1414,7 @@ All API routes follow a consistent pattern:
 | `0 3 * * *` | `/api/cron/discover` | Daily game discovery at 3 AM UTC |
 | `0 3 * * 0` | `/api/cron/discover?deep=true` | Weekly deep discovery (Sundays at 3 AM UTC) |
 
-### 8.14 GX Corner Proxy Routes
+### 8.15 GX Corner Proxy Routes
 
 Server-side proxy routes for the 8 GX Corner feeds. Each route fetches from the GX Corner API via the client in `src/lib/external/gxcorner.ts` and returns the data directly. All routes use `export const revalidate = 300` for 5-minute ISR caching.
 
@@ -1158,7 +1431,19 @@ Server-side proxy routes for the 8 GX Corner feeds. Each route fetches from the 
 
 **Files**: `src/app/api/gx/highlights/route.ts`, `src/app/api/gx/calendar/route.ts`, `src/app/api/gx/free-to-play/route.ts`, `src/app/api/gx/top-games/route.ts`, `src/app/api/gx/deals/route.ts`, `src/app/api/gx/top-liked/route.ts`, `src/app/api/gx/news/popular/route.ts`, `src/app/api/gx/news/feed/route.ts`
 
-### 8.15 Admin Routes
+### 8.16 RAWG Curated Lists
+
+#### `GET /api/rawg/lists`
+- Proxy for RAWG curated list endpoints.
+- **Query params**:
+  - `type` — `best-of-year` | `popular-in-year` | `all-time` | `recent` | `genre` (required)
+  - `genre` — RAWG genre slug (required when `type=genre`)
+  - `page` — Pagination (default: 1)
+- Resolves RAWG slugs to internal DB slugs via batch lookup (falls back to RAWG slug if DB lookup fails).
+- Returns: `{ results: RawgListGameItem[], count, next, previous }` where each item has: rawgId, slug, name, backgroundImage, rating, ratingsCount, metacritic, released, added, genres[], platforms[].
+- Used by the `/explore` page and homepage "Most Anticipated" section.
+
+### 8.17 Admin Routes
 
 Protected admin API routes for managing games, reviews, and featured flags. All routes are guarded by `requireAdmin()` from `src/lib/admin.ts`, which checks the authenticated user's email against a hardcoded admin email list.
 
@@ -1172,732 +1457,430 @@ Protected admin API routes for managing games, reviews, and featured flags. All 
 | `/api/admin/reviews` | GET | List all reviews (paginated) |
 | `/api/admin/reviews` | POST | Create a new editorial review |
 | `/api/admin/reviews` | DELETE | Delete a review by ID |
-| `/api/admin/featured` | POST | Toggle `featured` / `trending` flags on a game |
+| `/api/admin/featured` | POST | Toggle `is_featured_manual` or `is_trending_manual` on a game |
+| `/api/admin/games/[id]/delete` | DELETE | Permanently deletes a game and all related records. |
+| `/api/admin/audit` | GET | Returns the latest 50 entries from `admin_audit_log`, ordered by `edited_at` DESC. |
+| `/api/admin/users` | GET | Paginated list of user profiles with aggregated counts. |
+| `/api/admin/backfill-scores` | POST | Recomputes v2 scores (community_score, critic_score, confidence, verdict_score) for all games. |
+| `/api/admin/seed-lists` | POST | Seeds 12 editorial curated lists. |
+| `/api/admin/seed-lists` | GET | Returns metadata about available seed list definitions. |
 
-**Auth**: All routes return `401` (not authenticated) or `403` (not admin) if the user lacks admin access.
-
-**Files**: `src/app/api/admin/stats/route.ts`, `src/app/api/admin/games/route.ts`, `src/app/api/admin/games/[id]/route.ts`, `src/app/api/admin/games/[id]/ingest/route.ts`, `src/app/api/admin/reviews/route.ts`, `src/app/api/admin/featured/route.ts`
+**Files**: `src/app/api/admin/stats/route.ts`, `src/app/api/admin/games/route.ts`, `src/app/api/admin/games/[id]/route.ts`, `src/app/api/admin/games/[id]/ingest/route.ts`, `src/app/api/admin/games/[id]/delete/route.ts`, `src/app/api/admin/reviews/route.ts`, `src/app/api/admin/featured/route.ts`, `src/app/api/admin/audit/route.ts`, `src/app/api/admin/users/route.ts`, `src/app/api/admin/backfill-scores/route.ts`, `src/app/api/admin/seed-lists/route.ts`
 
 ---
 
-## 9. Ingestion Pipeline
+## 9. Service Layer
+
+### `src/lib/services/ingest.ts` (~575 lines)
+Multi-source ingestion pipeline — see Section 10 (Ingestion Pipeline) for full details.
+
+### `src/lib/services/homepage.ts`
+- `fetchHomepageData()` — Aggregates all homepage sections in a single function.
+- Queries: hero (featured games), trending, topRated, newReleases, deals, recommendations, free-to-play.
+- Recency filters: trending 18mo, top rated 24mo (fallback 36mo), recommendations 36mo.
+- All queries sort by `verdict_score` first, fall back to legacy `score`.
+- Quality gates: `isQualityGame("topRated")` for top-rated (50+ reviews), `isQualityGame("recommended")` for recommendations (20+ reviews).
+- Excludes provisional/future/no-cover games from curated sections.
+
+### `src/lib/auditLog.ts` (35 lines)
+- Shared helper for writing admin audit log entries from any mutation route.
+- Exports: `writeAuditLog(entry: AuditLogEntry)` — best-effort insert into `admin_audit_log` table.
+- `AuditLogEntry` interface: entity_type, entity_id, action (`create`|`update`|`delete`), field_changes (Record of old→new diffs), edited_by, reason.
+- Failures are caught and logged to console, never block the response.
+- Used by: admin game edit, admin review create/delete, admin featured toggle, seed-lists.
+
+---
+
+## 10. Ingestion Pipeline
 
 **File**: `src/lib/services/ingest.ts`
 
-The ingestion pipeline is the core data enrichment engine. It follows a 13-step process:
+The `ingestGame()` function orchestrates a 13-step multi-source enrichment pipeline:
 
-### Step-by-Step Flow
+| Step | Source | Data Enriched |
+|------|--------|--------------|
+| 1 | **RAWG** | Title, slug, cover image, platforms, genres, release date, description, developer, publisher, screenshots, ESRB rating, metacritic, RAWG rating |
+| 2 | **Slug generation** | URL-safe slug from title via `slugify()` |
+| 3 | **Duplicate check** | Looks up existing game by RAWG slug in Supabase |
+| 4 | **Steam** | Steam App ID resolution, review stats (positive/total/%), current players, price, store URL, rating label |
+| 5 | **IGDB** | IGDB ID, aggregated rating, cover image, screenshots, header image, trailer URL, description, game modes, themes, storyline |
+| 6 | **CheapShark** | Active deals (store, price, savings %, deal URL) |
+| 7 | **Wikipedia** | Summary paragraph, Wikipedia URL |
+| 8 | **HowLongToBeat** | Main story hours, completionist hours, HLTB URL |
+| 9 | **Score computation** | Legacy waterfall score + v2 Verdict Scoring (community, critic, confidence, verdict_score) |
+| 10 | **Smart pros/cons** | Auto-generated from Steam sentiment, player counts, critic scores, genre tags |
+| 11 | **Verdict summary** | Auto-generated review summary based on score + genre |
+| 12 | **Upsert** | Insert or update game row in Supabase (conflict on `rawg_slug`) |
+| 13 | **Mobile verification** | Non-blocking `verifyMobileListings()` — checks Google Play + App Store for Android/iOS games |
 
-1. **Search RAWG** — Find the best match for the query, scoring by: has release date (+3), has rating (+2), higher ratings_count (up to +5)
-2. **Generate slug** — `slugify(bestMatch.name)`
-3. **Check for duplicates** — Query by `slug` or `rawg_id`; return early if exists (unless `forceRefresh`)
-4. **Fetch full details** — In parallel: RAWG game details + screenshots + store links
-5. **Extract store IDs** — Parse Steam App ID and Play Store URL from store links
-6. **Multi-source enrichment** — Fire all enrichment calls in parallel:
-   - Steam review summary (if Steam game)
-   - Steam app details for pricing
-   - Steam concurrent player count
-   - CheapShark deal search
-   - IGDB metadata match (if Twitch credentials configured)
-   - Wikipedia game summary
-   - HowLongToBeat playtime estimates (main, extras, completionist)
-7. **Process Steam data** — Extract review percentage, count, price, player count
-8. **Process CheapShark data** — Compare prices (use lower of Steam/CheapShark), get cheapest-ever, deal URL
-9. **Process IGDB data** — Extract trailer URL, Wikipedia/Reddit/official URLs, IGDB rating
-10. **Process Wikipedia data** — Get excerpt and page URL
-11. **Compute score** — Priority chain: Steam review % → IGDB aggregated → RAWG Metacritic → RAWG rating × 20. Also computes `verdict_label` via `scoreToVerdict()`
-12. **Build game record** — 50+ field object including:
-    - Auto-generated `verdict_summary` based on score + genres
-    - Auto-generated `pros` from: Steam sentiment, player count, IGDB rating, genre tags (story rich, open world, multiplayer, great soundtrack, indie)
-    - Auto-generated `cons` from: Steam reception, difficulty tags, early access, microtransactions, grind tags
-    - Best `description` from Wikipedia → IGDB summary → IGDB storyline → RAWG (sentence-trimmed at 1200 chars)
-    - `monetization` detection via free-to-play tags
-13. **Upsert + source mappings** — Insert or update game record; create/upsert source entries for RAWG, Steam, IGDB, CheapShark in `game_sources` table
-
-### Batch Ingestion
-- Processes queries sequentially with 1 second delay between each
-- Returns individual results for each game
+**Key behaviors**:
+- `forceRefresh: true` re-enriches all sources even if game exists.
+- Each external call is wrapped in try/catch — failures are non-fatal, the pipeline continues with partial data.
+- `isHighConfidenceMatch()` for mobile stores uses tiered matching (≥90% title = auto, ≥80% title + developer overlap = auto, else skip).
+- Rate limiting: 1.5s sleep for Google Play, 3.5s for Apple.
 
 ---
 
-## 10. Frontend — Pages
+## 11. Frontend — Pages
 
-### 10.1 Home Page
-**File**: `src/app/page.tsx` (Client Component)
+### 11.1 Home Page (`src/app/page.tsx`)
+- 11 sections: Hero Carousel, Trending, Most Anticipated, For You (recommendations), Discover (tabbed), Top Rated, New Releases, Deals, Free-to-Play, News, Footer.
+- 5 sections powered by GX Corner API (deals, free-to-play, top games, news, calendar).
+- Hero carousel: separate selection from trending rail (daily shuffle, deduped).
+- Each section uses `HorizontalScroll` for card rail layout.
+- 20 games per section.
+- Data fetched via `useQuery` with stale times of 5-30 minutes.
 
-Sections displayed in order:
-1. **Hero Carousel** — Auto-advancing (7s interval) carousel of 6 featured games (daily-shuffled from hero pool), cinematic crossfade transitions, gradient overlays, score rings, verdict badges, CTA buttons. Desktop min-height 560px/600px.
-2. **Trending Right Now** — HorizontalScroll of up to 20 trending games with animated GradientText section titles. Deduped from hero pool.
-3. **Recommended For You / You Might Enjoy** — HorizontalScroll of 20 personalized picks (authenticated: library-based recommendations; anonymous: genre-diverse curated picks)
-4. **Discover** — Tabbed section with New Releases, Deals, and Free to Play tabs. Each shows up to 20 items in HorizontalScroll.
-5. **Top Rated** — HorizontalScroll of 20 highest-scoring recent releases with GradientText header.
-6. **Gaming News** — 2-column editorial layout: 2 featured hero articles (left) + 9 compact stacked articles (right). Powered by GX Popular News + GX News Feed (deduped).
-7. **Multi-Source Game Intelligence** — Data sources banner showing all 7 API sources.
-8. **Footer** — Browse links, platform links, about links + data attribution.
+### 11.2 Game Detail Page (`src/app/game/[slug]/page.tsx`)
+- Richest page (~650 lines). Fetches game data + Steam reviews + deals.
+- Sections: Hero banner, title bar with scores, verdict summary, pros/cons, media carousel (screenshots + trailer), game info grid (developer, publisher, release date, platforms, genres, playtime, ESRB), where-to-play links (Steam, IGDB, Wikipedia, HLTB, App Store), deals, Steam player reviews, similar games, community reviews.
+- `HeroImage` component with next/image fallback for arbitrary domains.
+- Platform icons via `PlatformIcon` component.
+- Score chips showing multi-source scores (Steam, IGDB, Metacritic, RAWG).
 
-**Each section has unique animated gradient text** via GradientText component with framer-motion.
+### 11.3 Search Page (`src/app/search/page.tsx`)
+- Multi-filter search: text query, platform, genre, year, monetization, sort order.
+- Sort options: relevance, newest, top-rated, trending.
+- Platform URL aliases (PlayStation, Xbox, Switch, Mac → internal values).
+- 3-layer search: DB first → RAWG preview fallback → background ingest.
+- Paginated results (12 per page).
 
-**Data fetching**: Single `getHomepageData()` aggregator call via React Query (60s stale, 2min refetch). Shows skeleton states (`HeroSkeleton`, `HorizontalScrollSkeleton`, `SectionHeaderSkeleton`) that match actual horizontal card layout.
+### 11.4 Reviews Page (`src/app/reviews/page.tsx`)
+- Global reviews feed across all games.
+- Source tabs: Community Reviews / Steam Player Reviews.
+- Filters: sort (newest/helpful), platform.
+- Staff picks section replaced with dynamic top-rated query from DB.
 
-### 10.2 Game Detail Page
-**File**: `src/app/game/[slug]/page.tsx` (Client Component)
+### 11.5 Lists Page (`src/app/lists/page.tsx`)
+- Curated editorial lists index.
+- Admin seed button (triggers `/api/admin/seed-lists`).
+- Grid layout, 10th orphan item centered.
 
-The most feature-rich page in the application:
+### 11.6 Profile Page (`src/app/profile/[username]/page.tsx`)
+- Tabs: Overview, Reviews, Lists, Library, Activity.
+- Stats: library count, follower/following counts.
+- Recent activity from reviews + library changes.
+- `UserAvatar` component with image + initials fallback.
 
-**Hero section**: Full-bleed header image (50–60vh) with gradient overlays (always dark), platform badges, free-to-play indicator, release date, title, developer/genre chips.
+### 11.7 Library Page (`src/app/library/page.tsx`)
+- Authenticated user's game collection.
+- Status tabs: All, Wishlist, Playing, Completed, Dropped, Paused (Lucide icons).
+- `LibraryStatusSelector` component for changing game status.
+- Stats panel: total hours, average rating, genre breakdown.
 
-**Main content (two-column layout)**:
+### 11.8 Compare Page (`src/app/compare/page.tsx`)
+- Side-by-side comparison of two games.
+- Search dropdowns to select games.
+- Comparison grid: scores, platforms, genres, release dates, playtime, prices.
+- Platform icons shown for each game.
 
-**Left column (8/12)**:
-- **Verdict Card** — Score ring with glow effect, verdict badge, summary, 3-column score breakdown (Verdict/Steam/IGDB), multi-source score chips with source attribution, pros/cons in two-column layout
-- **Overview** — Best description from Wiki/IGDB/RAWG, tags cloud
-- **Media** — Trailer (YouTube link with thumbnail overlay, play button) + screenshot carousel with thumbnails
-- **Performance & Monetization** — Two-column cards with details and fallback text
-- **Steam Achievements** — List of achievements with icons, names, descriptions, and global unlock % with color-coded stat bars
-- **Latest News** — Steam news/patch notes with author, date, feed label
-- **Community Reviews** — Steam review summary card (percentage bar, positive/negative breakdown, link to Steam reviews) + verdict.games user reviews or "Be the first" CTA
+### 11.9 Release Calendar Page (`src/app/calendar/page.tsx`)
+- Monthly view of upcoming game releases.
+- Horizontal month navigator with drag scrolling.
+- Platform filter (using `PLATFORM_FILTER_OPTIONS`).
+- Merges GX Corner calendar + DB data (DB rows take priority).
+- Unreleased games show "COMING SOON" instead of verdict scores.
 
-**Right column (4/12, sticky)**:
-- **Where to Play** — Links to Steam, Google Play, Best Deal (CheapShark), Official Site; current price + all-time low
-- **Details** — Developer, publisher, release date, genres, monetization
-- **Live Stats** — Animated stat bars for Verdict score, Community score, Critic score; live player count with "updated X ago" timestamp; Steam review count
-- **External Links** — Grid of links to IGDB, Wikipedia, Metacritic, Reddit
+### 11.10 Developer Hub Page (`src/app/developers/[slug]/page.tsx`)
+- Developer portfolio: name, game count, average score, full game list.
+- Case-insensitive match on developer name.
 
-**Full-width sections**:
-- **Related Games** — 4-column grid of same-genre games
-- **Attribution** — Data source list + enrichment sources
+### 11.11 Explore Page (`src/app/explore/page.tsx`)
+- 5 tabs: Most Anticipated, Best of 2025, All-Time Top 250, New Releases, Browse by Genre.
+- Powered by RAWG curated list endpoints via `/api/rawg/lists`.
+- Genre browser with 10 genres (Action, Adventure, RPG, Shooter, Strategy, Simulation, Puzzle, Racing, Sports, Platformer).
+- Paginated results with `Pagination` component.
+- Platform icons shown per game.
 
-**SEO**: Layout file generates dynamic metadata (title, description, OpenGraph, Twitter Card) from Supabase data.
+### 11.12 Static Pages
+- **About** (`src/app/about/page.tsx`): Mission, features, data sources, team.
+- **Privacy** (`src/app/privacy/page.tsx`): Privacy policy.
+- **Terms** (`src/app/terms/page.tsx`): Terms of service.
 
-### 10.3 Search Page
-**File**: `src/app/search/page.tsx` (Client Component)
-
-- **Search bar** — Pre-filled from URL query param `q`
-- **Filters**: Platform (All/PC/Android), Genre (auto-detected from data), Year (last 15 years), Monetization (All/Free/Paid/etc.), Sort (Relevance/Newest/Top Rated/Trending)
-- **Results**: GameGrid with pagination (Previous/Next buttons)
-- **Empty states**: "No games found" with reset button, or "Try searching..." prompt
-- Uses URL search params as source of truth; syncs with React state
-
-### 10.4 Reviews Page
-**File**: `src/app/reviews/page.tsx` (Client Component)
-
-- **Filters**: Sort (Newest/Most Helpful), Platform (All/PC/Android)
-- **Feed**: Paginated ReviewCard list showing game cover, user info, rating, title, body, pros/cons, helpful count
-- **Pagination**: Page number display + Previous/Next
-
-### 10.5 Lists Page
-**File**: `src/app/lists/page.tsx` + `src/app/lists/[slug]/page.tsx` (Client Components)
-
-**Index page**: Grid of curated list cards showing cover image, title, description, game count, tags
-**Detail page**: Full list display with header (title, description, curator, tags) + GameGrid of all games in the list, followed by game count stats
-
-### 10.6 Profile Page
-**File**: `src/app/profile/[username]/page.tsx` (Client Component)
-
-- **Header**: Avatar (128×128), display name, username, join date, bio
-- **Stats**: Games Reviewed, Lists Created, Favorite Genres badges
-- **Activity**: Tabbed interface (Reviews / Lists) with user's reviews as ReviewCards
-
-### 10.7 Library Page
-**File**: `src/app/library/page.tsx` (Client Component)
-
-- Auth-gated personal library/backlog
-- Tabs for status filters (`all`, `playing`, `completed`, `wishlist`, `paused`, `dropped`)
-- Uses `/api/library` and `/api/library/stats` via React Query
-
-### 10.8 Compare Page
-**File**: `src/app/compare/page.tsx` (Client Component)
-
-- Two search inputs backed by `/api/search` for autocomplete
-- Fetches comparison payload from `/api/compare?g1=&g2=`
-- Renders side-by-side score, verdict, and key attributes (players, price, HLTB if available)
-
-### 10.9 Release Calendar Page
-**File**: `src/app/calendar/page.tsx` (Client Component)
-
-- Month picker (rolling window)
-- Groups games by release date
-- Data source: `/api/calendar?month=YYYY-MM`
-
-### 10.10 Developer Hub Page
-**File**: `src/app/developers/[slug]/page.tsx` (Client Component)
-
-- Developer overview with average score and all matching games
-- Data source: `/api/developers/[slug]`
-
-### 10.11 Static Pages
-
-#### About (`src/app/about/page.tsx`)
-- Mission statement, features list, data attribution table (RAWG, Steam, IGDB, CheapShark, Wikipedia with descriptions), tech stack list, "built by verdictgamer" credit
-
-#### Privacy (`src/app/privacy/page.tsx`)
-- Privacy policy covering: Information collected, how it's used, cookies, data security, third-party services, user rights, children's privacy, contact info
-
-#### Terms (`src/app/terms/page.tsx`)
-- Terms of service covering: Use of service, intellectual property, user content, data accuracy, no warranties, limitation of liability, changes, contact info
-
-### 10.12 Admin Dashboard
-
-A full admin interface for managing games, reviews, and featured content. Access restricted to users whose email matches the hardcoded admin list in `src/lib/admin.ts`.
-
-**Layout**: `src/app/admin/layout.tsx`
-- Sidebar navigation with links to Dashboard, Games, Reviews
-- Role guard — redirects non-admin users away
-
-**Dashboard**: `src/app/admin/page.tsx`
-- Stats overview (total games, reviews, users) with links to detail pages
-- Quick actions for common admin tasks (Add Game, Edit Pages, Write Reviews, Manage Users)
-- **Recent Activity** — Expandable audit log entries showing old→new field change diffs with color-coded values. Click to expand/collapse. "Edit →" links to game editor.
-- Seed Content section for editorial lists and community reviews
-
-**Games List**: `src/app/admin/games/page.tsx`
-- Searchable, paginated table of all games in the database
-- Links to individual game editor pages
-
-**Game Editor**: `src/app/admin/games/[id]/page.tsx`
-- Full form for editing all game fields organized in tabs: Overview, Editorial, Media, Store/Links, Diagnostics
-- **Source-specific Re-ingest**: dropdown to choose Full Pipeline / RAWG Only / IGDB Only
-  - IGDB reingest fetches cover images, screenshots, trailer, description, ratings, URLs and applies them directly to the database
-  - RAWG reingest fetches cover, platforms, genres, release date, description, developer, publisher, screenshots
-  - Success message shows which specific fields were updated
-- Toggle featured/trending flags with immediate save
-- **Audit logging**: all field changes are recorded with old/new values (empty→empty changes are filtered out)
-
-**Reviews**: `src/app/admin/reviews/page.tsx`
-- Review moderation: view, delete existing reviews
-- Write new editorial reviews
-
-**Users**: `src/app/admin/users/page.tsx`
-- View all user profiles with review counts and library activity
+### 11.13 Admin Dashboard (`src/app/admin/`)
+- **Layout** (`layout.tsx`): Sidebar nav + role guard (redirects non-admins).
+- **Dashboard** (`page.tsx`): Stats overview, recent activity, seed content section.
+- **Games** (`games/page.tsx`): Searchable, paginated game list.
+- **Game Editor** (`games/[id]/page.tsx`): Full game edit form, reingest controls (Full Pipeline / RAWG Only / IGDB Only), featured/trending toggles, audit log display.
+- **Reviews** (`reviews/page.tsx`): Review moderation, create editorial reviews.
+- **Users** (`admin/users/page.tsx`): User list with review/list/library counts, profile links.
 
 ---
 
-## 11. Frontend — Components
+## 12. Frontend — Components
 
-### 11.1 Layout Components
+### 12.1 Layout Components
+- **`NavbarTop`** (~175 lines): Top navigation with logo, search, nav links, theme toggle, auth dropdown. Mobile drawer with Lucide icons. UserAvatar in profile trigger. Outside-click/Escape/route-change close.
+- **`BottomNav`** (~100 lines): Mobile-only bottom tab bar. 5 tabs: Home, Search, Reviews, Lists, Library. `bg-background/80` for light mode support.
+- **`SectionHeader`** (~45 lines): Section title with Lucide icon (accepts `ReactNode`). Optional `GradientText` for animated titles.
 
-#### `NavbarTop`
-- **Mobile**: Sticky header with logo, search toggle (animated dropdown), theme toggle. Height: 48px
-- **Desktop**: Sticky header with logo, nav links (Home, Reviews, Lists, About) with active underline animation (`layoutId`), search input with icon, theme toggle. Height: 56px
-- **Search**: Form submission navigates to `/search?q=...`
+### 12.2 Display Components
+- **`HeroCarousel`** (~280 lines): Auto-advancing hero with cinematic crossfade (opacity+scale). Desktop min-height 560/600px. Mobile `object-top`. 8-second intervals. Separate selection from trending rail.
+- **`FeaturedHero`** (~109 lines): Static featured game hero with score, verdict badge, CTA button. Hero image guards.
+- **`GameCard`** (~220 lines): Two variants — standard grid card and compact horizontal card. Score ring, verdict badge, platform icons, cover image with fallback.
+- **`GameGrid`** (~60 lines): Animated grid layout with `FadeInSection` wrappers.
+- **`HorizontalScroll`** (~60 lines): Mouse-only drag (touch = native scroll). Momentum-based velocity tracking. No `setPointerCapture`.
+- **`MediaCarousel`** (~110 lines): Screenshot/trailer gallery with thumbnails. Lightbox mode.
+- **`ReviewCard`** (~125 lines): Review display with score, author, platform icons, vote buttons.
+- **`ReviewForm`**: Submit review form with rating slider, title, body, pros/cons, platform selector.
+- **`ScoreChips`** (~100 lines): Multi-source score badges showing Steam %, IGDB rating, Metacritic, RAWG rating.
+- **`SteamReviews`** (127 lines): Steam player reviews section. Fetches via `getSteamReviews()`. Shows up to 3 reviews with thumbs up/down, playtime, helpful count, date. Links to Steam store page.
+- **`CommentThread`**: Nested comment display for review comments.
+- **`AuthModal`**: Login/signup modal with OAuth providers.
+- **`LibraryStatusSelector`**: Dropdown to change game status in library. Lucide icons for each status.
+- **`UserAvatar`** (53 lines): Avatar component with 5 sizes (xs/sm/md/lg/xl). Uses next/image with error fallback to initials. Accent-colored initial circle.
+- **`LazySection`** (50 lines): IntersectionObserver-based lazy loading. 200px rootMargin for pre-loading. Custom fallback or animated pulse placeholder.
+- **`FadeInSection`** (~40 lines): Scroll-triggered fade-in animation wrapper.
 
-#### `BottomNav`
-- **Mobile only** (`md:hidden`): Fixed bottom navigation bar with 5 icons (Home, Search, Reviews, Lists, Profile)
-- Active state: accent color + scale animation + top indicator dot
-- Height: 56px with safe area bottom padding
+### 12.3 UI Primitives
+- **`FilterChips`** (~50 lines): Radio chip selector with optional icon function. Horizontally scrollable on mobile.
+- **`PixelBadge`** (~40 lines): Label badge with color variants.
+- **`PixelButton`** (~50 lines): Styled button with hover effects.
+- **`PixelCard`** (~40 lines): Card container with border and shadow.
+- **`ScoreRing`** (~60 lines): SVG circular score indicator with animated stroke. Color-coded by score range.
+- **`Skeleton`** (~80 lines): Loading skeleton variants (card, text, hero, horizontal scroll).
+- **`SortDropdown`** (~35 lines): Styled select dropdown for sort options.
+- **`Tabs`** (~60 lines): Tab navigation with animated underline indicator.
+- **`VerdictBadge`** (~35 lines): Verdict label badge (MUST PLAY, WORTH IT, MIXED, SKIP, COMING SOON). Color-coded.
+- **`GradientText`** (57 lines): Animated gradient text using framer-motion. Configurable gradient, optional neon blur glow effect. `backgroundPositionX` animation for flowing gradient.
+- **`HeroImage`** (52 lines): Resilient hero image component. Uses next/image with `fill` for optimized loading. Falls back to raw `<img>` tag if next/image fails (unknown domains). Lets admins set arbitrary header image URLs.
+- **`PlatformIcon`** (145 lines): SVG platform icons for all 11 platforms (PC, macOS, Linux, PS5, PS4, Xbox Series, Xbox One, Switch, Switch 2, Android, iOS). Exports: `PLATFORM_COLOR_MAP`, `PLATFORM_FILTER_OPTIONS` (family-grouped: PS4+PS5→PlayStation, etc.), `getFilterPlatforms()`, `getPlatformIcon()`, `platformFilterIcon()`.
+- **`Pagination`** (202 lines): Smart pagination with page numbers, ellipsis, prev/next, first/last, "Go to page" input. Responsive design. `buildPageNumbers()` algorithm shows window around current page.
 
-#### `SectionHeader`
-- Section title with accent bar, optional emoji icon, subtitle, optional "See all →" link
-
-#### `FadeInSection`
-- Framer Motion wrapper for scroll-reveal animation
-- Supports directional entrance (up, left, right, none) with custom delay
-- `viewport: { once: true, margin: "-60px" }` — triggers when 60px into viewport
-
-### 11.2 Display Components
-
-#### `GameCard`
-Two variants:
-- **Default**: Aspect 5:7 cover image, score overlay (top-right), platform badges (bottom-left), year badge (top-left), title, verdict badge, score chips, genres. Hover: lift + scale + shimmer effect, pixel corner decorations
-- **Spotlight**: Aspect 3:4 cover image, larger content overlay at bottom with platforms, year, title, verdict badge, score chips, verdictSummary. Used for trending section #1
-
-#### `GameGrid`
-- Responsive grid (2/3/4 columns) with Framer Motion staggered entrance animation (0.06s delay between items)
-- Empty state: "No games found" message
-
-#### `HeroCarousel`
-- Auto-advancing carousel (configurable interval, default 7s)
-- Touch/swipe support via Framer Motion drag (50px threshold)
-- Pause on hover
-- Navigation arrows (desktop only, hidden on hover until visible)
-- Dot indicators (expandable active dot)
-- Slide transitions: horizontal enter/exit with scale + opacity
-- Content transitions: fade up with 0.2s delay
-- Shows: Featured label, title, score ring, verdict badge, platform badges, year, multi-source score chips, summary, "Read Verdict" CTA
-
-#### `FeaturedHero`
-- Static (non-carousel) featured game display
-- Same visual treatment as carousel slide but without auto-advance
-
-#### `MediaCarousel`
-- Image gallery with main viewport + thumbnail strip
-- Navigation arrows for main image
-- Clickable thumbnails with active ring indicator
-- AnimatePresence for smooth transitions
-
-#### `ReviewCard`
-- Displays: game cover (optional), game title, username, date, platform, circular score badge, review title, body (4 lines clamp), pros/cons, helpful count
-- Pixel corner decorations, hover border/shadow effects
-
-#### `ReviewForm`
-- Auth-gated "Write a review" form used on game detail pages
-- Posts to `POST /api/reviews`
-
-#### `CommentThread`
-- Expand/collapse comment thread for a review
-- Reads `GET /api/reviews/[id]/comments` and posts to `POST /api/reviews/[id]/comments`
-
-#### `LibraryStatusSelector`
-- "Add to Library" dropdown for a game
-- Uses `GET/POST/DELETE /api/library` and updates `libraryStats`
-
-#### `AuthModal`
-- Login/sign-up modal with email/password + OAuth (Google, Discord)
-- Uses `useAuth()` and Supabase Auth redirect flow (`/api/auth/callback`)
-
-#### `ScoreChips`
-Multi-source score display with two variants:
-- **Compact** (for cards): Small badges showing Steam %, IGDB rating, Metacritic score
-- **Full** (for heroes/detail pages): Larger badges with emoji icons, labels, and detail info (e.g., "Very Positive (245K)")
-- Chip styling: Steam = dark blue/cyan, IGDB = purple, Metacritic = yellow
-- Fallback: Shows "Verdict {score}" if no source-specific scores exist
-
-#### `HorizontalScroll`
-- Mouse-only drag-to-scroll (touch devices use native smooth overflow scrolling)
-- Momentum-based scrolling with velocity tracking
-- Click-through for game cards (drag vs click distinguished by movement threshold)
-- Navigation arrows (desktop only, visible on group hover)
-- Smooth scroll by 60% of container width per click
-- Hidden scrollbar (`no-scrollbar` class)
-- No pointer capture (allows native click events to pass through)
-
-### 11.3 UI Primitives
-
-#### `FilterChips<T>`
-- Generic radio-group chip selector
-- Active chip: accent background with white text
-- Inactive: surface background with secondary text, hover effects
-
-#### `PixelBadge`
-- Inline label badge with 6 color variants: `default`, `accent`, `success`, `warning`, `danger`, `muted`
-- 2 sizes: `sm` (10px text), `md` (12px text)
-- Uppercase tracking-wider styling
-
-#### `PixelButton`
-- Button component with 4 variants: `primary` (accent fill), `secondary` (outline), `ghost` (transparent), `danger` (red tint)
-- 3 sizes: `sm`, `md`, `lg`
-- Framer Motion hover (scale 1.02) and tap (scale 0.98)
-- Focus-visible outline for accessibility
-
-#### `PixelCard`
-- Generic card container with pixel corner decorations
-- Optional hover lift effect
-- Corner color options: accent, green, cyan, orange
-
-#### `ScoreRing`
-- SVG circular progress ring with animated fill
-- Configurable size, stroke width
-- Color derived from score via `scoreColorVar()`
-- Animation: stroke offset animates from 0 to score% on mount (1s ease-out, 0.2s delay)
-- Center: numeric score label
-
-#### `Skeleton`
-- Base shimmer animation using gradient background
-- Pre-built variants: `GameCardSkeleton`, `ReviewCardSkeleton`, `HeroSkeleton`, `SectionHeaderSkeleton`, `GameGridSkeleton`, `HorizontalScrollSkeleton`
-- All skeletons match actual component layouts (horizontal card rows, proper aspect ratios, rounded corners)
-
-#### `SortDropdown<T>`
-- Styled `<select>` dropdown with custom arrow SVG
-- Accepts generic option types with label/value pairs
-
-#### `Tabs`
-- Tab navigation with animated underline indicator (`layoutId`)
-- Content fade-in on tab switch
-- Overflow-x scrollable tab bar for mobile
-
-#### `VerdictBadge`
-- Colored label for verdict labels (`MUST PLAY`, `WORTH IT`, `MIXED`, `SKIP`)
-- Colors mapped via `verdictBgClass()`:
-  - MUST PLAY: green
-  - WORTH IT: lime
-  - MIXED: yellow
-  - SKIP: red
-- 3 sizes: `sm`, `md`, `lg`
-
-### 11.4 GX Corner Components
-
-#### `GXDealCard`
-**File**: `src/components/GXDealCard.tsx`
-- Displays a game deal with: cover image, discount percentage badge, store badge (color-coded), original price (strikethrough), sale price, game title, genre tags
-- Used in the "Best Deals" homepage section
-- Links to the deal URL on the respective store
-
-#### `GXNewsCard`
-**File**: `src/components/GXNewsCard.tsx`
-- News article card with: article image, title, publisher name, publisher favicon
-- Links to the original article URL
-- Used in the "Gaming News" homepage section
-
-#### `GXServiceBadge`
-**File**: `src/components/GXServiceBadge.tsx`
-- Small badge indicating PS Plus or Game Pass availability
-- Color-coded per service (PS Plus blue, Game Pass green)
-- Used in the "On PS Plus & Game Pass" homepage section
+### 12.4 GX Corner Components
+- **`GXDealCard`** (89 lines): Deal card showing discount %, store name, prices.
+- **`GXNewsCard`**: Gaming news article card with image, title, source.
+- **`GXServiceBadge`**: PS Plus / Game Pass subscription badge.
 
 ---
 
-## 12. Design System
+## 13. Design System
 
-**File**: `src/app/globals.css` (643 lines)
+### 13.1 Color Tokens (`src/app/globals.css`)
 
-### 12.1 Color Tokens
+**Dark Mode (default)**:
+| Token | Value | Usage |
+|-------|-------|-------|
+| `--background` | `#0a0a0f` | Page background |
+| `--foreground` | `#f0f0f5` | Primary text |
+| `--surface` | `#12121a` | Card backgrounds |
+| `--surface-2` | `#1a1a24` | Elevated surfaces |
+| `--accent` | `#6366f1` | Primary accent (indigo) |
+| `--accent-hover` | `#818cf8` | Accent hover state |
+| `--border` | `rgba(255,255,255,0.08)` | Borders |
+| `--secondary` | `#a1a1aa` | Secondary text |
+| `--tertiary` | `#71717a` | Muted text |
 
-All colors defined as CSS custom properties under `:root` (dark) and `.light` class:
+**Light Mode** (`.light` class):
+- Background: `#f8f8fc`, Surface: `#ffffff`, Foreground: `#18181b`
+- Accent remains indigo `#6366f1`
+- Borders: `rgba(0,0,0,0.08)`
 
-**Dark Mode** (default):
-| Token | Value | Purpose |
-|-------|-------|---------|
-| `--vg-bg` | `#060a13` | Page background |
-| `--vg-surface` | `#0c1220` | Card/container background |
-| `--vg-surface-2` | `#131c2e` | Elevated surface |
-| `--vg-elevated` | `#1a2540` | Higher elevation |
-| `--vg-border` | `#1e2a42` | Default border |
-| `--vg-border-hover` | `#2d3d5c` | Hover border |
-| `--vg-accent` | `#a855f7` | Purple accent |
-| `--vg-accent-hover` | `#c084fc` | Accent hover |
-| `--vg-accent-soft` | `rgba(168,85,247,0.1)` | Accent tint |
-| `--vg-accent-glow` | `rgba(168,85,247,0.3)` | Accent glow |
-| `--vg-pixel-green` | `#4ade80` | Green accent |
-| `--vg-pixel-cyan` | `#22d3ee` | Cyan accent |
-| `--vg-pixel-orange` | `#fb923c` | Orange accent |
-| `--vg-success` | `#4ade80` | Success state |
-| `--vg-warning` | `#fbbf24` | Warning state |
-| `--vg-danger` | `#f87171` | Danger state |
-| `--vg-text` | `#f1f5f9` | Primary text |
-| `--vg-text-secondary` | `#94a3b8` | Secondary text |
-| `--vg-text-muted` | `#64748b` | Muted/tertiary text |
-| `--vg-score-great` | `#4ade80` | Score ≥ 90 |
-| `--vg-score-good` | `#a3e635` | Score ≥ 75 |
-| `--vg-score-mixed` | `#facc15` | Score ≥ 50 |
-| `--vg-score-bad` | `#f87171` | Score < 50 |
+**Score Colors**:
+| Token | Value | Range |
+|-------|-------|-------|
+| `--vg-score-great` | `#22c55e` | ≥ 90 |
+| `--vg-score-good` | `#84cc16` | ≥ 75 |
+| `--vg-score-mixed` | `#eab308` | ≥ 50 |
+| `--vg-score-bad` | `#ef4444` | < 50 |
 
-**Light Mode** overrides the same tokens with appropriate light-theme colors.
+**Pixel Colors** (brand accents):
+- `--pixel-cyan`: `#22d3ee`
+- `--pixel-green`: `#4ade80`
+- `--pixel-orange`: `#fb923c`
 
-**Tailwind v4 mapping** (`@theme inline`): All CSS variables are mapped to Tailwind color names (e.g., `bg-background`, `text-foreground`, `border-border`, `text-accent`).
+### 13.2 Typography
+- **Primary font**: `var(--font-geist-sans)` (Geist Sans from `next/font/google`)
+- **Mono font**: `var(--font-geist-mono)` (Geist Mono)
+- Heading sizes: `text-2xl` (mobile) → `text-4xl` (desktop)
+- Body text: `text-sm` with `leading-relaxed`
 
-### 12.2 Typography
+### 13.3 Animations & Transitions
+- `animate-fade-in`: opacity 0→1 over 400ms
+- `animate-slide-up`: translateY(16px)→0 + fade over 400ms
+- `animate-pulse-slow`: slow pulse (2s cycle)
+- `hover-lift`: translateY(-2px/-3px) on hover with fast transition
+- `scoreGlowBorder`: animated gradient border on score rings (reduced intensity)
+- `mesh-gradient`: animated background gradient (halved opacity)
+- `hero-spotlight`: radial gradient background effect (halved opacity)
+- Hero carousel: cinematic crossfade with opacity + scale transitions
 
-- **Sans**: Geist Sans (via `next/font/google`)
-- **Mono**: Geist Mono (via `next/font/google`)
-- Font smoothing: webkit + moz antialiasing
-- Selection color: accent text on white background
-
-### 12.3 Animations & Transitions
-
-**CSS Keyframes**:
-| Animation | Description |
-|-----------|-------------|
-| `shimmer` | Background position shift for loading skeletons |
-| `pixel-pulse` | Opacity pulsing for indicator dots |
-| `fade-in-up` | Translate Y 24px → 0 with opacity |
-| `fade-in` | Simple opacity 0 → 1 |
-| `slide-in-right` | Translate X 20px → 0 with opacity |
-| `scale-in` | Scale 0.95 → 1 with opacity |
-| `glow-pulse` | Box-shadow pulsing with accent glow |
-| `gradient-shift` | Background-position cycling for gradient borders |
-| `stat-fill` | Width from 0% to `var(--fill-width)` |
-| `float` | Subtle translateY bounce |
-| `page-enter` | Translate Y 8px → 0 with opacity |
-| `ripple` | Scale to 4x with opacity fadeout |
-| `subtle-bounce` | Small vertical bounce |
-| `slide-up-reveal` | Translate Y 32px → 0 with blur 4px → 0 |
-
-**Stagger delay utilities**: `.stagger-1` through `.stagger-8` (50ms increments)
-
-**Reduced motion**: All animations and transitions reduced to 0.01ms when `prefers-reduced-motion: reduce`
-
-### 12.4 Visual Effects
-
-| Effect Class | Description |
-|-------------|-------------|
-| `.pixel-corners` | 8×8 pixel corner decorations with accent-colored L-shaped borders |
-| `.pixel-corners-green` | Green corner variant |
-| `.pixel-corners-cyan` | Cyan corner variant |
-| `.pixel-divider` | Dotted horizontal divider with accent repeating gradient |
-| `.scanlines` | Subtle scanline overlay (repeating 2px transparent/opaque) |
-| `.glass-card` | Frosted glass card (blur 12px, semi-transparent background) |
-| `.glass-panel` | Deeper frosted glass (blur 20px, saturation 1.2) |
-| `.hover-lift` | Translate Y -4px + shadow on hover |
-| `.press-effect` | Scale 0.97 on active/press |
-| `.gradient-text` | Purple-to-cyan gradient text fill |
-| `.gradient-border` | Animated gradient border (gradient-shift animation, 4s cycle) |
-| `.score-glow-*` | Score-colored box-shadow glows (great/good/mixed/bad) |
-| `.mesh-gradient` | Multi-radial gradient background for sections |
-| `.hero-spotlight` | Radial gradient spotlight effect for hero sections |
-| `.noise-texture` | SVG fractal noise texture overlay at 3% opacity |
-| `.section-title-line` | Accent underline decoration for section headers |
-| `.card-shimmer` | Hover shimmer sweep effect (translateX -100% → 100%) |
-| `.animate-float` | Subtle floating animation (3s infinite) |
-| `.text-shimmer` | Gradient text with shimmer animation |
-| `.hero-gradient-bottom` | Dark gradient from bottom (always dark, not theme-dependent) |
-| `.hero-gradient-right` | Dark gradient from right |
-| `.hero-gradient-vignette` | Accent-colored vignette corners |
-| `.hero-overlay-text` | Forces light text on hero overlays (both themes) |
-| `.card-image-gradient` | Dark gradient for card images (always dark) |
-| `.steam-review-bar` | Gradient bar showing positive/negative review split |
-| `.stat-bar-fill` | Animated width bar for statistics |
-
-**Custom scrollbar**: 6px width, track matches background, thumb matches border with hover effect.
-
-**Safe area**: `.safe-area-bottom` with `env(safe-area-inset-bottom)` for notched devices.
+### 13.4 Visual Effects
+- `scrollbar-hide`: hides scrollbars on horizontal scroll containers
+- Glass morphism: `backdrop-blur` on nav, bottom bar
+- Score glow: colored box-shadow on score rings (50% reduced intensity)
+- Gradient text: animated `backgroundPositionX` on section headers
 
 ---
 
-## 13. State Management & Data Fetching
+## 14. State Management & Data Fetching
 
-### React Query Setup
-**File**: `src/app/providers.tsx`
+### React Query (TanStack Query v5)
+- **Provider**: `src/app/providers.tsx` — wraps app in `QueryClientProvider`
+- **Default config**: `staleTime: 5 * 60 * 1000` (5 min), `gcTime: 10 * 60 * 1000` (10 min)
+- **Key patterns**: `["game", slug]`, `["steam-reviews", slug]`, `["search", params]`, `["homepage"]`, `["admin-games"]`, etc.
 
-- `QueryClient` created per-session with `useState` (prevents SSR hydration issues)
-- Default options: `staleTime: 60_000` (1 minute), `refetchOnWindowFocus: false`
-- Per-query overrides: trending/featured sections use `staleTime: 5 * 60 * 1000` (5 minutes)
+### Caching Strategy
+| Data | staleTime | Revalidation |
+|------|-----------|-------------|
+| Homepage | 5 min | ISR (60s server) + client refetch |
+| Game detail | 5 min | On-demand |
+| Steam reviews | 30 min | Client-side |
+| Search results | 0 (always fresh) | On query change |
+| Admin data | 5s | `refetchOnMount: "always"` |
+| GX Corner feeds | 5 min | ISR (300s server) |
 
-### Data Flow
-```
-User visits page
-    → React Query checks cache
-    → If stale/missing: fetch /api/... route
-    → API route queries Supabase
-    → Maps DB rows to frontend types
-    → Returns JSON response
-    → React Query caches result
-    → Components render data
-```
-
-### Query Keys
-| Key Pattern | Page/Component |
-|------------|----------------|
-| `["featured"]` | Home — hero carousel |
-| `["trending"]` | Home — trending section |
-| `["newReleases"]` | Home — new releases |
-| `["topRated"]` | Home — top rated |
-| `["personalized"]` | Home — recommended |
-| `["game", slug]` | Game detail |
-| `["gameReviews", slug]` | Game detail — reviews tab |
-| `["relatedGames", slug]` | Game detail — related games |
-| `["gameNews", slug]` | Game detail — Steam news |
-| `["gameAchievements", slug]` | Game detail — achievements |
-| `["search", filters]` | Search page |
-| `["globalReviews", options]` | Reviews page |
-| `["curatedLists"]` | Lists page |
-| `["list", slug]` | List detail |
-| `["profile", username]` | Profile page |
+### Cache Invalidation
+- Admin game save/reingest/flag mutations invalidate: `admin-activity`, `admin-games`, `homepage`, `["game", slug]`
+- Library mutations invalidate: `library`, `library-stats`
+- Review submit invalidates: `["game-reviews", gameId]`, `reviews`
 
 ---
 
-## 14. Theming (Dark / Light Mode)
+## 15. Theming (Dark / Light Mode)
 
 **File**: `src/hooks/useTheme.tsx`
 
-- **React Context** providing `{ theme, toggle }` to all components
-- **Dark mode is default** (`:root` in CSS)
-- Light mode activates by adding `.light` class to `<html>`
-- **Persistence**: `localStorage.getItem("vg-theme")` / `localStorage.setItem("vg-theme", ...)`
-- **Toggle component**: `ThemeToggle.tsx` — 9×9 button with animated icon swap (☀ / ◐)
-- **HTML attribute**: `suppressHydrationWarning` on `<html>` to prevent SSR mismatch
-- **Hero sections always render with dark gradients** regardless of theme (`.hero-gradient-*`, `.hero-overlay-text` classes force dark appearance so images stay vibrant)
+- `ThemeProvider` context provides `theme` and `toggleTheme`
+- Persists to `localStorage` key `"theme"`
+- Applies `.light` or `.dark` class to `<html>` element
+- Default: dark mode
+- `ThemeToggle` component: Lucide Sun/Moon icons
+- All components use CSS custom properties (tokens) that switch between dark/light values
 
 ---
 
-## 15. Client-Side API Layer
+## 16. Client-Side API Layer
 
-**File**: `src/lib/api.ts`
+**File**: `src/lib/api.ts` (~260 lines)
 
-A typed fetch wrapper layer that all client components use to call the internal API routes:
+Typed wrapper functions for all API endpoints. All functions use `fetch()` with JSON parsing.
 
-**Core helper**:
-- `getBaseUrl()` — Returns empty string on client (relative URLs), full URL on server
-- `apiFetch<T>(path, options)` — Fetch wrapper that: sets `Content-Type: application/json`, checks `res.ok`, parses JSON, extracts `json.data` if `json.success`, returns `null` on failure
+**Key exports**:
+- `getHomepage()` → homepage sections
+- `getGame(slug)` → single game
+- `searchGames(params)` → search results
+- `getSteamReviews(slug, limit)` → Steam reviews
+- `getReviews(params)` → global reviews feed
+- `submitReview(data)` → POST review
+- `getLists()` / `getList(slug)` → curated lists
+- `getProfile(username)` → user profile
+- `getLibrary(status)` / `updateLibrary(data)` / `removeFromLibrary(gameId)` → library CRUD
+- `getLibraryStats()` → library analytics
+- `followUser(targetId)` / `unfollowUser(targetId)` → social
+- `getCalendar(month)` → release calendar
+- `compareGames(slug1, slug2)` → comparison
+- `getDeveloper(slug)` → developer hub
+- `getRawgList(type, page, genre)` → RAWG curated lists
+- `getRecommendations(limit)` → personalized recommendations
 
-**Game functions**:
-| Function | Route Called | Notes |
-|----------|-------------|-------|
-| `getFeaturedGame()` | `/api/games/trending` | Returns first featured or first trending |
-| `getFeaturedGames(limit)` | `/api/games/trending` | Featured first, then fill with trending |
-| `getTrendingGames()` | `/api/games/trending?limit=10` | |
-| `getNewReleases(limit)` | `/api/games/new-releases?limit=X` | |
-| `getTopRated(limit)` | `/api/games/top-rated?limit=X` | |
-| `searchGames(filters)` | `/api/search?q=&platform=&genre=&year=&monetization=&sort=&page=` | Returns PaginatedResponse |
-| `getGameBySlug(slug)` | `/api/games/{slug}` | |
-| `getRelatedGames(slug, limit)` | Composes `getGameBySlug` + `searchGames` | Same genre, excludes self |
-| `getPersonalizedGames(limit)` | Composes `getTopRated` + `getTrendingGames` | Genre-diverse picks excluding trending |
-
-**Review functions**:
-| Function | Route Called |
-|----------|-------------|
-| `getGameReviews(slug, options)` | `/api/games/{slug}/reviews?sort=&page=` |
-| `getGlobalReviews(options)` | `/api/reviews?sort=&platform=&page=` |
-
-**Steam data functions**:
-| Function | Route Called |
-|----------|-------------|
-| `getGameNews(slug, count)` | `/api/games/{slug}/news?count=X` |
-| `getGameAchievements(slug, limit)` | `/api/games/{slug}/achievements?limit=X` |
-
-**List functions**:
-| Function | Route Called |
-|----------|-------------|
-| `getCuratedLists()` | `/api/lists` |
-| `getListBySlug(slug)` | `/api/lists/{slug}` |
-
-**User functions**:
-| Function | Route Called |
-|----------|-------------|
-| `getUserProfile(username)` | `/api/profile/{username}` |
-| `getUserReviews(username)` | Composes `getGlobalReviews` + filter by username |
+**Type exports**: `SteamPlayerReview`, `RawgListGameItem`, `RawgListType`
 
 ---
 
-## 16. TypeScript Types
+## 17. TypeScript Types
 
-**File**: `src/lib/types.ts`
-
-### Enums / Union Types
-```typescript
-Platform       = "PC" | "Android"
-MonetizationType = "Free" | "Paid" | "Free with IAP" | "Free with Ads" | "Subscription"
-VerdictLabel   = "MUST PLAY" | "WORTH IT" | "MIXED" | "SKIP"
-SortOption     = "relevance" | "newest" | "top-rated" | "trending"
-```
+**File**: `src/lib/types.ts` (~160 lines)
 
 ### Core Interfaces
-
-**`Game`** (87 fields) — The central data model covering:
-- Identity: id, slug, title, subtitle
-- Media: coverImage, headerImage, screenshots, trailerUrl, trailerThumbnail
-- Classification: platforms, genres, tags
-- Credit: developer, publisher
-- Dates: releaseDate
-- Content: description
-- Verdict: score (0–100), verdictLabel, verdictSummary, pros[], cons[]
-- Detail sections: monetization, performanceNotes, monetizationNotes
-- Links: steamUrl, playStoreUrl, igdbUrl, wikipediaUrl, metacriticUrl, websiteUrl, redditUrl
-- Metadata: reviewCount, userScore, featured, trending
-- Pricing: priceCurrent (cents), priceCurrency, priceLowest, priceDealUrl, isFree
-- Players: currentPlayers, peakPlayers24h, playersUpdatedAt
-- Per-source scores: steamRatingLabel, rawgMetacritic, rawgRating, igdbRating, scoreSource
-- Enrichment: lastEnrichedAt, enrichmentSources[]
-
-**`Review`** — userId, gameId, gameSlug, gameTitle, gameCover, username, userAvatar, rating (0–100), title, body, pros[], cons[], helpful, createdAt, platform
-
-**`User`** — id, username, displayName, avatar, bio, gamesReviewed, listsCreated, joinedAt, favoriteGenres[], recentActivity[]
-
-**`ActivityItem`** — id, type (review/list/rating), gameSlug, gameTitle, listSlug, listTitle, rating, createdAt
-
-**`GameList`** — id, slug, title, description, coverImage, gameCount, games[], curatedBy, createdAt, tags[]
-
-**`SearchFilters`** — query, platform, genre, year, monetization, sort, page
-
-**`PaginatedResponse<T>`** — items[], total, page, pageSize, hasMore
-
-### Database Types
-**File**: `src/lib/supabase/types.ts`
-
-Full `Database` interface with typed `Tables` for all 6 tables (Row, Insert, Update generics). Convenience aliases: `GameRow`, `GameInsert`, `ReviewRow`, `ListRow`, `ListItemRow`, `ProfileRow`, `GameSourceRow`.
+- **`Game`**: id, slug, title, description, coverImage, headerImage, screenshotUrls, trailerUrl, developer, publisher, releaseDate, platforms[], genres[], tags[], score, verdictLabel, verdictSummary, pros[], cons[], reviewCount, steamUrl, igdbUrl, cheapSharkUrl, wikipediaUrl, howLongToBeatUrl, appStoreUrl, steamRatingLabel, currentPlayers, playtimeMain, playtimeComplete, deals[], trending, featured, isProvisional, monetizationType, esrbRating, confidence, communityScore, criticScore, verdictScore, trendingReason, scoreSource
+- **`Platform`**: Union type — `"PC"` | `"PlayStation 5"` | `"PlayStation 4"` | `"Xbox Series X|S"` | `"Xbox One"` | `"Nintendo Switch"` | `"Nintendo Switch 2"` | `"macOS"` | `"Linux"` | `"Android"` | `"iOS"`
+- **`MonetizationType`**: `"Free"` | `"Paid"` | `"Free with IAP"` | `"Subscription"` | `"Unknown"`
+- **`Review`**: id, gameId, profileId, rating, title, bodyText, pros, cons, platform, helpful, createdAt, authorName, authorAvatar, gameName, gameCover, gameSlug
+- **`UserProfile`**: id, username, displayName, avatarUrl, bio, favoriteGenres, role, createdAt
+- **`LibraryEntry`**: game + status, personalRating, hoursPlayed, notes, startedAt, completedAt
+- **`Deal`**: store, price, retailPrice, savings, url
 
 ---
 
-## 17. Utility Functions
+## 18. Utility Functions
 
-### `src/lib/utils.ts` (Frontend)
+### `src/lib/utils.ts` (~70 lines)
+- `cn(...classes)` — Tailwind class merge (clsx + tailwind-merge)
+- `formatNumber(n)` — Compact number formatting (1.2K, 1.5M)
+- `formatDate(date)` — Human-readable date string
+- `platformShort(platform)` — Short platform label ("PS5", "XSX", "NSW")
+- `scoreToVerdict(score)` — Legacy score → verdict label mapping (re-exports from `utils/score.ts`)
 
-| Function | Signature | Purpose |
-|----------|-----------|---------|
-| `scoreToVerdict` | `(score: number) → VerdictLabel` | Score → verdict: ≥90 "MUST PLAY", ≥75 "WORTH IT", ≥50 "MIXED", else "SKIP" |
-| `scoreColor` | `(score: number) → string` | Score → Tailwind text-color class |
-| `scoreColorVar` | `(score: number) → string` | Score → CSS variable string for SVG strokes |
-| `verdictBgClass` | `(label: VerdictLabel) → string` | Verdict → bg/text/border class string |
-| `formatDate` | `(dateStr: string) → string` | ISO/YYYY-MM-DD → "Mar 15, 2025" (returns "TBA" for invalid) |
-| `truncate` | `(text: string, maxLength: number) → string` | Truncate with "…" |
-| `pluralize` | `(count, singular, plural?) → string` | Simple pluralize |
-| `cn` | `(...classes) → string` | Class name merge (filters falsy values) |
+### `src/lib/utils/score.ts` (~18 lines)
+- `scoreToVerdict(score)` — Server-safe score → verdict label mapping (no DOM dependencies)
+- Used by both client and server code
 
-### `src/lib/utils/score.ts` (Server-safe)
-| Function | Purpose |
-|----------|---------|
-| `scoreToVerdict` | Same as above, but without Tailwind dependencies (safe for server code) |
+### `src/lib/utils/slugify.ts` (~30 lines)
+- `slugify(title)` — Converts title to URL-safe slug
+- `normalizeTitle(title)` — Normalizes title for comparison (lowercase, remove special chars)
 
-### `src/lib/utils/slugify.ts`
-| Function | Purpose |
-|----------|---------|
-| `slugify` | Title → URL slug (lowercase, hyphens, strip specials, `&` → `and`) |
-| `normalizeTitle` | Strips all non-alphanumeric chars for fuzzy title comparison (used in GX→DB matching, search deduplication) |
-| `titlesMatch` | Compares two titles after normalization — returns true if they match |
+### `src/lib/utils/scoring.ts`
+- Full v2 scoring engine — see Section 22 (Scoring Algorithm) for details
+- Exports: `wilsonLowerBound()`, `computeCommunityScore()`, `computeCriticScore()`, `computeConfidence()`, `computeVerdictScore()`, `getVerdictLabel()`
 
-### `src/lib/api/response.ts`
-| Function | Purpose |
-|----------|---------|
-| `jsonOk(data, status?)` | `{ success: true, data }` with status (default 200) |
-| `jsonError(message, status?)` | `{ success: false, error }` with status (default 500) |
-| `jsonNotFound(entity?)` | 404 error response |
-| `jsonBadRequest(message?)` | 400 error response |
+### `src/lib/utils/quality.ts`
+- `isQualityGame(tier)` — Filters by review count: `"topRated"` = 50+, `"recommended"` = 20+
+- `confidenceWeightedScore(game)` — Uses `verdict_score` if available, else Bayesian-smoothed legacy score
+- Used by: recommendations API, homepage, seed-lists
 
-### `src/lib/db/mappers.ts`
-| Function | Purpose |
-|----------|---------|
-| `mapGameRow(row)` | `GameRow` → `Game` (snake_case → camelCase, 50+ fields) |
-| `mapReviewRow(row)` | `ReviewRow` (with joins) → `Review` |
-| `mapProfileRow(row, stats)` | `ProfileRow` → `User` with review/list counts |
-| `mapListRow(row, games)` | `ListRow` + `Game[]` → `GameList` |
+### `src/lib/utils/platform.ts`
+- `normalizePlatform(raw)` — Normalizes raw platform strings to canonical `Platform` values
+- `normalizePlatforms(rawList)` — Batch normalize + deduplicate
+- Maps: "pc" → "PC", "playstation5" → "PlayStation 5", "xbox-series-x" → "Xbox Series X|S", etc.
+- Used as safety net in `mapGameRow()` mapper
+
+### `src/lib/api/response.ts` (~25 lines)
+- `jsonOk(data, status?, options?)` — Standard JSON success response with optional cache headers
+- `jsonError(message, status)` — Standard JSON error response
+
+### `src/lib/db/mappers.ts` (~120 lines)
+- `mapGameRow(row)` — Maps Supabase `games` row to frontend `Game` interface
+- Applies: verdict score display, Bayesian smoothing fallback, future game forcing (COMING SOON), `regenerateVerdictSummary()`, `sanitizePros()`, `normalizePlatforms()`
+- `mapReviewRow(row)` — Maps review DB row to `Review` interface
 
 ---
 
-## 18. Scripts
+## 19. Scripts
 
-All scripts are ESM (`.mjs`) files using `dotenv` for environment variable loading and `postgres` for direct database connections.
+### Ingestion Scripts
+- **`scripts/ingest-full-library.mjs`** (~300 lines): Bulk game ingestion from RAWG. Supports `--page`, `--limit`, `--genre` flags. Rate-limited with 200ms delay between calls.
+- **`scripts/refresh-games.mjs`** (~30 lines): Re-ingest specific games by slug/title.
+- **`scripts/refresh-all-games.mjs`** (~50 lines): Re-ingest all games in DB with rate limiting.
+- **`scripts/reingest-critical.mjs`**: Re-ingests high-priority games (e.g., AAA titles with stale data).
+- **`scripts/backfill-games.mjs`**: Backfills missing fields on existing games.
 
-### `scripts/ingest-full-library.mjs`
-- Ingests a curated list of ~300 games across multiple categories:
-  - Top PC games, indie gems, FPS, RPG, simulation, horror, fighting, racing, puzzle, sports, MMO, retro, strategy, sandbox, narrative, roguelike, VR-compatible, cozy/relaxing, mobile crossplay, free-to-play, recent releases
-- Calls `POST /api/ingest/batch` with chunks of ~20 games
-- Sequential processing with rate limiting
+### Seeding Scripts
+- **`scripts/seed-flags.mjs`** (~40 lines): Sets trending/featured flags on specific games.
+- **`scripts/seed-curated-lists.mjs`**: Seeds editorial curated lists locally (standalone version of admin seed-lists API).
 
-### `scripts/seed-flags.mjs`
-- Sets `trending` and `featured` flags in the database
-- Marks top 20 games by score as trending
-- Marks top 5 as featured
-- Uses direct SQL via `postgres` library
+### Migration Scripts
+- **`scripts/apply-schema.mjs`** (~20 lines): Applies `supabase/schema.sql` to database.
+- **`scripts/apply-migration-001.mjs`** (~20 lines): Multi-source columns migration.
+- **`scripts/apply-migration-003.mjs`** (~80 lines): User features migration (auth, library, follows, comments, votes).
+- **`scripts/apply-migration-005.mjs`** (~60 lines): Admin override columns migration.
+- **`scripts/apply-migration-011.mjs`**: Applies migration 011.
+- **`scripts/apply-migration-012.mjs`**: Applies migration 012.
+- **`scripts/migrate-score-columns.mjs`** (~40 lines): Adds per-source score columns and re-enriches.
+- **`scripts/migrate-players-updated-at.mjs`** (~20 lines): Adds `players_updated_at` column.
+- **`scripts/migrate-refresh-lock.mjs`**: Adds `refresh_lock_until` column for concurrent refresh prevention.
 
-### `scripts/refresh-games.mjs`
-- Re-ingests specific games by calling `/api/ingest/game` with `forceRefresh: true`
-- Used to update stale game data
+### Heroku Scheduler Scripts
+- **`scripts/heroku-discover-games.mjs`** (~20 lines): Calls `/api/cron/discover` on Vercel deployment URL.
+- **`scripts/heroku-refresh-trending.mjs`** (~20 lines): Calls `/api/cron/refresh-trending` on Vercel deployment URL.
+- **`scripts/heroku-re-enrich.mjs`**: Calls `/api/cron/re-enrich` on Vercel deployment URL.
 
-### `scripts/refresh-all-games.mjs`
-- Fetches all game slugs from database
-- Re-ingests each one with `forceRefresh: true`
-- 1.5-second delay between requests
+### Utility Scripts
+- **`scripts/update-igdb-images.mjs`**: Updates IGDB cover/screenshot images for existing games.
+- **`scripts/backfill-mobile-listings.mjs`**: Batch verifies mobile store listings (Google Play + App Store). Flags: `--android-only`, `--ios-only`, `--limit=N`, `--dry-run`.
+- **`scripts/generate-icons.mjs`**: Generates PWA icon variants from source image.
+- **`scripts/verify-db.mjs`**: Verifies database connectivity and table existence.
 
-### `scripts/heroku-discover-games.mjs`
-- Calls `GET /api/cron/discover` with `CRON_SECRET`
-- For Heroku Scheduler automation
+### Script Library
+- **`scripts/lib/db-connect.mjs`**: Shared Supabase client for scripts (reads env vars).
+- **`scripts/lib/scheduler-logger.mjs`**: Logging utility for Heroku scheduler scripts.
 
-### `scripts/heroku-refresh-trending.mjs`
-- Calls `GET /api/cron/refresh-trending` with `CRON_SECRET`
-- For Heroku Scheduler automation
-
-### `scripts/apply-schema.mjs`
-- Applies `supabase/schema.sql` to database via direct PostgreSQL connection
-
-### `scripts/apply-migration-001.mjs`
-- Applies `supabase/migrations/001_multi_source.sql`
-
-### `scripts/apply-migration-003.mjs`
-- Applies `supabase/migrations/003_user_features.sql`
-- Requires `DATABASE_URL` (the script reads it from root `.env`)
-
-### `scripts/apply-migration-005.mjs`
-- Applies `supabase/migrations/005_admin_overrides.sql`
-- Adds `is_featured_manual`, `is_trending_manual`, `manual_score` columns to `games`
-
-### `scripts/migrate-score-columns.mjs`
-- Adds per-source score columns (`steam_rating_label`, `rawg_metacritic`, `rawg_rating`, `score_source`) and re-enriches all games
-
-### `scripts/migrate-players-updated-at.mjs`
-- Adds `players_updated_at` column to games table
+### Admin Override Scripts
+- `scripts/migrate-admin-overrides.mjs`: Adds `is_featured_manual`, `is_trending_manual`, `manual_score` columns to `games`.
 
 ---
 
-## 19. SEO & Metadata
+## 20. SEO & Metadata
 
 ### Root Layout Metadata (`src/app/layout.tsx`)
 ```
@@ -1931,7 +1914,7 @@ twitter: summary_large_image card
 
 ---
 
-## 20. Deployment
+## 21. Deployment
 
 ### Architecture
 - **Frontend + API Routes**: Deployed on **Vercel** (primary hosting)
@@ -1949,28 +1932,29 @@ twitter: summary_large_image card
 - `Procfile`: `web: npm run start`
 - `heroku-postbuild` script: `next build`
 - **Heroku Scheduler** — Add-on for automated jobs:
-  - `npm run scheduler:trending` — Daily trending refresh (updates trending flags via IGDB PopScore + RAWG)
+  - `npm run scheduler:trending` — Daily trending refresh
   - `npm run scheduler:discover` — Daily/weekly game discovery (~320 games per standard run)
-  - `npm run scheduler:discover -- --deep` — Weekly deep discovery (~700+ games, includes genre & platform-specific searches)
+  - `npm run scheduler:discover -- --deep` — Weekly deep discovery (~700+ games)
 - All scheduler scripts call the `/api/cron/*` endpoints on the Vercel deployment URL
 
 ### Cron Job Setup
 - **Discover (Standard)**: Run `GET /api/cron/discover?secret=YOUR_SECRET` daily — fetches ~320 new games
-- **Discover (Deep)**: Run `GET /api/cron/discover?secret=YOUR_SECRET&deep=true` weekly — fetches ~700+ games across genres, platforms, and historical years
+- **Discover (Deep)**: Run `GET /api/cron/discover?secret=YOUR_SECRET&deep=true` weekly — fetches ~700+ games
 - **Refresh Trending**: Run `GET /api/cron/refresh-trending?secret=YOUR_SECRET` daily
+- **Re-Enrich**: Run `GET /api/cron/re-enrich?secret=YOUR_SECRET` — refreshes stale games
 - Can be triggered via: Vercel Cron, Heroku Scheduler, GitHub Actions, or any external cron service
 
 ---
 
-## 21. Security
+## 22. Security
 
 ### API Key Protection
-- `SUPABASE_SERVICE_ROLE_KEY` — **Server-only**, imported only in `src/lib/supabase/server.ts`, which is only used by Route Handlers. Never exposed to client
+- `SUPABASE_SERVICE_ROLE_KEY` — **Server-only**, imported only in `src/lib/supabase/server.ts`, used by Route Handlers. Never exposed to client
 - `RAWG_API_KEY`, `STEAM_API_KEY`, `TWITCH_CLIENT_ID`, `TWITCH_CLIENT_SECRET` — Server-only, used in `src/lib/external/*.ts` files
 - All POST ingestion routes support optional `CRON_SECRET` authentication (query param or Bearer header)
 
 ### Database Security
-- Row Level Security (RLS) enabled on all 6 tables
+- Row Level Security (RLS) enabled on all tables (games, reviews, lists, list_items, profiles, user_games, follows, review_votes, review_comments, admin_audit_log, source_mappings, steam_reviews, mobile_store_listings)
 - Public `SELECT` policies allow read-only access
 - All write operations (`INSERT`, `UPDATE`, `DELETE`) restricted to `service_role` — only accessible via server-side code using the service role key
 - The `anon` key (public) cannot write to any table
@@ -1979,12 +1963,15 @@ twitter: summary_large_image card
 - Ingestion routes validate: JSON body parsing, query string length (2–200 chars), batch size (max 50)
 - Bad requests return 400 with descriptive messages
 - POST routes check for required fields before processing
+- Profile settings: field length limits (display_name 100, bio 1000, genres 20)
+- Avatar upload: MIME type whitelist (JPEG/PNG/WebP), 2MB size limit
 
 ### Admin Access Control
 - Admin routes (`/api/admin/*`) are protected by `requireAdmin()` from `src/lib/admin.ts`
 - Access is controlled by a **hardcoded email list** in `src/lib/admin.ts` — only users whose Supabase Auth email matches a listed admin email can access admin endpoints
 - Non-admin users receive `403 Forbidden`; unauthenticated users receive `401 Not authenticated`
 - The admin dashboard UI (`/admin/*`) also enforces a client-side role guard in `src/app/admin/layout.tsx`
+- All admin mutations write to `admin_audit_log` via `writeAuditLog()` helper
 
 ### Environment Checks
 - All API routes check for Supabase configuration before attempting database operations
@@ -1992,90 +1979,85 @@ twitter: summary_large_image card
 
 ---
 
-## 22. Scoring Algorithm
+## 23. Scoring Algorithm
 
-The Verdict Score is a **0–100 integer** derived from the best available source during ingestion:
+**File**: `src/lib/utils/scoring.ts`
 
-### Score Priority Chain
-1. **Steam Review %** (preferred) — `(total_positive / total_reviews) * 100`
-2. **IGDB Aggregated Rating** — external critic average (0–100)
-3. **RAWG Metacritic Score** — Metacritic score from RAWG (0–100)
-4. **RAWG User Rating × 20** — RAWG rating (0–5) scaled to 0–100
+The v2 Verdict Scoring system replaced the legacy waterfall score with a multi-signal composite.
 
-The `score_source` column tracks which source was used.
+### 23.1 Community Score (Wilson Lower Bound)
 
-### Verdict Labels
-| Score Range | Verdict Label |
-|-------------|---------------|
-| 90–100 | `MUST PLAY` |
-| 75–89 | `WORTH IT` |
-| 50–74 | `MIXED` |
-| 0–49 | `SKIP` |
+```
+communityScore = wilsonLowerBound(steamPositive, steamTotal) × 100
+```
 
-### Score Color Mapping
-| Score Range | Color | CSS Variable |
-|-------------|-------|-------------|
-| ≥ 90 | Green | `--vg-score-great` |
-| ≥ 75 | Lime | `--vg-score-good` |
-| ≥ 50 | Yellow | `--vg-score-mixed` |
-| < 50 | Red | `--vg-score-bad` |
+- Uses Wilson score interval (95% confidence) to produce a conservative lower bound of the true positive rating.
+- Ensures games with few reviews are not over-rated (a game with 3/3 positive reviews does not score 100).
+- Range: 0–100.
 
-### Verdict Summary Generation
-Auto-generated based on score + primary genre:
-- ≥ 90: `"{title} is an exceptional {genre} experience that sets a new standard."`
-- ≥ 75: `"{title} is a solid {genre} worth your time and attention."`
-- ≥ 50: `"{title} has moments of brilliance but inconsistent execution holds it back."`
-- < 50: `"{title} struggles to deliver on its {genre} promises."`
+### 23.2 Critic Score
 
-### Pros/Cons Generation
-**Pros** are auto-generated from:
-- Steam review sentiment (if ≥ 90% → "Overwhelmingly Positive on Steam (95% positive from 245K reviews)")
-- Active playerbase (> 5000 → "Active community with X concurrent players")
-- IGDB critic rating (≥ 80 → "Critically acclaimed (X/100 critic average)")
-- Genre tags: story rich, open world, multiplayer, great soundtrack, indie gem
+```
+criticScore = average(igdbRating, rawgMetacritic)
+```
 
-**Cons** are auto-generated from:
-- Steam reception (< 70% → "Mixed Steam reception (X% positive)")
-- Difficulty tags: difficult, souls-like
-- Early access tag
-- Microtransactions tag
-- Grinding/grindy tags
-- Below-average rating + high volume
-- Fallback: "Limited professional critic coverage" or "No significant drawbacks reported"
+- Averages available critic sources (IGDB aggregated rating, RAWG metacritic).
+- If only one source is available, uses that source alone.
+- Range: 0–100.
 
-### Trending Algorithm (refresh-trending cron)
-1. **IGDB PopScore** (weighted composite):
-   - IGDB visits: 25%
-   - Want-to-play: 30%
-   - Currently playing: 30%
-   - Steam 24hr peak players: 15%
-2. **GX Top Liked** signal (with RAWG fallback if GX API is down)
-3. **RAWG trending** (last 90 days, ordered by recently added)
-4. **FreshnessScore fill** — games from last 4 years ranked by composite: `recency (30%) + rating (30%) + popularity (20%) + manualBoost (20%)`
-   - Recency: 100 (< 30d), 80 (< 90d), 60 (< 180d), 40 (< 1y), 20 (< 2y), 10 (older)
-   - Rating: direct score (0-100)
-   - Popularity: `min(100, current_players / 1000)`
-   - ManualBoost: 100 if `is_trending_manual` or `is_featured_manual` is true
-5. **Manual override preservation**: Games pinned by admin (`is_trending_manual`, `is_featured_manual`) are never reset
+### 23.3 Confidence
 
-Featured = top 5 trending by score.
+```
+confidence = reviewVolume × 0.4 + sourceCoverage × 0.3 + criticCoverage × 0.3
+```
 
-### Trending Reason Badges
-Each game gets a `trendingReason` string computed from its data:
-- "Editor's Pick" — `is_trending_manual` or `is_featured_manual` set by admin
-- "Popular Now" — `current_players > 10000`
-- "New Release" — released within last 30 days
-- "Coming Soon" — release date is in the future
-- "On Sale" — has an active deal URL
-- "Highly Rated" — score >= 90
-- "Trending" — has `trending` flag but no other qualifier
+- **Review volume**: Scaled 0→1 based on Steam review count (0 at 0 reviews, 1 at 10,000+ reviews).
+- **Source coverage**: Fraction of available data sources (Steam, IGDB, RAWG, CheapShark, Wikipedia, HLTB) that returned data.
+- **Critic coverage**: Whether IGDB and/or Metacritic scores are present (0, 0.5, or 1.0).
+- Range: 0–1.
+
+### 23.4 Verdict Score
+
+```
+verdictScore = communityScore × 0.5 + criticScore × 0.3 + (confidence × 20)
+```
+
+- **Community weight**: 50% — Steam user reviews are the primary signal.
+- **Critic weight**: 30% — Professional/aggregated reviews.
+- **Confidence bonus**: 20% — Up to 20 points for data completeness (high confidence = more trustworthy score).
+- Range: 0–100.
+
+### 23.5 Verdict Labels
+
+| Score Range | Label | Color |
+|-------------|-------|-------|
+| ≥ 90 | MUST PLAY | Green (`--vg-score-great`) |
+| ≥ 75 | WORTH IT | Lime (`--vg-score-good`) |
+| ≥ 50 | MIXED | Yellow (`--vg-score-mixed`) |
+| < 50 | SKIP | Red (`--vg-score-bad`) |
+| Provisional / Future | COMING SOON | Gray |
+
+### 23.6 Bayesian Smoothing Fallback
+
+For games without v2 scores (legacy data), the display score uses Bayesian smoothing:
+
+```
+displayScore = (reviewCount × rawScore + PRIOR_COUNT × PRIOR_MEAN) / (reviewCount + PRIOR_COUNT)
+```
+
+Where `PRIOR_COUNT = 50` and `PRIOR_MEAN = 65`. This pulls low-review-count games toward the mean, preventing extreme scores from small samples.
+
+### 23.7 Verdict Summary Regeneration
+
+`regenerateVerdictSummary()` in `src/lib/db/mappers.ts` produces the summary text from the **Bayesian-smoothed display score** at read time, not the raw ingest-time score. This fixes mismatches like "77 score but says exceptional experience".
 
 ---
 
-## 23. Complete File Reference
+## 24. Complete File Reference
 
 | File | Lines | Type | Description |
 |------|-------|------|-------------|
+| **Configuration** | | | |
 | `package.json` | 44 | Config | Dependencies, scripts, engines |
 | `next.config.ts` | 21 | Config | Image domains whitelist |
 | `tsconfig.json` | 36 | Config | TypeScript strict mode, paths |
@@ -2083,12 +2065,24 @@ Each game gets a `trendingReason` string computed from its data:
 | `postcss.config.mjs` | 8 | Config | Tailwind CSS v4 plugin |
 | `vercel.json` | 17 | Config | Framework hint + Vercel Cron schedules |
 | `Procfile` | 1 | Config | Heroku web process |
+| **Database** | | | |
 | `supabase/schema.sql` | ~210 | SQL | Full database schema |
-| `supabase/migrations/001_multi_source.sql` | ~48 | SQL | Multi-source columns |
-| `supabase/migrations/002_security_lint_fixes.sql` | ~72 | SQL | Security policy fixes |
-| `supabase/migrations/003_user_features.sql` | ~220 | SQL | Auth + library/follows/comments/votes + RLS |
-| `supabase/migrations/004_admin_role.sql` | 9 | SQL | Admin role column + CHECK constraint |
-| `supabase/migrations/005_admin_overrides.sql` | 10 | SQL | Admin override columns (featured/trending/score) |
+| `supabase/migrations/001_multi_source.sql` | ~48 | SQL | Multi-source enrichment columns |
+| `supabase/migrations/002_player_snapshots.sql` | ~30 | SQL | Player snapshot table + momentum |
+| `supabase/migrations/003_security_lint_fixes.sql` | ~20 | SQL | Supabase linter fixes (search_path, RLS scoping) |
+| `supabase/migrations/004_user_features.sql` | ~220 | SQL | Auth + library/follows/comments/votes + RLS |
+| `supabase/migrations/005_admin_role.sql` | 9 | SQL | Admin role column + CHECK constraint |
+| `supabase/migrations/006_admin_overrides.sql` | ~15 | SQL | Admin override columns (featured/trending/score) |
+| `supabase/migrations/007_refresh_lock.sql` | — | SQL | Game refresh lock flag |
+| `supabase/migrations/008_refresh_started_at.sql` | — | SQL | Refresh lock expiry timestamp |
+| `supabase/migrations/009_provisional_and_audit.sql` | — | SQL | Provisional flag + admin_audit_log table |
+| `supabase/migrations/010_rls_refactor.sql` | — | SQL | auth_profile_id() helper + RLS optimization |
+| `supabase/migrations/011_storage_avatars.sql` | — | SQL | Avatars storage bucket + RLS |
+| `supabase/migrations/012_steam_reviews_and_ingest_runs.sql` | — | SQL | Steam reviews cache + ingest_runs table |
+| `supabase/migrations/013_mobile_store_listings_rls.sql` | — | SQL | Mobile store listings RLS |
+| `supabase/migrations/014_comprehensive_security_fix.sql` | — | SQL | Critical RLS fix (service_role scoping) |
+| `supabase/migrations/015_verdict_scoring.sql` | — | SQL | v2 scoring columns + indexes |
+| **Pages** | | | |
 | `src/app/layout.tsx` | 72 | Layout | Root layout with fonts, nav, analytics |
 | `src/app/page.tsx` | ~740 | Page | Homepage with 11 sections (incl. 5 GX-powered) |
 | `src/app/providers.tsx` | 26 | Provider | QueryClient + ThemeProvider |
@@ -2101,6 +2095,7 @@ Each game gets a `trendingReason` string computed from its data:
 | `src/app/game/[slug]/layout.tsx` | ~65 | Layout | Game SEO metadata |
 | `src/app/game/[slug]/loading.tsx` | ~15 | Page | Game loading skeleton |
 | `src/app/search/page.tsx` | ~200 | Page | Search with filters |
+| `src/app/explore/page.tsx` | ~200 | Page | RAWG curated lists (5 tabs) |
 | `src/app/reviews/page.tsx` | ~100 | Page | Global reviews feed |
 | `src/app/lists/page.tsx` | ~80 | Page | Curated lists index |
 | `src/app/lists/[slug]/page.tsx` | ~80 | Page | List detail |
@@ -2113,10 +2108,20 @@ Each game gets a `trendingReason` string computed from its data:
 | `src/app/privacy/page.tsx` | ~100 | Page | Privacy policy |
 | `src/app/terms/page.tsx` | ~100 | Page | Terms of service |
 | `src/app/admin/layout.tsx` | — | Layout | Admin sidebar nav + role guard |
+| `src/app/settings/page.tsx` | — | Page | User settings (profile editing) |
 | `src/app/admin/page.tsx` | — | Page | Admin dashboard overview |
 | `src/app/admin/games/page.tsx` | — | Page | Admin game list (search + paginate) |
+| `src/app/admin/games/new/page.tsx` | — | Page | Admin create new game |
 | `src/app/admin/games/[id]/page.tsx` | — | Page | Admin game editor form |
 | `src/app/admin/reviews/page.tsx` | — | Page | Admin review moderation |
+| `src/app/admin/users/page.tsx` | — | Page | Admin user list |
+| **API Routes — Auth** | | | |
+| `src/app/api/auth/me/route.ts` | ~15 | API | Current authenticated user |
+| `src/app/api/auth/callback/route.ts` | ~50 | API | Supabase OAuth callback |
+| `src/app/api/auth/bootstrap/route.ts` | ~79 | API | Ensure profile row exists for auth user |
+| **API Routes — Homepage** | | | |
+| `src/app/api/homepage/route.ts` | ~30 | API | Homepage aggregator (ISR 60s) |
+| **API Routes — Games** | | | |
 | `src/app/api/games/trending/route.ts` | ~60 | API | Trending games endpoint |
 | `src/app/api/games/new-releases/route.ts` | ~70 | API | New releases endpoint |
 | `src/app/api/games/top-rated/route.ts` | ~45 | API | Top rated endpoint |
@@ -2125,27 +2130,35 @@ Each game gets a `trendingReason` string computed from its data:
 | `src/app/api/games/[slug]/deals/route.ts` | ~80 | API | Game deals endpoint |
 | `src/app/api/games/[slug]/news/route.ts` | ~65 | API | Game news endpoint |
 | `src/app/api/games/[slug]/achievements/route.ts` | ~65 | API | Game achievements endpoint |
+| `src/app/api/games/[slug]/steam-reviews/route.ts` | ~213 | API | Steam player reviews (cached) |
 | `src/app/api/games/stats/route.ts` | ~30 | API | Site-wide stats endpoint |
+| **API Routes — Discovery** | | | |
 | `src/app/api/search/route.ts` | ~130 | API | Search with on-demand ingest |
 | `src/app/api/recommendations/route.ts` | ~110 | API | Personalized recommendations |
+| `src/app/api/rawg/lists/route.ts` | ~118 | API | RAWG curated lists proxy |
+| **API Routes — Social** | | | |
 | `src/app/api/reviews/route.ts` | ~130 | API | Global reviews feed + submit review |
 | `src/app/api/reviews/[id]/vote/route.ts` | ~45 | API | Vote on a review |
 | `src/app/api/reviews/[id]/comments/route.ts` | ~100 | API | Review comments (threaded) |
 | `src/app/api/lists/route.ts` | ~70 | API | All curated lists |
 | `src/app/api/lists/[slug]/route.ts` | ~65 | API | Single list |
-| `src/app/api/auth/me/route.ts` | ~15 | API | Current authenticated user |
-| `src/app/api/auth/callback/route.ts` | ~50 | API | Supabase OAuth callback |
+| `src/app/api/profile/[username]/route.ts` | ~60 | API | User profile |
+| `src/app/api/profile/settings/route.ts` | ~142 | API | Profile settings + avatar upload |
 | `src/app/api/library/route.ts` | ~120 | API | User library (CRUD) |
 | `src/app/api/library/stats/route.ts` | ~60 | API | Library stats |
 | `src/app/api/follow/route.ts` | ~50 | API | Follow/unfollow user |
+| **API Routes — Misc** | | | |
 | `src/app/api/calendar/route.ts` | ~60 | API | Release calendar |
 | `src/app/api/compare/route.ts` | ~50 | API | Compare two games |
 | `src/app/api/developers/[slug]/route.ts` | ~60 | API | Developer hub API |
-| `src/app/api/profile/[username]/route.ts` | ~60 | API | User profile |
+| **API Routes — Ingestion** | | | |
 | `src/app/api/ingest/game/route.ts` | ~75 | API | Single game ingestion |
 | `src/app/api/ingest/batch/route.ts` | ~75 | API | Batch game ingestion |
+| **API Routes — Cron** | | | |
 | `src/app/api/cron/discover/route.ts` | ~150 | API | Auto-discover games |
 | `src/app/api/cron/refresh-trending/route.ts` | ~213 | API | Refresh trending/featured (+ GX signal) |
+| `src/app/api/cron/re-enrich/route.ts` | ~178 | API | Re-enrich stale game data |
+| **API Routes — GX Corner** | | | |
 | `src/app/api/gx/highlights/route.ts` | — | API | GX hero highlights proxy |
 | `src/app/api/gx/calendar/route.ts` | — | API | GX release calendar proxy |
 | `src/app/api/gx/free-to-play/route.ts` | — | API | GX free-to-play proxy |
@@ -2154,17 +2167,21 @@ Each game gets a `trendingReason` string computed from its data:
 | `src/app/api/gx/top-liked/route.ts` | — | API | GX most liked proxy |
 | `src/app/api/gx/news/popular/route.ts` | — | API | GX trending news proxy |
 | `src/app/api/gx/news/feed/route.ts` | — | API | GX full news feed proxy |
+| **API Routes — Admin** | | | |
 | `src/app/api/admin/stats/route.ts` | — | API | Admin dashboard stats |
 | `src/app/api/admin/games/route.ts` | — | API | Admin game list |
 | `src/app/api/admin/games/[id]/route.ts` | — | API | Admin game view/edit |
 | `src/app/api/admin/games/[id]/ingest/route.ts` | — | API | Admin force re-ingest |
+| `src/app/api/admin/games/[id]/delete/route.ts` | ~63 | API | Admin delete game + cascade |
 | `src/app/api/admin/reviews/route.ts` | — | API | Admin review CRUD |
 | `src/app/api/admin/featured/route.ts` | — | API | Admin toggle featured/trending |
+| `src/app/api/admin/audit/route.ts` | ~28 | API | Admin audit log viewer |
+| `src/app/api/admin/users/route.ts` | ~62 | API | Admin user list with counts |
+| `src/app/api/admin/backfill-scores/route.ts` | ~196 | API | Recompute v2 scores for all games |
+| `src/app/api/admin/seed-lists/route.ts` | ~237 | API | Seed editorial curated lists |
+| **Components** | | | |
 | `src/components/NavbarTop.tsx` | ~175 | Component | Top navigation |
 | `src/components/BottomNav.tsx` | ~100 | Component | Mobile bottom nav |
-| `src/components/GXDealCard.tsx` | 89 | Component | GX deal card (discount, store, price) |
-| `src/components/GXNewsCard.tsx` | — | Component | GX news article card |
-| `src/components/GXServiceBadge.tsx` | — | Component | PS Plus / Game Pass badge |
 | `src/components/GameCard.tsx` | ~220 | Component | Game card (2 variants) |
 | `src/components/GameGrid.tsx` | ~60 | Component | Animated game grid |
 | `src/components/HeroCarousel.tsx` | ~280 | Component | Auto-advancing hero |
@@ -2176,6 +2193,17 @@ Each game gets a `trendingReason` string computed from its data:
 | `src/components/ScoreChips.tsx` | ~100 | Component | Multi-source score badges |
 | `src/components/SectionHeader.tsx` | ~45 | Component | Section title |
 | `src/components/ThemeToggle.tsx` | ~30 | Component | Dark/light toggle |
+| `src/components/UserAvatar.tsx` | 53 | Component | Avatar with image + initials fallback |
+| `src/components/SteamReviews.tsx` | 127 | Component | Steam player reviews section |
+| `src/components/LazySection.tsx` | 50 | Component | IntersectionObserver lazy loader |
+| `src/components/AuthModal.tsx` | — | Component | Login/signup modal with OAuth providers |
+| `src/components/CommentThread.tsx` | — | Component | Threaded review comments UI |
+| `src/components/LibraryStatusSelector.tsx` | — | Component | Library status picker with Lucide icons |
+| `src/components/ReviewForm.tsx` | — | Component | Review submission form |
+| `src/components/GXDealCard.tsx` | 89 | Component | GX deal card |
+| `src/components/GXNewsCard.tsx` | — | Component | GX news article card |
+| `src/components/GXServiceBadge.tsx` | — | Component | PS Plus / Game Pass badge |
+| **UI Primitives** | | | |
 | `src/components/ui/FilterChips.tsx` | ~50 | UI | Radio chip selector |
 | `src/components/ui/PixelBadge.tsx` | ~40 | UI | Label badge |
 | `src/components/ui/PixelButton.tsx` | ~50 | UI | Styled button |
@@ -2185,14 +2213,28 @@ Each game gets a `trendingReason` string computed from its data:
 | `src/components/ui/SortDropdown.tsx` | ~35 | UI | Styled select |
 | `src/components/ui/Tabs.tsx` | ~60 | UI | Tab navigation |
 | `src/components/ui/VerdictBadge.tsx` | ~35 | UI | Verdict label badge |
+| `src/components/ui/GradientText.tsx` | 57 | UI | Animated gradient text (framer-motion) |
+| `src/components/ui/HeroImage.tsx` | 52 | UI | Resilient hero image with fallback |
+| `src/components/ui/PlatformIcon.tsx` | 145 | UI | SVG platform icons (11 platforms) |
+| `src/components/ui/Pagination.tsx` | 202 | UI | Smart pagination with Go-to-page |
+| **Hooks** | | | |
 | `src/hooks/useTheme.tsx` | ~55 | Hook | Theme context + toggle |
 | `src/hooks/useAuth.tsx` | — | Hook | Auth context/provider (Supabase Auth) |
-| `src/lib/admin.ts` | 36 | Auth | Admin access control (email list + guard) |
+| **Library** | | | |
+| `src/lib/admin.ts` | 36 | Auth | Admin access control (requireAdmin guard) |
+| `src/lib/adminEmails.ts` | — | Auth | Admin email list |
+| `src/lib/auditLog.ts` | 35 | Service | Admin audit log writer |
 | `src/lib/api.ts` | ~260 | Client | Frontend API wrapper |
 | `src/lib/types.ts` | ~160 | Types | All frontend interfaces |
-| `src/lib/utils.ts` | ~70 | Utility | UI helpers |
+| `src/lib/utils.ts` | ~70 | Utility | UI helpers (cn, formatNumber, formatDate) |
 | `src/lib/api/response.ts` | ~25 | Utility | JSON response helpers |
 | `src/lib/db/mappers.ts` | ~120 | Mapper | DB → frontend model |
+| `src/lib/utils/score.ts` | ~18 | Utility | Server-safe score mapping |
+| `src/lib/utils/slugify.ts` | ~30 | Utility | URL slug + title normalization |
+| `src/lib/utils/scoring.ts` | — | Utility | v2 scoring engine (Wilson LB, confidence) |
+| `src/lib/utils/quality.ts` | — | Utility | Quality gates + confidence-weighted score |
+| `src/lib/utils/platform.ts` | — | Utility | Platform normalization |
+| **External API Clients** | | | |
 | `src/lib/external/rawg.ts` | ~230 | External | RAWG API client |
 | `src/lib/external/steam.ts` | ~310 | External | Steam API client |
 | `src/lib/external/igdb.ts` | ~460 | External | IGDB/Twitch API client |
@@ -2200,32 +2242,48 @@ Each game gets a `trendingReason` string computed from its data:
 | `src/lib/external/wikipedia.ts` | ~120 | External | Wikipedia API client |
 | `src/lib/external/gxcorner.ts` | 286 | External | GX Corner API client (8 feeds) |
 | `src/lib/external/howlongtobeat.ts` | — | External | HowLongToBeat API client |
+| `src/lib/external/googleplay.ts` | — | External | Google Play Store scraper |
+| `src/lib/external/appstore.ts` | — | External | Apple App Store (iTunes) API client |
+| **Services** | | | |
 | `src/lib/services/ingest.ts` | ~575 | Service | Multi-source ingestion pipeline |
+| `src/lib/services/homepage.ts` | — | Service | Homepage data aggregator |
+| `src/lib/services/igdbBootstrap.ts` | — | Service | IGDB token bootstrap (Twitch OAuth) |
+| **Supabase** | | | |
 | `src/lib/supabase/auth.ts` | — | Auth | Server-side auth helpers (getCurrentUser) |
 | `src/lib/supabase/client.ts` | ~30 | DB | Browser Supabase client |
 | `src/lib/supabase/server.ts` | ~33 | DB | Server Supabase client |
 | `src/lib/supabase/index.ts` | ~8 | DB | Barrel export |
 | `src/lib/supabase/types.ts` | ~180 | DB | Database type definitions |
-| `src/lib/utils/score.ts` | ~18 | Utility | Server-safe score mapping |
-| `src/lib/utils/slugify.ts` | ~30 | Utility | URL slug + title normalization |
+| **Scripts** | | | |
 | `scripts/ingest-full-library.mjs` | ~300 | Script | Bulk game ingestion |
 | `scripts/seed-flags.mjs` | ~40 | Script | Set trending/featured flags |
+| `scripts/seed-curated-lists.mjs` | — | Script | Seed editorial curated lists |
 | `scripts/refresh-games.mjs` | ~30 | Script | Re-ingest specific games |
 | `scripts/refresh-all-games.mjs` | ~50 | Script | Re-ingest all games |
+| `scripts/reingest-critical.mjs` | — | Script | Re-ingest high-priority games |
+| `scripts/backfill-games.mjs` | — | Script | Backfill missing game fields |
+| `scripts/backfill-mobile-listings.mjs` | — | Script | Verify mobile store listings |
+| `scripts/update-igdb-images.mjs` | — | Script | Update IGDB images for existing games |
 | `scripts/heroku-discover-games.mjs` | ~20 | Script | Heroku cron: discover |
 | `scripts/heroku-refresh-trending.mjs` | ~20 | Script | Heroku cron: trending |
+| `scripts/heroku-re-enrich.mjs` | — | Script | Heroku cron: re-enrich |
 | `scripts/apply-schema.mjs` | ~20 | Script | Apply SQL schema |
 | `scripts/apply-migration-001.mjs` | ~20 | Script | Apply migration 001 |
 | `scripts/apply-migration-003.mjs` | ~80 | Script | Apply migration 003 (user features) |
 | `scripts/apply-migration-005.mjs` | ~60 | Script | Apply migration 005 (admin overrides) |
+| `scripts/apply-migration-011.mjs` | — | Script | Apply migration 011 |
+| `scripts/apply-migration-012.mjs` | — | Script | Apply migration 012 |
 | `scripts/migrate-score-columns.mjs` | ~40 | Script | Add score columns |
 | `scripts/migrate-players-updated-at.mjs` | ~20 | Script | Add players_updated_at |
+| `scripts/migrate-refresh-lock.mjs` | — | Script | Add refresh_lock_until column |
+| `scripts/generate-icons.mjs` | — | Script | Generate PWA icon variants |
+| `scripts/verify-db.mjs` | — | Script | Verify DB connectivity |
+| `scripts/lib/db-connect.mjs` | — | Lib | Shared Supabase client for scripts |
+| `scripts/lib/scheduler-logger.mjs` | — | Lib | Heroku scheduler logger |
 
 ---
 
----
-
-## 24. Recent Changes Log
+## 25. Recent Changes Log
 
 ### UI Overhaul (March 2026)
 
