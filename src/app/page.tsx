@@ -78,16 +78,11 @@ export default function HomePage() {
     isLoading: homepage.isLoading,
   };
 
-  // Hero carousel: daily-shuffled subset of the dedicated hero pool
-  // (server already filtered for: header_image, score≥72, recency)
+  // Hero carousel: top 6 games by confidence-weighted score (server-sorted)
   const featured = useMemo(() => {
     const pool = heroPool.data ?? [];
     if (pool.length === 0) return [];
-    // Daily shuffle so the carousel order changes each day but stays stable within a session
-    const daySeed = Math.floor(new Date().setHours(0, 0, 0, 0) / 86400000);
-    const shuffled = pool.slice(0, 12).map((g, i) => ({ g, sort: Math.sin(daySeed * (i + 1) * 9301) }));
-    shuffled.sort((a, b) => a.sort - b.sort);
-    return shuffled.map((s) => s.g).slice(0, 6);
+    return pool.slice(0, 6);
   }, [heroPool.data]);
 
   // heroIds used to prevent the same game appearing in the trending rail
