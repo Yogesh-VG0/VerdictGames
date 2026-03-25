@@ -59,6 +59,9 @@ export interface SteamAppDetails {
       coming_soon: boolean;
       date: string;
     };
+    pc_requirements?: { minimum?: string; recommended?: string } | string[];
+    mac_requirements?: { minimum?: string; recommended?: string } | string[];
+    linux_requirements?: { minimum?: string; recommended?: string } | string[];
   };
 }
 
@@ -85,7 +88,7 @@ export async function getSteamAppDetails(
 ): Promise<SteamAppDetails["data"] | null> {
   try {
     const res = await fetch(
-      `${STEAM_STORE_BASE}/appdetails?appids=${appId}&l=english`,
+      `${STEAM_STORE_BASE}/appdetails?appids=${appId}&cc=us&l=english`,
       { next: { revalidate: 3600 } }
     );
 
@@ -178,6 +181,49 @@ export function extractSteamPrice(
   }
 
   return { priceCurrent: null, priceCurrency: "USD", isFree: false };
+}
+
+/**
+ * Parse system requirements HTML from Steam into structured key-value pairs.
+ */
+export interface SystemRequirements {
+  minimum?: Record<string, string>;
+  recommended?: Record<string, string>;
+}
+
+function parseRequirementsHtml(html: string | undefined): Record<string, string> | undefined {
+  if (!html) return undefined;
+  const result: Record<string, string> = {};
+  // Steam returns HTML like: <li><strong>OS:</strong> Windows 10</li>
+  const liRegex = /<li>\s*<strong>([^<]+):?\s*<\/strong>\s*([\s\S]*?)\s*<\/li>/gi;
+  let match;
+  while ((match = liRegex.exec(html)) !== null) {
+    const key = match[1].replace(/:$/, "").trim();
+    const value = match[2].replace(/<[^>]*>/g, "").trim();
+    if (key && value) result[key] = value;
+  }
+  return Object.keys(result).length > 0 ? result : undefined;
+}
+
+export function extractSystemRequirements(
+  appData: SteamAppDetails["data"]
+): { pc?: SystemRequirements; mac?: SystemRequirements; linux?: SystemRequirements } | null {
+  if (!appData) return null;
+
+  const parseReqs = (reqs: { minimum?: string; recommended?: string } | string[] | undefined): SystemRequirements | undefined => {
+    if (!reqs || Array.isArray(reqs)) return undefined;
+    const min = parseRequirementsHtml(reqs.minimum);
+    const rec = parseRequirementsHtml(reqs.recommended);
+    if (!min && !rec) return undefined;
+    return { minimum: min, recommended: rec };
+  };
+
+  const pc = parseReqs(appData.pc_requirements);
+  const mac = parseReqs(appData.mac_requirements);
+  const linux = parseReqs(appData.linux_requirements);
+
+  if (!pc && !mac && !linux) return null;
+  return { pc: pc ?? undefined, mac: mac ?? undefined, linux: linux ?? undefined };
 }
 
 /**

@@ -1,8 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getSteamReviews, type SteamPlayerReview } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { ChevronDown, ChevronUp } from "lucide-react";
 
 interface SteamReviewsProps {
   slug: string;
@@ -66,10 +68,14 @@ function ReviewCard({ review }: { review: SteamPlayerReview }) {
   );
 }
 
+const REVIEWS_PER_PAGE = 3;
+
 export default function SteamReviews({ slug, className }: SteamReviewsProps) {
+  const [visibleCount, setVisibleCount] = useState(REVIEWS_PER_PAGE);
+
   const { data, isLoading } = useQuery({
     queryKey: ["steam-reviews", slug],
-    queryFn: () => getSteamReviews(slug, 3),
+    queryFn: () => getSteamReviews(slug, 20),
     staleTime: 30 * 60 * 1000,
   });
 
@@ -91,6 +97,10 @@ export default function SteamReviews({ slug, className }: SteamReviewsProps) {
   const steamUrl = data.steamAppId
     ? `https://store.steampowered.com/app/${data.steamAppId}#app_reviews_hash`
     : null;
+
+  const visibleReviews = data.reviews.slice(0, visibleCount);
+  const hasMore = visibleCount < data.reviews.length;
+  const isExpanded = visibleCount > REVIEWS_PER_PAGE;
 
   return (
     <div className={cn("space-y-3", className)}>
@@ -114,9 +124,31 @@ export default function SteamReviews({ slug, className }: SteamReviewsProps) {
         )}
       </div>
 
-      {data.reviews.map((review) => (
+      {visibleReviews.map((review) => (
         <ReviewCard key={review.recommendationId} review={review} />
       ))}
+
+      {/* Pagination controls */}
+      <div className="flex items-center justify-center gap-3 pt-1">
+        {hasMore && (
+          <button
+            onClick={() => setVisibleCount((c) => Math.min(c + REVIEWS_PER_PAGE, data.reviews.length))}
+            className="flex items-center gap-1.5 px-4 py-2 text-xs font-medium text-accent bg-accent/10 border border-accent/20 rounded-lg hover:bg-accent/20 transition-colors"
+          >
+            <ChevronDown className="w-3.5 h-3.5" />
+            Show More ({data.reviews.length - visibleCount} remaining)
+          </button>
+        )}
+        {isExpanded && (
+          <button
+            onClick={() => setVisibleCount(REVIEWS_PER_PAGE)}
+            className="flex items-center gap-1.5 px-4 py-2 text-xs font-medium text-secondary bg-surface-2 border border-border rounded-lg hover:text-foreground transition-colors"
+          >
+            <ChevronUp className="w-3.5 h-3.5" />
+            Show Less
+          </button>
+        )}
+      </div>
 
       <p className="text-[10px] text-tertiary pt-1">
         Reviews sourced from Steam. All reviews belong to their respective authors.

@@ -18,7 +18,7 @@ export async function GET(
   const { slug } = await params;
   const limit = Math.min(
     parseInt(request.nextUrl.searchParams.get("limit") ?? "3", 10),
-    10
+    20
   );
 
   try {

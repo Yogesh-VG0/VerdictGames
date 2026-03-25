@@ -245,6 +245,27 @@ export async function getGameAchievements(
   return data ?? { title: "", total: 0, achievements: [] };
 }
 
+/** Get system requirements from Steam for a game. */
+export interface SystemRequirementsData {
+  title?: string;
+  steamAppId?: number;
+  requirements: {
+    pc?: { minimum?: Record<string, string>; recommended?: Record<string, string> };
+    mac?: { minimum?: Record<string, string>; recommended?: Record<string, string> };
+    linux?: { minimum?: Record<string, string>; recommended?: Record<string, string> };
+  } | null;
+  message?: string;
+}
+
+export async function getSystemRequirements(
+  slug: string
+): Promise<SystemRequirementsData> {
+  const data = await apiFetch<SystemRequirementsData>(
+    `/api/games/${encodeURIComponent(slug)}/system-requirements`
+  );
+  return data ?? { requirements: null };
+}
+
 /** Get the global reviews feed. */
 export async function getGlobalReviews(options?: {
   sort?: "newest" | "helpful";

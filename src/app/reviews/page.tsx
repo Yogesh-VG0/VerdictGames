@@ -12,7 +12,7 @@ import SortDropdown from "@/components/ui/SortDropdown";
 import { ReviewCardSkeleton } from "@/components/ui/Skeleton";
 import type { Platform } from "@/lib/types";
 import { PLATFORM_FILTER_OPTIONS, platformFilterIcon } from "@/components/ui/PlatformIcon";
-import { PenLine, Star, ThumbsUp, ThumbsDown, Search, MessageSquare } from "lucide-react";
+import { PenLine, Star, ThumbsUp, ThumbsDown, Search, MessageSquare, ChevronDown, ChevronUp } from "lucide-react";
 import GradientText from "@/components/ui/GradientText";
 import Image from "next/image";
 import { slugify } from "@/lib/utils/slugify";
@@ -70,6 +70,7 @@ export default function ReviewsPage() {
   const [steamGameSlug, setSteamGameSlug] = useState<string | null>(null);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [debouncedSteamQuery, setDebouncedSteamQuery] = useState("");
+  const [visibleSteamCount, setVisibleSteamCount] = useState(5);
 
   // Debounce steam game query for suggestions
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -103,7 +104,7 @@ export default function ReviewsPage() {
 
   const steamReviewsQuery = useQuery({
     queryKey: ["steamReviewsPage", steamGameSlug],
-    queryFn: () => getSteamReviews(steamGameSlug!, 10),
+    queryFn: () => getSteamReviews(steamGameSlug!, 20),
     enabled: !!steamGameSlug,
     staleTime: 30 * 60 * 1000,
   });
@@ -269,9 +270,32 @@ export default function ReviewsPage() {
                       </div>
                     </div>
                   </div>
-                  {steamReviewsQuery.data.reviews.map((r) => (
+                  {steamReviewsQuery.data.reviews.slice(0, visibleSteamCount).map((r) => (
                     <SteamReviewCard key={r.recommendationId} review={r} />
                   ))}
+
+                  {/* Pagination controls */}
+                  <div className="flex items-center justify-center gap-3 pt-2">
+                    {visibleSteamCount < steamReviewsQuery.data.reviews.length && (
+                      <button
+                        onClick={() => setVisibleSteamCount((c) => Math.min(c + 5, steamReviewsQuery.data!.reviews.length))}
+                        className="flex items-center gap-1.5 px-4 py-2 text-xs font-medium text-accent bg-accent/10 border border-accent/20 rounded-lg hover:bg-accent/20 transition-colors"
+                      >
+                        <ChevronDown className="w-3.5 h-3.5" />
+                        Show More ({steamReviewsQuery.data.reviews.length - visibleSteamCount} remaining)
+                      </button>
+                    )}
+                    {visibleSteamCount > 5 && (
+                      <button
+                        onClick={() => setVisibleSteamCount(5)}
+                        className="flex items-center gap-1.5 px-4 py-2 text-xs font-medium text-secondary bg-surface-2 border border-border rounded-lg hover:text-foreground transition-colors"
+                      >
+                        <ChevronUp className="w-3.5 h-3.5" />
+                        Show Less
+                      </button>
+                    )}
+                  </div>
+
                   <p className="text-[10px] text-tertiary pt-1">
                     Reviews sourced from Steam via the official Valve API. All reviews belong to their respective authors.
                   </p>

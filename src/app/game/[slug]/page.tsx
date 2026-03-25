@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { getGameBySlug, getGameReviews, getRelatedGames, getGameNews, getGameAchievements } from "@/lib/api";
+import { getGameBySlug, getGameReviews, getRelatedGames, getGameNews, getGameAchievements, getSystemRequirements } from "@/lib/api";
 import SteamReviews from "@/components/SteamReviews";
 import type { SteamNewsArticle, SteamAchievementItem } from "@/lib/api";
 import { formatDate, scoreColor, cn } from "@/lib/utils";
@@ -30,7 +30,7 @@ import AuthModal from "@/components/AuthModal";
 import {
   Zap, CreditCard, Trophy, Newspaper, MessageSquare, Clock,
   BarChart3, Target, ThumbsUp, ThumbsDown, Gamepad2,
-  Smartphone, Tag, Globe,
+  Smartphone, Tag, Globe, ChevronDown, ChevronUp, Monitor, Apple, Terminal,
 } from "lucide-react";
 
 interface Props {
@@ -91,6 +91,7 @@ export default function GameDetailPage({ params }: Props) {
   const searchParams = useSearchParams();
   const rawgId = searchParams.get("rawgId") ? Number(searchParams.get("rawgId")) : undefined;
   const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [achievementsVisible, setAchievementsVisible] = useState(6);
 
   const { data: game, isLoading } = useQuery({
     queryKey: ["game", slug, rawgId],
@@ -117,12 +118,22 @@ export default function GameDetailPage({ params }: Props) {
 
   const { data: achievementsData } = useQuery({
     queryKey: ["gameAchievements", slug],
-    queryFn: () => getGameAchievements(slug, 10),
+    queryFn: () => getGameAchievements(slug, 50),
     enabled: !!game,
+  });
+
+  const { data: sysReqData } = useQuery({
+    queryKey: ["systemRequirements", slug],
+    queryFn: () => getSystemRequirements(slug),
+    enabled: !!game && !!game.platforms?.includes("PC"),
+    staleTime: 60 * 60 * 1000,
   });
 
   const renderAchievements = useCallback(() => {
     if (!achievementsData || achievementsData.achievements.length === 0) return null;
+    const visible = achievementsData.achievements.slice(0, achievementsVisible);
+    const hasMore = achievementsVisible < achievementsData.achievements.length;
+    const isExpanded = achievementsVisible > 6;
     return (
       <section className="rounded-2xl border border-border bg-surface p-5 space-y-4">
         <h3 className="text-sm font-bold text-foreground uppercase tracking-wider section-title-line flex items-center gap-2">
@@ -133,7 +144,7 @@ export default function GameDetailPage({ params }: Props) {
           </span>
         </h3>
         <div className="space-y-2">
-          {achievementsData.achievements.map((ach: SteamAchievementItem) => (
+          {visible.map((ach: SteamAchievementItem) => (
             <div
               key={ach.name}
               className="flex items-center gap-3 p-2 rounded-xl bg-surface-2 border border-border hover:border-accent/30 transition-colors"
@@ -166,14 +177,35 @@ export default function GameDetailPage({ params }: Props) {
             </div>
           ))}
         </div>
+        {/* Pagination controls */}
+        <div className="flex items-center justify-center gap-2 pt-1">
+          {hasMore && (
+            <button
+              onClick={() => setAchievementsVisible((c) => Math.min(c + 10, achievementsData.achievements.length))}
+              className="flex items-center gap-1 px-3 py-1.5 text-[11px] font-medium text-accent bg-accent/10 border border-accent/20 rounded-lg hover:bg-accent/20 transition-colors"
+            >
+              <ChevronDown className="w-3 h-3" />
+              Show More ({achievementsData.achievements.length - achievementsVisible} left)
+            </button>
+          )}
+          {isExpanded && (
+            <button
+              onClick={() => setAchievementsVisible(6)}
+              className="flex items-center gap-1 px-3 py-1.5 text-[11px] font-medium text-secondary bg-surface-2 border border-border rounded-lg hover:text-foreground transition-colors"
+            >
+              <ChevronUp className="w-3 h-3" />
+              Collapse
+            </button>
+          )}
+        </div>
         {achievementsData.total > achievementsData.achievements.length && (
-          <p className="text-xs text-tertiary text-center pt-1">
-            Showing {achievementsData.achievements.length} of {achievementsData.total} achievements
+          <p className="text-xs text-tertiary text-center">
+            Showing {Math.min(achievementsVisible, achievementsData.achievements.length)} of {achievementsData.total} achievements
           </p>
         )}
       </section>
     );
-  }, [achievementsData]);
+  }, [achievementsData, achievementsVisible]);
 
   if (isLoading) {
     return (
@@ -534,8 +566,42 @@ export default function GameDetailPage({ params }: Props) {
                             : "Performance details not available yet."
                     )}
                   </p>
-                  {/* System requirements link — point to Steam if available */}
-                  {game.platforms.includes("PC") && game.steamUrl && (
+                  {/* System requirements from Steam API */}
+                  {sysReqData?.requirements?.pc && (
+                    <div className="space-y-2 pt-1">
+                      <p className="text-[10px] uppercase tracking-wider text-tertiary font-semibold flex items-center gap-1.5">
+                        <Monitor className="w-3 h-3" /> System Requirements
+                      </p>
+                      {sysReqData.requirements.pc.minimum && (
+                        <div className="space-y-1">
+                          <p className="text-[10px] font-semibold text-secondary uppercase">Minimum</p>
+                          <div className="grid gap-1">
+                            {Object.entries(sysReqData.requirements.pc.minimum).map(([key, val]) => (
+                              <div key={key} className="flex gap-2 text-[11px]">
+                                <span className="text-tertiary font-medium shrink-0 w-20">{key}</span>
+                                <span className="text-secondary">{val}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {sysReqData.requirements.pc.recommended && (
+                        <div className="space-y-1 pt-1">
+                          <p className="text-[10px] font-semibold text-secondary uppercase">Recommended</p>
+                          <div className="grid gap-1">
+                            {Object.entries(sysReqData.requirements.pc.recommended).map(([key, val]) => (
+                              <div key={key} className="flex gap-2 text-[11px]">
+                                <span className="text-tertiary font-medium shrink-0 w-20">{key}</span>
+                                <span className="text-secondary">{val}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  {/* Fallback link to Steam */}
+                  {!sysReqData?.requirements?.pc && game.platforms.includes("PC") && game.steamUrl && (
                     <a
                       href={`${game.steamUrl}#sysreq_content`}
                       target="_blank"
@@ -744,7 +810,7 @@ export default function GameDetailPage({ params }: Props) {
 
           {/* ─── RIGHT COLUMN (Sidebar) ─── */}
           <div className="lg:col-span-4 space-y-6">
-            <div className="lg:sticky lg:top-20 space-y-6 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto lg:overscroll-y-contain sidebar-scroll lg:pb-4">
+            <div className="lg:sticky lg:top-20 space-y-6">
 
               {/* ── Add to Library ── */}
               <FadeInSection>
