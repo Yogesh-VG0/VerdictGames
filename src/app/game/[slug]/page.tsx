@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useState, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -120,6 +120,60 @@ export default function GameDetailPage({ params }: Props) {
     queryFn: () => getGameAchievements(slug, 10),
     enabled: !!game,
   });
+
+  const renderAchievements = useCallback(() => {
+    if (!achievementsData || achievementsData.achievements.length === 0) return null;
+    return (
+      <section className="rounded-2xl border border-border bg-surface p-5 space-y-4">
+        <h3 className="text-sm font-bold text-foreground uppercase tracking-wider section-title-line flex items-center gap-2">
+          <Trophy className="w-4 h-4 text-accent" />
+          Achievements
+          <span className="text-xs font-normal text-tertiary ml-auto">
+            {achievementsData.total} total
+          </span>
+        </h3>
+        <div className="space-y-2">
+          {achievementsData.achievements.map((ach: SteamAchievementItem) => (
+            <div
+              key={ach.name}
+              className="flex items-center gap-3 p-2 rounded-xl bg-surface-2 border border-border hover:border-accent/30 transition-colors"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={ach.icon}
+                alt={ach.name}
+                width={36}
+                height={36}
+                className="rounded-lg shrink-0"
+              />
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-medium text-foreground truncate">{ach.name}</p>
+                {ach.description && (
+                  <p className="text-[10px] text-tertiary truncate">{ach.description}</p>
+                )}
+              </div>
+              <div className="shrink-0 text-right">
+                <p className={cn(
+                  "text-xs font-bold tabular-nums",
+                  ach.globalUnlockPercent >= 50 ? "text-score-great" :
+                  ach.globalUnlockPercent >= 20 ? "text-score-good" :
+                  ach.globalUnlockPercent >= 5 ? "text-score-mixed" : "text-score-bad"
+                )}>
+                  {ach.globalUnlockPercent}%
+                </p>
+                <p className="text-[9px] text-tertiary">unlocked</p>
+              </div>
+            </div>
+          ))}
+        </div>
+        {achievementsData.total > achievementsData.achievements.length && (
+          <p className="text-xs text-tertiary text-center pt-1">
+            Showing {achievementsData.achievements.length} of {achievementsData.total} achievements
+          </p>
+        )}
+      </section>
+    );
+  }, [achievementsData]);
 
   if (isLoading) {
     return (
@@ -524,58 +578,13 @@ export default function GameDetailPage({ params }: Props) {
               </div>
             </FadeInSection>
 
-            {/* ── Steam Achievements ── */}
+            {/* ── Steam Achievements (mobile only — desktop renders in sidebar) ── */}
             {achievementsData && achievementsData.achievements.length > 0 && (
-              <FadeInSection>
-                <section className="rounded-2xl border border-border bg-surface p-5 md:p-6 space-y-4">
-                  <h3 className="text-sm font-bold text-foreground uppercase tracking-wider section-title-line flex items-center gap-2">
-                    <Trophy className="w-4 h-4 text-accent" />
-                    Achievements
-                    <span className="text-xs font-normal text-tertiary ml-auto">
-                      {achievementsData.total} total
-                    </span>
-                  </h3>
-                  <div className="space-y-2">
-                    {achievementsData.achievements.map((ach: SteamAchievementItem) => (
-                      <div
-                        key={ach.name}
-                        className="flex items-center gap-3 p-2.5 rounded-xl bg-surface-2 border border-border hover:border-accent/30 transition-colors"
-                      >
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={ach.icon}
-                          alt={ach.name}
-                          width={40}
-                          height={40}
-                          className="rounded-lg shrink-0"
-                        />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-foreground truncate">{ach.name}</p>
-                          {ach.description && (
-                            <p className="text-xs text-tertiary truncate">{ach.description}</p>
-                          )}
-                        </div>
-                        <div className="shrink-0 text-right">
-                          <p className={cn(
-                            "text-sm font-bold tabular-nums",
-                            ach.globalUnlockPercent >= 50 ? "text-score-great" :
-                            ach.globalUnlockPercent >= 20 ? "text-score-good" :
-                            ach.globalUnlockPercent >= 5 ? "text-score-mixed" : "text-score-bad"
-                          )}>
-                            {ach.globalUnlockPercent}%
-                          </p>
-                          <p className="text-[10px] text-tertiary">unlocked</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  {achievementsData.total > achievementsData.achievements.length && (
-                    <p className="text-xs text-tertiary text-center pt-1">
-                      Showing {achievementsData.achievements.length} of {achievementsData.total} achievements
-                    </p>
-                  )}
-                </section>
-              </FadeInSection>
+              <div className="lg:hidden">
+                <FadeInSection>
+                  {renderAchievements()}
+                </FadeInSection>
+              </div>
             )}
 
             {/* ── Latest Steam News ── */}
@@ -735,7 +744,7 @@ export default function GameDetailPage({ params }: Props) {
 
           {/* ─── RIGHT COLUMN (Sidebar) ─── */}
           <div className="lg:col-span-4 space-y-6">
-            <div className="lg:sticky lg:top-20 space-y-6">
+            <div className="lg:sticky lg:top-20 space-y-6 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto lg:overscroll-y-contain sidebar-scroll lg:pb-4">
 
               {/* ── Add to Library ── */}
               <FadeInSection>
@@ -1012,6 +1021,15 @@ export default function GameDetailPage({ params }: Props) {
                   </section>
                 )}
               </FadeInSection>
+
+              {/* ── Achievements (desktop only — mobile renders in main column) ── */}
+              {achievementsData && achievementsData.achievements.length > 0 && (
+                <div className="hidden lg:block">
+                  <FadeInSection>
+                    {renderAchievements()}
+                  </FadeInSection>
+                </div>
+              )}
             </div>
           </div>
         </div>
