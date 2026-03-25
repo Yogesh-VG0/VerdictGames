@@ -112,6 +112,7 @@ export async function fetchHeroCandidates(limit = 12): Promise<Game[]> {
     .neq("header_image", "")
     .gte("score", 76)
     .gt("score", 0)
+    .gte("confidence", 0.8)
     .gte("release_date", cutoff24)
     .lte("release_date", today)
     .order("verdict_score", { ascending: false, nullsFirst: false })
@@ -127,6 +128,7 @@ export async function fetchHeroCandidates(limit = 12): Promise<Game[]> {
       .neq("header_image", "")
       .gte("score", 72)
       .gt("score", 0)
+      .gte("confidence", 0.8)
       .gte("release_date", cutoff36)
       .lte("release_date", today)
       .order("verdict_score", { ascending: false, nullsFirst: false })
@@ -139,7 +141,7 @@ export async function fetchHeroCandidates(limit = 12): Promise<Game[]> {
   const autoDeduped = (autoPool ?? []).filter((g) => !manualIds.has(g.id));
   const combined = deduplicateBySteamAppId([...(manualFeatured ?? []), ...autoDeduped]);
 
-  // Quality filter: hero needs well-known games (100+ reviews, good description)
+  // Quality filter: hero needs well-known games (1000+ reviews, confidence>=0.8)
   // Don't use the default fallback (which returns ALL unfiltered) — instead, always
   // sort by confidence and take the best available even if fewer than minResults pass.
   const strictFiltered = combined.filter((r) => isQualityGame(r, "hero"));

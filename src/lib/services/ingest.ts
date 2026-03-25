@@ -411,7 +411,7 @@ export async function ingestGame(options: IngestOptions): Promise<IngestResult> 
     critic_score: criticScore,
     critic_source_count: criticSourceCount,
     confidence,
-    verdict_score: verdictScoreValue > 0 ? verdictScoreValue : null,
+    verdict_score: verdictScoreValue > 0 ? verdictScoreValue : 0,
     user_score: steamScore,
     featured: false,
     trending: false,

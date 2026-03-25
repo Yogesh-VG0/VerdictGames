@@ -217,7 +217,65 @@ for (let i = 0; i < steamGames.length; i += 10) {
   // Rate limit: 500ms between batches
   if (i + 10 < steamGames.length) await new Promise((r) => setTimeout(r, 500));
 }
-console.log(`  Updated ${playerUpdates} player counts\n`);
+console.log(`  Updated ${playerUpdates} player counts`);
+
+// ── Step 2b: Snapshot player counts + compute momentum ──
+console.log("\n📸 Step 2b: Snapshotting player counts + computing momentum...");
+try {
+  // Check if we already have a snapshot in the last 30 minutes (avoid duplicates from retries)
+  const [recentSnap] = await sql`
+    SELECT id FROM player_snapshots
+    WHERE recorded_at > NOW() - INTERVAL '30 minutes'
+    LIMIT 1
+  `;
+
+  if (!recentSnap) {
+    // Get all games with current player data
+    const gamesWithPlayers = await sql`
+      SELECT id, current_players FROM games
+      WHERE current_players IS NOT NULL AND current_players > 0
+    `;
+
+    if (gamesWithPlayers.length > 0) {
+      // Insert snapshots in batches of 100
+      for (let i = 0; i < gamesWithPlayers.length; i += 100) {
+        const batch = gamesWithPlayers.slice(i, i + 100);
+        const values = batch.map(g => ({ game_id: g.id, player_count: g.current_players }));
+        await sql`INSERT INTO player_snapshots ${sql(values)}`;
+      }
+      console.log(`  📸 Snapshotted ${gamesWithPlayers.length} player counts`);
+
+      // Compute momentum: log(current+1) - log(previous+1)
+      let momentumUpdated = 0;
+      for (const game of gamesWithPlayers) {
+        const [prev] = await sql`
+          SELECT player_count FROM player_snapshots
+          WHERE game_id = ${game.id}
+          ORDER BY recorded_at DESC
+          OFFSET 1 LIMIT 1
+        `;
+        if (prev) {
+          const momentum = Math.log(game.current_players + 1) - Math.log(prev.player_count + 1);
+          const rounded = Math.round(momentum * 10000) / 10000;
+          await sql`UPDATE games SET momentum = ${rounded} WHERE id = ${game.id}`;
+          momentumUpdated++;
+        }
+      }
+      console.log(`  📈 Updated momentum for ${momentumUpdated} games`);
+
+      // Cleanup snapshots older than 7 days
+      const deleted = await sql`
+        DELETE FROM player_snapshots
+        WHERE recorded_at < NOW() - INTERVAL '7 days'
+      `;
+      if (deleted.count > 0) console.log(`  🗑️ Cleaned ${deleted.count} old snapshots`);
+    }
+  } else {
+    console.log("  ⏭️ Snapshot skipped (already have one within 30 minutes)");
+  }
+} catch (e) {
+  console.log(`  ⚠ Momentum tracking error: ${e.message}`);
+}
 
 // ── Step 3: Steam Most Played (PRIMARY trending signal) ──
 console.log("🎮 Step 3: Steam Most Played (current_players DESC)...");

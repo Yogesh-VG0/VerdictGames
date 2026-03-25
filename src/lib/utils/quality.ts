@@ -17,8 +17,8 @@ interface QualityOpts {
   section?: SectionType;
 }
 
-const THRESHOLDS: Record<SectionType, { minReviews: number; minDescLen: number; requireImage: boolean }> = {
-  hero:        { minReviews: 100, minDescLen: 50, requireImage: true },   // hero needs well-known games
+const THRESHOLDS: Record<SectionType, { minReviews: number; minDescLen: number; requireImage: boolean; minConfidence?: number }> = {
+  hero:        { minReviews: 1000, minDescLen: 50, requireImage: true, minConfidence: 0.8 },   // hero needs well-known, multi-source-validated games
   trending:    { minReviews: 20,  minDescLen: 20, requireImage: true },
   topRated:    { minReviews: 50,  minDescLen: 20, requireImage: true },
   newReleases: { minReviews: 0,   minDescLen: 10, requireImage: true },   // allow low reviews for new games
@@ -68,6 +68,9 @@ export function isQualityGame(row: GameRow, section: SectionType = "generic"): b
 
   // Review count check
   if (row.review_count < t.minReviews) return false;
+
+  // Confidence check (hero section requires multi-source validation)
+  if (t.minConfidence && (row.confidence ?? 0) < t.minConfidence) return false;
 
   return true;
 }

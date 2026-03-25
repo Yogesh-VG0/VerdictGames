@@ -150,11 +150,12 @@ export async function GET(request: NextRequest) {
           .order("id", { ascending: true });
         break;
       case "trending":
+        // Prioritize cron-curated trending flag, then momentum, then players
         query = query
+          .order("trending", { ascending: false, nullsFirst: false })
           .order("momentum", { ascending: false, nullsFirst: false })
           .order("current_players", { ascending: false, nullsFirst: false })
           .order("verdict_score", { ascending: false, nullsFirst: false })
-          .order("score", { ascending: false })
           .order("id", { ascending: true });
         break;
       default:
@@ -163,16 +164,15 @@ export async function GET(request: NextRequest) {
         if (q) {
           query = query.order("release_date", { ascending: false }).order("id", { ascending: true });
         } else {
-          // Quality floor for no-query browsing: require minimum 10 reviews + cover image
-          // so tiny-review junk doesn't surface first when momentum is 0 everywhere
+          // No-query browsing: blend trending + recency + quality for a good default browse
+          // Prioritize trending flag (cron-curated), then recency, then score
           query = query
             .gte("review_count", 10)
             .not("cover_image", "is", null)
             .neq("cover_image", "")
-            .order("momentum", { ascending: false, nullsFirst: false })
-            .order("verdict_score", { ascending: false, nullsFirst: false })
-            .order("score", { ascending: false })
+            .order("trending", { ascending: false, nullsFirst: false })
             .order("release_date", { ascending: false })
+            .order("verdict_score", { ascending: false, nullsFirst: false })
             .order("id", { ascending: true });
         }
         break;
