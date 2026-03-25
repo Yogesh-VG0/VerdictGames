@@ -97,9 +97,11 @@
 
 html {
   scroll-behavior: smooth;
+  overflow-x: hidden;
 }
 
 body {
+  overflow-x: hidden;
   background: var(--vg-bg);
   color: var(--vg-text);
   font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;

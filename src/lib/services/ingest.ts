@@ -42,6 +42,14 @@ import { findGameWikiSummary } from "../external/wikipedia";
 import { fetchHLTBData } from "../external/howlongtobeat";
 import { slugify } from "../utils/slugify";
 import { scoreToVerdict } from "../utils/score";
+import {
+  computeCommunityScore,
+  computeCriticScore,
+  computeConfidence,
+  computeVerdictScore,
+  getVerdictLabel,
+  rawgRatingToPositiveRatio,
+} from "../utils/scoring";
 
 /* ───────── Types ───────── */
 
@@ -296,11 +304,10 @@ export async function ingestGame(options: IngestOptions): Promise<IngestResult> 
     enrichmentSources.push("wikipedia");
   }
 
-  // ── Step 10: Compute score ──
-  // Priority: Steam review % → IGDB aggregated → RAWG metacritic → RAWG rating * 20
-  // Also track which source the main score came from
+  // ── Step 10: Compute score (v2 multi-signal) ──
+  // Legacy score: waterfall pick for backward compatibility
   let scoreSource = "blended";
-  const score = (() => {
+  const legacyScore = (() => {
     if (steamScore !== null) { scoreSource = "steam"; return steamScore; }
     if (igdbEnrichment?.igdbRating) { scoreSource = "igdb"; return igdbEnrichment.igdbRating; }
     if (fullGame.metacritic) { scoreSource = "metacritic"; return fullGame.metacritic; }
@@ -313,7 +320,46 @@ export async function ingestGame(options: IngestOptions): Promise<IngestResult> 
   const rawgMetacritic = fullGame.metacritic ?? null;
   const rawgRating = fullGame.rating ?? null;
 
-  const verdictLabel = scoreToVerdict(score);
+  // ── Step 10b: Compute v2 scoring signals ──
+  const steamPositiveCount = steamReviewData?.total_positive ?? null;
+  const steamTotalCount = steamReviewData?.total_reviews ?? null;
+
+  // Community score: Wilson Lower Bound of positive ratio
+  let communityScore: number | null = null;
+  if (steamPositiveCount != null && steamTotalCount != null && steamTotalCount > 0) {
+    communityScore = computeCommunityScore(steamPositiveCount, steamTotalCount);
+  } else if (fullGame.rating && fullGame.ratings_count && fullGame.ratings_count > 0) {
+    // Fallback: approximate from RAWG user rating
+    const { positive, total } = rawgRatingToPositiveRatio(fullGame.rating, fullGame.ratings_count);
+    communityScore = computeCommunityScore(positive, total);
+  }
+
+  // Critic score: normalized average of IGDB + Metacritic
+  const { score: criticScore, sourceCount: criticSourceCount } = computeCriticScore(
+    igdbEnrichment?.igdbRating ?? null,
+    fullGame.metacritic ?? null
+  );
+
+  // Confidence: how much we trust the verdict
+  const reviewCount = steamReviewCount || fullGame.ratings_count || 0;
+  const confidence = computeConfidence(reviewCount, criticSourceCount, steamReviewData != null);
+
+  // Verdict score: final blended score
+  const verdictScoreValue = computeVerdictScore(communityScore, criticScore, confidence);
+
+  // Use verdict_score for the display score, fall back to legacy
+  const score = verdictScoreValue > 0 ? verdictScoreValue : legacyScore;
+
+  // Determine if upcoming or just released
+  const releaseDate = fullGame.released ?? null;
+  const isUpcoming = releaseDate ? new Date(releaseDate) > new Date() : false;
+  const isJustReleasedForLabel = releaseDate
+    ? (Date.now() - new Date(releaseDate).getTime()) < 14 * 86400000 && reviewCount < 20
+    : false;
+
+  const verdictLabel = verdictScoreValue > 0
+    ? getVerdictLabel(verdictScoreValue, confidence, isUpcoming, isJustReleasedForLabel)
+    : scoreToVerdict(score);
 
   // ── Step 11: Build game record ──
   const screenshotUrls = screenshots.map((s) => s.image);
@@ -356,7 +402,16 @@ export async function ingestGame(options: IngestOptions): Promise<IngestResult> 
     monetization_notes: "",
     steam_url: steamAppId ? steamStoreUrl(steamAppId) : null,
     play_store_url: playStoreUrl,
-    review_count: steamReviewCount || fullGame.ratings_count || 0,
+    review_count: reviewCount,
+
+    // Verdict Scoring v2
+    steam_positive_count: steamPositiveCount,
+    steam_total_count: steamTotalCount,
+    community_score: communityScore,
+    critic_score: criticScore,
+    critic_source_count: criticSourceCount,
+    confidence,
+    verdict_score: verdictScoreValue > 0 ? verdictScoreValue : null,
     user_score: steamScore,
     featured: false,
     trending: false,

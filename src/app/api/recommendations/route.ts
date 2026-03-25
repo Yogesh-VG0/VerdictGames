@@ -81,6 +81,7 @@ export async function GET(request: NextRequest) {
       .gte("score", 70)
       .gte("review_count", 20)              // minimum review threshold — no tiny-sample games
       .not("cover_image", "is", null)       // must have a cover image
+      .order("verdict_score", { ascending: false, nullsFirst: false })
       .order("score", { ascending: false })
       .limit(fetchLimit);
 

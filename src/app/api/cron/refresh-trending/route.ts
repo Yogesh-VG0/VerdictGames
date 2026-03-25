@@ -270,20 +270,21 @@ export async function GET(request: NextRequest) {
 
     const { data: fillGames } = await supabase
       .from("games")
-      .select("id, title, score, release_date, current_players, is_featured_manual, is_trending_manual")
+      .select("id, title, score, verdict_score, release_date, current_players, is_featured_manual, is_trending_manual")
       .not("id", "in", excludeClause)
       .not("release_date", "is", null)
       .gte("release_date", new Date(Date.now() - 4 * 365 * 86400000).toISOString().slice(0, 10))
+      .order("verdict_score", { ascending: false, nullsFirst: false })
       .order("score", { ascending: false })
-      .limit(needed * 3) as unknown as { data: { id: string; title: string; score: number; release_date: string; current_players: number | null; is_featured_manual?: boolean; is_trending_manual?: boolean }[] | null };
+      .limit(needed * 3) as unknown as { data: { id: string; title: string; score: number; verdict_score: number | null; release_date: string; current_players: number | null; is_featured_manual?: boolean; is_trending_manual?: boolean }[] | null };
 
     if (fillGames) {
-      type FillGame = { id: string; title: string; score: number; release_date: string; current_players: number | null; is_featured_manual?: boolean; is_trending_manual?: boolean };
+      type FillGame = { id: string; title: string; score: number; verdict_score: number | null; release_date: string; current_players: number | null; is_featured_manual?: boolean; is_trending_manual?: boolean };
       const scored = (fillGames as FillGame[]).map((g) => {
         const ageMs = Date.now() - new Date(g.release_date).getTime();
         const ageDays = ageMs / 86400000;
         const recencyScore = ageDays < 30 ? 100 : ageDays < 90 ? 80 : ageDays < 180 ? 60 : ageDays < 365 ? 40 : ageDays < 730 ? 20 : 10;
-        const ratingScore = g.score;
+        const ratingScore = g.verdict_score ?? g.score;
         const popularityScore = g.current_players ? Math.min(100, g.current_players / 1000) : 0;
         const manualBoost = (g.is_trending_manual || g.is_featured_manual) ? 100 : 0;
 
@@ -316,8 +317,9 @@ export async function GET(request: NextRequest) {
   // ── 5. Featured = top 5 trending by score ──
   const { data: featuredGames } = await supabase
     .from("games")
-    .select("id, title, score")
+    .select("id, title, score, verdict_score")
     .eq("trending", true)
+    .order("verdict_score", { ascending: false, nullsFirst: false })
     .order("score", { ascending: false })
     .limit(5);
 

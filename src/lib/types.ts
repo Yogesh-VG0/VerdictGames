@@ -125,6 +125,12 @@ export interface Game {
   // Provisional / upcoming game
   isProvisional?: boolean;
   releaseStatus?: string; // 'upcoming' | 'tba' | 'announced'
+
+  // Verdict Scoring v2
+  confidence?: number;       // 0.0-1.0, how much we trust the verdict
+  communityScore?: number;   // Wilson LB community score, 0-100
+  criticScore?: number;      // normalized critic score, 0-100
+  verdictScore?: number;     // final blended score, 0-100
 }
 
 export interface Review {

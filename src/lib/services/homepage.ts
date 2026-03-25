@@ -62,7 +62,7 @@ function deduplicateBySteamAppId(games: GameRow[]): GameRow[] {
 }
 
 function trendingRank(g: GameRow, minPlayers: number, maxPlayers: number): number {
-  const score = g.score ?? 0;
+  const score = g.verdict_score ?? g.score ?? 0;
   const playerCount = g.current_players ?? 0;
   const logPlayers = Math.log10(playerCount + 1);
   const logMin = Math.log10(Math.max(minPlayers, 0) + 1);
@@ -96,6 +96,7 @@ export async function fetchHeroCandidates(limit = 12): Promise<Game[]> {
     .neq("header_image", "")
     .gte("score", 72)
     .gt("score", 0)
+    .order("verdict_score", { ascending: false, nullsFirst: false })
     .order("score", { ascending: false })
     .limit(6) as { data: GameRow[] | null };
 
@@ -113,6 +114,7 @@ export async function fetchHeroCandidates(limit = 12): Promise<Game[]> {
     .gt("score", 0)
     .gte("release_date", cutoff24)
     .lte("release_date", today)
+    .order("verdict_score", { ascending: false, nullsFirst: false })
     .order("score", { ascending: false })
     .limit(40) as { data: GameRow[] | null };
 
@@ -127,6 +129,7 @@ export async function fetchHeroCandidates(limit = 12): Promise<Game[]> {
       .gt("score", 0)
       .gte("release_date", cutoff36)
       .lte("release_date", today)
+      .order("verdict_score", { ascending: false, nullsFirst: false })
       .order("score", { ascending: false })
       .limit(40) as { data: GameRow[] | null };
     autoPool = wider.data;
@@ -180,6 +183,7 @@ export async function fetchTrendingGames(limit = 20, homepageOnly = true): Promi
     .gte("release_date", cutoff4yr)
     .lte("release_date", today)
     .gt("score", 0)
+    .order("verdict_score", { ascending: false, nullsFirst: false })
     .order("score", { ascending: false })
     .limit(limit * 6) as { data: GameRow[] | null };
 
@@ -284,6 +288,7 @@ export async function fetchTopRated(limit = 10): Promise<Game[]> {
   const { data, error } = await supabase
     .from("games")
     .select("*")
+    .order("verdict_score", { ascending: false, nullsFirst: false })
     .order("score", { ascending: false })
     .limit(fetchLimit) as { data: GameRow[] | null; error: unknown };
 
@@ -310,6 +315,7 @@ export async function fetchHomepageTopRated(limit = 20): Promise<Game[]> {
     .not("release_date", "is", null)
     .gte("release_date", cutoff)
     .lte("release_date", new Date().toISOString().slice(0, 10))
+    .order("verdict_score", { ascending: false, nullsFirst: false })
     .order("score", { ascending: false })
     .limit(fetchLimit) as { data: GameRow[] | null; error: unknown };
 
@@ -326,6 +332,7 @@ export async function fetchHomepageTopRated(limit = 20): Promise<Game[]> {
       .not("release_date", "is", null)
       .gte("release_date", widerCutoff)
       .lte("release_date", new Date().toISOString().slice(0, 10))
+      .order("verdict_score", { ascending: false, nullsFirst: false })
       .order("score", { ascending: false })
       .limit(fetchLimit) as { data: GameRow[] | null; error: unknown };
 
@@ -358,6 +365,7 @@ export async function fetchHomepageRecommendations(limit = 20): Promise<Game[]> 
     .gte("score", 75)
     .gte("review_count", 20)              // minimum review threshold
     .not("cover_image", "is", null)       // must have cover image
+    .order("verdict_score", { ascending: false, nullsFirst: false })
     .order("score", { ascending: false })
     .limit(fetchLimit) as { data: GameRow[] | null; error: unknown };
 

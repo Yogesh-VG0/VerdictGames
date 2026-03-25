@@ -8,6 +8,7 @@
 import type { Game, Review, ReviewComment, User, GameList, UserGame, Platform, MonetizationType, VerdictLabel, LibraryStatus } from "../types";
 import type { GameRow, ReviewRow, ProfileRow, ListRow, UserGameRow, ReviewCommentRow } from "../supabase/types";
 import { scoreToVerdict } from "../utils/score";
+import { getVerdictLabel } from "../utils/scoring";
 import { normalizePlatforms } from "../utils/platform";
 
 /**
@@ -97,7 +98,9 @@ function sanitizePros(pros: string[], reviewCount: number): string[] {
 function computeTrendingReason(row: GameRow): string | undefined {
   const r = row as GameRow & { is_trending_manual?: boolean; is_featured_manual?: boolean };
   const momentum = row.momentum ?? 0;
-  const score = displayScore(row.score ?? 0, row.review_count ?? 0);
+  const score = (row.verdict_score != null && row.verdict_score > 0)
+    ? Math.round(row.verdict_score)
+    : displayScore(row.score ?? 0, row.review_count ?? 0);
   const currentPlayers = row.current_players ?? 0;
   const reviewCount = row.review_count ?? 0;
 
@@ -182,10 +185,35 @@ export function mapGameRow(row: GameRow): Game {
 
   const effectiveProvisional = flagProvisional || isComingSoonLabel || isFutureRelease || hasNoReviews;
 
-  // Provisional / coming-soon rows bypass Bayesian smoothing — show 0 and preserve COMING SOON
-  // "Just Released" rows also bypass — they show a temporary label with no finalized score
+  // ── Score resolution: prefer verdict_score (v2), fall back to legacy Bayesian ──
   const rawScore = row.score ?? 0;
-  const score = (effectiveProvisional || isJustReleased) ? 0 : displayScore(rawScore, reviewCount);
+  const hasV2Score = row.verdict_score != null && row.verdict_score > 0;
+  const rowConfidence = row.confidence ?? 0;
+
+  let score: number;
+  let verdictLabel: VerdictLabel;
+
+  if (effectiveProvisional) {
+    score = 0;
+    verdictLabel = "COMING SOON";
+  } else if (isJustReleased) {
+    score = 0;
+    verdictLabel = "JUST RELEASED";
+  } else if (hasV2Score) {
+    // Use v2 scoring: verdict_score already incorporates Wilson LB + critic blend
+    score = Math.round(row.verdict_score!);
+    verdictLabel = getVerdictLabel(score, rowConfidence, false, false);
+  } else {
+    // Legacy fallback for pre-backfill rows
+    score = displayScore(rawScore, reviewCount);
+    verdictLabel = scoreToVerdict(score) as VerdictLabel;
+  }
+
+  const verdictSummary = effectiveProvisional
+    ? "This game is awaiting data enrichment."
+    : isJustReleased
+      ? `${row.title} just launched — verdict pending as review data comes in.`
+      : regenerateVerdictSummary(row.title, score, row.genres, row.verdict_summary);
 
   return {
     id: row.id,
@@ -203,16 +231,8 @@ export function mapGameRow(row: GameRow): Game {
     releaseDate: row.release_date ?? "",
     description: row.description,
     score,
-    verdictLabel: effectiveProvisional
-      ? ("COMING SOON" as VerdictLabel)
-      : isJustReleased
-        ? ("JUST RELEASED" as VerdictLabel)
-        : (scoreToVerdict(score) as VerdictLabel),
-    verdictSummary: effectiveProvisional
-      ? "This game is awaiting data enrichment."
-      : isJustReleased
-        ? `${row.title} just launched — verdict pending as review data comes in.`
-        : regenerateVerdictSummary(row.title, score, row.genres, row.verdict_summary),
+    verdictLabel,
+    verdictSummary: verdictSummary,
     pros: sanitizePros(row.pros, reviewCount),
     cons: row.cons,
     monetization: row.monetization as MonetizationType,
@@ -267,6 +287,12 @@ export function mapGameRow(row: GameRow): Game {
     // Provisional/upcoming (COMING SOON label alone counts — see effectiveProvisional)
     isProvisional: effectiveProvisional,
     releaseStatus,
+
+    // Verdict Scoring v2
+    confidence: rowConfidence > 0 ? rowConfidence : undefined,
+    communityScore: row.community_score != null ? Math.round(row.community_score) : undefined,
+    criticScore: row.critic_score != null ? Math.round(row.critic_score) : undefined,
+    verdictScore: hasV2Score ? Math.round(row.verdict_score!) : undefined,
   };
 }
 

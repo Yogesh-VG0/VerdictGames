@@ -145,12 +145,15 @@ export async function GET(request: NextRequest) {
           .gte("review_count", 10)
           .not("cover_image", "is", null)
           .neq("cover_image", "")
-          .order("score", { ascending: false }).order("id", { ascending: true });
+          .order("verdict_score", { ascending: false, nullsFirst: false })
+          .order("score", { ascending: false })
+          .order("id", { ascending: true });
         break;
       case "trending":
         query = query
           .order("momentum", { ascending: false, nullsFirst: false })
           .order("current_players", { ascending: false, nullsFirst: false })
+          .order("verdict_score", { ascending: false, nullsFirst: false })
           .order("score", { ascending: false })
           .order("id", { ascending: true });
         break;
@@ -167,6 +170,7 @@ export async function GET(request: NextRequest) {
             .not("cover_image", "is", null)
             .neq("cover_image", "")
             .order("momentum", { ascending: false, nullsFirst: false })
+            .order("verdict_score", { ascending: false, nullsFirst: false })
             .order("score", { ascending: false })
             .order("release_date", { ascending: false })
             .order("id", { ascending: true });

@@ -27,12 +27,28 @@ const THRESHOLDS: Record<SectionType, { minReviews: number; minDescLen: number; 
 };
 
 /**
- * Confidence-weighted score: penalizes games with very few reviews.
- * A 100% score from 91 reviews should rank lower than 97% from 245K reviews.
- * Uses Bayesian average approach: (R*v + C*m) / (v + m)
- * where R=score, v=review_count, C=global_mean (75), m=min_confidence (200)
+ * Confidence-weighted score for ranking.
+ *
+ * v2 path (verdict_score + confidence available):
+ *   Uses the pre-computed verdict_score (Wilson LB + critic blend) weighted
+ *   by the confidence value. This naturally penalizes low-review games because
+ *   Wilson LB already pulls them down, and confidence scales the result.
+ *
+ * Legacy path (pre-backfill rows):
+ *   Bayesian average: (R*v + C*m) / (v + m)
  */
 export function confidenceWeightedScore(row: GameRow): number {
+  // v2 path: use pre-computed verdict scoring
+  if (row.verdict_score != null && row.verdict_score > 0) {
+    const conf = row.confidence ?? 0;
+    // Blend verdict_score toward global mean (70) based on confidence
+    // At confidence=1.0 → full verdict_score
+    // At confidence=0.0 → pulled heavily toward 70
+    const GLOBAL_MEAN = 70;
+    return row.verdict_score * (0.5 + conf * 0.5) + GLOBAL_MEAN * (0.5 - conf * 0.5);
+  }
+
+  // Legacy fallback
   const score = row.score ?? 0;
   const reviews = row.review_count ?? 0;
   const C = 75; // global mean score

@@ -92,6 +92,15 @@ export interface Database {
           is_provisional: boolean;
           release_status: string | null;
 
+          // Verdict Scoring v2 (migration 015)
+          steam_positive_count: number | null;
+          steam_total_count: number | null;
+          community_score: number | null;
+          critic_score: number | null;
+          critic_source_count: number;
+          confidence: number;
+          verdict_score: number | null;
+
           created_at: string;
           updated_at: string;
         };
@@ -163,6 +172,14 @@ export interface Database {
           manual_score?: number | null;
           is_provisional?: boolean;
           release_status?: string | null;
+          // Verdict Scoring v2 (migration 015)
+          steam_positive_count?: number | null;
+          steam_total_count?: number | null;
+          community_score?: number | null;
+          critic_score?: number | null;
+          critic_source_count?: number;
+          confidence?: number;
+          verdict_score?: number | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -236,6 +253,14 @@ export interface Database {
           manual_score?: number | null;
           is_provisional?: boolean;
           release_status?: string | null;
+          // Verdict Scoring v2 (migration 015)
+          steam_positive_count?: number | null;
+          steam_total_count?: number | null;
+          community_score?: number | null;
+          critic_score?: number | null;
+          critic_source_count?: number;
+          confidence?: number;
+          verdict_score?: number | null;
           created_at?: string;
           updated_at?: string;
         };

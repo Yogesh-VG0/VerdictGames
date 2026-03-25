@@ -14,7 +14,8 @@ export async function GET(
   { params }: { params: Promise<{ slug: string }> }
 ) {
   const { slug } = await params;
-  const name = slug.replace(/-/g, " ");
+  // Sanitize: strip characters that could break PostgREST .ilike() syntax
+  const name = slug.replace(/-/g, " ").replace(/[%_(),.;'"\\]/g, "").trim();
 
   try {
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {

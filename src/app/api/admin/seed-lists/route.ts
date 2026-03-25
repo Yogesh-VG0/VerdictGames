@@ -137,6 +137,7 @@ export async function POST() {
       .from("games")
       .select("*")
       .gt("score", 0)
+      .order("verdict_score", { ascending: false, nullsFirst: false })
       .order("score", { ascending: false })
       .limit(200) as { data: GameRow[] | null };
 
