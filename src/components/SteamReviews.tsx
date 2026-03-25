@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getSteamReviews, type SteamPlayerReview } from "@/lib/api";
 import { cn } from "@/lib/utils";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface SteamReviewsProps {
   slug: string;
@@ -68,10 +68,75 @@ function ReviewCard({ review }: { review: SteamPlayerReview }) {
   );
 }
 
+function NumberedPagination({
+  currentPage,
+  totalPages,
+  onPageChange,
+}: {
+  currentPage: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+}) {
+  if (totalPages <= 1) return null;
+
+  const getPageNumbers = () => {
+    const pages: (number | "...")[] = [];
+    if (totalPages <= 7) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      pages.push(1);
+      if (currentPage > 3) pages.push("...");
+      for (let i = Math.max(2, currentPage - 1); i <= Math.min(totalPages - 1, currentPage + 1); i++) {
+        pages.push(i);
+      }
+      if (currentPage < totalPages - 2) pages.push("...");
+      pages.push(totalPages);
+    }
+    return pages;
+  };
+
+  return (
+    <div className="flex items-center justify-center gap-1.5 pt-2">
+      <button
+        onClick={() => onPageChange(currentPage - 1)}
+        disabled={currentPage === 1}
+        className="p-1.5 rounded-lg border border-border text-secondary hover:text-foreground hover:bg-surface-2 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+      >
+        <ChevronLeft className="w-3.5 h-3.5" />
+      </button>
+      {getPageNumbers().map((page, i) =>
+        page === "..." ? (
+          <span key={`ellipsis-${i}`} className="px-1 text-[11px] text-tertiary">…</span>
+        ) : (
+          <button
+            key={page}
+            onClick={() => onPageChange(page)}
+            className={cn(
+              "min-w-[28px] h-7 rounded-lg text-[11px] font-medium transition-colors",
+              page === currentPage
+                ? "bg-accent text-white"
+                : "text-secondary hover:text-foreground hover:bg-surface-2 border border-border"
+            )}
+          >
+            {page}
+          </button>
+        )
+      )}
+      <button
+        onClick={() => onPageChange(currentPage + 1)}
+        disabled={currentPage === totalPages}
+        className="p-1.5 rounded-lg border border-border text-secondary hover:text-foreground hover:bg-surface-2 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+      >
+        <ChevronRight className="w-3.5 h-3.5" />
+      </button>
+    </div>
+  );
+}
+
 const REVIEWS_PER_PAGE = 3;
 
 export default function SteamReviews({ slug, className }: SteamReviewsProps) {
-  const [visibleCount, setVisibleCount] = useState(REVIEWS_PER_PAGE);
+  const [page, setPage] = useState(1);
 
   const { data, isLoading } = useQuery({
     queryKey: ["steam-reviews", slug],
@@ -98,9 +163,8 @@ export default function SteamReviews({ slug, className }: SteamReviewsProps) {
     ? `https://store.steampowered.com/app/${data.steamAppId}#app_reviews_hash`
     : null;
 
-  const visibleReviews = data.reviews.slice(0, visibleCount);
-  const hasMore = visibleCount < data.reviews.length;
-  const isExpanded = visibleCount > REVIEWS_PER_PAGE;
+  const totalPages = Math.ceil(data.reviews.length / REVIEWS_PER_PAGE);
+  const pageReviews = data.reviews.slice((page - 1) * REVIEWS_PER_PAGE, page * REVIEWS_PER_PAGE);
 
   return (
     <div className={cn("space-y-3", className)}>
@@ -124,31 +188,11 @@ export default function SteamReviews({ slug, className }: SteamReviewsProps) {
         )}
       </div>
 
-      {visibleReviews.map((review) => (
+      {pageReviews.map((review) => (
         <ReviewCard key={review.recommendationId} review={review} />
       ))}
 
-      {/* Pagination controls */}
-      <div className="flex items-center justify-center gap-3 pt-1">
-        {hasMore && (
-          <button
-            onClick={() => setVisibleCount((c) => Math.min(c + REVIEWS_PER_PAGE, data.reviews.length))}
-            className="flex items-center gap-1.5 px-4 py-2 text-xs font-medium text-accent bg-accent/10 border border-accent/20 rounded-lg hover:bg-accent/20 transition-colors"
-          >
-            <ChevronDown className="w-3.5 h-3.5" />
-            Show More ({data.reviews.length - visibleCount} remaining)
-          </button>
-        )}
-        {isExpanded && (
-          <button
-            onClick={() => setVisibleCount(REVIEWS_PER_PAGE)}
-            className="flex items-center gap-1.5 px-4 py-2 text-xs font-medium text-secondary bg-surface-2 border border-border rounded-lg hover:text-foreground transition-colors"
-          >
-            <ChevronUp className="w-3.5 h-3.5" />
-            Show Less
-          </button>
-        )}
-      </div>
+      <NumberedPagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
 
       <p className="text-[10px] text-tertiary pt-1">
         Reviews sourced from Steam. All reviews belong to their respective authors.

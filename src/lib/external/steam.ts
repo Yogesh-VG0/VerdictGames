@@ -199,7 +199,7 @@ function parseRequirementsHtml(html: string | undefined): Record<string, string>
   let match;
   while ((match = liRegex.exec(html)) !== null) {
     const key = match[1].replace(/:$/, "").trim();
-    const value = match[2].replace(/<[^>]*>/g, "").trim();
+    const value = match[2].replace(/<[^>]*>/g, "").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'").trim();
     if (key && value) result[key] = value;
   }
   return Object.keys(result).length > 0 ? result : undefined;

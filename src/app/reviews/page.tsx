@@ -12,7 +12,7 @@ import SortDropdown from "@/components/ui/SortDropdown";
 import { ReviewCardSkeleton } from "@/components/ui/Skeleton";
 import type { Platform } from "@/lib/types";
 import { PLATFORM_FILTER_OPTIONS, platformFilterIcon } from "@/components/ui/PlatformIcon";
-import { PenLine, Star, ThumbsUp, ThumbsDown, Search, MessageSquare, ChevronDown, ChevronUp } from "lucide-react";
+import { PenLine, Star, ThumbsUp, ThumbsDown, Search, MessageSquare, ChevronLeft, ChevronRight } from "lucide-react";
 import GradientText from "@/components/ui/GradientText";
 import Image from "next/image";
 import { slugify } from "@/lib/utils/slugify";
@@ -70,7 +70,8 @@ export default function ReviewsPage() {
   const [steamGameSlug, setSteamGameSlug] = useState<string | null>(null);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [debouncedSteamQuery, setDebouncedSteamQuery] = useState("");
-  const [visibleSteamCount, setVisibleSteamCount] = useState(5);
+  const [steamReviewPage, setSteamReviewPage] = useState(1);
+  const STEAM_REVIEWS_PER_PAGE = 5;
 
   // Debounce steam game query for suggestions
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -167,7 +168,7 @@ export default function ReviewsPage() {
             onSubmit={(e) => {
               e.preventDefault();
               const q = steamGameQuery.trim();
-              if (q) setSteamGameSlug(slugify(q));
+              if (q) { setSteamGameSlug(slugify(q)); setSteamReviewPage(1); }
             }}
           >
             <div className="relative flex-1">
@@ -192,6 +193,7 @@ export default function ReviewsPage() {
                       onClick={() => {
                         setSteamGameQuery(game.title);
                         setSteamGameSlug(game.slug);
+                        setSteamReviewPage(1);
                         setShowSuggestions(false);
                       }}
                       className="w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-surface-2 transition-colors text-sm"
@@ -270,31 +272,67 @@ export default function ReviewsPage() {
                       </div>
                     </div>
                   </div>
-                  {steamReviewsQuery.data.reviews.slice(0, visibleSteamCount).map((r) => (
+                  {steamReviewsQuery.data.reviews.slice(
+                    (steamReviewPage - 1) * STEAM_REVIEWS_PER_PAGE,
+                    steamReviewPage * STEAM_REVIEWS_PER_PAGE
+                  ).map((r) => (
                     <SteamReviewCard key={r.recommendationId} review={r} />
                   ))}
 
-                  {/* Pagination controls */}
-                  <div className="flex items-center justify-center gap-3 pt-2">
-                    {visibleSteamCount < steamReviewsQuery.data.reviews.length && (
-                      <button
-                        onClick={() => setVisibleSteamCount((c) => Math.min(c + 5, steamReviewsQuery.data!.reviews.length))}
-                        className="flex items-center gap-1.5 px-4 py-2 text-xs font-medium text-accent bg-accent/10 border border-accent/20 rounded-lg hover:bg-accent/20 transition-colors"
-                      >
-                        <ChevronDown className="w-3.5 h-3.5" />
-                        Show More ({steamReviewsQuery.data.reviews.length - visibleSteamCount} remaining)
-                      </button>
-                    )}
-                    {visibleSteamCount > 5 && (
-                      <button
-                        onClick={() => setVisibleSteamCount(5)}
-                        className="flex items-center gap-1.5 px-4 py-2 text-xs font-medium text-secondary bg-surface-2 border border-border rounded-lg hover:text-foreground transition-colors"
-                      >
-                        <ChevronUp className="w-3.5 h-3.5" />
-                        Show Less
-                      </button>
-                    )}
-                  </div>
+                  {/* Numbered pagination */}
+                  {(() => {
+                    const totalPages = Math.ceil(steamReviewsQuery.data.reviews.length / STEAM_REVIEWS_PER_PAGE);
+                    if (totalPages <= 1) return null;
+                    const getPages = () => {
+                      const pages: (number | "...")[] = [];
+                      if (totalPages <= 7) {
+                        for (let i = 1; i <= totalPages; i++) pages.push(i);
+                      } else {
+                        pages.push(1);
+                        if (steamReviewPage > 3) pages.push("...");
+                        for (let i = Math.max(2, steamReviewPage - 1); i <= Math.min(totalPages - 1, steamReviewPage + 1); i++) pages.push(i);
+                        if (steamReviewPage < totalPages - 2) pages.push("...");
+                        pages.push(totalPages);
+                      }
+                      return pages;
+                    };
+                    return (
+                      <div className="flex items-center justify-center gap-1.5 pt-2">
+                        <button
+                          onClick={() => setSteamReviewPage((p) => Math.max(1, p - 1))}
+                          disabled={steamReviewPage === 1}
+                          className="p-1.5 rounded-lg border border-border text-secondary hover:text-foreground hover:bg-surface-2 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                        >
+                          <ChevronLeft className="w-3.5 h-3.5" />
+                        </button>
+                        {getPages().map((pg, i) =>
+                          pg === "..." ? (
+                            <span key={`steam-ellipsis-${i}`} className="px-1 text-[11px] text-tertiary">…</span>
+                          ) : (
+                            <button
+                              key={pg}
+                              onClick={() => setSteamReviewPage(pg)}
+                              className={cn(
+                                "min-w-[28px] h-7 rounded-lg text-[11px] font-medium transition-colors",
+                                pg === steamReviewPage
+                                  ? "bg-accent text-white"
+                                  : "text-secondary hover:text-foreground hover:bg-surface-2 border border-border"
+                              )}
+                            >
+                              {pg}
+                            </button>
+                          )
+                        )}
+                        <button
+                          onClick={() => setSteamReviewPage((p) => Math.min(totalPages, p + 1))}
+                          disabled={steamReviewPage === totalPages}
+                          className="p-1.5 rounded-lg border border-border text-secondary hover:text-foreground hover:bg-surface-2 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                        >
+                          <ChevronRight className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    );
+                  })()}
 
                   <p className="text-[10px] text-tertiary pt-1">
                     Reviews sourced from Steam via the official Valve API. All reviews belong to their respective authors.

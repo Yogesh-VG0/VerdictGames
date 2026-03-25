@@ -28,9 +28,9 @@ import ReviewForm from "@/components/ReviewForm";
 import CommentThread from "@/components/CommentThread";
 import AuthModal from "@/components/AuthModal";
 import {
-  Zap, CreditCard, Trophy, Newspaper, MessageSquare, Clock,
+  Zap, Trophy, Newspaper, MessageSquare, Clock,
   BarChart3, Target, ThumbsUp, ThumbsDown, Gamepad2,
-  Smartphone, Tag, Globe, ChevronDown, ChevronUp, Monitor, Apple, Terminal,
+  Smartphone, Tag, Globe, ChevronLeft, ChevronRight, Monitor,
 } from "lucide-react";
 
 interface Props {
@@ -91,7 +91,7 @@ export default function GameDetailPage({ params }: Props) {
   const searchParams = useSearchParams();
   const rawgId = searchParams.get("rawgId") ? Number(searchParams.get("rawgId")) : undefined;
   const [authModalOpen, setAuthModalOpen] = useState(false);
-  const [achievementsVisible, setAchievementsVisible] = useState(6);
+  const [achievementsPage, setAchievementsPage] = useState(1);
 
   const { data: game, isLoading } = useQuery({
     queryKey: ["game", slug, rawgId],
@@ -129,11 +129,32 @@ export default function GameDetailPage({ params }: Props) {
     staleTime: 60 * 60 * 1000,
   });
 
+  const ACHIEVEMENTS_PER_PAGE = 10;
+
   const renderAchievements = useCallback(() => {
     if (!achievementsData || achievementsData.achievements.length === 0) return null;
-    const visible = achievementsData.achievements.slice(0, achievementsVisible);
-    const hasMore = achievementsVisible < achievementsData.achievements.length;
-    const isExpanded = achievementsVisible > 6;
+    const totalAchPages = Math.ceil(achievementsData.achievements.length / ACHIEVEMENTS_PER_PAGE);
+    const pageItems = achievementsData.achievements.slice(
+      (achievementsPage - 1) * ACHIEVEMENTS_PER_PAGE,
+      achievementsPage * ACHIEVEMENTS_PER_PAGE
+    );
+
+    const getAchPageNumbers = () => {
+      const pages: (number | "...")[] = [];
+      if (totalAchPages <= 7) {
+        for (let i = 1; i <= totalAchPages; i++) pages.push(i);
+      } else {
+        pages.push(1);
+        if (achievementsPage > 3) pages.push("...");
+        for (let i = Math.max(2, achievementsPage - 1); i <= Math.min(totalAchPages - 1, achievementsPage + 1); i++) {
+          pages.push(i);
+        }
+        if (achievementsPage < totalAchPages - 2) pages.push("...");
+        pages.push(totalAchPages);
+      }
+      return pages;
+    };
+
     return (
       <section className="rounded-2xl border border-border bg-surface p-5 space-y-4">
         <h3 className="text-sm font-bold text-foreground uppercase tracking-wider section-title-line flex items-center gap-2">
@@ -144,7 +165,7 @@ export default function GameDetailPage({ params }: Props) {
           </span>
         </h3>
         <div className="space-y-2">
-          {visible.map((ach: SteamAchievementItem) => (
+          {pageItems.map((ach: SteamAchievementItem) => (
             <div
               key={ach.name}
               className="flex items-center gap-3 p-2 rounded-xl bg-surface-2 border border-border hover:border-accent/30 transition-colors"
@@ -177,35 +198,46 @@ export default function GameDetailPage({ params }: Props) {
             </div>
           ))}
         </div>
-        {/* Pagination controls */}
-        <div className="flex items-center justify-center gap-2 pt-1">
-          {hasMore && (
+        {/* Numbered pagination */}
+        {totalAchPages > 1 && (
+          <div className="flex items-center justify-center gap-1.5 pt-1">
             <button
-              onClick={() => setAchievementsVisible((c) => Math.min(c + 10, achievementsData.achievements.length))}
-              className="flex items-center gap-1 px-3 py-1.5 text-[11px] font-medium text-accent bg-accent/10 border border-accent/20 rounded-lg hover:bg-accent/20 transition-colors"
+              onClick={() => setAchievementsPage((p) => Math.max(1, p - 1))}
+              disabled={achievementsPage === 1}
+              className="p-1.5 rounded-lg border border-border text-secondary hover:text-foreground hover:bg-surface-2 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
             >
-              <ChevronDown className="w-3 h-3" />
-              Show More ({achievementsData.achievements.length - achievementsVisible} left)
+              <ChevronLeft className="w-3 h-3" />
             </button>
-          )}
-          {isExpanded && (
+            {getAchPageNumbers().map((pg, i) =>
+              pg === "..." ? (
+                <span key={`ach-ellipsis-${i}`} className="px-1 text-[10px] text-tertiary">…</span>
+              ) : (
+                <button
+                  key={pg}
+                  onClick={() => setAchievementsPage(pg)}
+                  className={cn(
+                    "min-w-[26px] h-[26px] rounded-lg text-[10px] font-medium transition-colors",
+                    pg === achievementsPage
+                      ? "bg-accent text-white"
+                      : "text-secondary hover:text-foreground hover:bg-surface-2 border border-border"
+                  )}
+                >
+                  {pg}
+                </button>
+              )
+            )}
             <button
-              onClick={() => setAchievementsVisible(6)}
-              className="flex items-center gap-1 px-3 py-1.5 text-[11px] font-medium text-secondary bg-surface-2 border border-border rounded-lg hover:text-foreground transition-colors"
+              onClick={() => setAchievementsPage((p) => Math.min(totalAchPages, p + 1))}
+              disabled={achievementsPage === totalAchPages}
+              className="p-1.5 rounded-lg border border-border text-secondary hover:text-foreground hover:bg-surface-2 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
             >
-              <ChevronUp className="w-3 h-3" />
-              Collapse
+              <ChevronRight className="w-3 h-3" />
             </button>
-          )}
-        </div>
-        {achievementsData.total > achievementsData.achievements.length && (
-          <p className="text-xs text-tertiary text-center">
-            Showing {Math.min(achievementsVisible, achievementsData.achievements.length)} of {achievementsData.total} achievements
-          </p>
+          </div>
         )}
       </section>
     );
-  }, [achievementsData, achievementsVisible]);
+  }, [achievementsData, achievementsPage]);
 
   if (isLoading) {
     return (
@@ -548,37 +580,37 @@ export default function GameDetailPage({ params }: Props) {
               )}
             </FadeInSection>
 
-            {/* ── Performance & Monetization ── */}
+            {/* ── Performance & System Requirements ── */}
             <FadeInSection>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <section className="rounded-2xl border border-border bg-surface p-5 space-y-3">
-                  <h3 className="text-sm font-bold text-foreground uppercase tracking-wider flex items-center gap-2">
-                    <Zap className="w-4 h-4 text-accent" /> Performance
-                  </h3>
-                  <p className="text-secondary text-sm leading-relaxed">
-                    {game.performanceNotes || (
-                      game.platforms.includes("PC")
-                        ? "Runs well on modern hardware."
-                        : game.platforms.some((p) => p.startsWith("PlayStation") || p.startsWith("Xbox") || p.startsWith("Nintendo"))
-                          ? "Optimized for console hardware. Performance may vary by model."
-                          : game.platforms.some((p) => p === "Android" || p === "iOS")
-                            ? "Optimized for mobile devices. Performance varies by device."
-                            : "Performance details not available yet."
-                    )}
-                  </p>
-                  {/* System requirements from Steam API */}
-                  {sysReqData?.requirements?.pc && (
-                    <div className="space-y-2 pt-1">
-                      <p className="text-[10px] uppercase tracking-wider text-tertiary font-semibold flex items-center gap-1.5">
-                        <Monitor className="w-3 h-3" /> System Requirements
-                      </p>
+              <section className="rounded-2xl border border-border bg-surface p-5 md:p-6 space-y-4">
+                <h3 className="text-sm font-bold text-foreground uppercase tracking-wider flex items-center gap-2">
+                  <Zap className="w-4 h-4 text-accent" /> Performance
+                </h3>
+                <p className="text-secondary text-sm leading-relaxed">
+                  {game.performanceNotes || (
+                    game.platforms.includes("PC")
+                      ? "Runs well on modern hardware."
+                      : game.platforms.some((p) => p.startsWith("PlayStation") || p.startsWith("Xbox") || p.startsWith("Nintendo"))
+                        ? "Optimized for console hardware. Performance may vary by model."
+                        : game.platforms.some((p) => p === "Android" || p === "iOS")
+                          ? "Optimized for mobile devices. Performance varies by device."
+                          : "Performance details not available yet."
+                  )}
+                </p>
+                {/* System requirements from Steam API — side-by-side on desktop */}
+                {sysReqData?.requirements?.pc && (
+                  <div className="space-y-3 pt-2 border-t border-border">
+                    <p className="text-[11px] uppercase tracking-wider text-tertiary font-semibold flex items-center gap-1.5 pt-2">
+                      <Monitor className="w-3.5 h-3.5" /> System Requirements
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       {sysReqData.requirements.pc.minimum && (
-                        <div className="space-y-1">
-                          <p className="text-[10px] font-semibold text-secondary uppercase">Minimum</p>
-                          <div className="grid gap-1">
+                        <div className="space-y-2">
+                          <p className="text-[10px] font-bold text-foreground uppercase tracking-wide">Minimum</p>
+                          <div className="grid gap-1.5">
                             {Object.entries(sysReqData.requirements.pc.minimum).map(([key, val]) => (
-                              <div key={key} className="flex gap-2 text-[11px]">
-                                <span className="text-tertiary font-medium shrink-0 w-20">{key}</span>
+                              <div key={key} className="text-[11px]">
+                                <span className="text-tertiary font-medium block">{key}</span>
                                 <span className="text-secondary">{val}</span>
                               </div>
                             ))}
@@ -586,12 +618,12 @@ export default function GameDetailPage({ params }: Props) {
                         </div>
                       )}
                       {sysReqData.requirements.pc.recommended && (
-                        <div className="space-y-1 pt-1">
-                          <p className="text-[10px] font-semibold text-secondary uppercase">Recommended</p>
-                          <div className="grid gap-1">
+                        <div className="space-y-2">
+                          <p className="text-[10px] font-bold text-foreground uppercase tracking-wide">Recommended</p>
+                          <div className="grid gap-1.5">
                             {Object.entries(sysReqData.requirements.pc.recommended).map(([key, val]) => (
-                              <div key={key} className="flex gap-2 text-[11px]">
-                                <span className="text-tertiary font-medium shrink-0 w-20">{key}</span>
+                              <div key={key} className="text-[11px]">
+                                <span className="text-tertiary font-medium block">{key}</span>
                                 <span className="text-secondary">{val}</span>
                               </div>
                             ))}
@@ -599,49 +631,21 @@ export default function GameDetailPage({ params }: Props) {
                         </div>
                       )}
                     </div>
-                  )}
-                  {/* Fallback link to Steam */}
-                  {!sysReqData?.requirements?.pc && game.platforms.includes("PC") && game.steamUrl && (
-                    <a
-                      href={`${game.steamUrl}#sysreq_content`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 text-xs text-pixel-cyan hover:text-pixel-cyan/80 transition-colors font-medium"
-                    >
-                      <Smartphone className="w-3.5 h-3.5" />
-                      View system requirements on Steam →
-                    </a>
-                  )}
-                </section>
-                <section className="rounded-2xl border border-border bg-surface p-5 space-y-3">
-                  <h3 className="text-sm font-bold text-foreground uppercase tracking-wider flex items-center gap-2">
-                    <CreditCard className="w-4 h-4 text-accent" /> Monetization
-                  </h3>
-                  <div className="flex items-center gap-2 mb-2">
-                    <PixelBadge
-                      variant={
-                        game.monetization === "Paid"
-                          ? "success"
-                          : game.monetization === "Free"
-                            ? "accent"
-                            : "warning"
-                      }
-                    >
-                      {game.monetization}
-                    </PixelBadge>
-                    {currentPrice && <span className="text-xs text-tertiary">({currentPrice})</span>}
                   </div>
-                  <p className="text-secondary text-sm leading-relaxed">
-                    {game.monetizationNotes || (
-                      game.isFree
-                        ? "Free to play. May include optional in-game purchases."
-                        : game.monetization === "Paid"
-                          ? "One-time purchase — full game included."
-                          : "Check the store page for in-app details."
-                    )}
-                  </p>
-                </section>
-              </div>
+                )}
+                {/* Fallback link to Steam */}
+                {!sysReqData?.requirements?.pc && game.platforms.includes("PC") && game.steamUrl && (
+                  <a
+                    href={`${game.steamUrl}#sysreq_content`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-xs text-pixel-cyan hover:text-pixel-cyan/80 transition-colors font-medium"
+                  >
+                    <Smartphone className="w-3.5 h-3.5" />
+                    View system requirements on Steam →
+                  </a>
+                )}
+              </section>
             </FadeInSection>
 
             {/* ── Steam Achievements (mobile only — desktop renders in sidebar) ── */}
