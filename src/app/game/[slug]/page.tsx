@@ -157,13 +157,15 @@ export default function GameDetailPage({ params }: Props) {
 
     return (
       <section className="rounded-2xl border border-border bg-surface p-5 space-y-4">
-        <h3 className="text-sm font-bold text-foreground uppercase tracking-wider section-title-line flex items-center gap-2">
-          <Trophy className="w-4 h-4 text-accent" />
-          Achievements
-          <span className="text-xs font-normal text-tertiary ml-auto">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-bold text-foreground uppercase tracking-wider section-title-line flex items-center gap-2">
+            <Trophy className="w-4 h-4 text-accent" />
+            Achievements
+          </h3>
+          <span className="text-[10px] font-medium text-tertiary bg-surface-2 border border-border rounded-full px-2 py-0.5 shrink-0">
             {achievementsData.total} total
           </span>
-        </h3>
+        </div>
         <div className="space-y-2">
           {pageItems.map((ach: SteamAchievementItem) => (
             <div

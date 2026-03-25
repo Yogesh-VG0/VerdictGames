@@ -48,7 +48,7 @@ function ReviewCard({ review }: { review: SteamPlayerReview }) {
       </div>
 
       {/* Review text */}
-      <p className="text-sm text-secondary leading-relaxed line-clamp-4">
+      <p className="text-sm text-secondary leading-relaxed line-clamp-6">
         {review.reviewText}
       </p>
 
