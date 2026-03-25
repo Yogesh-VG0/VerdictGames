@@ -17,8 +17,8 @@ interface QualityOpts {
   section?: SectionType;
 }
 
-const THRESHOLDS: Record<SectionType, { minReviews: number; minDescLen: number; requireImage: boolean; minConfidence?: number }> = {
-  hero:        { minReviews: 1000, minDescLen: 50, requireImage: true, minConfidence: 0.8 },   // hero needs well-known, multi-source-validated games
+const THRESHOLDS: Record<SectionType, { minReviews: number; minDescLen: number; requireImage: boolean; minConfidence?: number; minCurrentPlayers?: number }> = {
+  hero:        { minReviews: 10000, minDescLen: 50, requireImage: true, minConfidence: 0.8, minCurrentPlayers: 500 },   // hero needs well-known, actively-played, multi-source-validated games
   trending:    { minReviews: 20,  minDescLen: 20, requireImage: true },
   topRated:    { minReviews: 50,  minDescLen: 20, requireImage: true },
   newReleases: { minReviews: 0,   minDescLen: 10, requireImage: true },   // allow low reviews for new games
@@ -71,6 +71,9 @@ export function isQualityGame(row: GameRow, section: SectionType = "generic"): b
 
   // Confidence check (hero section requires multi-source validation)
   if (t.minConfidence && (row.confidence ?? 0) < t.minConfidence) return false;
+
+  // Current players check (hero section requires active player base)
+  if (t.minCurrentPlayers && (row.current_players ?? 0) < t.minCurrentPlayers) return false;
 
   return true;
 }

@@ -156,7 +156,7 @@ function SearchContent() {
            sort === "top-rated" ? <><Trophy className="w-6 h-6 text-yellow-500" /><GradientText text="Top Rated Games" gradient="linear-gradient(90deg, #facc15, #f97316, #22c55e)" /></> :
            sort === "newest" ? <><Sparkles className="w-6 h-6 text-cyan-500" /><GradientText text="New Releases" gradient="linear-gradient(90deg, #06b6d4, #3b82f6, #8b5cf6)" /></> :
            sort === "upcoming" ? <><Calendar className="w-6 h-6 text-purple-500" /><GradientText text="Upcoming Games" gradient="linear-gradient(90deg, #a855f7, #6366f1, #ec4899)" /></> :
-           sort === "recently-added" ? <><Clock className="w-6 h-6 text-blue-500" /><GradientText text="Recently Added" gradient="linear-gradient(90deg, #3b82f6, #06b6d4, #3b82f6)" /></> :
+           sort === "recently-added" ? <><Clock className="w-6 h-6 text-blue-500" /><GradientText text="Recently Added to Verdict" gradient="linear-gradient(90deg, #3b82f6, #06b6d4, #3b82f6)" /></> :
            <><SearchIcon className="w-6 h-6 text-accent" /><GradientText text="Search Games" gradient="linear-gradient(90deg, #6366f1 0%, #8b5cf6 25%, #a78bfa 50%, #8b5cf6 75%, #6366f1 100%)" /></>}
         </h1>
         <p className="text-sm text-secondary">
@@ -164,7 +164,7 @@ function SearchContent() {
            sort === "top-rated" ? "Highest Verdict scores across all platforms." :
            sort === "newest" ? "The latest released games, sorted by release date." :
            sort === "upcoming" ? "Unreleased games arriving soonest." :
-           sort === "recently-added" ? "The newest additions to our database." :
+           sort === "recently-added" ? "Latest games added to Verdict — not necessarily new releases." :
            "Discover and filter games across all platforms."}
         </p>
       </motion.div>
