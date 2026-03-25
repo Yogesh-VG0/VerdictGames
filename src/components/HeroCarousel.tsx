@@ -178,7 +178,7 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
 
       {/* Background images */}
       <div
-        className="relative aspect-[4/5] sm:aspect-[16/9] md:aspect-[2.35/1] min-h-[400px] sm:min-h-[440px] md:min-h-[580px] lg:min-h-[640px] overflow-hidden"
+        className="relative aspect-[4/5] sm:aspect-[16/9] md:aspect-[21/9] min-h-[480px] sm:min-h-[520px] md:min-h-[720px] lg:min-h-[80vh] overflow-hidden"
       >
         <AnimatePresence initial={false} custom={direction} mode="sync">
           <motion.div
