@@ -40,7 +40,7 @@ export async function POST() {
   // Fetch ALL games — we need to recompute scores for every row
   const { data: games, error } = await supabase
     .from("games")
-    .select("id, title, score, score_source, review_count, igdb_rating, rawg_metacritic, rawg_rating, steam_app_id, steam_positive_count, steam_total_count, release_date, is_provisional, verdict_label")
+    .select("id, title, score, score_source, review_count, igdb_rating, rawg_metacritic, rawg_rating, steam_app_id, steam_positive_count, steam_total_count, release_date, verdict_label")
     .order("id");
 
   if (error) {
@@ -104,12 +104,11 @@ export async function POST() {
         // ── Verdict Label ──
         const releaseDate = game.release_date ?? null;
         const isUpcoming = releaseDate ? new Date(releaseDate) > new Date() : false;
-        const isProvisional = game.is_provisional ?? false;
         const isJustReleased = releaseDate
           ? (Date.now() - new Date(releaseDate).getTime()) < 14 * 86400000 && reviewCount < 20
           : false;
 
-        const newLabel = (isProvisional || isUpcoming)
+        const newLabel = isUpcoming
           ? "COMING SOON"
           : isJustReleased
             ? "JUST RELEASED"
