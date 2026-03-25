@@ -61,6 +61,8 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "assets.xboxservices.com" },
       { protocol: "https", hostname: "shared.cloudflare.steamstatic.com" },
       { protocol: "https", hostname: "clan.cloudflare.steamstatic.com" },
+      { protocol: "https", hostname: "cdna.artstation.com" },
+      { protocol: "https", hostname: "cdnb.artstation.com" },
       ...supabaseImageHosts(),
     ],
   },
