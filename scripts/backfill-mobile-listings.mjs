@@ -32,6 +32,7 @@ try {
 } catch { /* .env not found */ }
 
 import { connectDb } from "./lib/db-connect.mjs";
+import { checkMinInterval, startRun, finishRun } from "./lib/scheduler-logger.mjs";
 
 const sql = connectDb("backfill-mobile");
 
@@ -42,6 +43,17 @@ const limitArg = process.argv.find((a) => a.startsWith("--limit="));
 const LIMIT = limitArg ? parseInt(limitArg.split("=")[1], 10) : 999;
 
 const THROTTLE_MS = 1500; // delay between scraper calls to avoid bans
+
+const JOB_NAME = ANDROID_ONLY ? 'backfill-mobile-android' : IOS_ONLY ? 'backfill-mobile-ios' : 'backfill-mobile';
+
+// Skip if last successful run was less than 11 hours ago (effective "every 12h" with hourly trigger)
+if (!DRY_RUN) {
+  const MIN_INTERVAL_HOURS = parseFloat(process.env.MOBILE_BACKFILL_INTERVAL_HOURS || "11");
+  const shouldRun = await checkMinInterval(sql, JOB_NAME, MIN_INTERVAL_HOURS);
+  if (!shouldRun) { await sql.end(); process.exit(0); }
+}
+
+const schedulerRun = !DRY_RUN ? await startRun(sql, JOB_NAME, { androidOnly: ANDROID_ONLY, iosOnly: IOS_ONLY, limit: LIMIT }) : { id: null };
 
 console.log("═══════════════════════════════════════════");
 console.log("  VERDICT.GAMES — Backfill Mobile Listings");
@@ -424,5 +436,17 @@ if (!ANDROID_ONLY) {
   console.log(`  iOS:     ${stats.ios.verified} verified, ${stats.ios.skipped} skipped, ${stats.ios.failed} failed (of ${stats.ios.checked} checked)`);
 }
 console.log("═══════════════════════════════════════════\n");
+
+if (!DRY_RUN) {
+  const totalVerified = (stats.android?.verified ?? 0) + (stats.ios?.verified ?? 0);
+  const totalFailed = (stats.android?.failed ?? 0) + (stats.ios?.failed ?? 0);
+  const totalChecked = (stats.android?.checked ?? 0) + (stats.ios?.checked ?? 0);
+  await finishRun(sql, schedulerRun?.id, {
+    rows_scanned: totalChecked,
+    rows_updated: totalVerified,
+    rows_skipped: (stats.android?.skipped ?? 0) + (stats.ios?.skipped ?? 0),
+    metadata: { failed: totalFailed },
+  });
+}
 
 await sql.end();

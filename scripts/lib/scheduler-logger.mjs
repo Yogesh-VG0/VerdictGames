@@ -55,6 +55,38 @@ export async function releaseLock(sql, jobName) {
 }
 
 /**
+ * Check if enough time has passed since the last successful run.
+ * Use this to implement "every N hours" with Heroku Scheduler's hourly trigger.
+ * Returns true if the job should run, false if it should skip.
+ *
+ * @param {object} sql - Postgres connection
+ * @param {string} jobName - The job name to check
+ * @param {number} minIntervalHours - Minimum hours between runs
+ */
+export async function checkMinInterval(sql, jobName, minIntervalHours) {
+  try {
+    const [row] = await sql`
+      SELECT started_at FROM scheduler_runs
+      WHERE job_name = ${jobName} AND status = 'success'
+      ORDER BY started_at DESC LIMIT 1
+    `;
+    if (!row) return true; // no previous run found, should run
+
+    const lastRun = new Date(row.started_at);
+    const hoursSince = (Date.now() - lastRun.getTime()) / (1000 * 60 * 60);
+
+    if (hoursSince < minIntervalHours) {
+      console.log(`⏭ Skipping ${jobName}: last successful run was ${hoursSince.toFixed(1)}h ago (min interval: ${minIntervalHours}h)`);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.warn(`⚠ Interval check failed: ${err.message}. Proceeding anyway.`);
+    return true; // fail-open
+  }
+}
+
+/**
  * Start a scheduler run. Returns { id } for the new run row.
  */
 export async function startRun(sql, jobName, metadata = {}) {

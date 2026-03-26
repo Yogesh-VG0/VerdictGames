@@ -24,7 +24,7 @@
  */
 
 import { readFileSync, writeFileSync, existsSync } from "fs";
-import { startRun, finishRun, acquireLock, releaseLock } from './lib/scheduler-logger.mjs';
+import { startRun, finishRun, acquireLock, releaseLock, checkMinInterval } from './lib/scheduler-logger.mjs';
 import { connectDb } from './lib/db-connect.mjs';
 
 // ── Load .env for local dev ──
@@ -140,6 +140,13 @@ console.log("  VERDICT.GAMES — Game Backfill Pipeline");
 console.log(`  Years: ${YEAR_FROM}–${YEAR_TO} | Limit: ${LIMIT} | Concurrency: ${CONCURRENCY} | Delay: ${DELAY_MS}ms${DRY_RUN ? " | DRY RUN" : ""}`);
 console.log(`  ${new Date().toISOString()}`);
 console.log("═══════════════════════════════════════════\n");
+
+// Skip if last successful run was less than 11 hours ago (effective "every 12h" with hourly trigger)
+if (!DRY_RUN) {
+  const MIN_INTERVAL_HOURS = parseFloat(process.env.BACKFILL_INTERVAL_HOURS || "11");
+  const shouldRun = await checkMinInterval(sql, 'backfill-games', MIN_INTERVAL_HOURS);
+  if (!shouldRun) { await sql.end(); process.exit(0); }
+}
 
 // Anti-overlap: advisory lock prevents concurrent backfill runs
 if (!DRY_RUN) {

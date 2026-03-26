@@ -19,7 +19,7 @@
  *   CRON_SECRET, API_URL (Vercel deployment URL)
  */
 
-import { startRun, finishRun, acquireLock, releaseLock } from './lib/scheduler-logger.mjs';
+import { startRun, finishRun, acquireLock, releaseLock, checkMinInterval } from './lib/scheduler-logger.mjs';
 import { connectDb } from './lib/db-connect.mjs';
 
 // Load .env for local dev; Heroku has Config Vars
@@ -100,6 +100,11 @@ console.log("══════════════════════�
 console.log("  VERDICT.GAMES — Trending & Featured Sync");
 console.log(`  ${new Date().toISOString()}`);
 console.log("═══════════════════════════════════════════\n");
+
+// Skip if last successful run was less than 5 hours ago (effective "every 6h" with hourly trigger)
+const MIN_INTERVAL_HOURS = parseFloat(process.env.TRENDING_INTERVAL_HOURS || "5");
+const shouldRun = await checkMinInterval(sql, 'refresh-trending', MIN_INTERVAL_HOURS);
+if (!shouldRun) { await sql.end(); process.exit(0); }
 
 const locked = await acquireLock(sql, 'refresh-trending');
 if (!locked) { await sql.end(); process.exit(0); }

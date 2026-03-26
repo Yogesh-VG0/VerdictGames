@@ -30,7 +30,7 @@ try {
   // .env not found — running on Heroku, env vars already set
 }
 
-import { startRun, finishRun, acquireLock, releaseLock } from './lib/scheduler-logger.mjs';
+import { startRun, finishRun, acquireLock, releaseLock, checkMinInterval } from './lib/scheduler-logger.mjs';
 import { connectDb, getDbUrl } from './lib/db-connect.mjs';
 
 const SITE_URL = process.env.SITE_URL || "https://www.verdict.games";
@@ -54,6 +54,11 @@ params.set("limit", LIMIT);
 const url = `${SITE_URL}/api/cron/re-enrich?${params}`;
 let run = null;
 if (sql) {
+  // Skip if last successful run was less than 5 hours ago (effective "every 6h" with hourly trigger)
+  const MIN_INTERVAL_HOURS = parseFloat(process.env.RE_ENRICH_INTERVAL_HOURS || "5");
+  const shouldRun = await checkMinInterval(sql, 're-enrich', MIN_INTERVAL_HOURS);
+  if (!shouldRun) { await sql.end(); process.exit(0); }
+
   const locked = await acquireLock(sql, 're-enrich');
   if (!locked) { await sql.end(); process.exit(0); }
   run = await startRun(sql, 're-enrich', { limit: LIMIT });
