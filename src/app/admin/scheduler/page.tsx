@@ -57,7 +57,7 @@ const JOB_LABELS: Record<string, { label: string; description: string; icon: str
 };
 
 // Heroku-only jobs can't be triggered from the web UI
-const HEROKU_ONLY_JOBS = new Set(["backfill-games", "backfill-mobile-android", "backfill-mobile-ios"]);
+const HEROKU_ONLY_JOBS = new Set(["backfill-games", "backfill-mobile-android", "backfill-mobile-ios", "refresh-trending", "discover-games"]);
 
 // ── Human-readable metadata labels per job type ──
 const METADATA_LABELS: Record<string, Record<string, string>> = {
@@ -401,12 +401,13 @@ export default function SchedulerPage() {
       return json.success ? json.data : json;
     },
     onSuccess: (data) => {
+      const msg = data.message || data.error || "Unknown response";
       if (data.herokuOnly) {
-        setTriggerMsg(data.message);
+        setTriggerMsg(msg);
       } else if (data.success === false) {
-        setTriggerMsg(`Failed: ${data.message}`);
+        setTriggerMsg(`Failed: ${msg}`);
       } else {
-        setTriggerMsg(`${data.job} completed successfully`);
+        setTriggerMsg(`${data.job ?? "Job"} completed successfully`);
         queryClient.invalidateQueries({ queryKey: ["admin-scheduler"] });
       }
       setTimeout(() => setTriggerMsg(null), 15000);
@@ -579,10 +580,8 @@ export default function SchedulerPage() {
         </div>
         <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {[
-            { job: "re-enrich", label: "Re-enrich Stale Games", desc: "Refresh oldest-enriched games with fresh data from RAWG, IGDB, and Steam", color: "bg-green-500/10 text-green-500 border-green-500/20" },
-            { job: "refresh-trending", label: "Refresh Trending", desc: "Update player counts and recalculate trending/featured flags", color: "bg-amber-500/10 text-amber-500 border-amber-500/20" },
-            { job: "discover-games", label: "Discover New Games", desc: "Search RAWG for trending, new, and top-rated games to ingest", color: "bg-blue-500/10 text-blue-500 border-blue-500/20" },
-            { job: "seed-curated-lists", label: "Seed Editorial Lists", desc: "Regenerate all 12 editorial curated lists from current data", color: "bg-purple-500/10 text-purple-500 border-purple-500/20" },
+            { job: "re-enrich", label: "Re-enrich Stale Games", desc: "Refresh oldest-enriched games with fresh data from RAWG, IGDB, and Steam (~2 min)", color: "bg-green-500/10 text-green-500 border-green-500/20" },
+            { job: "seed-curated-lists", label: "Seed Editorial Lists", desc: "Regenerate 12 editorial curated lists from current data (~1.5 min)", color: "bg-purple-500/10 text-purple-500 border-purple-500/20" },
           ].map((action) => {
             const isRunning = triggerMutation.isPending && triggerMutation.variables === action.job;
             return (

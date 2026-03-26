@@ -319,13 +319,14 @@ export default function AdminGameEditor({ params }: { params: Promise<{ id: stri
             <option value="igdb">IGDB Only</option>
             <option value="google_play">Google Play</option>
             <option value="app_store">App Store</option>
+            <option value="mobile_both">Both Mobile Stores</option>
           </select>
           <button
             onClick={() => reingestMutation.mutate(reingestSource)}
             disabled={reingestMutation.isPending}
             className="px-3 py-2 rounded-xl text-xs font-medium bg-pixel-cyan/10 text-pixel-cyan border border-pixel-cyan/20 hover:bg-pixel-cyan/20 transition-all disabled:opacity-50"
           >
-            {reingestMutation.isPending ? "Re-ingesting..." : reingestSource === "all" ? "Re-ingest Data" : `Fetch from ${reingestSource === "google_play" ? "Google Play" : reingestSource === "app_store" ? "App Store" : reingestSource.toUpperCase()}`}
+            {reingestMutation.isPending ? "Re-ingesting..." : reingestSource === "all" ? "Re-ingest Data" : `Fetch from ${reingestSource === "google_play" ? "Google Play" : reingestSource === "app_store" ? "App Store" : reingestSource === "mobile_both" ? "Both Stores" : reingestSource.toUpperCase()}`}
           </button>
           <button
             onClick={() => saveMutation.mutate()}
@@ -647,13 +648,14 @@ export default function AdminGameEditor({ params }: { params: Promise<{ id: stri
                 <option value="igdb">IGDB Only</option>
                 <option value="google_play">Google Play</option>
                 <option value="app_store">App Store</option>
+                <option value="mobile_both">Both Mobile Stores</option>
               </select>
               <button
                 onClick={() => reingestMutation.mutate(reingestSource)}
                 disabled={reingestMutation.isPending}
                 className="px-4 py-2.5 rounded-xl text-xs font-medium bg-pixel-cyan/10 text-pixel-cyan border border-pixel-cyan/20 hover:bg-pixel-cyan/20 transition-all disabled:opacity-50"
               >
-                {reingestMutation.isPending ? "Re-ingesting..." : `🔄 Re-ingest from ${reingestSource === "all" ? "Pipeline" : reingestSource === "google_play" ? "Google Play" : reingestSource === "app_store" ? "App Store" : reingestSource.toUpperCase()}`}
+                {reingestMutation.isPending ? "Re-ingesting..." : `🔄 Re-ingest from ${reingestSource === "all" ? "Pipeline" : reingestSource === "google_play" ? "Google Play" : reingestSource === "app_store" ? "App Store" : reingestSource === "mobile_both" ? "Both Stores" : reingestSource.toUpperCase()}`}
               </button>
             </div>
           </>

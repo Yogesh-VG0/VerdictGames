@@ -14,6 +14,17 @@ export const maxDuration = 300; // 5 min max
  * Body: { job: string, params?: Record<string, string> }
  */
 
+// Maps job names to their CLI commands for Heroku one-off dynos
+const HEROKU_CLI_COMMANDS: Record<string, string> = {
+  "refresh-trending": "heroku run node scripts/heroku-refresh-trending.mjs -a verdict-games",
+  "discover-games": "heroku run node scripts/heroku-discover-games.mjs -a verdict-games",
+  "re-enrich": "heroku run node scripts/heroku-re-enrich.mjs -a verdict-games",
+  "seed-curated-lists": "heroku run node scripts/seed-curated-lists.mjs -a verdict-games",
+  "backfill-games": "heroku run node scripts/backfill-games.mjs --year-from=2020 --year-to=2026 --limit=25 -a verdict-games",
+  "backfill-mobile-android": "heroku run node scripts/backfill-mobile-listings.mjs --android-only --limit=15 -a verdict-games",
+  "backfill-mobile-ios": "heroku run node scripts/backfill-mobile-listings.mjs --ios-only --limit=15 -a verdict-games",
+};
+
 const TRIGGERABLE_JOBS: Record<string, {
   type: "cron" | "admin" | "heroku-only";
   path?: string;
@@ -24,37 +35,33 @@ const TRIGGERABLE_JOBS: Record<string, {
     type: "cron",
     path: "/api/cron/re-enrich",
     method: "GET",
-    description: "Re-enrich stale games (refreshes RAWG/IGDB/Steam data for oldest-enriched games)",
+    description: "Re-enrich stale games (~2 min, safe for serverless)",
   },
   "refresh-trending": {
-    type: "cron",
-    path: "/api/cron/refresh-trending",
-    method: "GET",
-    description: "Refresh trending & featured flags using IGDB PopScore + RAWG + GX data",
+    type: "heroku-only",
+    description: "Refresh trending & featured flags (~23 min, too slow for serverless)",
   },
   "discover-games": {
-    type: "cron",
-    path: "/api/cron/discover",
-    method: "GET",
-    description: "Discover and ingest new games from RAWG (trending, new releases, top rated)",
+    type: "heroku-only",
+    description: "Discover and ingest new games from RAWG (~5+ min, too slow for serverless)",
   },
   "seed-curated-lists": {
     type: "admin",
     path: "/api/admin/seed-lists",
     method: "POST",
-    description: "Regenerate all 12 editorial curated lists from current game data",
+    description: "Regenerate 12 editorial curated lists (lite version; Heroku script creates all 22)",
   },
   "backfill-games": {
     type: "heroku-only",
-    description: "Bulk ingest games by year range (runs on Heroku — too heavy for serverless)",
+    description: "Bulk ingest games by year range (runs on Heroku)",
   },
   "backfill-mobile-android": {
     type: "heroku-only",
-    description: "Verify Google Play store listings for all games with Android platform (runs on Heroku)",
+    description: "Verify Google Play store listings (runs on Heroku)",
   },
   "backfill-mobile-ios": {
     type: "heroku-only",
-    description: "Verify App Store listings for all games with iOS platform (runs on Heroku)",
+    description: "Verify App Store listings (runs on Heroku)",
   },
 };
 
@@ -74,10 +81,11 @@ export async function POST(req: NextRequest) {
 
   // Heroku-only jobs can't be triggered from the web app
   if (job.type === "heroku-only") {
+    const cliCmd = HEROKU_CLI_COMMANDS[jobName] ?? `heroku run node scripts/${jobName}.mjs -a verdict-games`;
     return jsonOk({
       success: false,
       job: jobName,
-      message: `"${jobName}" runs on Heroku and cannot be triggered from the admin dashboard. Use the Heroku CLI instead:\n\nheroku run node scripts/heroku-${jobName.replace("backfill-mobile-", "backfill-mobile-listings.mjs --").replace("backfill-games", "backfill-games.mjs")}\n\nOr run it locally:\nnode scripts/heroku-${jobName.replace("backfill-mobile-android", "backfill-mobile-listings.mjs --android-only").replace("backfill-mobile-ios", "backfill-mobile-listings.mjs --ios-only").replace("backfill-games", "backfill-games.mjs")}`,
+      message: `"${jobName}" runs on Heroku and cannot be triggered from the admin dashboard.\n\nRun via Heroku CLI:\n${cliCmd}`,
       herokuOnly: true,
     });
   }
