@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import {
@@ -14,12 +14,17 @@ import {
   Filter,
   BarChart3,
   Calendar,
+  Play,
+  Terminal,
+  Info,
+  Zap,
+  Server,
 } from "lucide-react";
 
 interface SchedulerRun {
   id: string;
   job_name: string;
-  status: "running" | "success" | "error";
+  status: "running" | "success" | "error" | "stale";
   started_at: string;
   finished_at: string | null;
   duration_ms: number | null;
@@ -41,15 +46,146 @@ interface JobSummary {
   lastStatus: string | null;
 }
 
-const JOB_LABELS: Record<string, { label: string; description: string }> = {
-  "refresh-trending": { label: "Refresh Trending", description: "Steam player counts + trending/featured flags" },
-  "discover-games": { label: "Discover Games", description: "Find and ingest new games from RAWG" },
-  "re-enrich": { label: "Re-enrich", description: "Refresh stale game enrichment data" },
-  "backfill-games": { label: "Backfill Games", description: "Ingest missing games by year range" },
-  "backfill-mobile-android": { label: "Backfill Android", description: "Verify Google Play store listings" },
-  "backfill-mobile-ios": { label: "Backfill iOS", description: "Verify App Store listings" },
-  "seed-curated-lists": { label: "Seed Lists", description: "Refresh editorial curated lists" },
+const JOB_LABELS: Record<string, { label: string; description: string; icon: string }> = {
+  "refresh-trending": { label: "Refresh Trending", description: "Steam player counts + trending/featured flags", icon: "trending" },
+  "discover-games": { label: "Discover Games", description: "Find and ingest new games from RAWG", icon: "discover" },
+  "re-enrich": { label: "Re-enrich", description: "Refresh stale game enrichment data", icon: "enrich" },
+  "backfill-games": { label: "Backfill Games", description: "Ingest missing games by year range", icon: "backfill" },
+  "backfill-mobile-android": { label: "Backfill Android", description: "Verify Google Play store listings", icon: "android" },
+  "backfill-mobile-ios": { label: "Backfill iOS", description: "Verify App Store listings", icon: "ios" },
+  "seed-curated-lists": { label: "Seed Lists", description: "Refresh editorial curated lists", icon: "lists" },
 };
+
+// Heroku-only jobs can't be triggered from the web UI
+const HEROKU_ONLY_JOBS = new Set(["backfill-games", "backfill-mobile-android", "backfill-mobile-ios"]);
+
+// ── Human-readable metadata labels per job type ──
+const METADATA_LABELS: Record<string, Record<string, string>> = {
+  "refresh-trending": {
+    totalGames: "Total games in DB",
+    trending: "Games marked trending",
+    elapsed: "Duration (seconds)",
+    featured: "Games marked featured",
+  },
+  "discover-games": {
+    elapsed: "Duration (seconds)",
+    failed: "Failed ingestions",
+    deep: "Deep mode enabled",
+    queries: "RAWG API queries made",
+  },
+  "re-enrich": {
+    elapsed: "Duration (seconds)",
+    failed: "Failed re-enrichments",
+    limit: "Batch size limit",
+    fastPathCount: "Fast-path (recent releases)",
+  },
+  "backfill-games": {
+    errors: "Errors encountered",
+    yearFrom: "Year range start",
+    yearTo: "Year range end",
+    elapsed: "Duration (seconds)",
+  },
+  "backfill-mobile-android": {
+    failed: "Failed lookups",
+    elapsed: "Duration (seconds)",
+    matched: "Matched listings",
+  },
+  "backfill-mobile-ios": {
+    failed: "Failed lookups",
+    elapsed: "Duration (seconds)",
+    matched: "Matched listings",
+  },
+  "seed-curated-lists": {
+    elapsed: "Duration (seconds)",
+    lists_created: "Lists created",
+  },
+};
+
+// ── Counter labels with context per job type ──
+const COUNTER_LABELS: Record<string, { scanned: string; created: string; updated: string; skipped: string }> = {
+  "refresh-trending": {
+    scanned: "Steam games checked",
+    created: "New games ingested",
+    updated: "Player counts + flags updated",
+    skipped: "Unchanged",
+  },
+  "discover-games": {
+    scanned: "Unique games found from RAWG",
+    created: "New games ingested",
+    updated: "Existing games refreshed",
+    skipped: "Already in database",
+  },
+  "re-enrich": {
+    scanned: "Stale games processed",
+    created: "Newly enriched",
+    updated: "Games re-enriched",
+    skipped: "Skipped (locked)",
+  },
+  "backfill-games": {
+    scanned: "RAWG pages scanned",
+    created: "New games ingested",
+    updated: "Games updated",
+    skipped: "Already existed",
+  },
+  "backfill-mobile-android": {
+    scanned: "Games checked on Google Play",
+    created: "New listings verified",
+    updated: "Listings refreshed",
+    skipped: "No match / already verified",
+  },
+  "backfill-mobile-ios": {
+    scanned: "Games checked on App Store",
+    created: "New listings verified",
+    updated: "Listings refreshed",
+    skipped: "No match / already verified",
+  },
+  "seed-curated-lists": {
+    scanned: "List definitions processed",
+    created: "Lists created",
+    updated: "Lists refreshed",
+    skipped: "Unchanged",
+  },
+};
+
+function getRunSummaryText(run: SchedulerRun, meta: Record<string, unknown> | null): string | null {
+  const { job_name, status, rows_created, rows_updated, rows_scanned, rows_skipped } = run;
+
+  if (status === "stale") return "Run was interrupted or timed out before completing.";
+  if (status === "running") return "Currently executing...";
+  if (status === "error") return null; // error_message shown separately
+
+  switch (job_name) {
+    case "refresh-trending": {
+      const trending = meta?.trending ?? "?";
+      const total = meta?.totalGames ?? "?";
+      const elapsed = meta?.elapsed ? `${Number(meta.elapsed).toFixed(0)}s` : "";
+      return `Refreshed player counts for ${rows_scanned.toLocaleString()} Steam games. ${rows_updated.toLocaleString()} player counts + flags updated. ${trending} games marked trending out of ${total} total.${elapsed ? ` Completed in ${elapsed}.` : ""}`;
+    }
+    case "discover-games": {
+      const queries = meta?.queries ?? "?";
+      const failed = meta?.failed ?? 0;
+      return `Fetched ${queries} RAWG lists, found ${rows_scanned.toLocaleString()} unique games. Ingested ${rows_created} new games, ${rows_skipped.toLocaleString()} already in DB.${Number(failed) > 0 ? ` ${failed} failed.` : ""}`;
+    }
+    case "re-enrich": {
+      const limit = meta?.limit ?? "?";
+      const failed = meta?.failed ?? 0;
+      return `Processed ${rows_scanned} stale games (batch limit: ${limit}). Successfully re-enriched ${rows_updated} with fresh RAWG/IGDB/Steam data.${Number(failed) > 0 ? ` ${failed} failed.` : ""}`;
+    }
+    case "backfill-games": {
+      const yFrom = meta?.yearFrom ?? "?";
+      const yTo = meta?.yearTo ?? "?";
+      return `Scanned RAWG for games from ${yFrom}–${yTo}. Ingested ${rows_created} new games, ${rows_skipped.toLocaleString()} already existed.`;
+    }
+    case "backfill-mobile-android":
+      return `Checked ${rows_scanned} games against Google Play. ${rows_created > 0 ? `Verified ${rows_created} new listings.` : "No new listings."} ${rows_skipped > 0 ? `${rows_skipped} skipped (no match or already verified).` : ""}`;
+    case "backfill-mobile-ios":
+      return `Checked ${rows_scanned} games against App Store. ${rows_created > 0 ? `Verified ${rows_created} new listings.` : "No new listings."} ${rows_skipped > 0 ? `${rows_skipped} skipped (no match or already verified).` : ""}`;
+    case "seed-curated-lists":
+      return `Regenerated ${rows_updated > 0 ? rows_updated : rows_created} editorial curated lists with current game data.`;
+    default:
+      return null;
+  }
+}
 
 function StatusIcon({ status }: { status: string }) {
   if (status === "success") return <CheckCircle2 className="w-4 h-4 text-green-500" />;
@@ -120,6 +256,9 @@ function RunRow({ run }: { run: SchedulerRun }) {
   const jobInfo = JOB_LABELS[run.job_name] || { label: run.job_name, description: "" };
   const meta = parseMetadata(run.metadata);
   const hasDetails = (meta && Object.keys(meta).length > 0) || run.error_message || run.rows_scanned > 0 || run.rows_created > 0;
+  const summaryText = getRunSummaryText(run, meta);
+  const counterLabels = COUNTER_LABELS[run.job_name] ?? { scanned: "Scanned", created: "Created", updated: "Updated", skipped: "Skipped" };
+  const metaLabels = METADATA_LABELS[run.job_name] ?? {};
 
   return (
     <div className="border-b border-border last:border-b-0">
@@ -163,16 +302,24 @@ function RunRow({ run }: { run: SchedulerRun }) {
 
       {expanded && hasDetails && (
         <div className="px-4 sm:px-12 pb-3 space-y-2">
-          {/* Counters */}
+          {/* Human-readable summary */}
+          {summaryText && (
+            <div className="flex gap-2 bg-accent/5 border border-accent/10 rounded-lg px-3 py-2">
+              <Info className="w-3.5 h-3.5 text-accent shrink-0 mt-0.5" />
+              <p className="text-xs text-secondary leading-relaxed">{summaryText}</p>
+            </div>
+          )}
+
+          {/* Counters with contextual labels */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {[
-              { label: "Scanned", value: run.rows_scanned },
-              { label: "Created", value: run.rows_created },
-              { label: "Updated", value: run.rows_updated },
-              { label: "Skipped", value: run.rows_skipped },
+              { label: counterLabels.scanned, value: run.rows_scanned },
+              { label: counterLabels.created, value: run.rows_created },
+              { label: counterLabels.updated, value: run.rows_updated },
+              { label: counterLabels.skipped, value: run.rows_skipped },
             ].map((c) => (
               <div key={c.label} className="bg-surface-2 rounded-lg px-3 py-2">
-                <div className="text-[11px] text-tertiary uppercase tracking-wider">{c.label}</div>
+                <div className="text-[11px] text-tertiary uppercase tracking-wider leading-tight">{c.label}</div>
                 <div className="text-sm font-semibold text-foreground">{c.value.toLocaleString()}</div>
               </div>
             ))}
@@ -192,19 +339,27 @@ function RunRow({ run }: { run: SchedulerRun }) {
             </div>
           )}
 
-          {/* Metadata */}
+          {/* Metadata with human-readable labels */}
           {meta && Object.keys(meta).length > 0 && (
             <div className="bg-surface-2 rounded-lg px-3 py-2">
-              <div className="text-[11px] text-tertiary uppercase tracking-wider mb-1">Metadata</div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-1 text-xs">
-                {Object.entries(meta).map(([key, value]) => (
-                  <div key={key} className="flex items-baseline gap-1.5">
-                    <span className="text-tertiary">{key}:</span>
-                    <span className="text-foreground font-medium truncate">
-                      {typeof value === "object" ? JSON.stringify(value) : String(value)}
-                    </span>
-                  </div>
-                ))}
+              <div className="text-[11px] text-tertiary uppercase tracking-wider mb-1.5 flex items-center gap-1">
+                <Terminal className="w-3 h-3" /> Run Details
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-1.5 text-xs">
+                {Object.entries(meta).map(([key, value]) => {
+                  const label = metaLabels[key] || key.replace(/_/g, " ").replace(/([A-Z])/g, " $1").trim();
+                  return (
+                    <div key={key} className="flex items-baseline gap-1.5">
+                      <span className="text-tertiary capitalize">{label}:</span>
+                      <span className="text-foreground font-medium truncate">
+                        {typeof value === "boolean" ? (value ? "Yes" : "No") :
+                          typeof value === "object" ? JSON.stringify(value) :
+                          key === "elapsed" ? `${Number(value).toFixed(1)}s` :
+                          String(value)}
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -216,6 +371,8 @@ function RunRow({ run }: { run: SchedulerRun }) {
 
 export default function SchedulerPage() {
   const [filter, setFilter] = useState<string | null>(null);
+  const [triggerMsg, setTriggerMsg] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
   const { data, isLoading, refetch, dataUpdatedAt } = useQuery({
     queryKey: ["admin-scheduler", filter],
@@ -233,9 +390,39 @@ export default function SchedulerPage() {
     refetchInterval: 60_000,
   });
 
+  const triggerMutation = useMutation({
+    mutationFn: async (jobName: string) => {
+      const res = await fetch("/api/admin/scheduler-runs/trigger", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ job: jobName }),
+      });
+      const json = await res.json();
+      return json.success ? json.data : json;
+    },
+    onSuccess: (data) => {
+      if (data.herokuOnly) {
+        setTriggerMsg(data.message);
+      } else if (data.success === false) {
+        setTriggerMsg(`Failed: ${data.message}`);
+      } else {
+        setTriggerMsg(`${data.job} completed successfully`);
+        queryClient.invalidateQueries({ queryKey: ["admin-scheduler"] });
+      }
+      setTimeout(() => setTriggerMsg(null), 15000);
+    },
+    onError: (err) => {
+      setTriggerMsg(`Trigger failed: ${(err as Error).message}`);
+      setTimeout(() => setTriggerMsg(null), 10000);
+    },
+  });
+
   const runs = data?.runs ?? [];
   const summary = data?.summary ?? {};
   const jobNames = Object.keys(summary).sort();
+
+  // All known jobs (even if they haven't run yet)
+  const allJobNames = [...new Set([...Object.keys(JOB_LABELS), ...jobNames])].sort();
 
   // Overall stats
   const totalRuns = Object.values(summary).reduce((a, s) => a + s.total, 0);
@@ -254,7 +441,7 @@ export default function SchedulerPage() {
             Scheduler Logs
           </h1>
           <p className="text-sm text-secondary mt-1">
-            Monitor Heroku scheduler job runs and their results
+            Monitor scheduler job runs, view detailed results, and trigger manual runs
           </p>
         </div>
         <button
@@ -265,6 +452,20 @@ export default function SchedulerPage() {
           Refresh
         </button>
       </div>
+
+      {/* Trigger message */}
+      {triggerMsg && (
+        <div className={cn(
+          "rounded-xl px-4 py-3 text-sm whitespace-pre-line border",
+          triggerMsg.startsWith("Failed") || triggerMsg.startsWith("Trigger failed")
+            ? "bg-red-500/10 border-red-500/20 text-red-400"
+            : triggerMsg.includes("Heroku") || triggerMsg.includes("heroku")
+              ? "bg-amber-500/10 border-amber-500/20 text-amber-400"
+              : "bg-green-500/10 border-green-500/20 text-green-500"
+        )}>
+          {triggerMsg}
+        </div>
+      )}
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -284,7 +485,7 @@ export default function SchedulerPage() {
         ))}
       </div>
 
-      {/* Per-Job Summary */}
+      {/* Per-Job Summary with trigger buttons */}
       <div className="bg-surface rounded-xl border border-border overflow-hidden">
         <div className="px-4 py-3 border-b border-border flex items-center justify-between">
           <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
@@ -300,14 +501,16 @@ export default function SchedulerPage() {
         <div className="divide-y divide-border">
           {isLoading ? (
             <div className="px-4 py-8 text-center text-secondary text-sm">Loading...</div>
-          ) : jobNames.length === 0 ? (
+          ) : allJobNames.length === 0 ? (
             <div className="px-4 py-8 text-center text-secondary text-sm">No scheduler runs found</div>
           ) : (
-            jobNames.map((name) => {
-              const s = summary[name];
+            allJobNames.map((name) => {
+              const s = summary[name] ?? { total: 0, success: 0, error: 0, running: 0, stale: 0, lastRun: null, lastStatus: null };
               const info = JOB_LABELS[name] || { label: name, description: "" };
               const completedRuns = s.total - s.stale - s.running;
               const successRate = completedRuns > 0 ? Math.round((s.success / completedRuns) * 100) : 0;
+              const isHerokuOnly = HEROKU_ONLY_JOBS.has(name);
+              const isTriggering = triggerMutation.isPending && triggerMutation.variables === name;
               return (
                 <div key={name} className="px-4 py-3 flex items-center gap-3 hover:bg-surface-2 transition-colors">
                   <div className="flex-1 min-w-0">
@@ -318,23 +521,88 @@ export default function SchedulerPage() {
                           <Loader2 className="w-3 h-3 animate-spin" /> running
                         </span>
                       )}
+                      {isHerokuOnly && (
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-purple-500/10 text-purple-400" title="This job runs on Heroku and cannot be triggered from the dashboard">
+                          <Server className="w-3 h-3" /> Heroku
+                        </span>
+                      )}
                     </div>
                     <div className="text-xs text-tertiary">{info.description}</div>
                   </div>
-                  <div className="flex items-center gap-4 text-xs text-secondary shrink-0">
-                    <div className="text-right">
-                      <div className="font-medium text-foreground">{s.total} runs</div>
-                      <div>{successRate}% success</div>
-                    </div>
-                    <div className="text-right">
-                      {s.lastRun && <div>{formatRelative(s.lastRun)}</div>}
-                      {s.lastStatus && <StatusBadge status={s.lastStatus} />}
-                    </div>
+                  <div className="flex items-center gap-3 shrink-0">
+                    {s.total > 0 && (
+                      <div className="flex items-center gap-4 text-xs text-secondary">
+                        <div className="text-right">
+                          <div className="font-medium text-foreground">{s.total} runs</div>
+                          <div>{successRate}% success</div>
+                        </div>
+                        <div className="text-right">
+                          {s.lastRun && <div>{formatRelative(s.lastRun)}</div>}
+                          {s.lastStatus && <StatusBadge status={s.lastStatus} />}
+                        </div>
+                      </div>
+                    )}
+                    <button
+                      onClick={() => triggerMutation.mutate(name)}
+                      disabled={triggerMutation.isPending}
+                      title={isHerokuOnly ? "Show Heroku CLI command" : `Manually trigger ${info.label}`}
+                      className={cn(
+                        "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all disabled:opacity-50",
+                        isHerokuOnly
+                          ? "bg-purple-500/10 text-purple-400 border border-purple-500/20 hover:bg-purple-500/20"
+                          : "bg-pixel-cyan/10 text-pixel-cyan border border-pixel-cyan/20 hover:bg-pixel-cyan/20"
+                      )}
+                    >
+                      {isTriggering ? (
+                        <><Loader2 className="w-3 h-3 animate-spin" /> Running...</>
+                      ) : isHerokuOnly ? (
+                        <><Terminal className="w-3 h-3" /> CLI</>
+                      ) : (
+                        <><Play className="w-3 h-3" /> Run</>
+                      )}
+                    </button>
                   </div>
                 </div>
               );
             })
           )}
+        </div>
+      </div>
+
+      {/* Quick Actions */}
+      <div className="bg-surface rounded-xl border border-border overflow-hidden">
+        <div className="px-4 py-3 border-b border-border">
+          <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
+            <Zap className="w-4 h-4 text-accent" />
+            Quick Actions
+          </h2>
+        </div>
+        <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {[
+            { job: "re-enrich", label: "Re-enrich Stale Games", desc: "Refresh oldest-enriched games with fresh data from RAWG, IGDB, and Steam", color: "bg-green-500/10 text-green-500 border-green-500/20" },
+            { job: "refresh-trending", label: "Refresh Trending", desc: "Update player counts and recalculate trending/featured flags", color: "bg-amber-500/10 text-amber-500 border-amber-500/20" },
+            { job: "discover-games", label: "Discover New Games", desc: "Search RAWG for trending, new, and top-rated games to ingest", color: "bg-blue-500/10 text-blue-500 border-blue-500/20" },
+            { job: "seed-curated-lists", label: "Seed Editorial Lists", desc: "Regenerate all 12 editorial curated lists from current data", color: "bg-purple-500/10 text-purple-500 border-purple-500/20" },
+          ].map((action) => {
+            const isRunning = triggerMutation.isPending && triggerMutation.variables === action.job;
+            return (
+              <button
+                key={action.job}
+                onClick={() => triggerMutation.mutate(action.job)}
+                disabled={triggerMutation.isPending}
+                className={cn(
+                  "text-left p-3 rounded-xl border transition-all disabled:opacity-50 hover:scale-[1.01]",
+                  action.color
+                )}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  {isRunning ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
+                  <span className="font-medium text-sm">{isRunning ? "Running..." : action.label}</span>
+                </div>
+                <p className="text-xs opacity-75 leading-relaxed">{action.desc}</p>
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -356,7 +624,7 @@ export default function SchedulerPage() {
             >
               All
             </button>
-            {jobNames.map((name) => (
+            {allJobNames.map((name) => (
               <button
                 key={name}
                 onClick={() => setFilter(name === filter ? null : name)}
