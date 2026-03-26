@@ -2,7 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
-import { Gamepad2, FileText, Users, Plus, PenLine, Pencil, ListPlus, Loader2, Database, ChevronDown } from "lucide-react";
+import { Gamepad2, FileText, Users, Plus, PenLine, Pencil, ListPlus, Loader2, Database, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { useState, useCallback, type ReactNode } from "react";
 
 interface AdminStats {
@@ -63,11 +63,17 @@ function formatFieldValue(val: unknown): string {
   return str.length > 80 ? str.slice(0, 80) + "…" : str;
 }
 
+const ITEMS_PER_PAGE = 4;
+
 function ActivityLog({ entries, isLoading }: { entries: AuditEntry[]; isLoading: boolean }) {
+  const [page, setPage] = useState(0);
+  const totalPages = Math.max(1, Math.ceil(entries.length / ITEMS_PER_PAGE));
+  const pageEntries = entries.slice(page * ITEMS_PER_PAGE, (page + 1) * ITEMS_PER_PAGE);
+
   if (isLoading) {
     return (
       <div className="rounded-2xl border border-border bg-surface overflow-hidden p-4 space-y-3">
-        {Array.from({ length: 5 }).map((_, i) => (
+        {Array.from({ length: ITEMS_PER_PAGE }).map((_, i) => (
           <div key={i} className="h-12 rounded-lg bg-surface-2 animate-pulse" />
         ))}
       </div>
@@ -84,14 +90,33 @@ function ActivityLog({ entries, isLoading }: { entries: AuditEntry[]; isLoading:
   }
 
   return (
-    <div className="rounded-2xl border border-border bg-surface overflow-hidden flex flex-col" style={{ maxHeight: "480px" }}>
-      <div className="divide-y divide-border overflow-y-auto flex-1 scrollbar-hide">
-        {entries.map((entry) => (
+    <div className="rounded-2xl border border-border bg-surface overflow-hidden flex flex-col">
+      <div className="divide-y divide-border">
+        {pageEntries.map((entry) => (
           <AuditEntryRow key={entry.id} entry={entry} />
         ))}
       </div>
-      <div className="px-4 py-2 text-center border-t border-border shrink-0 bg-surface">
+      <div className="px-3 py-2 border-t border-border shrink-0 bg-surface flex items-center justify-between">
         <span className="text-[10px] text-tertiary">{entries.length} entries</span>
+        <div className="flex items-center gap-1.5">
+          <button
+            onClick={() => setPage((p) => Math.max(0, p - 1))}
+            disabled={page === 0}
+            className="p-1 rounded-md hover:bg-surface-2 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          >
+            <ChevronLeft className="w-3.5 h-3.5 text-secondary" />
+          </button>
+          <span className="text-[10px] text-tertiary tabular-nums min-w-[3.5rem] text-center">
+            {page + 1} / {totalPages}
+          </span>
+          <button
+            onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+            disabled={page >= totalPages - 1}
+            className="p-1 rounded-md hover:bg-surface-2 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          >
+            <ChevronRight className="w-3.5 h-3.5 text-secondary" />
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -200,7 +225,7 @@ export default function AdminDashboard() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
+        <h1 className="text-2xl font-bold bg-gradient-to-r from-amber-400 via-orange-400 to-rose-400 bg-clip-text text-transparent">Dashboard</h1>
         <p className="text-sm text-secondary mt-1">Overview of your verdict.games database</p>
       </div>
 
@@ -235,85 +260,88 @@ export default function AdminDashboard() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Quick Actions */}
-        <div className="space-y-3">
-          <h2 className="text-lg font-bold text-foreground">Quick Actions</h2>
+        {/* Left column: Quick Actions + Seed Content */}
+        <div className="space-y-6">
+          {/* Quick Actions */}
           <div className="space-y-3">
-            <Link
-              href="/admin/games/new"
-              className="block rounded-2xl border border-accent/20 bg-accent/5 p-4 hover:border-accent/40 hover:bg-accent/10 transition-all group"
-            >
-              <h3 className="text-sm font-semibold text-accent group-hover:text-accent-hover transition-colors flex items-center gap-2">
-                <Plus className="w-4 h-4" /> Add New Game
-              </h3>
-              <p className="text-xs text-tertiary mt-1">
-                Create via title lookup, source URL, or manual provisional entry
-              </p>
-            </Link>
-            {[
-              { href: "/admin/games", label: "Edit Game Pages", desc: "Update descriptions, verdicts, pros/cons, and media", icon: <PenLine className="w-4 h-4 inline mr-1.5 opacity-60" /> as ReactNode },
-              { href: "/admin/reviews", label: "Write Reviews", desc: "Create editorial reviews or moderate community reviews", icon: <FileText className="w-4 h-4 inline mr-1.5 opacity-60" /> as ReactNode },
-              { href: "/admin/users", label: "Manage Users", desc: "View profiles, review counts, library activity", icon: <Users className="w-4 h-4 inline mr-1.5 opacity-60" /> as ReactNode },
-            ].map(q => (
+            <h2 className="text-lg font-bold text-foreground">Quick Actions</h2>
+            <div className="space-y-3">
               <Link
-                key={q.href}
-                href={q.href}
-                className="block rounded-2xl border border-border bg-surface p-4 hover:border-accent/30 transition-all group"
+                href="/admin/games/new"
+                className="block rounded-2xl border border-accent/20 bg-accent/5 p-4 hover:border-accent/40 hover:bg-accent/10 transition-all group"
               >
-                <h3 className="text-sm font-semibold text-foreground group-hover:text-accent transition-colors flex items-center">
-                  {(q as { icon?: ReactNode }).icon}{q.label}
+                <h3 className="text-sm font-semibold text-accent group-hover:text-accent-hover transition-colors flex items-center gap-2">
+                  <Plus className="w-4 h-4" /> Add New Game
                 </h3>
-                <p className="text-xs text-tertiary mt-1">{q.desc}</p>
+                <p className="text-xs text-tertiary mt-1">
+                  Create via title lookup, source URL, or manual provisional entry
+                </p>
               </Link>
-            ))}
+              {[
+                { href: "/admin/games", label: "Edit Game Pages", desc: "Update descriptions, verdicts, pros/cons, and media", icon: <PenLine className="w-4 h-4 inline mr-1.5 opacity-60" /> as ReactNode },
+                { href: "/admin/reviews", label: "Write Reviews", desc: "Create editorial reviews or moderate community reviews", icon: <FileText className="w-4 h-4 inline mr-1.5 opacity-60" /> as ReactNode },
+                { href: "/admin/users", label: "Manage Users", desc: "View profiles, review counts, library activity", icon: <Users className="w-4 h-4 inline mr-1.5 opacity-60" /> as ReactNode },
+              ].map(q => (
+                <Link
+                  key={q.href}
+                  href={q.href}
+                  className="block rounded-2xl border border-border bg-surface p-4 hover:border-accent/30 transition-all group"
+                >
+                  <h3 className="text-sm font-semibold text-foreground group-hover:text-accent transition-colors flex items-center">
+                    {(q as { icon?: ReactNode }).icon}{q.label}
+                  </h3>
+                  <p className="text-xs text-tertiary mt-1">{q.desc}</p>
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          {/* Seed Content — in left column so visible without scrolling */}
+          <div className="space-y-3">
+            <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+              <Database className="w-5 h-5 text-emerald-500" />
+              Seed Content
+            </h2>
+            <p className="text-xs text-tertiary">Populate your site with starter content for launch.</p>
+            <div className="space-y-3">
+              <button
+                onClick={() => seedListsMutation.mutate()}
+                disabled={seedListsMutation.isPending}
+                className="w-full rounded-2xl border border-border bg-surface p-4 hover:border-accent/30 transition-all text-left disabled:opacity-50"
+              >
+                <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                  {seedListsMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <ListPlus className="w-4 h-4 text-accent" />}
+                  {seedListsMutation.isPending ? "Seeding Lists..." : "Seed Editorial Lists"}
+                </h3>
+                <p className="text-xs text-tertiary mt-1">
+                  Creates 22 curated lists from your existing game database.
+                </p>
+                {seedListsMutation.isSuccess && (
+                  <p className="text-xs text-pixel-green mt-2">Done! Check the Lists page.</p>
+                )}
+                {seedListsMutation.isError && (
+                  <p className="text-xs text-danger mt-2">Failed — check console for details.</p>
+                )}
+              </button>
+              <Link
+                href="/admin/reviews"
+                className="block rounded-2xl border border-border bg-surface p-4 hover:border-accent/30 transition-all"
+              >
+                <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                  <PenLine className="w-4 h-4 text-accent" /> Create Community Reviews
+                </h3>
+                <p className="text-xs text-tertiary mt-1">
+                  Write editorial reviews to populate the Reviews page.
+                </p>
+              </Link>
+            </div>
           </div>
         </div>
 
-        {/* Recent Admin Activity */}
+        {/* Right column: Recent Admin Activity */}
         <div className="space-y-3">
           <h2 className="text-lg font-bold text-foreground">Recent Activity</h2>
           <ActivityLog entries={activity.data ?? []} isLoading={activity.isLoading} />
-        </div>
-      </div>
-
-      {/* Seed Content */}
-      <div className="space-y-3">
-        <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
-          <Database className="w-5 h-5 text-emerald-500" />
-          <span className="bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 bg-clip-text text-transparent">Seed Content</span>
-        </h2>
-        <p className="text-xs text-tertiary">Populate your site with starter content for launch.</p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <button
-            onClick={() => seedListsMutation.mutate()}
-            disabled={seedListsMutation.isPending}
-            className="rounded-2xl border border-border bg-surface p-4 hover:border-accent/30 transition-all text-left disabled:opacity-50"
-          >
-            <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-              {seedListsMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <ListPlus className="w-4 h-4 text-accent" />}
-              {seedListsMutation.isPending ? "Seeding Lists..." : "Seed Editorial Lists"}
-            </h3>
-            <p className="text-xs text-tertiary mt-1">
-              Creates 12 curated lists from your existing game database.
-            </p>
-            {seedListsMutation.isSuccess && (
-              <p className="text-xs text-pixel-green mt-2">Done! Check the Lists page.</p>
-            )}
-            {seedListsMutation.isError && (
-              <p className="text-xs text-danger mt-2">Failed — check console for details.</p>
-            )}
-          </button>
-          <Link
-            href="/admin/reviews"
-            className="rounded-2xl border border-border bg-surface p-4 hover:border-accent/30 transition-all"
-          >
-            <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-              <PenLine className="w-4 h-4 text-accent" /> Create Community Reviews
-            </h3>
-            <p className="text-xs text-tertiary mt-1">
-              Write editorial reviews to populate the Reviews page.
-            </p>
-          </Link>
         </div>
       </div>
     </div>

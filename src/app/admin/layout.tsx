@@ -59,7 +59,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <div className="md:sticky md:top-24 space-y-1">
             <div className="flex items-center justify-between md:block mb-2 md:mb-4">
               <div>
-                <h2 className="text-sm font-bold text-foreground uppercase tracking-wider">Admin Panel</h2>
+                <h2 className="text-sm font-bold uppercase tracking-wider bg-gradient-to-r from-amber-400 via-orange-400 to-rose-400 bg-clip-text text-transparent">Admin Panel</h2>
                 <p className="text-[11px] text-tertiary mt-0.5">
                   Logged in as {user.username}
                 </p>
