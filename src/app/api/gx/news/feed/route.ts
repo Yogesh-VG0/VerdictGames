@@ -2,7 +2,7 @@ import { jsonOk } from "@/lib/api/response";
 import { getGXNewsFeed } from "@/lib/external/gxcorner";
 import type { GXNewsItem } from "@/lib/types";
 
-export const revalidate = 300;
+export const revalidate = 3600;
 
 export async function GET() {
   const raw = await getGXNewsFeed();

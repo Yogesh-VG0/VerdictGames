@@ -2,7 +2,7 @@ import { jsonOk } from "@/lib/api/response";
 import { getGXTopGames } from "@/lib/external/gxcorner";
 import type { GXTopGame } from "@/lib/types";
 
-export const revalidate = 300;
+export const revalidate = 3600;
 
 export async function GET() {
   const raw = await getGXTopGames();

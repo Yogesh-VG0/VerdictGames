@@ -25,7 +25,7 @@ export default function DealsPage() {
   const { data: deals, isLoading } = useQuery({
     queryKey: ["gx-deals-full"],
     queryFn: () => getGXDeals(),
-    staleTime: 5 * 60 * 1000,
+    staleTime: 60 * 60 * 1000,
   });
 
   // Extract unique genres and stores from data

@@ -158,7 +158,7 @@ export interface GXNewsArticle {
 
 async function gxFetch<T>(url: string): Promise<T> {
   const res = await fetch(url, {
-    next: { revalidate: 300 },
+    next: { revalidate: 3600 },
     signal: AbortSignal.timeout(15000),
   });
   if (!res.ok) throw new Error(`GX API ${res.status}: ${url}`);

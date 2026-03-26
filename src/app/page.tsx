@@ -103,7 +103,7 @@ export default function HomePage() {
   const gxFreeToPlay = useQuery({
     queryKey: ["gx-free-to-play"],
     queryFn: () => getGXFreeToPlay(),
-    staleTime: 5 * 60 * 1000,
+    staleTime: 60 * 60 * 1000,
     enabled: discoverTab === "free",
   });
   const anticipated = useQuery({
@@ -130,7 +130,7 @@ export default function HomePage() {
       }
       return merged;
     },
-    staleTime: 5 * 60 * 1000,
+    staleTime: 60 * 60 * 1000,
   });
 
   return (

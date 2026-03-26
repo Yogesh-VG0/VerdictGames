@@ -159,13 +159,13 @@ export default function FreeToPlayPage() {
   const { data: freeGames, isLoading: freeLoading } = useQuery({
     queryKey: ["gx-free-to-play-full"],
     queryFn: () => getGXFreeToPlay(),
-    staleTime: 5 * 60 * 1000,
+    staleTime: 60 * 60 * 1000,
   });
 
   const { data: topGames, isLoading: topLoading } = useQuery({
     queryKey: ["gx-top-games-full"],
     queryFn: () => getGXTopGames(),
-    staleTime: 5 * 60 * 1000,
+    staleTime: 60 * 60 * 1000,
     enabled: activeTab === "subscriptions",
   });
 
