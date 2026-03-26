@@ -24,17 +24,23 @@ export interface GooglePlayAppResult {
   appId: string;
   title: string;
   summary?: string;
+  description?: string;
+  descriptionHTML?: string;
   developer: string;
   developerId?: string;
   icon: string;
   headerImage?: string;
   screenshots: string[];
+  video?: string;
+  videoImage?: string;
+  previewVideo?: string;
   score: number | null;
   ratings: number;
   reviews: number;
+  histogram?: Record<string, number>;
   installs: string;
   minInstalls?: number;
-  realInstalls?: number;
+  maxInstalls?: number;
   price: number;
   free: boolean;
   currency: string;
@@ -46,7 +52,10 @@ export interface GooglePlayAppResult {
   released?: string;
   updated?: number;
   version?: string;
+  recentChanges?: string;
   url: string;
+  developerWebsite?: string;
+  developerEmail?: string;
 }
 
 export interface GooglePlaySearchResult {
@@ -71,13 +80,17 @@ export interface GooglePlaySearchResult {
  */
 export async function searchGooglePlay(
   term: string,
-  limit = 5
+  limit = 5,
+  lang = "en",
+  country = "us"
 ): Promise<GooglePlaySearchResult[]> {
   try {
     const gplay = await getGplayScraper();
     const results = await gplay.search({
       term,
       num: limit,
+      lang,
+      country,
       throttle: 10,
     });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -117,17 +130,23 @@ export async function getGooglePlayApp(
       appId: r.appId ?? appId,
       title: r.title ?? "",
       summary: r.summary,
+      description: r.description,
+      descriptionHTML: r.descriptionHTML,
       developer: r.developer ?? "",
       developerId: r.developerId,
       icon: r.icon ?? "",
       headerImage: r.headerImage,
       screenshots: r.screenshots ?? [],
+      video: r.video || undefined,
+      videoImage: r.videoImage || undefined,
+      previewVideo: r.previewVideo || undefined,
       score: r.score ?? null,
       ratings: r.ratings ?? 0,
       reviews: r.reviews ?? 0,
+      histogram: r.histogram,
       installs: r.installs ?? "",
       minInstalls: r.minInstalls,
-      realInstalls: r.maxInstalls ?? r.realInstalls,
+      maxInstalls: r.maxInstalls ?? r.realInstalls,
       price: r.price ?? 0,
       free: r.free ?? true,
       currency: r.currency ?? "USD",
@@ -139,7 +158,10 @@ export async function getGooglePlayApp(
       released: r.released,
       updated: r.updated,
       version: r.version,
+      recentChanges: r.recentChanges,
       url: r.url ?? `https://play.google.com/store/apps/details?id=${appId}`,
+      developerWebsite: r.developerWebsite,
+      developerEmail: r.developerEmail,
     };
   } catch (err) {
     console.warn(`[googleplay] getApp(${appId}) failed:`, (err as Error).message);

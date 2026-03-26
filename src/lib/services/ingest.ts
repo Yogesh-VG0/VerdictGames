@@ -867,7 +867,7 @@ async function verifyMobileListings(
               rating_count: appData.ratings,
               review_count: appData.reviews,
               installs: appData.installs,
-              real_installs: appData.realInstalls ?? null,
+              real_installs: appData.maxInstalls ?? null,
               price: appData.price,
               currency: appData.currency,
               is_free: appData.free,

@@ -92,16 +92,28 @@ export async function POST(request: NextRequest) {
     let releaseDate: string | null = body.releaseDate || null;
     let storeScore: number | null = null;
     let storeRatings = 0;
+    let trailerUrl: string | null = null;
+    let trailerThumbnail: string | null = null;
+    let websiteUrl: string | null = null;
+    let contentRating: string | null = null;
+    let storeUrl: string | null = null;
+    // Cache fetched app data to avoid double-fetching for mobile_store_listings
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let fetchedGpApp: any = null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let fetchedAsApp: any = null;
 
     if (storeSource === "google_play" && body.appId) {
       try {
         const { getGooglePlayApp } = await import("@/lib/external/googleplay");
         const app = await getGooglePlayApp(body.appId);
+        fetchedGpApp = app;
         if (app) {
           coverImage = coverImage || app.icon || "";
           headerImage = app.headerImage || "";
           screenshots = app.screenshots?.slice(0, 10) || [];
-          description = description || app.summary || "";
+          // Use full description, fall back to summary
+          description = description || app.description || app.summary || "";
           developer = developer || app.developer || "";
           publisher = publisher || app.developer || "";
           platforms = platforms.length ? platforms : ["Android"];
@@ -110,9 +122,16 @@ export async function POST(request: NextRequest) {
           isFree = app.free;
           playStoreUrl = app.url;
           storeExternalId = app.appId;
+          storeUrl = app.url;
           releaseDate = releaseDate || app.released || null;
           storeScore = app.score;
           storeRatings = app.ratings || 0;
+          // Trailer from Play Store video
+          trailerUrl = app.video || app.previewVideo || null;
+          trailerThumbnail = app.videoImage || app.headerImage || null;
+          // Developer website
+          websiteUrl = app.developerWebsite || null;
+          contentRating = app.contentRating || null;
         }
       } catch (err) {
         console.warn("[admin/games] Google Play fetch failed:", (err as Error).message);
@@ -121,10 +140,11 @@ export async function POST(request: NextRequest) {
       try {
         const { lookupAppStoreById } = await import("@/lib/external/appstore");
         const app = await lookupAppStoreById(body.trackId);
+        fetchedAsApp = app;
         if (app) {
           coverImage = coverImage || app.artworkUrl512 || app.artworkUrl100 || "";
           screenshots = app.screenshotUrls?.slice(0, 10) || [];
-          description = description || app.description?.slice(0, 2000) || "";
+          description = description || app.description || "";
           developer = developer || app.artistName || "";
           publisher = publisher || app.sellerName || app.artistName || "";
           platforms = platforms.length ? platforms : ["iOS"];
@@ -132,6 +152,7 @@ export async function POST(request: NextRequest) {
           monetization = app.price === 0 ? "Free" : "Paid";
           isFree = app.price === 0;
           storeExternalId = String(app.trackId);
+          storeUrl = app.trackViewUrl;
           releaseDate = releaseDate || (app.releaseDate ? app.releaseDate.split("T")[0] : null);
           storeScore = app.averageUserRating;
           storeRatings = app.userRatingCount || 0;
@@ -149,6 +170,9 @@ export async function POST(request: NextRequest) {
       verdictLabel = score >= 85 ? "EXCEPTIONAL" : score >= 70 ? "GREAT" : score >= 55 ? "GOOD" : score >= 40 ? "MIXED" : "POOR";
     }
 
+    // Truncate description to a reasonable size for DB
+    const trimmedDescription = description.length > 4000 ? description.slice(0, 4000) + "..." : description;
+
     const record = {
       slug,
       title,
@@ -162,14 +186,14 @@ export async function POST(request: NextRequest) {
       developer,
       publisher,
       release_date: releaseDate,
-      description: description || "This game page is awaiting data enrichment.",
+      description: trimmedDescription || "This game page is awaiting data enrichment.",
       score,
       verdict_label: verdictLabel,
       verdict_summary: storeScore ? `Rated ${storeScore.toFixed(1)}/5 by ${storeRatings.toLocaleString()} users on ${storeSource === "google_play" ? "Google Play" : "App Store"}.` : "",
       pros: [],
       cons: [],
       monetization,
-      performance_notes: "",
+      performance_notes: storeSource === "google_play" ? "Optimized for mobile devices. Performance varies by device." : "Optimized for iOS devices.",
       monetization_notes: "",
       review_count: storeRatings,
       featured: false,
@@ -180,6 +204,9 @@ export async function POST(request: NextRequest) {
       is_free: isFree,
       is_provisional: storeScore ? false : true,
       play_store_url: playStoreUrl,
+      trailer_url: trailerUrl,
+      trailer_thumbnail: trailerThumbnail,
+      website_url: websiteUrl,
     };
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -192,21 +219,61 @@ export async function POST(request: NextRequest) {
       return jsonError("Failed to create game: " + (error?.message ?? "Unknown error"), 500);
     }
 
-    // Link in mobile_store_listings
+    // Link in mobile_store_listings with full store metadata (reuses cached app data)
     if (storeExternalId) {
       try {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await (supabase.from("mobile_store_listings") as any).upsert({
+        const listingData: Record<string, unknown> = {
           game_id: inserted.id,
           store: storeSource,
           external_id: storeExternalId,
+          store_url: storeUrl,
           title,
           developer,
           icon_url: coverImage,
-          score: storeScore,
-          ratings_count: storeRatings,
+          header_image_url: headerImage || null,
+          screenshots: screenshots.slice(0, 10),
+          rating_average: storeScore,
+          rating_count: storeRatings,
           is_verified: true,
-        }, { onConflict: "store,external_id" });
+          content_rating: contentRating,
+          genre: genres[0] || null,
+          is_free: isFree,
+          price: 0,
+          currency: "USD",
+        };
+
+        // Enrich from cached Google Play data (no re-fetch)
+        if (fetchedGpApp) {
+          listingData.installs = fetchedGpApp.installs || null;
+          listingData.real_installs = fetchedGpApp.maxInstalls || null;
+          listingData.review_count = fetchedGpApp.reviews || 0;
+          listingData.genre_id = fetchedGpApp.genreId || null;
+          listingData.version = fetchedGpApp.version || null;
+          listingData.offers_iap = fetchedGpApp.offersIAP ?? false;
+          listingData.iap_range = fetchedGpApp.inAppProductPrice || null;
+          listingData.price = fetchedGpApp.price || 0;
+          listingData.currency = fetchedGpApp.currency || "USD";
+          listingData.released_at = fetchedGpApp.released || null;
+          listingData.last_updated_at = fetchedGpApp.updated ? new Date(fetchedGpApp.updated).toISOString() : null;
+        }
+
+        // Enrich from cached App Store data (no re-fetch)
+        if (fetchedAsApp) {
+          listingData.review_count = fetchedAsApp.userRatingCount || 0;
+          listingData.version = fetchedAsApp.version || null;
+          listingData.content_rating = fetchedAsApp.contentAdvisoryRating || null;
+          listingData.released_at = fetchedAsApp.releaseDate ? fetchedAsApp.releaseDate.split("T")[0] : null;
+          listingData.last_updated_at = fetchedAsApp.currentVersionReleaseDate || null;
+          listingData.price = fetchedAsApp.price || 0;
+          listingData.currency = fetchedAsApp.currency || "USD";
+        }
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (supabase.from("mobile_store_listings") as any).upsert(
+          listingData,
+          { onConflict: "store,external_id" }
+        );
       } catch { /* best-effort */ }
     }
 
