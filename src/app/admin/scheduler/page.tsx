@@ -213,7 +213,9 @@ export default function SchedulerPage() {
       if (filter) params.set("job", filter);
       const res = await fetch(`/api/admin/scheduler-runs?${params}`);
       if (!res.ok) throw new Error("Failed to fetch scheduler runs");
-      return res.json() as Promise<{ runs: SchedulerRun[]; summary: Record<string, JobSummary> }>;
+      const json = await res.json();
+      const payload = json.success ? json.data : json;
+      return payload as { runs: SchedulerRun[]; summary: Record<string, JobSummary> };
     },
     staleTime: 30_000,
     refetchInterval: 60_000,
