@@ -23,7 +23,6 @@ export const GAME_CARD_COLUMNS = [
   "price_current", "price_currency", "is_free", "price_deal_url", "price_lowest",
   "current_players", "peak_players_24h", "momentum",
   "trending", "featured", "is_featured_manual", "is_trending_manual",
-  "is_provisional", "release_status",
   "community_score", "critic_score", "score_source",
   "user_score", "steam_rating_label",
   "rawg_metacritic", "rawg_rating",
