@@ -369,10 +369,14 @@ export async function ingestGame(options: IngestOptions): Promise<IngestResult> 
   const developer = fullGame.developers?.[0]?.name ?? "";
   const publisher = fullGame.publishers?.[0]?.name ?? "";
 
-  // Prefer IGDB images over RAWG (higher quality, more consistent)
+  // Cover image priority: Steam library capsule > IGDB cover > RAWG background
+  // Steam capsules are always stable; IGDB covers can rotate with seasonal events
+  const steamCover = steamAppId
+    ? `https://cdn.akamai.steamstatic.com/steam/apps/${steamAppId}/library_600x900_2x.jpg`
+    : null;
   const igdbCover = igdbEnrichment?.coverImageUrl ?? null;
   const igdbScreenshots = igdbEnrichment?.screenshotUrls ?? [];
-  const finalCover = igdbCover || fullGame.background_image || "";
+  const finalCover = steamCover || igdbCover || fullGame.background_image || "";
   const finalScreenshots = igdbScreenshots.length > 0 ? igdbScreenshots : screenshotUrls;
   const finalHeader = igdbScreenshots.length > 0
     ? igdbScreenshots[0]
