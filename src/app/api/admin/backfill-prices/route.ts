@@ -24,11 +24,12 @@ export async function POST(request: Request) {
   const url = new URL(request.url);
   const CHUNK = parseInt(url.searchParams.get("chunk") || "30", 10);
 
-  // Fetch games with steam_app_id that might have wrong currency
+  // Fetch games with steam_app_id that still have non-USD currency
   const { data: games, error } = await supabase
     .from("games")
     .select("id, title, steam_app_id, price_currency, is_free")
     .not("steam_app_id", "is", null)
+    .neq("price_currency", "USD")
     .order("id")
     .limit(CHUNK);
 
