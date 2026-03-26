@@ -15,12 +15,12 @@
  * Heroku Scheduler: node scripts/heroku-refresh-trending.mjs
  *
  * Required Config Vars:
- *   DATABASE_URL, RAWG_API_KEY, TWITCH_CLIENT_ID, TWITCH_CLIENT_SECRET,
- *   CRON_SECRET, API_URL (Vercel deployment URL)
+ *   DATABASE_URL, RAWG_API_KEY, TWITCH_CLIENT_ID, TWITCH_CLIENT_SECRET
  */
 
 import { startRun, finishRun, acquireLock, releaseLock, checkMinInterval } from './lib/scheduler-logger.mjs';
 import { connectDb } from './lib/db-connect.mjs';
+import { ingestGameDirect } from './lib/ingest-pipeline.mjs';
 
 // Load .env for local dev; Heroku has Config Vars
 try {
@@ -43,8 +43,6 @@ const IGDB_BASE = "https://api.igdb.com/v4";
 const TWITCH_TOKEN_URL = "https://id.twitch.tv/oauth2/token";
 const STEAM_API = "https://api.steampowered.com/ISteamUserStats/GetNumberOfCurrentPlayers/v1";
 const STEAM_CHARTS_API = "https://api.steampowered.com/ISteamChartsService/GetMostPlayedGames/v1/";
-const CRON_SECRET = process.env.CRON_SECRET || "";
-const API_URL = process.env.API_URL || process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 
 // ── Helpers ──
 async function getIgdbToken() {
@@ -149,8 +147,8 @@ if (globalTop.length > 0) {
   const missing = globalTop.filter((r) => !ourAppSet.has(r.appid));
   console.log(`\n🆕 Step 1: ${missing.length} top Steam games not in our DB`);
 
-  if (missing.length > 0 && CRON_SECRET && API_URL !== "http://localhost:3000") {
-    // Auto-ingest up to 20 missing games per run (to avoid overloading)
+  if (missing.length > 0) {
+    // Auto-ingest up to 20 missing games per run via local pipeline
     const toIngest = missing.slice(0, 20);
     let ingested = 0;
 
@@ -159,21 +157,12 @@ if (globalTop.length > 0) {
       if (!name) { console.log(`  ⚠ Could not resolve name for appid ${game.appid}`); continue; }
 
       try {
-        const res = await fetch(`${API_URL}/api/ingest/game`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${CRON_SECRET}`,
-          },
-          body: JSON.stringify({ query: name }),
-          signal: AbortSignal.timeout(30000),
-        });
-        if (res.ok) {
+        const result = await ingestGameDirect(sql, name);
+        if (result.success) {
           ingested++;
           console.log(`  ✓ Ingested: ${name} (appid ${game.appid})`);
         } else {
-          const text = await res.text().catch(() => "");
-          console.log(`  ✗ Failed to ingest ${name}: ${res.status} ${text.slice(0, 100)}`);
+          console.log(`  ✗ Failed to ingest ${name}: ${result.message}`);
         }
       } catch (e) {
         console.log(`  ✗ Ingest error for ${name}: ${e.message}`);
@@ -183,8 +172,6 @@ if (globalTop.length > 0) {
       await new Promise((r) => setTimeout(r, 1000));
     }
     console.log(`  Ingested ${ingested}/${toIngest.length} new games`);
-  } else if (missing.length > 0) {
-    console.log(`  ⚠ Skipping auto-ingest (no CRON_SECRET or API_URL not set)`);
   }
 }
 

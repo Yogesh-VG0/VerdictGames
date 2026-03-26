@@ -20,12 +20,14 @@
  *   --dry-run            Print candidates without ingesting
  *
  * Checkpoint file: .backfill-checkpoint.json (gitignored)
- * Required env: DATABASE_URL, RAWG_API_KEY, CRON_SECRET, API_URL or NEXT_PUBLIC_SITE_URL
+ * Required env: DATABASE_URL, RAWG_API_KEY
+ * Optional env: TWITCH_CLIENT_ID, TWITCH_CLIENT_SECRET (for IGDB enrichment)
  */
 
 import { readFileSync, writeFileSync, existsSync } from "fs";
 import { startRun, finishRun, acquireLock, releaseLock, checkMinInterval } from './lib/scheduler-logger.mjs';
 import { connectDb } from './lib/db-connect.mjs';
+import { ingestGameDirect } from './lib/ingest-pipeline.mjs';
 
 // ── Load .env for local dev ──
 try {
@@ -62,14 +64,11 @@ const CHECKPOINT   = ".backfill-checkpoint.json";
 
 const RAWG_BASE    = "https://api.rawg.io/api";
 const RAWG_KEY     = process.env.RAWG_API_KEY;
-const CRON_SECRET  = process.env.CRON_SECRET;
-const API_URL      = process.env.API_URL || process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 
 const MIN_RAWG_RATING    = 3.0;
 const MIN_RATINGS_COUNT  = 20;
 
 if (!RAWG_KEY) { console.error("✗ RAWG_API_KEY not set"); process.exit(1); }
-if (!CRON_SECRET && !DRY_RUN) { console.error("✗ CRON_SECRET not set"); process.exit(1); }
 
 const sql = connectDb("backfill-games");
 
@@ -237,56 +236,30 @@ for (let year = resumeYear; year >= YEAR_FROM; year--) {
         yearNew++;
       });
     } else {
-      // ── Ingest batch with concurrency ──
+      // ── Ingest batch with concurrency (local pipeline) ──
       const batch = rawGames.slice(0, LIMIT - fetched);
 
       await withConcurrency(batch, CONCURRENCY, async (rawgGame) => {
         const slug  = slugifyTitle(rawgGame.name);
         const title = normTitle(rawgGame.name);
 
-        // Retry with exponential backoff for 429 rate limits
-        const MAX_RETRIES = 3;
-        for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-          try {
-            const res = await fetch(`${API_URL}/api/ingest/game`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json", Authorization: `Bearer ${CRON_SECRET}` },
-              body: JSON.stringify({ query: rawgGame.name }),
-              signal: AbortSignal.timeout(45000),
-            });
-
-            if (res.ok) {
-              ingested++;
-              existingSlugs.add(slug);
-              existingTitles.add(title);
-              console.log(`  ✓ [${ingested}] ${rawgGame.name} (${year})`);
-              break;
-            } else if (res.status === 429 && attempt < MAX_RETRIES) {
-              const backoff = 2000 * Math.pow(2, attempt); // 2s, 4s, 8s
-              console.log(`  ⏳ ${rawgGame.name} — 429 rate limited, retrying in ${backoff / 1000}s (attempt ${attempt + 1}/${MAX_RETRIES})`);
-              await sleep(backoff);
-              continue;
-            } else {
-              const text = await res.text().catch(() => "");
-              console.log(`  ✗ ${rawgGame.name} — ${res.status} ${text.slice(0, 60)}`);
-              errors++;
-              errorDetails.push({ title: rawgGame.name, error: `${res.status}` });
-              break;
-            }
-          } catch (e) {
-            if (attempt < MAX_RETRIES && e.message?.includes('timeout')) {
-              const backoff = 2000 * Math.pow(2, attempt);
-              console.log(`  ⏳ ${rawgGame.name} — timeout, retrying in ${backoff / 1000}s`);
-              await sleep(backoff);
-              continue;
-            }
-            console.log(`  ✗ ${rawgGame.name} — ${e.message}`);
+        try {
+          const result = await ingestGameDirect(sql, rawgGame.name, { expectedSlug: rawgGame.slug });
+          if (result.success) {
+            ingested++;
+            existingSlugs.add(slug);
+            existingTitles.add(title);
+            console.log(`  ✓ [${ingested}] ${rawgGame.name} (${year})`);
+          } else {
+            console.log(`  ✗ ${rawgGame.name} — ${result.message}`);
             errors++;
-            errorDetails.push({ title: rawgGame.name, error: e.message });
-            break;
+            errorDetails.push({ title: rawgGame.name, error: result.message });
           }
+        } catch (e) {
+          console.log(`  ✗ ${rawgGame.name} — ${e.message}`);
+          errors++;
+          errorDetails.push({ title: rawgGame.name, error: e.message });
         }
-        // Small inter-request delay within a batch to avoid burst pressure
         await sleep(200);
       });
 

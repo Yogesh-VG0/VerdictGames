@@ -3,14 +3,15 @@
 /**
  * VERDICT.GAMES — Heroku Scheduler: Re-enrich Stale Games
  *
- * Calls the Vercel-hosted /api/cron/re-enrich endpoint to batch-refresh
- * games whose enrichment data is older than 24 hours.
+ * Finds games whose enrichment data is older than 24 hours and
+ * re-ingests them using the local pipeline (no Vercel API calls).
  *
  * Heroku Scheduler command: node scripts/heroku-re-enrich.mjs
  *
  * Required Heroku Config Vars:
- *   CRON_SECRET (must match the one set on Vercel)
- *   SITE_URL (default: https://www.verdict.games)
+ *   DATABASE_URL or SUPABASE_DB_URL
+ *   RAWG_API_KEY
+ *   (optional) TWITCH_CLIENT_ID, TWITCH_CLIENT_SECRET for IGDB enrichment
  */
 
 // On Heroku, env vars are already set via Config Vars.
@@ -31,63 +32,39 @@ try {
 }
 
 import { startRun, finishRun, acquireLock, releaseLock, checkMinInterval } from './lib/scheduler-logger.mjs';
-import { connectDb, getDbUrl } from './lib/db-connect.mjs';
+import { connectDb } from './lib/db-connect.mjs';
+import { reEnrichBatch } from './lib/ingest-pipeline.mjs';
 
-const SITE_URL = process.env.SITE_URL || "https://www.verdict.games";
-const CRON_SECRET = process.env.CRON_SECRET || "";
 const LIMIT = process.argv.includes("--limit")
-  ? process.argv[process.argv.indexOf("--limit") + 1]
-  : "20";
+  ? parseInt(process.argv[process.argv.indexOf("--limit") + 1])
+  : 20;
 
-const sql = getDbUrl() ? connectDb("re-enrich") : null;
+const sql = connectDb("re-enrich");
 
 const start = Date.now();
 console.log("═══════════════════════════════════════════");
-console.log("  VERDICT.GAMES — Re-enrich Stale Games");
+console.log("  VERDICT.GAMES — Re-enrich Stale Games (Local Pipeline)");
 console.log(`  Limit: ${LIMIT} games per run`);
 console.log(`  ${new Date().toISOString()}`);
 console.log("═══════════════════════════════════════════\n");
 
-const params = new URLSearchParams();
-if (CRON_SECRET) params.set("secret", CRON_SECRET);
-params.set("limit", LIMIT);
-const url = `${SITE_URL}/api/cron/re-enrich?${params}`;
-let run = null;
-if (sql) {
-  // Skip if last successful run was less than 5 hours ago (effective "every 6h" with hourly trigger)
-  const MIN_INTERVAL_HOURS = parseFloat(process.env.RE_ENRICH_INTERVAL_HOURS || "5");
-  const shouldRun = await checkMinInterval(sql, 're-enrich', MIN_INTERVAL_HOURS);
-  if (!shouldRun) { await sql.end(); process.exit(0); }
+// Skip if last successful run was less than 5 hours ago
+const MIN_INTERVAL_HOURS = parseFloat(process.env.RE_ENRICH_INTERVAL_HOURS || "5");
+const shouldRun = await checkMinInterval(sql, 're-enrich', MIN_INTERVAL_HOURS);
+if (!shouldRun) { await sql.end(); process.exit(0); }
 
-  const locked = await acquireLock(sql, 're-enrich');
-  if (!locked) { await sql.end(); process.exit(0); }
-  run = await startRun(sql, 're-enrich', { limit: LIMIT });
-}
-
-console.log(`🌐 Calling ${SITE_URL}/api/cron/re-enrich ...`);
+const locked = await acquireLock(sql, 're-enrich');
+if (!locked) { await sql.end(); process.exit(0); }
+const run = await startRun(sql, 're-enrich', { limit: LIMIT });
 
 try {
-  const res = await fetch(url, {
-    method: "GET",
-    headers: {
-      "User-Agent": "VerdictGames-HerokuScheduler/1.0",
-      ...(CRON_SECRET ? { Authorization: `Bearer ${CRON_SECRET}` } : {}),
-    },
-    signal: AbortSignal.timeout(600000), // 10 min timeout
-  });
+  const data = await reEnrichBatch(sql, { limit: LIMIT });
 
-  if (!res.ok) {
-    console.error(`❌ API returned ${res.status}: ${res.statusText}`);
-    const text = await res.text().catch(() => "");
-    if (text) console.error(`   ${text.slice(0, 500)}`);
-    process.exit(1);
-  }
-
-  const data = await res.json();
   console.log(`\n✅ Re-enrichment complete:`);
-  console.log(`   Refreshed: ${data.refreshed ?? 0}`);
-  console.log(`   Failed: ${data.failed ?? 0}`);
-  console.log(`   Total processed: ${data.total ?? 0}`);
+  console.log(`   Refreshed: ${data.refreshed}`);
+  console.log(`   Failed: ${data.failed}`);
+  console.log(`   Total processed: ${data.total}`);
+  if (data.fastPathCount) console.log(`   Fast-path (recent): ${data.fastPathCount}`);
 
   if (data.log?.length > 0) {
     console.log(`\n📋 Details:`);
@@ -99,21 +76,18 @@ try {
   const elapsed = ((Date.now() - start) / 1000).toFixed(1);
   console.log(`\n⏱ Time: ${elapsed}s`);
 
-  if (sql) {
-    await finishRun(sql, run?.id, {
-      rows_scanned: data.total ?? 0,
-      rows_updated: data.refreshed ?? 0,
-      metadata: { elapsed, failed: data.failed ?? 0, limit: LIMIT },
-    });
-    await releaseLock(sql, 're-enrich');
-    await sql.end();
-  }
+  await finishRun(sql, run.id, {
+    rows_scanned: data.total,
+    rows_updated: data.refreshed,
+    metadata: { elapsed, failed: data.failed, limit: LIMIT },
+  });
 } catch (err) {
-  console.error(`❌ Failed to call re-enrich endpoint:`, err.message);
-  if (sql) {
-    await finishRun(sql, run?.id, { error_message: err.message });
-    await releaseLock(sql, 're-enrich');
-    await sql.end();
-  }
+  console.error(`❌ Re-enrichment failed:`, err.message);
+  await finishRun(sql, run.id, { error_message: err.message });
+  await releaseLock(sql, 're-enrich');
+  await sql.end();
   process.exit(1);
 }
+
+await releaseLock(sql, 're-enrich');
+await sql.end();
