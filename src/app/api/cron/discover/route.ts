@@ -57,6 +57,8 @@ function formatDateRange(daysBack: number, daysForward: number): string {
   return `${from.toISOString().slice(0, 10)},${to.toISOString().slice(0, 10)}`;
 }
 
+export const maxDuration = 300; // 5 min max for Vercel
+
 export async function GET(request: NextRequest) {
   // Require CRON_SECRET for production security
   const cronSecret = process.env.CRON_SECRET;
