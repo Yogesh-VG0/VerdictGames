@@ -7,6 +7,7 @@
 import { NextRequest } from "next/server";
 import { jsonOk } from "@/lib/api/response";
 import { mapGameRow, mapListRow } from "@/lib/db/mappers";
+import { GAME_CARD_COLUMNS } from "@/lib/db/columns";
 import type { ListRow, GameRow } from "@/lib/supabase/types";
 
 export async function GET(_request: NextRequest) {
@@ -18,47 +19,51 @@ export async function GET(_request: NextRequest) {
     const { getServerSupabase } = await import("@/lib/supabase/server");
     const supabase = getServerSupabase();
 
-    // Get all lists
-    const { data: listsData, error: listsError } = await supabase
-      .from("lists")
-      .select("*")
-      .order("created_at", { ascending: false }) as { data: ListRow[] | null; error: unknown };
+    // Batch: fetch all lists + all list_items in parallel (2 queries instead of N*2)
+    const [listsRes, itemsRes] = await Promise.all([
+      supabase.from("lists").select("*").order("created_at", { ascending: false }),
+      supabase.from("list_items").select("list_id, game_id, position").order("position", { ascending: true }),
+    ]);
 
-    if (listsError) throw listsError;
+    if (listsRes.error) throw listsRes.error;
+    const listsData = listsRes.data as ListRow[] | null;
+    if (!listsData || listsData.length === 0) return jsonOk([]);
 
-    if (!listsData || listsData.length === 0) {
-      return jsonOk([]);
+    // Group list_items by list_id
+    const itemsByList = new Map<string, { game_id: string; position: number }[]>();
+    for (const item of (itemsRes.data ?? []) as { list_id: string; game_id: string; position: number }[]) {
+      const arr = itemsByList.get(item.list_id) ?? [];
+      arr.push(item);
+      itemsByList.set(item.list_id, arr);
     }
 
-    // For each list, fetch its games
-    const results = await Promise.all(
-      listsData.map(async (list) => {
-        const { data: items } = await supabase
-          .from("list_items")
-          .select("game_id, position")
-          .eq("list_id", list.id)
-          .order("position", { ascending: true }) as { data: { game_id: string; position: number }[] | null };
+    // Collect all unique game IDs across all lists
+    const allGameIds = new Set<string>();
+    for (const items of itemsByList.values()) {
+      for (const item of items) allGameIds.add(item.game_id);
+    }
 
-        if (!items || items.length === 0) {
-          return mapListRow(list, []);
-        }
+    // Single batch query for all games (with card columns only)
+    let gamesMap = new Map<string, ReturnType<typeof mapGameRow>>();
+    if (allGameIds.size > 0) {
+      const { data: gamesData } = await supabase
+        .from("games")
+        .select(GAME_CARD_COLUMNS)
+        .in("id", [...allGameIds]) as { data: GameRow[] | null };
 
-        const gameIds = items.map((i) => i.game_id);
-        const { data: gamesData } = await supabase
-          .from("games")
-          .select("*")
-          .in("id", gameIds) as { data: GameRow[] | null };
+      for (const row of gamesData ?? []) {
+        gamesMap.set(row.id, mapGameRow(row));
+      }
+    }
 
-        const games = (gamesData ?? []).map(mapGameRow);
-
-        // Sort games by list position
-        const orderedGames = gameIds
-          .map((id) => games.find((g) => g.id === id))
-          .filter(Boolean) as ReturnType<typeof mapGameRow>[];
-
-        return mapListRow(list, orderedGames);
-      })
-    );
+    // Assemble results
+    const results = listsData.map((list) => {
+      const items = itemsByList.get(list.id) ?? [];
+      const orderedGames = items
+        .map((item) => gamesMap.get(item.game_id))
+        .filter(Boolean) as ReturnType<typeof mapGameRow>[];
+      return mapListRow(list, orderedGames);
+    });
 
     return jsonOk(results);
   } catch (err) {

@@ -35,13 +35,15 @@ export async function GET(
       return jsonNotFound("Profile");
     }
 
-    // Run all count queries in parallel
-    const [reviewRes, listsRes, libraryRes, followerRes, followingRes] = await Promise.all([
+    // Run ALL queries in parallel — counts + recent activity in one batch
+    const [reviewRes, listsRes, libraryRes, followerRes, followingRes, recentReviewsRes, recentLibraryRes] = await Promise.all([
       supabase.from("reviews").select("id", { count: "exact", head: true }).eq("profile_id", profile.id),
       supabase.from("lists").select("id", { count: "exact", head: true }).eq("owner_id", profile.id),
       supabase.from("user_games").select("id", { count: "exact", head: true }).eq("user_id", profile.id),
       supabase.from("follows").select("id", { count: "exact", head: true }).eq("following_id", profile.id),
       supabase.from("follows").select("id", { count: "exact", head: true }).eq("follower_id", profile.id),
+      supabase.from("reviews").select("id, rating, created_at, game:games!inner(slug, title)").eq("profile_id", profile.id).order("created_at", { ascending: false }).limit(10),
+      supabase.from("user_games").select("id, status, personal_rating, created_at, game:games!inner(slug, title)").eq("user_id", profile.id).order("created_at", { ascending: false }).limit(10),
     ]);
 
     const reviewCount = reviewRes.count ?? 0;
@@ -54,16 +56,8 @@ export async function GET(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const recentActivity: any[] = [];
 
-    // Recent reviews
-    const { data: recentReviews } = await supabase
-      .from("reviews")
-      .select("id, rating, created_at, game:games!inner(slug, title)")
-      .eq("profile_id", profile.id)
-      .order("created_at", { ascending: false })
-      .limit(10);
-
-    if (recentReviews) {
-      for (const r of recentReviews) {
+    if (recentReviewsRes.data) {
+      for (const r of recentReviewsRes.data) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const game = r.game as any;
         recentActivity.push({
@@ -77,16 +71,8 @@ export async function GET(
       }
     }
 
-    // Recent library additions
-    const { data: recentLibrary } = await supabase
-      .from("user_games")
-      .select("id, status, personal_rating, created_at, game:games!inner(slug, title)")
-      .eq("user_id", profile.id)
-      .order("created_at", { ascending: false })
-      .limit(10);
-
-    if (recentLibrary) {
-      for (const ug of recentLibrary) {
+    if (recentLibraryRes.data) {
+      for (const ug of recentLibraryRes.data) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const game = ug.game as any;
         recentActivity.push({

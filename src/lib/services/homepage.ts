@@ -8,6 +8,7 @@
 
 import { getServerSupabase } from "@/lib/supabase/server";
 import { mapGameRow } from "@/lib/db/mappers";
+import { GAME_CARD_COLUMNS_WITH_DESC } from "@/lib/db/columns";
 import { filterQualityGames, confidenceWeightedScore, isQualityGame } from "@/lib/utils/quality";
 import type { GameRow } from "@/lib/supabase/types";
 import type { Game, GXDeal } from "@/lib/types";
@@ -90,7 +91,7 @@ export async function fetchHeroCandidates(limit = 12): Promise<Game[]> {
   // Step 1: Manually featured games (editorial priority) — no age limit
   const { data: manualFeatured } = await supabase
     .from("games")
-    .select("*")
+    .select(GAME_CARD_COLUMNS_WITH_DESC)
     .eq("is_featured_manual", true)
     .not("header_image", "is", null)
     .neq("header_image", "")
@@ -107,7 +108,7 @@ export async function fetchHeroCandidates(limit = 12): Promise<Game[]> {
 
   let { data: autoPool } = await supabase
     .from("games")
-    .select("*")
+    .select(GAME_CARD_COLUMNS_WITH_DESC)
     .not("header_image", "is", null)
     .neq("header_image", "")
     .gte("score", 76)
@@ -125,7 +126,7 @@ export async function fetchHeroCandidates(limit = 12): Promise<Game[]> {
   if (!autoPool || autoPool.length < 6) {
     const wider = await supabase
       .from("games")
-      .select("*")
+      .select(GAME_CARD_COLUMNS_WITH_DESC)
       .not("header_image", "is", null)
       .neq("header_image", "")
       .gte("score", 72)
@@ -171,7 +172,7 @@ export async function fetchTrendingGames(limit = 20, homepageOnly = true): Promi
   // Step 1: Load manually-flagged trending seeds (these get priority slots in the rail)
   const { data: flagged, error } = await supabase
     .from("games")
-    .select("*")
+    .select(GAME_CARD_COLUMNS_WITH_DESC)
     .eq("trending", true)
     .limit(40) as { data: GameRow[] | null; error: unknown };
 
@@ -184,7 +185,7 @@ export async function fetchTrendingGames(limit = 20, homepageOnly = true): Promi
 
   const { data: pool } = await supabase
     .from("games")
-    .select("*")
+    .select(GAME_CARD_COLUMNS_WITH_DESC)
     .not("release_date", "is", null)
     .gte("release_date", cutoff4yr)
     .lte("release_date", today)
@@ -249,7 +250,7 @@ export async function fetchNewReleases(limit = 20): Promise<Game[]> {
   // Try last 2 years first
   let { data, error } = await supabase
     .from("games")
-    .select("*")
+    .select(GAME_CARD_COLUMNS_WITH_DESC)
     .not("release_date", "is", null)
     .lte("release_date", new Date().toISOString().slice(0, 10))
     .gte("release_date", dateCutoff(2))
@@ -260,7 +261,7 @@ export async function fetchNewReleases(limit = 20): Promise<Game[]> {
   if (!error && (!data || data.length < limit)) {
     const fallback = await supabase
       .from("games")
-      .select("*")
+      .select(GAME_CARD_COLUMNS_WITH_DESC)
       .not("release_date", "is", null)
       .lte("release_date", new Date().toISOString().slice(0, 10))
       .gte("release_date", dateCutoff(5))
@@ -293,7 +294,7 @@ export async function fetchTopRated(limit = 10): Promise<Game[]> {
 
   const { data, error } = await supabase
     .from("games")
-    .select("*")
+    .select(GAME_CARD_COLUMNS_WITH_DESC)
     .order("verdict_score", { ascending: false, nullsFirst: false })
     .order("score", { ascending: false })
     .limit(fetchLimit) as { data: GameRow[] | null; error: unknown };
@@ -317,7 +318,7 @@ export async function fetchHomepageTopRated(limit = 20): Promise<Game[]> {
 
   let { data, error } = await supabase
     .from("games")
-    .select("*")
+    .select(GAME_CARD_COLUMNS_WITH_DESC)
     .not("release_date", "is", null)
     .gte("release_date", cutoff)
     .lte("release_date", new Date().toISOString().slice(0, 10))
@@ -334,7 +335,7 @@ export async function fetchHomepageTopRated(limit = 20): Promise<Game[]> {
     const widerCutoff = monthsAgoISO(HOMEPAGE_TOP_RATED_FALLBACK_MONTHS);
     const fallback = await supabase
       .from("games")
-      .select("*")
+      .select(GAME_CARD_COLUMNS_WITH_DESC)
       .not("release_date", "is", null)
       .gte("release_date", widerCutoff)
       .lte("release_date", new Date().toISOString().slice(0, 10))
@@ -364,7 +365,7 @@ export async function fetchHomepageRecommendations(limit = 20): Promise<Game[]> 
 
   const { data, error } = await supabase
     .from("games")
-    .select("*")
+    .select(GAME_CARD_COLUMNS_WITH_DESC)
     .not("release_date", "is", null)
     .gte("release_date", cutoff)
     .lte("release_date", new Date().toISOString().slice(0, 10))

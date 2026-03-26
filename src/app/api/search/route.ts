@@ -11,6 +11,7 @@
 import { NextRequest } from "next/server";
 import { jsonOk } from "@/lib/api/response";
 import { mapGameRow } from "@/lib/db/mappers";
+import { GAME_CARD_COLUMNS_WITH_DESC } from "@/lib/db/columns";
 import { confidenceWeightedScore } from "@/lib/utils/quality";
 import type { Game, PaginatedResponse, SortOption, Platform } from "@/lib/types";
 import type { GameRow } from "@/lib/supabase/types";
@@ -38,12 +39,12 @@ export async function GET(request: NextRequest) {
     const { getServerSupabase } = await import("@/lib/supabase/server");
     const supabase = getServerSupabase();
 
-    let query = supabase.from("games").select("*", { count: "exact" });
+    let query = supabase.from("games").select(GAME_CARD_COLUMNS_WITH_DESC, { count: "planned" });
 
-    // Text search — use ilike on title, or Postgres full-text if scaled
+    // Text search — ilike on title/developer/publisher (NOT description — too slow on large text)
     if (q) {
       query = query.or(
-        `title.ilike.%${q}%,developer.ilike.%${q}%,publisher.ilike.%${q}%,description.ilike.%${q}%`
+        `title.ilike.%${q}%,developer.ilike.%${q}%,publisher.ilike.%${q}%`
       );
     }
 

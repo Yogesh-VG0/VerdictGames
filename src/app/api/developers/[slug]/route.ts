@@ -7,6 +7,7 @@
 import { NextRequest } from "next/server";
 import { jsonOk, jsonNotFound } from "@/lib/api/response";
 import { mapGameRow } from "@/lib/db/mappers";
+import { GAME_CARD_COLUMNS } from "@/lib/db/columns";
 import type { GameRow } from "@/lib/supabase/types";
 
 export async function GET(
@@ -28,7 +29,7 @@ export async function GET(
     // Case-insensitive search on developer name
     const { data, error } = await supabase
       .from("games")
-      .select("*")
+      .select(GAME_CARD_COLUMNS)
       .ilike("developer", `%${name}%`)
       .order("release_date", { ascending: false }) as { data: GameRow[] | null; error: unknown };
 

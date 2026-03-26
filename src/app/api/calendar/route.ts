@@ -7,6 +7,7 @@
 import { NextRequest } from "next/server";
 import { jsonOk } from "@/lib/api/response";
 import { mapGameRow } from "@/lib/db/mappers";
+import { GAME_CARD_COLUMNS } from "@/lib/db/columns";
 import type { GameRow } from "@/lib/supabase/types";
 
 export async function GET(request: NextRequest) {
@@ -24,7 +25,7 @@ export async function GET(request: NextRequest) {
 
     let query = supabase
       .from("games")
-      .select("*")
+      .select(GAME_CARD_COLUMNS)
       .not("release_date", "is", null)
       .order("release_date", { ascending: true })
       .limit(limit);

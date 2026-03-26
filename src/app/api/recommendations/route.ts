@@ -8,6 +8,7 @@
 import { NextRequest } from "next/server";
 import { jsonOk } from "@/lib/api/response";
 import { mapGameRow } from "@/lib/db/mappers";
+import { GAME_CARD_COLUMNS_WITH_DESC } from "@/lib/db/columns";
 import { confidenceWeightedScore, isQualityGame } from "@/lib/utils/quality";
 import type { GameRow } from "@/lib/supabase/types";
 
@@ -68,13 +69,13 @@ export async function GET(request: NextRequest) {
     const cutoffStr = cutoffDate.toISOString().slice(0, 10);
     const today = new Date().toISOString().slice(0, 10);
 
-    // Over-fetch substantially so quality filtering + genre diversity still leaves enough
-    const fetchLimit = limit * 8;
+    // Over-fetch so quality filtering + genre diversity still leaves enough
+    const fetchLimit = limit * 5;
 
     // Build recommendation query — require minimum review count at DB level
     let query = supabase
       .from("games")
-      .select("*")
+      .select(GAME_CARD_COLUMNS_WITH_DESC)
       .not("release_date", "is", null)
       .gte("release_date", cutoffStr)
       .lte("release_date", today)           // exclude unreleased/future games

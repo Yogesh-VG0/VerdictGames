@@ -9,6 +9,7 @@ import { jsonOk, jsonError, jsonBadRequest } from "@/lib/api/response";
 import { getCurrentUser } from "@/lib/supabase/auth";
 import { getServerSupabase } from "@/lib/supabase/server";
 import { mapUserGameRow } from "@/lib/db/mappers";
+import { GAME_CARD_COLUMNS } from "@/lib/db/columns";
 import type { GameRow, UserGameRow } from "@/lib/supabase/types";
 
 export async function GET(request: NextRequest) {
@@ -22,7 +23,7 @@ export async function GET(request: NextRequest) {
     const supabase = getServerSupabase();
     let query = supabase
       .from("user_games")
-      .select("*, game:games!inner(*)")
+      .select(`*, game:games!inner(${GAME_CARD_COLUMNS})`)
       .eq("user_id", user.profileId)
       .order("updated_at", { ascending: false });
 

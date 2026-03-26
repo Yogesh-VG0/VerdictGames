@@ -7,6 +7,7 @@
 import { NextRequest } from "next/server";
 import { jsonOk, jsonNotFound } from "@/lib/api/response";
 import { mapGameRow, mapListRow } from "@/lib/db/mappers";
+import { GAME_CARD_COLUMNS } from "@/lib/db/columns";
 import type { ListRow, GameRow } from "@/lib/supabase/types";
 
 export async function GET(
@@ -48,7 +49,7 @@ export async function GET(
       const gameIds = items.map((i) => i.game_id);
       const { data: gamesData } = await supabase
         .from("games")
-        .select("*")
+        .select(GAME_CARD_COLUMNS)
         .in("id", gameIds) as { data: GameRow[] | null };
 
       const allGames = (gamesData ?? []).map(mapGameRow);

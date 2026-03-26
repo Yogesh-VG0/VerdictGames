@@ -3,6 +3,7 @@ import { jsonOk, jsonError } from "@/lib/api/response";
 import { requireAdmin } from "@/lib/admin";
 import { getServerSupabase } from "@/lib/supabase/server";
 import { mapGameRow } from "@/lib/db/mappers";
+import { GAME_CARD_COLUMNS } from "@/lib/db/columns";
 import type { GameRow } from "@/lib/supabase/types";
 import { slugify } from "@/lib/utils/slugify";
 
@@ -18,7 +19,7 @@ export async function GET(request: NextRequest) {
   const offset = (page - 1) * limit;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let query = supabase.from("games").select("*", { count: "exact" }) as any;
+  let query = supabase.from("games").select(GAME_CARD_COLUMNS, { count: "planned" }) as any;
 
   if (q) {
     query = query.ilike("title", `%${q}%`);
