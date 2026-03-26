@@ -58,7 +58,174 @@ export async function POST(request: NextRequest) {
     return jsonError(result.message, 400);
   }
 
-  // Mode 2: Ingest via source URL (extract title from URL slug)
+  // Mode 2: Ingest from mobile store (Google Play or App Store)
+  if (body.mode === "mobile_store") {
+    const storeSource: string = body.storeSource; // "google_play" | "app_store"
+    const title: string = body.title?.trim();
+    if (!title) return jsonError("Title is required", 400);
+
+    const slug = body.slug || slugify(title);
+
+    // Duplicate check
+    const { data: existingSlug } = await supabase
+      .from("games")
+      .select("id, slug, title")
+      .eq("slug", slug)
+      .maybeSingle();
+    if (existingSlug) {
+      return jsonError(`A game with slug "${slug}" already exists: "${(existingSlug as { title: string }).title}"`, 409);
+    }
+
+    // Fetch full store details
+    let coverImage = body.coverImage || "";
+    let headerImage = "";
+    let screenshots: string[] = [];
+    let description = body.description || "";
+    let developer = body.developer || "";
+    let publisher = body.publisher || "";
+    let platforms = body.platforms || [];
+    let genres = body.genres || [];
+    let monetization = "";
+    let isFree = true;
+    let playStoreUrl: string | null = null;
+    let storeExternalId: string | null = null;
+    let releaseDate: string | null = body.releaseDate || null;
+    let storeScore: number | null = null;
+    let storeRatings = 0;
+
+    if (storeSource === "google_play" && body.appId) {
+      try {
+        const { getGooglePlayApp } = await import("@/lib/external/googleplay");
+        const app = await getGooglePlayApp(body.appId);
+        if (app) {
+          coverImage = coverImage || app.icon || "";
+          headerImage = app.headerImage || "";
+          screenshots = app.screenshots?.slice(0, 10) || [];
+          description = description || app.summary || "";
+          developer = developer || app.developer || "";
+          publisher = publisher || app.developer || "";
+          platforms = platforms.length ? platforms : ["Android"];
+          genres = genres.length ? genres : [app.genre].filter(Boolean);
+          monetization = app.free ? (app.offersIAP ? "Free + IAP" : "Free") : "Paid";
+          isFree = app.free;
+          playStoreUrl = app.url;
+          storeExternalId = app.appId;
+          releaseDate = releaseDate || app.released || null;
+          storeScore = app.score;
+          storeRatings = app.ratings || 0;
+        }
+      } catch (err) {
+        console.warn("[admin/games] Google Play fetch failed:", (err as Error).message);
+      }
+    } else if (storeSource === "app_store" && body.trackId) {
+      try {
+        const { lookupAppStoreById } = await import("@/lib/external/appstore");
+        const app = await lookupAppStoreById(body.trackId);
+        if (app) {
+          coverImage = coverImage || app.artworkUrl512 || app.artworkUrl100 || "";
+          screenshots = app.screenshotUrls?.slice(0, 10) || [];
+          description = description || app.description?.slice(0, 2000) || "";
+          developer = developer || app.artistName || "";
+          publisher = publisher || app.sellerName || app.artistName || "";
+          platforms = platforms.length ? platforms : ["iOS"];
+          genres = genres.length ? genres : app.genres?.length ? app.genres : [app.primaryGenreName].filter(Boolean);
+          monetization = app.price === 0 ? "Free" : "Paid";
+          isFree = app.price === 0;
+          storeExternalId = String(app.trackId);
+          releaseDate = releaseDate || (app.releaseDate ? app.releaseDate.split("T")[0] : null);
+          storeScore = app.averageUserRating;
+          storeRatings = app.userRatingCount || 0;
+        }
+      } catch (err) {
+        console.warn("[admin/games] App Store fetch failed:", (err as Error).message);
+      }
+    }
+
+    // Build verdict summary from store rating
+    let verdictLabel = "COMING SOON";
+    let score = 0;
+    if (storeScore && storeRatings > 50) {
+      score = Math.round(storeScore * 20); // 5-star → 0-100
+      verdictLabel = score >= 85 ? "EXCEPTIONAL" : score >= 70 ? "GREAT" : score >= 55 ? "GOOD" : score >= 40 ? "MIXED" : "POOR";
+    }
+
+    const record = {
+      slug,
+      title,
+      subtitle: null,
+      cover_image: coverImage,
+      header_image: headerImage,
+      screenshots,
+      platforms,
+      genres,
+      tags: [],
+      developer,
+      publisher,
+      release_date: releaseDate,
+      description: description || "This game page is awaiting data enrichment.",
+      score,
+      verdict_label: verdictLabel,
+      verdict_summary: storeScore ? `Rated ${storeScore.toFixed(1)}/5 by ${storeRatings.toLocaleString()} users on ${storeSource === "google_play" ? "Google Play" : "App Store"}.` : "",
+      pros: [],
+      cons: [],
+      monetization,
+      performance_notes: "",
+      monetization_notes: "",
+      review_count: storeRatings,
+      featured: false,
+      trending: false,
+      score_source: "store_rating",
+      enrichment_sources: [storeSource],
+      price_currency: "USD",
+      is_free: isFree,
+      is_provisional: storeScore ? false : true,
+      play_store_url: playStoreUrl,
+    };
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: inserted, error } = await (supabase.from("games") as any)
+      .insert(record)
+      .select("*")
+      .single() as { data: GameRow | null; error: { message: string } | null };
+
+    if (error || !inserted) {
+      return jsonError("Failed to create game: " + (error?.message ?? "Unknown error"), 500);
+    }
+
+    // Link in mobile_store_listings
+    if (storeExternalId) {
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (supabase.from("mobile_store_listings") as any).upsert({
+          game_id: inserted.id,
+          store: storeSource,
+          external_id: storeExternalId,
+          title,
+          developer,
+          icon_url: coverImage,
+          score: storeScore,
+          ratings_count: storeRatings,
+          is_verified: true,
+        }, { onConflict: "store,external_id" });
+      } catch { /* best-effort */ }
+    }
+
+    // Audit log
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase.from("admin_audit_log") as any).insert({
+        entity_type: "game",
+        entity_id: inserted.id,
+        action: "create",
+        field_changes: { title: { old: null, new: title }, mode: "mobile_store", store: storeSource },
+        edited_by: user?.email ?? "unknown",
+      });
+    } catch { /* best-effort */ }
+
+    return jsonOk({ gameId: inserted.id, slug: inserted.slug, message: `Game "${title}" created from ${storeSource === "google_play" ? "Google Play" : "App Store"}.` });
+  }
+
+  // Mode 3: Ingest via source URL (extract title from URL slug)
   if (body.mode === "url" && body.url) {
     const parsedUrl = new URL(body.url);
     const urlSlug = parsedUrl.pathname.split("/").filter(Boolean).pop() ?? "";

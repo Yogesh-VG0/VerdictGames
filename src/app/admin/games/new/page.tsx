@@ -4,24 +4,36 @@ import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { slugify } from "@/lib/utils/slugify";
-import { Search, Link2, FileEdit, ArrowLeft, Check, Star, Calendar, Gamepad2, Loader2, AlertCircle, CheckCircle2, ExternalLink } from "lucide-react";
+import { Search, Link2, FileEdit, ArrowLeft, Check, Star, Calendar, Gamepad2, Loader2, AlertCircle, CheckCircle2, ExternalLink, Smartphone, Download, Store } from "lucide-react";
 
 type Mode = "lookup" | "url" | "provisional";
 type Step = "search" | "candidates" | "confirm" | "ingesting";
+type CandidateSource = "rawg" | "google_play" | "app_store";
 
 interface Candidate {
-  rawgId: number;
+  source: CandidateSource;
+  rawgId: number | null;
   name: string;
   slug: string;
   released: string | null;
   backgroundImage: string | null;
-  rating: number;
-  ratingsCount: number;
+  rating: number | null;
+  ratingsCount: number | null;
   metacritic: number | null;
   platforms: string[];
   genres: string[];
+  developer: string | null;
+  icon: string | null;
+  score: number | null;
+  installs: string | null;
+  appId: string | null;
+  trackId: number | null;
+  storeUrl: string | null;
   alreadyInDb: boolean;
 }
+
+const SOURCE_LABELS: Record<CandidateSource, string> = { rawg: "RAWG", google_play: "Google Play", app_store: "App Store" };
+const SOURCE_COLORS: Record<CandidateSource, string> = { rawg: "bg-blue-500/10 text-blue-400 border-blue-500/20", google_play: "bg-green-500/10 text-green-400 border-green-500/20", app_store: "bg-sky-500/10 text-sky-400 border-sky-500/20" };
 
 const PLATFORMS = ["PC", "PlayStation 5", "PlayStation 4", "Xbox Series X|S", "Xbox One", "Nintendo Switch", "Nintendo Switch 2", "Android", "iOS", "macOS", "Linux"];
 const RELEASE_STATUSES = [
@@ -65,12 +77,13 @@ export default function AdminAddGamePage() {
 
   const autoSlug = form.title ? slugify(form.title) : "";
 
-  // Search RAWG for candidates
+  // Search all sources for candidates
   const handleSearch = useCallback(async () => {
     if (!lookupTitle.trim()) { setError("Enter a game title"); return; }
     setLoading(true);
     setError("");
     setCandidates([]);
+    setSourceFilter(null);
     try {
       const res = await fetch(`/api/admin/games/search-preview?q=${encodeURIComponent(lookupTitle.trim())}`);
       const json = await res.json();
@@ -85,6 +98,15 @@ export default function AdminAddGamePage() {
       setLoading(false);
     }
   }, [lookupTitle]);
+
+  // Source filter for candidates list
+  const [sourceFilter, setSourceFilter] = useState<CandidateSource | null>(null);
+  const filteredCandidates = sourceFilter ? candidates.filter(c => c.source === sourceFilter) : candidates;
+  const sourceCounts = {
+    rawg: candidates.filter(c => c.source === "rawg").length,
+    google_play: candidates.filter(c => c.source === "google_play").length,
+    app_store: candidates.filter(c => c.source === "app_store").length,
+  };
 
   // Select a candidate and move to confirm step
   function selectCandidate(c: Candidate) {
@@ -102,10 +124,31 @@ export default function AdminAddGamePage() {
     setSuccess("");
     setStep("ingesting");
     try {
+      let payload: Record<string, unknown>;
+
+      if (selectedCandidate.source === "rawg") {
+        // RAWG: use the standard lookup ingest pipeline
+        payload = { mode: "lookup", title: editedTitle.trim() || selectedCandidate.name };
+      } else {
+        // Google Play / App Store: use mobile_store mode
+        payload = {
+          mode: "mobile_store",
+          storeSource: selectedCandidate.source,
+          title: editedTitle.trim() || selectedCandidate.name,
+          slug: slugify(editedTitle.trim() || selectedCandidate.name),
+          developer: selectedCandidate.developer || "",
+          platforms: selectedCandidate.platforms,
+          genres: selectedCandidate.genres,
+          coverImage: selectedCandidate.icon || "",
+          appId: selectedCandidate.appId,
+          trackId: selectedCandidate.trackId,
+        };
+      }
+
       const res = await fetch("/api/admin/games", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mode: "lookup", title: editedTitle.trim() || selectedCandidate.name }),
+        body: JSON.stringify(payload),
       });
       const json = await res.json();
       if (!res.ok) {
@@ -202,7 +245,7 @@ export default function AdminAddGamePage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-foreground">Add New Game</h1>
-        <p className="text-sm text-secondary mt-1">Search, verify, and ingest a game from RAWG — or create manually</p>
+        <p className="text-sm text-secondary mt-1">Search RAWG, Google Play &amp; App Store — or create manually</p>
       </div>
 
       {/* Mode Tabs */}
@@ -226,14 +269,14 @@ export default function AdminAddGamePage() {
           {step === "search" && (
             <div className="space-y-4">
               <p className="text-xs text-tertiary">
-                Search by title to find the game on RAWG. You&apos;ll be able to verify the match before ingesting.
+                Search by title across RAWG, Google Play &amp; App Store. You&apos;ll verify the match before ingesting.
               </p>
               <div className="flex gap-2">
                 <input
                   value={lookupTitle}
                   onChange={e => setLookupTitle(e.target.value)}
                   onKeyDown={e => e.key === "Enter" && handleSearch()}
-                  placeholder="e.g. Elden Ring, Hollow Knight Silksong"
+                  placeholder="e.g. Elden Ring, Offroad League Online, Clash Royale"
                   className={`${inputCls} flex-1`}
                   autoFocus
                 />
@@ -249,7 +292,7 @@ export default function AdminAddGamePage() {
             </div>
           )}
 
-          {/* Step 2: Pick from candidates */}
+          {/* Step 2: Pick from candidates (multi-source) */}
           {step === "candidates" && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
@@ -264,10 +307,44 @@ export default function AdminAddGamePage() {
                 </button>
               </div>
 
-              <div className="grid gap-3">
-                {candidates.map((c) => (
+              {/* Source filter tabs */}
+              <div className="flex flex-wrap gap-1.5">
+                <button
+                  onClick={() => setSourceFilter(null)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${!sourceFilter ? "bg-accent/20 border-accent/40 text-accent" : "bg-surface-2 border-border text-tertiary hover:text-secondary"}`}
+                >
+                  All ({candidates.length})
+                </button>
+                {sourceCounts.rawg > 0 && (
                   <button
-                    key={c.rawgId}
+                    onClick={() => setSourceFilter("rawg")}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all flex items-center gap-1.5 ${sourceFilter === "rawg" ? "bg-blue-500/20 border-blue-500/40 text-blue-400" : "bg-surface-2 border-border text-tertiary hover:text-secondary"}`}
+                  >
+                    <Gamepad2 className="w-3 h-3" /> RAWG ({sourceCounts.rawg})
+                  </button>
+                )}
+                {sourceCounts.google_play > 0 && (
+                  <button
+                    onClick={() => setSourceFilter("google_play")}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all flex items-center gap-1.5 ${sourceFilter === "google_play" ? "bg-green-500/20 border-green-500/40 text-green-400" : "bg-surface-2 border-border text-tertiary hover:text-secondary"}`}
+                  >
+                    <Smartphone className="w-3 h-3" /> Google Play ({sourceCounts.google_play})
+                  </button>
+                )}
+                {sourceCounts.app_store > 0 && (
+                  <button
+                    onClick={() => setSourceFilter("app_store")}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all flex items-center gap-1.5 ${sourceFilter === "app_store" ? "bg-sky-500/20 border-sky-500/40 text-sky-400" : "bg-surface-2 border-border text-tertiary hover:text-secondary"}`}
+                  >
+                    <Store className="w-3 h-3" /> App Store ({sourceCounts.app_store})
+                  </button>
+                )}
+              </div>
+
+              <div className="grid gap-3">
+                {filteredCandidates.map((c, idx) => (
+                  <button
+                    key={`${c.source}-${c.rawgId || c.appId || c.trackId || idx}`}
                     onClick={() => !c.alreadyInDb && selectCandidate(c)}
                     disabled={c.alreadyInDb}
                     className={`group relative flex items-start gap-4 p-3 rounded-xl border text-left transition-all ${
@@ -276,28 +353,34 @@ export default function AdminAddGamePage() {
                         : "border-border hover:border-accent/40 hover:bg-accent/[0.03] cursor-pointer bg-surface"
                     }`}
                   >
-                    {/* Thumbnail */}
+                    {/* Thumbnail / Icon */}
                     <div className="w-20 h-28 sm:w-24 sm:h-32 rounded-lg overflow-hidden bg-surface-2 shrink-0 relative">
-                      {c.backgroundImage ? (
+                      {(c.backgroundImage || c.icon) ? (
                         <Image
-                          src={c.backgroundImage}
+                          src={(c.backgroundImage || c.icon)!}
                           alt={c.name}
                           fill
-                          className="object-cover"
+                          className={c.source !== "rawg" ? "object-contain p-2" : "object-cover"}
                           sizes="96px"
                           unoptimized
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-tertiary">
-                          <Gamepad2 className="w-8 h-8" />
+                          {c.source === "google_play" ? <Smartphone className="w-8 h-8" /> :
+                           c.source === "app_store" ? <Store className="w-8 h-8" /> :
+                           <Gamepad2 className="w-8 h-8" />}
                         </div>
                       )}
                     </div>
 
                     {/* Info */}
                     <div className="flex-1 min-w-0 py-0.5">
-                      <div className="flex items-start gap-2">
+                      <div className="flex items-start gap-2 flex-wrap">
                         <h4 className="text-sm font-semibold text-foreground truncate">{c.name}</h4>
+                        {/* Source badge */}
+                        <span className={`shrink-0 px-2 py-0.5 rounded-md border text-[10px] font-semibold uppercase tracking-wider ${SOURCE_COLORS[c.source]}`}>
+                          {SOURCE_LABELS[c.source]}
+                        </span>
                         {c.alreadyInDb && (
                           <span className="shrink-0 px-2 py-0.5 rounded-md bg-success/10 text-success text-[10px] font-semibold uppercase tracking-wider">
                             In DB
@@ -305,20 +388,37 @@ export default function AdminAddGamePage() {
                         )}
                       </div>
 
+                      {/* Developer (mobile stores) */}
+                      {c.developer && (
+                        <p className="text-xs text-secondary mt-0.5 truncate">by {c.developer}</p>
+                      )}
+
                       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5 text-xs text-secondary">
                         {c.released && (
                           <span className="flex items-center gap-1">
                             <Calendar className="w-3 h-3" /> {c.released}
                           </span>
                         )}
-                        {c.rating > 0 && (
+                        {/* RAWG rating */}
+                        {c.rating != null && c.rating > 0 && (
                           <span className="flex items-center gap-1">
-                            <Star className="w-3 h-3 text-yellow-500" /> {c.rating.toFixed(1)} ({c.ratingsCount.toLocaleString()})
+                            <Star className="w-3 h-3 text-yellow-500" /> {c.rating.toFixed(1)}{c.ratingsCount != null ? ` (${c.ratingsCount.toLocaleString()})` : ""}
+                          </span>
+                        )}
+                        {/* Store score (5-star) */}
+                        {c.score != null && c.score > 0 && (
+                          <span className="flex items-center gap-1">
+                            <Star className="w-3 h-3 text-yellow-500" /> {c.score.toFixed(1)}/5
                           </span>
                         )}
                         {c.metacritic && (
                           <span className="px-1.5 py-0.5 rounded bg-accent/10 text-accent font-semibold text-[10px]">
                             MC {c.metacritic}
+                          </span>
+                        )}
+                        {c.installs && (
+                          <span className="flex items-center gap-1">
+                            <Download className="w-3 h-3" /> {c.installs}
                           </span>
                         )}
                       </div>
@@ -360,8 +460,13 @@ export default function AdminAddGamePage() {
             <div className="space-y-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-sm font-semibold text-foreground">Confirm & Ingest</h3>
-                  <p className="text-xs text-tertiary mt-0.5">Review the selected game and edit the title if needed before ingesting</p>
+                  <h3 className="text-sm font-semibold text-foreground">Confirm &amp; Ingest</h3>
+                  <p className="text-xs text-tertiary mt-0.5">
+                    Review the selected game and edit the title if needed before ingesting
+                    {selectedCandidate.source !== "rawg" && (
+                      <span className="text-yellow-400/80"> — mobile store data will be fetched automatically</span>
+                    )}
+                  </p>
                 </div>
                 <button
                   onClick={() => setStep("candidates")}
@@ -374,13 +479,13 @@ export default function AdminAddGamePage() {
 
               {/* Selected game card */}
               <div className="flex gap-4 p-4 rounded-xl border border-accent/30 bg-accent/[0.03]">
-                <div className="w-24 h-32 sm:w-28 sm:h-36 rounded-lg overflow-hidden bg-surface-2 shrink-0 relative">
-                  {selectedCandidate.backgroundImage ? (
+                <div className={`rounded-lg overflow-hidden bg-surface-2 shrink-0 relative ${selectedCandidate.source !== "rawg" ? "w-20 h-20 sm:w-24 sm:h-24" : "w-24 h-32 sm:w-28 sm:h-36"}`}>
+                  {(selectedCandidate.backgroundImage || selectedCandidate.icon) ? (
                     <Image
-                      src={selectedCandidate.backgroundImage}
+                      src={(selectedCandidate.backgroundImage || selectedCandidate.icon)!}
                       alt={selectedCandidate.name}
                       fill
-                      className="object-cover"
+                      className={selectedCandidate.source !== "rawg" ? "object-contain p-1" : "object-cover"}
                       sizes="112px"
                       unoptimized
                     />
@@ -391,16 +496,30 @@ export default function AdminAddGamePage() {
                   )}
                 </div>
                 <div className="flex-1 min-w-0 space-y-2">
-                  <h4 className="text-base font-bold text-foreground">{selectedCandidate.name}</h4>
+                  <div className="flex items-start gap-2 flex-wrap">
+                    <h4 className="text-base font-bold text-foreground">{selectedCandidate.name}</h4>
+                    <span className={`shrink-0 px-2 py-0.5 rounded-md border text-[10px] font-semibold uppercase tracking-wider ${SOURCE_COLORS[selectedCandidate.source]}`}>
+                      {SOURCE_LABELS[selectedCandidate.source]}
+                    </span>
+                  </div>
+                  {selectedCandidate.developer && (
+                    <p className="text-xs text-secondary">by {selectedCandidate.developer}</p>
+                  )}
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-secondary">
                     {selectedCandidate.released && (
                       <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {selectedCandidate.released}</span>
                     )}
-                    {selectedCandidate.rating > 0 && (
+                    {selectedCandidate.rating != null && selectedCandidate.rating > 0 && (
                       <span className="flex items-center gap-1"><Star className="w-3 h-3 text-yellow-500" /> {selectedCandidate.rating.toFixed(1)}</span>
+                    )}
+                    {selectedCandidate.score != null && selectedCandidate.score > 0 && (
+                      <span className="flex items-center gap-1"><Star className="w-3 h-3 text-yellow-500" /> {selectedCandidate.score.toFixed(1)}/5</span>
                     )}
                     {selectedCandidate.metacritic && (
                       <span className="px-1.5 py-0.5 rounded bg-accent/10 text-accent font-semibold text-[10px]">MC {selectedCandidate.metacritic}</span>
+                    )}
+                    {selectedCandidate.installs && (
+                      <span className="flex items-center gap-1"><Download className="w-3 h-3" /> {selectedCandidate.installs}</span>
                     )}
                   </div>
                   {selectedCandidate.platforms.length > 0 && (
@@ -413,21 +532,34 @@ export default function AdminAddGamePage() {
                   {selectedCandidate.genres.length > 0 && (
                     <p className="text-[11px] text-tertiary">{selectedCandidate.genres.join(", ")}</p>
                   )}
-                  <a
-                    href={`https://rawg.io/games/${selectedCandidate.slug}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-[11px] text-accent hover:underline"
-                  >
-                    View on RAWG <ExternalLink className="w-3 h-3" />
-                  </a>
+                  {/* Source-specific link */}
+                  {selectedCandidate.source === "rawg" && (
+                    <a
+                      href={`https://rawg.io/games/${selectedCandidate.slug}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-[11px] text-accent hover:underline"
+                    >
+                      View on RAWG <ExternalLink className="w-3 h-3" />
+                    </a>
+                  )}
+                  {selectedCandidate.storeUrl && (
+                    <a
+                      href={selectedCandidate.storeUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-[11px] text-accent hover:underline"
+                    >
+                      View on {SOURCE_LABELS[selectedCandidate.source]} <ExternalLink className="w-3 h-3" />
+                    </a>
+                  )}
                 </div>
               </div>
 
               {/* Editable title */}
               <div>
                 <label className="block text-xs font-medium text-secondary mb-1.5">
-                  Ingest Title <span className="text-tertiary">(edit if the RAWG name is wrong)</span>
+                  Ingest Title <span className="text-tertiary">(edit if needed)</span>
                 </label>
                 <input
                   value={editedTitle}
@@ -446,12 +578,12 @@ export default function AdminAddGamePage() {
                 {step === "ingesting" ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    Ingesting &amp; Enriching...
+                    {selectedCandidate.source === "rawg" ? "Ingesting & Enriching..." : "Creating from Store Data..."}
                   </>
                 ) : (
                   <>
                     <Check className="w-4 h-4" />
-                    Confirm &amp; Ingest Game
+                    {selectedCandidate.source === "rawg" ? "Confirm & Ingest Game" : `Create from ${SOURCE_LABELS[selectedCandidate.source]}`}
                   </>
                 )}
               </button>
