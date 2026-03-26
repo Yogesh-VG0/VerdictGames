@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { ExternalLink } from "lucide-react";
 import type { GXDeal } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { slugify } from "@/lib/utils/slugify";
@@ -18,7 +19,8 @@ export default function GXDealCard({ deal }: GXDealCardProps) {
   const isBundle = deal.badge?.toLowerCase().includes("bundle") ||
     deal.badge?.toLowerCase().includes("collection") ||
     deal.title.toLowerCase().includes("bundle") ||
-    deal.title.toLowerCase().includes("collection");
+    deal.title.toLowerCase().includes("collection") ||
+    (deal.badge?.toLowerCase().includes("items"));
   const cardHref = isBundle && deal.buyUrl ? deal.buyUrl : gameHref;
   const isExternal = isBundle && !!deal.buyUrl;
 
@@ -30,12 +32,17 @@ export default function GXDealCard({ deal }: GXDealCardProps) {
         <Link href={cardHref} className={className}>{children}</Link>
       );
 
+  // Price label for the CTA button
+  const priceLabel = deal.price !== null
+    ? `${deal.currency ?? "$"}${deal.price.toFixed(2)}`
+    : null;
+
   return (
     <motion.div
       whileHover={{ y: -4 }}
       whileTap={{ scale: 0.98 }}
       transition={{ duration: 0.3, ease: "easeOut" }}
-      className="block group rounded-2xl border border-border bg-surface overflow-hidden card-shimmer hover:border-accent/30 hover:shadow-[0_0_30px_-8px_rgba(168,85,247,0.15)] transition-all duration-500"
+      className="flex flex-col group rounded-2xl border border-border bg-surface overflow-hidden card-shimmer hover:border-accent/30 hover:shadow-[0_0_30px_-8px_rgba(168,85,247,0.15)] transition-all duration-500"
     >
       <CardWrapper className="block">
         <div className="relative aspect-[3/4] overflow-hidden">
@@ -70,14 +77,12 @@ export default function GXDealCard({ deal }: GXDealCardProps) {
         </div>
       </CardWrapper>
 
-      <div className="p-3.5 space-y-2">
-        <div className="flex items-start justify-between gap-2">
-          <CardWrapper
-            className="text-sm font-semibold text-foreground leading-tight line-clamp-1 group-hover:text-accent transition-colors"
-          >
-            {deal.title}
-          </CardWrapper>
-        </div>
+      <div className="p-3.5 space-y-2 flex-1 flex flex-col">
+        <CardWrapper
+          className="text-sm font-semibold text-foreground leading-tight line-clamp-1 group-hover:text-accent transition-colors"
+        >
+          {deal.title}
+        </CardWrapper>
 
         <div className="flex items-center justify-between">
           {deal.storeName && (
@@ -91,18 +96,30 @@ export default function GXDealCard({ deal }: GXDealCardProps) {
               {deal.storeName}
             </span>
           )}
-          {deal.price !== null && (
-            <span className="text-xs font-bold text-pixel-green">
-              {deal.currency ?? "$"}{deal.price.toFixed(2)}
-            </span>
-          )}
+          <div className="flex flex-wrap gap-1.5 ml-auto">
+            {deal.genres.slice(0, 2).map((g) => (
+              <span key={g} className="text-[10px] text-tertiary font-medium">{g}</span>
+            ))}
+          </div>
         </div>
 
-        <div className="flex flex-wrap gap-1.5">
-          {deal.genres.slice(0, 2).map((g) => (
-            <span key={g} className="text-[10px] text-tertiary font-medium">{g}</span>
-          ))}
-        </div>
+        {/* Get Deal CTA — always links to external store */}
+        {deal.buyUrl && (
+          <a
+            href={deal.buyUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className={cn(
+              "mt-auto flex items-center justify-center gap-1.5 w-full px-3 py-2 rounded-xl text-xs font-bold transition-all duration-200",
+              "bg-pixel-green/15 text-pixel-green border border-pixel-green/20",
+              "hover:bg-pixel-green hover:text-black hover:border-pixel-green"
+            )}
+          >
+            <ExternalLink className="w-3 h-3" />
+            {priceLabel ? `Get Deal · ${priceLabel}` : "Get Deal"}
+          </a>
+        )}
       </div>
     </motion.div>
   );

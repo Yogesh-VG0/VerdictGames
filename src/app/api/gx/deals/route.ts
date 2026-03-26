@@ -13,7 +13,7 @@ export async function GET() {
     discount: entry.game.prices?.[0]?.discount ?? null,
     price: entry.game.prices?.[0]?.price ?? null,
     currency: entry.game.prices?.[0]?.currency?.abbr ?? null,
-    buyUrl: entry.game.prices?.[0]?.url ?? null,
+    buyUrl: entry.game.prices?.[0]?.url ?? entry.url ?? null,
     storeName: entry.store?.name ?? null,
     storeColor: entry.store?.color ?? null,
     badge: entry.tag?.name ?? null,

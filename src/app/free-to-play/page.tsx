@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { Gift, Gamepad2, SlidersHorizontal, Crown } from "lucide-react";
+import { Gift, Gamepad2, SlidersHorizontal, Crown, ExternalLink } from "lucide-react";
 import { getGXFreeToPlay, getGXTopGames } from "@/lib/api";
 import type { GXFreeGame, GXTopGame } from "@/lib/types";
 import { slugify } from "@/lib/utils/slugify";
@@ -15,95 +15,127 @@ type ActiveTab = "free" | "subscriptions";
 
 function FreeGameCard({ game }: { game: GXFreeGame }) {
   return (
-    <Link
-      href={`/game/${slugify(game.title)}`}
-      className="block group rounded-2xl border border-border bg-surface overflow-hidden card-shimmer hover:border-pixel-green/30 hover:shadow-lg transition-all duration-300"
-    >
-      <div className="relative aspect-[3/4] overflow-hidden">
-        {game.cover ? (
-          <Image
-            src={game.cover}
-            alt={game.title}
-            fill
-            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
-            className="object-cover transition-transform duration-700 group-hover:scale-110"
-          />
-        ) : (
-          <div className="w-full h-full bg-surface-2 flex items-center justify-center">
-            <Gamepad2 className="w-8 h-8 text-tertiary" />
+    <div className="flex flex-col group rounded-2xl border border-border bg-surface overflow-hidden card-shimmer hover:border-pixel-green/30 hover:shadow-lg transition-all duration-300">
+      <Link href={`/game/${slugify(game.title)}`} className="block">
+        <div className="relative aspect-[3/4] overflow-hidden">
+          {game.cover ? (
+            <Image
+              src={game.cover}
+              alt={game.title}
+              fill
+              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
+              className="object-cover transition-transform duration-700 group-hover:scale-110"
+            />
+          ) : (
+            <div className="w-full h-full bg-surface-2 flex items-center justify-center">
+              <Gamepad2 className="w-8 h-8 text-tertiary" />
+            </div>
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+          <div className="absolute top-2.5 left-2.5">
+            <span className="text-[10px] font-bold text-white bg-pixel-green/80 backdrop-blur-md px-2 py-0.5 rounded-lg border border-white/10">
+              FREE
+            </span>
           </div>
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-        <div className="absolute top-2.5 left-2.5">
-          <span className="text-[10px] font-bold text-white bg-pixel-green/80 backdrop-blur-md px-2 py-0.5 rounded-lg border border-white/10">
-            FREE
-          </span>
         </div>
-      </div>
-      <div className="p-3 space-y-1.5">
-        <h3 className="text-sm font-semibold text-foreground leading-tight line-clamp-1 group-hover:text-pixel-green transition-colors">
-          {game.title}
-        </h3>
+      </Link>
+      <div className="p-3 space-y-1.5 flex-1 flex flex-col">
+        <Link href={`/game/${slugify(game.title)}`}>
+          <h3 className="text-sm font-semibold text-foreground leading-tight line-clamp-1 group-hover:text-pixel-green transition-colors">
+            {game.title}
+          </h3>
+        </Link>
         <div className="flex flex-wrap gap-1.5">
           {game.genres.slice(0, 2).map((g) => (
             <span key={g} className="text-[10px] text-tertiary font-medium">{g}</span>
           ))}
         </div>
+        {game.url && (
+          <a
+            href={game.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={cn(
+              "mt-auto flex items-center justify-center gap-1.5 w-full px-3 py-2 rounded-xl text-xs font-bold transition-all duration-200",
+              "bg-pixel-green/15 text-pixel-green border border-pixel-green/20",
+              "hover:bg-pixel-green hover:text-black hover:border-pixel-green"
+            )}
+          >
+            <ExternalLink className="w-3 h-3" />
+            Play Free
+          </a>
+        )}
       </div>
-    </Link>
+    </div>
   );
 }
 
 function SubscriptionGameCard({ game }: { game: GXTopGame }) {
   return (
-    <Link
-      href={`/game/${slugify(game.title)}`}
-      className="block group rounded-2xl border border-border bg-surface overflow-hidden card-shimmer hover:border-accent/30 hover:shadow-lg transition-all duration-300"
-    >
-      <div className="relative aspect-[3/4] overflow-hidden">
-        {game.cover ? (
-          <Image
-            src={game.cover}
-            alt={game.title}
-            fill
-            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
-            className="object-cover transition-transform duration-700 group-hover:scale-110"
-          />
-        ) : (
-          <div className="w-full h-full bg-surface-2 flex items-center justify-center">
-            <Gamepad2 className="w-8 h-8 text-tertiary" />
-          </div>
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-        {game.serviceName && (
-          <div className="absolute top-2.5 left-2.5">
-            <span
-              className="text-[10px] font-bold text-white backdrop-blur-md px-2 py-0.5 rounded-lg border border-white/10"
-              style={{ backgroundColor: game.serviceColor ? `${game.serviceColor}CC` : "rgba(139,92,246,0.8)" }}
-            >
-              {game.serviceName}
-            </span>
-          </div>
-        )}
-        {game.serviceTag && (
-          <div className="absolute top-2.5 right-2.5">
-            <span className="text-[10px] font-bold text-white bg-black/50 backdrop-blur-md px-2 py-0.5 rounded-lg border border-white/10">
-              {game.serviceTag}
-            </span>
-          </div>
-        )}
-      </div>
-      <div className="p-3 space-y-1.5">
-        <h3 className="text-sm font-semibold text-foreground leading-tight line-clamp-1 group-hover:text-accent transition-colors">
-          {game.title}
-        </h3>
+    <div className="flex flex-col group rounded-2xl border border-border bg-surface overflow-hidden card-shimmer hover:border-accent/30 hover:shadow-lg transition-all duration-300">
+      <Link href={`/game/${slugify(game.title)}`} className="block">
+        <div className="relative aspect-[3/4] overflow-hidden">
+          {game.cover ? (
+            <Image
+              src={game.cover}
+              alt={game.title}
+              fill
+              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
+              className="object-cover transition-transform duration-700 group-hover:scale-110"
+            />
+          ) : (
+            <div className="w-full h-full bg-surface-2 flex items-center justify-center">
+              <Gamepad2 className="w-8 h-8 text-tertiary" />
+            </div>
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+          {game.serviceName && (
+            <div className="absolute top-2.5 left-2.5">
+              <span
+                className="text-[10px] font-bold text-white backdrop-blur-md px-2 py-0.5 rounded-lg border border-white/10"
+                style={{ backgroundColor: game.serviceColor ? `${game.serviceColor}CC` : "rgba(139,92,246,0.8)" }}
+              >
+                {game.serviceName}
+              </span>
+            </div>
+          )}
+          {game.serviceTag && (
+            <div className="absolute top-2.5 right-2.5">
+              <span className="text-[10px] font-bold text-white bg-black/50 backdrop-blur-md px-2 py-0.5 rounded-lg border border-white/10">
+                {game.serviceTag}
+              </span>
+            </div>
+          )}
+        </div>
+      </Link>
+      <div className="p-3 space-y-1.5 flex-1 flex flex-col">
+        <Link href={`/game/${slugify(game.title)}`}>
+          <h3 className="text-sm font-semibold text-foreground leading-tight line-clamp-1 group-hover:text-accent transition-colors">
+            {game.title}
+          </h3>
+        </Link>
         <div className="flex flex-wrap gap-1.5">
           {game.genres.slice(0, 2).map((g) => (
             <span key={g} className="text-[10px] text-tertiary font-medium">{g}</span>
           ))}
         </div>
+        {game.url && (
+          <a
+            href={game.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={cn(
+              "mt-auto flex items-center justify-center gap-1.5 w-full px-3 py-2 rounded-xl text-xs font-bold transition-all duration-200",
+              "bg-accent/15 text-accent border border-accent/20",
+              "hover:bg-accent hover:text-white hover:border-accent"
+            )}
+          >
+            <ExternalLink className="w-3 h-3" />
+            {game.serviceName ? `View on ${game.serviceName}` : "View"}
+          </a>
+        )}
       </div>
-    </Link>
+    </div>
   );
 }
 
