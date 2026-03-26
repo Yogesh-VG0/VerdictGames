@@ -12,6 +12,14 @@ export async function GET(req: NextRequest) {
   const limit = Math.min(parseInt(searchParams.get("limit") || "100"), 500);
   const jobName = searchParams.get("job") || null;
 
+  // Auto-cleanup: mark runs stuck in 'running' for >2h as 'stale'
+  const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (supabase.from("scheduler_runs") as any)
+    .update({ status: "stale", finished_at: new Date().toISOString() })
+    .eq("status", "running")
+    .lt("started_at", twoHoursAgo);
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let query = (supabase.from("scheduler_runs") as any)
     .select("*")
@@ -41,19 +49,21 @@ export async function GET(req: NextRequest) {
     success: number;
     error: number;
     running: number;
+    stale: number;
     lastRun: string | null;
     lastStatus: string | null;
   }> = {};
 
   for (const row of (stats ?? [])) {
     if (!jobSummary[row.job_name]) {
-      jobSummary[row.job_name] = { total: 0, success: 0, error: 0, running: 0, lastRun: null, lastStatus: null };
+      jobSummary[row.job_name] = { total: 0, success: 0, error: 0, running: 0, stale: 0, lastRun: null, lastStatus: null };
     }
     const s = jobSummary[row.job_name];
     s.total++;
     if (row.status === "success") s.success++;
     else if (row.status === "error") s.error++;
     else if (row.status === "running") s.running++;
+    else if (row.status === "stale") s.stale++;
     if (!s.lastRun) {
       s.lastRun = row.started_at;
       s.lastStatus = row.status;

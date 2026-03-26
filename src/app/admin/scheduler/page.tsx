@@ -36,6 +36,7 @@ interface JobSummary {
   success: number;
   error: number;
   running: number;
+  stale: number;
   lastRun: string | null;
   lastStatus: string | null;
 }
@@ -54,6 +55,7 @@ function StatusIcon({ status }: { status: string }) {
   if (status === "success") return <CheckCircle2 className="w-4 h-4 text-green-500" />;
   if (status === "error") return <XCircle className="w-4 h-4 text-red-500" />;
   if (status === "running") return <Loader2 className="w-4 h-4 text-amber-500 animate-spin" />;
+  if (status === "stale") return <Clock className="w-4 h-4 text-orange-400" />;
   return <Clock className="w-4 h-4 text-secondary" />;
 }
 
@@ -64,7 +66,8 @@ function StatusBadge({ status }: { status: string }) {
         "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium",
         status === "success" && "bg-green-500/10 text-green-500",
         status === "error" && "bg-red-500/10 text-red-500",
-        status === "running" && "bg-amber-500/10 text-amber-500"
+        status === "running" && "bg-amber-500/10 text-amber-500",
+        status === "stale" && "bg-orange-400/10 text-orange-400"
       )}
     >
       <StatusIcon status={status} />
@@ -104,10 +107,19 @@ function formatTimestamp(dateStr: string): string {
   });
 }
 
+function parseMetadata(raw: Record<string, unknown> | string | null): Record<string, unknown> | null {
+  if (!raw) return null;
+  if (typeof raw === "string") {
+    try { return JSON.parse(raw); } catch { return null; }
+  }
+  return raw;
+}
+
 function RunRow({ run }: { run: SchedulerRun }) {
   const [expanded, setExpanded] = useState(false);
   const jobInfo = JOB_LABELS[run.job_name] || { label: run.job_name, description: "" };
-  const hasDetails = run.metadata || run.error_message || run.rows_scanned > 0 || run.rows_created > 0;
+  const meta = parseMetadata(run.metadata);
+  const hasDetails = (meta && Object.keys(meta).length > 0) || run.error_message || run.rows_scanned > 0 || run.rows_created > 0;
 
   return (
     <div className="border-b border-border last:border-b-0">
@@ -181,11 +193,11 @@ function RunRow({ run }: { run: SchedulerRun }) {
           )}
 
           {/* Metadata */}
-          {run.metadata && Object.keys(run.metadata).length > 0 && (
+          {meta && Object.keys(meta).length > 0 && (
             <div className="bg-surface-2 rounded-lg px-3 py-2">
               <div className="text-[11px] text-tertiary uppercase tracking-wider mb-1">Metadata</div>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-1 text-xs">
-                {Object.entries(run.metadata).map(([key, value]) => (
+                {Object.entries(meta).map(([key, value]) => (
                   <div key={key} className="flex items-baseline gap-1.5">
                     <span className="text-tertiary">{key}:</span>
                     <span className="text-foreground font-medium truncate">
@@ -229,6 +241,7 @@ export default function SchedulerPage() {
   const totalRuns = Object.values(summary).reduce((a, s) => a + s.total, 0);
   const totalSuccess = Object.values(summary).reduce((a, s) => a + s.success, 0);
   const totalErrors = Object.values(summary).reduce((a, s) => a + s.error, 0);
+  const totalStale = Object.values(summary).reduce((a, s) => a + s.stale, 0);
   const totalRunning = Object.values(summary).reduce((a, s) => a + s.running, 0);
 
   return (
@@ -259,7 +272,7 @@ export default function SchedulerPage() {
           { label: "Total (7d)", value: totalRuns, icon: BarChart3, color: "text-accent" },
           { label: "Succeeded", value: totalSuccess, icon: CheckCircle2, color: "text-green-500" },
           { label: "Failed", value: totalErrors, icon: XCircle, color: "text-red-500" },
-          { label: "Running", value: totalRunning, icon: Loader2, color: "text-amber-500" },
+          { label: "Stale / Running", value: `${totalStale} / ${totalRunning}`, icon: Clock, color: "text-orange-400" },
         ].map((card) => (
           <div key={card.label} className="bg-surface rounded-xl border border-border p-4">
             <div className="flex items-center gap-2 text-xs text-tertiary mb-1">
@@ -293,7 +306,8 @@ export default function SchedulerPage() {
             jobNames.map((name) => {
               const s = summary[name];
               const info = JOB_LABELS[name] || { label: name, description: "" };
-              const successRate = s.total > 0 ? Math.round((s.success / s.total) * 100) : 0;
+              const completedRuns = s.total - s.stale - s.running;
+              const successRate = completedRuns > 0 ? Math.round((s.success / completedRuns) * 100) : 0;
               return (
                 <div key={name} className="px-4 py-3 flex items-center gap-3 hover:bg-surface-2 transition-colors">
                   <div className="flex-1 min-w-0">
