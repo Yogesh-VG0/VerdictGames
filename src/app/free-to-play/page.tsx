@@ -10,6 +10,7 @@ import { getGXFreeToPlay, getGXTopGames } from "@/lib/api";
 import type { GXFreeGame, GXTopGame } from "@/lib/types";
 import { slugify } from "@/lib/utils/slugify";
 import { cn } from "@/lib/utils";
+import GXPageNav from "@/components/GXPageNav";
 
 type ActiveTab = "free" | "subscriptions";
 
@@ -39,17 +40,15 @@ function FreeGameCard({ game }: { game: GXFreeGame }) {
           </div>
         </div>
       </Link>
-      <div className="p-3 space-y-1.5 flex-1 flex flex-col">
+      <div className="p-3 flex-1 flex flex-col gap-1.5">
         <Link href={`/game/${slugify(game.title)}`}>
           <h3 className="text-sm font-semibold text-foreground leading-tight line-clamp-1 group-hover:text-pixel-green transition-colors">
             {game.title}
           </h3>
         </Link>
-        <div className="flex flex-wrap gap-1.5">
-          {game.genres.slice(0, 2).map((g) => (
-            <span key={g} className="text-[10px] text-tertiary font-medium">{g}</span>
-          ))}
-        </div>
+        <span className="text-[10px] text-tertiary font-medium truncate min-h-[16px]">
+          {game.genres.slice(0, 2).join(" · ") || "\u00A0"}
+        </span>
         {game.url && (
           <a
             href={game.url}
@@ -108,17 +107,15 @@ function SubscriptionGameCard({ game }: { game: GXTopGame }) {
           )}
         </div>
       </Link>
-      <div className="p-3 space-y-1.5 flex-1 flex flex-col">
+      <div className="p-3 flex-1 flex flex-col gap-1.5">
         <Link href={`/game/${slugify(game.title)}`}>
           <h3 className="text-sm font-semibold text-foreground leading-tight line-clamp-1 group-hover:text-accent transition-colors">
             {game.title}
           </h3>
         </Link>
-        <div className="flex flex-wrap gap-1.5">
-          {game.genres.slice(0, 2).map((g) => (
-            <span key={g} className="text-[10px] text-tertiary font-medium">{g}</span>
-          ))}
-        </div>
+        <span className="text-[10px] text-tertiary font-medium truncate min-h-[16px]">
+          {game.genres.slice(0, 2).join(" · ") || "\u00A0"}
+        </span>
         {game.url && (
           <a
             href={game.url}
@@ -217,6 +214,9 @@ export default function FreeToPlayPage() {
 
   return (
     <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6 overflow-x-hidden">
+      {/* Quick Nav */}
+      <GXPageNav />
+
       {/* Header */}
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold text-foreground flex items-center gap-3">

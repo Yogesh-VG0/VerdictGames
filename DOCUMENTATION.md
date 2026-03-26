@@ -292,6 +292,14 @@ verdict-games/
 │   │   │   ├── loading.tsx
 │   │   │   └── page.tsx
 │   │   │
+│   │   ├── deals/                           # Game deals page (GX Corner)
+│   │   │   ├── layout.tsx                   # SEO metadata
+│   │   │   └── page.tsx                     # Filterable deals grid
+│   │   │
+│   │   ├── free-to-play/                    # Free-to-play page (GX Corner)
+│   │   │   ├── layout.tsx                   # SEO metadata
+│   │   │   └── page.tsx                     # Free games + subscription tabs
+│   │   │
 │   │   ├── explore/                         # Explore page (RAWG curated lists)
 │   │   │   └── page.tsx
 │   │   │
@@ -316,6 +324,7 @@ verdict-games/
 │   │   ├── AuthModal.tsx                    # Login/sign-up modal (email + OAuth)
 │   │   ├── GXDealCard.tsx                   # GX deal card (discount, store, price)
 │   │   ├── GXNewsCard.tsx                   # GX news article card
+│   │   ├── GXPageNav.tsx                    # Cross-navigation bar (Home/Deals/Free/Explore)
 │   │   ├── GXServiceBadge.tsx               # PS Plus / Game Pass badge
 │   │   ├── BottomNav.tsx                    # Mobile bottom navigation
 │   │   ├── FadeInSection.tsx                # Scroll-reveal animation wrapper
@@ -1105,7 +1114,7 @@ Fetches playtime estimates by searching the HowLongToBeat API for matching game 
 - News data: `https://api.news.gxcorner.games`
 
 **Auth**: None required (public APIs, CORS-enabled)
-**Cache**: 5 minutes (`next: { revalidate: 300 }` with 15-second timeout)
+**Cache**: 1 hour (`next: { revalidate: 3600 }` with 15-second timeout)
 
 8 public feeds providing real-time gaming industry data:
 
@@ -1416,7 +1425,7 @@ All API routes follow a consistent pattern:
 
 ### 8.15 GX Corner Proxy Routes
 
-Server-side proxy routes for the 8 GX Corner feeds. Each route fetches from the GX Corner API via the client in `src/lib/external/gxcorner.ts` and returns the data directly. All routes use `export const revalidate = 300` for 5-minute ISR caching.
+Server-side proxy routes for the 8 GX Corner feeds. Each route fetches from the GX Corner API via the client in `src/lib/external/gxcorner.ts` and returns the data directly. All routes use `export const revalidate = 3600` for 1-hour ISR caching.
 
 | Route | Method | Description |
 |-------|--------|-------------|
@@ -1526,10 +1535,13 @@ The `ingestGame()` function orchestrates a 13-step multi-source enrichment pipel
 ### 11.1 Home Page (`src/app/page.tsx`)
 - 11 sections: Hero Carousel, Trending, Most Anticipated, For You (recommendations), Discover (tabbed), Top Rated, New Releases, Deals, Free-to-Play, News, Footer.
 - 5 sections powered by GX Corner API (deals, free-to-play, top games, news, calendar).
+- Discover tab "See all" links to /deals, /free-to-play, or /search?sort=newest depending on active tab.
 - Hero carousel: separate selection from trending rail (daily shuffle, deduped).
 - Each section uses `HorizontalScroll` for card rail layout.
 - 20 games per section.
-- Data fetched via `useQuery` with stale times of 5-30 minutes.
+- Data fetched via `useQuery` with stale times of 60 minutes (GX data) to 5 minutes (homepage aggregator).
+- GXDealCard: image/title links to internal game page (or external for bundles), 'Get Deal' CTA button links to store. Store + genres in single row with truncation for consistent card heights.
+- Free-to-play inline cards: 'Play Free' CTA button linking to external URL.
 
 ### 11.2 Game Detail Page (`src/app/game/[slug]/page.tsx`)
 - Richest page (~650 lines). Fetches game data + Steam reviews + deals.
@@ -1585,19 +1597,40 @@ The `ingestGame()` function orchestrates a 13-step multi-source enrichment pipel
 - Developer portfolio: name, game count, average score, full game list.
 - Case-insensitive match on developer name.
 
-### 11.11 Explore Page (`src/app/explore/page.tsx`)
+### 11.11 Deals Page (`src/app/deals/page.tsx`)
+- Dedicated page for browsing all game deals from GX Corner.
+- Filters: store (dynamic from data), genre (dynamic from data).
+- Sort modes: Biggest Discount, Price Low→High, Price High→Low, A→Z.
+- Uses `GXDealCard` with consistent single-row store+genre layout.
+- `GXPageNav` cross-navigation bar at top for switching between Home, Deals, Free-to-Play, Explore.
+- SEO layout with metadata, keywords, and canonical URL.
+- Responsive grid: 2 cols mobile, 3 sm, 4 md, 5 xl. Animated entry with Framer Motion.
+- Loading skeletons match card layout. Empty state with "Clear filters" button.
+
+### 11.12 Free-to-Play Page (`src/app/free-to-play/page.tsx`)
+- Dedicated page for free games and subscription service catalogs.
+- Two tabs: Free Games (GX free-to-play feed) and Subscription Games (GX top games / PS Plus / Game Pass).
+- Filters: genre (dynamic), service (for subscription tab).
+- `FreeGameCard`: image/title links to internal game page, 'Play Free' CTA to external URL.
+- `SubscriptionGameCard`: service badge, service tag, 'View on [Service]' CTA button.
+- `GXPageNav` cross-navigation bar at top.
+- SEO layout with metadata, keywords, and canonical URL.
+- Consistent card heights via single-line genre row with min-height and truncation.
+- Responsive grid with animated card entry.
+
+### 11.13 Explore Page (`src/app/explore/page.tsx`)
 - 5 tabs: Most Anticipated, Best of 2025, All-Time Top 250, New Releases, Browse by Genre.
 - Powered by RAWG curated list endpoints via `/api/rawg/lists`.
 - Genre browser with 10 genres (Action, Adventure, RPG, Shooter, Strategy, Simulation, Puzzle, Racing, Sports, Platformer).
 - Paginated results with `Pagination` component.
 - Platform icons shown per game.
 
-### 11.12 Static Pages
+### 11.14 Static Pages
 - **About** (`src/app/about/page.tsx`): Mission, features, data sources, team.
 - **Privacy** (`src/app/privacy/page.tsx`): Privacy policy.
 - **Terms** (`src/app/terms/page.tsx`): Terms of service.
 
-### 11.13 Admin Dashboard (`src/app/admin/`)
+### 11.15 Admin Dashboard (`src/app/admin/`)
 - **Layout** (`layout.tsx`): Sidebar nav + role guard (redirects non-admins).
 - **Dashboard** (`page.tsx`): Stats overview, recent activity, seed content section.
 - **Games** (`games/page.tsx`): Searchable, paginated game list.
@@ -1648,7 +1681,8 @@ The `ingestGame()` function orchestrates a 13-step multi-source enrichment pipel
 - **`Pagination`** (202 lines): Smart pagination with page numbers, ellipsis, prev/next, first/last, "Go to page" input. Responsive design. `buildPageNumbers()` algorithm shows window around current page.
 
 ### 12.4 GX Corner Components
-- **`GXDealCard`** (89 lines): Deal card showing discount %, store name, prices.
+- **`GXDealCard`** (~127 lines): Deal card with image/title linking to internal game page (or external for bundles). Prominent 'Get Deal' CTA button linking to external store. Store badge + genre in a single truncated row for consistent card heights across grids. Bundle detection via badge/title keywords.
+- **`GXPageNav`** (~42 lines): Cross-navigation bar for switching between Home, Deals, Free to Play, and Explore pages. Active state highlighting via `usePathname()`. Horizontally scrollable on mobile.
 - **`GXNewsCard`**: Gaming news article card with image, title, source.
 - **`GXServiceBadge`**: PS Plus / Game Pass subscription badge.
 
@@ -1728,7 +1762,7 @@ The `ingestGame()` function orchestrates a 13-step multi-source enrichment pipel
 | Steam reviews | 30 min | Client-side |
 | Search results | 0 (always fresh) | On query change |
 | Admin data | 5s | `refetchOnMount: "always"` |
-| GX Corner feeds | 5 min | ISR (300s server) |
+| GX Corner feeds | 60 min | ISR (3600s server) + 60 min client staleTime |
 
 ### Cache Invalidation
 - Admin game save/reingest/flag mutations invalidate: `admin-activity`, `admin-games`, `homepage`, `["game", slug]`
@@ -1905,12 +1939,13 @@ twitter: summary_large_image card
 - Sitemap: `{SITE_URL}/sitemap.xml`
 
 ### Dynamic Sitemap (`src/app/sitemap.ts`)
-- **Static pages**: Home (daily, priority 1.0), Search (daily, 0.8), Lists (weekly, 0.7), Reviews (weekly, 0.7), About (monthly, 0.4), Privacy (yearly, 0.2), Terms (yearly, 0.2)
-- **Dynamic game pages**: Up to 1000 games from Supabase, sorted by score, weekly change frequency, 0.9 priority
+- **Static pages**: Home (daily, 1.0), Explore (daily, 0.9), Search (daily, 0.8), Calendar (daily, 0.8), Deals (daily, 0.8), Free-to-Play (daily, 0.8), Lists (weekly, 0.7), Reviews (weekly, 0.7), Compare (weekly, 0.6), About (monthly, 0.4), Privacy (yearly, 0.2), Terms (yearly, 0.2)
+- **Dynamic game pages**: Up to 5000 games from Supabase, sorted by score, weekly change frequency, priority 0.7–0.9 based on score
+- **Curated list pages**: All public lists from Supabase, weekly change frequency, 0.7 priority
 - Falls back to static pages only if Supabase is not configured
 
 ### Per-Page Layouts
-- Search, Reviews, Lists pages have layout files providing static metadata (title, description)
+- Search, Reviews, Lists, Explore, Calendar, Deals, Free-to-Play pages all have layout files providing static metadata (title, description, keywords, canonical URL, OpenGraph)
 
 ---
 
@@ -2104,6 +2139,10 @@ Where `PRIOR_COUNT = 50` and `PRIOR_MEAN = 65`. This pulls low-review-count game
 | `src/app/compare/page.tsx` | ~300 | Page | Game comparison (side-by-side) |
 | `src/app/calendar/page.tsx` | ~170 | Page | Release calendar |
 | `src/app/developers/[slug]/page.tsx` | ~115 | Page | Developer hub |
+| `src/app/deals/page.tsx` | ~230 | Page | Game deals (filters + grid) |
+| `src/app/deals/layout.tsx` | ~25 | Layout | Deals SEO metadata |
+| `src/app/free-to-play/page.tsx` | ~405 | Page | Free games + subscriptions (tabs + filters) |
+| `src/app/free-to-play/layout.tsx` | ~25 | Layout | Free-to-Play SEO metadata |
 | `src/app/about/page.tsx` | ~120 | Page | About page |
 | `src/app/privacy/page.tsx` | ~100 | Page | Privacy policy |
 | `src/app/terms/page.tsx` | ~100 | Page | Terms of service |
@@ -2200,7 +2239,8 @@ Where `PRIOR_COUNT = 50` and `PRIOR_MEAN = 65`. This pulls low-review-count game
 | `src/components/CommentThread.tsx` | — | Component | Threaded review comments UI |
 | `src/components/LibraryStatusSelector.tsx` | — | Component | Library status picker with Lucide icons |
 | `src/components/ReviewForm.tsx` | — | Component | Review submission form |
-| `src/components/GXDealCard.tsx` | 89 | Component | GX deal card |
+| `src/components/GXDealCard.tsx` | ~127 | Component | GX deal card (internal link + Get Deal CTA) |
+| `src/components/GXPageNav.tsx` | ~42 | Component | Cross-nav bar (Home/Deals/Free/Explore) |
 | `src/components/GXNewsCard.tsx` | — | Component | GX news article card |
 | `src/components/GXServiceBadge.tsx` | — | Component | PS Plus / Game Pass badge |
 | **UI Primitives** | | | |
@@ -2370,6 +2410,30 @@ Where `PRIOR_COUNT = 50` and `PRIOR_MEAN = 65`. This pulls low-review-count game
 
 - `.mcp.json` removed from git tracking and added to `.gitignore` (contained API keys)
 - Admin audit log records all game edits with field-level diffs
+
+### Deals & Free-to-Play Pages (March 2026)
+
+**New Pages:**
+- `/deals` — Dedicated game deals page with store/genre filters, 4 sort modes, responsive grid
+- `/free-to-play` — Free games + subscription service picks with tabbed view, genre/service filters
+- Both pages include `GXPageNav` cross-navigation bar for easy switching between Home, Deals, Free to Play, and Explore
+
+**Card Consistency Fixes:**
+- `GXDealCard` redesigned: image/title links to internal game page (bundles link externally), 'Get Deal' CTA button always links to store URL
+- Store name + genres rendered in single truncated row with `min-h-[20px]` — prevents height inconsistencies from long genre names or missing genres
+- `FreeGameCard` / `SubscriptionGameCard`: genres in single-line `truncate` with `min-h-[16px]`, non-breaking space fallback when genres are empty
+- Homepage inline free-to-play cards updated with same consistency fixes
+
+**SEO:**
+- Layout files with `Metadata` exports for both `/deals` and `/free-to-play` (title, description, keywords, canonical URL, OpenGraph)
+- Both pages added to sitemap with daily change frequency and 0.8 priority
+
+**GX Corner Caching:**
+- All GX API caching increased from 5 minutes to 1 hour to protect unofficial endpoints
+- `gxFetch()` revalidate: 300 → 3600
+- All 8 `/api/gx/*` route handlers: `revalidate = 3600`
+- Client-side React Query staleTime: 5 min → 60 min
+- Result: max ~8 requests/hour to GX Corner regardless of traffic volume
 
 ---
 

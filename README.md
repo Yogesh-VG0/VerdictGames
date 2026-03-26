@@ -7,7 +7,7 @@
 **The Verdict on Every Game**
 
 A premium, data-driven game discovery and reviews platform.
-Letterboxd for games — enriched with data from **7 external APIs** across all major platforms.
+Letterboxd for games — enriched with data from **9 external APIs** across all major platforms.
 
 [**Visit Live Site**](https://www.verdict.games)
 
@@ -48,9 +48,12 @@ Letterboxd for games — enriched with data from **7 external APIs** across all 
 - **Rich game pages** — verdict badges, pros/cons, pricing, trailers, achievements, news, Steam player reviews
 - **Search & filter** — 11 platforms, genre, year, monetization, with full-text + RAWG fallback
 - **Explore** — RAWG-powered curated lists: Most Anticipated, Best of 2025, All-Time Top 250, genre browsing
+- **Game deals** — filterable deals page with store/genre filters, 4 sort modes, powered by GX Corner
+- **Free-to-play** — free games + PS Plus / Game Pass subscription catalogs with tabbed browsing
 - **Release calendar** — merged GX + database data with platform filters and month navigation
 - **Curated lists** — 12 editorial lists with overlap enforcement and unique thumbnails
 - **Game comparison** — side-by-side comparison with scores, stats, and HLTB data
+- **Cross-navigation** — quick nav bar on deals/free-to-play pages for seamless page switching
 
 ### Community & Social
 - **Community reviews** — user reviews with helpful voting + Steam player reviews integration
@@ -172,13 +175,16 @@ src/
 │   ├── search/                 # Browse with 5 filter types
 │   ├── explore/                # RAWG curated lists (5 tabs)
 │   ├── calendar/               # Release calendar with GX merge
+│   ├── deals/                  # Game deals (GX Corner, filterable grid)
+│   ├── free-to-play/           # Free games + subscription catalogs
 │   ├── compare/                # Side-by-side game comparison
 │   └── ...                     # reviews, lists, library, profile, settings
 │
-├── components/                 # 36 React components
+├── components/                 # 37 React components
 │   ├── ui/                     # Primitives (ScoreRing, FilterChips, Skeleton, etc.)
 │   ├── HeroCarousel.tsx        # Cinematic auto-advancing hero
 │   ├── GameCard.tsx            # Default + spotlight variants
+│   ├── GXPageNav.tsx           # Cross-navigation (Home/Deals/Free/Explore)
 │   └── ...                     # ReviewCard, SteamReviews, AuthModal, etc.
 │
 ├── lib/

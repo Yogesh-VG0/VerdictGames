@@ -414,17 +414,15 @@ export default function HomePage() {
                                 </div>
                               </div>
                             </Link>
-                            <div className="p-3 space-y-1.5 flex-1 flex flex-col">
+                            <div className="p-3 flex-1 flex flex-col gap-1.5">
                               <Link href={`/game/${slugify(game.title)}`}>
                                 <h3 className="text-sm font-semibold text-foreground leading-tight line-clamp-1 group-hover:text-pixel-green transition-colors">
                                   {game.title}
                                 </h3>
                               </Link>
-                              <div className="flex flex-wrap gap-1.5">
-                                {game.genres.slice(0, 2).map((g) => (
-                                  <span key={g} className="text-[10px] text-tertiary font-medium">{g}</span>
-                                ))}
-                              </div>
+                              <span className="text-[10px] text-tertiary font-medium truncate min-h-[16px]">
+                                {game.genres.slice(0, 2).join(" · ") || "\u00A0"}
+                              </span>
                               {game.url && (
                                 <a
                                   href={game.url}

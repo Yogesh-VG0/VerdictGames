@@ -77,18 +77,19 @@ export default function GXDealCard({ deal }: GXDealCardProps) {
         </div>
       </CardWrapper>
 
-      <div className="p-3.5 space-y-2 flex-1 flex flex-col">
+      <div className="p-3.5 flex-1 flex flex-col gap-1.5">
         <CardWrapper
           className="text-sm font-semibold text-foreground leading-tight line-clamp-1 group-hover:text-accent transition-colors"
         >
           {deal.title}
         </CardWrapper>
 
-        <div className="flex items-center justify-between">
+        {/* Store + genres — single row, never wraps, consistent height */}
+        <div className="flex items-center gap-2 min-h-[20px] overflow-hidden">
           {deal.storeName && (
             <span
               className={cn(
-                "text-[10px] font-bold px-2 py-0.5 rounded-md border border-border",
+                "shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-md border border-border truncate max-w-[50%]",
                 "bg-surface-2 text-secondary"
               )}
               style={deal.storeColor ? { color: deal.storeColor } : undefined}
@@ -96,11 +97,9 @@ export default function GXDealCard({ deal }: GXDealCardProps) {
               {deal.storeName}
             </span>
           )}
-          <div className="flex flex-wrap gap-1.5 ml-auto">
-            {deal.genres.slice(0, 2).map((g) => (
-              <span key={g} className="text-[10px] text-tertiary font-medium">{g}</span>
-            ))}
-          </div>
+          <span className="text-[10px] text-tertiary font-medium truncate min-w-0">
+            {deal.genres.slice(0, 2).join(" · ")}
+          </span>
         </div>
 
         {/* Get Deal CTA — always links to external store */}

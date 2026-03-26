@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { Tag, SlidersHorizontal, Store } from "lucide-react";
 import { getGXDeals } from "@/lib/api";
 import GXDealCard from "@/components/GXDealCard";
+import GXPageNav from "@/components/GXPageNav";
 import { cn } from "@/lib/utils";
 
 type SortMode = "discount" | "price-low" | "price-high" | "name";
@@ -75,6 +76,9 @@ export default function DealsPage() {
 
   return (
     <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6 overflow-x-hidden">
+      {/* Quick Nav */}
+      <GXPageNav />
+
       {/* Header */}
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold text-foreground flex items-center gap-3">
