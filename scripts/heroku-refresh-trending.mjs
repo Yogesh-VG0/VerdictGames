@@ -111,13 +111,24 @@ const matched = [];
 console.log("🌍 Step 0: Fetching Steam Global Top 100 most-played...");
 let globalTop = [];
 try {
-  const res = await fetch(STEAM_CHARTS_API, { signal: AbortSignal.timeout(15000) });
+  // ISteamChartsService may require a Steam Web API key on some infrastructure
+  const steamKey = process.env.STEAM_API_KEY || process.env.STEAM_WEB_API_KEY;
+  const chartsUrl = steamKey
+    ? `${STEAM_CHARTS_API}?key=${steamKey}`
+    : STEAM_CHARTS_API;
+  const res = await fetch(chartsUrl, { signal: AbortSignal.timeout(15000) });
   if (res.ok) {
     const data = await res.json();
     globalTop = (data?.response?.ranks ?? [])
       .filter((r) => r.appid && r.concurrent_in_game > 0)
       .slice(0, 100);
     console.log(`  ✓ Got ${globalTop.length} games from Steam Charts`);
+    if (globalTop.length === 0) {
+      console.log(`  ⚠ Steam Charts returned empty ranks. Response keys: ${JSON.stringify(Object.keys(data?.response ?? {}))}`);
+      if (!steamKey) {
+        console.log(`  💡 Tip: Set STEAM_API_KEY config var for reliable Steam Charts access`);
+      }
+    }
   } else {
     console.log(`  ⚠ Steam Charts API returned ${res.status}, falling back to DB-only`);
   }

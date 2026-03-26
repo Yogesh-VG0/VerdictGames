@@ -11,7 +11,7 @@
     "build": "next build",
     "start": "next start -p $PORT",
     "lint": "eslint",
-    "heroku-postbuild": "next build",
+    "heroku-postbuild": "echo 'Scheduler-only deploy — skipping Next.js build'",
     "scheduler:trending": "node scripts/heroku-refresh-trending.mjs",
     "scheduler:discover": "node scripts/heroku-discover-games.mjs",
     "scheduler:re-enrich": "node scripts/heroku-re-enrich.mjs",
@@ -34,6 +34,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "typescript": "^5",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
@@ -44,7 +45,6 @@
     "shadcn": "^4.1.0",
     "sharp": "^0.34.5",
     "tailwindcss": "^4",
-    "typescript": "^5",
     "vitest": "^4.1.0"
   }
 }

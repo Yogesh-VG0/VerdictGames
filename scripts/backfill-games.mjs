@@ -53,8 +53,8 @@ const args = Object.fromEntries(
 const YEAR_FROM    = parseInt(args["year-from"]   ?? "2022");
 const YEAR_TO      = parseInt(args["year-to"]     ?? String(new Date().getFullYear()));
 const LIMIT        = parseInt(args["limit"]        ?? "60");
-const CONCURRENCY  = Math.min(10, parseInt(args["concurrency"] ?? "3"));
-const DELAY_MS     = parseInt(args["delay-ms"]     ?? "100");
+const CONCURRENCY  = Math.min(5, parseInt(args["concurrency"] ?? "2"));
+const DELAY_MS     = parseInt(args["delay-ms"]     ?? "500");
 const DRY_RUN      = args["dry-run"] === true;
 const NO_RESUME    = args["no-resume"] === true;
 const PAGE_SIZE    = 40;
@@ -237,30 +237,50 @@ for (let year = resumeYear; year >= YEAR_FROM; year--) {
         const slug  = slugifyTitle(rawgGame.name);
         const title = normTitle(rawgGame.name);
 
-        try {
-          const res = await fetch(`${API_URL}/api/ingest/game`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json", Authorization: `Bearer ${CRON_SECRET}` },
-            body: JSON.stringify({ query: rawgGame.name }),
-            signal: AbortSignal.timeout(45000),
-          });
+        // Retry with exponential backoff for 429 rate limits
+        const MAX_RETRIES = 3;
+        for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+          try {
+            const res = await fetch(`${API_URL}/api/ingest/game`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json", Authorization: `Bearer ${CRON_SECRET}` },
+              body: JSON.stringify({ query: rawgGame.name }),
+              signal: AbortSignal.timeout(45000),
+            });
 
-          if (res.ok) {
-            ingested++;
-            existingSlugs.add(slug);
-            existingTitles.add(title);
-            console.log(`  ✓ [${ingested}] ${rawgGame.name} (${year})`);
-          } else {
-            const text = await res.text().catch(() => "");
-            console.log(`  ✗ ${rawgGame.name} — ${res.status} ${text.slice(0, 60)}`);
+            if (res.ok) {
+              ingested++;
+              existingSlugs.add(slug);
+              existingTitles.add(title);
+              console.log(`  ✓ [${ingested}] ${rawgGame.name} (${year})`);
+              break;
+            } else if (res.status === 429 && attempt < MAX_RETRIES) {
+              const backoff = 2000 * Math.pow(2, attempt); // 2s, 4s, 8s
+              console.log(`  ⏳ ${rawgGame.name} — 429 rate limited, retrying in ${backoff / 1000}s (attempt ${attempt + 1}/${MAX_RETRIES})`);
+              await sleep(backoff);
+              continue;
+            } else {
+              const text = await res.text().catch(() => "");
+              console.log(`  ✗ ${rawgGame.name} — ${res.status} ${text.slice(0, 60)}`);
+              errors++;
+              errorDetails.push({ title: rawgGame.name, error: `${res.status}` });
+              break;
+            }
+          } catch (e) {
+            if (attempt < MAX_RETRIES && e.message?.includes('timeout')) {
+              const backoff = 2000 * Math.pow(2, attempt);
+              console.log(`  ⏳ ${rawgGame.name} — timeout, retrying in ${backoff / 1000}s`);
+              await sleep(backoff);
+              continue;
+            }
+            console.log(`  ✗ ${rawgGame.name} — ${e.message}`);
             errors++;
-            errorDetails.push({ title: rawgGame.name, error: `${res.status}` });
+            errorDetails.push({ title: rawgGame.name, error: e.message });
+            break;
           }
-        } catch (e) {
-          console.log(`  ✗ ${rawgGame.name} — ${e.message}`);
-          errors++;
-          errorDetails.push({ title: rawgGame.name, error: e.message });
         }
+        // Small inter-request delay within a batch to avoid burst pressure
+        await sleep(200);
       });
 
       fetched += batch.length;

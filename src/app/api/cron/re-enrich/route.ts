@@ -170,7 +170,9 @@ export async function GET(request: NextRequest) {
   return jsonOk({
     refreshed: successCount,
     failed: failCount,
-    total: staleGames.length,
+    total: allGames.length,
+    fastPathCount: fastPathGames.length,
+    staleCount: staleGames.length,
     log,
     timestamp: new Date().toISOString(),
   });

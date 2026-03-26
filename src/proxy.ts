@@ -1,10 +1,12 @@
 /**
- * VERDICT.GAMES — Rate Limiting Middleware
+ * VERDICT.GAMES — Rate Limiting Proxy
  *
  * In-memory sliding-window rate limiter for all API routes.
  * Different limits for public reads, authenticated writes, and sensitive endpoints.
  *
  * For production at scale, swap the in-memory Map for Redis (e.g. @upstash/ratelimit).
+ *
+ * Next.js 16.x: middleware.ts renamed to proxy.ts (see migration docs).
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -113,9 +115,9 @@ function checkRateLimit(
   };
 }
 
-// ── Middleware ──
+// ── Proxy ──
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Only rate-limit API routes
