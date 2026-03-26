@@ -191,7 +191,7 @@ export async function POST() {
         cover_image: coverImage,
         tags: seed.tags,
         is_public: true,
-        curated_by: "Verdict.games Editorial",
+        curated_by: "editorial",
       })
       .select("id")
       .single() as { data: { id: string } | null; error: { message: string } | null };
@@ -230,7 +230,7 @@ export async function GET() {
   if (error) return error;
 
   return jsonOk({
-    message: "POST to this endpoint to seed 12 editorial curated lists",
+    message: "POST to this endpoint to seed 12 editorial curated lists. The scheduler script (seed-curated-lists.mjs) creates the full 22-list set daily.",
     lists: SEED_LISTS.map(l => ({ slug: l.slug, title: l.title })),
   });
 }

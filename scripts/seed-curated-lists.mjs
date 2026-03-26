@@ -675,10 +675,12 @@ for (const blueprint of LIST_BLUEPRINTS) {
 }
 
 // ── Cleanup stale editorial lists not in current blueprints ──
+// Also clean up lists created by the admin seed button ("Verdict.games Editorial")
+// to prevent duplicates between the two seeding systems
 const currentSlugs = LIST_BLUEPRINTS.map((b) => b.slug);
 const staleLists = await sql`
   SELECT id, slug FROM lists
-  WHERE curated_by = ${SYSTEM_CURATOR}
+  WHERE (curated_by = ${SYSTEM_CURATOR} OR curated_by = 'Verdict.games Editorial')
     AND slug != ALL(${currentSlugs})
 `;
 let cleaned = 0;
