@@ -317,13 +317,15 @@ export default function AdminGameEditor({ params }: { params: Promise<{ id: stri
             <option value="all">Full Pipeline</option>
             <option value="rawg">RAWG Only</option>
             <option value="igdb">IGDB Only</option>
+            <option value="google_play">Google Play</option>
+            <option value="app_store">App Store</option>
           </select>
           <button
             onClick={() => reingestMutation.mutate(reingestSource)}
             disabled={reingestMutation.isPending}
             className="px-3 py-2 rounded-xl text-xs font-medium bg-pixel-cyan/10 text-pixel-cyan border border-pixel-cyan/20 hover:bg-pixel-cyan/20 transition-all disabled:opacity-50"
           >
-            {reingestMutation.isPending ? "Re-ingesting..." : reingestSource === "all" ? "Re-ingest Data" : `Fetch from ${reingestSource.toUpperCase()}`}
+            {reingestMutation.isPending ? "Re-ingesting..." : reingestSource === "all" ? "Re-ingest Data" : `Fetch from ${reingestSource === "google_play" ? "Google Play" : reingestSource === "app_store" ? "App Store" : reingestSource.toUpperCase()}`}
           </button>
           <button
             onClick={() => saveMutation.mutate()}
@@ -344,7 +346,7 @@ export default function AdminGameEditor({ params }: { params: Promise<{ id: stri
 
       {/* ── Flag toggles ── */}
       <div className="flex items-center gap-4 rounded-2xl border border-border bg-surface p-4">
-        <label className="flex items-center gap-2 cursor-pointer">
+        <label className="flex items-center gap-2 cursor-pointer group" title="Featured games appear in the hero carousel on the homepage. Only a few games should be featured at a time for maximum impact.">
           <input
             type="checkbox"
             checked={form.featured}
@@ -355,8 +357,9 @@ export default function AdminGameEditor({ params }: { params: Promise<{ id: stri
             className="w-4 h-4 rounded accent-accent"
           />
           <span className="text-sm text-foreground font-medium">Featured</span>
+          <span className="text-[10px] text-tertiary hidden sm:inline group-hover:text-secondary transition-colors">Homepage hero carousel</span>
         </label>
-        <label className="flex items-center gap-2 cursor-pointer">
+        <label className="flex items-center gap-2 cursor-pointer group" title="Trending games appear in the &quot;Trending Now&quot; rail on the homepage. Auto-managed hourly by the scheduler based on Steam player counts, but can be manually toggled here.">
           <input
             type="checkbox"
             checked={form.trending}
@@ -367,6 +370,7 @@ export default function AdminGameEditor({ params }: { params: Promise<{ id: stri
             className="w-4 h-4 rounded accent-accent"
           />
           <span className="text-sm text-foreground font-medium">Trending</span>
+          <span className="text-[10px] text-tertiary hidden sm:inline group-hover:text-secondary transition-colors">Homepage trending rail (auto-managed hourly)</span>
         </label>
       </div>
 
@@ -641,13 +645,15 @@ export default function AdminGameEditor({ params }: { params: Promise<{ id: stri
                 <option value="all">Full Pipeline</option>
                 <option value="rawg">RAWG Only</option>
                 <option value="igdb">IGDB Only</option>
+                <option value="google_play">Google Play</option>
+                <option value="app_store">App Store</option>
               </select>
               <button
                 onClick={() => reingestMutation.mutate(reingestSource)}
                 disabled={reingestMutation.isPending}
                 className="px-4 py-2.5 rounded-xl text-xs font-medium bg-pixel-cyan/10 text-pixel-cyan border border-pixel-cyan/20 hover:bg-pixel-cyan/20 transition-all disabled:opacity-50"
               >
-                {reingestMutation.isPending ? "Re-ingesting..." : "🔄 Re-ingest from Pipeline"}
+                {reingestMutation.isPending ? "Re-ingesting..." : `🔄 Re-ingest from ${reingestSource === "all" ? "Pipeline" : reingestSource === "google_play" ? "Google Play" : reingestSource === "app_store" ? "App Store" : reingestSource.toUpperCase()}`}
               </button>
             </div>
           </>

@@ -203,6 +203,284 @@ export async function POST(
       });
     }
 
+    // ── Google Play re-ingest ──
+    if (source === "google_play") {
+      const { getGooglePlayApp, extractPackageName, searchGooglePlay } = await import("@/lib/external/googleplay");
+
+      // Find the appId: from play_store_url, mobile_store_listings, or search
+      const { data: gameRow } = await supabase.from("games").select("play_store_url").eq("id", id).maybeSingle();
+      const playUrl = (gameRow as { play_store_url?: string } | null)?.play_store_url;
+      let appId: string | null = playUrl ? extractPackageName(playUrl) : null;
+
+      if (!appId) {
+        // Check mobile_store_listings
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: listing } = await (supabase.from("mobile_store_listings") as any)
+          .select("external_id")
+          .eq("game_id", id)
+          .eq("store", "google_play")
+          .maybeSingle();
+        appId = (listing as { external_id?: string } | null)?.external_id ?? null;
+      }
+
+      if (!appId) {
+        // Last resort: search by title
+        const results = await searchGooglePlay(typedGame.title, 3);
+        const match = results.find(r => r.title.toLowerCase() === typedGame.title.toLowerCase()) || results[0];
+        if (match) appId = match.appId;
+      }
+
+      if (!appId) return jsonOk({ success: false, message: "No Google Play match found. Add a Play Store URL first.", source: "google_play" });
+
+      const app = await getGooglePlayApp(appId);
+      if (!app) return jsonOk({ success: false, message: `Failed to fetch Google Play data for ${appId}`, source: "google_play" });
+
+      // Build update payload — only overwrite empty/missing fields by default,
+      // but always refresh store-specific data
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const gpUpdates: Record<string, any> = {};
+      const { data: currentGame } = await supabase.from("games").select("*").eq("id", id).maybeSingle();
+      const cur = currentGame as Record<string, unknown> | null;
+
+      // Always update these from Play Store (authoritative for mobile)
+      gpUpdates.play_store_url = app.url;
+      if (app.description && (!cur?.description || (cur.description as string).length < 100)) {
+        gpUpdates.description = app.description.length > 4000 ? app.description.slice(0, 4000) + "..." : app.description;
+      }
+      if (app.icon && !cur?.cover_image) gpUpdates.cover_image = app.icon;
+      if (app.headerImage && !cur?.header_image) gpUpdates.header_image = app.headerImage;
+      if (app.screenshots?.length && !(cur?.screenshots as string[] | undefined)?.length) {
+        gpUpdates.screenshots = app.screenshots.slice(0, 10);
+      }
+      if ((app.video || app.previewVideo) && !cur?.trailer_url) {
+        gpUpdates.trailer_url = app.video || app.previewVideo;
+        gpUpdates.trailer_thumbnail = app.videoImage || app.headerImage || null;
+      }
+      if (app.developerWebsite && !cur?.website_url) gpUpdates.website_url = app.developerWebsite;
+      if (app.developer && !cur?.developer) gpUpdates.developer = app.developer;
+      if (app.developer && !cur?.publisher) gpUpdates.publisher = app.developer;
+      if (app.genre && !(cur?.genres as string[] | undefined)?.length) gpUpdates.genres = [app.genre];
+      if (app.released && !cur?.release_date) gpUpdates.release_date = app.released;
+
+      // Monetization
+      const monetization = app.free ? (app.offersIAP ? "Free + IAP" : "Free") : "Paid";
+      if (!cur?.monetization) gpUpdates.monetization = monetization;
+      gpUpdates.is_free = app.free;
+
+      // Platforms: ensure Android is included
+      const curPlatforms = (cur?.platforms as string[]) ?? [];
+      if (!curPlatforms.includes("Android")) {
+        gpUpdates.platforms = [...curPlatforms, "Android"];
+      }
+
+      const gpFieldsToUpdate = Object.keys(gpUpdates).filter(k => k !== "updated_at");
+
+      if (gpFieldsToUpdate.length > 0) {
+        gpUpdates.updated_at = new Date().toISOString();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error: updateError } = await (supabase.from("games") as any).update(gpUpdates).eq("id", id);
+        if (updateError) return jsonError(`Google Play data fetched but DB update failed: ${updateError.message}`, 500);
+
+        // Audit log
+        if (cur) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const fieldChanges: Record<string, { old: any; new: any }> = {};
+          for (const key of gpFieldsToUpdate) {
+            const oldVal = cur[key];
+            const newVal = gpUpdates[key];
+            if (JSON.stringify(oldVal) !== JSON.stringify(newVal)) {
+              fieldChanges[key] = { old: oldVal, new: newVal };
+            }
+          }
+          if (Object.keys(fieldChanges).length > 0) {
+            await writeAuditLog({
+              entity_type: "game",
+              entity_id: id,
+              action: "update",
+              field_changes: fieldChanges,
+              edited_by: user?.email ?? "unknown",
+              reason: `Google Play reingest: ${app.title} (${app.appId})`,
+            });
+          }
+        }
+      }
+
+      // Upsert mobile_store_listings
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (supabase.from("mobile_store_listings") as any).upsert({
+          game_id: id,
+          store: "google_play",
+          external_id: app.appId,
+          store_url: app.url,
+          title: app.title,
+          developer: app.developer,
+          icon_url: app.icon,
+          header_image_url: app.headerImage || null,
+          screenshots: app.screenshots?.slice(0, 10) ?? [],
+          rating_average: app.score,
+          rating_count: app.ratings,
+          review_count: app.reviews,
+          installs: app.installs || null,
+          real_installs: app.maxInstalls || null,
+          genre: app.genre,
+          genre_id: app.genreId || null,
+          content_rating: app.contentRating || null,
+          version: app.version || null,
+          is_free: app.free,
+          offers_iap: app.offersIAP,
+          iap_range: app.inAppProductPrice || null,
+          price: app.price || 0,
+          currency: app.currency || "USD",
+          released_at: app.released || null,
+          last_updated_at: app.updated ? new Date(app.updated).toISOString() : null,
+          is_verified: true,
+        }, { onConflict: "store,external_id" });
+      } catch { /* best-effort */ }
+
+      return jsonOk({
+        success: true,
+        source: "google_play",
+        message: `Refreshed from Google Play: ${app.title} (${gpFieldsToUpdate.length} fields updated)`,
+        data: {
+          appId: app.appId,
+          title: app.title,
+          score: app.score,
+          ratings: app.ratings,
+          installs: app.installs,
+          description: app.description?.slice(0, 200) ?? "",
+          fieldsUpdated: gpFieldsToUpdate,
+        },
+      });
+    }
+
+    // ── App Store re-ingest ──
+    if (source === "app_store") {
+      const { searchAppStore, lookupAppStoreById } = await import("@/lib/external/appstore");
+
+      // Find the trackId from mobile_store_listings or search
+      let trackId: number | null = null;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: listing } = await (supabase.from("mobile_store_listings") as any)
+        .select("external_id")
+        .eq("game_id", id)
+        .eq("store", "app_store")
+        .maybeSingle();
+      if ((listing as { external_id?: string } | null)?.external_id) {
+        trackId = parseInt((listing as { external_id: string }).external_id, 10);
+      }
+
+      if (!trackId) {
+        // Search by title
+        const results = await searchAppStore(typedGame.title, 3);
+        const match = results.find(r => r.trackName.toLowerCase() === typedGame.title.toLowerCase()) || results[0];
+        if (match) trackId = match.trackId;
+      }
+
+      if (!trackId) return jsonOk({ success: false, message: "No App Store match found.", source: "app_store" });
+
+      const app = await lookupAppStoreById(trackId);
+      if (!app) return jsonOk({ success: false, message: `Failed to fetch App Store data for trackId ${trackId}`, source: "app_store" });
+
+      // Build update payload
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const asUpdates: Record<string, any> = {};
+      const { data: currentGame } = await supabase.from("games").select("*").eq("id", id).maybeSingle();
+      const cur = currentGame as Record<string, unknown> | null;
+
+      if (app.description && (!cur?.description || (cur.description as string).length < 100)) {
+        asUpdates.description = app.description.length > 4000 ? app.description.slice(0, 4000) + "..." : app.description;
+      }
+      if ((app.artworkUrl512 || app.artworkUrl100) && !cur?.cover_image) {
+        asUpdates.cover_image = app.artworkUrl512 || app.artworkUrl100;
+      }
+      if (app.screenshotUrls?.length && !(cur?.screenshots as string[] | undefined)?.length) {
+        asUpdates.screenshots = app.screenshotUrls.slice(0, 10);
+      }
+      if (app.artistName && !cur?.developer) asUpdates.developer = app.artistName;
+      if ((app.sellerName || app.artistName) && !cur?.publisher) asUpdates.publisher = app.sellerName || app.artistName;
+      if (app.genres?.length && !(cur?.genres as string[] | undefined)?.length) asUpdates.genres = app.genres;
+      if (app.releaseDate && !cur?.release_date) asUpdates.release_date = app.releaseDate.split("T")[0];
+
+      // Platforms: ensure iOS is included
+      const curPlatforms = (cur?.platforms as string[]) ?? [];
+      if (!curPlatforms.includes("iOS")) {
+        asUpdates.platforms = [...curPlatforms, "iOS"];
+      }
+
+      const asFieldsToUpdate = Object.keys(asUpdates).filter(k => k !== "updated_at");
+
+      if (asFieldsToUpdate.length > 0) {
+        asUpdates.updated_at = new Date().toISOString();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error: updateError } = await (supabase.from("games") as any).update(asUpdates).eq("id", id);
+        if (updateError) return jsonError(`App Store data fetched but DB update failed: ${updateError.message}`, 500);
+
+        // Audit log
+        if (cur) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const fieldChanges: Record<string, { old: any; new: any }> = {};
+          for (const key of asFieldsToUpdate) {
+            const oldVal = cur[key];
+            const newVal = asUpdates[key];
+            if (JSON.stringify(oldVal) !== JSON.stringify(newVal)) {
+              fieldChanges[key] = { old: oldVal, new: newVal };
+            }
+          }
+          if (Object.keys(fieldChanges).length > 0) {
+            await writeAuditLog({
+              entity_type: "game",
+              entity_id: id,
+              action: "update",
+              field_changes: fieldChanges,
+              edited_by: user?.email ?? "unknown",
+              reason: `App Store reingest: ${app.trackName} (${app.trackId})`,
+            });
+          }
+        }
+      }
+
+      // Upsert mobile_store_listings
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (supabase.from("mobile_store_listings") as any).upsert({
+          game_id: id,
+          store: "app_store",
+          external_id: String(app.trackId),
+          store_url: app.trackViewUrl,
+          title: app.trackName,
+          developer: app.artistName,
+          icon_url: app.artworkUrl512 || app.artworkUrl100 || null,
+          screenshots: app.screenshotUrls?.slice(0, 10) ?? [],
+          rating_average: app.averageUserRating,
+          rating_count: app.userRatingCount || 0,
+          content_rating: app.contentAdvisoryRating || null,
+          version: app.version || null,
+          released_at: app.releaseDate ? app.releaseDate.split("T")[0] : null,
+          last_updated_at: app.currentVersionReleaseDate || null,
+          price: app.price || 0,
+          currency: app.currency || "USD",
+          is_free: app.price === 0,
+          genre: app.primaryGenreName || null,
+          is_verified: true,
+        }, { onConflict: "store,external_id" });
+      } catch { /* best-effort */ }
+
+      return jsonOk({
+        success: true,
+        source: "app_store",
+        message: `Refreshed from App Store: ${app.trackName} (${asFieldsToUpdate.length} fields updated)`,
+        data: {
+          trackId: app.trackId,
+          title: app.trackName,
+          rating: app.averageUserRating,
+          ratingCount: app.userRatingCount,
+          description: app.description?.slice(0, 200) ?? "",
+          fieldsUpdated: asFieldsToUpdate,
+        },
+      });
+    }
+
     // Default: full pipeline re-ingest
     const { ingestGame } = await import("@/lib/services/ingest");
     const result = await ingestGame({
