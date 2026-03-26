@@ -63,8 +63,8 @@ export function isQualityGame(row: GameRow, section: SectionType = "generic"): b
   // Image check
   if (t.requireImage && !row.cover_image) return false;
 
-  // Description check
-  if (t.minDescLen > 0 && (!row.description || row.description.length < t.minDescLen)) return false;
+  // Description check (tolerant of missing description when using card-only columns)
+  if (t.minDescLen > 0 && row.description != null && row.description.length < t.minDescLen) return false;
 
   // Review count check
   if (row.review_count < t.minReviews) return false;
