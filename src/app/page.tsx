@@ -31,7 +31,7 @@ import {
 } from "@/components/ui/Skeleton";
 import GradientText from "@/components/ui/GradientText";
 import {
-  Flame, Gem, Gamepad2, Trophy, Newspaper, Sparkles, Tag, Gift, Rocket,
+  Flame, Gem, Gamepad2, Trophy, Newspaper, Sparkles, Tag, Gift, Rocket, ExternalLink,
 } from "lucide-react";
 
 type DiscoverTab = "new" | "deals" | "free";
@@ -394,38 +394,50 @@ export default function HomePage() {
                           transition={{ delay: i * 0.05, duration: 0.4 }}
                           className={CARD_WIDTH}
                         >
-                          <Link
-                            href={`/game/${slugify(game.title)}`}
-                            className="block group rounded-2xl border border-border bg-surface overflow-hidden card-shimmer hover:border-pixel-green/30 transition-all duration-300"
-                          >
-                            <div className="relative aspect-[3/4] overflow-hidden">
-                              {game.cover && (
-                                <Image
-                                  src={game.cover}
-                                  alt={game.title}
-                                  fill
-                                  sizes="(max-width: 640px) 50vw, 20vw"
-                                  className="object-cover transition-transform duration-700 group-hover:scale-110"
-                                />
-                              )}
-                              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-                              <div className="absolute top-2.5 left-2.5">
-                                <span className="text-[10px] font-bold text-white bg-pixel-green/80 backdrop-blur-md px-2 py-0.5 rounded-lg border border-white/10">
-                                  FREE
-                                </span>
+                          <div className="flex flex-col h-full group rounded-2xl border border-border bg-surface overflow-hidden card-shimmer hover:border-pixel-green/30 transition-all duration-300">
+                            <Link href={`/game/${slugify(game.title)}`} className="block">
+                              <div className="relative aspect-[3/4] overflow-hidden">
+                                {game.cover && (
+                                  <Image
+                                    src={game.cover}
+                                    alt={game.title}
+                                    fill
+                                    sizes="(max-width: 640px) 50vw, 20vw"
+                                    className="object-cover transition-transform duration-700 group-hover:scale-110"
+                                  />
+                                )}
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                                <div className="absolute top-2.5 left-2.5">
+                                  <span className="text-[10px] font-bold text-white bg-pixel-green/80 backdrop-blur-md px-2 py-0.5 rounded-lg border border-white/10">
+                                    FREE
+                                  </span>
+                                </div>
                               </div>
-                            </div>
-                            <div className="p-3 space-y-1.5">
-                              <h3 className="text-sm font-semibold text-foreground leading-tight line-clamp-1 group-hover:text-pixel-green transition-colors">
-                                {game.title}
-                              </h3>
+                            </Link>
+                            <div className="p-3 space-y-1.5 flex-1 flex flex-col">
+                              <Link href={`/game/${slugify(game.title)}`}>
+                                <h3 className="text-sm font-semibold text-foreground leading-tight line-clamp-1 group-hover:text-pixel-green transition-colors">
+                                  {game.title}
+                                </h3>
+                              </Link>
                               <div className="flex flex-wrap gap-1.5">
                                 {game.genres.slice(0, 2).map((g) => (
                                   <span key={g} className="text-[10px] text-tertiary font-medium">{g}</span>
                                 ))}
                               </div>
+                              {game.url && (
+                                <a
+                                  href={game.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="mt-auto flex items-center justify-center gap-1.5 w-full px-3 py-2 rounded-xl text-xs font-bold transition-all duration-200 bg-pixel-green/15 text-pixel-green border border-pixel-green/20 hover:bg-pixel-green hover:text-black hover:border-pixel-green"
+                                >
+                                  <ExternalLink className="w-3 h-3" />
+                                  Play Free
+                                </a>
+                              )}
                             </div>
-                          </Link>
+                          </div>
                         </motion.div>
                       ))}
                     </HorizontalScroll>
