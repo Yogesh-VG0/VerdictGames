@@ -308,8 +308,8 @@ export default function HomePage() {
             <FadeInSection>
               <SectionHeader
                 title="Discover"
-                href="/search?sort=newest"
-                linkLabel="Browse all"
+                href={discoverTab === "deals" ? "/deals" : discoverTab === "free" ? "/free-to-play" : "/search?sort=newest"}
+                linkLabel={discoverTab === "deals" ? "See all deals" : discoverTab === "free" ? "See all free games" : "See all new releases"}
                 icon={<Gamepad2 className="w-5 h-5" />}
                 subtitle="Find your next obsession"
                 gradient="linear-gradient(90deg, #06b6d4 0%, #3b82f6 25%, #8b5cf6 50%, #3b82f6 75%, #06b6d4 100%)"
@@ -673,8 +673,9 @@ export default function HomePage() {
                   <li><Link href="/search?sort=trending" className="hover:text-accent transition-colors">Trending</Link></li>
                   <li><Link href="/search?sort=newest" className="hover:text-accent transition-colors">New Releases</Link></li>
                   <li><Link href="/search?sort=top-rated" className="hover:text-accent transition-colors">Top Rated</Link></li>
+                  <li><Link href="/deals" className="hover:text-accent transition-colors">Deals</Link></li>
+                  <li><Link href="/free-to-play" className="hover:text-accent transition-colors">Free to Play</Link></li>
                   <li><Link href="/calendar" className="hover:text-accent transition-colors">Upcoming</Link></li>
-                  <li><Link href="/lists" className="hover:text-accent transition-colors">Curated Lists</Link></li>
                 </ul>
               </div>
               <div>

@@ -130,15 +130,18 @@ export async function GET(request: NextRequest) {
           .order("release_date", { ascending: false }).order("id", { ascending: true });
         break;
       case "upcoming":
-        // Only unreleased games, soonest first
+        // Only unreleased games, soonest first — require cover image for public-readiness
         query = query.gt("release_date", today)
+          .not("cover_image", "is", null)
+          .neq("cover_image", "")
           .order("release_date", { ascending: true }).order("id", { ascending: true });
         break;
       case "recently-added":
-        // Newest DB entries — require cover image for public-readiness
+        // Newest DB entries — require cover image + score>0 to exclude junk/incomplete entries
         query = query
           .not("cover_image", "is", null)
           .neq("cover_image", "")
+          .gt("score", 0)
           .order("created_at", { ascending: false }).order("id", { ascending: true });
         break;
       case "top-rated":
@@ -153,7 +156,10 @@ export async function GET(request: NextRequest) {
         break;
       case "trending":
         // Prioritize cron-curated trending flag, then momentum, then players
+        // Require cover image for public-readiness
         query = query
+          .not("cover_image", "is", null)
+          .neq("cover_image", "")
           .order("trending", { ascending: false, nullsFirst: false })
           .order("momentum", { ascending: false, nullsFirst: false })
           .order("current_players", { ascending: false, nullsFirst: false })

@@ -436,6 +436,7 @@ export async function fetchDeals(): Promise<GXDeal[]> {
       badge: entry.tag?.name ?? null,
       dealType: entry.dealType,
       genres: entry.game.genres.map((g) => g.name),
+      platforms: entry.game.platforms.map((p) => p.name),
     }));
   } catch {
     return [];

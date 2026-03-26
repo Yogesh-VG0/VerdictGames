@@ -13,6 +13,7 @@ export async function GET() {
     url: entry.url,
     ctaLabel: entry.cta?.label ?? null,
     genres: entry.game.genres.map((g) => g.name),
+    platforms: entry.game.platforms.map((p) => p.name),
   }));
   return jsonOk(games);
 }

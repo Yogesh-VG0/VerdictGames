@@ -279,6 +279,7 @@ export interface GXDeal {
   badge: string | null;
   dealType: string | null;
   genres: string[];
+  platforms: string[];
 }
 
 export interface GXNewsItem {
@@ -310,6 +311,7 @@ export interface GXFreeGame {
   url: string | null;
   ctaLabel: string | null;
   genres: string[];
+  platforms: string[];
 }
 
 export interface GXMostLiked {

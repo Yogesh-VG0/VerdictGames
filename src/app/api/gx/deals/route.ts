@@ -19,6 +19,7 @@ export async function GET() {
     badge: entry.tag?.name ?? null,
     dealType: entry.dealType,
     genres: entry.game.genres.map((g) => g.name),
+    platforms: entry.game.platforms.map((p) => p.name),
   }));
   return jsonOk(deals);
 }
