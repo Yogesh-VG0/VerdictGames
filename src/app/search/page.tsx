@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback, Suspense } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
@@ -46,18 +46,10 @@ function SearchContent() {
   const [sort, setSort] = useState<SortOption>(
     (searchParams.get("sort") as SortOption) ?? "relevance"
   );
-  const [page, setPage] = useState(1);
-  const [loadingMore, setLoadingMore] = useState(false);
-
-  // Accumulated results across pages for infinite scroll
-  const accumulatedRef = useRef<Game[]>([]);
-  const [allGames, setAllGames] = useState<Game[]>([]);
-  const [totalCount, setTotalCount] = useState(0);
-  const [hasMore, setHasMore] = useState(false);
-
-  // Track filter fingerprint to reset accumulation when filters change
-  const filterKey = `${debouncedQuery}|${platform}|${genre}|${year}|${monetization}|${sort}`;
-  const prevFilterKeyRef = useRef(filterKey);
+  const [page, setPage] = useState(() => {
+    const p = parseInt(searchParams.get("page") ?? "1", 10);
+    return Number.isFinite(p) && p > 0 ? p : 1;
+  });
 
   // Debounce the query input
   useEffect(() => {
@@ -78,44 +70,16 @@ function SearchContent() {
     page,
   };
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isFetching } = useQuery({
     queryKey: ["search", filters],
     queryFn: () => searchGames(filters),
+    placeholderData: (prev) => prev,
   });
 
-  // When filters change, reset accumulated results
-  useEffect(() => {
-    if (prevFilterKeyRef.current !== filterKey) {
-      accumulatedRef.current = [];
-      setAllGames([]);
-      prevFilterKeyRef.current = filterKey;
-    }
-  }, [filterKey]);
-
-  // When data arrives, accumulate or replace based on page
-  useEffect(() => {
-    if (!data) return;
-
-    if (page === 1) {
-      // Fresh search — replace everything
-      accumulatedRef.current = data.items;
-    } else {
-      // Append new page — dedup by ID
-      const existingIds = new Set(accumulatedRef.current.map((g) => g.id));
-      const newItems = data.items.filter((g) => !existingIds.has(g.id));
-      accumulatedRef.current = [...accumulatedRef.current, ...newItems];
-    }
-
-    setAllGames([...accumulatedRef.current]);
-    setTotalCount(data.total);
-    setHasMore(data.hasMore);
-    setLoadingMore(false);
-  }, [data, page]);
-
-  const handleLoadMore = useCallback(() => {
-    setLoadingMore(true);
-    setPage((p) => p + 1);
-  }, []);
+  const games = data?.items ?? [];
+  const totalCount = data?.total ?? 0;
+  const hasMore = data?.hasMore ?? false;
+  const totalPages = Math.ceil(totalCount / (data?.pageSize ?? 25));
 
   // Reset filters handler
   const resetFilters = useCallback(() => {
@@ -127,7 +91,7 @@ function SearchContent() {
     setPage(1);
   }, []);
 
-  // Sync URL on filter change
+  // Sync URL on filter/page change
   useEffect(() => {
     const params = new URLSearchParams();
     if (debouncedQuery) params.set("q", debouncedQuery);
@@ -136,11 +100,12 @@ function SearchContent() {
     if (year) params.set("year", year);
     if (monetization !== "All") params.set("monetization", monetization);
     if (sort !== "relevance") params.set("sort", sort);
+    if (page > 1) params.set("page", String(page));
     router.replace(`/search?${params.toString()}`, { scroll: false });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedQuery, platform, genre, year, monetization, sort]);
+  }, [debouncedQuery, platform, genre, year, monetization, sort, page]);
 
-  const isInitialLoad = isLoading && page === 1;
+  const isInitialLoad = isLoading && !data;
 
   return (
     <div className="max-w-[1400px] mx-auto px-4 py-6 space-y-6 overflow-x-hidden">
@@ -312,35 +277,67 @@ function SearchContent() {
               )}
               <GameGridSkeleton count={8} />
             </motion.div>
-          ) : allGames.length > 0 ? (
+          ) : games.length > 0 ? (
             <motion.div
               key="results"
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
+              className={isFetching ? "opacity-60 pointer-events-none transition-opacity" : "transition-opacity"}
             >
               <p className="text-xs text-tertiary mb-4">
-                Showing {allGames.length} of {totalCount} game{totalCount !== 1 ? "s" : ""}
+                Showing {(page - 1) * (data?.pageSize ?? 25) + 1}–{Math.min(page * (data?.pageSize ?? 25), totalCount)} of {totalCount} game{totalCount !== 1 ? "s" : ""}
               </p>
-              <GameGrid games={allGames} columns={5} />
+              <GameGrid games={games} columns={5} />
 
-              {/* Load more */}
-              {hasMore && (
-                <div className="flex justify-center pt-8">
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-center gap-2 pt-8">
                   <button
-                    onClick={handleLoadMore}
-                    disabled={loadingMore}
-                    className="px-6 py-2.5 text-sm font-medium text-accent border border-accent rounded-full hover:bg-accent/10 transition-colors disabled:opacity-60 flex items-center gap-2"
+                    onClick={() => { setPage((p) => Math.max(1, p - 1)); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                    disabled={page <= 1}
+                    className="px-4 py-2 text-sm font-medium rounded-lg border border-border text-secondary hover:text-foreground hover:border-accent/50 transition-colors disabled:opacity-30 disabled:pointer-events-none"
                   >
-                    {loadingMore ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-accent border-t-transparent rounded-full animate-spin" />
-                        Loading...
-                      </>
-                    ) : (
-                      "Load more"
-                    )}
+                    Previous
+                  </button>
+                  <div className="flex items-center gap-1">
+                    {(() => {
+                      const pages: (number | "...")[] = [];
+                      if (totalPages <= 7) {
+                        for (let i = 1; i <= totalPages; i++) pages.push(i);
+                      } else {
+                        pages.push(1);
+                        if (page > 3) pages.push("...");
+                        for (let i = Math.max(2, page - 1); i <= Math.min(totalPages - 1, page + 1); i++) pages.push(i);
+                        if (page < totalPages - 2) pages.push("...");
+                        pages.push(totalPages);
+                      }
+                      return pages.map((p, idx) =>
+                        p === "..." ? (
+                          <span key={`ellipsis-${idx}`} className="px-2 text-tertiary text-sm">…</span>
+                        ) : (
+                          <button
+                            key={p}
+                            onClick={() => { setPage(p); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                            className={`w-9 h-9 text-sm font-medium rounded-lg transition-colors ${
+                              p === page
+                                ? "bg-accent text-white"
+                                : "text-secondary hover:text-foreground hover:bg-surface-2"
+                            }`}
+                          >
+                            {p}
+                          </button>
+                        )
+                      );
+                    })()}
+                  </div>
+                  <button
+                    onClick={() => { setPage((p) => Math.min(totalPages, p + 1)); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                    disabled={!hasMore}
+                    className="px-4 py-2 text-sm font-medium rounded-lg border border-border text-secondary hover:text-foreground hover:border-accent/50 transition-colors disabled:opacity-30 disabled:pointer-events-none"
+                  >
+                    Next
                   </button>
                 </div>
               )}

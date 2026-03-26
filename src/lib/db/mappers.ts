@@ -181,9 +181,11 @@ export function mapGameRow(row: GameRow): Game {
         return daysSinceRelease >= 0 && daysSinceRelease <= JUST_RELEASED_DAYS;
       })()
     : false;
-  const isJustReleased = isRecentRelease && reviewCount < JUST_RELEASED_MIN_REVIEWS && !hasNoReviews;
+  // Recently released (≤14 days) with fewer than 20 reviews → "JUST RELEASED" (including 0 reviews)
+  const isJustReleased = isRecentRelease && reviewCount < JUST_RELEASED_MIN_REVIEWS;
 
-  const effectiveProvisional = flagProvisional || isComingSoonLabel || isFutureRelease || hasNoReviews;
+  // Provisional: future games, explicit flags, OR old games with 0 reviews (not recent releases)
+  const effectiveProvisional = flagProvisional || isComingSoonLabel || isFutureRelease || (hasNoReviews && !isRecentRelease);
 
   // ── Score resolution: prefer verdict_score (v2), fall back to legacy Bayesian ──
   const rawScore = row.score ?? 0;

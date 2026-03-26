@@ -58,7 +58,7 @@ export default function NavbarTop() {
   const allNavLinks = [
     { href: "/", label: "Home", icon: <Home className="w-4 h-4" /> },
     { href: "/explore", label: "Explore", icon: <Sparkles className="w-4 h-4" /> },
-    { href: "/search?sort=trending", label: "Browse", icon: <Flame className="w-4 h-4" /> },
+    { href: "/search", label: "Browse", icon: <Flame className="w-4 h-4" /> },
     { href: "/calendar", label: "Calendar", icon: <CalendarDays className="w-4 h-4" /> },
     { href: "/reviews", label: "Reviews", icon: <Star className="w-4 h-4" /> },
     { href: "/lists", label: "Lists", icon: <List className="w-4 h-4" /> },
@@ -86,7 +86,7 @@ export default function NavbarTop() {
   const navLinks = [
     { href: "/", label: "Home" },
     { href: "/explore", label: "Explore" },
-    { href: "/search?sort=trending", label: "Browse" },
+    { href: "/search", label: "Browse" },
     { href: "/reviews", label: "Reviews" },
     { href: "/calendar", label: "Calendar" },
     { href: "/lists", label: "Lists" },
@@ -230,12 +230,8 @@ export default function NavbarTop() {
                     const [basePath, qs] = link.href.split("?");
                     isActive = pathname === basePath && typeof window !== "undefined" && window.location.search === `?${qs}`;
                   } else {
-                    // Links without query params: match pathname prefix but NOT if the URL also has query params that match another link
+                    // Links without query params: match pathname prefix
                     isActive = pathname.startsWith(link.href);
-                    // If we're on /search with a sort=trending query, don't highlight the plain /search Explore link
-                    if (link.href === "/search" && typeof window !== "undefined" && window.location.search.includes("sort=trending")) {
-                      isActive = false;
-                    }
                   }
                   return (
                     <Link

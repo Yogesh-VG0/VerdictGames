@@ -50,19 +50,6 @@ const slideVariants: Variants = {
   },
 };
 
-const contentVariants: Variants = {
-  enter: { opacity: 0, y: 24 },
-  center: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.6, delay: 0.3, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
-  },
-  exit: {
-    opacity: 0,
-    y: -16,
-    transition: { duration: 0.25, ease: "easeIn" as const },
-  },
-};
 
 const SWIPE_THRESHOLD = 40;
 const SWIPE_VELOCITY = 300;
@@ -212,13 +199,8 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
       {/* Content overlay — receives touch events for swipe */}
       <div className="absolute bottom-0 left-0 right-0 z-[2]">
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 pb-6 sm:pb-8 md:pb-12">
-        <AnimatePresence mode="wait">
-          <motion.div
+          <div
             key={`content-${currentIndex}`}
-            variants={contentVariants}
-            initial="enter"
-            animate="center"
-            exit="exit"
             className="space-y-2.5 sm:space-y-3"
           >
             {/* Reason label */}
@@ -316,8 +298,7 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
                 </a>
               )}
             </div>
-          </motion.div>
-        </AnimatePresence>
+          </div>
       </div>
       </div>
 

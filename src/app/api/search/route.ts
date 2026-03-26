@@ -166,15 +166,17 @@ export async function GET(request: NextRequest) {
         if (q) {
           query = query.order("release_date", { ascending: false }).order("id", { ascending: true });
         } else {
-          // No-query browsing: blend trending + recency + quality for a good default browse
-          // Prioritize trending flag (cron-curated), then recency, then score
+          // No-query browsing: active + quality + recency for a good default browse
+          // Trending flag groups active games first; verdict_score ranks within each group.
+          // Score floor (>=55) excludes SKIP-rated games from default browse.
           query = query
             .gte("review_count", 10)
+            .gte("score", 55)
             .not("cover_image", "is", null)
             .neq("cover_image", "")
             .order("trending", { ascending: false, nullsFirst: false })
-            .order("release_date", { ascending: false })
             .order("verdict_score", { ascending: false, nullsFirst: false })
+            .order("release_date", { ascending: false })
             .order("id", { ascending: true });
         }
         break;
