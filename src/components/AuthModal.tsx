@@ -2,14 +2,17 @@
  * VERDICT.GAMES — Auth Modal
  *
  * Login / Sign-up modal with email + OAuth (Google, Discord).
+ * Includes real-time username validation, password strength checks,
+ * and a polished UI with show/hide toggle.
  */
 
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
+import { Eye, EyeOff, X, CheckCircle2, AlertCircle, Loader2, User, Mail, Lock } from "lucide-react";
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -18,18 +21,98 @@ interface AuthModalProps {
   message?: string;
 }
 
+const USERNAME_RE = /^[a-zA-Z0-9_]+$/;
+const PASSWORD_RE_LETTER = /[a-zA-Z]/;
+const PASSWORD_RE_NUMBER = /[0-9]/;
+
+const inputCls = "w-full h-10 pl-10 pr-4 text-sm rounded-xl bg-white/5 border border-white/10 text-foreground placeholder:text-tertiary focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/20 transition-all";
+const inputIconCls = "absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-tertiary pointer-events-none";
+
 export default function AuthModal({ isOpen, onClose, defaultTab = "login", message }: AuthModalProps) {
   const [tab, setTab] = useState<"login" | "signup">(defaultTab);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [username, setUsername] = useState("");
   const [error, setError] = useState("");
+  const [successMsg, setSuccessMsg] = useState("");
   const [loading, setLoading] = useState(false);
   const { signInWithEmail, signUpWithEmail, signInWithOAuth } = useAuth();
+
+  // Username availability check
+  const [usernameStatus, setUsernameStatus] = useState<"idle" | "checking" | "available" | "taken">("idle");
+  const [usernameHint, setUsernameHint] = useState("");
+  const checkTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const checkUsername = useCallback(async (val: string) => {
+    const clean = val.trim().toLowerCase();
+    if (clean.length < 3) { setUsernameStatus("idle"); setUsernameHint(""); return; }
+    if (!USERNAME_RE.test(clean)) {
+      setUsernameStatus("taken");
+      setUsernameHint("Only letters, numbers, and underscores");
+      return;
+    }
+    setUsernameStatus("checking");
+    try {
+      const res = await fetch(`/api/auth/check-username?username=${encodeURIComponent(clean)}`);
+      const json = await res.json();
+      if (json.data?.available) {
+        setUsernameStatus("available");
+        setUsernameHint("Username is available");
+      } else {
+        setUsernameStatus("taken");
+        setUsernameHint(json.data?.reason || "Username is not available");
+      }
+    } catch {
+      setUsernameStatus("idle");
+      setUsernameHint("");
+    }
+  }, []);
+
+  function handleUsernameChange(val: string) {
+    // Strip invalid characters in real time, allow only alphanumeric + underscore
+    const sanitized = val.replace(/[^a-zA-Z0-9_]/g, "").slice(0, 24);
+    setUsername(sanitized);
+    setUsernameStatus("idle");
+    setUsernameHint("");
+    if (checkTimer.current) clearTimeout(checkTimer.current);
+    if (sanitized.length >= 3) {
+      checkTimer.current = setTimeout(() => checkUsername(sanitized), 400);
+    }
+  }
+
+  // Password strength
+  const pwLen = password.length >= 8;
+  const pwLetter = PASSWORD_RE_LETTER.test(password);
+  const pwNumber = PASSWORD_RE_NUMBER.test(password);
+  const pwValid = pwLen && pwLetter && pwNumber;
+
+  // Reset state on tab switch
+  useEffect(() => {
+    setError("");
+    setSuccessMsg("");
+    setUsernameStatus("idle");
+    setUsernameHint("");
+  }, [tab]);
+
+  // Reset everything when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      setEmail("");
+      setPassword("");
+      setUsername("");
+      setError("");
+      setSuccessMsg("");
+      setShowPassword(false);
+      setUsernameStatus("idle");
+      setUsernameHint("");
+    }
+  }, [isOpen]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+    setSuccessMsg("");
     setLoading(true);
 
     if (tab === "login") {
@@ -37,16 +120,45 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login", messa
       if (result.error) setError(result.error);
       else onClose();
     } else {
-      if (username.length < 3) {
+      // Username validation
+      const cleanUsername = username.trim().toLowerCase();
+      if (cleanUsername.length < 3) {
         setError("Username must be at least 3 characters.");
         setLoading(false);
         return;
       }
-      const result = await signUpWithEmail(email, password, username);
-      if (result.error) setError(result.error);
-      else {
-        setError("");
-        setTab("login");
+      if (cleanUsername.length > 24) {
+        setError("Username must be 24 characters or fewer.");
+        setLoading(false);
+        return;
+      }
+      if (!USERNAME_RE.test(cleanUsername)) {
+        setError("Username can only contain letters, numbers, and underscores.");
+        setLoading(false);
+        return;
+      }
+      // Password strength
+      if (!pwValid) {
+        setError("Password must be at least 8 characters with at least one letter and one number.");
+        setLoading(false);
+        return;
+      }
+      // Check username availability one more time
+      if (usernameStatus === "taken") {
+        setError(usernameHint || "Username is not available.");
+        setLoading(false);
+        return;
+      }
+
+      const result = await signUpWithEmail(email, password, cleanUsername);
+      if (result.error) {
+        setError(result.error);
+      } else {
+        setSuccessMsg("Account created! Check your email to verify, then log in.");
+        setEmail("");
+        setPassword("");
+        setUsername("");
+        setTimeout(() => setTab("login"), 2000);
       }
     }
     setLoading(false);
@@ -66,17 +178,16 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login", messa
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="w-full max-w-md rounded-2xl border border-white/[0.08] bg-surface p-6 shadow-2xl"
+            className="relative w-full max-w-md rounded-2xl border border-white/[0.08] bg-surface p-6 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Close button */}
             <button
               onClick={onClose}
               className="absolute top-4 right-4 text-tertiary hover:text-foreground transition-colors"
+              aria-label="Close"
             >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
+              <X className="w-5 h-5" />
             </button>
 
             {/* Header */}
@@ -124,7 +235,7 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login", messa
               {(["login", "signup"] as const).map((t) => (
                 <button
                   key={t}
-                  onClick={() => { setTab(t); setError(""); }}
+                  onClick={() => { setTab(t); setError(""); setSuccessMsg(""); }}
                   className={cn(
                     "flex-1 py-2 text-sm font-medium rounded-lg transition-all",
                     tab === t ? "bg-accent text-white" : "text-secondary hover:text-foreground"
@@ -135,48 +246,114 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login", messa
               ))}
             </div>
 
+            {/* Success message */}
+            {successMsg && (
+              <div className="flex items-start gap-2 mb-4 rounded-xl bg-success/10 border border-success/20 px-3 py-2.5 text-xs text-success">
+                <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>{successMsg}</span>
+              </div>
+            )}
+
             {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-3">
               {tab === "signup" && (
-                <input
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder="Username"
-                  required
-                  minLength={3}
-                  maxLength={30}
-                  className="w-full h-10 px-4 text-sm rounded-xl bg-white/5 border border-white/10 text-foreground placeholder:text-tertiary focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/20 transition-all"
-                />
+                <div className="space-y-1">
+                  <div className="relative">
+                    <User className={inputIconCls} />
+                    <input
+                      type="text"
+                      value={username}
+                      onChange={(e) => handleUsernameChange(e.target.value)}
+                      placeholder="Username"
+                      required
+                      autoComplete="username"
+                      className={cn(inputCls, "pr-9", usernameStatus === "available" && "border-success/50", usernameStatus === "taken" && "border-danger/50")}
+                    />
+                    {/* Status icon */}
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      {usernameStatus === "checking" && <Loader2 className="w-4 h-4 text-tertiary animate-spin" />}
+                      {usernameStatus === "available" && <CheckCircle2 className="w-4 h-4 text-success" />}
+                      {usernameStatus === "taken" && <AlertCircle className="w-4 h-4 text-danger" />}
+                    </div>
+                  </div>
+                  {usernameHint && (
+                    <p className={cn("text-[11px] px-1", usernameStatus === "available" ? "text-success" : "text-danger")}>
+                      {usernameHint}
+                    </p>
+                  )}
+                  <p className="text-[10px] text-tertiary px-1">3-24 characters. Letters, numbers, and underscores only.</p>
+                </div>
               )}
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Email"
-                required
-                className="w-full h-10 px-4 text-sm rounded-xl bg-white/5 border border-white/10 text-foreground placeholder:text-tertiary focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/20 transition-all"
-              />
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Password"
-                required
-                minLength={6}
-                className="w-full h-10 px-4 text-sm rounded-xl bg-white/5 border border-white/10 text-foreground placeholder:text-tertiary focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/20 transition-all"
-              />
+
+              <div className="relative">
+                <Mail className={inputIconCls} />
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Email"
+                  required
+                  autoComplete="email"
+                  className={inputCls}
+                />
+              </div>
+
+              <div className="space-y-1">
+                <div className="relative">
+                  <Lock className={inputIconCls} />
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Password"
+                    required
+                    autoComplete={tab === "login" ? "current-password" : "new-password"}
+                    className={cn(inputCls, "pr-10")}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-tertiary hover:text-foreground transition-colors"
+                    tabIndex={-1}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+
+                {/* Password strength indicators (signup only) */}
+                {tab === "signup" && password.length > 0 && (
+                  <div className="flex items-center gap-3 px-1 pt-0.5">
+                    <span className={cn("text-[10px]", pwLen ? "text-success" : "text-tertiary")}>
+                      {pwLen ? "\u2713" : "\u2022"} 8+ chars
+                    </span>
+                    <span className={cn("text-[10px]", pwLetter ? "text-success" : "text-tertiary")}>
+                      {pwLetter ? "\u2713" : "\u2022"} Letter
+                    </span>
+                    <span className={cn("text-[10px]", pwNumber ? "text-success" : "text-tertiary")}>
+                      {pwNumber ? "\u2713" : "\u2022"} Number
+                    </span>
+                  </div>
+                )}
+              </div>
 
               {error && (
-                <p className="text-xs text-danger">{error}</p>
+                <div className="flex items-start gap-2 rounded-xl bg-danger/10 border border-danger/20 px-3 py-2.5 text-xs text-danger">
+                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                  <span>{error}</span>
+                </div>
               )}
 
               <button
                 type="submit"
-                disabled={loading}
-                className="w-full h-10 rounded-xl bg-accent text-white text-sm font-semibold hover:bg-accent-hover transition-colors disabled:opacity-50"
+                disabled={loading || (tab === "signup" && usernameStatus === "taken")}
+                className="w-full h-10 rounded-xl bg-accent text-white text-sm font-semibold hover:bg-accent-hover transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
               >
-                {loading ? "..." : tab === "login" ? "Log In" : "Create Account"}
+                {loading ? (
+                  <><Loader2 className="w-4 h-4 animate-spin" /> {tab === "login" ? "Signing in..." : "Creating account..."}</>
+                ) : (
+                  tab === "login" ? "Log In" : "Create Account"
+                )}
               </button>
             </form>
           </motion.div>

@@ -47,11 +47,33 @@ export async function POST() {
       email.split("@")[0] ??
       "user";
 
-    // Note: local generated Supabase types may not include `auth_id` on Insert yet.
+    // Sanitize username: lowercase, strip invalid chars, enforce 3-24 chars
+    let baseUsername = preferredUsername.toLowerCase().replace(/[^a-z0-9_]/g, "").slice(0, 24);
+    if (baseUsername.length < 3) baseUsername = "user";
+
+    // Ensure uniqueness: check if username exists, append random suffix if taken
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const profilesTable = service.from("profiles") as any;
+    let finalUsername = baseUsername;
+    const { data: existingUser } = await profilesTable
+      .select("id")
+      .eq("username", baseUsername)
+      .maybeSingle();
+    if (existingUser) {
+      // Append random 4-digit suffix, retry up to 5 times
+      for (let i = 0; i < 5; i++) {
+        const suffix = Math.floor(1000 + Math.random() * 9000);
+        const candidate = `${baseUsername.slice(0, 19)}_${suffix}`;
+        const { data: dup } = await profilesTable
+          .select("id")
+          .eq("username", candidate)
+          .maybeSingle();
+        if (!dup) { finalUsername = candidate; break; }
+      }
+    }
+
     const rowBase = {
-      username: preferredUsername.toLowerCase().replace(/[^a-z0-9_]/g, "").slice(0, 24) || "user",
+      username: finalUsername,
       display_name: preferredUsername.slice(0, 32),
       avatar_url: (user.user_metadata?.avatar_url as string | undefined) ?? "",
       bio: "",

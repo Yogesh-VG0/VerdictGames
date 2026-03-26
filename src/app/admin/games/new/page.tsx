@@ -1,10 +1,27 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { slugify } from "@/lib/utils/slugify";
+import { Search, Link2, FileEdit, ArrowLeft, Check, Star, Calendar, Gamepad2, Loader2, AlertCircle, CheckCircle2, ExternalLink } from "lucide-react";
 
 type Mode = "lookup" | "url" | "provisional";
+type Step = "search" | "candidates" | "confirm" | "ingesting";
+
+interface Candidate {
+  rawgId: number;
+  name: string;
+  slug: string;
+  released: string | null;
+  backgroundImage: string | null;
+  rating: number;
+  ratingsCount: number;
+  metacritic: number | null;
+  platforms: string[];
+  genres: string[];
+  alreadyInDb: boolean;
+}
 
 const PLATFORMS = ["PC", "PlayStation 5", "PlayStation 4", "Xbox Series X|S", "Xbox One", "Nintendo Switch", "Nintendo Switch 2", "Android", "iOS", "macOS", "Linux"];
 const RELEASE_STATUSES = [
@@ -13,15 +30,21 @@ const RELEASE_STATUSES = [
   { value: "announced", label: "Announced" },
 ];
 
+const inputCls = "w-full rounded-xl bg-surface-2 border border-border px-4 py-2.5 text-sm text-foreground placeholder:text-tertiary focus:border-accent focus:outline-none transition-colors";
+
 export default function AdminAddGamePage() {
   const router = useRouter();
   const [mode, setMode] = useState<Mode>("lookup");
+  const [step, setStep] = useState<Step>("search");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
   // Lookup mode
   const [lookupTitle, setLookupTitle] = useState("");
+  const [candidates, setCandidates] = useState<Candidate[]>([]);
+  const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
+  const [editedTitle, setEditedTitle] = useState("");
 
   // URL mode
   const [sourceUrl, setSourceUrl] = useState("");
@@ -42,18 +65,79 @@ export default function AdminAddGamePage() {
 
   const autoSlug = form.title ? slugify(form.title) : "";
 
-  async function handleSubmit() {
+  // Search RAWG for candidates
+  const handleSearch = useCallback(async () => {
+    if (!lookupTitle.trim()) { setError("Enter a game title"); return; }
+    setLoading(true);
+    setError("");
+    setCandidates([]);
+    try {
+      const res = await fetch(`/api/admin/games/search-preview?q=${encodeURIComponent(lookupTitle.trim())}`);
+      const json = await res.json();
+      if (!res.ok) { setError(json.error || "Search failed"); setLoading(false); return; }
+      const list: Candidate[] = json.data?.candidates ?? [];
+      if (list.length === 0) { setError(`No results found for "${lookupTitle}". Try a different search or create a Provisional page.`); setLoading(false); return; }
+      setCandidates(list);
+      setStep("candidates");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Search failed");
+    } finally {
+      setLoading(false);
+    }
+  }, [lookupTitle]);
+
+  // Select a candidate and move to confirm step
+  function selectCandidate(c: Candidate) {
+    setSelectedCandidate(c);
+    setEditedTitle(c.name);
+    setError("");
+    setStep("confirm");
+  }
+
+  // Confirm and ingest the selected game
+  async function handleIngest() {
+    if (!selectedCandidate) return;
     setLoading(true);
     setError("");
     setSuccess("");
+    setStep("ingesting");
+    try {
+      const res = await fetch("/api/admin/games", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode: "lookup", title: editedTitle.trim() || selectedCandidate.name }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        if (res.status === 422) {
+          setError(`${json.error || "Low confidence match."} Try editing the title or create a Provisional page.`);
+        } else {
+          setError(json.error || "Failed to ingest game");
+        }
+        setStep("confirm");
+      } else {
+        setSuccess(json.data?.message || "Game ingested successfully!");
+        setTimeout(() => {
+          if (json.data?.gameId) router.push(`/admin/games/${json.data.gameId}`);
+          else router.push("/admin/games");
+        }, 1500);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unknown error");
+      setStep("confirm");
+    } finally {
+      setLoading(false);
+    }
+  }
 
+  // URL & Provisional submit
+  async function handleOtherSubmit() {
+    setLoading(true);
+    setError("");
+    setSuccess("");
     try {
       let body: Record<string, unknown>;
-
-      if (mode === "lookup") {
-        if (!lookupTitle.trim()) { setError("Enter a game title"); setLoading(false); return; }
-        body = { mode: "lookup", title: lookupTitle.trim() };
-      } else if (mode === "url") {
+      if (mode === "url") {
         if (!sourceUrl.trim()) { setError("Enter a source URL"); setLoading(false); return; }
         body = { mode: "url", url: sourceUrl.trim() };
       } else {
@@ -72,29 +156,19 @@ export default function AdminAddGamePage() {
           coverImage: form.coverImage,
         };
       }
-
       const res = await fetch("/api/admin/games", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
       const json = await res.json();
-
       if (!res.ok) {
-        // 422 = low confidence match — offer to create provisional instead
-        if (res.status === 422) {
-          setError(`⚠️ ${json.error || "Low confidence match."} You can try creating a Provisional page instead.`);
-        } else {
-          setError(json.error || "Failed to create game");
-        }
+        setError(json.error || "Failed to create game");
       } else {
         setSuccess(json.data?.message || "Game created!");
         setTimeout(() => {
-          if (json.data?.gameId) {
-            router.push(`/admin/games/${json.data.gameId}`);
-          } else {
-            router.push("/admin/games");
-          }
+          if (json.data?.gameId) router.push(`/admin/games/${json.data.gameId}`);
+          else router.push("/admin/games");
         }, 1500);
       }
     } catch (err) {
@@ -104,8 +178,22 @@ export default function AdminAddGamePage() {
     }
   }
 
+  function resetLookup() {
+    setStep("search");
+    setCandidates([]);
+    setSelectedCandidate(null);
+    setEditedTitle("");
+    setError("");
+    setSuccess("");
+  }
+
+  function switchMode(m: Mode) {
+    setMode(m);
+    resetLookup();
+  }
+
   const tabClass = (t: Mode) =>
-    `px-4 py-2.5 text-sm font-medium rounded-xl transition-all ${mode === t
+    `flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-xl transition-all ${mode === t
       ? "bg-accent text-white shadow-sm shadow-accent/20"
       : "text-secondary hover:text-foreground hover:bg-surface-2"
     }`;
@@ -114,42 +202,281 @@ export default function AdminAddGamePage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-foreground">Add New Game</h1>
-        <p className="text-sm text-secondary mt-1">Create a game entry via lookup, URL import, or manual entry</p>
+        <p className="text-sm text-secondary mt-1">Search, verify, and ingest a game from RAWG — or create manually</p>
       </div>
 
       {/* Mode Tabs */}
       <div className="flex flex-wrap gap-2">
-        <button onClick={() => setMode("lookup")} className={tabClass("lookup")}>
-          🔍 Title Lookup
+        <button onClick={() => switchMode("lookup")} className={tabClass("lookup")}>
+          <Search className="w-4 h-4" /> Title Lookup
         </button>
-        <button onClick={() => setMode("url")} className={tabClass("url")}>
-          🔗 Source URL
+        <button onClick={() => switchMode("url")} className={tabClass("url")}>
+          <Link2 className="w-4 h-4" /> Source URL
         </button>
-        <button onClick={() => setMode("provisional")} className={tabClass("provisional")}>
-          📝 Create Provisional
+        <button onClick={() => switchMode("provisional")} className={tabClass("provisional")}>
+          <FileEdit className="w-4 h-4" /> Create Provisional
         </button>
       </div>
 
-      {/* Form */}
-      <div className="rounded-2xl border border-border bg-surface p-5 sm:p-6 space-y-5">
-        {mode === "lookup" && (
-          <div className="space-y-4">
-            <p className="text-xs text-tertiary">
-              Search RAWG/IGDB/Steam by title. The game will be fully ingested and enriched automatically.
-            </p>
-            <div>
-              <label className="block text-xs font-medium text-secondary mb-1.5">Game Title</label>
-              <input
-                value={lookupTitle}
-                onChange={e => setLookupTitle(e.target.value)}
-                placeholder="e.g. Elden Ring, Hollow Knight Silksong"
-                className="w-full rounded-xl bg-surface-2 border border-border px-4 py-2.5 text-sm text-foreground placeholder:text-tertiary focus:border-accent focus:outline-none transition-colors"
-              />
-            </div>
-          </div>
-        )}
+      {/* ═══════════ LOOKUP MODE ═══════════ */}
+      {mode === "lookup" && (
+        <div className="rounded-2xl border border-border bg-surface p-5 sm:p-6 space-y-5">
 
-        {mode === "url" && (
+          {/* Step 1: Search */}
+          {step === "search" && (
+            <div className="space-y-4">
+              <p className="text-xs text-tertiary">
+                Search by title to find the game on RAWG. You&apos;ll be able to verify the match before ingesting.
+              </p>
+              <div className="flex gap-2">
+                <input
+                  value={lookupTitle}
+                  onChange={e => setLookupTitle(e.target.value)}
+                  onKeyDown={e => e.key === "Enter" && handleSearch()}
+                  placeholder="e.g. Elden Ring, Hollow Knight Silksong"
+                  className={`${inputCls} flex-1`}
+                  autoFocus
+                />
+                <button
+                  onClick={handleSearch}
+                  disabled={loading}
+                  className="px-5 py-2.5 rounded-xl bg-accent text-white text-sm font-medium hover:bg-accent-hover transition-colors disabled:opacity-50 flex items-center gap-2 shrink-0"
+                >
+                  {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+                  Search
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Step 2: Pick from candidates */}
+          {step === "candidates" && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-semibold text-foreground">Search Results</h3>
+                  <p className="text-xs text-tertiary mt-0.5">
+                    {candidates.length} result{candidates.length !== 1 && "s"} for &quot;{lookupTitle}&quot; — select the correct game
+                  </p>
+                </div>
+                <button onClick={resetLookup} className="flex items-center gap-1.5 text-xs text-secondary hover:text-foreground transition-colors">
+                  <ArrowLeft className="w-3.5 h-3.5" /> New Search
+                </button>
+              </div>
+
+              <div className="grid gap-3">
+                {candidates.map((c) => (
+                  <button
+                    key={c.rawgId}
+                    onClick={() => !c.alreadyInDb && selectCandidate(c)}
+                    disabled={c.alreadyInDb}
+                    className={`group relative flex items-start gap-4 p-3 rounded-xl border text-left transition-all ${
+                      c.alreadyInDb
+                        ? "border-border/50 opacity-60 cursor-not-allowed bg-surface"
+                        : "border-border hover:border-accent/40 hover:bg-accent/[0.03] cursor-pointer bg-surface"
+                    }`}
+                  >
+                    {/* Thumbnail */}
+                    <div className="w-20 h-28 sm:w-24 sm:h-32 rounded-lg overflow-hidden bg-surface-2 shrink-0 relative">
+                      {c.backgroundImage ? (
+                        <Image
+                          src={c.backgroundImage}
+                          alt={c.name}
+                          fill
+                          className="object-cover"
+                          sizes="96px"
+                          unoptimized
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-tertiary">
+                          <Gamepad2 className="w-8 h-8" />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Info */}
+                    <div className="flex-1 min-w-0 py-0.5">
+                      <div className="flex items-start gap-2">
+                        <h4 className="text-sm font-semibold text-foreground truncate">{c.name}</h4>
+                        {c.alreadyInDb && (
+                          <span className="shrink-0 px-2 py-0.5 rounded-md bg-success/10 text-success text-[10px] font-semibold uppercase tracking-wider">
+                            In DB
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5 text-xs text-secondary">
+                        {c.released && (
+                          <span className="flex items-center gap-1">
+                            <Calendar className="w-3 h-3" /> {c.released}
+                          </span>
+                        )}
+                        {c.rating > 0 && (
+                          <span className="flex items-center gap-1">
+                            <Star className="w-3 h-3 text-yellow-500" /> {c.rating.toFixed(1)} ({c.ratingsCount.toLocaleString()})
+                          </span>
+                        )}
+                        {c.metacritic && (
+                          <span className="px-1.5 py-0.5 rounded bg-accent/10 text-accent font-semibold text-[10px]">
+                            MC {c.metacritic}
+                          </span>
+                        )}
+                      </div>
+
+                      {c.platforms.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {c.platforms.slice(0, 5).map((p) => (
+                            <span key={p} className="px-1.5 py-0.5 rounded bg-white/5 border border-border text-[10px] text-tertiary">
+                              {p}
+                            </span>
+                          ))}
+                          {c.platforms.length > 5 && (
+                            <span className="px-1.5 py-0.5 text-[10px] text-tertiary">+{c.platforms.length - 5}</span>
+                          )}
+                        </div>
+                      )}
+
+                      {c.genres.length > 0 && (
+                        <p className="text-[11px] text-tertiary mt-1.5 truncate">{c.genres.join(", ")}</p>
+                      )}
+                    </div>
+
+                    {/* Select indicator */}
+                    {!c.alreadyInDb && (
+                      <div className="shrink-0 self-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center">
+                          <Check className="w-4 h-4 text-accent" />
+                        </div>
+                      </div>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Step 3: Confirm & Edit before ingest */}
+          {(step === "confirm" || step === "ingesting") && selectedCandidate && (
+            <div className="space-y-5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-semibold text-foreground">Confirm & Ingest</h3>
+                  <p className="text-xs text-tertiary mt-0.5">Review the selected game and edit the title if needed before ingesting</p>
+                </div>
+                <button
+                  onClick={() => setStep("candidates")}
+                  disabled={step === "ingesting"}
+                  className="flex items-center gap-1.5 text-xs text-secondary hover:text-foreground transition-colors disabled:opacity-50"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" /> Back to Results
+                </button>
+              </div>
+
+              {/* Selected game card */}
+              <div className="flex gap-4 p-4 rounded-xl border border-accent/30 bg-accent/[0.03]">
+                <div className="w-24 h-32 sm:w-28 sm:h-36 rounded-lg overflow-hidden bg-surface-2 shrink-0 relative">
+                  {selectedCandidate.backgroundImage ? (
+                    <Image
+                      src={selectedCandidate.backgroundImage}
+                      alt={selectedCandidate.name}
+                      fill
+                      className="object-cover"
+                      sizes="112px"
+                      unoptimized
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-tertiary">
+                      <Gamepad2 className="w-10 h-10" />
+                    </div>
+                  )}
+                </div>
+                <div className="flex-1 min-w-0 space-y-2">
+                  <h4 className="text-base font-bold text-foreground">{selectedCandidate.name}</h4>
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-secondary">
+                    {selectedCandidate.released && (
+                      <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {selectedCandidate.released}</span>
+                    )}
+                    {selectedCandidate.rating > 0 && (
+                      <span className="flex items-center gap-1"><Star className="w-3 h-3 text-yellow-500" /> {selectedCandidate.rating.toFixed(1)}</span>
+                    )}
+                    {selectedCandidate.metacritic && (
+                      <span className="px-1.5 py-0.5 rounded bg-accent/10 text-accent font-semibold text-[10px]">MC {selectedCandidate.metacritic}</span>
+                    )}
+                  </div>
+                  {selectedCandidate.platforms.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {selectedCandidate.platforms.map((p) => (
+                        <span key={p} className="px-1.5 py-0.5 rounded bg-white/5 border border-border text-[10px] text-tertiary">{p}</span>
+                      ))}
+                    </div>
+                  )}
+                  {selectedCandidate.genres.length > 0 && (
+                    <p className="text-[11px] text-tertiary">{selectedCandidate.genres.join(", ")}</p>
+                  )}
+                  <a
+                    href={`https://rawg.io/games/${selectedCandidate.slug}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-[11px] text-accent hover:underline"
+                  >
+                    View on RAWG <ExternalLink className="w-3 h-3" />
+                  </a>
+                </div>
+              </div>
+
+              {/* Editable title */}
+              <div>
+                <label className="block text-xs font-medium text-secondary mb-1.5">
+                  Ingest Title <span className="text-tertiary">(edit if the RAWG name is wrong)</span>
+                </label>
+                <input
+                  value={editedTitle}
+                  onChange={e => setEditedTitle(e.target.value)}
+                  className={inputCls}
+                  disabled={step === "ingesting"}
+                />
+              </div>
+
+              {/* Ingest button */}
+              <button
+                onClick={handleIngest}
+                disabled={loading || step === "ingesting"}
+                className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-accent text-white font-medium text-sm hover:bg-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {step === "ingesting" ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Ingesting &amp; Enriching...
+                  </>
+                ) : (
+                  <>
+                    <Check className="w-4 h-4" />
+                    Confirm &amp; Ingest Game
+                  </>
+                )}
+              </button>
+            </div>
+          )}
+
+          {/* Status Messages */}
+          {error && (
+            <div className="flex items-start gap-2 rounded-xl bg-danger/10 border border-danger/20 px-4 py-3 text-sm text-danger">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>{error}</span>
+            </div>
+          )}
+          {success && (
+            <div className="flex items-start gap-2 rounded-xl bg-success/10 border border-success/20 px-4 py-3 text-sm text-success">
+              <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>{success}</span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ═══════════ URL MODE ═══════════ */}
+      {mode === "url" && (
+        <div className="rounded-2xl border border-border bg-surface p-5 sm:p-6 space-y-5">
           <div className="space-y-4">
             <p className="text-xs text-tertiary">
               Paste a Steam, RAWG, or IGDB URL. The title will be extracted and ingested automatically.
@@ -160,13 +487,34 @@ export default function AdminAddGamePage() {
                 value={sourceUrl}
                 onChange={e => setSourceUrl(e.target.value)}
                 placeholder="e.g. https://store.steampowered.com/app/1245620/ELDEN_RING/"
-                className="w-full rounded-xl bg-surface-2 border border-border px-4 py-2.5 text-sm text-foreground placeholder:text-tertiary focus:border-accent focus:outline-none transition-colors"
+                className={inputCls}
               />
             </div>
           </div>
-        )}
+          {error && (
+            <div className="flex items-start gap-2 rounded-xl bg-danger/10 border border-danger/20 px-4 py-3 text-sm text-danger">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" /><span>{error}</span>
+            </div>
+          )}
+          {success && (
+            <div className="flex items-start gap-2 rounded-xl bg-success/10 border border-success/20 px-4 py-3 text-sm text-success">
+              <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" /><span>{success}</span>
+            </div>
+          )}
+          <button
+            onClick={handleOtherSubmit}
+            disabled={loading}
+            className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-accent text-white font-medium text-sm hover:bg-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          >
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Link2 className="w-4 h-4" />}
+            Import from URL
+          </button>
+        </div>
+      )}
 
-        {mode === "provisional" && (
+      {/* ═══════════ PROVISIONAL MODE ═══════════ */}
+      {mode === "provisional" && (
+        <div className="rounded-2xl border border-border bg-surface p-5 sm:p-6 space-y-5">
           <div className="space-y-4">
             <p className="text-xs text-tertiary">
               Create a placeholder page for an announced or upcoming game. Data will be enriched when sources become available.
@@ -178,7 +526,7 @@ export default function AdminAddGamePage() {
                   value={form.title}
                   onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
                   placeholder="E.g. Grand Theft Auto VI"
-                  className="w-full rounded-xl bg-surface-2 border border-border px-4 py-2.5 text-sm text-foreground placeholder:text-tertiary focus:border-accent focus:outline-none transition-colors"
+                  className={inputCls}
                 />
               </div>
               <div>
@@ -189,7 +537,7 @@ export default function AdminAddGamePage() {
                   value={form.slug}
                   onChange={e => setForm(f => ({ ...f, slug: e.target.value }))}
                   placeholder={autoSlug || "auto-generated"}
-                  className="w-full rounded-xl bg-surface-2 border border-border px-4 py-2.5 text-sm text-foreground placeholder:text-tertiary focus:border-accent focus:outline-none transition-colors"
+                  className={inputCls}
                 />
               </div>
               <div>
@@ -198,7 +546,7 @@ export default function AdminAddGamePage() {
                   value={form.developer}
                   onChange={e => setForm(f => ({ ...f, developer: e.target.value }))}
                   placeholder="Studio name"
-                  className="w-full rounded-xl bg-surface-2 border border-border px-4 py-2.5 text-sm text-foreground placeholder:text-tertiary focus:border-accent focus:outline-none transition-colors"
+                  className={inputCls}
                 />
               </div>
               <div>
@@ -207,7 +555,7 @@ export default function AdminAddGamePage() {
                   value={form.publisher}
                   onChange={e => setForm(f => ({ ...f, publisher: e.target.value }))}
                   placeholder="Publisher name"
-                  className="w-full rounded-xl bg-surface-2 border border-border px-4 py-2.5 text-sm text-foreground placeholder:text-tertiary focus:border-accent focus:outline-none transition-colors"
+                  className={inputCls}
                 />
               </div>
               <div>
@@ -216,7 +564,7 @@ export default function AdminAddGamePage() {
                   type="date"
                   value={form.releaseDate}
                   onChange={e => setForm(f => ({ ...f, releaseDate: e.target.value }))}
-                  className="w-full rounded-xl bg-surface-2 border border-border px-4 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none transition-colors"
+                  className={inputCls}
                 />
               </div>
               <div>
@@ -224,7 +572,7 @@ export default function AdminAddGamePage() {
                 <select
                   value={form.releaseStatus}
                   onChange={e => setForm(f => ({ ...f, releaseStatus: e.target.value }))}
-                  className="w-full rounded-xl bg-surface-2 border border-border px-4 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none transition-colors"
+                  className={inputCls}
                 >
                   {RELEASE_STATUSES.map(s => (
                     <option key={s.value} value={s.value}>{s.label}</option>
@@ -262,7 +610,7 @@ export default function AdminAddGamePage() {
                 value={form.genres}
                 onChange={e => setForm(f => ({ ...f, genres: e.target.value }))}
                 placeholder="Action, RPG, Adventure"
-                className="w-full rounded-xl bg-surface-2 border border-border px-4 py-2.5 text-sm text-foreground placeholder:text-tertiary focus:border-accent focus:outline-none transition-colors"
+                className={inputCls}
               />
             </div>
 
@@ -273,7 +621,7 @@ export default function AdminAddGamePage() {
                 onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
                 rows={3}
                 placeholder="Brief game description..."
-                className="w-full rounded-xl bg-surface-2 border border-border px-4 py-2.5 text-sm text-foreground placeholder:text-tertiary focus:border-accent focus:outline-none transition-colors resize-none"
+                className={`${inputCls} resize-none`}
               />
             </div>
 
@@ -283,33 +631,32 @@ export default function AdminAddGamePage() {
                 value={form.coverImage}
                 onChange={e => setForm(f => ({ ...f, coverImage: e.target.value }))}
                 placeholder="https://..."
-                className="w-full rounded-xl bg-surface-2 border border-border px-4 py-2.5 text-sm text-foreground placeholder:text-tertiary focus:border-accent focus:outline-none transition-colors"
+                className={inputCls}
               />
             </div>
           </div>
-        )}
 
-        {/* Status Messages */}
-        {error && (
-          <div className="rounded-xl bg-danger/10 border border-danger/20 px-4 py-3 text-sm text-danger">
-            {error}
-          </div>
-        )}
-        {success && (
-          <div className="rounded-xl bg-success/10 border border-success/20 px-4 py-3 text-sm text-success">
-            {success}
-          </div>
-        )}
+          {error && (
+            <div className="flex items-start gap-2 rounded-xl bg-danger/10 border border-danger/20 px-4 py-3 text-sm text-danger">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" /><span>{error}</span>
+            </div>
+          )}
+          {success && (
+            <div className="flex items-start gap-2 rounded-xl bg-success/10 border border-success/20 px-4 py-3 text-sm text-success">
+              <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" /><span>{success}</span>
+            </div>
+          )}
 
-        {/* Submit */}
-        <button
-          onClick={handleSubmit}
-          disabled={loading}
-          className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-accent text-white font-medium text-sm hover:bg-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {loading ? "Processing..." : mode === "lookup" ? "Search & Ingest" : mode === "url" ? "Import from URL" : "Create Provisional Page"}
-        </button>
-      </div>
+          <button
+            onClick={handleOtherSubmit}
+            disabled={loading}
+            className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-accent text-white font-medium text-sm hover:bg-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          >
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileEdit className="w-4 h-4" />}
+            Create Provisional Page
+          </button>
+        </div>
+      )}
     </div>
   );
 }
