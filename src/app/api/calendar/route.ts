@@ -13,7 +13,14 @@ import type { GameRow } from "@/lib/supabase/types";
 export async function GET(request: NextRequest) {
   const params = request.nextUrl.searchParams;
   const month = params.get("month"); // YYYY-MM
-  const limit = parseInt(params.get("limit") ?? "50", 10);
+  const rawLimit = parseInt(params.get("limit") ?? "50", 10);
+  const limit = Number.isFinite(rawLimit) && rawLimit > 0 ? Math.min(rawLimit, 200) : 50;
+
+  // Validate month format
+  if (month && !/^\d{4}-\d{2}$/.test(month)) {
+    const { jsonBadRequest } = await import("@/lib/api/response");
+    return jsonBadRequest("Invalid month format. Expected YYYY-MM.");
+  }
 
   try {
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
@@ -48,7 +55,7 @@ export async function GET(request: NextRequest) {
     const { data, error } = await query as { data: GameRow[] | null; error: unknown };
     if (error) throw error;
 
-    return jsonOk((data ?? []).map(mapGameRow));
+    return jsonOk((data ?? []).map(mapGameRow), 200, { cache: true });
   } catch (err) {
     console.error("[API] /calendar error:", err);
     return jsonOk([]);

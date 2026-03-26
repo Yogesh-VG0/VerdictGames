@@ -65,7 +65,7 @@ export async function GET(_request: NextRequest) {
       return mapListRow(list, orderedGames);
     });
 
-    return jsonOk(results);
+    return jsonOk(results, 200, { cache: true });
   } catch (err) {
     console.error("[API] /lists error:", err);
     return jsonOk([]);

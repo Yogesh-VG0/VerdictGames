@@ -16,7 +16,8 @@ export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const sort = searchParams.get("sort") ?? "newest";
   const platform = searchParams.get("platform") ?? "All";
-  const page = parseInt(searchParams.get("page") ?? "1", 10);
+  const rawPage = parseInt(searchParams.get("page") ?? "1", 10);
+  const page = Number.isFinite(rawPage) && rawPage > 0 ? Math.min(rawPage, 100) : 1;
 
   try {
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
@@ -70,7 +71,7 @@ export async function GET(request: NextRequest) {
       hasMore: start + PAGE_SIZE < (count ?? 0),
     };
 
-    return jsonOk(result);
+    return jsonOk(result, 200, { cache: true });
   } catch (err) {
     console.error("[API] /reviews error:", err);
     const empty: PaginatedResponse<Review> = { items: [], total: 0, page, pageSize: PAGE_SIZE, hasMore: false };

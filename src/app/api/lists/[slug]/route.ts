@@ -58,7 +58,7 @@ export async function GET(
         .filter(Boolean) as ReturnType<typeof mapGameRow>[];
     }
 
-    return jsonOk(mapListRow(list, games));
+    return jsonOk(mapListRow(list, games), 200, { cache: true });
   } catch (err) {
     console.error(`[API] /lists/${slug} error:`, err);
     return jsonNotFound("List");

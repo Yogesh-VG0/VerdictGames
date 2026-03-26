@@ -13,7 +13,8 @@ import { confidenceWeightedScore, isQualityGame } from "@/lib/utils/quality";
 import type { GameRow } from "@/lib/supabase/types";
 
 export async function GET(request: NextRequest) {
-  const limit = parseInt(request.nextUrl.searchParams.get("limit") ?? "8", 10);
+  const rawLimit = parseInt(request.nextUrl.searchParams.get("limit") ?? "8", 10);
+  const limit = Number.isFinite(rawLimit) && rawLimit > 0 ? Math.min(rawLimit, 50) : 8;
 
   try {
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
@@ -133,7 +134,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    return jsonOk(picks.map(mapGameRow));
+    return jsonOk(picks.map(mapGameRow), 200, { cache: true });
   } catch (err) {
     console.error("[API] /recommendations error:", err);
     return jsonOk([]);

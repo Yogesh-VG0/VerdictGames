@@ -21,14 +21,15 @@ const PAGE_SIZE = 25;
 export async function GET(request: NextRequest) {
   const params = request.nextUrl.searchParams;
   const rawQ = params.get("q") ?? "";
-  // Sanitize: strip characters that could break PostgREST .or() syntax
-  const q = rawQ.replace(/[%_(),.;'"\\]/g, "").trim();
+  // Sanitize: strip characters that could break PostgREST .or()/.cs.{} syntax
+  const q = rawQ.replace(/[%_(),.;'"\\|{}\[\]]/g, "").trim().slice(0, 200);
   const platform = params.get("platform") ?? "All";
   const genre = params.get("genre") ?? "";
   const year = params.get("year") ?? "";
   const monetization = params.get("monetization") ?? "All";
   const sort = (params.get("sort") ?? "relevance") as SortOption;
-  const page = parseInt(params.get("page") ?? "1", 10);
+  const rawPage = parseInt(params.get("page") ?? "1", 10);
+  const page = Number.isFinite(rawPage) && rawPage > 0 ? Math.min(rawPage, 100) : 1;
 
   try {
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
@@ -269,7 +270,7 @@ export async function GET(request: NextRequest) {
       hasMore: start + PAGE_SIZE < total,
     };
 
-    return jsonOk(paginatedResult);
+    return jsonOk(paginatedResult, 200, { cache: true });
   } catch (err) {
     console.error("[API] /search error:", err);
     const empty: PaginatedResponse<Game> = { items: [], total: 0, page, pageSize: PAGE_SIZE, hasMore: false };

@@ -15,10 +15,11 @@ export async function GET(request: NextRequest) {
       return jsonOk([], 200, { cache: true });
     }
 
-    const limit = parseInt(
+    const rawLimit = parseInt(
       request.nextUrl.searchParams.get("limit") ?? "16",
       10
     );
+    const limit = Number.isFinite(rawLimit) && rawLimit > 0 ? Math.min(rawLimit, 50) : 16;
 
     const games = await fetchTopRated(limit);
     return jsonOk(games, 200, { cache: true });
