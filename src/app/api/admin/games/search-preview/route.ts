@@ -22,11 +22,17 @@ export async function GET(request: NextRequest) {
   const q = request.nextUrl.searchParams.get("q")?.trim();
   if (!q) return jsonBadRequest("Missing query parameter ?q=");
 
-  // Search all sources in parallel — never let one failure block others
+  // Optional source filter: "rawg", "google_play", "app_store", or omit for all
+  const sourceParam = request.nextUrl.searchParams.get("source")?.trim() || "all";
+  const wantRawg = sourceParam === "all" || sourceParam === "rawg";
+  const wantGplay = sourceParam === "all" || sourceParam === "google_play";
+  const wantAppStore = sourceParam === "all" || sourceParam === "app_store";
+
+  // Only search requested sources — avoids wasted API calls
   const [rawgResult, gplayResult, appStoreResult] = await Promise.allSettled([
-    searchRawg(q, 1, 8),
-    searchGooglePlay(q, 6).catch(() => []),
-    searchAppStore(q, 6).catch(() => []),
+    wantRawg ? searchRawg(q, 1, 8) : Promise.resolve({ results: [], count: 0, next: null, previous: null } as Awaited<ReturnType<typeof searchRawg>>),
+    wantGplay ? searchGooglePlay(q, 6).catch(() => []) : Promise.resolve([]),
+    wantAppStore ? searchAppStore(q, 6).catch(() => []) : Promise.resolve([]),
   ]);
 
   const rawgResults = rawgResult.status === "fulfilled" ? rawgResult.value.results : [];

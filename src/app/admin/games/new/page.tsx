@@ -54,6 +54,7 @@ export default function AdminAddGamePage() {
 
   // Lookup mode
   const [lookupTitle, setLookupTitle] = useState("");
+  const [searchSource, setSearchSource] = useState<"all" | CandidateSource>("all");
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
   const [editedTitle, setEditedTitle] = useState("");
@@ -85,7 +86,8 @@ export default function AdminAddGamePage() {
     setCandidates([]);
     setSourceFilter(null);
     try {
-      const res = await fetch(`/api/admin/games/search-preview?q=${encodeURIComponent(lookupTitle.trim())}`);
+      const sourceParam = searchSource !== "all" ? `&source=${searchSource}` : "";
+      const res = await fetch(`/api/admin/games/search-preview?q=${encodeURIComponent(lookupTitle.trim())}${sourceParam}`);
       const json = await res.json();
       if (!res.ok) { setError(json.error || "Search failed"); setLoading(false); return; }
       const list: Candidate[] = json.data?.candidates ?? [];
@@ -97,7 +99,7 @@ export default function AdminAddGamePage() {
     } finally {
       setLoading(false);
     }
-  }, [lookupTitle]);
+  }, [lookupTitle, searchSource]);
 
   // Source filter for candidates list
   const [sourceFilter, setSourceFilter] = useState<CandidateSource | null>(null);
@@ -269,14 +271,40 @@ export default function AdminAddGamePage() {
           {step === "search" && (
             <div className="space-y-4">
               <p className="text-xs text-tertiary">
-                Search by title across RAWG, Google Play &amp; App Store. You&apos;ll verify the match before ingesting.
+                Search by title across RAWG, Google Play &amp; App Store. Pick a source to narrow results.
               </p>
+
+              {/* Source selector chips */}
+              <div className="flex flex-wrap gap-1.5">
+                {([
+                  { value: "all", label: "All Sources", icon: <Search className="w-3 h-3" /> },
+                  { value: "rawg", label: "RAWG", icon: <Gamepad2 className="w-3 h-3" /> },
+                  { value: "google_play", label: "Google Play", icon: <Smartphone className="w-3 h-3" /> },
+                  { value: "app_store", label: "App Store", icon: <Store className="w-3 h-3" /> },
+                ] as { value: "all" | CandidateSource; label: string; icon: React.ReactNode }[]).map((s) => (
+                  <button
+                    key={s.value}
+                    onClick={() => setSearchSource(s.value)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all flex items-center gap-1.5 ${
+                      searchSource === s.value
+                        ? s.value === "rawg" ? "bg-blue-500/20 border-blue-500/40 text-blue-400"
+                          : s.value === "google_play" ? "bg-green-500/20 border-green-500/40 text-green-400"
+                          : s.value === "app_store" ? "bg-sky-500/20 border-sky-500/40 text-sky-400"
+                          : "bg-accent/20 border-accent/40 text-accent"
+                        : "bg-surface-2 border-border text-tertiary hover:text-secondary"
+                    }`}
+                  >
+                    {s.icon} {s.label}
+                  </button>
+                ))}
+              </div>
+
               <div className="flex gap-2">
                 <input
                   value={lookupTitle}
                   onChange={e => setLookupTitle(e.target.value)}
                   onKeyDown={e => e.key === "Enter" && handleSearch()}
-                  placeholder="e.g. Elden Ring, Offroad League Online, Clash Royale"
+                  placeholder={searchSource === "google_play" ? "e.g. Offroad League Online, Clash Royale" : searchSource === "app_store" ? "e.g. Genshin Impact, Alto\u2019s Odyssey" : searchSource === "rawg" ? "e.g. Elden Ring, Hollow Knight" : "e.g. Elden Ring, Offroad League Online"}
                   className={`${inputCls} flex-1`}
                   autoFocus
                 />
