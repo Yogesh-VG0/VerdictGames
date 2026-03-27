@@ -96,3 +96,44 @@ export function platformVariant(platform: string): "accent" | "success" | "warni
   if (platform === "Android" || platform === "iOS") return "muted";
   return "default";
 }
+
+/** Format cents to a dollar string like "$29.99". */
+export function formatPrice(cents: number | undefined, currency = "USD"): string | null {
+  if (cents === undefined || cents === null) return null;
+  if (cents === 0) return "Free";
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency,
+    minimumFractionDigits: 2,
+  }).format(cents / 100);
+}
+
+/** CSS glow class for score tier. */
+export function scoreGlowClass(score: number): string {
+  if (score >= 80) return "score-glow-great";
+  if (score >= 65) return "score-glow-good";
+  if (score >= 45) return "score-glow-mixed";
+  return "score-glow-bad";
+}
+
+/** Human-readable label for score source. */
+export function sourceLabel(source?: string): string | null {
+  if (!source || source === "blended") return null;
+  if (source === "steam") return "Steam";
+  if (source === "igdb") return "IGDB";
+  if (source === "metacritic") return "Critic";
+  if (source === "rawg") return "RAWG";
+  return null;
+}
+
+/** Format a timestamp to "Xh ago" / "Xm ago" / "Xd ago". */
+export function formatTimeAgo(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  return `${days}d ago`;
+}

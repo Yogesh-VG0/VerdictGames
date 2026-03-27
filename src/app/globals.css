@@ -681,3 +681,69 @@ select option {
   color: #0f172a;
 }
 
+/* ═══════════════════════════════════════════════════
+   Custom Range Slider — Touch-friendly
+   ═══════════════════════════════════════════════════ */
+
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 8px;
+  border-radius: 9999px;
+  outline: none;
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--vg-accent);
+  border: 3px solid var(--vg-surface);
+  box-shadow: 0 0 0 2px var(--vg-accent-glow), 0 2px 8px rgba(0, 0, 0, 0.3);
+  cursor: grab;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+  box-shadow: 0 0 0 4px var(--vg-accent-glow), 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+input[type="range"]::-webkit-slider-thumb:active {
+  cursor: grabbing;
+  transform: scale(1.1);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--vg-accent);
+  border: 3px solid var(--vg-surface);
+  box-shadow: 0 0 0 2px var(--vg-accent-glow), 0 2px 8px rgba(0, 0, 0, 0.3);
+  cursor: grab;
+}
+
+input[type="range"]::-moz-range-thumb:hover {
+  transform: scale(1.15);
+}
+
+/* ═══════════════════════════════════════════════════
+   Motion Tokens
+   Standardized durations and easings for consistency.
+   ═══════════════════════════════════════════════════ */
+
+:root {
+  --motion-fast: 150ms;
+  --motion-normal: 300ms;
+  --motion-slow: 500ms;
+  --motion-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --motion-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --navbar-height: 56px;
+  --bottom-nav-height: 56px;
+}
+

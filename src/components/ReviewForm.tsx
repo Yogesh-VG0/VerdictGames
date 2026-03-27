@@ -8,6 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import PixelButton from "@/components/ui/PixelButton";
 import PlatformIcon from "@/components/ui/PlatformIcon";
+import { useToast } from "@/components/ui/Toast";
 
 interface ReviewFormProps {
   gameId: string;
@@ -21,6 +22,7 @@ const PLATFORMS = ["PC", "PlayStation 5", "PlayStation 4", "Xbox Series X|S", "X
 export default function ReviewForm({ gameId, gameSlug, onAuthRequired, onSuccess }: ReviewFormProps) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const { addToast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
 
   const [rating, setRating] = useState(75);
@@ -42,6 +44,7 @@ export default function ReviewForm({ gameId, gameSlug, onAuthRequired, onSuccess
       setConsText("");
       setRating(75);
       setError("");
+      addToast("Review submitted successfully!", "success");
       onSuccess?.();
     },
     onError: () => setError("Failed to submit review. Please try again."),
@@ -99,7 +102,7 @@ export default function ReviewForm({ gameId, gameSlug, onAuthRequired, onSuccess
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.3 }}
             onSubmit={handleSubmit}
-            className="overflow-hidden rounded-2xl border border-white/[0.08] bg-surface p-5 space-y-4"
+            className="overflow-hidden rounded-2xl border border-border bg-surface p-5 space-y-4"
           >
             <div className="flex items-center justify-between">
               <h4 className="text-sm font-bold text-foreground uppercase tracking-wider">
@@ -149,7 +152,7 @@ export default function ReviewForm({ gameId, gameSlug, onAuthRequired, onSuccess
                       "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all border",
                       platform === p
                         ? "bg-accent/10 border-accent/30 text-accent"
-                        : "bg-white/5 border-white/[0.08] text-secondary hover:text-foreground"
+                        : "bg-surface-2 border-border text-secondary hover:text-foreground"
                     )}
                   >
                     <PlatformIcon platform={p} size={14} />
@@ -168,7 +171,7 @@ export default function ReviewForm({ gameId, gameSlug, onAuthRequired, onSuccess
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="Sum up your experience..."
                 maxLength={200}
-                className="w-full h-10 px-3 text-sm rounded-xl bg-white/5 border border-white/[0.08] text-foreground placeholder:text-tertiary focus:outline-none focus:border-accent/50 transition-all"
+                className="w-full h-10 px-3 text-sm rounded-xl bg-surface-2 border border-border text-foreground placeholder:text-tertiary focus:outline-none focus:border-accent/50 transition-all"
               />
             </div>
 
@@ -181,7 +184,7 @@ export default function ReviewForm({ gameId, gameSlug, onAuthRequired, onSuccess
                 placeholder="Share your thoughts..."
                 rows={4}
                 maxLength={5000}
-                className="w-full px-3 py-2.5 text-sm rounded-xl bg-white/5 border border-white/[0.08] text-foreground placeholder:text-tertiary focus:outline-none focus:border-accent/50 transition-all resize-y"
+                className="w-full px-3 py-2.5 text-sm rounded-xl bg-surface-2 border border-border text-foreground placeholder:text-tertiary focus:outline-none focus:border-accent/50 transition-all resize-y"
               />
             </div>
 
@@ -194,7 +197,7 @@ export default function ReviewForm({ gameId, gameSlug, onAuthRequired, onSuccess
                   onChange={(e) => setProsText(e.target.value)}
                   placeholder="Great combat&#10;Beautiful graphics"
                   rows={3}
-                  className="w-full px-3 py-2 text-sm rounded-xl bg-white/5 border border-success/20 text-foreground placeholder:text-tertiary focus:outline-none focus:border-success/50 transition-all resize-y"
+                  className="w-full px-3 py-2 text-sm rounded-xl bg-surface-2 border border-success/20 text-foreground placeholder:text-tertiary focus:outline-none focus:border-success/50 transition-all resize-y"
                 />
               </div>
               <div className="space-y-1.5">
@@ -204,7 +207,7 @@ export default function ReviewForm({ gameId, gameSlug, onAuthRequired, onSuccess
                   onChange={(e) => setConsText(e.target.value)}
                   placeholder="Short story&#10;Buggy multiplayer"
                   rows={3}
-                  className="w-full px-3 py-2 text-sm rounded-xl bg-white/5 border border-danger/20 text-foreground placeholder:text-tertiary focus:outline-none focus:border-danger/50 transition-all resize-y"
+                  className="w-full px-3 py-2 text-sm rounded-xl bg-surface-2 border border-danger/20 text-foreground placeholder:text-tertiary focus:outline-none focus:border-danger/50 transition-all resize-y"
                 />
               </div>
             </div>

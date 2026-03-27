@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useRef, useState, useEffect, useCallback } from "react";
+import { useRef, useState, useEffect, useCallback, type KeyboardEvent as ReactKbEvent } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -55,7 +55,7 @@ export default function NavbarTop() {
     closeDropdown();
   }, [pathname, closeDropdown]);
 
-  const allNavLinks = [
+  const navLinks = [
     { href: "/", label: "Home", icon: <Home className="w-4 h-4" /> },
     { href: "/explore", label: "Explore", icon: <Sparkles className="w-4 h-4" /> },
     { href: "/search", label: "Browse", icon: <Flame className="w-4 h-4" /> },
@@ -75,6 +75,38 @@ export default function NavbarTop() {
     setProfileDropdownOpen(false);
   }, [signOut]);
 
+  // Body scroll lock for sidebar
+  useEffect(() => {
+    if (sidebarOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => { document.body.style.overflow = ""; };
+  }, [sidebarOpen]);
+
+  // Focus trap helper
+  const trapFocus = useCallback((e: React.KeyboardEvent, containerRef: React.RefObject<HTMLDivElement | null>) => {
+    if (e.key === "Escape") return; // let escape handlers run
+    if (e.key !== "Tab" || !containerRef.current) return;
+    const focusable = containerRef.current.querySelectorAll<HTMLElement>(
+      'a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    );
+    if (focusable.length === 0) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  }, []);
+
+  const sidebarRef = useRef<HTMLDivElement>(null);
+  const signOutDialogRef = useRef<HTMLDivElement>(null);
+
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
     if (query.trim()) {
@@ -83,14 +115,6 @@ export default function NavbarTop() {
     }
   }
 
-  const navLinks = [
-    { href: "/", label: "Home" },
-    { href: "/explore", label: "Explore" },
-    { href: "/search", label: "Browse" },
-    { href: "/reviews", label: "Reviews" },
-    { href: "/calendar", label: "Calendar" },
-    { href: "/lists", label: "Lists" },
-  ];
 
   return (
     <>
@@ -174,6 +198,14 @@ export default function NavbarTop() {
             />
             {/* Drawer */}
             <motion.div
+              ref={sidebarRef}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Navigation menu"
+              onKeyDown={(e) => {
+                if (e.key === "Escape") setSidebarOpen(false);
+                trapFocus(e, sidebarRef);
+              }}
               initial={{ x: "100%" }}
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
@@ -221,7 +253,7 @@ export default function NavbarTop() {
               {/* Navigation links */}
               <div className="py-2">
                 <p className="px-4 py-2 text-[10px] uppercase tracking-wider text-tertiary font-medium">Browse</p>
-                {allNavLinks.map((link) => {
+                {navLinks.map((link) => {
                   let isActive: boolean;
                   if (link.href === "/") {
                     isActive = pathname === "/";
@@ -351,6 +383,7 @@ export default function NavbarTop() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search games..."
+              aria-label="Search games"
               className="w-full h-9 pl-9 pr-3 text-sm rounded-xl bg-surface-2 border border-border text-foreground placeholder:text-tertiary focus:outline-none focus:border-accent/40 focus:bg-elevated transition-all"
             />
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-tertiary" />
@@ -461,6 +494,14 @@ export default function NavbarTop() {
               onClick={() => setSignOutConfirmOpen(false)}
             />
             <motion.div
+              ref={signOutDialogRef}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Sign out confirmation"
+              onKeyDown={(e) => {
+                if (e.key === "Escape") setSignOutConfirmOpen(false);
+                trapFocus(e, signOutDialogRef);
+              }}
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}

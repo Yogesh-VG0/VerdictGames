@@ -6,13 +6,17 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { getRawgList, type RawgListGameItem, type RawgListType } from "@/lib/api";
 import PlatformIcon from "@/components/ui/PlatformIcon";
+import Image from "next/image";
 import { Flame, Trophy, Clock, Star, Gamepad2, Users, TrendingUp } from "lucide-react";
 import Pagination from "@/components/ui/Pagination";
 import { cn } from "@/lib/utils";
 
+const CURRENT_YEAR = new Date().getFullYear();
+const LAST_YEAR = CURRENT_YEAR - 1;
+
 const TABS = [
-  { id: "best-of-year" as RawgListType, label: "Most Anticipated", icon: Flame, desc: "Most hyped games of 2026" },
-  { id: "popular-in-year" as RawgListType, label: "Best of 2025", icon: Trophy, desc: "Top games from last year" },
+  { id: "best-of-year" as RawgListType, label: "Most Anticipated", icon: Flame, desc: `Most hyped games of ${CURRENT_YEAR}` },
+  { id: "popular-in-year" as RawgListType, label: `Best of ${LAST_YEAR}`, icon: Trophy, desc: `Top games from ${LAST_YEAR}` },
   { id: "all-time" as RawgListType, label: "All-Time Top 250", icon: Star, desc: "Greatest games ever made" },
   { id: "recent" as RawgListType, label: "New Releases", icon: Clock, desc: "Released in the last 30 days" },
   { id: "genre" as RawgListType, label: "Browse by Genre", icon: Gamepad2, desc: "Explore games by genre" },
@@ -67,11 +71,12 @@ function GameCard({ game, rank }: { game: RawgListGameItem; rank?: number }) {
       {/* Image */}
       <div className="relative aspect-[16/9] overflow-hidden bg-surface-2">
         {game.image ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <Image
             src={game.image}
             alt={game.name}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            fill
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
+            className="object-cover group-hover:scale-105 transition-transform duration-500"
             loading="lazy"
           />
         ) : (
@@ -166,7 +171,7 @@ export default function ExplorePage() {
     queryFn: () => getRawgList(activeTab, {
       page,
       pageSize: 20,
-      year: activeTab === "popular-in-year" ? 2025 : undefined,
+      year: activeTab === "popular-in-year" ? LAST_YEAR : undefined,
       genre: activeTab === "genre" ? selectedGenre : undefined,
     }),
     staleTime: 60_000,

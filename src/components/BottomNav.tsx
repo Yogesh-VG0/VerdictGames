@@ -40,7 +40,9 @@ export default function BottomNav() {
     { href: "/", label: "Home", icon: Home },
     { href: "/explore", label: "Explore", icon: Compass },
     { href: "/search", label: "Search", icon: Search },
-    { href: "/library", label: "Library", icon: Gamepad2 },
+    ...(user
+      ? [{ href: "/library", label: "Library", icon: Gamepad2 }]
+      : [{ href: "/deals", label: "Deals", icon: Gamepad2 }]),
     {
       href: user ? `/profile/${user.username}` : "/about",
       label: user ? "Profile" : "More",

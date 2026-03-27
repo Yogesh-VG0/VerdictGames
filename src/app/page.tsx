@@ -47,6 +47,7 @@ const DISCOVER_TABS: { label: string; value: DiscoverTab; icon: React.ReactNode 
 export default function HomePage() {
   const { user } = useAuth();
   const [discoverTab, setDiscoverTab] = useState<DiscoverTab>("new");
+  const [newsExpanded, setNewsExpanded] = useState(false);
 
   // ── Single homepage aggregator call ──
   const homepage = useQuery({
@@ -200,7 +201,7 @@ export default function HomePage() {
                 href="/explore"
                 linkLabel="See all"
                 icon={<Rocket className="w-5 h-5" />}
-                subtitle="The most hyped upcoming games based on community interest"
+                subtitle={`The most hyped upcoming games of ${new Date().getFullYear()} and beyond`}
                 gradient="linear-gradient(90deg, #06b6d4 0%, #3b82f6 25%, #8b5cf6 50%, #06b6d4 75%, #3b82f6 100%)"
               />
               <HorizontalScroll>
@@ -214,11 +215,12 @@ export default function HomePage() {
                       <Link href={`/game/${game.slug}?rawgId=${game.rawgId}`} className="block group">
                         <div className="relative aspect-[16/9] rounded-2xl overflow-hidden border border-border bg-surface-2 group-hover:border-accent/40 transition-all">
                           {game.image ? (
-                            /* eslint-disable-next-line @next/next/no-img-element */
-                            <img
+                            <Image
                               src={game.image}
                               alt={game.name}
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                              fill
+                              sizes="(max-width: 640px) 80vw, (max-width: 1024px) 40vw, 320px"
+                              className="object-cover group-hover:scale-105 transition-transform duration-500"
                               loading="lazy"
                             />
                           ) : (
@@ -509,6 +511,8 @@ export default function HomePage() {
                   icon={<Newspaper className="w-5 h-5" />}
                   subtitle="Trending stories from top gaming outlets"
                   gradient="linear-gradient(90deg, #14b8a6 0%, #06b6d4 25%, #3b82f6 50%, #06b6d4 75%, #14b8a6 100%)"
+                  href="https://gx.games/news"
+                  linkLabel="View all news"
                 />
                 {/* 2-column editorial layout: 2 featured + compact stack */}
                 {(() => {
@@ -573,7 +577,7 @@ export default function HomePage() {
 
                       {/* Right column: compact stacked articles — hide overflow on mobile via CSS */}
                       {rest.length > 0 && (
-                        <div className="lg:col-span-7 space-y-2 max-h-[320px] lg:max-h-none overflow-hidden">
+                        <div className={cn("lg:col-span-7 space-y-2 lg:max-h-none overflow-hidden transition-all duration-300", newsExpanded ? "max-h-none" : "max-h-[320px]")}>
                           {rest.map((article, i) => (
                             <motion.a
                               key={article.id}
@@ -621,6 +625,15 @@ export default function HomePage() {
                           ))}
                         </div>
                       )}
+                      {/* Show more button for mobile when news is truncated */}
+                      {rest.length > 4 && !newsExpanded && (
+                        <button
+                          onClick={() => setNewsExpanded(true)}
+                          className="lg:hidden w-full mt-3 py-2.5 rounded-xl border border-border bg-surface text-sm font-medium text-secondary hover:text-foreground hover:border-accent/30 transition-all"
+                        >
+                          Show more stories
+                        </button>
+                      )}
                     </div>
                   );
                 })()}
@@ -663,63 +676,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── Footer ── */}
-      <footer className="border-t border-border bg-surface/50">
-        <div className="max-w-[1400px] mx-auto px-4 py-12">
-          <FadeInSection>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-              <div className="md:col-span-1">
-                <p className="text-lg font-bold">
-                  <span className="gradient-text">VERDICT</span>
-                  <span className="text-secondary font-light">.games</span>
-                </p>
-                <p className="text-xs text-tertiary mt-2 leading-relaxed">
-                  Your trusted source for honest game verdicts. Data-driven reviews powered by 7 sources.
-                </p>
-              </div>
-              <div>
-                <h4 className="text-xs font-semibold text-secondary uppercase tracking-wider mb-3">Browse</h4>
-                <ul className="space-y-2 text-sm text-tertiary">
-                  <li><Link href="/search?sort=trending" className="hover:text-accent transition-colors">Trending</Link></li>
-                  <li><Link href="/search?sort=newest" className="hover:text-accent transition-colors">New Releases</Link></li>
-                  <li><Link href="/search?sort=top-rated" className="hover:text-accent transition-colors">Top Rated</Link></li>
-                  <li><Link href="/deals" className="hover:text-accent transition-colors">Deals</Link></li>
-                  <li><Link href="/free-to-play" className="hover:text-accent transition-colors">Free to Play</Link></li>
-                  <li><Link href="/calendar" className="hover:text-accent transition-colors">Upcoming</Link></li>
-                </ul>
-              </div>
-              <div>
-                <h4 className="text-xs font-semibold text-secondary uppercase tracking-wider mb-3">Platforms</h4>
-                <ul className="space-y-2 text-sm text-tertiary">
-                  <li><Link href="/search?platform=PC" className="hover:text-accent transition-colors">PC</Link></li>
-                  <li><Link href="/search?platform=PlayStation+5" className="hover:text-accent transition-colors">PlayStation 5</Link></li>
-                  <li><Link href="/search?platform=Xbox+Series+X%7CS" className="hover:text-accent transition-colors">Xbox Series X|S</Link></li>
-                  <li><Link href="/search?platform=Nintendo+Switch" className="hover:text-accent transition-colors">Nintendo Switch</Link></li>
-                  <li><Link href="/search?platform=Android" className="hover:text-accent transition-colors">Android</Link></li>
-                </ul>
-              </div>
-              <div>
-                <h4 className="text-xs font-semibold text-secondary uppercase tracking-wider mb-3">About</h4>
-                <ul className="space-y-2 text-sm text-tertiary">
-                  <li><Link href="/about" className="hover:text-accent transition-colors">About Us</Link></li>
-                  <li><Link href="/reviews" className="hover:text-accent transition-colors">Community Reviews</Link></li>
-                  <li><Link href="/compare" className="hover:text-accent transition-colors">Compare Games</Link></li>
-                  <li><Link href="/privacy" className="hover:text-accent transition-colors">Privacy Policy</Link></li>
-                  <li><Link href="/terms" className="hover:text-accent transition-colors">Terms of Service</Link></li>
-                </ul>
-              </div>
-            </div>
-            <div className="mt-8 pt-6 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-4">
-              <p className="text-[11px] text-tertiary">
-                © {new Date().getFullYear()} verdict.games — Data from RAWG, Steam, IGDB, CheapShark, Wikipedia, HLTB & GX Corner.
-              </p>
-              <p className="text-[10px] text-tertiary">
-                All game titles, trademarks, and copyrights belong to their respective owners.
-              </p>
-            </div>
-          </FadeInSection>
-        </div>
-      </footer>
     </div>
   );
 }

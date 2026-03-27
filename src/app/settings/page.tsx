@@ -6,7 +6,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getUserProfile } from "@/lib/api";
 import GradientText from "@/components/ui/GradientText";
-import { Settings } from "lucide-react";
+import { Settings, AlertCircle } from "lucide-react";
+import { useToast } from "@/components/ui/Toast";
 
 const GENRE_OPTIONS = [
   "Action", "Adventure", "RPG", "Strategy", "Simulation",
@@ -20,6 +21,8 @@ export default function SettingsPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { addToast } = useToast();
+  const [avatarError, setAvatarError] = useState("");
 
   const { data: profile, isLoading } = useQuery({
     queryKey: ["user", user?.username],
@@ -33,6 +36,23 @@ export default function SettingsPage() {
   const [avatarPreview, setAvatarPreview] = useState("");
   const [avatarFile, setAvatarFile] = useState<{ base64: string; contentType: string } | null>(null);
   const [saved, setSaved] = useState(false);
+
+  // Track dirty state for unsaved changes warning
+  const isDirty = profile ? (
+    displayName !== (profile.displayName ?? "") ||
+    bio !== (profile.bio ?? "") ||
+    JSON.stringify(favoriteGenres) !== JSON.stringify(profile.favoriteGenres ?? []) ||
+    avatarFile !== null
+  ) : false;
+
+  useEffect(() => {
+    if (!isDirty) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [isDirty]);
 
   // Initialize form from profile data — moved to useEffect
   useEffect(() => {
@@ -88,6 +108,7 @@ export default function SettingsPage() {
       queryClient.invalidateQueries({ queryKey: ["user", user?.username] });
       setAvatarFile(null); // Clear pending upload
       setSaved(true);
+      addToast("Settings saved successfully!", "success");
       setTimeout(() => setSaved(false), 3000);
       // Refresh auth context so navbar/profile updates immediately
       await refreshUser();
@@ -98,9 +119,10 @@ export default function SettingsPage() {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 2 * 1024 * 1024) {
-      alert("Image must be under 2MB");
+      setAvatarError("Image must be under 2MB. Please choose a smaller file.");
       return;
     }
+    setAvatarError("");
 
     const reader = new FileReader();
     reader.onload = () => {
@@ -207,6 +229,12 @@ export default function SettingsPage() {
             className="hidden"
           />
         </div>
+        {avatarError && (
+          <div className="flex items-center gap-2 rounded-xl bg-danger/10 border border-danger/20 px-3 py-2 text-xs text-danger">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <span>{avatarError}</span>
+          </div>
+        )}
       </div>
 
       {/* Profile Info */}
@@ -222,6 +250,7 @@ export default function SettingsPage() {
             placeholder="Your display name"
             className="w-full rounded-xl bg-surface-2 border border-border px-4 py-2.5 text-sm text-foreground placeholder:text-tertiary focus:border-accent focus:outline-none transition-colors"
           />
+          <p className="text-right text-[10px] text-tertiary mt-1">{displayName.length}/50</p>
         </div>
 
         <div>
@@ -278,11 +307,29 @@ export default function SettingsPage() {
           View Profile
         </button>
         {saved && (
-          <span className="text-sm text-success font-medium animate-pulse">✓ Saved!</span>
+          <span className="text-sm text-success font-medium animate-fade-in">✓ Saved!</span>
         )}
         {saveMutation.isError && (
           <span className="text-sm text-danger">{(saveMutation.error as Error).message}</span>
         )}
+      </div>
+
+      {/* Danger Zone */}
+      <div className="rounded-2xl border border-danger/20 bg-danger/5 p-5 sm:p-6 space-y-3">
+        <h2 className="text-sm font-bold text-danger uppercase tracking-wider">Danger Zone</h2>
+        <p className="text-xs text-secondary leading-relaxed">
+          Permanently delete your account and all associated data including reviews, library, and profile information. This action cannot be undone.
+        </p>
+        <button
+          onClick={() => {
+            if (window.confirm("Are you sure you want to delete your account? This action is permanent and cannot be undone.")) {
+              addToast("Please contact support@verdict.games to complete account deletion.", "info", 8000);
+            }
+          }}
+          className="px-4 py-2 rounded-xl border border-danger/30 text-danger text-sm font-medium hover:bg-danger/10 transition-colors"
+        >
+          Delete Account
+        </button>
       </div>
     </div>
   );

@@ -10,16 +10,7 @@ import PixelButton from "@/components/ui/PixelButton";
 import PlatformIcon from "@/components/ui/PlatformIcon";
 import HeroImage from "@/components/ui/HeroImage";
 import { collapsePlatforms } from "@/lib/utils/platform";
-import { cn } from "@/lib/utils";
-
-function sourceLabel(source?: string): string | null {
-  if (!source || source === "blended") return null;
-  if (source === "steam") return "Steam";
-  if (source === "igdb") return "IGDB";
-  if (source === "metacritic") return "Critic";
-  if (source === "rawg") return "RAWG";
-  return null;
-}
+import { cn, sourceLabel } from "@/lib/utils";
 
 interface HeroCarouselProps {
   games: Game[];
@@ -131,6 +122,18 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
     setIsPaused((p) => !p);
   }, []);
 
+  // Keyboard navigation (left/right arrows)
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === "ArrowLeft") {
+      paginate(-1);
+    } else if (e.key === "ArrowRight") {
+      paginate(1);
+    } else if (e.key === " " || e.key === "Spacebar") {
+      e.preventDefault();
+      setIsPaused((p) => !p);
+    }
+  }, [paginate]);
+
   // Auto-advance
   useEffect(() => {
     if (isPaused || slideCount <= 1) return;
@@ -155,8 +158,13 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
   return (
     <section
       ref={containerRef}
-      className="relative overflow-hidden group"
+      className="relative overflow-hidden group outline-none"
       style={{ perspective: "1200px" }}
+      tabIndex={0}
+      role="region"
+      aria-roledescription="carousel"
+      aria-label="Featured games"
+      onKeyDown={handleKeyDown}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
@@ -165,7 +173,7 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
 
       {/* Background images */}
       <div
-        className="relative aspect-[4/5] sm:aspect-[16/9] md:aspect-[21/9] min-h-[480px] sm:min-h-[520px] md:min-h-[720px] lg:min-h-[80vh] overflow-hidden"
+        className="relative aspect-[4/5] sm:aspect-[16/9] md:aspect-[21/9] min-h-[400px] sm:min-h-[480px] md:min-h-[580px] lg:min-h-[640px] overflow-hidden"
       >
         <AnimatePresence initial={false} custom={direction} mode="sync">
           <motion.div
@@ -366,16 +374,23 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
         </div>
       )}
 
-      {/* Accent line on pause + subtle pause indicator */}
-      {slideCount > 1 && isPaused && (
+      {/* Accent line on pause + pause/play indicator */}
+      {slideCount > 1 && isPaused ? (
         <>
           <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-accent to-transparent opacity-50 z-[3]" />
           <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-[4] flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/40 backdrop-blur-sm border border-white/15 text-white/60 text-[10px] font-medium pointer-events-none">
             <svg width="8" height="8" viewBox="0 0 12 12" fill="currentColor"><rect x="1" y="1" width="3.5" height="10" rx="0.5" /><rect x="7.5" y="1" width="3.5" height="10" rx="0.5" /></svg>
-            Paused
+            Paused — click to resume
           </div>
         </>
-      )}
+      ) : slideCount > 1 ? (
+        <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-[4] opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/40 backdrop-blur-sm border border-white/15 text-white/40 text-[10px] font-medium">
+            <svg width="8" height="8" viewBox="0 0 12 12" fill="currentColor"><rect x="1" y="1" width="3.5" height="10" rx="0.5" /><rect x="7.5" y="1" width="3.5" height="10" rx="0.5" /></svg>
+            Click to pause
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }

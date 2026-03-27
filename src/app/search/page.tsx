@@ -135,7 +135,7 @@ function SearchContent() {
       </motion.div>
 
       {/* Sticky search bar */}
-      <div className="sticky top-12 md:top-20 z-40 bg-background/80 backdrop-blur-xl py-3 -mx-4 px-4 border-b border-border">
+      <div className="sticky z-40 bg-background/80 backdrop-blur-xl py-3 -mx-4 px-4 border-b border-border" style={{ top: "var(--navbar-height, 56px)" }}>
         <div className="relative">
           <svg
             className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-tertiary"
@@ -151,6 +151,7 @@ function SearchContent() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search by title, genre, developer..."
+            aria-label="Search games"
             className="w-full h-11 pl-10 pr-4 text-sm rounded-xl border border-border bg-surface-2 text-foreground placeholder:text-tertiary focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/20 transition-all"
             autoFocus={false}
           />
@@ -199,7 +200,7 @@ function SearchContent() {
                 setGenre(e.target.value);
                 setPage(1);
               }}
-              className="h-8 px-2 text-xs rounded-xl border border-border bg-surface-2 text-foreground focus:outline-none focus:border-accent/50"
+              className="h-10 px-3 text-sm rounded-xl border border-border bg-surface-2 text-foreground focus:outline-none focus:border-accent/50 transition-colors"
             >
               <option value="">All Genres</option>
               {allGenres.map((g) => (
@@ -221,7 +222,7 @@ function SearchContent() {
                 setYear(e.target.value);
                 setPage(1);
               }}
-              className="h-8 px-2 text-xs rounded-xl border border-border bg-surface-2 text-foreground focus:outline-none focus:border-accent/50"
+              className="h-10 px-3 text-sm rounded-xl border border-border bg-surface-2 text-foreground focus:outline-none focus:border-accent/50 transition-colors"
             >
               <option value="">All Years</option>
               {allYears.map((y) => (
@@ -284,11 +285,16 @@ function SearchContent() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
-              className={isFetching ? "opacity-60 pointer-events-none transition-opacity" : "transition-opacity"}
+              className={isFetching ? "opacity-60 pointer-events-none transition-opacity relative" : "transition-opacity relative"}
             >
-              <p className="text-xs text-tertiary mb-4">
-                Showing {(page - 1) * (data?.pageSize ?? 25) + 1}–{Math.min(page * (data?.pageSize ?? 25), totalCount)} of {totalCount} game{totalCount !== 1 ? "s" : ""}
-              </p>
+              <div className="flex items-center gap-2 mb-4">
+                <p className="text-xs text-tertiary">
+                  Showing {(page - 1) * (data?.pageSize ?? 25) + 1}–{Math.min(page * (data?.pageSize ?? 25), totalCount)} of {totalCount} game{totalCount !== 1 ? "s" : ""}
+                </p>
+                {isFetching && (
+                  <div className="w-3.5 h-3.5 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+                )}
+              </div>
               <GameGrid games={games} columns={5} />
 
               {/* Pagination */}

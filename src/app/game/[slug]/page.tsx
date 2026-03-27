@@ -9,7 +9,7 @@ import { motion } from "framer-motion";
 import { getGameBySlug, getGameReviews, getRelatedGames, getGameNews, getGameAchievements, getSystemRequirements } from "@/lib/api";
 import SteamReviews from "@/components/SteamReviews";
 import type { SteamNewsArticle, SteamAchievementItem } from "@/lib/api";
-import { formatDate, scoreColor, cn } from "@/lib/utils";
+import { formatDate, scoreColor, cn, formatPrice, scoreGlowClass, formatTimeAgo } from "@/lib/utils";
 import PlatformIcon from "@/components/ui/PlatformIcon";
 import HeroImage from "@/components/ui/HeroImage";
 import ScoreRing from "@/components/ui/ScoreRing";
@@ -30,41 +30,11 @@ import AuthModal from "@/components/AuthModal";
 import {
   Zap, Trophy, Newspaper, MessageSquare, Clock,
   BarChart3, Target, ThumbsUp, ThumbsDown, Gamepad2,
-  Smartphone, Tag, Globe, ChevronLeft, ChevronRight, Monitor,
+  Smartphone, Tag, Globe, ChevronLeft, ChevronRight, Monitor, Share2, Home, Copy, Check,
 } from "lucide-react";
 
 interface Props {
   params: Promise<{ slug: string }>;
-}
-
-/** Format cents to a dollar string like "$29.99" */
-function formatPrice(cents: number | undefined, currency = "USD"): string | null {
-  if (cents === undefined || cents === null) return null;
-  if (cents === 0) return "Free";
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency,
-    minimumFractionDigits: 2,
-  }).format(cents / 100);
-}
-
-function scoreGlowClass(score: number) {
-  if (score >= 80) return "score-glow-great";
-  if (score >= 65) return "score-glow-good";
-  if (score >= 45) return "score-glow-mixed";
-  return "score-glow-bad";
-}
-
-/** Format a timestamp to "Xh ago" / "Xm ago" / "Xd ago" */
-function formatTimeAgo(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return "just now";
-  if (mins < 60) return `${mins}m ago`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  const days = Math.floor(hrs / 24);
-  return `${days}d ago`;
 }
 
 /** Visual stat bar component */
@@ -92,6 +62,8 @@ export default function GameDetailPage({ params }: Props) {
   const rawgId = searchParams.get("rawgId") ? Number(searchParams.get("rawgId")) : undefined;
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [achievementsPage, setAchievementsPage] = useState(1);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const { data: game, isLoading } = useQuery({
     queryKey: ["game", slug, rawgId],
@@ -443,6 +415,67 @@ export default function GameDetailPage({ params }: Props) {
 
       {/* ═══════════════ MAIN CONTENT ═══════════════ */}
       <div className="max-w-[1400px] mx-auto px-4 py-8">
+        {/* Breadcrumbs + Share */}
+        <div className="flex items-center justify-between mb-6">
+          <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-tertiary overflow-hidden">
+            <Link href="/" className="flex items-center gap-1 hover:text-foreground transition-colors shrink-0">
+              <Home className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Home</span>
+            </Link>
+            <ChevronRight className="w-3 h-3 shrink-0" />
+            {game.genres[0] && (
+              <>
+                <Link href={`/search?genre=${encodeURIComponent(game.genres[0])}`} className="hover:text-foreground transition-colors shrink-0">
+                  {game.genres[0]}
+                </Link>
+                <ChevronRight className="w-3 h-3 shrink-0" />
+              </>
+            )}
+            <span className="text-foreground font-medium truncate">{game.title}</span>
+          </nav>
+          <div className="relative shrink-0">
+            <button
+              onClick={() => setShareOpen(!shareOpen)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium text-secondary hover:text-foreground border border-border hover:border-accent/30 bg-surface transition-all"
+            >
+              <Share2 className="w-3.5 h-3.5" />
+              Share
+            </button>
+            {shareOpen && (
+              <div className="absolute right-0 top-full mt-2 w-56 rounded-xl bg-surface border border-border shadow-2xl z-50 overflow-hidden animate-scale-in">
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(window.location.href);
+                    setCopied(true);
+                    setTimeout(() => { setCopied(false); setShareOpen(false); }, 1500);
+                  }}
+                  className="flex items-center gap-2.5 w-full px-4 py-3 text-sm text-secondary hover:text-foreground hover:bg-surface-2 transition-colors"
+                >
+                  {copied ? <Check className="w-4 h-4 text-success" /> : <Copy className="w-4 h-4" />}
+                  {copied ? "Copied!" : "Copy link"}
+                </button>
+                <a
+                  href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`Check out ${game.title} on verdict.games`)}&url=${encodeURIComponent(typeof window !== 'undefined' ? window.location.href : '')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2.5 w-full px-4 py-3 text-sm text-secondary hover:text-foreground hover:bg-surface-2 transition-colors"
+                >
+                  <Globe className="w-4 h-4" />
+                  Share on X
+                </a>
+                <a
+                  href={`https://reddit.com/submit?url=${encodeURIComponent(typeof window !== 'undefined' ? window.location.href : '')}&title=${encodeURIComponent(game.title)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2.5 w-full px-4 py-3 text-sm text-secondary hover:text-foreground hover:bg-surface-2 transition-colors"
+                >
+                  <MessageSquare className="w-4 h-4" />
+                  Share on Reddit
+                </a>
+              </div>
+            )}
+          </div>
+        </div>
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
 
           {/* ─── LEFT COLUMN (Main Content) ─── */}
@@ -594,9 +627,9 @@ export default function GameDetailPage({ params }: Props) {
                     return (
                       <div className="relative aspect-video rounded-xl overflow-hidden border border-border">
                         <iframe
-                          src={`https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1`}
+                          src={`https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1&autoplay=0`}
                           title={`${game.title} trailer`}
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                           allowFullScreen
                           loading="lazy"
                           className="absolute inset-0 w-full h-full"
@@ -847,7 +880,7 @@ export default function GameDetailPage({ params }: Props) {
 
           {/* ─── RIGHT COLUMN (Sidebar) ─── */}
           <div className="lg:col-span-4 space-y-6">
-            <div className="lg:sticky lg:top-20 space-y-6">
+            <div className="lg:sticky space-y-6" style={{ top: "calc(var(--navbar-height, 56px) + 16px)" }}>
 
               {/* ── Add to Library ── */}
               <FadeInSection>

@@ -4,6 +4,8 @@ import "./globals.css";
 import Providers from "./providers";
 import NavbarTop from "@/components/NavbarTop";
 import BottomNav from "@/components/BottomNav";
+import Footer from "@/components/Footer";
+import ScrollToTop from "@/components/ScrollToTop";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
@@ -106,7 +108,9 @@ export default function RootLayout({
       >
         <Providers>
           <NavbarTop />
-          <main className="min-h-screen pb-20 md:pb-0">{children}</main>
+          <main className="min-h-screen md:pb-0" style={{ paddingBottom: "var(--bottom-nav-height, 56px)" }}>{children}</main>
+          <Footer />
+          <ScrollToTop />
           <BottomNav />
         </Providers>
         <Analytics />

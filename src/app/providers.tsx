@@ -3,6 +3,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider } from "@/hooks/useTheme";
 import { AuthProvider } from "@/hooks/useAuth";
+import { ToastProvider } from "@/components/ui/Toast";
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 
@@ -31,8 +32,10 @@ export default function Providers({ children }: { children: React.ReactNode }) {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <AuthProvider>
-          <ScrollToTop />
-          {children}
+          <ToastProvider>
+            <ScrollToTop />
+            {children}
+          </ToastProvider>
         </AuthProvider>
       </ThemeProvider>
     </QueryClientProvider>

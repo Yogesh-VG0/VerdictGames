@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Game } from "@/lib/types";
-import { scoreColor, cn } from "@/lib/utils";
+import { scoreColor, cn, sourceLabel, scoreGlowClass } from "@/lib/utils";
 import { collapsePlatforms } from "@/lib/utils/platform";
 import VerdictBadge from "@/components/ui/VerdictBadge";
 import PlatformIcon from "@/components/ui/PlatformIcon";
@@ -15,22 +15,6 @@ interface GameCardProps {
   priority?: boolean;
   className?: string;
   variant?: "default" | "spotlight";
-}
-
-function sourceLabel(source?: string): string | null {
-  if (!source || source === "blended") return null;
-  if (source === "steam") return "Steam";
-  if (source === "igdb") return "IGDB";
-  if (source === "metacritic") return "Critic";
-  if (source === "rawg") return "RAWG";
-  return null;
-}
-
-function scoreGlowClass(score: number) {
-  if (score >= 80) return "score-glow-great";
-  if (score >= 65) return "score-glow-good";
-  if (score >= 45) return "score-glow-mixed";
-  return "score-glow-bad";
 }
 
 function BlurImage({ src, alt, priority, className }: {

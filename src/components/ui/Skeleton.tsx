@@ -86,28 +86,28 @@ export function HeroSkeleton() {
         <div className="px-6 md:px-10 pb-8 md:pb-12 pt-24 space-y-4">
           {/* Platform badges */}
           <div className="flex gap-2">
-            <Skeleton className="h-7 w-20 rounded-lg bg-white/10" />
-            <Skeleton className="h-7 w-20 rounded-lg bg-white/10" />
-            <Skeleton className="h-7 w-24 rounded-lg bg-white/10" />
+            <Skeleton className="h-7 w-20 rounded-lg bg-border/60" />
+            <Skeleton className="h-7 w-20 rounded-lg bg-border/60" />
+            <Skeleton className="h-7 w-24 rounded-lg bg-border/60" />
           </div>
           {/* Title */}
-          <Skeleton className="h-10 md:h-14 w-96 max-w-[70%] rounded-xl bg-white/10" />
+          <Skeleton className="h-10 md:h-14 w-96 max-w-[70%] rounded-xl bg-border/60" />
           {/* Subtitle / verdict */}
           <div className="flex items-center gap-3">
-            <Skeleton className="w-14 h-14 rounded-full bg-white/10 shrink-0" />
+            <Skeleton className="w-14 h-14 rounded-full bg-border/60 shrink-0" />
             <div className="space-y-2">
-              <Skeleton className="h-5 w-24 rounded-full bg-white/10" />
-              <Skeleton className="h-3 w-64 max-w-full rounded-lg bg-white/10" />
+              <Skeleton className="h-5 w-24 rounded-full bg-border/60" />
+              <Skeleton className="h-3 w-64 max-w-full rounded-lg bg-border/60" />
             </div>
           </div>
           {/* CTA */}
-          <Skeleton className="h-10 w-36 rounded-xl bg-white/10" />
+          <Skeleton className="h-10 w-36 rounded-xl bg-border/60" />
         </div>
       </div>
       {/* Dot indicators */}
       <div className="absolute bottom-3 right-6 flex gap-1.5">
         {Array.from({ length: 5 }).map((_, i) => (
-          <Skeleton key={i} className={cn("w-2 h-2 rounded-full", i === 0 ? "bg-white/40 w-6" : "bg-white/15")} />
+          <Skeleton key={i} className={cn("w-2 h-2 rounded-full", i === 0 ? "bg-border w-6" : "bg-border/40")} />
         ))}
       </div>
     </div>
