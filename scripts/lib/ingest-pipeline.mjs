@@ -495,9 +495,38 @@ export async function ingestGameDirect(sql, query, options = {}) {
   // ── 6. Upsert game ──
   let gameId;
   if (existing) {
-    // UPDATE — keep slug, featured, trending unchanged
-    const { slug: _s, featured: _f, trending: _t, ...upd } = rec;
-    await sql`UPDATE games SET ${sql(upd)} WHERE id = ${existing.id}`;
+    // UPDATE — preserve editorial fields that may have been manually edited
+    // These fields are NEVER overwritten during re-enrichment:
+    const ALWAYS_PRESERVE = new Set(["slug", "featured", "trending"]);
+    // These fields are only overwritten if the existing value is empty/null:
+    const EDITORIAL_FIELDS = new Set([
+      "title", "subtitle", "description", "cover_image", "header_image",
+      "screenshots", "pros", "cons", "verdict_summary",
+      "performance_notes", "monetization_notes", "monetization",
+      "developer", "publisher",
+    ]);
+
+    // Fetch current editorial values to check which ones are already set
+    const [cur] = await sql`SELECT ${sql(["title","subtitle","description","cover_image","header_image",
+      "screenshots","pros","cons","verdict_summary","performance_notes","monetization_notes",
+      "monetization","developer","publisher"])} FROM games WHERE id = ${existing.id}`;
+
+    const upd = {};
+    for (const [key, val] of Object.entries(rec)) {
+      if (ALWAYS_PRESERVE.has(key)) continue;
+      if (EDITORIAL_FIELDS.has(key) && cur) {
+        const curVal = cur[key];
+        // Only overwrite if current DB value is empty/null/default
+        const isEmpty = curVal === null || curVal === undefined || curVal === ""
+          || (Array.isArray(curVal) && curVal.length === 0);
+        if (!isEmpty) continue; // preserve existing manual data
+      }
+      upd[key] = val;
+    }
+
+    if (Object.keys(upd).length > 0) {
+      await sql`UPDATE games SET ${sql(upd)} WHERE id = ${existing.id}`;
+    }
     gameId = existing.id;
   } else {
     // INSERT

@@ -168,17 +168,57 @@ try {
 
   // Deduplicate by slug
   const seen = new Set();
-  const allGames = [];
+  const rawGames = [];
   for (const list of allLists) {
     for (const game of list) {
       if (!seen.has(game.slug)) {
         seen.add(game.slug);
-        allGames.push(game);
+        rawGames.push(game);
       }
     }
   }
 
-  console.log(`  Found ${allGames.length} unique games from ${fetches.length} RAWG queries\n`);
+  console.log(`  Found ${rawGames.length} unique games from ${fetches.length} RAWG queries`);
+
+  // ── Quality gates: filter out junk before ingesting ──
+  const DLC_PATTERNS = [
+    /:\s*(episode|part|chapter|act)\s+\w+$/i,
+    /\b(dlc|expansion|season pass|starter pack|upgrade|bundle)\b/i,
+    /\s-\s+(the\s+)?\w+\s+(dlc|pack|edition)$/i,
+  ];
+  const ADULT_TAGS = new Set(["sexual content","nsfw","hentai","adult","erotic","nudity"]);
+  const JUNK_TAGS = new Set(["mod","mods","fan-made","fan game"]);
+  const MIN_RATING = 2.5;       // RAWG rating 1-5
+  const MIN_RATINGS_COUNT = 5;  // at least 5 ratings on RAWG
+
+  function isDLC(game) {
+    const name = game.name || "";
+    // Check name patterns
+    if (DLC_PATTERNS.some(p => p.test(name))) return true;
+    // RAWG marks DLC/add-ons with added_by_status.toplay being very low and no metacritic
+    // Also check if parent game exists (slug contains base game slug)
+    return false;
+  }
+
+  function hasAdultOrJunkTags(game) {
+    const tags = (game.tags ?? []).map(t => (t.name || t.slug || "").toLowerCase());
+    return tags.some(t => ADULT_TAGS.has(t) || JUNK_TAGS.has(t));
+  }
+
+  const allGames = rawGames.filter(game => {
+    // Skip games with very low/no ratings (obscure junk)
+    if ((game.ratings_count ?? 0) < MIN_RATINGS_COUNT && !game.metacritic) return false;
+    // Skip very low rated games
+    if (game.rating && game.rating < MIN_RATING && (game.ratings_count ?? 0) > 20) return false;
+    // Skip DLC/expansions
+    if (isDLC(game)) return false;
+    // Skip adult/junk content
+    if (hasAdultOrJunkTags(game)) return false;
+    return true;
+  });
+
+  const filtered = rawGames.length - allGames.length;
+  console.log(`  After quality filtering: ${allGames.length} games (${filtered} filtered out)\n`);
 
   // ── Step 2: Ingest each game via local pipeline (direct DB) ──
   console.log("🔄 Step 2: Ingesting games via local pipeline...\n");
