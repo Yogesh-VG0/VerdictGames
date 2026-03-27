@@ -65,7 +65,9 @@ export async function GET(request: NextRequest) {
   if (!cronSecret) {
     return jsonError("CRON_SECRET not configured", 503);
   }
-  const provided = request.nextUrl.searchParams.get("secret");
+  const provided =
+    request.nextUrl.searchParams.get("secret") ??
+    request.headers.get("authorization")?.replace("Bearer ", "");
   if (provided !== cronSecret) {
     return jsonError("Unauthorized", 401);
   }

@@ -648,7 +648,7 @@ function pickBestTrailer(
 /* ───────── Utilities ───────── */
 
 function escapeQuotes(str: string): string {
-  return str.replace(/"/g, '\\"');
+  return str.replace(/"/g, '\\"').replace(/[;\n\r]/g, "");
 }
 
 /**

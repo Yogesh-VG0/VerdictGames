@@ -13,7 +13,8 @@ export async function GET(request: NextRequest) {
 
   const supabase = getServerSupabase();
   const params = request.nextUrl.searchParams;
-  const q = params.get("q") ?? "";
+  const rawQ = params.get("q") ?? "";
+  const q = rawQ.replace(/[%_(),.;'"\\|{}\[\]]/g, "").trim().slice(0, 200);
   const page = Math.max(1, parseInt(params.get("page") ?? "1", 10));
   const limit = 20;
   const offset = (page - 1) * limit;

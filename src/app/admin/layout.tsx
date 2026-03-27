@@ -6,6 +6,11 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { isAdminEmail } from "@/lib/adminEmails";
+
+function isAdmin(user: { email: string; role?: string } | null): boolean {
+  if (!user) return false;
+  return user.role === "admin" || isAdminEmail(user.email);
+}
 import { LayoutDashboard, Gamepad2, FileText, Users, Clock } from "lucide-react";
 
 const NAV_ITEMS: { href: string; label: string; icon: ReactNode }[] = [
@@ -24,7 +29,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   // Redirect non-admin users once auth has fully resolved
   useEffect(() => {
     if (loading) return;
-    if (!user || !isAdminEmail(user.email)) {
+    if (!isAdmin(user)) {
       router.replace("/");
     }
   }, [user, loading, router]);
@@ -37,7 +42,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     );
   }
 
-  if (!user || !isAdminEmail(user.email)) {
+  if (!isAdmin(user)) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center space-y-4">
@@ -61,7 +66,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <div>
                 <h2 className="text-sm font-bold uppercase tracking-wider bg-gradient-to-r from-amber-400 via-orange-400 to-rose-400 bg-clip-text text-transparent">Admin Panel</h2>
                 <p className="text-[11px] text-tertiary mt-0.5">
-                  Logged in as {user.username}
+                  Logged in as {user?.username}
                 </p>
               </div>
               <Link href="/" className="md:hidden text-xs text-tertiary hover:text-accent transition-colors">

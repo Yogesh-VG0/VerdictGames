@@ -19,7 +19,10 @@ export async function requireAdmin() {
     return { user: null, error: jsonError("Not authenticated", 401) };
   }
 
-  if (!isAdminEmail(user.email)) {
+  // Allow access if DB role is 'admin' OR email is in the hardcoded allow-list.
+  // This lets us manage admin access via DB without code deploys,
+  // while keeping the email list as a fallback.
+  if (user.role !== "admin" && !isAdminEmail(user.email)) {
     return { user: null, error: jsonError("Forbidden: admin access required", 403) };
   }
 
