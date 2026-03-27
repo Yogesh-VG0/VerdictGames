@@ -413,13 +413,19 @@ export async function submitReview(data: {
   });
 }
 
-/** Vote on a review (1 = helpful, -1 = unhelpful). */
-export async function voteOnReview(reviewId: string, value: 1 | -1): Promise<boolean> {
-  const result = await apiFetch<{ voted: boolean }>(`/api/reviews/${reviewId}/vote`, {
+/** Vote on a review (1 = helpful, -1 = unhelpful). Returns updated counts. */
+export interface VoteResult {
+  voted: boolean;
+  userVote: number | null;
+  helpful: number;
+  notHelpful: number;
+}
+
+export async function voteOnReview(reviewId: string, value: 1 | -1): Promise<VoteResult | null> {
+  return apiFetch<VoteResult>(`/api/reviews/${reviewId}/vote`, {
     method: "POST",
     body: JSON.stringify({ value }),
   });
-  return result?.voted ?? false;
 }
 
 /** Get comments for a review. */

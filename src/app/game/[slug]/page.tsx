@@ -868,7 +868,11 @@ export default function GameDetailPage({ params }: Props) {
                     </h4>
                     {reviewsData.items.map((review) => (
                       <div key={review.id} className="space-y-2">
-                        <ReviewCard review={review} showGame={false} />
+                        <ReviewCard
+                          review={review}
+                          showGame={false}
+                          onAuthRequired={() => setAuthModalOpen(true)}
+                        />
                         <CommentThread
                           reviewId={review.id}
                           onAuthRequired={() => setAuthModalOpen(true)}

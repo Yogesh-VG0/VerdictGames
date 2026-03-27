@@ -3,8 +3,26 @@
  * Verdict.games a production-quality site.
  *
  * Run: node scripts/ingest-full-library.mjs
- * Requires dev server running on localhost:3000
+ * Requires dev server running on localhost:3000 and CRON_SECRET in .env
  */
+
+import { readFileSync } from "fs";
+
+// ── Load .env ──
+try {
+  const env = readFileSync(".env", "utf8");
+  for (const line of env.split("\n")) {
+    const t = line.trim();
+    if (!t || t.startsWith("#")) continue;
+    const i = t.indexOf("=");
+    if (i === -1) continue;
+    const key = t.slice(0, i).trim();
+    if (!process.env[key]) process.env[key] = t.slice(i + 1).trim();
+  }
+} catch { /* no .env file */ }
+
+const CRON_SECRET = process.env.CRON_SECRET;
+if (!CRON_SECRET) { console.error("✗ CRON_SECRET not set in .env"); process.exit(1); }
 
 const games = [
   // ── Already ingested (will skip if exists) ──
@@ -344,7 +362,7 @@ for (let i = 0; i < unique.length; i++) {
   const num = `[${i + 1}/${unique.length}]`;
 
   try {
-    const r = await fetch("http://localhost:3000/api/ingest/game", {
+    const r = await fetch(`http://localhost:3000/api/ingest/game?secret=${encodeURIComponent(CRON_SECRET)}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ query }),

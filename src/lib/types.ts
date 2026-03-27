@@ -149,6 +149,8 @@ export interface Review {
   pros?: string[];
   cons?: string[];
   helpful: number;
+  notHelpful: number;
+  userVote: -1 | 0 | 1;  // current user's vote: 1=helpful, -1=not, 0=none
   createdAt: string;
   platform: Platform;
 }

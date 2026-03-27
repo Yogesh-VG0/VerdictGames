@@ -303,6 +303,9 @@ export function mapReviewRow(
   row: ReviewRow & {
     game?: { slug: string; title: string; cover_image: string } | null;
     profile?: { username: string; display_name?: string; avatar_url: string } | null;
+    vote_up_count?: number;
+    vote_down_count?: number;
+    user_vote_value?: number | null;
   }
 ): Review {
   return {
@@ -320,7 +323,9 @@ export function mapReviewRow(
     body: row.body,
     pros: row.pros.length > 0 ? row.pros : undefined,
     cons: row.cons.length > 0 ? row.cons : undefined,
-    helpful: row.helpful,
+    helpful: row.vote_up_count ?? row.helpful ?? 0,
+    notHelpful: row.vote_down_count ?? 0,
+    userVote: (row.user_vote_value === 1 ? 1 : row.user_vote_value === -1 ? -1 : 0) as -1 | 0 | 1,
     createdAt: row.created_at,
     platform: row.platform as Platform,
   };

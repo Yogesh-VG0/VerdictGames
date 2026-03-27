@@ -1,22 +1,86 @@
 "use client";
 
-import Image from "next/image";
+import { useState, useCallback } from "react";
 import Link from "next/link";
 import { Review } from "@/lib/types";
 import { scoreColor, formatDate, cn } from "@/lib/utils";
+import { voteOnReview } from "@/lib/api";
 import PlatformIcon from "@/components/ui/PlatformIcon";
+import { ThumbsUp, ThumbsDown } from "lucide-react";
 
 interface ReviewCardProps {
   review: Review;
   showGame?: boolean;
   className?: string;
+  onAuthRequired?: () => void;
 }
 
 export default function ReviewCard({
   review,
   showGame = true,
   className,
+  onAuthRequired,
 }: ReviewCardProps) {
+  const [helpful, setHelpful] = useState(review.helpful);
+  const [notHelpful, setNotHelpful] = useState(review.notHelpful);
+  const [userVote, setUserVote] = useState<-1 | 0 | 1>(review.userVote);
+  const [voting, setVoting] = useState(false);
+
+  const handleVote = useCallback(
+    async (value: 1 | -1) => {
+      if (voting) return;
+
+      // Check auth — if onAuthRequired is provided, caller handles unauthed state
+      // The API will return 401 which we handle below
+
+      // Optimistic update
+      const prevHelpful = helpful;
+      const prevNotHelpful = notHelpful;
+      const prevVote = userVote;
+
+      if (userVote === value) {
+        // Toggle off
+        setUserVote(0);
+        if (value === 1) setHelpful((h) => Math.max(0, h - 1));
+        else setNotHelpful((h) => Math.max(0, h - 1));
+      } else {
+        // New vote or change direction
+        if (userVote === 1) setHelpful((h) => Math.max(0, h - 1));
+        else if (userVote === -1) setNotHelpful((h) => Math.max(0, h - 1));
+        setUserVote(value);
+        if (value === 1) setHelpful((h) => h + 1);
+        else setNotHelpful((h) => h + 1);
+      }
+
+      setVoting(true);
+      try {
+        const result = await voteOnReview(review.id, value);
+        if (result) {
+          // Sync with server truth
+          setHelpful(result.helpful);
+          setNotHelpful(result.notHelpful);
+          setUserVote(
+            result.userVote === 1 ? 1 : result.userVote === -1 ? -1 : 0
+          );
+        } else {
+          // API returned null — likely 401 (not authenticated)
+          setHelpful(prevHelpful);
+          setNotHelpful(prevNotHelpful);
+          setUserVote(prevVote);
+          onAuthRequired?.();
+        }
+      } catch {
+        // Revert on error
+        setHelpful(prevHelpful);
+        setNotHelpful(prevNotHelpful);
+        setUserVote(prevVote);
+      } finally {
+        setVoting(false);
+      }
+    },
+    [voting, userVote, helpful, notHelpful, review.id, onAuthRequired]
+  );
+
   return (
     <article
       className={cn(
@@ -135,9 +199,47 @@ export default function ReviewCard({
         </div>
       )}
 
-      {/* Footer */}
-      <div className="flex items-center gap-3 pt-1 text-xs text-tertiary">
-        <span>▲ {review.helpful} found helpful</span>
+      {/* Footer — Voting buttons */}
+      <div className="flex items-center gap-1.5 pt-1">
+        {/* Helpful button */}
+        <button
+          onClick={() => handleVote(1)}
+          disabled={voting}
+          aria-label="Mark as helpful"
+          aria-pressed={userVote === 1}
+          className={cn(
+            "inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 border",
+            userVote === 1
+              ? "bg-score-great/15 text-score-great border-score-great/30 shadow-sm"
+              : "text-tertiary border-transparent hover:text-score-great hover:bg-score-great/10 hover:border-score-great/20",
+            voting && "opacity-50 cursor-not-allowed"
+          )}
+        >
+          <ThumbsUp className={cn("w-3.5 h-3.5", userVote === 1 && "fill-current")} />
+          <span className="tabular-nums">{helpful}</span>
+        </button>
+
+        {/* Not Helpful button */}
+        <button
+          onClick={() => handleVote(-1)}
+          disabled={voting}
+          aria-label="Mark as not helpful"
+          aria-pressed={userVote === -1}
+          className={cn(
+            "inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 border",
+            userVote === -1
+              ? "bg-score-bad/15 text-score-bad border-score-bad/30 shadow-sm"
+              : "text-tertiary border-transparent hover:text-score-bad hover:bg-score-bad/10 hover:border-score-bad/20",
+            voting && "opacity-50 cursor-not-allowed"
+          )}
+        >
+          <ThumbsDown className={cn("w-3.5 h-3.5", userVote === -1 && "fill-current")} />
+          {notHelpful > 0 && <span className="tabular-nums">{notHelpful}</span>}
+        </button>
+
+        <span className="text-[10px] text-tertiary ml-1">
+          {helpful > 0 ? `${helpful} found helpful` : "Was this helpful?"}
+        </span>
       </div>
     </article>
   );

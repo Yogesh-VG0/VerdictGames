@@ -28,6 +28,16 @@ export async function GET(request: NextRequest) {
     const { getServerSupabase } = await import("@/lib/supabase/server");
     const supabase = getServerSupabase();
 
+    // Get current user for vote state (optional)
+    let currentProfileId: string | null = null;
+    try {
+      const { getCurrentUser } = await import("@/lib/supabase/auth");
+      const user = await getCurrentUser();
+      currentProfileId = user?.profileId ?? null;
+    } catch {
+      // Not authenticated
+    }
+
     let query = supabase
       .from("reviews")
       .select(
@@ -59,9 +69,50 @@ export async function GET(request: NextRequest) {
 
     if (error) throw error;
 
-    const reviews = (data ?? []).map((row: Record<string, unknown>) =>
-      mapReviewRow(row as Parameters<typeof mapReviewRow>[0])
-    );
+    // Fetch vote aggregates
+    const reviewIds = (data ?? []).map((r: Record<string, unknown>) => r.id as string);
+    let voteCounts: Record<string, { up: number; down: number }> = {};
+    let userVotes: Record<string, number> = {};
+
+    if (reviewIds.length > 0) {
+      const { data: voteData } = await supabase
+        .from("review_votes")
+        .select("review_id, value")
+        .in("review_id", reviewIds);
+
+      if (voteData) {
+        for (const v of voteData) {
+          if (!voteCounts[v.review_id]) voteCounts[v.review_id] = { up: 0, down: 0 };
+          if (v.value === 1) voteCounts[v.review_id].up++;
+          else if (v.value === -1) voteCounts[v.review_id].down++;
+        }
+      }
+
+      if (currentProfileId) {
+        const { data: myVotes } = await supabase
+          .from("review_votes")
+          .select("review_id, value")
+          .in("review_id", reviewIds)
+          .eq("profile_id", currentProfileId);
+
+        if (myVotes) {
+          for (const v of myVotes) {
+            userVotes[v.review_id] = v.value;
+          }
+        }
+      }
+    }
+
+    const reviews = (data ?? []).map((row: Record<string, unknown>) => {
+      const reviewId = row.id as string;
+      const enriched = {
+        ...row,
+        vote_up_count: voteCounts[reviewId]?.up ?? 0,
+        vote_down_count: voteCounts[reviewId]?.down ?? 0,
+        user_vote_value: userVotes[reviewId] ?? null,
+      };
+      return mapReviewRow(enriched as Parameters<typeof mapReviewRow>[0]);
+    });
 
     const result: PaginatedResponse<Review> = {
       items: reviews,

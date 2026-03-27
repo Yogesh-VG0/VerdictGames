@@ -17,8 +17,9 @@ const nextConfig: NextConfig = {
     ];
   },
   images: {
-    // Allow any HTTPS image source so admins can set arbitrary header/cover URLs
-    // without needing a code deploy to whitelist each new domain.
+    // Bypass Vercel's Image Optimization to avoid the 5K/month free-tier limit.
+    // Source images from RAWG, IGDB, Steam, etc. are already reasonably sized.
+    unoptimized: true,
     remotePatterns: [
       { protocol: "https", hostname: "**" },
     ],
