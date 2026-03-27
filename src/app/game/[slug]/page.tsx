@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState, useCallback } from "react";
+import { use, useState, useCallback, useRef, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -64,6 +64,26 @@ export default function GameDetailPage({ params }: Props) {
   const [achievementsPage, setAchievementsPage] = useState(1);
   const [shareOpen, setShareOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const shareRef = useRef<HTMLDivElement>(null);
+
+  // Close share dropdown on outside click or Escape
+  useEffect(() => {
+    if (!shareOpen) return;
+    function handleClick(e: MouseEvent) {
+      if (shareRef.current && !shareRef.current.contains(e.target as Node)) {
+        setShareOpen(false);
+      }
+    }
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setShareOpen(false);
+    }
+    document.addEventListener("mousedown", handleClick);
+    document.addEventListener("keydown", handleKey);
+    return () => {
+      document.removeEventListener("mousedown", handleClick);
+      document.removeEventListener("keydown", handleKey);
+    };
+  }, [shareOpen]);
 
   const { data: game, isLoading } = useQuery({
     queryKey: ["game", slug, rawgId],
@@ -433,7 +453,7 @@ export default function GameDetailPage({ params }: Props) {
             )}
             <span className="text-foreground font-medium truncate">{game.title}</span>
           </nav>
-          <div className="relative shrink-0">
+          <div className="relative shrink-0" ref={shareRef}>
             <button
               onClick={() => setShareOpen(!shareOpen)}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium text-secondary hover:text-foreground border border-border hover:border-accent/30 bg-surface transition-all"
@@ -553,8 +573,14 @@ export default function GameDetailPage({ params }: Props) {
                       </div>
                     </div>
                     <ScoreChips game={game} variant="full" className="justify-center" />
-                    <p className="text-[9px] text-tertiary text-center">
+                    <p className="text-[9px] text-tertiary text-center flex items-center justify-center gap-1">
                       Verdict score derived from {game.scoreSource === "steam" ? "Steam reviews" : game.scoreSource === "igdb" ? "IGDB rating" : game.scoreSource === "metacritic" ? "Metacritic" : "RAWG/IGDB signals"}
+                      <span
+                        className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-surface-2 border border-border text-tertiary hover:text-accent hover:border-accent/30 cursor-help transition-colors"
+                        title="The Verdict Score is a weighted blend of critic reviews, user ratings, and community signals across multiple data sources including Steam, IGDB, Metacritic, and RAWG. Scores are normalized to a 0–100 scale and weighted by source reliability."
+                      >
+                        ?
+                      </span>
                     </p>
                   </div>
                 </div>

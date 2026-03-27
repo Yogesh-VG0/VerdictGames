@@ -75,7 +75,7 @@ export default function DealsPage() {
   }, [deals, selectedGenre, selectedStore, sortMode]);
 
   return (
-    <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6 overflow-x-hidden">
+    <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6 overflow-x-hidden page-enter">
       {/* Quick Nav */}
       <GXPageNav />
 

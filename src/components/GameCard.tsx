@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { Gamepad2 } from "lucide-react";
 import { Game } from "@/lib/types";
 import { scoreColor, cn, sourceLabel, scoreGlowClass } from "@/lib/utils";
 import { collapsePlatforms } from "@/lib/utils/platform";
@@ -192,8 +193,9 @@ export default function GameCard({
               priority={priority}
             />
           ) : (
-            <div className="absolute inset-0 bg-surface-2 flex items-center justify-center">
-              <span className="text-tertiary text-xs font-medium">{game.title.slice(0, 2).toUpperCase()}</span>
+            <div className="absolute inset-0 bg-gradient-to-br from-accent/20 via-surface-2 to-pixel-cyan/10 flex flex-col items-center justify-center gap-2 p-3">
+              <Gamepad2 className="w-8 h-8 text-accent/40" />
+              <span className="text-tertiary text-[10px] font-semibold text-center leading-tight line-clamp-3">{game.title}</span>
             </div>
           )}
 

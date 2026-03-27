@@ -80,7 +80,7 @@ export default function HomePage() {
 
   // Hero carousel: top 6 games by confidence-weighted score (server-sorted)
   const featured = useMemo(() => {
-    const pool = heroPool.data ?? [];
+    const pool = (heroPool.data ?? []).filter((g) => g.coverImage);
     if (pool.length === 0) return [];
     return pool.slice(0, 6);
   }, [heroPool.data]);
@@ -169,7 +169,7 @@ export default function HomePage() {
                   gradient="linear-gradient(90deg, #f97316 0%, #ef4444 25%, #f97316 50%, #eab308 75%, #f97316 100%)"
                 />
                 <HorizontalScroll>
-                  {trending.data!.filter((g) => !heroIds.has(g.id)).slice(0, 20).map((game, i) => (
+                  {trending.data!.filter((g) => !heroIds.has(g.id) && g.coverImage).slice(0, 20).map((game, i) => (
                     <div key={game.id} className={CARD_WIDTH}>
                       <motion.div
                         initial={{ opacity: 0, y: 20 }}
@@ -205,7 +205,7 @@ export default function HomePage() {
                 gradient="linear-gradient(90deg, #06b6d4 0%, #3b82f6 25%, #8b5cf6 50%, #06b6d4 75%, #3b82f6 100%)"
               />
               <HorizontalScroll>
-                {anticipated.data.items.map((game, i) => (
+                {anticipated.data.items.filter((g) => g.image).map((game, i) => (
                   <div key={game.rawgId} className="shrink-0 w-64 sm:w-72 md:w-80 h-full">
                     <motion.div
                       initial={{ opacity: 0, y: 20 }}
@@ -280,7 +280,7 @@ export default function HomePage() {
                   gradient="linear-gradient(90deg, #a855f7 0%, #6366f1 25%, #ec4899 50%, #a855f7 75%, #6366f1 100%)"
                 />
                 <HorizontalScroll>
-                  {recommendedGames.map((game, i) => (
+                  {recommendedGames.filter((g) => g.coverImage).map((game, i) => (
                     <div key={game.id} className={CARD_WIDTH}>
                       <motion.div
                         initial={{ opacity: 0, y: 20 }}
@@ -310,7 +310,7 @@ export default function HomePage() {
             <FadeInSection>
               <SectionHeader
                 title="Discover"
-                href={discoverTab === "deals" ? "/deals" : discoverTab === "free" ? "/free-to-play" : "/search?sort=newest"}
+                href={discoverTab === "deals" ? "/search?tab=deals" : discoverTab === "free" ? "/search?tab=free" : "/search?sort=newest"}
                 linkLabel={discoverTab === "deals" ? "See all deals" : discoverTab === "free" ? "See all free games" : "See all new releases"}
                 icon={<Gamepad2 className="w-5 h-5" />}
                 subtitle="Find your next obsession"
@@ -340,7 +340,7 @@ export default function HomePage() {
                     <HorizontalScrollSkeleton count={6} />
                   ) : newReleases.data && newReleases.data.length > 0 ? (
                     <HorizontalScroll>
-                      {newReleases.data.map((game, i) => (
+                      {newReleases.data.filter((g) => g.coverImage).map((game, i) => (
                         <div key={game.id} className={CARD_WIDTH}>
                           <motion.div
                             initial={{ opacity: 0, y: 20 }}
@@ -477,7 +477,7 @@ export default function HomePage() {
                     gradient="linear-gradient(90deg, #facc15 0%, #f97316 25%, #eab308 50%, #22c55e 75%, #facc15 100%)"
                   />
                   <HorizontalScroll>
-                    {topRated.data.slice(0, 20).map((game, i) => (
+                    {topRated.data.filter((g) => g.coverImage).slice(0, 20).map((game, i) => (
                       <div key={game.id} className={CARD_WIDTH}>
                         <motion.div
                           initial={{ opacity: 0, y: 20 }}
@@ -511,7 +511,7 @@ export default function HomePage() {
                   icon={<Newspaper className="w-5 h-5" />}
                   subtitle="Trending stories from top gaming outlets"
                   gradient="linear-gradient(90deg, #14b8a6 0%, #06b6d4 25%, #3b82f6 50%, #06b6d4 75%, #14b8a6 100%)"
-                  href="https://gx.games/news"
+                  href="/news"
                   linkLabel="View all news"
                 />
                 {/* 2-column editorial layout: 2 featured + compact stack */}

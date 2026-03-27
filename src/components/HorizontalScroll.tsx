@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useCallback, useEffect } from "react";
+import { useRef } from "react";
 import { cn } from "@/lib/utils";
 
 interface HorizontalScrollProps {
@@ -15,16 +15,6 @@ export default function HorizontalScroll({
   snap = false,
 }: HorizontalScrollProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const dragState = useRef({
-    isDown: false,
-    startX: 0,
-    scrollLeft: 0,
-    hasMoved: false,
-    lastX: 0,
-    lastTime: 0,
-    velocity: 0,
-  });
-  const animFrame = useRef<number>(0);
 
   function scrollByDir(dir: "left" | "right") {
     if (!scrollRef.current) return;
@@ -35,88 +25,14 @@ export default function HorizontalScroll({
     });
   }
 
-  /* ── Mouse-only drag: touch devices use native overflow scroll ── */
-  const onMouseDown = useCallback((e: React.MouseEvent) => {
-    if (!scrollRef.current) return;
-    if ((e.target as HTMLElement).closest("button[aria-label]")) return;
-    cancelAnimationFrame(animFrame.current);
-    dragState.current = {
-      isDown: true,
-      startX: e.clientX,
-      scrollLeft: scrollRef.current.scrollLeft,
-      hasMoved: false,
-      lastX: e.clientX,
-      lastTime: Date.now(),
-      velocity: 0,
-    };
-  }, []);
-
-  const onMouseMove = useCallback((e: React.MouseEvent) => {
-    if (!dragState.current.isDown || !scrollRef.current) return;
-    const dx = e.clientX - dragState.current.startX;
-    if (Math.abs(dx) > 3) {
-      dragState.current.hasMoved = true;
-      e.preventDefault();
-    }
-    scrollRef.current.scrollLeft = dragState.current.scrollLeft - dx * 1.2;
-    const now = Date.now();
-    const dt = now - dragState.current.lastTime;
-    if (dt > 0) {
-      dragState.current.velocity = (e.clientX - dragState.current.lastX) / dt;
-    }
-    dragState.current.lastX = e.clientX;
-    dragState.current.lastTime = now;
-  }, []);
-
-  const endDrag = useCallback(() => {
-    if (!dragState.current.isDown) return;
-    dragState.current.isDown = false;
-
-    // Momentum scrolling
-    const el = scrollRef.current;
-    if (el && dragState.current.hasMoved && Math.abs(dragState.current.velocity) > 0.2) {
-      let v = dragState.current.velocity * 150;
-      const decelerate = () => {
-        if (Math.abs(v) < 0.5 || !el) return;
-        el.scrollLeft -= v * 0.016;
-        v *= 0.95;
-        animFrame.current = requestAnimationFrame(decelerate);
-      };
-      cancelAnimationFrame(animFrame.current);
-      decelerate();
-    }
-
-    // Reset hasMoved after a tick so onClickCapture can still catch the click
-    setTimeout(() => {
-      dragState.current.hasMoved = false;
-    }, 0);
-  }, []);
-
-  const onClickCapture = useCallback((e: React.MouseEvent) => {
-    if (dragState.current.hasMoved) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
-  }, []);
-
-  useEffect(() => {
-    return () => cancelAnimationFrame(animFrame.current);
-  }, []);
-
   return (
     <div className={cn("relative group", className)}>
       <div
         ref={scrollRef}
         className={cn(
-          "flex gap-4 overflow-x-auto no-scrollbar scroll-smooth cursor-grab select-none",
+          "flex gap-4 overflow-x-auto no-scrollbar scroll-smooth",
           snap && "snap-x snap-mandatory"
         )}
-        onMouseDown={onMouseDown}
-        onMouseMove={onMouseMove}
-        onMouseUp={endDrag}
-        onMouseLeave={endDrag}
-        onClickCapture={onClickCapture}
-        onDragStart={(e) => e.preventDefault()}
       >
         {children}
       </div>

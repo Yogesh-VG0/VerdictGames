@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect, useCallback, Suspense } from "react";
+import { useState, useEffect, useCallback, useMemo, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
-import { searchGames } from "@/lib/api";
-import type { Game, SearchFilters, SortOption, MonetizationType, Platform } from "@/lib/types";
+import { searchGames, getGXDeals, getGXFreeToPlay } from "@/lib/api";
+import type { Game, SearchFilters, SortOption, MonetizationType, Platform, GXDeal, GXFreeGame } from "@/lib/types";
 import { PLATFORM_FILTER_OPTIONS, platformFilterIcon } from "@/components/ui/PlatformIcon";
+import GXDealCard from "@/components/GXDealCard";
 
 const allGenres: string[] = [
   "Action", "Action RPG", "Adventure", "Battle Royale", "Card Game",
@@ -25,7 +26,15 @@ import FilterChips from "@/components/ui/FilterChips";
 import SortDropdown from "@/components/ui/SortDropdown";
 import GradientText from "@/components/ui/GradientText";
 import { GameGridSkeleton } from "@/components/ui/Skeleton";
-import { Flame, Trophy, Sparkles, Calendar, Clock, Search as SearchIcon } from "lucide-react";
+import { Flame, Trophy, Sparkles, Calendar, Clock, Search as SearchIcon, Tag, Gift, Gamepad2, ExternalLink } from "lucide-react";
+import { slugify } from "@/lib/utils/slugify";
+import Link from "next/link";
+import Image from "next/image";
+import { cn } from "@/lib/utils";
+
+type BrowseTab = "games" | "deals" | "free";
+
+const MONETIZATION_OPTIONS = ["All", "Free", "Paid"] as const;
 
 /* Platform icons imported from shared PlatformIcon component */
 
@@ -33,6 +42,9 @@ function SearchContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
+  const [browseTab, setBrowseTab] = useState<BrowseTab>(
+    (searchParams.get("tab") as BrowseTab) || "games"
+  );
   const [query, setQuery] = useState(searchParams.get("q") ?? "");
   const [debouncedQuery, setDebouncedQuery] = useState(query);
   const [platform, setPlatform] = useState<Platform | "All">(
@@ -91,24 +103,42 @@ function SearchContent() {
     setPage(1);
   }, []);
 
+  // Fetch deals and free-to-play data for browse tabs
+  const { data: dealsData, isLoading: dealsLoading } = useQuery({
+    queryKey: ["gx-deals-browse"],
+    queryFn: () => getGXDeals(),
+    staleTime: 60 * 60 * 1000,
+    enabled: browseTab === "deals",
+  });
+
+  const { data: freeData, isLoading: freeLoading } = useQuery({
+    queryKey: ["gx-free-browse"],
+    queryFn: () => getGXFreeToPlay(),
+    staleTime: 60 * 60 * 1000,
+    enabled: browseTab === "free",
+  });
+
   // Sync URL on filter/page change
   useEffect(() => {
     const params = new URLSearchParams();
-    if (debouncedQuery) params.set("q", debouncedQuery);
-    if (platform !== "All") params.set("platform", platform);
-    if (genre) params.set("genre", genre);
-    if (year) params.set("year", year);
-    if (monetization !== "All") params.set("monetization", monetization);
-    if (sort !== "relevance") params.set("sort", sort);
-    if (page > 1) params.set("page", String(page));
+    if (browseTab !== "games") params.set("tab", browseTab);
+    if (browseTab === "games") {
+      if (debouncedQuery) params.set("q", debouncedQuery);
+      if (platform !== "All") params.set("platform", platform);
+      if (genre) params.set("genre", genre);
+      if (year) params.set("year", year);
+      if (monetization !== "All") params.set("monetization", monetization);
+      if (sort !== "relevance") params.set("sort", sort);
+      if (page > 1) params.set("page", String(page));
+    }
     router.replace(`/search?${params.toString()}`, { scroll: false });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedQuery, platform, genre, year, monetization, sort, page]);
+  }, [browseTab, debouncedQuery, platform, genre, year, monetization, sort, page]);
 
   const isInitialLoad = isLoading && !data;
 
   return (
-    <div className="max-w-[1400px] mx-auto px-4 py-6 space-y-6 overflow-x-hidden">
+    <div className="max-w-[1400px] mx-auto px-4 py-6 space-y-6 overflow-x-hidden page-enter">
       {/* Search header — contextual based on active sort */}
       <motion.div
         initial={{ opacity: 0, y: 16 }}
@@ -134,7 +164,35 @@ function SearchContent() {
         </p>
       </motion.div>
 
-      {/* Sticky search bar */}
+      {/* Browse mode tabs */}
+      <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1 -mx-4 px-4 sm:mx-0 sm:px-0">
+        {([
+          { key: "games" as BrowseTab, label: "Games", icon: SearchIcon },
+          { key: "deals" as BrowseTab, label: "Deals", icon: Tag },
+          { key: "free" as BrowseTab, label: "Free to Play", icon: Gift },
+        ]).map(({ key, label, icon: Icon }) => (
+          <button
+            key={key}
+            onClick={() => setBrowseTab(key)}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-all border",
+              browseTab === key
+                ? key === "deals"
+                  ? "bg-pixel-green/15 text-pixel-green border-pixel-green/30 shadow-sm"
+                  : key === "free"
+                    ? "bg-pixel-cyan/15 text-pixel-cyan border-pixel-cyan/30 shadow-sm"
+                    : "bg-accent/15 text-accent border-accent/30 shadow-sm"
+                : "bg-surface border-border text-secondary hover:text-foreground hover:border-border-hover"
+            )}
+          >
+            <Icon className="w-4 h-4" />
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {/* Sticky search bar — only for Games tab */}
+      {browseTab === "games" && (
       <div className="sticky z-40 bg-background/80 backdrop-blur-xl py-3 -mx-4 px-4 border-b border-border" style={{ top: "var(--navbar-height, 56px)" }}>
         <div className="relative">
           <svg
@@ -167,8 +225,10 @@ function SearchContent() {
           )}
         </div>
       </div>
+      )}
 
-      {/* Filters */}
+      {/* Filters — only for Games tab */}
+      {browseTab === "games" && (
       <div className="space-y-4">
         <div className="space-y-2">
           <label className="text-[10px] uppercase tracking-wider text-tertiary font-medium block">
@@ -184,6 +244,23 @@ function SearchContent() {
               }}
               labelFn={(v) => PLATFORM_FILTER_OPTIONS.find((o) => o.value === v)?.label ?? v}
               iconFn={(v) => platformFilterIcon(v)}
+            />
+          </div>
+        </div>
+
+        {/* Monetization filter chips */}
+        <div className="space-y-2">
+          <label className="text-[10px] uppercase tracking-wider text-tertiary font-medium block">
+            Price
+          </label>
+          <div className="overflow-x-auto scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
+            <FilterChips
+              options={MONETIZATION_OPTIONS as unknown as string[]}
+              selected={monetization}
+              onChange={(v) => {
+                setMonetization(v as MonetizationType | "All");
+                setPage(1);
+              }}
             />
           </div>
         </div>
@@ -256,8 +333,10 @@ function SearchContent() {
           </div>
         </div>
       </div>
+      )}
 
-      {/* Results */}
+      {/* Results — Games Tab */}
+      {browseTab === "games" && (
       <div>
         <AnimatePresence mode="wait">
           {isInitialLoad ? (
@@ -382,6 +461,143 @@ function SearchContent() {
           ) : null}
         </AnimatePresence>
       </div>
+      )}
+
+      {/* Deals Tab */}
+      {browseTab === "deals" && (
+        <div>
+          {dealsLoading ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-4">
+              {Array.from({ length: 12 }).map((_, i) => (
+                <div key={i} className="rounded-2xl border border-border bg-surface overflow-hidden">
+                  <div className="aspect-[3/4] bg-surface-2 animate-pulse" />
+                  <div className="p-3.5 space-y-2">
+                    <div className="h-4 w-3/4 bg-surface-2 rounded animate-pulse" />
+                    <div className="h-3 w-1/2 bg-surface-2 rounded animate-pulse" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : dealsData && dealsData.length > 0 ? (
+            <>
+              <p className="text-xs text-tertiary mb-4">{dealsData.length} deal{dealsData.length !== 1 ? "s" : ""} available</p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-4">
+                {dealsData.map((deal, i) => (
+                  <motion.div
+                    key={deal.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: Math.min(i * 0.03, 0.5), duration: 0.4 }}
+                  >
+                    <GXDealCard deal={deal} />
+                  </motion.div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <div className="py-16 text-center">
+              <Tag className="w-12 h-12 text-tertiary mx-auto mb-3" />
+              <p className="text-secondary">No deals available right now.</p>
+            </div>
+          )}
+          <p className="text-center text-[10px] text-tertiary pt-6">
+            Deal data powered by <a href="https://gxcorner.games" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">GX Corner</a>
+          </p>
+        </div>
+      )}
+
+      {/* Free to Play Tab */}
+      {browseTab === "free" && (
+        <div>
+          {freeLoading ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-4">
+              {Array.from({ length: 12 }).map((_, i) => (
+                <div key={i} className="rounded-2xl border border-border bg-surface overflow-hidden">
+                  <div className="aspect-[3/4] bg-surface-2 animate-pulse" />
+                  <div className="p-3.5 space-y-2">
+                    <div className="h-4 w-3/4 bg-surface-2 rounded animate-pulse" />
+                    <div className="h-3 w-1/2 bg-surface-2 rounded animate-pulse" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : freeData && freeData.length > 0 ? (
+            <>
+              <p className="text-xs text-tertiary mb-4">{freeData.length} free game{freeData.length !== 1 ? "s" : ""}</p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-4">
+                {freeData.map((game, i) => (
+                  <motion.div
+                    key={game.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: Math.min(i * 0.03, 0.5), duration: 0.4 }}
+                  >
+                    <div className="flex flex-col group rounded-2xl border border-border bg-surface overflow-hidden card-shimmer hover:border-pixel-green/30 hover:shadow-lg transition-all duration-300">
+                      <Link href={`/game/${slugify(game.title)}`} className="block">
+                        <div className="relative aspect-[3/4] overflow-hidden">
+                          {game.cover ? (
+                            <Image
+                              src={game.cover}
+                              alt={game.title}
+                              fill
+                              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
+                              className="object-cover transition-transform duration-700 group-hover:scale-110"
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-gradient-to-br from-pixel-green/20 via-surface-2 to-pixel-cyan/10 flex flex-col items-center justify-center gap-2 p-3">
+                              <Gamepad2 className="w-8 h-8 text-pixel-green/40" />
+                              <span className="text-tertiary text-[10px] font-semibold text-center line-clamp-2">{game.title}</span>
+                            </div>
+                          )}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                          <div className="absolute top-2.5 left-2.5">
+                            <span className="text-[10px] font-bold text-white bg-pixel-green/80 backdrop-blur-md px-2 py-0.5 rounded-lg border border-white/10">
+                              FREE
+                            </span>
+                          </div>
+                        </div>
+                      </Link>
+                      <div className="p-3 flex-1 flex flex-col gap-1.5">
+                        <Link href={`/game/${slugify(game.title)}`}>
+                          <h3 className="text-sm font-semibold text-foreground leading-tight line-clamp-1 group-hover:text-pixel-green transition-colors">
+                            {game.title}
+                          </h3>
+                        </Link>
+                        <span className="text-[10px] text-tertiary font-medium truncate min-h-[16px]">
+                          {game.genres.slice(0, 2).join(" · ") || "\u00A0"}
+                        </span>
+                        {game.url && (
+                          <a
+                            href={game.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={cn(
+                              "mt-auto flex items-center justify-center gap-1.5 w-full px-3 py-2 rounded-xl text-xs font-bold transition-all duration-200",
+                              "bg-pixel-green/15 text-pixel-green border border-pixel-green/20",
+                              "hover:bg-pixel-green hover:text-black hover:border-pixel-green"
+                            )}
+                          >
+                            <ExternalLink className="w-3 h-3" />
+                            Play Free
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <div className="py-16 text-center">
+              <Gift className="w-12 h-12 text-tertiary mx-auto mb-3" />
+              <p className="text-secondary">No free games available right now.</p>
+            </div>
+          )}
+          <p className="text-center text-[10px] text-tertiary pt-6">
+            Game data powered by <a href="https://gxcorner.games" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">GX Corner</a>
+          </p>
+        </div>
+      )}
     </div>
   );
 }
