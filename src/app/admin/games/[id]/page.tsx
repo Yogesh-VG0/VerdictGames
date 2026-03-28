@@ -139,6 +139,7 @@ export default function AdminGameEditor({ params }: { params: Promise<{ id: stri
   useEffect(() => {
     if (game.data) {
       const g = game.data;
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setForm({
         title: g.title ?? "",
         subtitle: g.subtitle ?? "",

@@ -4,6 +4,8 @@
  * Returns a single list with its games.
  */
 
+export const revalidate = 300; // ISR: revalidate every 5 minutes
+
 import { NextRequest } from "next/server";
 import { jsonOk, jsonNotFound } from "@/lib/api/response";
 import { mapGameRow, mapListRow } from "@/lib/db/mappers";
@@ -52,7 +54,11 @@ export async function GET(
         .select(GAME_CARD_COLUMNS)
         .in("id", gameIds) as { data: GameRow[] | null };
 
-      const allGames = (gamesData ?? []).map(mapGameRow);
+      // Filter for surface readiness — curated lists require cover, title, desc, genre
+      const { isSurfaceReady } = await import("@/lib/utils/quality");
+      const allGames = (gamesData ?? [])
+        .filter((r) => isSurfaceReady(r, "curatedList"))
+        .map(mapGameRow);
       games = gameIds
         .map((id) => allGames.find((g) => g.id === id))
         .filter(Boolean) as ReturnType<typeof mapGameRow>[];

@@ -286,7 +286,9 @@ export async function getGXPopularNews(): Promise<GXNewsArticle[]> {
       COUNTRY: "US",
       LOCALE: "en-US",
     });
-    return await gxFetch<GXNewsArticle[]>(`${NEWS_BASE}/news/popular?${params}`);
+    const raw = await gxFetch<GXNewsArticle[]>(`${NEWS_BASE}/news/popular?${params}`);
+    // Validate: discard entries missing title, image, or URL
+    return (raw ?? []).filter((a) => a.title && a.image && (a.display_url || a.real_url));
   } catch (err) {
     console.warn("[GX] popular news fetch failed:", err);
     return [];
@@ -306,7 +308,8 @@ export async function getGXNewsFeed(): Promise<GXNewsArticle[]> {
       LOCALE: "en-US",
     });
     const data = await gxFetch<{ news: GXNewsArticle[] }>(`${NEWS_BASE}/news?${params}`);
-    return data.news;
+    // Validate: discard entries missing title, image, or URL
+    return (data.news ?? []).filter((a) => a.title && a.image && (a.display_url || a.real_url));
   } catch (err) {
     console.warn("[GX] news feed fetch failed:", err);
     return [];

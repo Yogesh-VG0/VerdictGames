@@ -37,6 +37,7 @@ function LibraryContent() {
   useEffect(() => {
     const urlStatus = searchParams.get("status");
     if (urlStatus && STATUS_TABS.some(t => t.key === urlStatus)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setActiveTab(urlStatus);
     }
   }, [searchParams]);

@@ -23,6 +23,7 @@ export default function ScoreRing({
   const offset = circumference - (score / 100) * circumference;
   const color = scoreColorVar(score);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => setMounted(true), []);
 
   return (

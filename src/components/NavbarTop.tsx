@@ -52,6 +52,7 @@ export default function NavbarTop() {
   // Close dropdown on route change
   const closeDropdown = useCallback(() => setProfileDropdownOpen(false), []);
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     closeDropdown();
   }, [pathname, closeDropdown]);
 

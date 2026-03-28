@@ -5,6 +5,8 @@
  * Delegates to the shared service layer.
  */
 
+export const revalidate = 120; // ISR: revalidate every 2 minutes
+
 import { NextRequest } from "next/server";
 import { jsonOk } from "@/lib/api/response";
 import { fetchNewReleases } from "@/lib/services/homepage";

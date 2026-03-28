@@ -161,7 +161,8 @@ if (trendingIds.length < 20) {
 console.log("\n═══════════════════════════════════════════");
 console.log("  TRENDING RESULTS"); 
 console.log("═══════════════════════════════════════════");
-await sql`UPDATE games SET trending = false, featured = false`;
+// ONLY reset trending flag — featured is editorial-only (is_featured_manual), never auto-derived
+await sql`UPDATE games SET trending = false`;
 const uniqueIds = [...new Set(trendingIds)].slice(0, 20);
 if (uniqueIds.length > 0) await sql`UPDATE games SET trending = true WHERE id = ANY(${uniqueIds})`;
 for (const m of matched) {
@@ -170,10 +171,10 @@ for (const m of matched) {
 }
 console.log(`\n🔥 Marked ${uniqueIds.length} games as trending`);
 
-// ── Featured ──
-const feat = await sql`SELECT id, title, score FROM games WHERE trending = true ORDER BY score DESC LIMIT 5`;
-if (feat.length > 0) await sql`UPDATE games SET featured = true WHERE id = ANY(${feat.map((g) => g.id)})`;
-console.log(`⭐ Featured: ${feat.map((g) => `${g.title} (${g.score})`).join(", ")}`);
+// NOTE: Featured flag is NOT set here. Featured is editorial-only via is_featured_manual.
+// Use the admin panel to set is_featured_manual on deserving games.
+const [{ fc: featCount }] = await sql`SELECT COUNT(*) as fc FROM games WHERE is_featured_manual = true`;
+console.log(`⭐ Featured (editorial): ${featCount} games with is_featured_manual=true`);
 
 const [{ count }] = await sql`SELECT COUNT(*) as count FROM games`;
 const [{ tc }] = await sql`SELECT COUNT(*) as tc FROM games WHERE trending = true`;

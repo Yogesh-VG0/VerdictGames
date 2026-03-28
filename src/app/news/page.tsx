@@ -24,10 +24,13 @@ export default function NewsPage() {
         getGXNewsFeed(),
       ]);
       // Dedupe by normalized title, popular items first
+      // ALSO filter out articles without images (user requirement: don't show imageless news)
       const seen = new Set<string>();
       const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
       const merged: GXNewsItem[] = [];
       for (const a of [...popular, ...feed]) {
+        // Skip articles without images
+        if (!a.image || a.image.trim() === "") continue;
         const key = normalize(a.title);
         if (!seen.has(key)) {
           seen.add(key);

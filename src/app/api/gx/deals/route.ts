@@ -1,11 +1,15 @@
 import { jsonOk } from "@/lib/api/response";
 import { getGXDeals } from "@/lib/external/gxcorner";
+import { gxFetchWithCache } from "@/lib/external/gx-cache";
 import type { GXDeal } from "@/lib/types";
 
 export const revalidate = 3600;
 
 export async function GET() {
-  const raw = await getGXDeals();
+  const { data: raw } = await gxFetchWithCache(
+    "deals",
+    getGXDeals
+  );
   const deals: GXDeal[] = raw.map((entry) => ({
     id: entry.id,
     title: entry.game.title,

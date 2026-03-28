@@ -87,8 +87,8 @@ export async function GET(
     // Fetch vote aggregates for these reviews
     const reviewIds = (data ?? []).map((r: Record<string, unknown>) => r.id as string);
     
-    let voteCounts: Record<string, { up: number; down: number }> = {};
-    let userVotes: Record<string, number> = {};
+    const voteCounts: Record<string, { up: number; down: number }> = {};
+    const userVotes: Record<string, number> = {};
 
     if (reviewIds.length > 0) {
       // Get aggregate vote counts per review

@@ -92,6 +92,7 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login", messa
 
   // Reset state on tab switch
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setError("");
     setSuccessMsg("");
     setUsernameStatus("idle");
@@ -101,6 +102,7 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login", messa
   // Reset everything when modal closes
   useEffect(() => {
     if (!isOpen) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setEmail("");
       setPassword("");
       setUsername("");

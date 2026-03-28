@@ -1,11 +1,15 @@
 import { jsonOk } from "@/lib/api/response";
 import { getGXTopLiked } from "@/lib/external/gxcorner";
+import { gxFetchWithCache } from "@/lib/external/gx-cache";
 import type { GXMostLiked } from "@/lib/types";
 
 export const revalidate = 3600;
 
 export async function GET() {
-  const raw = await getGXTopLiked();
+  const { data: raw } = await gxFetchWithCache(
+    "top_liked",
+    getGXTopLiked
+  );
   const games: GXMostLiked[] = raw.map((g) => ({
     id: g.id,
     title: g.title,

@@ -4,6 +4,8 @@
  * Returns all curated game lists.
  */
 
+export const revalidate = 300; // ISR: revalidate every 5 minutes
+
 import { NextRequest } from "next/server";
 import { jsonOk } from "@/lib/api/response";
 import { mapGameRow, mapListRow } from "@/lib/db/mappers";
@@ -44,7 +46,7 @@ export async function GET(_request: NextRequest) {
     }
 
     // Single batch query for all games (with card columns only)
-    let gamesMap = new Map<string, ReturnType<typeof mapGameRow>>();
+    const gamesMap = new Map<string, ReturnType<typeof mapGameRow>>();
     if (allGameIds.size > 0) {
       const { data: gamesData } = await supabase
         .from("games")

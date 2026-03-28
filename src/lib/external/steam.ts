@@ -8,8 +8,25 @@
  * and the Steamworks Web API (key required for some endpoints).
  */
 
+import { recordProviderUsage } from "@/lib/utils/providerUsage";
+
 const STEAM_STORE_BASE = "https://store.steampowered.com/api";
 const STEAM_API_BASE = "https://api.steampowered.com";
+
+/**
+ * Tracked fetch for Steam API - non-blocking usage recording.
+ */
+async function trackedFetch(endpoint: string, url: string, init?: RequestInit): Promise<Response> {
+  const start = Date.now();
+  try {
+    const res = await fetch(url, init);
+    recordProviderUsage("steam", endpoint, res.ok, Date.now() - start);
+    return res;
+  } catch (err) {
+    recordProviderUsage("steam", endpoint, false, Date.now() - start);
+    throw err;
+  }
+}
 
 /* ───────── Response Types ───────── */
 
@@ -87,7 +104,8 @@ export async function getSteamAppDetails(
   appId: number
 ): Promise<SteamAppDetails["data"] | null> {
   try {
-    const res = await fetch(
+    const res = await trackedFetch(
+      "appdetails",
       `${STEAM_STORE_BASE}/appdetails?appids=${appId}&cc=us&l=english`,
       { next: { revalidate: 3600 } }
     );
@@ -113,7 +131,8 @@ export async function getSteamReviewSummary(
   appId: number
 ): Promise<SteamReviewSummary["query_summary"] | null> {
   try {
-    const reviewRes = await fetch(
+    const reviewRes = await trackedFetch(
+      "reviews",
       `https://store.steampowered.com/appreviews/${appId}?json=1&language=all&purchase_type=all&num_per_page=0`,
       { next: { revalidate: 1800 } }
     );
@@ -138,7 +157,8 @@ export async function getSteamPlayerCount(
   appId: number
 ): Promise<number | null> {
   try {
-    const res = await fetch(
+    const res = await trackedFetch(
+      "player-count",
       `${STEAM_API_BASE}/ISteamUserStats/GetNumberOfCurrentPlayers/v1/?appid=${appId}`,
       { next: { revalidate: 300 } } // cache 5 min — player count changes frequently
     );

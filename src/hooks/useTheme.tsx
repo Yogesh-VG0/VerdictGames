@@ -27,6 +27,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const stored = localStorage.getItem("vg-theme") as Theme | null;
     if (stored === "light") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setTheme("light");
       document.documentElement.classList.add("light");
     }

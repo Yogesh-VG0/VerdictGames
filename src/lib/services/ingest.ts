@@ -258,7 +258,7 @@ export async function ingestGame(options: IngestOptions): Promise<IngestResult> 
   // ── Step 7: Process CheapShark data ──
   let cheapsharkId: string | null = null;
   let priceCurrent: number | null = steamPrice?.priceCurrent ?? null;
-  let priceCurrency: string = steamPrice?.priceCurrency ?? "USD";
+  const priceCurrency: string = steamPrice?.priceCurrency ?? "USD";
   let priceLowest: number | null = null;
   let priceDealUrl: string | null = null;
   let isFree: boolean = steamPrice?.isFree ?? hasFreeTag;
@@ -459,8 +459,9 @@ export async function ingestGame(options: IngestOptions): Promise<IngestResult> 
 
   if (existing && forceRefresh) {
     // Update existing record
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const { error: updateError } = await (supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .from("games") as any)
       .update(gameRecord)
       .eq("id", existing.id);
@@ -477,8 +478,9 @@ export async function ingestGame(options: IngestOptions): Promise<IngestResult> 
     gameId = existing.id;
   } else {
     // Insert new record
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const { data: inserted, error: insertError } = await (supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .from("games") as any)
       .insert(gameRecord)
       .select("id")
@@ -830,7 +832,7 @@ async function verifyMobileListings(
 
       let packageName = playStoreUrl ? extractPackageName(playStoreUrl) : null;
       let appData = packageName ? await getGooglePlayApp(packageName) : null;
-      let matchedViaUrl = !!appData;
+      const matchedViaUrl = !!appData;
 
       // If no direct package name, search by title with tiered matching
       if (!appData) {

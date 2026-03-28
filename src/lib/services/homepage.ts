@@ -4,12 +4,27 @@
  * Shared game-fetching logic used by both the /api/homepage aggregator
  * and the individual /api/games/* routes. No internal HTTP calls —
  * hits Supabase directly for minimal latency.
+ *
+ * ─── Section Contracts ───────────────────────────────────────────
+ * Hero:          Editorial + high-quality, visually stunning games
+ * Trending:      Genuine current momentum / player-count surge
+ * Top Rated:     Confidence-weighted best-scored recent games
+ * New Releases:  Card-ready recently released games (newest first)
+ * Upcoming:      Chronological upcoming/confirmed releases
+ * Recently Added:Newly ingested games that pass readiness
+ * Recommendations:Anonymous high-quality discovery (homepage)
+ *
+ * ─── Invariants ──────────────────────────────────────────────────
+ * • Quality scoring ≠ surface readiness (never conflated)
+ * • Every public rail output passes isSurfaceReady('homepageRail')
+ * • Global homepage dedup: each game appears in exactly one rail
+ * • Hero/Featured is NEVER derived from trending
  */
 
 import { getServerSupabase } from "@/lib/supabase/server";
 import { mapGameRow } from "@/lib/db/mappers";
 import { GAME_CARD_COLUMNS_WITH_DESC } from "@/lib/db/columns";
-import { filterQualityGames, confidenceWeightedScore, isQualityGame } from "@/lib/utils/quality";
+import { filterQualityGames, confidenceWeightedScore, isQualityGame, isSurfaceReady } from "@/lib/utils/quality";
 import type { GameRow } from "@/lib/supabase/types";
 import type { Game, GXDeal } from "@/lib/types";
 
@@ -73,22 +88,62 @@ function trendingRank(g: GameRow, minPlayers: number, maxPlayers: number): numbe
   const ageMs = Date.now() - new Date(g.release_date ?? "2000-01-01").getTime();
   const ageDays = ageMs / 86400000;
   const recency = Math.min(100, Math.exp(-ageDays / DECAY_DAYS) * 100);
-  // Factor in momentum (log-based, stored on the row)
+  // Factor in momentum (log-based, stored on the row) — raised to 25% weight
   const momentum = (g as GameRow & { momentum?: number }).momentum ?? 0;
-  const momentumBoost = Math.max(0, Math.min(20, momentum * 50));
-  return (score * 0.25) + (playerScore * 0.35) + (recency * 0.25) + (momentumBoost * 0.15);
+  const momentumBoost = Math.max(0, Math.min(25, momentum * 65));
+  return (score * 0.20) + (playerScore * 0.30) + (recency * 0.25) + (momentumBoost * 0.25);
 }
 
 /* ═══════════════════════════════════════════════════
-   Hero Candidates — independent pool for the carousel
-   Different from trending rail: requires header art,
-   higher score gate, and ordered by editorial intent.
+   Genre Diversity Helper
+   Caps how many games from one primary genre can appear
+   ═══════════════════════════════════════════════════ */
+
+function applyGenreDiversity(rows: GameRow[], limit: number, maxPerGenre: number): GameRow[] {
+  const genreCounts = new Map<string, number>();
+  const picks: GameRow[] = [];
+  const overflow: GameRow[] = [];
+
+  for (const row of rows) {
+    if (picks.length >= limit) break;
+    const primary = (row.genres?.[0] ?? "unknown").toLowerCase();
+    const count = genreCounts.get(primary) ?? 0;
+    if (count < maxPerGenre) {
+      genreCounts.set(primary, count + 1);
+      picks.push(row);
+    } else {
+      overflow.push(row);
+    }
+  }
+
+  // Fill remaining from overflow (genre limits exceeded, but need more games)
+  if (picks.length < limit) {
+    const pickIds = new Set(picks.map((p) => p.id));
+    for (const row of overflow) {
+      if (picks.length >= limit) break;
+      if (!pickIds.has(row.id)) picks.push(row);
+    }
+  }
+
+  return picks;
+}
+
+/* ═══════════════════════════════════════════════════
+   Hero Candidates — CONTRACT
+   ─────────────────────────────────────────────────
+   Purpose:  Editorial + visually stunning games
+   Requires: header_image, cover_image, score>=72, confidence>=0.5
+   Excludes: is_provisional, no header_image, unreleased (unless editorial)
+   Scoring:  40% editorial, 30% verdict_score, 20% review volume, 10% recency
+   Diversity: Max 2 per primary genre
+   RULE:     NEVER derived from trending. Only from is_featured_manual + auto pool.
    ═══════════════════════════════════════════════════ */
 
 export async function fetchHeroCandidates(limit = 12): Promise<Game[]> {
   const supabase = getServerSupabase();
 
   // Step 1: Manually featured games (editorial priority) — no age limit
+  // RULE: Hero sourced from is_featured_manual flag, NEVER from trending flag
   const { data: manualFeatured } = await supabase
     .from("games")
     .select(GAME_CARD_COLUMNS_WITH_DESC)
@@ -104,6 +159,7 @@ export async function fetchHeroCandidates(limit = 12): Promise<Game[]> {
   // Step 2: Auto-selected recent high-quality games with header art
   const cutoff24 = monthsAgoISO(24);
   const cutoff36 = monthsAgoISO(36);
+  const cutoff60 = monthsAgoISO(60);
   const today = new Date().toISOString().slice(0, 10);
 
   let { data: autoPool } = await supabase
@@ -113,9 +169,8 @@ export async function fetchHeroCandidates(limit = 12): Promise<Game[]> {
     .neq("header_image", "")
     .gte("score", 76)
     .gt("score", 0)
-    .gte("confidence", 0.8)
-    .gte("review_count", 10000)
-    .gte("current_players", 500)
+    .gte("confidence", 0.5)
+    .gte("review_count", 5000)
     .gte("release_date", cutoff24)
     .lte("release_date", today)
     .order("verdict_score", { ascending: false, nullsFirst: false })
@@ -131,9 +186,8 @@ export async function fetchHeroCandidates(limit = 12): Promise<Game[]> {
       .neq("header_image", "")
       .gte("score", 72)
       .gt("score", 0)
-      .gte("confidence", 0.8)
-      .gte("review_count", 10000)
-      .gte("current_players", 500)
+      .gte("confidence", 0.5)
+      .gte("review_count", 3000)
       .gte("release_date", cutoff36)
       .lte("release_date", today)
       .order("verdict_score", { ascending: false, nullsFirst: false })
@@ -142,29 +196,64 @@ export async function fetchHeroCandidates(limit = 12): Promise<Game[]> {
     autoPool = wider.data;
   }
 
+  // Last resort: widen to 60mo and drop confidence to 0.3
+  if (!autoPool || autoPool.length < 4) {
+    const widest = await supabase
+      .from("games")
+      .select(GAME_CARD_COLUMNS_WITH_DESC)
+      .not("header_image", "is", null)
+      .neq("header_image", "")
+      .gte("score", 72)
+      .gt("score", 0)
+      .gte("confidence", 0.3)
+      .gte("review_count", 1000)
+      .gte("release_date", cutoff60)
+      .lte("release_date", today)
+      .order("verdict_score", { ascending: false, nullsFirst: false })
+      .order("score", { ascending: false })
+      .limit(40) as { data: GameRow[] | null };
+    autoPool = widest.data;
+  }
+
   const manualIds = new Set((manualFeatured ?? []).map((g) => g.id));
   const autoDeduped = (autoPool ?? []).filter((g) => !manualIds.has(g.id));
   const combined = deduplicateBySteamAppId([...(manualFeatured ?? []), ...autoDeduped]);
 
-  // Quality filter: hero needs well-known games (1000+ reviews, confidence>=0.8)
-  // Don't use the default fallback (which returns ALL unfiltered) — instead, always
-  // sort by confidence and take the best available even if fewer than minResults pass.
-  const strictFiltered = combined.filter((r) => isQualityGame(r, "hero"));
+  // Surface readiness gate + quality filter
+  const ready = combined.filter((r) => isSurfaceReady(r, "homepageRail"));
+  const strictFiltered = ready.filter((r) => isQualityGame(r, "hero"));
   const qualityFiltered = strictFiltered.length >= 4
     ? strictFiltered
-    : [...combined].sort((a, b) => confidenceWeightedScore(b) - confidenceWeightedScore(a)).slice(0, 12);
+    : [...ready].sort((a, b) => confidenceWeightedScore(b) - confidenceWeightedScore(a)).slice(0, limit * 2);
 
-  // Sort: manual featured first → then by confidence-weighted score (penalizes few-review games)
-  qualityFiltered.sort((a, b) => {
-    if (a.is_featured_manual && !b.is_featured_manual) return -1;
-    if (!a.is_featured_manual && b.is_featured_manual) return 1;
-    if (a.featured && !b.featured) return -1;
-    if (!a.featured && b.featured) return 1;
-    return confidenceWeightedScore(b) - confidenceWeightedScore(a);
-  });
+  // Composite score: 40% editorial, 30% verdict, 20% review volume, 10% recency
+  const heroScore = (g: GameRow): number => {
+    const editorial = g.is_featured_manual ? 40 : 0;
+    const verdict = Math.min(30, ((g.verdict_score ?? g.score ?? 0) / 100) * 30);
+    const volume = Math.min(20, Math.log10((g.review_count ?? 0) + 1) * 4);
+    const ageMs = Date.now() - new Date(g.release_date ?? "2000-01-01").getTime();
+    const ageDays = ageMs / 86400000;
+    const recency = Math.min(10, Math.exp(-ageDays / 365) * 10);
+    return editorial + verdict + volume + recency;
+  };
 
-  return qualityFiltered.slice(0, limit).map(mapGameRow);
+  qualityFiltered.sort((a, b) => heroScore(b) - heroScore(a));
+
+  // Genre diversity: max 2 per primary genre
+  const diversified = applyGenreDiversity(qualityFiltered, limit, 2);
+
+  return diversified.map(mapGameRow);
 }
+
+/* ═══════════════════════════════════════════════════
+   Trending — CONTRACT
+   ─────────────────────────────────────────────────
+   Purpose:  Games with genuine current momentum/surge
+   Requires: cover_image, score>0, released
+   Excludes: is_provisional, unreleased
+   Scoring:  20% score, 30% players, 25% recency, 25% momentum
+   Diversity: Max 3 per primary genre
+   ═══════════════════════════════════════════════════ */
 
 export async function fetchTrendingGames(limit = 20, homepageOnly = true): Promise<Game[]> {
   const supabase = getServerSupabase();
@@ -190,6 +279,8 @@ export async function fetchTrendingGames(limit = 20, homepageOnly = true): Promi
     .gte("release_date", cutoff4yr)
     .lte("release_date", today)
     .gt("score", 0)
+    .not("cover_image", "is", null)        // Cover image required at DB level
+    .neq("cover_image", "")
     .order("verdict_score", { ascending: false, nullsFirst: false })
     .order("score", { ascending: false })
     .limit(limit * 6) as { data: GameRow[] | null };
@@ -199,22 +290,23 @@ export async function fetchTrendingGames(limit = 20, homepageOnly = true): Promi
   const poolDeduped = (pool ?? []).filter((g) => !flaggedIds.has(g.id));
   const allCandidates = deduplicateBySteamAppId([...(flagged ?? []), ...poolDeduped]);
 
-  // Step 4: Quality filter
-  const qualified = filterQualityGames(allCandidates, { section: "trending", minResults: 4 });
+  // Step 4: Quality filter + surface readiness
+  const qualityFiltered = filterQualityGames(allCandidates, { section: "trending", minResults: 4 });
+  const readyFiltered = qualityFiltered.filter((r) => isSurfaceReady(r, "homepageRail"));
 
   // Step 5: Apply recency gate (graduated) — but only for homepage
   let recencyFiltered: GameRow[];
   if (homepageOnly) {
-    recencyFiltered = qualified.filter(isHomepageTrendingEligible);
+    recencyFiltered = readyFiltered.filter(isHomepageTrendingEligible);
     if (recencyFiltered.length < limit) {
-      recencyFiltered = qualified.filter((r) => isRecentEnoughForHome(r, HOMEPAGE_TRENDING_FALLBACK_MONTHS));
+      recencyFiltered = readyFiltered.filter((r) => isRecentEnoughForHome(r, HOMEPAGE_TRENDING_FALLBACK_MONTHS));
     }
     if (recencyFiltered.length < limit) {
-      recencyFiltered = qualified.filter((r) => isRecentEnoughForHome(r, HOMEPAGE_TRENDING_LAST_RESORT_MONTHS));
+      recencyFiltered = readyFiltered.filter((r) => isRecentEnoughForHome(r, HOMEPAGE_TRENDING_LAST_RESORT_MONTHS));
     }
-    if (recencyFiltered.length < 4) recencyFiltered = qualified;
+    if (recencyFiltered.length < 4) recencyFiltered = readyFiltered;
   } else {
-    recencyFiltered = qualified;
+    recencyFiltered = readyFiltered;
   }
 
   // Step 6: Rank by trending score — flagged games get a fixed boost
@@ -230,11 +322,20 @@ export async function fetchTrendingGames(limit = 20, homepageOnly = true): Promi
     return trendingRank(b, minP, maxP) - trendingRank(a, minP, maxP);
   });
 
-  return ranked.slice(0, limit).map(mapGameRow);
+  // Genre diversity: max 3 per primary genre
+  const diversified = applyGenreDiversity(ranked, limit, 3);
+
+  return diversified.map(mapGameRow);
 }
 
 /* ═══════════════════════════════════════════════════
-   New Releases (extracted from /api/games/new-releases)
+   New Releases — CONTRACT
+   ─────────────────────────────────────────────────
+   Purpose:  Card-ready recently released games
+   Requires: cover_image, description not empty, release_date<=today
+   Excludes: is_provisional (unless review_count>50), unreleased
+   Sorting:  release_date DESC (newest first)
+   Recency:  2 years, fallback 5 years
    ═══════════════════════════════════════════════════ */
 
 function dateCutoff(yearsBack: number): string {
@@ -245,7 +346,7 @@ function dateCutoff(yearsBack: number): string {
 
 export async function fetchNewReleases(limit = 20): Promise<Game[]> {
   const supabase = getServerSupabase();
-  const fetchLimit = limit * 2; // over-fetch for quality filtering
+  const fetchLimit = limit * 3; // over-fetch for quality filtering + dedup
 
   // Try last 2 years first
   let { data, error } = await supabase
@@ -254,6 +355,9 @@ export async function fetchNewReleases(limit = 20): Promise<Game[]> {
     .not("release_date", "is", null)
     .lte("release_date", new Date().toISOString().slice(0, 10))
     .gte("release_date", dateCutoff(2))
+    .not("cover_image", "is", null)
+    .neq("cover_image", "")
+    .neq("description", "")
     .order("release_date", { ascending: false })
     .limit(fetchLimit) as { data: GameRow[] | null; error: unknown };
 
@@ -265,6 +369,9 @@ export async function fetchNewReleases(limit = 20): Promise<Game[]> {
       .not("release_date", "is", null)
       .lte("release_date", new Date().toISOString().slice(0, 10))
       .gte("release_date", dateCutoff(5))
+      .not("cover_image", "is", null)
+      .neq("cover_image", "")
+      .neq("description", "")
       .order("release_date", { ascending: false })
       .limit(fetchLimit) as { data: GameRow[] | null; error: unknown };
 
@@ -276,12 +383,27 @@ export async function fetchNewReleases(limit = 20): Promise<Game[]> {
 
   if (error) throw error;
 
-  const filtered = filterQualityGames(data ?? [], { section: "newReleases", minResults: 4 });
-  return filtered.slice(0, limit).map(mapGameRow);
+  // Surface readiness + quality filter
+  const ready = (data ?? []).filter((r) => isSurfaceReady(r, "homepageRail"));
+  const filtered = filterQualityGames(ready, { section: "newReleases", minResults: 4 });
+
+  // Exclude provisional unless well-reviewed
+  const final = filtered.filter((r) => {
+    if ((r as GameRow & { is_provisional?: boolean }).is_provisional && r.review_count < 50) return false;
+    return true;
+  });
+
+  return final.slice(0, limit).map(mapGameRow);
 }
 
 /* ═══════════════════════════════════════════════════
-   Top Rated (extracted from /api/games/top-rated)
+   Top Rated — CONTRACT
+   ─────────────────────────────────────────────────
+   Purpose:  Confidence-weighted best-scored recent games
+   Requires: cover_image, review_count>=50, confidence>=0.3
+   Excludes: is_provisional, COMING SOON
+   Scoring:  confidenceWeightedScore()
+   Homepage: 24mo, fallback 36mo
    ═══════════════════════════════════════════════════ */
 
 /**
@@ -295,16 +417,30 @@ export async function fetchTopRated(limit = 10): Promise<Game[]> {
   const { data, error } = await supabase
     .from("games")
     .select(GAME_CARD_COLUMNS_WITH_DESC)
+    .not("cover_image", "is", null)
+    .neq("cover_image", "")
+    .gte("review_count", 50)
+    .gte("confidence", 0.3)
     .order("verdict_score", { ascending: false, nullsFirst: false })
     .order("score", { ascending: false })
     .limit(fetchLimit) as { data: GameRow[] | null; error: unknown };
 
   if (error) throw error;
 
-  const filtered = filterQualityGames(data ?? [], { section: "topRated", minResults: 4 });
+  const ready = (data ?? []).filter((r) => isSurfaceReady(r, "homepageRail"));
+  const filtered = filterQualityGames(ready, { section: "topRated", minResults: 4 });
+
+  // Exclude provisional / coming soon
+  const clean = filtered.filter((r) => {
+    if ((r as GameRow & { is_provisional?: boolean }).is_provisional) return false;
+    if (r.verdict_label === "COMING SOON") return false;
+    if (r.release_date && r.release_date > new Date().toISOString().slice(0, 10)) return false;
+    return true;
+  });
+
   // Sort by confidence-weighted score so tiny-sample 100% games don't dominate
-  filtered.sort((a, b) => confidenceWeightedScore(b) - confidenceWeightedScore(a));
-  return filtered.slice(0, limit).map(mapGameRow);
+  clean.sort((a, b) => confidenceWeightedScore(b) - confidenceWeightedScore(a));
+  return clean.slice(0, limit).map(mapGameRow);
 }
 
 /**
@@ -316,19 +452,24 @@ export async function fetchHomepageTopRated(limit = 20): Promise<Game[]> {
   const fetchLimit = limit * 4;
   const cutoff = monthsAgoISO(HOMEPAGE_TOP_RATED_MONTHS);
 
-  let { data, error } = await supabase
+  const { data, error } = await supabase
     .from("games")
     .select(GAME_CARD_COLUMNS_WITH_DESC)
     .not("release_date", "is", null)
     .gte("release_date", cutoff)
     .lte("release_date", new Date().toISOString().slice(0, 10))
+    .not("cover_image", "is", null)
+    .neq("cover_image", "")
+    .gte("review_count", 50)
+    .gte("confidence", 0.3)
     .order("verdict_score", { ascending: false, nullsFirst: false })
     .order("score", { ascending: false })
     .limit(fetchLimit) as { data: GameRow[] | null; error: unknown };
 
   if (error) throw error;
 
-  let filtered = filterQualityGames(data ?? [], { section: "topRated", minResults: 4 });
+  let ready = (data ?? []).filter((r) => isSurfaceReady(r, "homepageRail"));
+  let filtered = filterQualityGames(ready, { section: "topRated", minResults: 4 });
 
   // Fallback: widen to 36 months if not enough
   if (filtered.length < limit) {
@@ -339,25 +480,46 @@ export async function fetchHomepageTopRated(limit = 20): Promise<Game[]> {
       .not("release_date", "is", null)
       .gte("release_date", widerCutoff)
       .lte("release_date", new Date().toISOString().slice(0, 10))
+      .not("cover_image", "is", null)
+      .neq("cover_image", "")
+      .gte("review_count", 50)
+      .gte("confidence", 0.3)
       .order("verdict_score", { ascending: false, nullsFirst: false })
       .order("score", { ascending: false })
       .limit(fetchLimit) as { data: GameRow[] | null; error: unknown };
 
     if (!fallback.error && fallback.data) {
-      filtered = filterQualityGames(fallback.data, { section: "topRated", minResults: 4 });
+      ready = fallback.data.filter((r) => isSurfaceReady(r, "homepageRail"));
+      filtered = filterQualityGames(ready, { section: "topRated", minResults: 4 });
     }
   }
+
+  // Exclude provisional / coming soon
+  filtered = filtered.filter((r) => {
+    if ((r as GameRow & { is_provisional?: boolean }).is_provisional) return false;
+    if (r.verdict_label === "COMING SOON") return false;
+    if (r.release_date && r.release_date > new Date().toISOString().slice(0, 10)) return false;
+    return true;
+  });
 
   // Sort by confidence-weighted score so games with few reviews don't dominate
   filtered.sort((a, b) => confidenceWeightedScore(b) - confidenceWeightedScore(a));
 
-  return filtered.slice(0, limit).map(mapGameRow);
+  // Genre diversity: one per genre first, then fill
+  const diversified = applyGenreDiversity(filtered, limit, 2);
+
+  return diversified.map(mapGameRow);
 }
 
-/**
- * Homepage recommendations — recent high-quality picks for anonymous users.
- * Avoids all-time classics dominating the homepage.
- */
+/* ═══════════════════════════════════════════════════
+   Recommendations (anonymous) — CONTRACT
+   ─────────────────────────────────────────────────
+   Purpose:  Safe, broad, high-quality discovery (logged-out)
+   Requires: cover_image, review_count>=50, confidence>=0.4, score>=75
+   Excludes: is_provisional, COMING SOON
+   Diversity: Max 1 per primary genre (enforced)
+   ═══════════════════════════════════════════════════ */
+
 export async function fetchHomepageRecommendations(limit = 20): Promise<Game[]> {
   const supabase = getServerSupabase();
   const fetchLimit = limit * 8;
@@ -370,49 +532,33 @@ export async function fetchHomepageRecommendations(limit = 20): Promise<Game[]> 
     .gte("release_date", cutoff)
     .lte("release_date", new Date().toISOString().slice(0, 10))
     .gte("score", 75)
-    .gte("review_count", 20)              // minimum review threshold
+    .gte("review_count", 50)
+    .gte("confidence", 0.4)
     .not("cover_image", "is", null)       // must have cover image
+    .neq("cover_image", "")
     .order("verdict_score", { ascending: false, nullsFirst: false })
     .order("score", { ascending: false })
     .limit(fetchLimit) as { data: GameRow[] | null; error: unknown };
 
   if (error) throw error;
 
-  // Quality filter: require 50+ reviews, image, description
-  let filtered = filterQualityGames(data ?? [], { section: "topRated", minResults: 4 });
+  // Surface readiness gate
+  const ready = (data ?? []).filter((r) => isSurfaceReady(r, "homepageRail"));
 
   // Exclude provisional / coming soon
-  filtered = filtered.filter((r) => {
+  const clean = ready.filter((r) => {
     if ((r as GameRow & { is_provisional?: boolean }).is_provisional) return false;
     if (r.verdict_label === "COMING SOON") return false;
-    if (r.release_date && r.release_date > new Date().toISOString().slice(0, 10)) return false;
     return true;
   });
 
-  // Sort by confidence-weighted score so low-review 100% games don't dominate
-  filtered.sort((a, b) => confidenceWeightedScore(b) - confidenceWeightedScore(a));
+  // Sort by confidence-weighted score
+  clean.sort((a, b) => confidenceWeightedScore(b) - confidenceWeightedScore(a));
 
-  // Genre diversity: pick one per primary genre first
-  const seen = new Set<string>();
-  const picks: GameRow[] = [];
-  for (const row of filtered) {
-    if (picks.length >= limit) break;
-    const primary = (row.genres?.[0] ?? "unknown").toLowerCase();
-    if (!seen.has(primary) || seen.size >= 8) {
-      seen.add(primary);
-      picks.push(row);
-    }
-  }
-  // Fill remaining
-  if (picks.length < limit) {
-    const pickIds = new Set(picks.map((p) => p.id));
-    for (const row of filtered) {
-      if (picks.length >= limit) break;
-      if (!pickIds.has(row.id)) picks.push(row);
-    }
-  }
+  // Genre diversity: max 1 per genre for anonymous recs (broad discovery)
+  const diversified = applyGenreDiversity(clean, limit, 1);
 
-  return picks.map(mapGameRow);
+  return diversified.map(mapGameRow);
 }
 
 /* ═══════════════════════════════════════════════════
@@ -445,31 +591,53 @@ export async function fetchDeals(): Promise<GXDeal[]> {
 
 /* ═══════════════════════════════════════════════════
    Homepage Aggregator — single call, all sections
+   with strict global deduplication and refill logic
+
+   Dedup Priority: Hero > Trending > Top Rated > New Releases > Recommendations
+   Each game appears in exactly ONE rail on the homepage.
    ═══════════════════════════════════════════════════ */
 
 export interface HomepageData {
-  hero: Game[];        // carousel candidates — distinct from trending rail
-  trending: Game[];    // trending rail — pre-deduped against hero
+  hero: Game[];        // carousel candidates — editorially distinct from trending
+  trending: Game[];    // trending rail — genuine momentum
   topRated: Game[];
   newReleases: Game[];
   deals: GXDeal[];
-  recommendations: Game[];  // anonymous recommendations — avoids extra API call
+  recommendations: Game[];  // anonymous recommendations
 }
 
 export async function fetchHomepageData(): Promise<HomepageData> {
-  const [hero, trending, topRated, newReleases, deals, recommendations] = await Promise.all([
-    fetchHeroCandidates(12).catch(() => [] as Game[]),
-    fetchTrendingGames(26, true).catch(() => [] as Game[]),
-    fetchHomepageTopRated(20).catch(() => [] as Game[]),
-    fetchNewReleases(20).catch(() => [] as Game[]),
+  // Fetch all sections in parallel — each overfetches for dedup headroom
+  const [heroRaw, trendingRaw, topRatedRaw, newReleasesRaw, deals, recsRaw] = await Promise.all([
+    fetchHeroCandidates(24).catch(() => [] as Game[]),         // 2× target for dedup
+    fetchTrendingGames(40, true).catch(() => [] as Game[]),    // 2× target
+    fetchHomepageTopRated(40).catch(() => [] as Game[]),       // 2× target
+    fetchNewReleases(40).catch(() => [] as Game[]),            // 2× target
     fetchDeals().catch(() => [] as GXDeal[]),
-    fetchHomepageRecommendations(20).catch(() => [] as Game[]),
+    fetchHomepageRecommendations(40).catch(() => [] as Game[]),// 2× target
   ]);
 
-  // Pre-deduplicate trending rail against hero pool
-  // Hero top-4 candidates must not appear in the trending rail
-  const heroTopIds = new Set(hero.slice(0, 4).map((g) => g.id));
-  const trendingDeduped = trending.filter((g) => !heroTopIds.has(g.id));
+  // ─── Global Dedup: each game in exactly one rail ───
+  const usedIds = new Set<string>();
 
-  return { hero, trending: trendingDeduped, topRated, newReleases, deals, recommendations };
+  function claimSlots(candidates: Game[], max: number): Game[] {
+    const result: Game[] = [];
+    for (const g of candidates) {
+      if (result.length >= max) break;
+      if (!usedIds.has(g.id)) {
+        usedIds.add(g.id);
+        result.push(g);
+      }
+    }
+    return result;
+  }
+
+  // Claim in priority order
+  const hero = claimSlots(heroRaw, 12);
+  const trending = claimSlots(trendingRaw, 20);
+  const topRated = claimSlots(topRatedRaw, 20);
+  const newReleases = claimSlots(newReleasesRaw, 20);
+  const recommendations = claimSlots(recsRaw, 20);
+
+  return { hero, trending, topRated, newReleases, deals, recommendations };
 }

@@ -7,7 +7,22 @@
  * Server-only — never import in client code.
  */
 
+import { recordProviderUsage } from "@/lib/utils/providerUsage";
+
 const CHEAPSHARK_BASE = "https://www.cheapshark.com/api/1.0";
+
+/** Tracked fetch for CheapShark - non-blocking usage recording */
+async function trackedFetch(endpoint: string, url: string, init?: RequestInit): Promise<Response> {
+  const start = Date.now();
+  try {
+    const res = await fetch(url, init);
+    recordProviderUsage("cheapshark", endpoint, res.ok, Date.now() - start);
+    return res;
+  } catch (err) {
+    recordProviderUsage("cheapshark", endpoint, false, Date.now() - start);
+    throw err;
+  }
+}
 
 /* ───────── Response Types ───────── */
 
@@ -103,7 +118,7 @@ export async function searchCheapShark(
       exact: "0",
     });
 
-    const res = await fetch(`${CHEAPSHARK_BASE}/games?${params}`, {
+    const res = await trackedFetch("search", `${CHEAPSHARK_BASE}/games?${params}`, {
       next: { revalidate: 1800 },
     });
 
@@ -125,7 +140,7 @@ export async function getCheapSharkGame(
   gameId: string
 ): Promise<CheapSharkGameInfo | null> {
   try {
-    const res = await fetch(`${CHEAPSHARK_BASE}/games?id=${gameId}`, {
+    const res = await trackedFetch("game", `${CHEAPSHARK_BASE}/games?id=${gameId}`, {
       next: { revalidate: 1800 },
     });
 
@@ -164,7 +179,7 @@ export async function getCheapSharkDeals(options?: {
       params.set("storeID", options.storeId);
     }
 
-    const res = await fetch(`${CHEAPSHARK_BASE}/deals?${params}`, {
+    const res = await trackedFetch("deals", `${CHEAPSHARK_BASE}/deals?${params}`, {
       next: { revalidate: 1800 },
     });
 

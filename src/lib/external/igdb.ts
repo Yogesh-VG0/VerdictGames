@@ -12,6 +12,8 @@
  * Server-only — never import in client code.
  */
 
+import { recordProviderUsage } from "@/lib/utils/providerUsage";
+
 const IGDB_BASE = "https://api.igdb.com/v4";
 const TWITCH_TOKEN_URL = "https://id.twitch.tv/oauth2/token";
 
@@ -142,6 +144,7 @@ async function igdbQuery<T>(
   if (!token) return null;
 
   const clientId = process.env.TWITCH_CLIENT_ID!;
+  const start = Date.now();
 
   try {
     const res = await fetch(`${IGDB_BASE}/${endpoint}`, {
@@ -154,6 +157,9 @@ async function igdbQuery<T>(
       body,
     });
 
+    // Fire-and-forget tracking (non-blocking)
+    recordProviderUsage("igdb", endpoint, res.ok, Date.now() - start);
+
     if (!res.ok) {
       console.error(`[IGDB] Query to /${endpoint} failed: ${res.status}`);
       return null;
@@ -161,6 +167,7 @@ async function igdbQuery<T>(
 
     return res.json() as Promise<T[]>;
   } catch (err) {
+    recordProviderUsage("igdb", endpoint, false, Date.now() - start);
     console.error(`[IGDB] Query to /${endpoint} error:`, err);
     return null;
   }

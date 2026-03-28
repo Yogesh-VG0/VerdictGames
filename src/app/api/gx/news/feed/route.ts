@@ -1,11 +1,15 @@
 import { jsonOk } from "@/lib/api/response";
 import { getGXNewsFeed } from "@/lib/external/gxcorner";
+import { gxFetchWithCache } from "@/lib/external/gx-cache";
 import type { GXNewsItem } from "@/lib/types";
 
 export const revalidate = 3600;
 
 export async function GET() {
-  const raw = await getGXNewsFeed();
+  const { data: raw } = await gxFetchWithCache(
+    "news_feed",
+    getGXNewsFeed
+  );
   const news: GXNewsItem[] = raw.map((a) => ({
     id: a.article_id,
     title: a.title,

@@ -4,6 +4,8 @@
  * Query params: month (YYYY-MM), limit
  */
 
+export const revalidate = 300; // ISR: revalidate every 5 minutes
+
 import { NextRequest } from "next/server";
 import { jsonOk } from "@/lib/api/response";
 import { mapGameRow } from "@/lib/db/mappers";
@@ -34,6 +36,8 @@ export async function GET(request: NextRequest) {
       .from("games")
       .select(GAME_CARD_COLUMNS)
       .not("release_date", "is", null)
+      .not("cover_image", "is", null)
+      .neq("cover_image", "")
       .order("release_date", { ascending: true })
       .limit(limit);
 

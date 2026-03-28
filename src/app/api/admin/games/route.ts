@@ -7,6 +7,25 @@ import { GAME_CARD_COLUMNS } from "@/lib/db/columns";
 import type { GameRow } from "@/lib/supabase/types";
 import { slugify } from "@/lib/utils/slugify";
 
+/**
+ * Quality filter types for admin diagnostics.
+ * Each filter isolates games with specific data quality issues.
+ */
+type QualityFilter =
+  | "missing-cover"
+  | "missing-header"
+  | "missing-screenshots"
+  | "missing-description"
+  | "missing-genres"
+  | "missing-tags"
+  | "missing-trailer"
+  | "missing-store-link"
+  | "low-confidence"
+  | "provisional"
+  | "stale-enrichment"
+  | "no-provider"
+  | "zero-reviews";
+
 export async function GET(request: NextRequest) {
   const { error } = await requireAdmin();
   if (error) return error;
@@ -16,21 +35,111 @@ export async function GET(request: NextRequest) {
   const rawQ = params.get("q") ?? "";
   const q = rawQ.replace(/[%_(),.;'"\\|{}\[\]]/g, "").trim().slice(0, 200);
   const page = Math.max(1, parseInt(params.get("page") ?? "1", 10));
+  const filter = params.get("filter") as QualityFilter | null;
+  const sortBy = params.get("sort") ?? "updated"; // "updated" | "confidence" | "reviews" | "completeness"
   const limit = 20;
   const offset = (page - 1) * limit;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let query = supabase.from("games").select(GAME_CARD_COLUMNS, { count: "planned" }) as any;
+  // Extended columns for quality diagnostics
+  const ADMIN_COLUMNS = `${GAME_CARD_COLUMNS},confidence,enrichment_sources,trailer_url,steam_url,play_store_url,created_at,updated_at,last_enriched_at,completeness_score,media_source`;
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let query = supabase.from("games").select(ADMIN_COLUMNS, { count: "planned" }) as any;
+
+  // Text search
   if (q) {
     query = query.ilike("title", `%${q}%`);
   }
 
-  query = query.order("updated_at", { ascending: false }).range(offset, offset + limit - 1);
+  // Quality filters
+  if (filter) {
+    switch (filter) {
+      case "missing-cover":
+        query = query.or("cover_image.is.null,cover_image.eq.");
+        break;
+      case "missing-header":
+        query = query.or("header_image.is.null,header_image.eq.");
+        break;
+      case "missing-screenshots":
+        query = query.or("screenshots.is.null,screenshots.eq.{}");
+        break;
+      case "missing-description":
+        query = query.or("description.is.null,description.eq.");
+        break;
+      case "missing-genres":
+        query = query.or("genres.is.null,genres.eq.{}");
+        break;
+      case "missing-tags":
+        query = query.or("tags.is.null,tags.eq.{}");
+        break;
+      case "missing-trailer":
+        query = query.or("trailer_url.is.null,trailer_url.eq.");
+        break;
+      case "missing-store-link":
+        // No Steam or Play Store URL
+        query = query
+          .or("steam_url.is.null,steam_url.eq.")
+          .or("play_store_url.is.null,play_store_url.eq.");
+        break;
+      case "low-confidence":
+        query = query.lt("confidence", 0.3);
+        break;
+      case "provisional":
+        query = query.eq("is_provisional", true);
+        break;
+      case "stale-enrichment":
+        // Enriched more than 30 days ago
+        const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+        query = query.lt("last_enriched_at", thirtyDaysAgo);
+        break;
+      case "no-provider":
+        // No enrichment sources
+        query = query.or("enrichment_sources.is.null,enrichment_sources.eq.{}");
+        break;
+      case "zero-reviews":
+        query = query.or("review_count.is.null,review_count.eq.0");
+        break;
+    }
+  }
+
+  // Sorting
+  switch (sortBy) {
+    case "confidence":
+      query = query.order("confidence", { ascending: true, nullsFirst: true });
+      break;
+    case "reviews":
+      query = query.order("review_count", { ascending: true, nullsFirst: true });
+      break;
+    case "completeness":
+      query = query.order("completeness_score", { ascending: true, nullsFirst: true });
+      break;
+    default:
+      query = query.order("updated_at", { ascending: false });
+  }
+
+  query = query.range(offset, offset + limit - 1);
   const { data, count } = await query;
 
+  // Map rows with extra admin fields
+  const games = ((data ?? []) as GameRow[]).map((row) => {
+    const mapped = mapGameRow(row);
+    return {
+      ...mapped,
+      // Extra admin diagnostics
+      confidence: row.confidence ?? null,
+      enrichmentSources: row.enrichment_sources ?? [],
+      hasTrailer: !!row.trailer_url,
+      hasStoreLink: !!(row.steam_url || row.play_store_url),
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+      enrichedAt: row.last_enriched_at ?? null,
+      completenessScore: (row as GameRow & { completeness_score?: number }).completeness_score ?? 0,
+      mediaSource: (row as GameRow & { media_source?: string }).media_source ?? null,
+    };
+  });
+
   return jsonOk({
-    games: ((data ?? []) as GameRow[]).map(mapGameRow),
+    games,
     total: count ?? 0,
     page,
     pageSize: limit,
@@ -223,7 +332,7 @@ export async function POST(request: NextRequest) {
     // Link in mobile_store_listings with full store metadata (reuses cached app data)
     if (storeExternalId) {
       try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+         
         const listingData: Record<string, unknown> = {
           game_id: inserted.id,
           store: storeSource,

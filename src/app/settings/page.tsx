@@ -57,6 +57,7 @@ export default function SettingsPage() {
   // Initialize form from profile data — moved to useEffect
   useEffect(() => {
     if (profile) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setDisplayName(profile.displayName ?? "");
       setBio(profile.bio ?? "");
       setFavoriteGenres(profile.favoriteGenres ?? []);

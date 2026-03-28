@@ -4,19 +4,76 @@
  * Full-text search across games with filter support.
  * Query params: q, platform, genre, year, monetization, sort, page
  *
+ * Relevance ranking: title-similarity-first (50%), then quality (25%),
+ * review volume (15%), and recency (10%).
+ *
  * On-demand ingest: if a text query returns 0 results and no filters
  * are active, attempts to ingest the game from external sources.
  */
+
+export const revalidate = 30; // ISR: short cache for search freshness
 
 import { NextRequest } from "next/server";
 import { jsonOk } from "@/lib/api/response";
 import { mapGameRow } from "@/lib/db/mappers";
 import { GAME_CARD_COLUMNS_WITH_DESC } from "@/lib/db/columns";
-import { confidenceWeightedScore } from "@/lib/utils/quality";
+import { confidenceWeightedScore, isSurfaceReady } from "@/lib/utils/quality";
 import type { Game, PaginatedResponse, SortOption, Platform } from "@/lib/types";
 import type { GameRow } from "@/lib/supabase/types";
 
 const PAGE_SIZE = 25;
+
+/* ─── Title Similarity Scoring ─── */
+
+/**
+ * Compute title similarity between query and a game title.
+ * Returns 0-1 where 1 = exact match.
+ *
+ * Strategy:
+ * - Exact match (case-insensitive) → 1.0
+ * - Starts-with → 0.9 + length bonus
+ * - Contains as word → 0.7 + position bonus
+ * - Contains substring → 0.5 + length ratio
+ * - Partial word overlap → 0.1-0.4 based on word overlap ratio
+ */
+function titleSimilarity(query: string, title: string): number {
+  const q = query.toLowerCase().trim();
+  const t = title.toLowerCase().trim();
+
+  // Exact match
+  if (q === t) return 1.0;
+
+  // Title starts with query
+  if (t.startsWith(q)) return 0.9 + Math.min(0.09, q.length / t.length * 0.09);
+
+  // Query starts with title (user typed more than the title)
+  if (q.startsWith(t)) return 0.85 + Math.min(0.09, t.length / q.length * 0.09);
+
+  // Contains as whole word(s)
+  const qWords = q.split(/\s+/);
+  const tWords = t.split(/\s+/);
+
+  // Check if all query words appear in title
+  const allQueryWordsInTitle = qWords.every((qw) => tWords.some((tw) => tw.includes(qw)));
+  if (allQueryWordsInTitle) {
+    const wordOverlap = qWords.length / Math.max(tWords.length, 1);
+    return 0.7 + Math.min(0.19, wordOverlap * 0.19);
+  }
+
+  // Contains as substring
+  if (t.includes(q)) {
+    const lengthRatio = q.length / t.length;
+    return 0.5 + Math.min(0.19, lengthRatio * 0.19);
+  }
+
+  // Partial word overlap
+  const matchingWords = qWords.filter((qw) => tWords.some((tw) => tw.includes(qw) || qw.includes(tw)));
+  if (matchingWords.length > 0) {
+    return 0.1 + (matchingWords.length / qWords.length) * 0.3;
+  }
+
+  return 0;
+}
 
 export async function GET(request: NextRequest) {
   const params = request.nextUrl.searchParams;
@@ -167,10 +224,14 @@ export async function GET(request: NextRequest) {
           .order("id", { ascending: true });
         break;
       default:
-        // relevance — if there's a query, rank by release_date (most relevant recent first)
-        // if no query, use a blended browse rank with quality floor
+        // relevance — title-similarity-first ranking
         if (q) {
-          query = query.order("release_date", { ascending: false }).order("id", { ascending: true });
+          // Overfetch for JS-side re-ranking by title similarity
+          // We'll fetch up to 150 results and re-rank in JS
+          query = query
+            .order("verdict_score", { ascending: false, nullsFirst: false })
+            .order("score", { ascending: false })
+            .order("id", { ascending: true });
         } else {
           // No-query browsing: active + quality + recency for a good default browse
           // Trending flag groups active games first; verdict_score ranks within each group.
@@ -188,12 +249,16 @@ export async function GET(request: NextRequest) {
         break;
     }
 
-    // For top-rated, we need to over-fetch a larger window so we can re-sort by
-    // confidence-weighted score in JS. Fetch enough rows to cover the requested page
-    // after re-ranking (fetch up to page*4 rows, re-rank, then slice the correct page).
+    // For relevance with query, we overfetch and re-rank by title similarity
+    const isRelevanceWithQuery = sort === "relevance" && q;
     const isTopRated = sort === "top-rated";
     const start = (page - 1) * PAGE_SIZE;
-    if (isTopRated) {
+
+    if (isRelevanceWithQuery) {
+      // Adaptive overfetch: 150 results for title similarity re-ranking
+      const overfetchSize = 150;
+      query = query.range(0, overfetchSize - 1);
+    } else if (isTopRated) {
       // Fetch enough rows to cover at least `page * PAGE_SIZE` after re-ranking
       const trFetchEnd = Math.max(page * PAGE_SIZE * 4, 200);
       query = query.range(0, trFetchEnd - 1);
@@ -207,13 +272,38 @@ export async function GET(request: NextRequest) {
 
     let rows = data ?? [];
 
+    // ─── Relevance re-ranking: title similarity first ───
+    if (isRelevanceWithQuery && rows.length > 0) {
+      // Compute composite relevance score:
+      // 50% title similarity, 25% quality, 15% review volume, 10% recency
+      const scored = rows.map((row) => {
+        const sim = titleSimilarity(q, row.title);
+        const quality = Math.min(1, confidenceWeightedScore(row) / 100);
+        const volume = Math.min(1, Math.log10((row.review_count ?? 0) + 1) / 6);
+        const ageMs = row.release_date
+          ? Date.now() - new Date(row.release_date).getTime()
+          : Infinity;
+        const ageDays = ageMs / 86400000;
+        const recency = ageDays < 365 ? 1 : ageDays < 730 ? 0.8 : ageDays < 1825 ? 0.6 : 0.3;
+
+        // Surface readiness bonus: complete games rank slightly higher
+        const readiness = isSurfaceReady(row, "searchResult") ? 0.05 : 0;
+
+        const relevance = (sim * 0.50) + (quality * 0.25) + (volume * 0.15) + (recency * 0.10) + readiness;
+        return { row, relevance, sim };
+      });
+
+      scored.sort((a, b) => b.relevance - a.relevance);
+      rows = scored.slice(start, start + PAGE_SIZE).map((s) => s.row);
+    }
+
     // Re-sort top-rated by confidence-weighted score so tiny-sample 100% games don't dominate
     if (isTopRated && rows.length > 0) {
       rows.sort((a, b) => confidenceWeightedScore(b) - confidenceWeightedScore(a));
       rows = rows.slice(start, start + PAGE_SIZE);
     }
 
-    let games = rows.map(mapGameRow);
+    const games = rows.map(mapGameRow);
     let total = count ?? 0;
 
     // ── 3-layer search: DB → RAWG instant preview → background ingest ──

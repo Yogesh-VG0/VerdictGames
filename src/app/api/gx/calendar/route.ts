@@ -1,11 +1,15 @@
 import { jsonOk } from "@/lib/api/response";
 import { getGXCalendar } from "@/lib/external/gxcorner";
+import { gxFetchWithCache } from "@/lib/external/gx-cache";
 import type { GXCalendarGame } from "@/lib/types";
 
 export const revalidate = 3600;
 
 export async function GET() {
-  const raw = await getGXCalendar();
+  const { data: raw } = await gxFetchWithCache(
+    "calendar",
+    getGXCalendar
+  );
   const games: GXCalendarGame[] = raw.map((entry) => ({
     title: entry.game.title,
     slug: entry.game.slug,

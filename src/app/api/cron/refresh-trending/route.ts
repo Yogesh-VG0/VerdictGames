@@ -1,14 +1,15 @@
 /**
  * GET /api/cron/refresh-trending
  *
- * Auto-updates trending & featured flags using IGDB PopScore + RAWG data.
+ * Auto-updates trending flags using IGDB PopScore + RAWG data.
+ * NOTE: Featured flags are editorial-only (is_featured_manual) and NEVER derived from trending.
  * Designed to run daily via Vercel Cron.
  *
  * Flow:
  * 1. Fetch IGDB PopScore (visits, want-to-play, playing, steam peak players)
  * 2. Cross-reference with our database
  * 3. Fallback to RAWG trending + recency-weighted scoring
- * 4. Update trending/featured flags in Supabase
+ * 4. Update trending flags in Supabase (featured is editorial-only, not touched here)
  */
 
 import { NextRequest } from "next/server";
@@ -96,8 +97,40 @@ export async function GET(request: NextRequest) {
     return jsonError("Supabase not configured", 503);
   }
 
+
   const { getServerSupabase } = await import("@/lib/supabase/server");
   const supabase = getServerSupabase();
+
+  // ── Idempotency guard: skip if a successful run completed within 30 minutes ──
+  const thirtyMinAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const schedulerTable = supabase.from("scheduler_runs") as any;
+  const { data: recentRun } = await schedulerTable
+    .select("id, finished_at")
+    .eq("job_name", "refresh-trending")
+    .eq("status", "success")
+    .gte("finished_at", thirtyMinAgo)
+    .limit(1) as { data: { id: string; finished_at: string }[] | null };
+
+  if (recentRun && recentRun.length > 0) {
+    return jsonOk({
+      skipped: true,
+      reason: "A successful run completed within the last 30 minutes",
+      lastRun: recentRun[0].finished_at,
+    });
+  }
+
+  // Record run start
+  const runStartedAt = new Date().toISOString();
+  const { data: runRecord } = await schedulerTable
+    .insert({
+      job_name: "refresh-trending",
+      started_at: runStartedAt,
+      status: "running",
+    })
+    .select("id")
+    .single() as { data: { id: string } | null };
+  const runId = runRecord?.id;
 
   const trendingIds: string[] = [];
   const log: string[] = [];
@@ -300,12 +333,12 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  // ── 4. Reset algorithmic flags (preserving manual overrides) ──
+  // ── 4. Reset algorithmic trending flags (preserving manual overrides) ──
+  // NOTE: Featured is editorial-only (is_featured_manual). We NEVER touch featured here.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const gamesTable = supabase.from("games") as any;
-  await gamesTable.update({ trending: false, featured: false })
-    .eq("is_trending_manual", false)
-    .eq("is_featured_manual", false);
+  await gamesTable.update({ trending: false })
+    .eq("is_trending_manual", false);
 
   if (trendingIds.length > 0) {
     // Mark trending
@@ -314,21 +347,15 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  // ── 5. Featured = top 5 trending by score ──
+  // ── 5. Featured is editorial-only — just log count for observability ──
   const { data: featuredGames } = await supabase
     .from("games")
-    .select("id, title, score, verdict_score")
-    .eq("trending", true)
-    .order("verdict_score", { ascending: false, nullsFirst: false })
-    .order("score", { ascending: false })
-    .limit(5);
+    .select("id, title")
+    .eq("is_featured_manual", true)
+    .limit(20);
 
-  if (featuredGames) {
-    for (const g of (featuredGames as { id: string; title: string; score: number }[])) {
-      await gamesTable.update({ featured: true }).eq("id", g.id);
-      log.push(`⭐ Featured: ${g.title} (${g.score})`);
-    }
-  }
+  const featuredCount = featuredGames?.length ?? 0;
+  log.push(`⭐ Featured (editorial): ${featuredCount} games with is_featured_manual=true`);
 
   // ── 6. Momentum Tracking — snapshot + compute ──
   try {
@@ -397,10 +424,26 @@ export async function GET(request: NextRequest) {
     log.push(`Momentum tracking error: ${(err as Error).message}`);
   }
 
+  // ── Record run completion ──
+  const finishedAt = new Date().toISOString();
+  const durationMs = Date.now() - new Date(runStartedAt).getTime();
+  if (runId) {
+    await schedulerTable
+      .update({
+        finished_at: finishedAt,
+        status: "success",
+        duration_ms: durationMs,
+        rows_updated: trendingIds.length,
+        metadata: { featuredCount, logLines: log.length },
+      })
+      .eq("id", runId);
+  }
+
   return jsonOk({
     trendingCount: trendingIds.length,
-    featuredCount: featuredGames?.length ?? 0,
+    featuredCount,
     log,
-    timestamp: new Date().toISOString(),
+    durationMs,
+    timestamp: finishedAt,
   });
 }

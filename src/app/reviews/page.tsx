@@ -74,7 +74,7 @@ export default function ReviewsPage() {
   const STEAM_REVIEWS_PER_PAGE = 5;
 
   // Debounce steam game query for suggestions
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSteamQuery(steamGameQuery), 300);
     return () => clearTimeout(timer);

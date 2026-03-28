@@ -7,12 +7,30 @@
  * Docs: https://rawg.io/apidocs
  */
 
+import { recordProviderUsage } from "@/lib/utils/providerUsage";
+
 const RAWG_BASE = "https://api.rawg.io/api";
 
 function getApiKey(): string {
   const key = process.env.RAWG_API_KEY;
   if (!key) throw new Error("Missing RAWG_API_KEY environment variable.");
   return key;
+}
+
+/**
+ * Tracked fetch for RAWG API - non-blocking usage recording.
+ */
+async function trackedFetch(endpoint: string, url: string, init?: RequestInit): Promise<Response> {
+  const start = Date.now();
+  try {
+    const res = await fetch(url, init);
+    // Fire-and-forget tracking (non-blocking)
+    recordProviderUsage("rawg", endpoint, res.ok, Date.now() - start);
+    return res;
+  } catch (err) {
+    recordProviderUsage("rawg", endpoint, false, Date.now() - start);
+    throw err;
+  }
 }
 
 /* ───────── Response Types ───────── */
@@ -84,7 +102,7 @@ export async function searchRawg(
     search_precise: "true",
   });
 
-  const res = await fetch(`${RAWG_BASE}/games?${params}`, {
+  const res = await trackedFetch("search", `${RAWG_BASE}/games?${params}`, {
     next: { revalidate: 3600 },
   });
 
@@ -101,7 +119,7 @@ export async function searchRawg(
 export async function getRawgGame(id: number): Promise<RawgGameDetail> {
   const params = new URLSearchParams({ key: getApiKey() });
 
-  const res = await fetch(`${RAWG_BASE}/games/${id}?${params}`, {
+  const res = await trackedFetch("game", `${RAWG_BASE}/games/${id}?${params}`, {
     next: { revalidate: 3600 },
   });
 
@@ -121,7 +139,7 @@ export async function getRawgScreenshots(id: number): Promise<RawgScreenshot[]> 
     page_size: "10",
   });
 
-  const res = await fetch(`${RAWG_BASE}/games/${id}/screenshots?${params}`, {
+  const res = await trackedFetch("screenshots", `${RAWG_BASE}/games/${id}/screenshots?${params}`, {
     next: { revalidate: 3600 },
   });
 
@@ -149,7 +167,7 @@ export interface RawgStoreLink {
 export async function getRawgStoreLinks(gameId: number): Promise<RawgStoreLink[]> {
   const params = new URLSearchParams({ key: getApiKey() });
 
-  const res = await fetch(`${RAWG_BASE}/games/${gameId}/stores?${params}`, {
+  const res = await trackedFetch("stores", `${RAWG_BASE}/games/${gameId}/stores?${params}`, {
     next: { revalidate: 3600 },
   });
 
@@ -211,7 +229,7 @@ export async function getRawgBestOfYear(page = 1, pageSize = 20): Promise<RawgLi
     page_size: String(pageSize),
   });
 
-  const res = await fetch(`${RAWG_BASE}/games/lists/greatest?${params}`, {
+  const res = await trackedFetch("lists/greatest", `${RAWG_BASE}/games/lists/greatest?${params}`, {
     next: { revalidate: 3600 },
   });
 
@@ -232,7 +250,7 @@ export async function getRawgPopularInYear(year: number, page = 1, pageSize = 20
     page_size: String(pageSize),
   });
 
-  const res = await fetch(`${RAWG_BASE}/games/lists/greatest?${params}`, {
+  const res = await trackedFetch("lists/popular-year", `${RAWG_BASE}/games/lists/greatest?${params}`, {
     next: { revalidate: 3600 },
   });
 
@@ -251,7 +269,7 @@ export async function getRawgAllTimeTop(page = 1, pageSize = 20): Promise<RawgLi
     page_size: String(pageSize),
   });
 
-  const res = await fetch(`${RAWG_BASE}/games/lists/popular?${params}`, {
+  const res = await trackedFetch("lists/popular", `${RAWG_BASE}/games/lists/popular?${params}`, {
     next: { revalidate: 3600 },
   });
 
@@ -271,7 +289,7 @@ export async function getRawgRecentReleases(page = 1, pageSize = 20): Promise<Ra
     page_size: String(pageSize),
   });
 
-  const res = await fetch(`${RAWG_BASE}/games/lists/recent-games-past?${params}`, {
+  const res = await trackedFetch("lists/recent", `${RAWG_BASE}/games/lists/recent-games-past?${params}`, {
     next: { revalidate: 1800 },
   });
 
@@ -291,7 +309,7 @@ export async function getRawgCalendar(year: number, month: number, page = 1, pag
     page_size: String(pageSize),
   });
 
-  const res = await fetch(`${RAWG_BASE}/games/calendar/${year}/${month}?${params}`, {
+  const res = await trackedFetch("calendar", `${RAWG_BASE}/games/calendar/${year}/${month}?${params}`, {
     next: { revalidate: 3600 },
   });
 
@@ -311,7 +329,7 @@ export async function getRawgByGenre(genreSlug: string, page = 1, pageSize = 20)
     page_size: String(pageSize),
   });
 
-  const res = await fetch(`${RAWG_BASE}/games?${params}`, {
+  const res = await trackedFetch("genre", `${RAWG_BASE}/games?${params}`, {
     next: { revalidate: 3600 },
   });
 

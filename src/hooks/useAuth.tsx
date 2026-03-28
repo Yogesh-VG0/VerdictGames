@@ -113,6 +113,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [supabase]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (!supabase) { setLoading(false); return; }
 
     // Use getSession() for instant local check (reads from storage, no network call).

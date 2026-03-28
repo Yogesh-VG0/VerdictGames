@@ -11,7 +11,7 @@ function isAdmin(user: { email: string; role?: string } | null): boolean {
   if (!user) return false;
   return user.role === "admin" || isAdminEmail(user.email);
 }
-import { LayoutDashboard, Gamepad2, FileText, Users, Clock } from "lucide-react";
+import { LayoutDashboard, Gamepad2, FileText, Users, Clock, Database } from "lucide-react";
 
 const NAV_ITEMS: { href: string; label: string; icon: ReactNode }[] = [
   { href: "/admin", label: "Dashboard", icon: <LayoutDashboard className="w-4 h-4" /> },
@@ -19,6 +19,7 @@ const NAV_ITEMS: { href: string; label: string; icon: ReactNode }[] = [
   { href: "/admin/reviews", label: "Reviews", icon: <FileText className="w-4 h-4" /> },
   { href: "/admin/users", label: "Users", icon: <Users className="w-4 h-4" /> },
   { href: "/admin/scheduler", label: "Scheduler", icon: <Clock className="w-4 h-4" /> },
+  { href: "/admin/providers", label: "Providers", icon: <Database className="w-4 h-4" /> },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
