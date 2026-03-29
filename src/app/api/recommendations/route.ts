@@ -5,6 +5,8 @@
  * For anonymous: content-based diverse picks
  */
 
+export const revalidate = 120; // ISR: revalidate every 2 minutes
+
 import { NextRequest } from "next/server";
 import { jsonOk } from "@/lib/api/response";
 import { mapGameRow } from "@/lib/db/mappers";

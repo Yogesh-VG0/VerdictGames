@@ -10,6 +10,8 @@
  *   pageSize: number (default 20)
  */
 
+export const revalidate = 3600; // ISR: revalidate every hour (RAWG data is relatively static)
+
 import { NextRequest } from "next/server";
 import { jsonOk, jsonError } from "@/lib/api/response";
 import { isPublicSafeRawgGame } from "@/lib/utils/publicSafety";

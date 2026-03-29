@@ -4,6 +4,8 @@
  * Query params: g1 (slug), g2 (slug)
  */
 
+export const revalidate = 300; // ISR: revalidate every 5 minutes
+
 import { NextRequest } from "next/server";
 import { jsonOk, jsonBadRequest, jsonNotFound } from "@/lib/api/response";
 import { mapGameRow } from "@/lib/db/mappers";

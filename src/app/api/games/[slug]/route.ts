@@ -4,6 +4,8 @@
  * Returns a single game by slug, with related games.
  */
 
+export const revalidate = 60; // ISR: revalidate every minute for fresh data
+
 import { NextRequest } from "next/server";
 import { jsonOk, jsonNotFound } from "@/lib/api/response";
 import { mapGameRow } from "@/lib/db/mappers";

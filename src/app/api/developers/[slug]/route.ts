@@ -4,6 +4,8 @@
  * Returns all games by a developer with aggregate stats.
  */
 
+export const revalidate = 300; // ISR: revalidate every 5 minutes
+
 import { NextRequest } from "next/server";
 import { jsonOk, jsonNotFound } from "@/lib/api/response";
 import { mapGameRow } from "@/lib/db/mappers";
