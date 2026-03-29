@@ -166,7 +166,7 @@ export default function ExplorePage() {
   const [page, setPage] = useState(1);
   const [selectedGenre, setSelectedGenre] = useState("action");
 
-  const PAGE_SIZE = 25;
+  const PAGE_SIZE = 20;
   
   const query = useQuery({
     queryKey: ["rawg-list", activeTab, page, activeTab === "genre" ? selectedGenre : null],

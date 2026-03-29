@@ -7,10 +7,10 @@
  *   year: number (for popular-in-year)
  *   genre: string (for genre browsing)
  *   page: number (default 1)
- *   pageSize: number (default 25)
+ *   pageSize: number (default 20)
  * 
  * NOTE: RAWG API has page_size max of 40. We fetch multiple RAWG pages internally
- * to serve our desired pageSize (25) consistently.
+ * to serve our desired pageSize (20) consistently.
  */
 
 export const revalidate = 3600; // ISR: revalidate every hour (RAWG data is relatively static)
@@ -20,8 +20,8 @@ import { jsonOk, jsonError } from "@/lib/api/response";
 import { isPublicSafeRawgGame } from "@/lib/utils/publicSafety";
 import type { RawgListItem, RawgListResponse } from "@/lib/external/rawg";
 
-// Our desired page size for the frontend
-const FRONTEND_PAGE_SIZE = 25;
+// Our desired page size for the frontend (5 columns × 4 rows = 20)
+const FRONTEND_PAGE_SIZE = 20;
 // RAWG API page size (keep at 40 to minimize API calls)
 const RAWG_PAGE_SIZE = 40;
 
