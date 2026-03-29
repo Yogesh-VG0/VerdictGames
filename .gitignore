@@ -69,3 +69,6 @@ scripts/update-igdb-images.mjs
 scripts/upgrade-rawg-to-igdb.mjs
 scripts/verify-*.mjs
 scripts/seed-flags.mjs
+
+# Audit files (local only)
+AUDIT_FINDINGS.md
