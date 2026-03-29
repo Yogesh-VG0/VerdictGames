@@ -36,6 +36,33 @@ type BrowseTab = "games" | "deals" | "free";
 
 const MONETIZATION_OPTIONS = ["All", "Free", "Paid"] as const;
 
+// Common genres found in GX deals/free-to-play data
+const GX_GENRE_OPTIONS = [
+  "All",
+  "Action",
+  "Adventure", 
+  "RPG",
+  "Shooter",
+  "Strategy",
+  "Puzzle",
+  "Horror",
+  "Platformer",
+  "Racing",
+  "Simulation",
+  "Sports",
+  "Fighting",
+] as const;
+
+// Platform options for GX filtering
+const GX_PLATFORM_OPTIONS = [
+  { value: "All", label: "All Platforms" },
+  { value: "Windows", label: "PC" },
+  { value: "Playstation", label: "PlayStation" },
+  { value: "Xbox", label: "Xbox" },
+  { value: "Switch", label: "Switch" },
+  { value: "Mac", label: "Mac" },
+] as const;
+
 /* Platform icons imported from shared PlatformIcon component */
 
 function SearchContent() {
@@ -62,6 +89,10 @@ function SearchContent() {
     const p = parseInt(searchParams.get("page") ?? "1", 10);
     return Number.isFinite(p) && p > 0 ? p : 1;
   });
+  
+  // GX tab filters (Deals / Free to Play)
+  const [gxGenre, setGxGenre] = useState("All");
+  const [gxPlatform, setGxPlatform] = useState("All");
 
   // Debounce the query input
   useEffect(() => {
@@ -117,6 +148,50 @@ function SearchContent() {
     staleTime: 60 * 60 * 1000,
     enabled: browseTab === "free",
   });
+  
+  // Filter deals data based on selected filters
+  const filteredDeals = useMemo(() => {
+    if (!dealsData) return [];
+    return dealsData.filter((deal) => {
+      // Genre filter
+      if (gxGenre !== "All") {
+        const hasGenre = deal.genres.some((g) => 
+          g.toLowerCase().includes(gxGenre.toLowerCase())
+        );
+        if (!hasGenre) return false;
+      }
+      // Platform filter
+      if (gxPlatform !== "All") {
+        const hasPlatform = deal.platforms.some((p) => 
+          p.toLowerCase().includes(gxPlatform.toLowerCase())
+        );
+        if (!hasPlatform) return false;
+      }
+      return true;
+    });
+  }, [dealsData, gxGenre, gxPlatform]);
+  
+  // Filter free-to-play data based on selected filters
+  const filteredFreeGames = useMemo(() => {
+    if (!freeData) return [];
+    return freeData.filter((game) => {
+      // Genre filter
+      if (gxGenre !== "All") {
+        const hasGenre = game.genres.some((g) => 
+          g.toLowerCase().includes(gxGenre.toLowerCase())
+        );
+        if (!hasGenre) return false;
+      }
+      // Platform filter
+      if (gxPlatform !== "All") {
+        const hasPlatform = game.platforms.some((p) => 
+          p.toLowerCase().includes(gxPlatform.toLowerCase())
+        );
+        if (!hasPlatform) return false;
+      }
+      return true;
+    });
+  }, [freeData, gxGenre, gxPlatform]);
 
   // Sync URL on filter/page change
   useEffect(() => {
@@ -466,6 +541,53 @@ function SearchContent() {
       {/* Deals Tab */}
       {browseTab === "deals" && (
         <div>
+          {/* Filters for Deals */}
+          <div className="space-y-4 mb-6">
+            <div className="flex flex-wrap items-end gap-4">
+              {/* Genre filter */}
+              <div className="space-y-2">
+                <label className="text-[10px] uppercase tracking-wider text-tertiary font-medium">
+                  Genre
+                </label>
+                <select
+                  value={gxGenre}
+                  onChange={(e) => setGxGenre(e.target.value)}
+                  className="h-10 px-3 text-sm rounded-xl border border-border bg-surface-2 text-foreground focus:outline-none focus:border-accent/50 transition-colors"
+                >
+                  {GX_GENRE_OPTIONS.map((g) => (
+                    <option key={g} value={g}>{g}</option>
+                  ))}
+                </select>
+              </div>
+              
+              {/* Platform filter */}
+              <div className="space-y-2">
+                <label className="text-[10px] uppercase tracking-wider text-tertiary font-medium">
+                  Platform
+                </label>
+                <select
+                  value={gxPlatform}
+                  onChange={(e) => setGxPlatform(e.target.value)}
+                  className="h-10 px-3 text-sm rounded-xl border border-border bg-surface-2 text-foreground focus:outline-none focus:border-accent/50 transition-colors"
+                >
+                  {GX_PLATFORM_OPTIONS.map((p) => (
+                    <option key={p.value} value={p.value}>{p.label}</option>
+                  ))}
+                </select>
+              </div>
+              
+              {/* Reset filters */}
+              {(gxGenre !== "All" || gxPlatform !== "All") && (
+                <button
+                  onClick={() => { setGxGenre("All"); setGxPlatform("All"); }}
+                  className="h-10 px-3 text-xs text-accent border border-accent/30 rounded-xl hover:bg-accent/10 transition-colors"
+                >
+                  Clear filters
+                </button>
+              )}
+            </div>
+          </div>
+          
           {dealsLoading ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-4">
               {Array.from({ length: 12 }).map((_, i) => (
@@ -478,11 +600,14 @@ function SearchContent() {
                 </div>
               ))}
             </div>
-          ) : dealsData && dealsData.length > 0 ? (
+          ) : filteredDeals.length > 0 ? (
             <>
-              <p className="text-xs text-tertiary mb-4">{dealsData.length} deal{dealsData.length !== 1 ? "s" : ""} available</p>
+              <p className="text-xs text-tertiary mb-4">
+                {filteredDeals.length} deal{filteredDeals.length !== 1 ? "s" : ""} 
+                {(gxGenre !== "All" || gxPlatform !== "All") && dealsData ? ` (of ${dealsData.length} total)` : " available"}
+              </p>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-4">
-                {dealsData.map((deal, i) => (
+                {filteredDeals.map((deal, i) => (
                   <motion.div
                     key={deal.id}
                     initial={{ opacity: 0, y: 20 }}
@@ -497,7 +622,19 @@ function SearchContent() {
           ) : (
             <div className="py-16 text-center">
               <Tag className="w-12 h-12 text-tertiary mx-auto mb-3" />
-              <p className="text-secondary">No deals available right now.</p>
+              <p className="text-secondary">
+                {(gxGenre !== "All" || gxPlatform !== "All") 
+                  ? "No deals match your filters." 
+                  : "No deals available right now."}
+              </p>
+              {(gxGenre !== "All" || gxPlatform !== "All") && (
+                <button
+                  onClick={() => { setGxGenre("All"); setGxPlatform("All"); }}
+                  className="mt-3 px-4 py-2 text-sm text-accent border border-accent/30 rounded-xl hover:bg-accent/10 transition-colors"
+                >
+                  Clear filters
+                </button>
+              )}
             </div>
           )}
           <p className="text-center text-[10px] text-tertiary pt-6">
@@ -509,6 +646,53 @@ function SearchContent() {
       {/* Free to Play Tab */}
       {browseTab === "free" && (
         <div>
+          {/* Filters for Free to Play */}
+          <div className="space-y-4 mb-6">
+            <div className="flex flex-wrap items-end gap-4">
+              {/* Genre filter */}
+              <div className="space-y-2">
+                <label className="text-[10px] uppercase tracking-wider text-tertiary font-medium">
+                  Genre
+                </label>
+                <select
+                  value={gxGenre}
+                  onChange={(e) => setGxGenre(e.target.value)}
+                  className="h-10 px-3 text-sm rounded-xl border border-border bg-surface-2 text-foreground focus:outline-none focus:border-accent/50 transition-colors"
+                >
+                  {GX_GENRE_OPTIONS.map((g) => (
+                    <option key={g} value={g}>{g}</option>
+                  ))}
+                </select>
+              </div>
+              
+              {/* Platform filter */}
+              <div className="space-y-2">
+                <label className="text-[10px] uppercase tracking-wider text-tertiary font-medium">
+                  Platform
+                </label>
+                <select
+                  value={gxPlatform}
+                  onChange={(e) => setGxPlatform(e.target.value)}
+                  className="h-10 px-3 text-sm rounded-xl border border-border bg-surface-2 text-foreground focus:outline-none focus:border-accent/50 transition-colors"
+                >
+                  {GX_PLATFORM_OPTIONS.map((p) => (
+                    <option key={p.value} value={p.value}>{p.label}</option>
+                  ))}
+                </select>
+              </div>
+              
+              {/* Reset filters */}
+              {(gxGenre !== "All" || gxPlatform !== "All") && (
+                <button
+                  onClick={() => { setGxGenre("All"); setGxPlatform("All"); }}
+                  className="h-10 px-3 text-xs text-accent border border-accent/30 rounded-xl hover:bg-accent/10 transition-colors"
+                >
+                  Clear filters
+                </button>
+              )}
+            </div>
+          </div>
+          
           {freeLoading ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-4">
               {Array.from({ length: 12 }).map((_, i) => (
@@ -521,11 +705,14 @@ function SearchContent() {
                 </div>
               ))}
             </div>
-          ) : freeData && freeData.length > 0 ? (
+          ) : filteredFreeGames.length > 0 ? (
             <>
-              <p className="text-xs text-tertiary mb-4">{freeData.length} free game{freeData.length !== 1 ? "s" : ""}</p>
+              <p className="text-xs text-tertiary mb-4">
+                {filteredFreeGames.length} free game{filteredFreeGames.length !== 1 ? "s" : ""}
+                {(gxGenre !== "All" || gxPlatform !== "All") && freeData ? ` (of ${freeData.length} total)` : ""}
+              </p>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-4">
-                {freeData.map((game, i) => (
+                {filteredFreeGames.map((game, i) => (
                   <motion.div
                     key={game.id}
                     initial={{ opacity: 0, y: 20 }}
@@ -590,7 +777,19 @@ function SearchContent() {
           ) : (
             <div className="py-16 text-center">
               <Gift className="w-12 h-12 text-tertiary mx-auto mb-3" />
-              <p className="text-secondary">No free games available right now.</p>
+              <p className="text-secondary">
+                {(gxGenre !== "All" || gxPlatform !== "All") 
+                  ? "No free games match your filters." 
+                  : "No free games available right now."}
+              </p>
+              {(gxGenre !== "All" || gxPlatform !== "All") && (
+                <button
+                  onClick={() => { setGxGenre("All"); setGxPlatform("All"); }}
+                  className="mt-3 px-4 py-2 text-sm text-accent border border-accent/30 rounded-xl hover:bg-accent/10 transition-colors"
+                >
+                  Clear filters
+                </button>
+              )}
             </div>
           )}
           <p className="text-center text-[10px] text-tertiary pt-6">

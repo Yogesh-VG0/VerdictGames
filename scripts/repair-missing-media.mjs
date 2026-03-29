@@ -83,7 +83,8 @@ async function fetchIgdbCover(igdbId) {
       Authorization: `Bearer ${token}`,
       "Content-Type": "text/plain",
     },
-    body: `fields cover.url,screenshots.url; where id = ${igdbId};`,
+    // IGDB returns image_id, NOT url - must build URL from image_id
+    body: `fields cover.image_id,screenshots.image_id; where id = ${igdbId};`,
     signal: AbortSignal.timeout(10000),
   });
 
@@ -92,11 +93,13 @@ async function fetchIgdbCover(igdbId) {
   const game = data[0];
   if (!game) return null;
 
-  const coverUrl = game.cover?.url
-    ? `https:${game.cover.url.replace("t_thumb", "t_cover_big")}`
+  // Build proper IGDB image URLs from image_id
+  // cover_big_2x = 264x374 high-quality cover (best for our use)
+  const coverUrl = game.cover?.image_id
+    ? `https://images.igdb.com/igdb/image/upload/t_cover_big_2x/${game.cover.image_id}.jpg`
     : null;
   const screenshots = (game.screenshots ?? [])
-    .map((s) => `https:${s.url.replace("t_thumb", "t_screenshot_big")}`)
+    .map((s) => s.image_id ? `https://images.igdb.com/igdb/image/upload/t_screenshot_big/${s.image_id}.jpg` : null)
     .filter(Boolean);
 
   return { coverUrl, screenshots };

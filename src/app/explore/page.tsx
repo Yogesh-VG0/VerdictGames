@@ -166,11 +166,13 @@ export default function ExplorePage() {
   const [page, setPage] = useState(1);
   const [selectedGenre, setSelectedGenre] = useState("action");
 
+  const PAGE_SIZE = 25;
+  
   const query = useQuery({
     queryKey: ["rawg-list", activeTab, page, activeTab === "genre" ? selectedGenre : null],
     queryFn: () => getRawgList(activeTab, {
       page,
-      pageSize: 20,
+      pageSize: PAGE_SIZE,
       year: activeTab === "popular-in-year" ? LAST_YEAR : undefined,
       genre: activeTab === "genre" ? selectedGenre : undefined,
     }),
@@ -276,7 +278,7 @@ export default function ExplorePage() {
             <GameCard
               key={game.rawgId}
               game={game}
-              rank={activeTab === "all-time" ? (page - 1) * 20 + i + 1 : undefined}
+              rank={activeTab === "all-time" ? (page - 1) * PAGE_SIZE + i + 1 : undefined}
             />
           ))
         )}
@@ -286,7 +288,7 @@ export default function ExplorePage() {
       {query.data && query.data.count > 0 && (
         <Pagination
           currentPage={page}
-          totalPages={Math.min(Math.ceil(query.data.count / 20), 500)}
+          totalPages={Math.min(Math.ceil(query.data.count / PAGE_SIZE), 400)}
           onPageChange={(p) => { setPage(p); window.scrollTo({ top: 0, behavior: "smooth" }); }}
         />
       )}

@@ -124,16 +124,50 @@ export async function POST(
 
     if (source === "rawg") {
       const { searchRawg, getRawgGame, mapRawgPlatforms } = await import("@/lib/external/rawg");
+      const { findIgdbMatch, extractIgdbEnrichment, isIgdbConfigured, getIgdbGame } = await import("@/lib/external/igdb");
+      
       const results = await searchRawg(typedGame.title, 1, 3);
       if (!results.results.length) return jsonOk({ success: false, message: "No RAWG match found", source: "rawg" });
 
       const best = results.results[0];
       const detail = await getRawgGame(best.id);
 
+      // ══════════════════════════════════════════════════
+      // COVER IMAGE PRIORITY: IGDB first, then RAWG
+      // Even when doing "RAWG reingest", we still prefer IGDB covers
+      // ══════════════════════════════════════════════════
+      let coverImage: string | null = null;
+      let igdbCoverUsed = false;
+      
+      // Try IGDB cover first (best quality)
+      if (isIgdbConfigured()) {
+        try {
+          const igdbMatch = await findIgdbMatch(typedGame.title, releaseYear);
+          if (igdbMatch) {
+            const fullIgdb = await getIgdbGame(igdbMatch.id);
+            const igdbEnrich = extractIgdbEnrichment(fullIgdb ?? igdbMatch);
+            if (igdbEnrich.coverImageUrl) {
+              coverImage = igdbEnrich.coverImageUrl;
+              igdbCoverUsed = true;
+            }
+          }
+        } catch (e) {
+          console.warn("[RAWG reingest] IGDB cover check failed:", (e as Error).message);
+        }
+      }
+      
+      // Fallback to RAWG cover
+      if (!coverImage && best.background_image) {
+        coverImage = best.background_image;
+      }
+
       // Build update payload from RAWG data (only non-empty fields)
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const rawgUpdates: Record<string, any> = {};
-      if (best.background_image) rawgUpdates.cover_image = best.background_image;
+      if (coverImage) {
+        rawgUpdates.cover_image = coverImage;
+        rawgUpdates.media_source = igdbCoverUsed ? "igdb" : "rawg";
+      }
       if (best.platforms) rawgUpdates.platforms = mapRawgPlatforms(best.platforms);
       if (best.genres?.length) rawgUpdates.genres = best.genres.map((g: { name: string }) => g.name);
       if (best.released) rawgUpdates.release_date = best.released;
