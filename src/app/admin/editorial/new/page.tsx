@@ -26,12 +26,12 @@ async function searchGames(query: string): Promise<GameSearchResult[]> {
   const json = await res.json();
   if (json.success && json.data?.games) {
     return json.data.games.map((g: Record<string, unknown>) => ({
-      id: g.id,
-      title: g.title,
-      slug: g.slug,
-      cover_image: g.cover_image,
-      developer: g.developer,
-      release_date: g.release_date,
+      id: g.id as string,
+      title: g.title as string,
+      slug: g.slug as string,
+      cover_image: (g.coverImage as string) || "",
+      developer: (g.developer as string) || "",
+      release_date: (g.releaseDate as string) || null,
     }));
   }
   return [];
