@@ -21,9 +21,19 @@ interface GameSearchResult {
 
 async function searchGames(query: string): Promise<GameSearchResult[]> {
   if (!query.trim()) return [];
-  const res = await fetch(`/api/admin/games/search-preview?q=${encodeURIComponent(query)}`);
+  // Search games already in the database (not external sources)
+  const res = await fetch(`/api/admin/games?q=${encodeURIComponent(query)}&limit=10`);
   const json = await res.json();
-  if (json.success) return json.data.slice(0, 8);
+  if (json.success && json.data?.games) {
+    return json.data.games.map((g: Record<string, unknown>) => ({
+      id: g.id,
+      title: g.title,
+      slug: g.slug,
+      cover_image: g.cover_image,
+      developer: g.developer,
+      release_date: g.release_date,
+    }));
+  }
   return [];
 }
 

@@ -273,6 +273,32 @@ export default function AdminGameEditor({ params }: { params: Promise<{ id: stri
   const removeScreenshot = (index: number) => {
     setForm((f) => ({ ...f, screenshots: f.screenshots.filter((_, i) => i !== index) }));
   };
+  const handleScreenshotUpload = async (file: File) => {
+    setUploading("screenshot");
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("folder", "verdict-games/screenshots");
+      formData.append("gameSlug", game.data?.slug ?? "");
+
+      const res = await fetch("/api/admin/upload", {
+        method: "POST",
+        body: formData,
+      });
+      const json = await res.json();
+      if (json.success && json.data?.url) {
+        setForm((f) => ({ ...f, screenshots: [...f.screenshots, json.data.url] }));
+        setSaveMsg(`Screenshot uploaded!`);
+        setTimeout(() => setSaveMsg(""), 3000);
+      } else {
+        setSaveMsg(`Error: ${json.error || "Upload failed"}`);
+      }
+    } catch (err) {
+      setSaveMsg(`Error: ${err instanceof Error ? err.message : "Upload failed"}`);
+    } finally {
+      setUploading(null);
+    }
+  };
 
   // ── Setters ──
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -646,6 +672,29 @@ export default function AdminGameEditor({ params }: { params: Promise<{ id: stri
                 >
                   Add
                 </button>
+                <label className="px-3 py-2 rounded-xl text-xs font-medium bg-pixel-cyan/10 text-pixel-cyan border border-pixel-cyan/20 hover:bg-pixel-cyan/20 transition-all cursor-pointer shrink-0 flex items-center gap-1.5">
+                  {uploading === "screenshot" ? (
+                    <span className="animate-pulse">Uploading...</span>
+                  ) : (
+                    <>
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+                      </svg>
+                      Upload
+                    </>
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleScreenshotUpload(file);
+                      e.target.value = "";
+                    }}
+                    disabled={uploading === "screenshot"}
+                  />
+                </label>
               </div>
               {form.screenshots.length > 0 && (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
