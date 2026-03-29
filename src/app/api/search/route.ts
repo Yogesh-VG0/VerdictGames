@@ -182,10 +182,12 @@ export async function GET(request: NextRequest) {
     const today = new Date().toISOString().slice(0, 10);
     switch (sort) {
       case "newest":
-        // Only released games, newest first — require cover image + title for public-readiness
+        // Only released games, newest first — require cover image + exclude provisional/COMING SOON
         query = query.lte("release_date", today)
           .not("cover_image", "is", null)
           .neq("cover_image", "")
+          .or("is_provisional.is.null,is_provisional.eq.false")
+          .neq("verdict_label", "COMING SOON")
           .order("release_date", { ascending: false }).order("id", { ascending: true });
         break;
       case "upcoming":
@@ -196,11 +198,13 @@ export async function GET(request: NextRequest) {
           .order("release_date", { ascending: true }).order("id", { ascending: true });
         break;
       case "recently-added":
-        // Newest DB entries — require cover image + score>0 to exclude junk/incomplete entries
+        // Newest DB entries — require cover image + score>0 + exclude provisional/COMING SOON
         query = query
           .not("cover_image", "is", null)
           .neq("cover_image", "")
           .gt("score", 0)
+          .or("is_provisional.is.null,is_provisional.eq.false")
+          .neq("verdict_label", "COMING SOON")
           .order("created_at", { ascending: false }).order("id", { ascending: true });
         break;
       case "top-rated":

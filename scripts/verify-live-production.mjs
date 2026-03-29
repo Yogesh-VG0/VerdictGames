@@ -148,7 +148,7 @@ async function main() {
     if (result.error) {
       console.log(`   ❌ ERROR: ${result.error}`);
     } else {
-      const games = result.data?.data?.games || [];
+      const games = result.data?.data?.items || [];
       console.log(`   Total: ${games.length} games`);
       const issues = analyzeGames(games, name);
       allIssues.adult.push(...issues.adult);
@@ -206,7 +206,7 @@ async function main() {
     console.log(`   Total lists: ${listData.length}`);
     for (const list of listData) {
       const games = list.games || [];
-      console.log(`   - ${list.name}: ${games.length} games`);
+      console.log(`   - ${list.title || list.name || 'Untitled'}: ${games.length} games`);
       const issues = analyzeGames(games, `lists.${list.slug}`);
       allIssues.adult.push(...issues.adult);
       allIssues.brokenCover.push(...issues.brokenCover);
@@ -234,7 +234,7 @@ async function main() {
   if (rawgLists.error) {
     console.log(`   ❌ ERROR: ${rawgLists.error}`);
   } else {
-    const items = rawgLists.data?.items || [];
+    const items = rawgLists.data?.data?.items || [];
     console.log(`   Total: ${items.length} items`);
     const issues = analyzeGames(items, "rawg/lists");
     allIssues.adult.push(...issues.adult);
@@ -247,7 +247,7 @@ async function main() {
   if (gxPopular.error) {
     console.log(`   ❌ ERROR: ${gxPopular.error}`);
   } else {
-    const items = Array.isArray(gxPopular.data) ? gxPopular.data : [];
+    const items = Array.isArray(gxPopular.data?.data) ? gxPopular.data.data : [];
     console.log(`   Total: ${items.length} items`);
   }
 
@@ -256,7 +256,7 @@ async function main() {
   if (gxFeed.error) {
     console.log(`   ❌ ERROR: ${gxFeed.error}`);
   } else {
-    const items = Array.isArray(gxFeed.data) ? gxFeed.data : [];
+    const items = Array.isArray(gxFeed.data?.data) ? gxFeed.data.data : [];
     console.log(`   Total: ${items.length} items`);
   }
 
