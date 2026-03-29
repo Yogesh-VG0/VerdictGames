@@ -315,6 +315,14 @@ export async function fetchTrendingGames(limit = 20, homepageOnly = true): Promi
       recencyFiltered = readyFiltered.filter((r) => isRecentEnoughForHome(r, HOMEPAGE_TRENDING_LAST_RESORT_MONTHS));
     }
     if (recencyFiltered.length < 4) recencyFiltered = readyFiltered;
+
+    // Step 5b: Exclude games with negative momentum from homepage trending
+    // Showing "📉 Falling" games in "Trending Right Now" is semantically inconsistent
+    const momentumFiltered = recencyFiltered.filter((r) => (r.momentum ?? 0) >= -0.1);
+    // Only apply if we still have enough games
+    if (momentumFiltered.length >= limit / 2) {
+      recencyFiltered = momentumFiltered;
+    }
   } else {
     recencyFiltered = readyFiltered;
   }
