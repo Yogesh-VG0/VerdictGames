@@ -548,9 +548,32 @@ export async function POST(
           if (gpApp) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const gpUpdates: Record<string, any> = { play_store_url: gpApp.url, updated_at: new Date().toISOString() };
-            const { data: cur } = await supabase.from("games").select("platforms").eq("id", id).maybeSingle();
-            const curPlatforms = ((cur as Record<string, unknown> | null)?.platforms as string[]) ?? [];
+            const { data: cur } = await supabase.from("games").select("*").eq("id", id).maybeSingle();
+            const curData = cur as Record<string, unknown> | null;
+            const curPlatforms = (curData?.platforms as string[]) ?? [];
             if (!curPlatforms.includes("Android")) gpUpdates.platforms = [...curPlatforms, "Android"];
+            
+            // If forceOverwrite, update all fields from Google Play
+            if (forceOverwrite) {
+              if (gpApp.description) {
+                gpUpdates.description = gpApp.description.length > 4000 ? gpApp.description.slice(0, 4000) + "..." : gpApp.description;
+              }
+              if (gpApp.icon) gpUpdates.cover_image = gpApp.icon;
+              if (gpApp.headerImage) gpUpdates.header_image = gpApp.headerImage;
+              if (gpApp.screenshots?.length) gpUpdates.screenshots = gpApp.screenshots.slice(0, 10);
+              if (gpApp.video || gpApp.previewVideo) {
+                gpUpdates.trailer_url = gpApp.video || gpApp.previewVideo;
+                gpUpdates.trailer_thumbnail = gpApp.videoImage || gpApp.headerImage || null;
+              }
+              if (gpApp.developerWebsite) gpUpdates.website_url = gpApp.developerWebsite;
+              if (gpApp.developer) gpUpdates.developer = gpApp.developer;
+              if (gpApp.developer) gpUpdates.publisher = gpApp.developer;
+              if (gpApp.genre) gpUpdates.genres = [gpApp.genre];
+              if (gpApp.released) gpUpdates.release_date = gpApp.released;
+              gpUpdates.monetization = gpApp.free ? (gpApp.offersIAP ? "Free + IAP" : "Free") : "Paid";
+              gpUpdates.is_free = gpApp.free;
+            }
+            
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             await (supabase.from("games") as any).update(gpUpdates).eq("id", id);
             try {
@@ -596,13 +619,28 @@ export async function POST(
           if (asApp) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const asUpdates: Record<string, any> = { updated_at: new Date().toISOString() };
-            const { data: cur } = await supabase.from("games").select("platforms").eq("id", id).maybeSingle();
-            const curPlatforms = ((cur as Record<string, unknown> | null)?.platforms as string[]) ?? [];
+            const { data: cur } = await supabase.from("games").select("*").eq("id", id).maybeSingle();
+            const curData = cur as Record<string, unknown> | null;
+            const curPlatforms = (curData?.platforms as string[]) ?? [];
             if (!curPlatforms.includes("iOS")) asUpdates.platforms = [...curPlatforms, "iOS"];
-            if (Object.keys(asUpdates).length > 1) {
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              await (supabase.from("games") as any).update(asUpdates).eq("id", id);
+            
+            // If forceOverwrite, update all fields from App Store
+            if (forceOverwrite) {
+              if (asApp.description) {
+                asUpdates.description = asApp.description.length > 4000 ? asApp.description.slice(0, 4000) + "..." : asApp.description;
+              }
+              if (asApp.artworkUrl512 || asApp.artworkUrl100) {
+                asUpdates.cover_image = asApp.artworkUrl512 || asApp.artworkUrl100;
+              }
+              if (asApp.screenshotUrls?.length) asUpdates.screenshots = asApp.screenshotUrls.slice(0, 10);
+              if (asApp.artistName) asUpdates.developer = asApp.artistName;
+              if (asApp.sellerName || asApp.artistName) asUpdates.publisher = asApp.sellerName || asApp.artistName;
+              if (asApp.genres?.length) asUpdates.genres = asApp.genres;
+              if (asApp.releaseDate) asUpdates.release_date = asApp.releaseDate.split("T")[0];
             }
+            
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            await (supabase.from("games") as any).update(asUpdates).eq("id", id);
             try {
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               await (supabase.from("mobile_store_listings") as any).upsert({
