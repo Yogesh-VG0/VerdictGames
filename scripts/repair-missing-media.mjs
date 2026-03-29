@@ -97,9 +97,66 @@ async function fetchIgdbCover(igdbId) {
   return { coverUrl, screenshots };
 }
 
-/* ─── Steam cover validation ─── */
+/* ─── Steam cover validation + GetItems API fallback ─── */
 
 const STEAM_LIBRARY_COVER_PATTERN = /cdn\.akamai\.steamstatic\.com\/steam\/apps\/(\d+)\/library_600x900/;
+
+/**
+ * Fetch Steam cover via GetItems API (reliable fallback).
+ * Uses IStoreBrowseService/GetItems/v1 which returns proper asset paths.
+ */
+async function fetchSteamCoverViaGetItems(steamAppId) {
+  if (!steamAppId) return null;
+  try {
+    const inputJson = JSON.stringify({
+      ids: [{ appid: parseInt(steamAppId) }],
+      context: { country_code: "US" },
+      data_request: { include_assets: true }
+    });
+    const url = `https://api.steampowered.com/IStoreBrowseService/GetItems/v1/?input_json=${encodeURIComponent(inputJson)}`;
+    const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const item = data?.response?.store_items?.[0];
+    if (!item?.assets) return null;
+    
+    const { asset_url_format, library_capsule_2x, header } = item.assets;
+    if (!asset_url_format || !library_capsule_2x) return null;
+    
+    const baseUrl = "https://shared.akamai.steamstatic.com/store_item_assets";
+    const coverUrl = `${baseUrl}/${asset_url_format.replace("${FILENAME}", library_capsule_2x)}`;
+    const headerUrl = header ? `${baseUrl}/${asset_url_format.replace("${FILENAME}", header)}` : null;
+    
+    return { coverUrl, headerUrl };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Validate and get Steam cover with GetItems API fallback.
+ * Returns { coverUrl, headerUrl, source } or null.
+ */
+async function validateAndGetSteamCover(steamAppId) {
+  if (!steamAppId) return null;
+  
+  // Try standard CDN URL first
+  const cdnUrl = `https://cdn.akamai.steamstatic.com/steam/apps/${steamAppId}/library_600x900_2x.jpg`;
+  try {
+    const res = await fetch(cdnUrl, { method: "HEAD", signal: AbortSignal.timeout(5000) });
+    if (res.ok) {
+      return { coverUrl: cdnUrl, headerUrl: null, source: "steam-cdn" };
+    }
+  } catch { /* continue to fallback */ }
+  
+  // Fallback: Use GetItems API
+  const getItemsResult = await fetchSteamCoverViaGetItems(steamAppId);
+  if (getItemsResult?.coverUrl) {
+    return { ...getItemsResult, source: "steam-api" };
+  }
+  
+  return null;
+}
 
 async function validateSteamCover(url) {
   try {
@@ -195,43 +252,24 @@ async function main() {
     let headerImage = null;
     let screenshots = game.screenshots || [];
 
-    // Strategy 1: RAWG (primary)
-    if (rawgSource && RAWG_KEY) {
+    // ══════════════════════════════════════════════════
+    // COVER REPAIR PRIORITY ORDER:
+    //   1. IGDB cover (most reliable, high-quality)
+    //   2. RAWG background_image (good fallback)
+    //   3. Steam validated cover (last resort, unreliable)
+    // ══════════════════════════════════════════════════
+    let mediaSource = null;
+
+    // Strategy 1: IGDB (PRIMARY - most reliable)
+    if (igdbSource) {
       try {
-        console.log(`  📡 Trying RAWG (id: ${rawgSource.source_game_id})...`);
-        const rawgGame = await fetchRawgGame(rawgSource.source_game_id);
-
-        if (rawgGame.background_image) {
-          coverImage = rawgGame.background_image;
-          headerImage = rawgGame.background_image_additional || rawgGame.background_image;
-          console.log(`  ✅ RAWG cover: ${coverImage.slice(0, 80)}...`);
-        }
-
-        // Also grab screenshots if missing
-        if (!screenshots || screenshots.length === 0) {
-          const rawgScreens = await fetchRawgScreenshots(rawgSource.source_game_id);
-          if (rawgScreens.length > 0) {
-            screenshots = rawgScreens;
-            console.log(`  📸 RAWG screenshots: ${rawgScreens.length}`);
-          }
-        }
-
-        // Rate limit: 200ms between RAWG calls
-        await new Promise((r) => setTimeout(r, 200));
-      } catch (err) {
-        console.log(`  ⚠️  RAWG failed: ${err.message}`);
-      }
-    }
-
-    // Strategy 2: IGDB (fallback)
-    if (!coverImage && igdbSource) {
-      try {
-        console.log(`  📡 Trying IGDB (id: ${igdbSource.source_game_id})...`);
+        console.log(`  📡 [Priority 1] Trying IGDB (id: ${igdbSource.source_game_id})...`);
         const igdbResult = await fetchIgdbCover(igdbSource.source_game_id);
 
         if (igdbResult?.coverUrl) {
           coverImage = igdbResult.coverUrl;
           headerImage = igdbResult.coverUrl;
+          mediaSource = "igdb";
           console.log(`  ✅ IGDB cover: ${coverImage}`);
         }
         if (igdbResult?.screenshots?.length > 0 && (!screenshots || screenshots.length === 0)) {
@@ -245,10 +283,38 @@ async function main() {
       }
     }
 
-    // Strategy 3: RAWG search by title (last resort)
+    // Strategy 2: RAWG (SECONDARY)
+    if (!coverImage && rawgSource && RAWG_KEY) {
+      try {
+        console.log(`  📡 [Priority 2] Trying RAWG (id: ${rawgSource.source_game_id})...`);
+        const rawgGame = await fetchRawgGame(rawgSource.source_game_id);
+
+        if (rawgGame.background_image) {
+          coverImage = rawgGame.background_image;
+          headerImage = rawgGame.background_image_additional || rawgGame.background_image;
+          mediaSource = "rawg";
+          console.log(`  ✅ RAWG cover: ${coverImage.slice(0, 80)}...`);
+        }
+
+        // Also grab screenshots if missing
+        if (!screenshots || screenshots.length === 0) {
+          const rawgScreens = await fetchRawgScreenshots(rawgSource.source_game_id);
+          if (rawgScreens.length > 0) {
+            screenshots = rawgScreens;
+            console.log(`  📸 RAWG screenshots: ${rawgScreens.length}`);
+          }
+        }
+
+        await new Promise((r) => setTimeout(r, 200));
+      } catch (err) {
+        console.log(`  ⚠️  RAWG failed: ${err.message}`);
+      }
+    }
+
+    // Strategy 3: RAWG search by title (if no source ID)
     if (!coverImage && RAWG_KEY) {
       try {
-        console.log(`  📡 Trying RAWG search by title: "${game.title}"...`);
+        console.log(`  📡 [Priority 2b] Trying RAWG search by title: "${game.title}"...`);
         const searchRes = await fetch(
           `${RAWG_BASE}/games?key=${RAWG_KEY}&search=${encodeURIComponent(game.title)}&page_size=3&search_precise=true`,
           { signal: AbortSignal.timeout(10000) }
@@ -262,6 +328,7 @@ async function main() {
           if (match?.background_image) {
             coverImage = match.background_image;
             headerImage = match.background_image;
+            mediaSource = "rawg";
             console.log(`  ✅ RAWG search cover: ${coverImage.slice(0, 80)}...`);
           }
         }
@@ -271,12 +338,31 @@ async function main() {
       }
     }
 
+    // Strategy 4: Steam validated cover (LAST RESORT)
+    if (!coverImage && game.steam_app_id) {
+      try {
+        console.log(`  📡 [Priority 3 - Last Resort] Trying Steam (appid: ${game.steam_app_id})...`);
+        const steamResult = await validateAndGetSteamCover(game.steam_app_id);
+        if (steamResult?.coverUrl) {
+          coverImage = steamResult.coverUrl;
+          headerImage = steamResult.headerUrl || steamResult.coverUrl;
+          mediaSource = "steam";
+          console.log(`  ✅ Steam cover via ${steamResult.source}: ${coverImage.slice(0, 80)}...`);
+        } else {
+          console.log(`  ⚠️  Steam validation failed - no valid cover`);
+        }
+        await new Promise((r) => setTimeout(r, 200));
+      } catch (err) {
+        console.log(`  ⚠️  Steam failed: ${err.message}`);
+      }
+    }
+
     // 3. Update the game if we found media
     if (coverImage) {
       const update = {
         cover_image: coverImage,
         header_image: headerImage || coverImage,
-        media_source: "rawg", // Track provenance
+        media_source: mediaSource, // Track provenance correctly
       };
       if (screenshots && screenshots.length > 0 && (!game.screenshots || game.screenshots.length === 0)) {
         update.screenshots = screenshots;

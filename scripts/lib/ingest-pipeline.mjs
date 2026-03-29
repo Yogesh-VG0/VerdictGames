@@ -21,6 +21,118 @@ const TWITCH_TOKEN_URL = "https://id.twitch.tv/oauth2/token";
 const CHEAPSHARK_BASE = "https://www.cheapshark.com/api/1.0";
 const WIKI_BASE = "https://en.wikipedia.org/api/rest_v1";
 
+// ══════════════════════════════════════════════════
+// Media Validation & Cover Image Strategy
+// ══════════════════════════════════════════════════
+// GLOBAL COVER PRIORITY ORDER:
+//   1. IGDB cover (most reliable, high-quality)
+//   2. RAWG background_image (good fallback)
+//   3. Steam validated cover (last resort, unreliable)
+//   4. Keep existing trusted media or leave empty for repair
+// ══════════════════════════════════════════════════
+
+/**
+ * Known-good image URL patterns (trusted sources that rarely 404).
+ * IGDB and RAWG are preferred over Steam.
+ */
+const TRUSTED_IMAGE_PATTERNS = [
+  /images\.igdb\.com/,      // IGDB - highest priority
+  /media\.rawg\.io/,        // RAWG - second priority
+  /upload\.wikimedia\.org/, // Wikipedia - trusted
+];
+
+/** Media source priority ranking (lower = better) */
+const MEDIA_SOURCE_PRIORITY = { igdb: 1, rawg: 2, steam: 3, unknown: 99 };
+
+/**
+ * Check if an image URL is from a trusted source.
+ */
+function isTrustedImageUrl(url) {
+  if (!url) return false;
+  return TRUSTED_IMAGE_PATTERNS.some(p => p.test(url));
+}
+
+/**
+ * Get media source from URL.
+ */
+function getMediaSourceFromUrl(url) {
+  if (!url) return null;
+  if (/images\.igdb\.com/.test(url)) return "igdb";
+  if (/media\.rawg\.io/.test(url)) return "rawg";
+  if (/steamstatic\.com|steamcdn/.test(url)) return "steam";
+  return "unknown";
+}
+
+/**
+ * Check if new media source is better than existing.
+ * Returns true if newSource should replace existingSource.
+ */
+function isMediaUpgrade(existingSource, newSource) {
+  const existingPriority = MEDIA_SOURCE_PRIORITY[existingSource] ?? 99;
+  const newPriority = MEDIA_SOURCE_PRIORITY[newSource] ?? 99;
+  return newPriority < existingPriority;
+}
+
+/**
+ * Fetch Steam cover via GetItems API (reliable fallback).
+ * Returns { coverUrl, headerUrl } or null if not found.
+ * Uses IStoreBrowseService/GetItems/v1 which returns proper asset paths.
+ */
+async function fetchSteamCoverViaGetItems(steamAppId) {
+  if (!steamAppId) return null;
+  try {
+    const inputJson = JSON.stringify({
+      ids: [{ appid: steamAppId }],
+      context: { country_code: "US" },
+      data_request: { include_assets: true }
+    });
+    const url = `https://api.steampowered.com/IStoreBrowseService/GetItems/v1/?input_json=${encodeURIComponent(inputJson)}`;
+    const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const item = data?.response?.store_items?.[0];
+    if (!item?.assets) return null;
+    
+    const { asset_url_format, library_capsule_2x, header } = item.assets;
+    if (!asset_url_format || !library_capsule_2x) return null;
+    
+    // Build full URL: https://shared.akamai.steamstatic.com/store_item_assets/{asset_url_format with FILENAME replaced}
+    const baseUrl = "https://shared.akamai.steamstatic.com/store_item_assets";
+    const coverUrl = `${baseUrl}/${asset_url_format.replace("${FILENAME}", library_capsule_2x)}`;
+    const headerUrl = header ? `${baseUrl}/${asset_url_format.replace("${FILENAME}", header)}` : null;
+    
+    return { coverUrl, headerUrl };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Validate a Steam library cover URL via HEAD request.
+ * First tries the standard CDN URL, then falls back to GetItems API.
+ * Returns { url, source: 'steam' } if valid, null if not.
+ */
+async function validateAndGetSteamCover(steamAppId) {
+  if (!steamAppId) return null;
+  
+  // Try standard CDN URL first (faster if it exists)
+  const cdnUrl = `https://cdn.akamai.steamstatic.com/steam/apps/${steamAppId}/library_600x900_2x.jpg`;
+  try {
+    const res = await fetch(cdnUrl, { method: "HEAD", signal: AbortSignal.timeout(5000) });
+    if (res.ok) {
+      return { coverUrl: cdnUrl, headerUrl: null, source: "steam-cdn" };
+    }
+  } catch { /* continue to fallback */ }
+  
+  // Fallback: Use GetItems API for games with non-standard asset paths
+  const getItemsResult = await fetchSteamCoverViaGetItems(steamAppId);
+  if (getItemsResult?.coverUrl) {
+    return { ...getItemsResult, source: "steam-api" };
+  }
+  
+  return null;
+}
+
 function getRawgKey() {
   const k = process.env.RAWG_API_KEY;
   if (!k) throw new Error("Missing RAWG_API_KEY");
@@ -450,10 +562,54 @@ export async function ingestGameDirect(sql, query, options = {}) {
   const tags = (fullGame.tags ?? []).slice(0, 12).map(t => t.name);
   const dev = fullGame.developers?.[0]?.name ?? "";
   const pub = fullGame.publishers?.[0]?.name ?? "";
-  const steamCover = steamAppId ? `https://cdn.akamai.steamstatic.com/steam/apps/${steamAppId}/library_600x900_2x.jpg` : null;
+  // ══════════════════════════════════════════════════
+  // COVER IMAGE SELECTION — NEW PRIORITY ORDER:
+  //   1. IGDB cover (most reliable, high-quality)
+  //   2. RAWG background_image (good fallback)
+  //   3. Steam validated cover (last resort, unreliable)
+  //   4. Keep existing trusted media or leave empty
+  // ══════════════════════════════════════════════════
   const igdbCover = ie?.coverUrl ?? null;
   const igdbSS = ie?.screenshots ?? [];
-  const cover = steamCover || igdbCover || fullGame.background_image || "";
+  const rawgCover = fullGame.background_image || "";
+  
+  let cover = "";
+  let mediaSource = null;
+  let coverDebug = "";
+  
+  // Priority 1: IGDB cover (preferred)
+  if (igdbCover) {
+    cover = igdbCover;
+    mediaSource = "igdb";
+    coverDebug = "[cover] Using IGDB cover (priority 1)";
+  }
+  // Priority 2: RAWG background image
+  else if (rawgCover) {
+    cover = rawgCover;
+    mediaSource = "rawg";
+    coverDebug = "[cover] Using RAWG background (priority 2)";
+  }
+  // Priority 3: Steam validated cover (last resort)
+  else if (steamAppId) {
+    const steamResult = await validateAndGetSteamCover(steamAppId);
+    if (steamResult?.coverUrl) {
+      cover = steamResult.coverUrl;
+      mediaSource = "steam";
+      coverDebug = `[cover] Using Steam cover via ${steamResult.source} (priority 3 - fallback)`;
+    } else {
+      coverDebug = "[cover] Steam validation failed, no cover available";
+    }
+  }
+  // No cover found
+  else {
+    coverDebug = "[cover] No cover sources available";
+  }
+  
+  // Log cover source for debugging (can be disabled in production)
+  if (process.env.DEBUG_MEDIA) console.log(`  ${fullGame.name}: ${coverDebug}`);
+  
+  // Header image: prefer IGDB screenshots, then RAWG additional/background
+  // Header is separate from cover - don't use Steam for headers
   const header = igdbSS.length ? igdbSS[0] : (fullGame.background_image_additional ?? fullGame.background_image ?? "");
   const finalSS = igdbSS.length ? igdbSS : ssUrls;
   const freeTags = ["free-to-play","free to play","f2p"];
@@ -489,6 +645,7 @@ export async function ingestGameDirect(sql, query, options = {}) {
     hltb_main: hltbData?.main ?? null, hltb_extras: hltbData?.extras ?? null,
     hltb_completionist: hltbData?.completionist ?? null, hltb_last_fetched: hltbData ? now : null,
     last_enriched_at: now, enrichment_sources: sources,
+    media_source: mediaSource,
     is_provisional: !steamRev && !igdbData,
   };
 
@@ -509,7 +666,7 @@ export async function ingestGameDirect(sql, query, options = {}) {
     // Fetch current editorial values to check which ones are already set
     const [cur] = await sql`SELECT ${sql(["title","subtitle","description","cover_image","header_image",
       "screenshots","pros","cons","verdict_summary","performance_notes","monetization_notes",
-      "monetization","developer","publisher"])} FROM games WHERE id = ${existing.id}`;
+      "monetization","developer","publisher","media_source"])} FROM games WHERE id = ${existing.id}`;
 
     const upd = {};
     for (const [key, val] of Object.entries(rec)) {
@@ -519,7 +676,30 @@ export async function ingestGameDirect(sql, query, options = {}) {
         // Only overwrite if current DB value is empty/null/default
         const isEmpty = curVal === null || curVal === undefined || curVal === ""
           || (Array.isArray(curVal) && curVal.length === 0);
-        if (!isEmpty) continue; // preserve existing manual data
+        if (!isEmpty) {
+          // ══════════════════════════════════════════════════
+          // NO-REGRESSION PROTECTION FOR MEDIA:
+          // - Never overwrite IGDB/RAWG with Steam
+          // - Only allow upgrades (igdb > rawg > steam)
+          // ══════════════════════════════════════════════════
+          if (key === "cover_image" && cur.media_source) {
+            const existingSource = cur.media_source;
+            const newSource = mediaSource;
+            // Only overwrite if new source is better (lower priority number)
+            if (!isMediaUpgrade(existingSource, newSource)) {
+              if (process.env.DEBUG_MEDIA) {
+                console.log(`  [no-regression] Keeping ${existingSource} cover, not replacing with ${newSource}`);
+              }
+              continue; // Keep existing better media
+            }
+            // Allow upgrade: e.g., replacing steam with igdb
+            if (process.env.DEBUG_MEDIA) {
+              console.log(`  [upgrade] Replacing ${existingSource} cover with ${newSource}`);
+            }
+          } else {
+            continue; // preserve existing manual data for non-media fields
+          }
+        }
       }
       upd[key] = val;
     }

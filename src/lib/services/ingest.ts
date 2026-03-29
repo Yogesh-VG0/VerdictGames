@@ -38,7 +38,7 @@ import {
 } from "../external/steam";
 import { findCheapSharkDeal } from "../external/cheapshark";
 import { findIgdbMatch, extractIgdbEnrichment, isIgdbConfigured } from "../external/igdb";
-import { validateSteamCover, findValidCoverUrl } from "../utils/mediaReadiness";
+import { validateAndGetSteamCover, isMediaUpgrade, MEDIA_SOURCE_PRIORITY } from "../utils/mediaReadiness";
 import { findGameWikiSummary } from "../external/wikipedia";
 import { fetchHLTBData } from "../external/howlongtobeat";
 import { slugify } from "../utils/slugify";
@@ -370,33 +370,46 @@ export async function ingestGame(options: IngestOptions): Promise<IngestResult> 
   const developer = fullGame.developers?.[0]?.name ?? "";
   const publisher = fullGame.publishers?.[0]?.name ?? "";
 
-  // Cover image priority: Steam library capsule > IGDB cover > RAWG background
-  // Steam capsules don't exist for all games — validate before using
+  // ══════════════════════════════════════════════════
+  // COVER IMAGE SELECTION — NEW PRIORITY ORDER:
+  //   1. IGDB cover (most reliable, high-quality)
+  //   2. RAWG background_image (good fallback)
+  //   3. Steam validated cover (last resort, unreliable)
+  //   4. Keep existing trusted media or leave empty
+  // ══════════════════════════════════════════════════
   const igdbCover = igdbEnrichment?.coverImageUrl ?? null;
   const igdbScreenshots = igdbEnrichment?.screenshotUrls ?? [];
   const rawgCover = fullGame.background_image || "";
 
-  // Validate Steam cover URL (async) — fall back to IGDB or RAWG if 404
-  let finalCover: string;
+  let finalCover: string = "";
   let mediaSource: string | null = null;
-  if (steamAppId) {
-    const validSteamCover = await validateSteamCover(steamAppId);
-    if (validSteamCover) {
-      finalCover = validSteamCover;
-      mediaSource = "steam";
-    } else if (igdbCover) {
-      finalCover = igdbCover;
-      mediaSource = "igdb";
-    } else {
-      finalCover = rawgCover;
-      mediaSource = rawgCover ? "rawg" : null;
-    }
-  } else if (igdbCover) {
+
+  // Priority 1: IGDB cover (preferred)
+  if (igdbCover) {
     finalCover = igdbCover;
     mediaSource = "igdb";
-  } else {
+    console.log(`  [cover] ${fullGame.name}: Using IGDB cover (priority 1)`);
+  }
+  // Priority 2: RAWG background image
+  else if (rawgCover) {
     finalCover = rawgCover;
-    mediaSource = rawgCover ? "rawg" : null;
+    mediaSource = "rawg";
+    console.log(`  [cover] ${fullGame.name}: Using RAWG background (priority 2)`);
+  }
+  // Priority 3: Steam validated cover (last resort)
+  else if (steamAppId) {
+    const steamResult = await validateAndGetSteamCover(steamAppId);
+    if (steamResult?.coverUrl) {
+      finalCover = steamResult.coverUrl;
+      mediaSource = "steam";
+      console.log(`  [cover] ${fullGame.name}: Using Steam cover via ${steamResult.source} (priority 3 - fallback)`);
+    } else {
+      console.log(`  [cover] ${fullGame.name}: Steam validation failed, no cover available`);
+    }
+  }
+  // No cover found
+  else {
+    console.log(`  [cover] ${fullGame.name}: No cover sources available`);
   }
 
   const finalScreenshots = igdbScreenshots.length > 0 ? igdbScreenshots : screenshotUrls;
