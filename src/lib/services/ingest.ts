@@ -38,6 +38,7 @@ import {
 } from "../external/steam";
 import { findCheapSharkDeal } from "../external/cheapshark";
 import { findIgdbMatch, extractIgdbEnrichment, isIgdbConfigured } from "../external/igdb";
+import { validateSteamCover, findValidCoverUrl } from "../utils/mediaReadiness";
 import { findGameWikiSummary } from "../external/wikipedia";
 import { fetchHLTBData } from "../external/howlongtobeat";
 import { slugify } from "../utils/slugify";
@@ -370,13 +371,34 @@ export async function ingestGame(options: IngestOptions): Promise<IngestResult> 
   const publisher = fullGame.publishers?.[0]?.name ?? "";
 
   // Cover image priority: Steam library capsule > IGDB cover > RAWG background
-  // Steam capsules are always stable; IGDB covers can rotate with seasonal events
-  const steamCover = steamAppId
-    ? `https://cdn.akamai.steamstatic.com/steam/apps/${steamAppId}/library_600x900_2x.jpg`
-    : null;
+  // Steam capsules don't exist for all games — validate before using
   const igdbCover = igdbEnrichment?.coverImageUrl ?? null;
   const igdbScreenshots = igdbEnrichment?.screenshotUrls ?? [];
-  const finalCover = steamCover || igdbCover || fullGame.background_image || "";
+  const rawgCover = fullGame.background_image || "";
+
+  // Validate Steam cover URL (async) — fall back to IGDB or RAWG if 404
+  let finalCover: string;
+  let mediaSource: string | null = null;
+  if (steamAppId) {
+    const validSteamCover = await validateSteamCover(steamAppId);
+    if (validSteamCover) {
+      finalCover = validSteamCover;
+      mediaSource = "steam";
+    } else if (igdbCover) {
+      finalCover = igdbCover;
+      mediaSource = "igdb";
+    } else {
+      finalCover = rawgCover;
+      mediaSource = rawgCover ? "rawg" : null;
+    }
+  } else if (igdbCover) {
+    finalCover = igdbCover;
+    mediaSource = "igdb";
+  } else {
+    finalCover = rawgCover;
+    mediaSource = rawgCover ? "rawg" : null;
+  }
+
   const finalScreenshots = igdbScreenshots.length > 0 ? igdbScreenshots : screenshotUrls;
   const finalHeader = igdbScreenshots.length > 0
     ? igdbScreenshots[0]
@@ -452,6 +474,7 @@ export async function ingestGame(options: IngestOptions): Promise<IngestResult> 
     hltb_last_fetched: hltbData ? new Date().toISOString() : null,
     last_enriched_at: new Date().toISOString(),
     enrichment_sources: enrichmentSources,
+    media_source: mediaSource,
   };
 
   // ── Step 12: Upsert game ──

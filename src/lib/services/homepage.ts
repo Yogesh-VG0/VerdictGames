@@ -25,6 +25,8 @@ import { getServerSupabase } from "@/lib/supabase/server";
 import { mapGameRow } from "@/lib/db/mappers";
 import { GAME_CARD_COLUMNS_WITH_DESC } from "@/lib/db/columns";
 import { filterQualityGames, confidenceWeightedScore, isQualityGame, isSurfaceReady } from "@/lib/utils/quality";
+import { isPublicSafeGame } from "@/lib/utils/publicSafety";
+import { hasUsableCardImage } from "@/lib/utils/mediaReadiness";
 import type { GameRow } from "@/lib/supabase/types";
 import type { Game, GXDeal } from "@/lib/types";
 
@@ -219,8 +221,12 @@ export async function fetchHeroCandidates(limit = 12): Promise<Game[]> {
   const autoDeduped = (autoPool ?? []).filter((g) => !manualIds.has(g.id));
   const combined = deduplicateBySteamAppId([...(manualFeatured ?? []), ...autoDeduped]);
 
-  // Surface readiness gate + quality filter
-  const ready = combined.filter((r) => isSurfaceReady(r, "homepageRail"));
+  // Surface readiness gate + public safety + media readiness + quality filter
+  const ready = combined.filter((r) =>
+    isSurfaceReady(r, "homepageRail") &&
+    isPublicSafeGame(r) &&
+    hasUsableCardImage(r)
+  );
   const strictFiltered = ready.filter((r) => isQualityGame(r, "hero"));
   const qualityFiltered = strictFiltered.length >= 4
     ? strictFiltered
@@ -290,9 +296,13 @@ export async function fetchTrendingGames(limit = 20, homepageOnly = true): Promi
   const poolDeduped = (pool ?? []).filter((g) => !flaggedIds.has(g.id));
   const allCandidates = deduplicateBySteamAppId([...(flagged ?? []), ...poolDeduped]);
 
-  // Step 4: Quality filter + surface readiness
+  // Step 4: Quality filter + surface readiness + public safety + media readiness
   const qualityFiltered = filterQualityGames(allCandidates, { section: "trending", minResults: 4 });
-  const readyFiltered = qualityFiltered.filter((r) => isSurfaceReady(r, "homepageRail"));
+  const readyFiltered = qualityFiltered.filter((r) =>
+    isSurfaceReady(r, "homepageRail") &&
+    isPublicSafeGame(r) &&
+    hasUsableCardImage(r)
+  );
 
   // Step 5: Apply recency gate (graduated) — but only for homepage
   let recencyFiltered: GameRow[];
@@ -383,13 +393,20 @@ export async function fetchNewReleases(limit = 20): Promise<Game[]> {
 
   if (error) throw error;
 
-  // Surface readiness + quality filter
-  const ready = (data ?? []).filter((r) => isSurfaceReady(r, "homepageRail"));
+  // Surface readiness + public safety + media readiness + quality filter
+  const ready = (data ?? []).filter((r) =>
+    isSurfaceReady(r, "homepageRail") &&
+    isPublicSafeGame(r) &&
+    hasUsableCardImage(r)
+  );
   const filtered = filterQualityGames(ready, { section: "newReleases", minResults: 4 });
 
-  // Exclude provisional unless well-reviewed
+  // Exclude provisional unless well-reviewed, exclude COMING SOON, exclude future dates
+  const today = new Date().toISOString().slice(0, 10);
   const final = filtered.filter((r) => {
     if ((r as GameRow & { is_provisional?: boolean }).is_provisional && r.review_count < 50) return false;
+    if (r.verdict_label === "COMING SOON") return false;
+    if (r.release_date && r.release_date > today) return false;
     return true;
   });
 
@@ -427,7 +444,11 @@ export async function fetchTopRated(limit = 10): Promise<Game[]> {
 
   if (error) throw error;
 
-  const ready = (data ?? []).filter((r) => isSurfaceReady(r, "homepageRail"));
+  const ready = (data ?? []).filter((r) =>
+    isSurfaceReady(r, "homepageRail") &&
+    isPublicSafeGame(r) &&
+    hasUsableCardImage(r)
+  );
   const filtered = filterQualityGames(ready, { section: "topRated", minResults: 4 });
 
   // Exclude provisional / coming soon
@@ -468,7 +489,11 @@ export async function fetchHomepageTopRated(limit = 20): Promise<Game[]> {
 
   if (error) throw error;
 
-  let ready = (data ?? []).filter((r) => isSurfaceReady(r, "homepageRail"));
+  let ready = (data ?? []).filter((r) =>
+    isSurfaceReady(r, "homepageRail") &&
+    isPublicSafeGame(r) &&
+    hasUsableCardImage(r)
+  );
   let filtered = filterQualityGames(ready, { section: "topRated", minResults: 4 });
 
   // Fallback: widen to 36 months if not enough
@@ -489,7 +514,11 @@ export async function fetchHomepageTopRated(limit = 20): Promise<Game[]> {
       .limit(fetchLimit) as { data: GameRow[] | null; error: unknown };
 
     if (!fallback.error && fallback.data) {
-      ready = fallback.data.filter((r) => isSurfaceReady(r, "homepageRail"));
+      ready = fallback.data.filter((r) =>
+        isSurfaceReady(r, "homepageRail") &&
+        isPublicSafeGame(r) &&
+        hasUsableCardImage(r)
+      );
       filtered = filterQualityGames(ready, { section: "topRated", minResults: 4 });
     }
   }
@@ -542,8 +571,12 @@ export async function fetchHomepageRecommendations(limit = 20): Promise<Game[]> 
 
   if (error) throw error;
 
-  // Surface readiness gate
-  const ready = (data ?? []).filter((r) => isSurfaceReady(r, "homepageRail"));
+  // Surface readiness + public safety + media readiness gate
+  const ready = (data ?? []).filter((r) =>
+    isSurfaceReady(r, "homepageRail") &&
+    isPublicSafeGame(r) &&
+    hasUsableCardImage(r)
+  );
 
   // Exclude provisional / coming soon
   const clean = ready.filter((r) => {

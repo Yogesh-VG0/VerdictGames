@@ -10,6 +10,8 @@ import { jsonOk } from "@/lib/api/response";
 import { mapGameRow } from "@/lib/db/mappers";
 import { GAME_CARD_COLUMNS_WITH_DESC } from "@/lib/db/columns";
 import { confidenceWeightedScore, isQualityGame } from "@/lib/utils/quality";
+import { isPublicSafeGame } from "@/lib/utils/publicSafety";
+import { hasUsableCardImage } from "@/lib/utils/mediaReadiness";
 import type { GameRow } from "@/lib/supabase/types";
 
 export async function GET(request: NextRequest) {
@@ -95,8 +97,11 @@ export async function GET(request: NextRequest) {
     const { data, error } = await query as { data: GameRow[] | null; error: unknown };
     if (error) throw error;
 
-    // Quality filter: require image, decent description, non-provisional
+    // Quality filter: require image, decent description, non-provisional, public safe
     let rows = (data ?? []).filter((r) => {
+      // Public safety + media readiness
+      if (!isPublicSafeGame(r)) return false;
+      if (!hasUsableCardImage(r)) return false;
       // Exclude provisional / coming soon
       if ((r as GameRow & { is_provisional?: boolean }).is_provisional) return false;
       if (r.verdict_label === "COMING SOON") return false;

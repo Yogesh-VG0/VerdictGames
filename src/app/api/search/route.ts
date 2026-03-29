@@ -18,6 +18,8 @@ import { jsonOk } from "@/lib/api/response";
 import { mapGameRow } from "@/lib/db/mappers";
 import { GAME_CARD_COLUMNS_WITH_DESC } from "@/lib/db/columns";
 import { confidenceWeightedScore, isSurfaceReady } from "@/lib/utils/quality";
+import { isPublicSafeGame } from "@/lib/utils/publicSafety";
+import { hasUsableCardImage } from "@/lib/utils/mediaReadiness";
 import type { Game, PaginatedResponse, SortOption, Platform } from "@/lib/types";
 import type { GameRow } from "@/lib/supabase/types";
 
@@ -270,7 +272,11 @@ export async function GET(request: NextRequest) {
 
     if (error) throw error;
 
-    let rows = data ?? [];
+    // Apply public safety + media readiness filters
+    let rows = (data ?? []).filter((r) =>
+      isPublicSafeGame(r) &&
+      hasUsableCardImage(r)
+    );
 
     // ─── Relevance re-ranking: title similarity first ───
     if (isRelevanceWithQuery && rows.length > 0) {

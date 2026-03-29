@@ -9,7 +9,9 @@ export const revalidate = 300; // ISR: revalidate every 5 minutes
 import { NextRequest } from "next/server";
 import { jsonOk } from "@/lib/api/response";
 import { mapGameRow, mapListRow } from "@/lib/db/mappers";
-import { GAME_CARD_COLUMNS } from "@/lib/db/columns";
+import { GAME_CARD_COLUMNS_WITH_DESC } from "@/lib/db/columns";
+import { isPublicSafeGame } from "@/lib/utils/publicSafety";
+import { hasUsableCardImage } from "@/lib/utils/mediaReadiness";
 import type { ListRow, GameRow } from "@/lib/supabase/types";
 
 export async function GET(_request: NextRequest) {
@@ -45,16 +47,19 @@ export async function GET(_request: NextRequest) {
       for (const item of items) allGameIds.add(item.game_id);
     }
 
-    // Single batch query for all games (with card columns only)
+    // Single batch query for all games (with description for filtering)
     const gamesMap = new Map<string, ReturnType<typeof mapGameRow>>();
     if (allGameIds.size > 0) {
       const { data: gamesData } = await supabase
         .from("games")
-        .select(GAME_CARD_COLUMNS)
+        .select(GAME_CARD_COLUMNS_WITH_DESC)
         .in("id", [...allGameIds]) as { data: GameRow[] | null };
 
+      // Apply public safety + media readiness filters
       for (const row of gamesData ?? []) {
-        gamesMap.set(row.id, mapGameRow(row));
+        if (isPublicSafeGame(row) && hasUsableCardImage(row)) {
+          gamesMap.set(row.id, mapGameRow(row));
+        }
       }
     }
 

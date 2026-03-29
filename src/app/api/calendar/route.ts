@@ -9,7 +9,9 @@ export const revalidate = 300; // ISR: revalidate every 5 minutes
 import { NextRequest } from "next/server";
 import { jsonOk } from "@/lib/api/response";
 import { mapGameRow } from "@/lib/db/mappers";
-import { GAME_CARD_COLUMNS } from "@/lib/db/columns";
+import { GAME_CARD_COLUMNS_WITH_DESC } from "@/lib/db/columns";
+import { isPublicSafeGame } from "@/lib/utils/publicSafety";
+import { hasUsableCardImage } from "@/lib/utils/mediaReadiness";
 import type { GameRow } from "@/lib/supabase/types";
 
 export async function GET(request: NextRequest) {
@@ -34,12 +36,12 @@ export async function GET(request: NextRequest) {
 
     let query = supabase
       .from("games")
-      .select(GAME_CARD_COLUMNS)
+      .select(GAME_CARD_COLUMNS_WITH_DESC)
       .not("release_date", "is", null)
       .not("cover_image", "is", null)
       .neq("cover_image", "")
       .order("release_date", { ascending: true })
-      .limit(limit);
+      .limit(limit * 2); // Overfetch for filtering
 
     if (month) {
       const [year, mon] = month.split("-");
@@ -59,7 +61,12 @@ export async function GET(request: NextRequest) {
     const { data, error } = await query as { data: GameRow[] | null; error: unknown };
     if (error) throw error;
 
-    return jsonOk((data ?? []).map(mapGameRow), 200, { cache: true });
+    // Apply public safety + media readiness filters
+    const filtered = (data ?? [])
+      .filter((r) => isPublicSafeGame(r) && hasUsableCardImage(r))
+      .slice(0, limit);
+
+    return jsonOk(filtered.map(mapGameRow), 200, { cache: true });
   } catch (err) {
     console.error("[API] /calendar error:", err);
     return jsonOk([]);

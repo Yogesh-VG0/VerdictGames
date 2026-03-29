@@ -12,6 +12,7 @@
 
 import { NextRequest } from "next/server";
 import { jsonOk, jsonError } from "@/lib/api/response";
+import { isPublicSafeRawgGame } from "@/lib/utils/publicSafety";
 
 export async function GET(request: NextRequest) {
   const sp = request.nextUrl.searchParams;
@@ -54,8 +55,11 @@ export async function GET(request: NextRequest) {
         return jsonError(`Unknown list type: ${type}`, 400);
     }
 
+    // Filter for public safety (blocks adult/NSFW RAWG results)
+    const safeResults = data.results.filter((item) => isPublicSafeRawgGame(item));
+
     // Map to a lighter response format
-    const items = data.results.map((item) => ({
+    const items = safeResults.map((item) => ({
       rawgId: item.id,
       slug: item.slug,
       name: item.name,

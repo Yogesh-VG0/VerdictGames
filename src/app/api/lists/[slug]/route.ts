@@ -9,7 +9,9 @@ export const revalidate = 300; // ISR: revalidate every 5 minutes
 import { NextRequest } from "next/server";
 import { jsonOk, jsonNotFound } from "@/lib/api/response";
 import { mapGameRow, mapListRow } from "@/lib/db/mappers";
-import { GAME_CARD_COLUMNS } from "@/lib/db/columns";
+import { GAME_CARD_COLUMNS_WITH_DESC } from "@/lib/db/columns";
+import { isPublicSafeGame } from "@/lib/utils/publicSafety";
+import { hasUsableCardImage } from "@/lib/utils/mediaReadiness";
 import type { ListRow, GameRow } from "@/lib/supabase/types";
 
 export async function GET(
@@ -51,13 +53,17 @@ export async function GET(
       const gameIds = items.map((i) => i.game_id);
       const { data: gamesData } = await supabase
         .from("games")
-        .select(GAME_CARD_COLUMNS)
+        .select(GAME_CARD_COLUMNS_WITH_DESC)
         .in("id", gameIds) as { data: GameRow[] | null };
 
-      // Filter for surface readiness — curated lists require cover, title, desc, genre
+      // Filter for surface readiness + public safety + media readiness
       const { isSurfaceReady } = await import("@/lib/utils/quality");
       const allGames = (gamesData ?? [])
-        .filter((r) => isSurfaceReady(r, "curatedList"))
+        .filter((r) =>
+          isSurfaceReady(r, "curatedList") &&
+          isPublicSafeGame(r) &&
+          hasUsableCardImage(r)
+        )
         .map(mapGameRow);
       games = gameIds
         .map((id) => allGames.find((g) => g.id === id))

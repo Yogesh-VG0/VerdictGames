@@ -97,35 +97,89 @@ async function fetchIgdbCover(igdbId) {
   return { coverUrl, screenshots };
 }
 
+/* ─── Steam cover validation ─── */
+
+const STEAM_LIBRARY_COVER_PATTERN = /cdn\.akamai\.steamstatic\.com\/steam\/apps\/(\d+)\/library_600x900/;
+
+async function validateSteamCover(url) {
+  try {
+    const res = await fetch(url, { method: "HEAD", signal: AbortSignal.timeout(5000) });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 /* ─── Main repair logic ─── */
 
 async function main() {
-  console.log("🔧 Verdict Games — Media Repair Pipeline\n");
+  const args = process.argv.slice(2);
+  const validateBroken = args.includes("--validate-broken");
+  const dryRun = args.includes("--dry-run");
+  
+  console.log("🔧 Verdict Games — Media Repair Pipeline");
+  console.log(`   Mode: ${validateBroken ? "Validate broken URLs" : "Repair missing media"}`);
+  if (dryRun) console.log("   DRY RUN — no changes will be made");
+  console.log("");
 
-  // 1. Find all games missing cover images
-  const { data: missingGames, error: fetchErr } = await supabase
-    .from("games")
-    .select("id, title, slug, cover_image, header_image, screenshots")
-    .or("cover_image.is.null,cover_image.eq.")
-    .order("created_at", { ascending: false });
+  let gamesToRepair;
 
-  if (fetchErr) {
-    console.error("❌ Failed to fetch games:", fetchErr.message);
-    process.exit(1);
+  if (validateBroken) {
+    // Find games with Steam library covers that need validation
+    const { data: steamCoverGames, error: fetchErr } = await supabase
+      .from("games")
+      .select("id, title, slug, cover_image, header_image, screenshots, steam_app_id")
+      .like("cover_image", "%library_600x900%")
+      .order("created_at", { ascending: false });
+
+    if (fetchErr) {
+      console.error("❌ Failed to fetch games:", fetchErr.message);
+      process.exit(1);
+    }
+
+    console.log(`Found ${steamCoverGames.length} games with Steam library covers to validate\n`);
+
+    // Validate each Steam cover URL
+    const brokenGames = [];
+    for (const game of steamCoverGames) {
+      const isValid = await validateSteamCover(game.cover_image);
+      if (!isValid) {
+        console.log(`  ❌ BROKEN: ${game.title} — ${game.cover_image.slice(0, 60)}...`);
+        brokenGames.push(game);
+      }
+      // Rate limit
+      await new Promise((r) => setTimeout(r, 100));
+    }
+
+    console.log(`\nFound ${brokenGames.length} games with broken Steam covers\n`);
+    gamesToRepair = brokenGames;
+  } else {
+    // Original mode: find games with null/empty cover images
+    const { data: missingGames, error: fetchErr } = await supabase
+      .from("games")
+      .select("id, title, slug, cover_image, header_image, screenshots")
+      .or("cover_image.is.null,cover_image.eq.")
+      .order("created_at", { ascending: false });
+
+    if (fetchErr) {
+      console.error("❌ Failed to fetch games:", fetchErr.message);
+      process.exit(1);
+    }
+
+    console.log(`Found ${missingGames.length} games missing cover images\n`);
+    gamesToRepair = missingGames;
   }
 
-  console.log(`Found ${missingGames.length} games missing cover images\n`);
-
-  if (missingGames.length === 0) {
-    console.log("✅ All games have cover images. Nothing to repair.");
+  if (gamesToRepair.length === 0) {
+    console.log("✅ No games need repair.");
     return;
   }
 
-  // 2. For each game, look up source IDs
+  // 2. For each game, look up source IDs and repair
   let repaired = 0;
   let failed = 0;
 
-  for (const game of missingGames) {
+  for (const game of gamesToRepair) {
     console.log(`\n── ${game.title} (${game.slug}) ──`);
 
     // Get source references
@@ -222,22 +276,28 @@ async function main() {
       const update = {
         cover_image: coverImage,
         header_image: headerImage || coverImage,
+        media_source: "rawg", // Track provenance
       };
       if (screenshots && screenshots.length > 0 && (!game.screenshots || game.screenshots.length === 0)) {
         update.screenshots = screenshots;
       }
 
-      const { error: updateErr } = await supabase
-        .from("games")
-        .update(update)
-        .eq("id", game.id);
-
-      if (updateErr) {
-        console.log(`  ❌ DB update failed: ${updateErr.message}`);
-        failed++;
-      } else {
-        console.log(`  💾 Updated successfully`);
+      if (dryRun) {
+        console.log(`  🔍 DRY RUN: Would update to ${coverImage.slice(0, 60)}...`);
         repaired++;
+      } else {
+        const { error: updateErr } = await supabase
+          .from("games")
+          .update(update)
+          .eq("id", game.id);
+
+        if (updateErr) {
+          console.log(`  ❌ DB update failed: ${updateErr.message}`);
+          failed++;
+        } else {
+          console.log(`  💾 Updated successfully`);
+          repaired++;
+        }
       }
     } else {
       console.log(`  ❌ No image found from any source`);
@@ -247,7 +307,11 @@ async function main() {
 
   console.log(`\n${"═".repeat(50)}`);
   console.log(`🔧 Repair complete: ${repaired} fixed, ${failed} still missing`);
-  console.log(`   Total: ${missingGames.length} processed`);
+  console.log(`   Total: ${gamesToRepair.length} processed`);
+  console.log(`\nUsage:`);
+  console.log(`  node scripts/repair-missing-media.mjs                  # Repair null/empty covers`);
+  console.log(`  node scripts/repair-missing-media.mjs --validate-broken # Find & repair broken Steam covers`);
+  console.log(`  node scripts/repair-missing-media.mjs --dry-run        # Preview changes without writing`);
 }
 
 main().catch((err) => {
