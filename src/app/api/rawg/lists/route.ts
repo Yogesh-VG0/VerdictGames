@@ -9,21 +9,17 @@
  *   page: number (default 1)
  *   pageSize: number (default 20)
  * 
- * NOTE: RAWG API has page_size max of 40. We fetch multiple RAWG pages internally
- * to serve our desired pageSize (20) consistently.
+ * NOTE: RAWG API already handles content filtering, so we don't filter here.
  */
 
 export const revalidate = 3600; // ISR: revalidate every hour (RAWG data is relatively static)
 
 import { NextRequest } from "next/server";
 import { jsonOk, jsonError } from "@/lib/api/response";
-import { isPublicSafeRawgGame } from "@/lib/utils/publicSafety";
 import type { RawgListItem, RawgListResponse } from "@/lib/external/rawg";
 
 // Our desired page size for the frontend (5 columns × 4 rows = 20)
 const FRONTEND_PAGE_SIZE = 20;
-// RAWG API page size (keep at 40 to minimize API calls)
-const RAWG_PAGE_SIZE = 40;
 
 export async function GET(request: NextRequest) {
   const sp = request.nextUrl.searchParams;
@@ -40,66 +36,36 @@ export async function GET(request: NextRequest) {
       getRawgByGenre,
     } = await import("@/lib/external/rawg");
 
-    // Calculate which RAWG pages we need to fetch
-    // For page 1 with pageSize 25, we need RAWG page 1 (items 1-40)
-    // For page 2 with pageSize 25, we need RAWG page 1 (items 26-40) + page 2 (items 41-50)
-    const startIndex = (page - 1) * pageSize; // 0-indexed start
-    const endIndex = startIndex + pageSize;   // exclusive end
-    
-    // Which RAWG pages cover this range?
-    const rawgPageStart = Math.floor(startIndex / RAWG_PAGE_SIZE) + 1;
-    const rawgPageEnd = Math.floor((endIndex - 1) / RAWG_PAGE_SIZE) + 1;
-    
-    // Fetch required RAWG pages
     const year = parseInt(sp.get("year") ?? String(new Date().getFullYear() - 1), 10);
     const genre = sp.get("genre") ?? "action";
     
-    async function fetchRawgPage(rawgPage: number): Promise<RawgListResponse> {
-      switch (type) {
-        case "best-of-year":
-          return getRawgBestOfYear(rawgPage, RAWG_PAGE_SIZE);
-        case "popular-in-year":
-          return getRawgPopularInYear(year, rawgPage, RAWG_PAGE_SIZE);
-        case "all-time":
-          return getRawgAllTimeTop(rawgPage, RAWG_PAGE_SIZE);
-        case "recent":
-          return getRawgRecentReleases(rawgPage, RAWG_PAGE_SIZE);
-        case "genre":
-          return getRawgByGenre(genre, rawgPage, RAWG_PAGE_SIZE);
-        default:
-          throw new Error(`Unknown list type: ${type}`);
-      }
+    // Fetch directly from RAWG with our desired page size
+    let resp: RawgListResponse;
+    switch (type) {
+      case "best-of-year":
+        resp = await getRawgBestOfYear(page, pageSize);
+        break;
+      case "popular-in-year":
+        resp = await getRawgPopularInYear(year, page, pageSize);
+        break;
+      case "all-time":
+        resp = await getRawgAllTimeTop(page, pageSize);
+        break;
+      case "recent":
+        resp = await getRawgRecentReleases(page, pageSize);
+        break;
+      case "genre":
+        resp = await getRawgByGenre(genre, page, pageSize);
+        break;
+      default:
+        throw new Error(`Unknown list type: ${type}`);
     }
     
-    // Fetch pages in parallel if needed (usually 1-2 pages)
-    const pagePromises: Promise<RawgListResponse>[] = [];
-    for (let p = rawgPageStart; p <= rawgPageEnd; p++) {
-      pagePromises.push(fetchRawgPage(p));
-    }
-    
-    const rawgResponses = await Promise.all(pagePromises);
-    
-    // Combine all results
-    let allResults: RawgListItem[] = [];
-    let totalCount = 0;
-    
-    for (let i = 0; i < rawgResponses.length; i++) {
-      const resp = rawgResponses[i];
-      allResults = allResults.concat(resp.results);
-      if (i === 0) totalCount = resp.count; // Use count from first response
-    }
-    
-    // Calculate offset within combined results
-    const offsetInCombined = startIndex - (rawgPageStart - 1) * RAWG_PAGE_SIZE;
-    
-    // Slice to get exactly the items for this page
-    const pageResults = allResults.slice(offsetInCombined, offsetInCombined + pageSize);
-
-    // Filter for public safety (blocks adult/NSFW RAWG results)
-    const safeResults = pageResults.filter((item) => isPublicSafeRawgGame(item));
+    const totalCount = resp.count;
+    const results = resp.results;
 
     // Map to a lighter response format
-    const items = safeResults.map((item) => ({
+    const items = results.map((item: RawgListItem) => ({
       rawgId: item.id,
       slug: item.slug,
       name: item.name,
@@ -149,7 +115,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Determine if there are more pages
-    const hasNext = endIndex < totalCount;
+    const hasNext = page * pageSize < totalCount;
     
     return jsonOk({
       count: totalCount,

@@ -50,3 +50,22 @@ next-env.d.ts
 # IDE config
 .cursor/
 .windsurf/
+
+# Development/one-time scripts (not needed in production)
+# Keep: heroku-*.mjs (schedulers), lib/ (shared utils), seed-curated-lists.mjs, generate-icons.mjs
+scripts/analyze-live-responses.mjs
+scripts/apply-migration-*.mjs
+scripts/apply-schema.mjs
+scripts/backfill-*.mjs
+scripts/check-igdb.mjs
+scripts/cleanup-public-safety.mjs
+scripts/fix-wrong-igdb-matches.mjs
+scripts/ingest-full-library.mjs
+scripts/migrate-*.mjs
+scripts/refresh-*.mjs
+scripts/reingest-critical.mjs
+scripts/repair-missing-media.mjs
+scripts/update-igdb-images.mjs
+scripts/upgrade-rawg-to-igdb.mjs
+scripts/verify-*.mjs
+scripts/seed-flags.mjs
