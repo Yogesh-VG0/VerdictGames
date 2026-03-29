@@ -232,15 +232,44 @@ export async function fetchHeroCandidates(limit = 12): Promise<Game[]> {
     ? strictFiltered
     : [...ready].sort((a, b) => confidenceWeightedScore(b) - confidenceWeightedScore(a)).slice(0, limit * 2);
 
-  // Composite score: 40% editorial, 30% verdict, 20% review volume, 10% recency
+  // Rebalanced hero scoring for flagship showcase:
+  // 20% editorial boost (reduced from 40%)
+  // 25% quality (verdict score)
+  // 20% current significance (trending, momentum, players)
+  // 20% freshness (stronger recency decay)
+  // 10% review volume (reduced from 20%)
+  // 5% media quality (screenshots, header)
   const heroScore = (g: GameRow): number => {
-    const editorial = g.is_featured_manual ? 40 : 0;
-    const verdict = Math.min(30, ((g.verdict_score ?? g.score ?? 0) / 100) * 30);
-    const volume = Math.min(20, Math.log10((g.review_count ?? 0) + 1) * 4);
+    // Editorial boost - still gives priority but not dominant
+    const editorial = g.is_featured_manual ? 20 : 0;
+    
+    // Quality score
+    const verdict = Math.min(25, ((g.verdict_score ?? g.score ?? 0) / 100) * 25);
+    
+    // Current significance - trending games get boost
+    const isTrending = (g as GameRow & { trending?: boolean }).trending;
+    const momentum = (g as GameRow & { momentum?: number }).momentum ?? 0;
+    const players = g.current_players ?? 0;
+    const trendingBoost = isTrending ? 10 : 0;
+    const momentumBoost = Math.min(5, Math.max(0, momentum * 10));
+    const playerBoost = Math.min(5, Math.log10(players + 1) * 1.5);
+    const significance = trendingBoost + momentumBoost + playerBoost;
+    
+    // Freshness - stronger recency preference, faster decay for old games
     const ageMs = Date.now() - new Date(g.release_date ?? "2000-01-01").getTime();
     const ageDays = ageMs / 86400000;
-    const recency = Math.min(10, Math.exp(-ageDays / 365) * 10);
-    return editorial + verdict + volume + recency;
+    // Games < 6 months get full points, then decay faster
+    const freshness = ageDays < 180 ? 20 : ageDays < 365 ? 15 : ageDays < 730 ? 10 : ageDays < 1825 ? 5 : 2;
+    
+    // Review volume (reduced weight - don't let old games dominate)
+    const volume = Math.min(10, Math.log10((g.review_count ?? 0) + 1) * 2);
+    
+    // Media quality - bonus for games with screenshots and header
+    const hasScreenshots = g.screenshots && (Array.isArray(g.screenshots) ? g.screenshots.length > 0 : g.screenshots !== "");
+    const hasHeader = g.header_image && g.header_image !== "";
+    const mediaQuality = (hasScreenshots ? 2.5 : 0) + (hasHeader ? 2.5 : 0);
+    
+    return editorial + verdict + significance + freshness + volume + mediaQuality;
   };
 
   qualityFiltered.sort((a, b) => heroScore(b) - heroScore(a));

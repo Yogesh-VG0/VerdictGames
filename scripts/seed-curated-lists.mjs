@@ -103,6 +103,7 @@ function passesPairwiseOverlap(proposedIds) {
 
 const LIST_BLUEPRINTS = [
   // ── 1. Best Recent Single-Player RPGs ──
+  // FIX: Require explicit single-player tags, exclude multiplayer-focused games
   {
     slug: "best-single-player-rpgs",
     title: "Best Recent Single-Player RPGs",
@@ -111,7 +112,10 @@ const LIST_BLUEPRINTS = [
     query: async () => sql`
       SELECT id FROM games
       WHERE genres && ARRAY['RPG']
+        AND (tags && ARRAY['Singleplayer', 'Story Rich', 'RPG', 'Action RPG', 'JRPG', 'Open World'] 
+             OR NOT (tags && ARRAY['Multiplayer', 'Online Co-Op', 'PvP', 'MMO']))
         AND NOT (genres && ARRAY['Massively Multiplayer'])
+        AND NOT (tags && ARRAY['MMO', 'MMORPG', 'Battle Royale'])
         AND release_date >= ${yearsAgoISO(4)}
         AND release_date <= CURRENT_DATE
         AND score >= 78
@@ -185,7 +189,7 @@ const LIST_BLUEPRINTS = [
     `,
   },
   // ── 5. Best Story-Driven Adventures ──
-  // NOTE: RPG exclusion removed — many narrative RPGs should qualify
+  // FIX: Require explicit narrative tags, not just Adventure genre
   {
     slug: "best-story-driven-adventures",
     title: "Best Story-Driven Adventures",
@@ -193,9 +197,9 @@ const LIST_BLUEPRINTS = [
     tags: ["editorial", "story", "narrative", "adventure"],
     query: async () => sql`
       SELECT id FROM games
-      WHERE (tags && ARRAY['Story Rich', 'Choices Matter', 'Narrative', 'Cinematic', 'Visual Novel', 'Interactive Fiction']
-             OR genres && ARRAY['Adventure'])
-        AND NOT (genres && ARRAY['Strategy', 'Shooter'])
+      WHERE tags && ARRAY['Story Rich', 'Choices Matter', 'Narrative', 'Cinematic', 'Visual Novel', 'Interactive Fiction', 'Emotional', 'Multiple Endings']
+        AND NOT (genres && ARRAY['Strategy', 'Sports', 'Racing'])
+        AND NOT (tags && ARRAY['Competitive', 'PvP', 'Battle Royale', 'Multiplayer'])
         AND release_date >= ${yearsAgoISO(4)}
         AND release_date <= CURRENT_DATE
         AND score >= 78
@@ -227,6 +231,7 @@ const LIST_BLUEPRINTS = [
     `,
   },
   // ── 7. Best Competitive Multiplayer Games ──
+  // FIX: Require explicit competitive tags, exclude casual/simulation
   {
     slug: "best-competitive-multiplayer",
     title: "Best Competitive Multiplayer Games",
@@ -234,21 +239,23 @@ const LIST_BLUEPRINTS = [
     tags: ["editorial", "competitive", "multiplayer", "pvp"],
     query: async () => sql`
       SELECT id FROM games
-      WHERE (tags && ARRAY['PvP', 'Competitive', 'eSports', 'Battle Royale', 'Arena Shooter', 'MOBA']
-             OR genres && ARRAY['Shooter', 'Fighting', 'Sports'])
-        AND NOT (genres && ARRAY['RPG', 'Adventure'])
+      WHERE (tags && ARRAY['PvP', 'Competitive', 'eSports', 'Battle Royale', 'Arena Shooter', 'MOBA', 'Team-Based', 'Multiplayer']
+             AND (genres && ARRAY['Shooter', 'Fighting', 'Sports'] OR tags && ARRAY['Fighting', 'FPS', 'Third-Person Shooter']))
+        AND NOT (genres && ARRAY['RPG', 'Adventure', 'Simulation', 'Puzzle'])
+        AND NOT (tags && ARRAY['Relaxing', 'Casual', 'Singleplayer', 'Story Rich'])
         AND release_date >= ${yearsAgoISO(5)}
         AND release_date <= CURRENT_DATE
         AND score >= 72
         AND review_count >= ${MIN_LIST_REVIEWS}
         AND cover_image IS NOT NULL AND cover_image != ''
         AND score > 0 AND verdict_label != 'COMING SOON'
-      ORDER BY (score::float * GREATEST(review_count, 0) + 75.0 * 200.0) / (GREATEST(review_count, 0) + 200.0) DESC,
-             current_players DESC NULLS LAST
+      ORDER BY current_players DESC NULLS LAST,
+             (score::float * GREATEST(review_count, 0) + 75.0 * 200.0) / (GREATEST(review_count, 0) + 200.0) DESC
       LIMIT 24
     `,
   },
   // ── 8. Most Wanted Upcoming Games ──
+  // FIX: Must actually be UPCOMING (release_date > today), not just within the year
   {
     slug: `most-wanted-${new Date().getFullYear()}`,
     title: `Most Wanted Upcoming ${new Date().getFullYear()} Games`,
@@ -256,13 +263,14 @@ const LIST_BLUEPRINTS = [
     tags: ["editorial", "upcoming", String(new Date().getFullYear()), "wishlist"],
     query: async () => {
       const yearStr = String(new Date().getFullYear());
+      const today = new Date().toISOString().slice(0, 10);
       return sql`
         SELECT id FROM games
-        WHERE release_date >= ${yearStr + "-01-01"}
+        WHERE release_date > ${today}
           AND release_date <= ${yearStr + "-12-31"}
           AND cover_image IS NOT NULL AND cover_image != ''
-        ORDER BY (score::float * GREATEST(COALESCE(review_count, 0), 0) + 75.0 * 200.0) / (GREATEST(COALESCE(review_count, 0), 0) + 200.0) DESC NULLS LAST,
-               release_date ASC
+        ORDER BY release_date ASC,
+               (score::float * GREATEST(COALESCE(review_count, 0), 0) + 75.0 * 200.0) / (GREATEST(COALESCE(review_count, 0), 0) + 200.0) DESC NULLS LAST
         LIMIT 24
       `;
     },
@@ -332,6 +340,7 @@ const LIST_BLUEPRINTS = [
     `,
   },
   // ── 12. Best Platformers ──
+  // FIX: Require explicit platformer genre/tags, exclude non-platforming games
   {
     slug: "best-platformers",
     title: "Best Platformers",
@@ -340,7 +349,9 @@ const LIST_BLUEPRINTS = [
     query: async () => sql`
       SELECT id FROM games
       WHERE (genres && ARRAY['Platformer']
-             OR tags && ARRAY['Platformer', '2D Platformer', '3D Platformer', 'Precision Platformer'])
+             OR tags && ARRAY['Platformer', '2D Platformer', '3D Platformer', 'Precision Platformer', 'Collectathon'])
+        AND NOT (genres && ARRAY['Sports', 'Racing', 'Strategy', 'Simulation'])
+        AND NOT (tags && ARRAY['Multiplayer', 'PvP', 'MMO', 'MMORPG'])
         AND release_date <= CURRENT_DATE
         AND score >= 78
         AND review_count >= ${MIN_ALLTIME_REVIEWS}
@@ -407,6 +418,7 @@ const LIST_BLUEPRINTS = [
     `,
   },
   // ── 16. Survival Horror Essentials ──
+  // FIX: Require explicit survival horror tags, not just generic Horror genre
   {
     slug: "survival-horror-essentials",
     title: "Survival Horror Essentials",
@@ -414,8 +426,11 @@ const LIST_BLUEPRINTS = [
     tags: ["editorial", "survival-horror", "horror", "classic"],
     query: async () => sql`
       SELECT id FROM games
-      WHERE (genres && ARRAY['Horror']
-             OR tags && ARRAY['Survival Horror', 'Horror', 'Psychological Horror'])
+      WHERE tags && ARRAY['Survival Horror', 'Psychological Horror', 'Horror']
+        AND (tags && ARRAY['Survival', 'Resource Management', 'Atmospheric', 'Dark'] 
+             OR genres && ARRAY['Horror'])
+        AND NOT (genres && ARRAY['Strategy', 'Sports', 'Racing', 'Puzzle'])
+        AND NOT (tags && ARRAY['Comedy', 'Funny', 'Cute', 'Relaxing'])
         AND release_date <= CURRENT_DATE
         AND score >= 76
         AND review_count >= ${MIN_ALLTIME_REVIEWS}

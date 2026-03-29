@@ -260,6 +260,11 @@ export async function GET(request: NextRequest) {
     const isTopRated = sort === "top-rated";
     const start = (page - 1) * PAGE_SIZE;
 
+    // UNDERFILL FIX: All sort modes now overfetch to account for post-filtering
+    // Post-filters (public safety, media readiness, provisional exclusion) can remove items
+    // Without overfetch, users get fewer than PAGE_SIZE items per page
+    const OVERFETCH_MULTIPLIER = 3; // Fetch 3x to ensure enough after filtering
+
     if (isRelevanceWithQuery) {
       // Adaptive overfetch: 150 results for title similarity re-ranking
       const overfetchSize = 150;
@@ -269,7 +274,9 @@ export async function GET(request: NextRequest) {
       const trFetchEnd = Math.max(page * PAGE_SIZE * 4, 200);
       query = query.range(0, trFetchEnd - 1);
     } else {
-      query = query.range(start, start + PAGE_SIZE - 1);
+      // All other sorts: overfetch from page start to allow for post-filter drops
+      const overfetchEnd = start + (PAGE_SIZE * OVERFETCH_MULTIPLIER) - 1;
+      query = query.range(start, overfetchEnd);
     }
 
     const { data, error, count } = await query as unknown as { data: GameRow[] | null; error: unknown; count: number | null };
@@ -277,23 +284,27 @@ export async function GET(request: NextRequest) {
     if (error) throw error;
 
     // Apply public safety + media readiness filters
-    // Also filter out games that will be converted to COMING SOON by mapper:
-    // - is_provisional = true
-    // - verdict_label = 'COMING SOON'
-    // - future release date
-    // - 0 reviews AND not a recent release (>14 days old)
+    // Filter logic varies by sort mode:
+    // - "upcoming": KEEP future releases, exclude released/provisional
+    // - others: exclude future releases and provisional/COMING SOON
     const JUST_RELEASED_DAYS = 14;
     const todayStr = new Date().toISOString().slice(0, 10);
     const todayMs = new Date(todayStr + "T00:00:00").getTime();
+    const isUpcoming = sort === "upcoming";
+    const isTrending = sort === "trending";
 
     let rows = (data ?? []).filter((r) => {
       if (!isPublicSafeGame(r) || !hasUsableCardImage(r)) return false;
       
-      // Exclude explicit provisional
+      if (isUpcoming) {
+        // Upcoming: KEEP future releases, require release_date > today
+        if (!r.release_date || r.release_date <= todayStr) return false;
+        return true;
+      }
+      
+      // Non-upcoming sorts: exclude provisional and future releases
       if ((r as GameRow & { is_provisional?: boolean }).is_provisional) return false;
       if (r.verdict_label === "COMING SOON") return false;
-      
-      // Exclude future releases
       if (r.release_date && r.release_date > todayStr) return false;
       
       // Exclude 0-review games that are past the "just released" window
@@ -302,6 +313,12 @@ export async function GET(request: NextRequest) {
         const releaseMs = new Date(r.release_date + "T00:00:00").getTime();
         const daysSinceRelease = (todayMs - releaseMs) / (1000 * 60 * 60 * 24);
         if (daysSinceRelease > JUST_RELEASED_DAYS) return false;
+      }
+      
+      // Browse trending: exclude games with significant negative momentum ("Falling")
+      if (isTrending) {
+        const momentum = (r as GameRow & { momentum?: number }).momentum ?? 0;
+        if (momentum < -0.1) return false;
       }
       
       return true;
@@ -338,8 +355,24 @@ export async function GET(request: NextRequest) {
       rows = rows.slice(start, start + PAGE_SIZE);
     }
 
+    // For other sort modes: slice to PAGE_SIZE after overfetch + filter
+    if (!isRelevanceWithQuery && !isTopRated) {
+      rows = rows.slice(0, PAGE_SIZE);
+    }
+
     const games = rows.map(mapGameRow);
-    let total = count ?? 0;
+    // Use filtered count for consistency - DB count may include items removed by post-filters
+    // For upcoming/trending/etc., the post-filter may remove items, so total should reflect actual results
+    let total = rows.length;
+    // For paginated queries, estimate total from DB count but cap at filtered reality
+    if (!isRelevanceWithQuery && !isTopRated) {
+      // If we got a full page, there are likely more - use DB count as estimate
+      // but if we got fewer items than requested after filtering, that's the real total
+      const dbCount = count ?? 0;
+      if (rows.length >= PAGE_SIZE) {
+        total = dbCount; // Likely more pages available
+      }
+    }
 
     // ── 3-layer search: DB → RAWG instant preview → background ingest ──
     const noFilters = platform === "All" && !genre && !year && monetization === "All";
