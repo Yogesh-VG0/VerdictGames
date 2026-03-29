@@ -182,15 +182,10 @@ export async function getGXHighlights(): Promise<GXHighlight[]> {
 
 /** API 3 — Release calendar */
 export async function getGXCalendar(): Promise<GXCalendarEntry[]> {
-  try {
-    const data = await gxFetch<{ data: { sectionType: [{ games: GXCalendarEntry[] }] } }>(
-      `${BASE}/new-content/corners/desktop/calendar/${SECTION_IDS.calendar}/us/en?${PARAMS}`
-    );
-    return data.data.sectionType[0].games;
-  } catch (err) {
-    console.warn("[GX] calendar fetch failed:", err);
-    return [];
-  }
+  const data = await gxFetch<{ data: { sectionType: [{ games: GXCalendarEntry[] }] } }>(
+    `${BASE}/new-content/corners/desktop/calendar/${SECTION_IDS.calendar}/us/en?${PARAMS}`
+  );
+  return data.data.sectionType[0].games;
 }
 
 /** API 4 — Free-to-play games */

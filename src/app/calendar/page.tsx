@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
-import { getCalendarGames, getGXCalendar, gxCalendarToGame } from "@/lib/api";
+import { getCalendarGames } from "@/lib/api";
 import FadeInSection from "@/components/FadeInSection";
 import SectionHeader from "@/components/SectionHeader";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -14,8 +14,7 @@ import PlatformIcon, {
   getFilterPlatforms,
 } from "@/components/ui/PlatformIcon";
 import { collapsePlatforms } from "@/lib/utils/platform";
-import type { Game, Platform } from "@/lib/types";
-import type { GXCalendarGame } from "@/lib/types";
+import type { CalendarMonthResponse, Game, Platform } from "@/lib/types";
 import { CalendarDays, Gamepad2, CalendarX } from "lucide-react";
 
 const MONTHS = [
@@ -125,41 +124,28 @@ export default function CalendarPage() {
     }
   }, [selectedMonth]);
 
-  const { data: games, isLoading } = useQuery<Game[]>({
+  const { data: calendar, isLoading } = useQuery<CalendarMonthResponse>({
     queryKey: ["calendar", "merged", selectedMonth, selectedPlatform],
     queryFn: async () => {
-      // Fetch both GX and DB in parallel, then merge — DB-enriched rows take priority
-      const [gxRaw, dbGames] = await Promise.all([
-        getGXCalendar(),
-        getCalendarGames(selectedMonth),
-      ]);
-
-      const gxGames = (gxRaw ?? [])
-        .filter((g: GXCalendarGame) => (g.releaseDate ?? "").slice(0, 7) === selectedMonth)
-        .map((g: GXCalendarGame) => gxCalendarToGame(g));
-
-      // Merge: prefer DB row over GX placeholder when both exist (by slug/title)
-      const dbSlugs = new Set((dbGames ?? []).map((g: Game) => g.slug));
-      const dbTitles = new Set((dbGames ?? []).map((g: Game) => g.title.toLowerCase()));
-      const gxOnly = gxGames.filter(
-        (g: Game) => !dbSlugs.has(g.slug) && !dbTitles.has(g.title.toLowerCase())
-      );
-
-      const merged = [...(dbGames ?? []), ...gxOnly];
-
+      const response = await getCalendarGames(selectedMonth);
+      const merged = response.items;
       // Apply platform filter (supports family grouping)
-      if (selectedPlatform === "All") return merged;
+      if (selectedPlatform === "All") {
+        return response;
+      }
       const familyPlatforms = getFilterPlatforms(selectedPlatform);
-      return merged.filter((g: Game) =>
-        familyPlatforms.some(p => g.platforms.includes(p))
-      );
+      return {
+        ...response,
+        items: merged.filter((g: Game) => familyPlatforms.some(p => g.platforms.includes(p))),
+      };
     },
     staleTime: 5 * 60 * 1000,
   });
+  const games = useMemo(() => calendar?.items ?? [], [calendar?.items]);
 
   // Group by day
   const grouped = useMemo(() => {
-    if (!games) return {};
+    if (!games.length) return {};
     const map: Record<string, Game[]> = {};
     for (const g of games) {
       const day = g.releaseDate?.slice(0, 10) ?? "TBA";
@@ -168,7 +154,7 @@ export default function CalendarPage() {
     return Object.fromEntries(Object.entries(map).sort(([a], [b]) => a.localeCompare(b)));
   }, [games]);
 
-  const totalGames = games?.length ?? 0;
+  const totalGames = games.length;
 
   const toggleDay = (day: string) => {
     setCollapsedDays(prev => {
@@ -273,7 +259,7 @@ export default function CalendarPage() {
               </div>
             ))}
           </motion.div>
-        ) : games && games.length > 0 ? (
+        ) : games.length > 0 ? (
           <motion.div
             key={selectedMonth}
             initial={{ opacity: 0, y: 10 }}

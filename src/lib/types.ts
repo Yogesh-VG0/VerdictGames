@@ -68,6 +68,9 @@ export interface Game {
   userScore?: number;
   featured?: boolean;
   trending?: boolean;
+  rawgId?: number;
+  isPreview?: boolean;
+  previewSource?: "rawg" | "igdb";
 
   // Price & Deals (multi-source)
   priceCurrent?: number;     // cents
@@ -200,6 +203,8 @@ export interface GameList {
   slug: string;
   title: string;
   description: string;
+  previewText: string;
+  bodyText: string;
   coverImage: string;
   gameCount: number;
   games: Game[];
@@ -208,6 +213,12 @@ export interface GameList {
   tags: string[];
   ownerId?: string;
   isPublic?: boolean;
+  isSystemManaged?: boolean;
+  systemKey?: string;
+  managedBy?: string;
+  seedVersion?: number;
+  seedHash?: string;
+  lastSeededAt?: string;
 }
 
 export interface UserGame {
@@ -252,6 +263,7 @@ export interface PaginatedResponse<T> {
   page: number;
   pageSize: number;
   hasMore: boolean;
+  totalIsExact?: boolean;
 }
 
 export interface AuthUser {
@@ -337,4 +349,22 @@ export interface GXCalendarGame {
   ctaLabel: string | null;
   genres: string[];
   platforms: string[];
+}
+
+export type GXCalendarSource = "live" | "snapshot" | "empty";
+
+export interface GXCalendarMonthResponse {
+  month: string;
+  items: GXCalendarGame[];
+  source: GXCalendarSource;
+  fetchedAt?: string;
+}
+
+export interface CalendarMonthResponse {
+  month: string;
+  items: Game[];
+  gxSource: GXCalendarSource;
+  gxCount: number;
+  dbCount: number;
+  gxFetchedAt?: string;
 }

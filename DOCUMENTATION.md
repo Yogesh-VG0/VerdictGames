@@ -168,7 +168,7 @@ verdict-games/
 ├── package.json                # Dependencies, scripts, engines
 ├── postcss.config.mjs          # PostCSS with Tailwind CSS v4
 ├── tsconfig.json               # TypeScript config (strict, bundler resolution)
-├── vercel.json                 # Vercel framework hint
+├── vercel.json                 # Vercel framework hint (cron schedules intentionally disabled)
 │
 ├── public/                     # Static assets (favicon, OG images)
 │
@@ -387,8 +387,9 @@ verdict-games/
 │           └── slugify.ts                   # URL slug generator
 │
 └── supabase/
-    ├── schema.sql                           # Full database schema DDL
+    ├── schema.sql                           # Derived schema snapshot / reference
     └── migrations/
+        ├── 000_initial_schema.sql           # Base schema bootstrap migration
         ├── 001_multi_source.sql             # Multi-source enrichment columns
         ├── 002_security_lint_fixes.sql      # Security lint fixes
         └── 004_admin_role.sql              # Admin role column + constraint
@@ -434,7 +435,7 @@ verdict-games/
 
 ### `vercel.json`
 - Framework hint: `nextjs`
-- Vercel Cron schedules: refresh-trending (every 6h), discover (daily 3 AM UTC), deep discover (Sundays 3 AM UTC)
+- Cron schedules intentionally disabled; Heroku is the recurring scheduler authority
 
 ### `Procfile`
 - Heroku process: `web: npm run start`
@@ -1413,15 +1414,8 @@ All API routes follow a consistent pattern:
   7. Set `featured = true` for top 5 trending by score
 - **Manual override preservation**: games with `is_trending_manual = true` or `is_featured_manual = true` are never reset by the cron
 - **Auth**: Optional `CRON_SECRET` check
-- **Vercel Cron**: Configured in `vercel.json` — runs every 6 hours (`0 */6 * * *`)
+- **Recurring scheduler authority**: Heroku Scheduler
 - Returns: `{ trendingCount, featuredCount, log[], timestamp }`
-
-**Vercel Cron Configuration** (`vercel.json`):
-| Schedule | Path | Description |
-|----------|------|-------------|
-| `0 */6 * * *` | `/api/cron/refresh-trending` | Refresh trending/featured every 6 hours |
-| `0 3 * * *` | `/api/cron/discover` | Daily game discovery at 3 AM UTC |
-| `0 3 * * 0` | `/api/cron/discover?deep=true` | Weekly deep discovery (Sundays at 3 AM UTC) |
 
 ### 8.15 GX Corner Proxy Routes
 
@@ -1884,7 +1878,7 @@ Typed wrapper functions for all API endpoints. All functions use `fetch()` with 
 - **`scripts/seed-curated-lists.mjs`**: Seeds editorial curated lists locally (standalone version of admin seed-lists API).
 
 ### Migration Scripts
-- **`scripts/apply-schema.mjs`** (~20 lines): Applies `supabase/schema.sql` to database.
+- **`scripts/apply-schema.mjs`** (~20 lines): Applies ordered SQL migrations from `supabase/migrations`.
 - **`scripts/apply-migration-001.mjs`** (~20 lines): Multi-source columns migration.
 - **`scripts/apply-migration-003.mjs`** (~80 lines): User features migration (auth, library, follows, comments, votes).
 - **`scripts/apply-migration-005.mjs`** (~60 lines): Admin override columns migration.
@@ -1895,9 +1889,9 @@ Typed wrapper functions for all API endpoints. All functions use `fetch()` with 
 - **`scripts/migrate-refresh-lock.mjs`**: Adds `refresh_lock_until` column for concurrent refresh prevention.
 
 ### Heroku Scheduler Scripts
-- **`scripts/heroku-discover-games.mjs`** (~20 lines): Calls `/api/cron/discover` on Vercel deployment URL.
-- **`scripts/heroku-refresh-trending.mjs`** (~20 lines): Calls `/api/cron/refresh-trending` on Vercel deployment URL.
-- **`scripts/heroku-re-enrich.mjs`**: Calls `/api/cron/re-enrich` on Vercel deployment URL.
+- **`scripts/heroku-discover-games.mjs`** (~20 lines): Discovers and ingests new RAWG candidates directly from the local pipeline.
+- **`scripts/heroku-refresh-trending.mjs`** (~20 lines): Refreshes trending flags and player counts directly against Postgres + external APIs.
+- **`scripts/heroku-re-enrich.mjs`**: Re-enriches stale games directly via the local pipeline.
 
 ### Utility Scripts
 - **`scripts/update-igdb-images.mjs`**: Updates IGDB cover/screenshot images for existing games.
@@ -1970,14 +1964,14 @@ twitter: summary_large_image card
   - `npm run scheduler:trending` — Daily trending refresh
   - `npm run scheduler:discover` — Daily/weekly game discovery (~320 games per standard run)
   - `npm run scheduler:discover -- --deep` — Weekly deep discovery (~700+ games)
-- All scheduler scripts call the `/api/cron/*` endpoints on the Vercel deployment URL
+- Scheduler scripts run directly against Postgres and external APIs; `/api/cron/*` routes remain manual fallback endpoints only
 
 ### Cron Job Setup
 - **Discover (Standard)**: Run `GET /api/cron/discover?secret=YOUR_SECRET` daily — fetches ~320 new games
 - **Discover (Deep)**: Run `GET /api/cron/discover?secret=YOUR_SECRET&deep=true` weekly — fetches ~700+ games
 - **Refresh Trending**: Run `GET /api/cron/refresh-trending?secret=YOUR_SECRET` daily
 - **Re-Enrich**: Run `GET /api/cron/re-enrich?secret=YOUR_SECRET` — refreshes stale games
-- Can be triggered via: Vercel Cron, Heroku Scheduler, GitHub Actions, or any external cron service
+- Use these routes for manual fallback runs only; recurring production schedules run on Heroku
 
 ---
 
@@ -2098,10 +2092,11 @@ Where `PRIOR_COUNT = 50` and `PRIOR_MEAN = 65`. This pulls low-review-count game
 | `tsconfig.json` | 36 | Config | TypeScript strict mode, paths |
 | `eslint.config.mjs` | 19 | Config | ESLint 9 flat config |
 | `postcss.config.mjs` | 8 | Config | Tailwind CSS v4 plugin |
-| `vercel.json` | 17 | Config | Framework hint + Vercel Cron schedules |
+| `vercel.json` | 17 | Config | Framework hint; Vercel cron schedules intentionally disabled |
 | `Procfile` | 1 | Config | Heroku web process |
 | **Database** | | | |
-| `supabase/schema.sql` | ~210 | SQL | Full database schema |
+| `supabase/schema.sql` | ~210 | SQL | Derived schema snapshot / reference |
+| `supabase/migrations/000_initial_schema.sql` | ~200 | SQL | Base schema bootstrap migration |
 | `supabase/migrations/001_multi_source.sql` | ~48 | SQL | Multi-source enrichment columns |
 | `supabase/migrations/002_player_snapshots.sql` | ~30 | SQL | Player snapshot table + momentum |
 | `supabase/migrations/003_security_lint_fixes.sql` | ~20 | SQL | Supabase linter fixes (search_path, RLS scoping) |
@@ -2307,7 +2302,7 @@ Where `PRIOR_COUNT = 50` and `PRIOR_MEAN = 65`. This pulls low-review-count game
 | `scripts/heroku-discover-games.mjs` | ~20 | Script | Heroku cron: discover |
 | `scripts/heroku-refresh-trending.mjs` | ~20 | Script | Heroku cron: trending |
 | `scripts/heroku-re-enrich.mjs` | — | Script | Heroku cron: re-enrich |
-| `scripts/apply-schema.mjs` | ~20 | Script | Apply SQL schema |
+| `scripts/apply-schema.mjs` | ~20 | Script | Apply ordered SQL migrations |
 | `scripts/apply-migration-001.mjs` | ~20 | Script | Apply migration 001 |
 | `scripts/apply-migration-003.mjs` | ~80 | Script | Apply migration 003 (user features) |
 | `scripts/apply-migration-005.mjs` | ~60 | Script | Apply migration 005 (admin overrides) |

@@ -35,7 +35,7 @@ const TRIGGERABLE_JOBS: Record<string, {
     type: "cron",
     path: "/api/cron/re-enrich",
     method: "GET",
-    description: "Re-enrich stale games (~2 min, safe for serverless)",
+    description: "Manual serverless fallback only; recurring schedule runs on Heroku.",
   },
   "refresh-trending": {
     type: "heroku-only",
@@ -49,7 +49,7 @@ const TRIGGERABLE_JOBS: Record<string, {
     type: "admin",
     path: "/api/admin/seed-lists",
     method: "POST",
-    description: "Regenerate 12 editorial curated lists (lite version; Heroku script creates all 22)",
+    description: "Controlled 12-list reseed only; recurring 22-list schedule runs on Heroku.",
   },
   "backfill-games": {
     type: "heroku-only",
@@ -85,7 +85,7 @@ export async function POST(req: NextRequest) {
     return jsonOk({
       success: false,
       job: jobName,
-      message: `"${jobName}" runs on Heroku and cannot be triggered from the admin dashboard.\n\nRun via Heroku CLI:\n${cliCmd}`,
+      message: `"${jobName}" is scheduled by Heroku and cannot be triggered from the admin dashboard.\n\nRun manually via Heroku CLI:\n${cliCmd}`,
       herokuOnly: true,
     });
   }
@@ -135,7 +135,7 @@ export async function POST(req: NextRequest) {
     return jsonOk({
       success: true,
       job: jobName,
-      message: `Job "${jobName}" completed successfully`,
+      message: `Manual run for "${jobName}" completed successfully`,
       data: data.success !== undefined ? data.data ?? data : data,
     });
   } catch (err) {

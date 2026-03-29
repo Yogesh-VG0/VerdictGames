@@ -24,40 +24,18 @@ Complete guide for setting up the Supabase database, configuring API keys, runni
 
 ---
 
-## 2. Run Database Schema & Migrations
+## 2. Run Database Migrations
 
 ### Option A: SQL Editor (recommended)
 
 1. Open **Supabase Dashboard → SQL Editor**
-2. Run `supabase/schema.sql` — creates all core tables, indexes, triggers, and RLS policies
-3. Run migrations in order:
-
-| Migration | Purpose |
-|-----------|---------|
-| `001_multi_source.sql` | Multi-source enrichment columns (25+ new fields) |
-| `002_player_snapshots.sql` | Player snapshot table + momentum column |
-| `003_security_lint_fixes.sql` | Supabase linter fixes (search_path, RLS scoping) |
-| `004_user_features.sql` | Auth linkage, library, follows, comments, votes + RLS |
-| `005_admin_role.sql` | Admin role column + CHECK constraint |
-| `006_admin_overrides.sql` | Manual featured/trending/score override columns |
-| `007_refresh_lock.sql` | Game refresh lock flag |
-| `008_refresh_started_at.sql` | Refresh lock expiry timestamp |
-| `009_provisional_and_audit.sql` | Provisional flag + admin_audit_log table |
-| `010_rls_refactor.sql` | auth_profile_id() helper + RLS optimization |
-| `011_storage_avatars.sql` | Avatars storage bucket + RLS policies |
-| `012_steam_reviews_and_ingest_runs.sql` | Steam reviews cache + ingest_runs table |
-| `013_mobile_store_listings_rls.sql` | Mobile store listings RLS |
-| `014_comprehensive_security_fix.sql` | Critical RLS fix (service_role scoping) |
-| `015_verdict_scoring.sql` | v2 scoring columns + indexes |
+2. Run every SQL file in `supabase/migrations` in lexical order, starting with `000_initial_schema.sql`
+3. Treat `supabase/schema.sql` as a derived reference snapshot, not the bootstrap source of truth
 
 ### Option B: Script-based
 
 ```bash
 node scripts/apply-schema.mjs
-node scripts/apply-migration-001.mjs
-node scripts/apply-migration-003.mjs
-node scripts/apply-migration-005.mjs
-# ... etc
 ```
 
 ---
@@ -343,14 +321,7 @@ supabase/                          # Schema + 15 migrations
 2. Import into Vercel
 3. Add all environment variables in **Vercel → Settings → Environment Variables**
 4. Set `NEXT_PUBLIC_SITE_URL` to your production URL (e.g., `https://www.verdict.games`)
-5. Deploy — `vercel.json` auto-detects `nextjs` framework
-
-**Vercel Cron** (configured in `vercel.json`):
-| Schedule | Path | Description |
-|----------|------|-------------|
-| `0 */6 * * *` | `/api/cron/refresh-trending` | Refresh trending every 6 hours |
-| `0 3 * * *` | `/api/cron/discover` | Daily game discovery at 3 AM UTC |
-| `0 3 * * 0` | `/api/cron/discover?deep=true` | Weekly deep discovery (Sundays) |
+5. Deploy — `vercel.json` auto-detects `nextjs` framework and intentionally leaves cron schedules disabled
 
 ### Backend Cron — Heroku
 

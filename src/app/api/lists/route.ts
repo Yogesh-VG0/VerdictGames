@@ -6,15 +6,15 @@
 
 export const revalidate = 300; // ISR: revalidate every 5 minutes
 
-import { NextRequest } from "next/server";
 import { jsonOk } from "@/lib/api/response";
 import { mapGameRow, mapListRow } from "@/lib/db/mappers";
 import { GAME_CARD_COLUMNS_WITH_DESC } from "@/lib/db/columns";
+import { isSurfaceReady } from "@/lib/utils/quality";
 import { isPublicSafeGame } from "@/lib/utils/publicSafety";
 import { hasUsableCardImage } from "@/lib/utils/mediaReadiness";
 import type { ListRow, GameRow } from "@/lib/supabase/types";
 
-export async function GET(_request: NextRequest) {
+export async function GET() {
   try {
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
       return jsonOk([]);
@@ -25,7 +25,13 @@ export async function GET(_request: NextRequest) {
 
     // Batch: fetch all lists + all list_items in parallel (2 queries instead of N*2)
     const [listsRes, itemsRes] = await Promise.all([
-      supabase.from("lists").select("*").order("created_at", { ascending: false }),
+      supabase
+        .from("lists")
+        .select("*")
+        .eq("is_public", true)
+        .order("is_system_managed", { ascending: false })
+        .order("last_seeded_at", { ascending: false, nullsFirst: false })
+        .order("created_at", { ascending: false }),
       supabase.from("list_items").select("list_id, game_id, position").order("position", { ascending: true }),
     ]);
 
@@ -57,7 +63,7 @@ export async function GET(_request: NextRequest) {
 
       // Apply public safety + media readiness filters
       for (const row of gamesData ?? []) {
-        if (isPublicSafeGame(row) && hasUsableCardImage(row)) {
+        if (isSurfaceReady(row, "curatedList") && isPublicSafeGame(row) && hasUsableCardImage(row)) {
           gamesMap.set(row.id, mapGameRow(row));
         }
       }

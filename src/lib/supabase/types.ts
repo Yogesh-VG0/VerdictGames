@@ -491,17 +491,76 @@ export interface Database {
         };
         Relationships: [];
       };
+      gx_cache: {
+        Row: {
+          feed_key: string;
+          payload: unknown;
+          fetched_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          feed_key: string;
+          payload: unknown;
+          fetched_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          feed_key?: string;
+          payload?: unknown;
+          fetched_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      gx_calendar_month_snapshots: {
+        Row: {
+          month_key: string;
+          payload: unknown;
+          game_count: number;
+          source: string;
+          snapshot_version: number;
+          fetched_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          month_key: string;
+          payload: unknown;
+          game_count?: number;
+          source?: string;
+          snapshot_version?: number;
+          fetched_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          month_key?: string;
+          payload?: unknown;
+          game_count?: number;
+          source?: string;
+          snapshot_version?: number;
+          fetched_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       lists: {
         Row: {
           id: string;
           slug: string;
           title: string;
           description: string;
+          preview_text: string;
+          body_text: string;
           cover_image: string;
           curated_by: string;
           tags: string[];
           owner_id: string | null;
           is_public: boolean;
+          is_system_managed: boolean;
+          system_key: string | null;
+          managed_by: string | null;
+          seed_version: number | null;
+          seed_hash: string | null;
+          last_seeded_at: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -510,11 +569,19 @@ export interface Database {
           slug: string;
           title: string;
           description: string;
+          preview_text?: string;
+          body_text?: string;
           cover_image: string;
           curated_by: string;
           tags: string[];
           owner_id?: string | null;
           is_public: boolean;
+          is_system_managed?: boolean;
+          system_key?: string | null;
+          managed_by?: string | null;
+          seed_version?: number | null;
+          seed_hash?: string | null;
+          last_seeded_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -523,11 +590,19 @@ export interface Database {
           slug?: string;
           title?: string;
           description?: string;
+          preview_text?: string;
+          body_text?: string;
           cover_image?: string;
           curated_by?: string;
           tags?: string[];
           owner_id?: string | null;
           is_public?: boolean;
+          is_system_managed?: boolean;
+          system_key?: string | null;
+          managed_by?: string | null;
+          seed_version?: number | null;
+          seed_hash?: string | null;
+          last_seeded_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };

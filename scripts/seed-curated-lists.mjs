@@ -31,6 +31,7 @@
 
 import { startRun, finishRun } from './lib/scheduler-logger.mjs';
 import { connectDb } from './lib/db-connect.mjs';
+import { createHash } from 'node:crypto';
 
 try {
   const { readFileSync } = await import("fs");
@@ -46,6 +47,8 @@ try {
 } catch { /* Heroku uses Config Vars */ }
 
 const sql = connectDb("seed-curated-lists");
+const SYSTEM_LIST_MANAGER = "system-curated-lists";
+const SYSTEM_LIST_SEED_VERSION = 2;
 
 function yearsAgoISO(years) {
   const d = new Date();
@@ -54,6 +57,20 @@ function yearsAgoISO(years) {
 }
 
 const SYSTEM_CURATOR = "editorial";
+
+function buildSeedHash(seed, gameIds) {
+  return createHash("sha256")
+    .update(JSON.stringify({
+      slug: seed.slug,
+      title: seed.title,
+      previewText: seed.previewText,
+      bodyText: seed.bodyText,
+      tags: seed.tags,
+      gameIds,
+      seedVersion: SYSTEM_LIST_SEED_VERSION,
+    }))
+    .digest("hex");
+}
 
 // Define list blueprints — each contains SQL criteria to pick games
 // ── Overlap enforcement ──
@@ -625,20 +642,44 @@ for (const blueprint of LIST_BLUEPRINTS) {
     coverImage = g?.header_image || g?.cover_image || "";
   }
 
+  const previewText = blueprint.description;
+  const bodyText = blueprint.description;
+  const seedHash = buildSeedHash({
+    slug: blueprint.slug,
+    title: blueprint.title,
+    previewText,
+    bodyText,
+    tags: blueprint.tags,
+  }, constrainedIds);
+
   // Upsert the list
   const [existingList] = await sql`
-    SELECT id FROM lists WHERE slug = ${blueprint.slug} LIMIT 1
+    SELECT id, title, is_system_managed FROM lists WHERE slug = ${blueprint.slug} LIMIT 1
   `;
+
+  if (existingList && !existingList.is_system_managed) {
+    console.log(`  ⚠ Slug conflict with non-system list "${existingList.title}" — skipping`);
+    skipped++;
+    continue;
+  }
 
   let listId;
   if (existingList) {
     await sql`
       UPDATE lists SET
         title = ${blueprint.title},
-        description = ${blueprint.description},
+        description = ${bodyText},
+        preview_text = ${previewText},
+        body_text = ${bodyText},
         cover_image = ${coverImage},
         curated_by = ${SYSTEM_CURATOR},
         tags = ${blueprint.tags},
+        is_system_managed = true,
+        system_key = ${blueprint.slug},
+        managed_by = ${SYSTEM_LIST_MANAGER},
+        seed_version = ${SYSTEM_LIST_SEED_VERSION},
+        seed_hash = ${seedHash},
+        last_seeded_at = NOW(),
         updated_at = NOW()
       WHERE id = ${existingList.id}
     `;
@@ -647,15 +688,41 @@ for (const blueprint of LIST_BLUEPRINTS) {
     updated++;
   } else {
     const [newList] = await sql`
-      INSERT INTO lists (slug, title, description, cover_image, curated_by, tags, is_public, created_at, updated_at)
+      INSERT INTO lists (
+        slug,
+        title,
+        description,
+        preview_text,
+        body_text,
+        cover_image,
+        curated_by,
+        tags,
+        is_public,
+        is_system_managed,
+        system_key,
+        managed_by,
+        seed_version,
+        seed_hash,
+        last_seeded_at,
+        created_at,
+        updated_at
+      )
       VALUES (
         ${blueprint.slug},
         ${blueprint.title},
-        ${blueprint.description},
+        ${bodyText},
+        ${previewText},
+        ${bodyText},
         ${coverImage},
         ${SYSTEM_CURATOR},
         ${blueprint.tags},
         true,
+        true,
+        ${blueprint.slug},
+        ${SYSTEM_LIST_MANAGER},
+        ${SYSTEM_LIST_SEED_VERSION},
+        ${seedHash},
+        NOW(),
         NOW(),
         NOW()
       )
@@ -695,7 +762,8 @@ for (const blueprint of LIST_BLUEPRINTS) {
 const currentSlugs = LIST_BLUEPRINTS.map((b) => b.slug);
 const staleLists = await sql`
   SELECT id, slug FROM lists
-  WHERE (curated_by = ${SYSTEM_CURATOR} OR curated_by = 'Verdict.games Editorial')
+  WHERE is_system_managed = true
+    AND managed_by = ${SYSTEM_LIST_MANAGER}
     AND slug != ALL(${currentSlugs})
 `;
 let cleaned = 0;

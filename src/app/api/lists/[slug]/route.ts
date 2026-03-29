@@ -10,6 +10,7 @@ import { NextRequest } from "next/server";
 import { jsonOk, jsonNotFound } from "@/lib/api/response";
 import { mapGameRow, mapListRow } from "@/lib/db/mappers";
 import { GAME_CARD_COLUMNS_WITH_DESC } from "@/lib/db/columns";
+import { isSurfaceReady } from "@/lib/utils/quality";
 import { isPublicSafeGame } from "@/lib/utils/publicSafety";
 import { hasUsableCardImage } from "@/lib/utils/mediaReadiness";
 import type { ListRow, GameRow } from "@/lib/supabase/types";
@@ -32,6 +33,7 @@ export async function GET(
       .from("lists")
       .select("*")
       .eq("slug", slug)
+      .eq("is_public", true)
       .maybeSingle() as { data: ListRow | null; error: unknown };
 
     if (error) throw error;
@@ -57,7 +59,6 @@ export async function GET(
         .in("id", gameIds) as { data: GameRow[] | null };
 
       // Filter for surface readiness + public safety + media readiness
-      const { isSurfaceReady } = await import("@/lib/utils/quality");
       const allGames = (gamesData ?? [])
         .filter((r) =>
           isSurfaceReady(r, "curatedList") &&

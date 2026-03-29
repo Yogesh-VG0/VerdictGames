@@ -64,10 +64,31 @@ $$;
 -- 2. Enable RLS on scheduler_runs
 -- ───────────────────────────────────────────────────────────────────
 
+CREATE TABLE IF NOT EXISTS scheduler_runs (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  job_name text NOT NULL,
+  started_at timestamptz NOT NULL DEFAULT now(),
+  finished_at timestamptz,
+  status text NOT NULL DEFAULT 'running',
+  duration_ms integer,
+  rows_scanned integer DEFAULT 0,
+  rows_created integer DEFAULT 0,
+  rows_updated integer DEFAULT 0,
+  rows_skipped integer DEFAULT 0,
+  error_message text,
+  metadata jsonb DEFAULT '{}'::jsonb,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_scheduler_runs_job_name
+  ON scheduler_runs (job_name, started_at DESC);
+
 ALTER TABLE scheduler_runs ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Public read scheduler_runs" ON scheduler_runs;
 CREATE POLICY "Public read scheduler_runs"
   ON scheduler_runs FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Service manage scheduler_runs" ON scheduler_runs;
 CREATE POLICY "Service manage scheduler_runs"
   ON scheduler_runs FOR ALL TO service_role USING (true) WITH CHECK (true);
 

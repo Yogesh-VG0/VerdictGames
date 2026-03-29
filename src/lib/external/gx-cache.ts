@@ -12,6 +12,9 @@
  */
 
 import { getServerSupabase } from "@/lib/supabase/server";
+import type { GXCalendarEntry } from "@/lib/external/gxcorner";
+import type { GXCalendarGame, GXCalendarMonthResponse } from "@/lib/types";
+import { filterGXCalendarEntriesByMonth, isPastCalendarMonth } from "@/lib/utils/gx-calendar";
 
 type FeedKey =
   | "highlights"
@@ -22,6 +25,20 @@ type FeedKey =
   | "top_liked"
   | "news_popular"
   | "news_feed";
+
+const GX_CALENDAR_SNAPSHOT_VERSION = 1;
+
+function parsePayload<T>(payload: unknown): T | null {
+  if (payload == null) return null;
+  if (typeof payload === "string") {
+    try {
+      return JSON.parse(payload) as T;
+    } catch {
+      return null;
+    }
+  }
+  return payload as T;
+}
 
 /**
  * Fetch with durable cache: try live, cache on success, fallback on failure.
@@ -36,8 +53,7 @@ export async function gxFetchWithCache<T>(
   staleTtlMs = 6 * 60 * 60 * 1000
 ): Promise<{ data: T; source: "live" | "cache" | "empty" }> {
   const supabase = getServerSupabase();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const cacheTable = supabase.from("gx_cache") as any;
+  const cacheTable = supabase.from("gx_cache");
 
   // 1. Try live fetch
   try {
@@ -47,17 +63,17 @@ export async function gxFetchWithCache<T>(
     const isNonEmpty = Array.isArray(liveData) ? liveData.length > 0 : !!liveData;
     if (isNonEmpty) {
       // Fire and forget — don't block the response on cache write
-      cacheTable
-        .upsert({
+      void (async () => {
+        const { error } = await cacheTable.upsert({
           feed_key: feedKey,
-          payload: JSON.stringify(liveData),
+          payload: liveData,
           fetched_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
-        })
-        .then(() => {})
-        .catch((err: Error) => {
-          console.warn(`[GX Cache] Failed to update cache for ${feedKey}:`, err.message);
         });
+        if (error) {
+          console.warn(`[GX Cache] Failed to update cache for ${feedKey}:`, error.message);
+        }
+      })();
     }
 
     return { data: liveData, source: "live" };
@@ -70,11 +86,14 @@ export async function gxFetchWithCache<T>(
     const { data: cached } = await cacheTable
       .select("payload, fetched_at")
       .eq("feed_key", feedKey)
-      .single() as { data: { payload: string; fetched_at: string } | null };
+      .single() as { data: { payload: unknown; fetched_at: string } | null };
 
     if (cached?.payload) {
       const age = Date.now() - new Date(cached.fetched_at).getTime();
-      const parsed = JSON.parse(cached.payload) as T;
+      const parsed = parsePayload<T>(cached.payload);
+      if (!parsed) {
+        throw new Error(`Invalid cached payload for ${feedKey}`);
+      }
       const isStale = age > staleTtlMs;
 
       if (isStale) {
@@ -89,4 +108,89 @@ export async function gxFetchWithCache<T>(
 
   // 3. Both failed — return empty
   return { data: ([] as unknown) as T, source: "empty" };
+}
+
+async function readCalendarMonthSnapshot(month: string): Promise<{ items: GXCalendarGame[]; fetchedAt: string } | null> {
+  const supabase = getServerSupabase();
+  const { data } = await supabase
+    .from("gx_calendar_month_snapshots")
+    .select("payload, fetched_at")
+    .eq("month_key", month)
+    .maybeSingle() as { data: { payload: unknown; fetched_at: string } | null };
+
+  const items = parsePayload<GXCalendarGame[]>(data?.payload);
+  if (!data || !items) return null;
+
+  return {
+    items,
+    fetchedAt: data.fetched_at,
+  };
+}
+
+async function writeCalendarMonthSnapshot(month: string, items: GXCalendarGame[], fetchedAt: string) {
+  const supabase = getServerSupabase();
+  const { error } = await supabase
+    .from("gx_calendar_month_snapshots")
+    .upsert({
+      month_key: month,
+      payload: items,
+      game_count: items.length,
+      source: "gx",
+      snapshot_version: GX_CALENDAR_SNAPSHOT_VERSION,
+      fetched_at: fetchedAt,
+      updated_at: fetchedAt,
+    });
+
+  if (error) {
+    console.warn(`[GX Cache] Failed to write calendar month snapshot for ${month}:`, error.message);
+  }
+}
+
+export async function gxFetchCalendarMonthSnapshot(
+  month: string,
+  liveFetcher: () => Promise<GXCalendarEntry[]>
+): Promise<GXCalendarMonthResponse> {
+  if (isPastCalendarMonth(month)) {
+    const existingSnapshot = await readCalendarMonthSnapshot(month);
+    if (existingSnapshot) {
+      return {
+        month,
+        items: existingSnapshot.items,
+        source: "snapshot",
+        fetchedAt: existingSnapshot.fetchedAt,
+      };
+    }
+  }
+
+  try {
+    const liveEntries = await liveFetcher();
+    const items = filterGXCalendarEntriesByMonth(liveEntries, month);
+    const fetchedAt = new Date().toISOString();
+    await writeCalendarMonthSnapshot(month, items, fetchedAt);
+
+    return {
+      month,
+      items,
+      source: "live",
+      fetchedAt,
+    };
+  } catch (liveErr) {
+    console.warn(`[GX Cache] Live GX calendar fetch failed for ${month}:`, (liveErr as Error).message);
+  }
+
+  const snapshot = await readCalendarMonthSnapshot(month);
+  if (snapshot) {
+    return {
+      month,
+      items: snapshot.items,
+      source: "snapshot",
+      fetchedAt: snapshot.fetchedAt,
+    };
+  }
+
+  return {
+    month,
+    items: [],
+    source: "empty",
+  };
 }

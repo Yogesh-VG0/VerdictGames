@@ -69,5 +69,16 @@ export function connectDb(scriptName = "scheduler") {
     console.log(`🔗 DB target: [could not parse URL] (${scriptName})`);
   }
 
-  return postgres(dbUrl, { ssl: { rejectUnauthorized: false } });
+  let ssl = { rejectUnauthorized: false };
+
+  try {
+    const url = new URL(dbUrl);
+    if (["localhost", "127.0.0.1", "::1"].includes(url.hostname)) {
+      ssl = false;
+    }
+  } catch {
+    // Keep remote-safe default when URL parsing fails.
+  }
+
+  return postgres(dbUrl, { ssl });
 }

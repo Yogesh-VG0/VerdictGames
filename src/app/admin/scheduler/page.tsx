@@ -56,6 +56,8 @@ const JOB_LABELS: Record<string, { label: string; description: string; icon: str
   "seed-curated-lists": { label: "Seed Lists", description: "Refresh editorial curated lists", icon: "lists" },
 };
 
+const HEROKU_SCHEDULED_JOBS = new Set(["backfill-games", "backfill-mobile-android", "backfill-mobile-ios", "refresh-trending", "discover-games", "re-enrich", "seed-curated-lists"]);
+
 // Heroku-only jobs can't be triggered from the web UI
 const HEROKU_ONLY_JOBS = new Set(["backfill-games", "backfill-mobile-android", "backfill-mobile-ios", "refresh-trending", "discover-games"]);
 
@@ -442,7 +444,7 @@ export default function SchedulerPage() {
             Scheduler Logs
           </h1>
           <p className="text-sm text-secondary mt-1">
-            Monitor scheduler job runs, view detailed results, and trigger manual runs
+            Monitor recurring job runs. Heroku is the canonical scheduler; dashboard actions are manual fallback runs only.
           </p>
         </div>
         <button
@@ -467,6 +469,14 @@ export default function SchedulerPage() {
           {triggerMsg}
         </div>
       )}
+
+      <div className="rounded-xl border border-purple-500/20 bg-purple-500/5 px-4 py-3 text-sm text-secondary flex gap-3">
+        <Server className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
+        <p>
+          Recurring discovery, re-enrichment, trending, backfill, and full curated-list reseeds run on Heroku.
+          The admin dashboard only exposes lightweight manual fallbacks like on-demand re-enrich and controlled list reseeds.
+        </p>
+      </div>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -510,6 +520,7 @@ export default function SchedulerPage() {
               const info = JOB_LABELS[name] || { label: name, description: "" };
               const completedRuns = s.total - s.stale - s.running;
               const successRate = completedRuns > 0 ? Math.round((s.success / completedRuns) * 100) : 0;
+              const isHerokuScheduled = HEROKU_SCHEDULED_JOBS.has(name);
               const isHerokuOnly = HEROKU_ONLY_JOBS.has(name);
               const isTriggering = triggerMutation.isPending && triggerMutation.variables === name;
               return (
@@ -522,9 +533,9 @@ export default function SchedulerPage() {
                           <Loader2 className="w-3 h-3 animate-spin" /> running
                         </span>
                       )}
-                      {isHerokuOnly && (
-                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-purple-500/10 text-purple-400" title="This job runs on Heroku and cannot be triggered from the dashboard">
-                          <Server className="w-3 h-3" /> Heroku
+                      {isHerokuScheduled && (
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-purple-500/10 text-purple-400" title={isHerokuOnly ? "This job is scheduled on Heroku and cannot be triggered from the dashboard" : "This job is scheduled on Heroku; dashboard runs are manual fallbacks only"}>
+                          <Server className="w-3 h-3" /> Heroku schedule
                         </span>
                       )}
                     </div>
@@ -546,7 +557,7 @@ export default function SchedulerPage() {
                     <button
                       onClick={() => triggerMutation.mutate(name)}
                       disabled={triggerMutation.isPending}
-                      title={isHerokuOnly ? "Show Heroku CLI command" : `Manually trigger ${info.label}`}
+                      title={isHerokuOnly ? "Show Heroku CLI command" : isHerokuScheduled ? `Run a manual fallback for ${info.label}` : `Manually trigger ${info.label}`}
                       className={cn(
                         "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all disabled:opacity-50",
                         isHerokuOnly

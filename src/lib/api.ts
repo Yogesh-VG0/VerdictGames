@@ -17,7 +17,14 @@ import {
   SearchFilters,
   PaginatedResponse,
   GXDeal,
+  GXNewsItem,
+  GXTopGame,
+  GXFreeGame,
+  GXMostLiked,
+  GXCalendarMonthResponse,
+  CalendarMonthResponse,
 } from "./types";
+import { getCalendarMonthKey } from "./utils/gx-calendar";
 
 /** Must match `PAGE_SIZE` in `src/app/api/search/route.ts` */
 const PAGE_SIZE = 24;
@@ -517,9 +524,15 @@ export async function toggleFollow(profileId: string, action: "follow" | "unfoll
    ═══════════════════════════════════════════════════ */
 
 /** Get games releasing in a specific month. */
-export async function getCalendarGames(month?: string): Promise<Game[]> {
+export async function getCalendarGames(month?: string): Promise<CalendarMonthResponse> {
   const params = month ? `?month=${month}` : "";
-  return (await apiFetch<Game[]>(`/api/calendar${params}`)) ?? [];
+  return (await apiFetch<CalendarMonthResponse>(`/api/calendar${params}`)) ?? {
+    month: month ?? getCalendarMonthKey(),
+    items: [],
+    gxSource: "empty",
+    gxCount: 0,
+    dbCount: 0,
+  };
 }
 
 /* ═══════════════════════════════════════════════════
@@ -565,22 +578,8 @@ export async function getDeveloperHub(slug: string): Promise<DeveloperHub | null
 export async function getUpcomingGames(limit = 12): Promise<Game[]> {
   const now = new Date();
   const month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-
-  try {
-    // Primary: GX Calendar
-    const gx = await getGXCalendar();
-    const futureGx = (gx ?? [])
-      .filter((g) => (g.releaseDate ?? "").slice(0, 7) === month)
-      .filter((g) => !g.releaseDate || new Date(g.releaseDate) >= now)
-      .map((g) => gxCalendarToGame(g));
-    if (futureGx.length > 0) return futureGx.slice(0, limit);
-  } catch {
-    // ignore and fall back to DB
-  }
-
-  // Fallback: DB calendar
-  const games = await getCalendarGames(month);
-  const upcoming = games.filter((g) => {
+  const calendar = await getCalendarGames(month);
+  const upcoming = calendar.items.filter((g) => {
     if (!g.releaseDate) return true;
     return new Date(g.releaseDate) >= now;
   });
@@ -621,60 +620,6 @@ export async function getSiteStats(): Promise<SiteStats> {
    GX CORNER — Live feeds (no DB, refreshed every 5 min)
    ═══════════════════════════════════════════════════ */
 
-import type { GXNewsItem, GXTopGame, GXFreeGame, GXMostLiked, GXCalendarGame, Platform as GXPlatform } from "./types";
-import { slugify } from "./utils/slugify";
-
-function mapGXPlatformName(p: string): GXPlatform | null {
-  const s = p.toLowerCase();
-  if (s.includes("windows") || s === "pc") return "PC";
-  if (s.includes("playstation") || s === "ps5") return "PlayStation 5";
-  if (s.includes("xbox")) return "Xbox Series X|S";
-  if (s.includes("switch")) return "Nintendo Switch";
-  if (s.includes("android")) return "Android";
-  if (s.includes("ios")) return "iOS";
-  if (s.includes("mac")) return "macOS";
-  if (s.includes("linux")) return "Linux";
-  return null;
-}
-
-export function gxCalendarToGame(gx: GXCalendarGame): Game {
-  const platforms = (gx.platforms ?? [])
-    .map(mapGXPlatformName)
-    .filter(Boolean) as Platform[];
-
-  const slug = gx.slug ?? slugify(gx.title);
-
-  return {
-    id: `gx-cal-${slug}`,
-    slug,
-    title: gx.title,
-    subtitle: undefined,
-    coverImage: gx.cover ?? "",
-    headerImage: gx.cover ?? "",
-    screenshots: [],
-    platforms,
-    genres: gx.genres ?? [],
-    tags: [],
-    developer: "",
-    publisher: "",
-    releaseDate: gx.releaseDate ?? "",
-    description: "",
-    score: 0,
-    verdictLabel: "COMING SOON",
-    verdictSummary: "",
-    pros: [],
-    cons: [],
-    monetization: "Unknown",
-    performanceNotes: "",
-    monetizationNotes: "",
-    reviewCount: 0,
-    featured: false,
-    trending: false,
-    isProvisional: true,
-    scoreSource: "gx",
-  };
-}
-
 export async function getGXDeals(): Promise<GXDeal[]> {
   return (await apiFetch<GXDeal[]>("/api/gx/deals")) ?? [];
 }
@@ -699,8 +644,13 @@ export async function getGXTopLiked(): Promise<GXMostLiked[]> {
   return (await apiFetch<GXMostLiked[]>("/api/gx/top-liked")) ?? [];
 }
 
-export async function getGXCalendar(): Promise<GXCalendarGame[]> {
-  return (await apiFetch<GXCalendarGame[]>("/api/gx/calendar")) ?? [];
+export async function getGXCalendar(month?: string): Promise<GXCalendarMonthResponse> {
+  const params = month ? `?month=${month}` : "";
+  return (await apiFetch<GXCalendarMonthResponse>(`/api/gx/calendar${params}`)) ?? {
+    month: month ?? getCalendarMonthKey(),
+    items: [],
+    source: "empty",
+  };
 }
 
 /* ═══════════════════════════════════════════════════

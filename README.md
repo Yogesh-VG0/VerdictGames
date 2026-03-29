@@ -62,7 +62,7 @@ Letterboxd for games — enriched with data from **9 external APIs** across all 
 
 ### Admin & Operations
 - **Admin dashboard** — full game editor, source-specific reingest (RAWG/IGDB), audit log with field-level diffs
-- **Cron pipeline** — 5 scheduled jobs for discovery, enrichment, trending, lists, and backfill
+- **Cron pipeline** — Heroku is the canonical recurring scheduler; dashboard/API triggers are manual fallbacks only
 
 ### Design
 - **Responsive** — mobile-first with smooth horizontal scroll and native touch support
@@ -134,8 +134,8 @@ cp .env.example .env.local
 #          SUPABASE_SERVICE_ROLE_KEY, RAWG_API_KEY
 # Optional: TWITCH_CLIENT_ID, TWITCH_CLIENT_SECRET, STEAM_API_KEY, CRON_SECRET
 
-# 3. Apply database schema + migrations
-psql $DATABASE_URL -f supabase/schema.sql
+# 3. Bootstrap the database from ordered migrations
+node scripts/apply-schema.mjs
 
 # 4. Start dev server
 npm run dev
@@ -143,10 +143,12 @@ npm run dev
 # 5. Seed initial data
 node scripts/ingest-full-library.mjs     # ~300 curated games
 node scripts/seed-flags.mjs              # Set trending/featured flags
-node scripts/seed-curated-lists.mjs      # Create 12 editorial lists
+node scripts/seed-curated-lists.mjs      # Create the full 22 system-curated lists
 ```
 
 ### Scheduler Jobs (Heroku)
+
+Heroku is the recurring scheduler authority. `vercel.json` intentionally leaves cron schedules disabled, and the admin dashboard only exposes manual fallback runs for lightweight jobs.
 
 | Script | Frequency | Purpose |
 |--------|-----------|---------|
@@ -167,14 +169,14 @@ src/
 │   ├── admin/                  # Admin dashboard (games, reviews, users, audit)
 │   ├── api/                    # 60+ REST API routes
 │   │   ├── admin/              # Protected admin endpoints (11 routes)
-│   │   ├── cron/               # Scheduler endpoints (3 routes)
+│   │   ├── cron/               # Manual fallback cron endpoints (3 routes)
 │   │   ├── games/              # Game data + deals/news/achievements
 │   │   ├── gx/                 # GX Corner proxy (8 feeds)
 │   │   └── ...                 # auth, search, reviews, lists, profile, etc.
 │   ├── game/[slug]/            # Game detail (richest page)
 │   ├── search/                 # Browse with 5 filter types
 │   ├── explore/                # RAWG curated lists (5 tabs)
-│   ├── calendar/               # Release calendar with GX merge
+│   ├── calendar/               # Release calendar with merged month snapshots
 │   ├── deals/                  # Game deals (GX Corner, filterable grid)
 │   ├── free-to-play/           # Free games + subscription catalogs
 │   ├── compare/                # Side-by-side game comparison
@@ -197,7 +199,7 @@ src/
 ├── hooks/                      # useAuth, useTheme
 │
 scripts/                        # 25 Node.js CLI scripts
-supabase/                       # Schema + 15 migrations
+supabase/                       # Derived schema snapshot + ordered migrations
 ```
 
 ---

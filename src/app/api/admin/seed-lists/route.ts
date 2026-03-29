@@ -1,8 +1,9 @@
-import { jsonOk, jsonError } from "@/lib/api/response";
+import { createHash } from "node:crypto";
+import { jsonOk } from "@/lib/api/response";
 import { requireAdmin } from "@/lib/admin";
 import { getServerSupabase } from "@/lib/supabase/server";
 import { writeAuditLog } from "@/lib/auditLog";
-import type { GameRow } from "@/lib/supabase/types";
+import type { GameRow, ListRow } from "@/lib/supabase/types";
 
 /* ── 12 editorial list definitions ── */
 const SEED_LISTS = [
@@ -92,6 +93,23 @@ const SEED_LISTS = [
   },
 ];
 
+const SYSTEM_LIST_MANAGER = "system-curated-lists";
+const SYSTEM_LIST_SEED_VERSION = 2;
+
+function buildSeedHash(seed: { slug: string; title: string; previewText: string; bodyText: string; tags: string[] }, gameIds: string[]) {
+  return createHash("sha256")
+    .update(JSON.stringify({
+      slug: seed.slug,
+      title: seed.title,
+      previewText: seed.previewText,
+      bodyText: seed.bodyText,
+      tags: seed.tags,
+      gameIds,
+      seedVersion: SYSTEM_LIST_SEED_VERSION,
+    }))
+    .digest("hex");
+}
+
 export async function POST() {
   const { user, error: authErr } = await requireAdmin();
   if (authErr) return authErr;
@@ -99,38 +117,16 @@ export async function POST() {
   const supabase = getServerSupabase();
   const results: string[] = [];
   const usedCoverImages = new Set<string>();
-
-  // Clean up ALL editorial-seeded lists (by slug match OR by curated_by pattern)
   const seedSlugs = SEED_LISTS.map(s => s.slug);
-
-  // 1. Delete by matching slug
-  for (const slug of seedSlugs) {
-    const { data: oldLists } = await supabase
-      .from("lists")
-      .select("id")
-      .eq("slug", slug);
-    if (oldLists && oldLists.length > 0) {
-      for (const old of oldLists) {
-        await supabase.from("list_items").delete().eq("list_id", old.id);
-        await supabase.from("lists").delete().eq("id", old.id);
-      }
-    }
-  }
-
-  // 2. Delete any remaining lists created by the editorial seed (catches old slugs)
-  const { data: editorialLists } = await supabase
+  const { data: existingLists } = await supabase
     .from("lists")
-    .select("id")
-    .or("curated_by.eq.editorial,curated_by.eq.Verdict.games Editorial");
-  if (editorialLists && editorialLists.length > 0) {
-    for (const old of editorialLists) {
-      await supabase.from("list_items").delete().eq("list_id", old.id);
-      await supabase.from("lists").delete().eq("id", old.id);
-    }
-    results.push(`🗑️ Cleaned up ${editorialLists.length} old editorial list(s)`);
-  }
+    .select("id, slug, title, seed_version, is_system_managed")
+    .in("slug", seedSlugs) as { data: Pick<ListRow, "id" | "slug" | "title" | "seed_version" | "is_system_managed">[] | null };
+  const existingListsBySlug = new Map((existingLists ?? []).map((list) => [list.slug, list]));
 
   for (const seed of SEED_LISTS) {
+    const previewText = seed.description;
+    const bodyText = seed.description;
 
     // Fetch top-rated games with matching tags/genres
     const { data: gamesData } = await supabase
@@ -182,17 +178,59 @@ export async function POST() {
     const coverImage = coverGame?.header_image || coverGame?.cover_image || "";
     if (coverImage) usedCoverImages.add(coverImage);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: newList, error: listErr } = await (supabase.from("lists") as any)
-      .insert({
-        slug: seed.slug,
-        title: seed.title,
-        description: seed.description,
-        cover_image: coverImage,
-        tags: seed.tags,
-        is_public: true,
-        curated_by: "editorial",
-      })
+    const seedHash = buildSeedHash({
+      slug: seed.slug,
+      title: seed.title,
+      previewText,
+      bodyText,
+      tags: seed.tags,
+    }, finalGames.map((g) => g.id));
+    const seededAt = new Date().toISOString();
+    const existingList = existingListsBySlug.get(seed.slug);
+
+    if (existingList && !existingList.is_system_managed) {
+      results.push(`⚠️ Skipped "${seed.title}" because slug "${seed.slug}" is owned by a non-system list.`);
+      continue;
+    }
+
+    const listMutation = existingList
+      ? supabase.from("lists")
+        .update({
+          title: seed.title,
+          description: bodyText,
+          preview_text: previewText,
+          body_text: bodyText,
+          cover_image: coverImage,
+          tags: seed.tags,
+          is_public: true,
+          curated_by: "editorial",
+          is_system_managed: true,
+          system_key: seed.slug,
+          managed_by: SYSTEM_LIST_MANAGER,
+          seed_version: SYSTEM_LIST_SEED_VERSION,
+          seed_hash: seedHash,
+          last_seeded_at: seededAt,
+        })
+        .eq("id", existingList.id)
+      : supabase.from("lists")
+        .insert({
+          slug: seed.slug,
+          title: seed.title,
+          description: bodyText,
+          preview_text: previewText,
+          body_text: bodyText,
+          cover_image: coverImage,
+          tags: seed.tags,
+          is_public: true,
+          curated_by: "editorial",
+          is_system_managed: true,
+          system_key: seed.slug,
+          managed_by: SYSTEM_LIST_MANAGER,
+          seed_version: SYSTEM_LIST_SEED_VERSION,
+          seed_hash: seedHash,
+          last_seeded_at: seededAt,
+        });
+    const { data: newList, error: listErr } = await listMutation
       .select("id")
       .single() as { data: { id: string } | null; error: { message: string } | null };
 
@@ -202,24 +240,29 @@ export async function POST() {
     }
 
     // Insert list items
+    await supabase.from("list_items").delete().eq("list_id", newList.id);
     const items = finalGames.map((g, i) => ({
       list_id: newList.id,
       game_id: g.id,
-      position: i,
+      position: i + 1,
     }));
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase.from("list_items") as any).insert(items);
+    await supabase.from("list_items").insert(items);
 
     await writeAuditLog({
       entity_type: "list",
       entity_id: newList.id,
-      action: "create",
-      field_changes: { title: { old: null, new: seed.title }, game_count: { old: null, new: finalGames.length } },
+      action: existingList ? "update" : "create",
+      field_changes: {
+        title: { old: existingList?.title ?? null, new: seed.title },
+        game_count: { old: null, new: finalGames.length },
+        system_key: { old: existingList?.slug ?? null, new: seed.slug },
+        seed_version: { old: existingList?.seed_version ?? null, new: SYSTEM_LIST_SEED_VERSION },
+      },
       edited_by: user?.email ?? "unknown",
     });
 
-    results.push(`✅ Created "${seed.title}" with ${finalGames.length} games`);
+    results.push(`✅ ${existingList ? "Updated" : "Created"} "${seed.title}" with ${finalGames.length} games`);
   }
 
   return jsonOk({ results });
@@ -230,7 +273,7 @@ export async function GET() {
   if (error) return error;
 
   return jsonOk({
-    message: "POST to this endpoint to seed 12 editorial curated lists. The scheduler script (seed-curated-lists.mjs) creates the full 22-list set daily.",
+    message: "POST to this endpoint to controlled-reseed the 12 system-owned editorial lists. User-owned lists are untouched.",
     lists: SEED_LISTS.map(l => ({ slug: l.slug, title: l.title })),
   });
 }
