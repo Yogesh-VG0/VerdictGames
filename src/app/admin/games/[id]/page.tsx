@@ -28,11 +28,15 @@ async function updateGame(id: string, data: Record<string, any>): Promise<Game> 
   throw new Error(json.error ?? "Failed to update game");
 }
 
-async function reingestGame(id: string, source?: string): Promise<{ preview?: boolean; source?: string; message?: string; data?: Record<string, unknown> }> {
+async function reingestGame(id: string, source?: string, forceOverwrite?: boolean): Promise<{ preview?: boolean; source?: string; message?: string; data?: Record<string, unknown> }> {
+  const body: Record<string, unknown> = {};
+  if (source) body.source = source;
+  if (forceOverwrite) body.forceOverwrite = true;
+  
   const res = await fetch(`/api/admin/games/${id}/ingest`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(source ? { source } : {}),
+    body: JSON.stringify(body),
   });
   const json = await res.json();
   if (!json.success && !json.data?.preview) throw new Error(json.error ?? "Re-ingest failed");
@@ -238,7 +242,8 @@ export default function AdminGameEditor({ params }: { params: Promise<{ id: stri
   });
 
   const reingestMutation = useMutation({
-    mutationFn: (source?: string) => reingestGame(id, source === "all" ? undefined : source),
+    mutationFn: ({ source, forceOverwrite }: { source?: string; forceOverwrite?: boolean }) => 
+      reingestGame(id, source === "all" ? undefined : source, forceOverwrite),
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["admin-game", id] });
       queryClient.invalidateQueries({ queryKey: ["admin-activity"] });
@@ -276,8 +281,11 @@ export default function AdminGameEditor({ params }: { params: Promise<{ id: stri
   const handleScreenshotUpload = async (file: File) => {
     setUploading("screenshot");
     try {
+      // Compress large images before upload
+      const processedFile = await compressImage(file);
+      
       const formData = new FormData();
-      formData.append("file", file);
+      formData.append("file", processedFile);
       formData.append("folder", "verdict-games/screenshots");
       formData.append("gameSlug", game.data?.slug ?? "");
 
@@ -304,12 +312,62 @@ export default function AdminGameEditor({ params }: { params: Promise<{ id: stri
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const setField = (key: string, value: any) => setForm((f) => ({ ...f, [key]: value }));
 
+  // ── Compress image before upload ──
+  const compressImage = async (file: File, maxSizeMB: number = 3.5): Promise<File> => {
+    // If file is small enough, return as-is
+    if (file.size <= maxSizeMB * 1024 * 1024) return file;
+
+    return new Promise((resolve, reject) => {
+      const img = document.createElement("img");
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+
+      img.onload = () => {
+        // Calculate new dimensions (max 2000px on longest side)
+        let { width, height } = img;
+        const maxDim = 2000;
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = (height / width) * maxDim;
+            width = maxDim;
+          } else {
+            width = (width / height) * maxDim;
+            height = maxDim;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        ctx?.drawImage(img, 0, 0, width, height);
+
+        // Convert to blob with reduced quality
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              resolve(new File([blob], file.name, { type: "image/jpeg" }));
+            } else {
+              reject(new Error("Compression failed"));
+            }
+          },
+          "image/jpeg",
+          0.85
+        );
+      };
+
+      img.onerror = () => reject(new Error("Failed to load image"));
+      img.src = URL.createObjectURL(file);
+    });
+  };
+
   // ── Image upload handler ──
   const handleImageUpload = async (file: File, fieldKey: string) => {
     setUploading(fieldKey);
     try {
+      // Compress large images before upload
+      const processedFile = await compressImage(file);
+      
       const formData = new FormData();
-      formData.append("file", file);
+      formData.append("file", processedFile);
       formData.append("folder", "verdict-games");
       formData.append("gameSlug", game.data?.slug ?? "");
 
@@ -390,7 +448,7 @@ export default function AdminGameEditor({ params }: { params: Promise<{ id: stri
             <option value="mobile_both">Both Mobile Stores</option>
           </select>
           <button
-            onClick={() => reingestMutation.mutate(reingestSource)}
+            onClick={() => reingestMutation.mutate({ source: reingestSource })}
             disabled={reingestMutation.isPending}
             className="px-3 py-2 rounded-xl text-xs font-medium bg-pixel-cyan/10 text-pixel-cyan border border-pixel-cyan/20 hover:bg-pixel-cyan/20 transition-all disabled:opacity-50"
           >
@@ -792,12 +850,22 @@ export default function AdminGameEditor({ params }: { params: Promise<{ id: stri
                 <option value="mobile_both">Both Mobile Stores</option>
               </select>
               <button
-                onClick={() => reingestMutation.mutate(reingestSource)}
+                onClick={() => reingestMutation.mutate({ source: reingestSource })}
                 disabled={reingestMutation.isPending}
                 className="px-4 py-2.5 rounded-xl text-xs font-medium bg-pixel-cyan/10 text-pixel-cyan border border-pixel-cyan/20 hover:bg-pixel-cyan/20 transition-all disabled:opacity-50"
               >
                 {reingestMutation.isPending ? "Re-ingesting..." : `🔄 Re-ingest from ${reingestSource === "all" ? "Pipeline" : reingestSource === "google_play" ? "Google Play" : reingestSource === "app_store" ? "App Store" : reingestSource === "mobile_both" ? "Both Stores" : reingestSource.toUpperCase()}`}
               </button>
+              {(reingestSource === "google_play" || reingestSource === "app_store" || reingestSource === "mobile_both") && (
+                <button
+                  onClick={() => reingestMutation.mutate({ source: reingestSource, forceOverwrite: true })}
+                  disabled={reingestMutation.isPending}
+                  className="px-4 py-2.5 rounded-xl text-xs font-medium bg-danger/10 text-danger border border-danger/20 hover:bg-danger/20 transition-all disabled:opacity-50"
+                  title="Overwrite ALL fields with fresh store data (resets admin edits)"
+                >
+                  🔄 Force Reset
+                </button>
+              )}
             </div>
           </>
         )}

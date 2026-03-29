@@ -1,5 +1,3 @@
-"use server";
-
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin";
 import { v2 as cloudinary } from "cloudinary";
@@ -33,11 +31,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate file size (max 10MB)
-    const maxSize = 10 * 1024 * 1024;
+    // Validate file size (max 4MB to stay under Vercel's 4.5MB serverless limit)
+    const maxSize = 4 * 1024 * 1024;
     if (file.size > maxSize) {
       return NextResponse.json(
-        { success: false, error: "File too large. Maximum size: 10MB" },
+        { success: false, error: "File too large. Maximum size: 4MB. Please compress the image or use a smaller file." },
         { status: 400 }
       );
     }

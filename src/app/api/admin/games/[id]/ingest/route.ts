@@ -13,9 +13,11 @@ export async function POST(
   const { id } = await params;
 
   let source: string | undefined;
+  let forceOverwrite = false;
   try {
     const body = await request.json();
     source = body?.source;
+    forceOverwrite = body?.forceOverwrite === true;
   } catch {
     // No body is fine — defaults to full pipeline
   }
@@ -277,28 +279,29 @@ export async function POST(
       const cur = currentGame as Record<string, unknown> | null;
 
       // Always update these from Play Store (authoritative for mobile)
+      // If forceOverwrite is true, overwrite ALL fields regardless of current values
       gpUpdates.play_store_url = app.url;
-      if (app.description && (!cur?.description || (cur.description as string).length < 100)) {
+      if (app.description && (forceOverwrite || !cur?.description || (cur.description as string).length < 100)) {
         gpUpdates.description = app.description.length > 4000 ? app.description.slice(0, 4000) + "..." : app.description;
       }
-      if (app.icon && !cur?.cover_image) gpUpdates.cover_image = app.icon;
-      if (app.headerImage && !cur?.header_image) gpUpdates.header_image = app.headerImage;
-      if (app.screenshots?.length && !(cur?.screenshots as string[] | undefined)?.length) {
+      if (app.icon && (forceOverwrite || !cur?.cover_image)) gpUpdates.cover_image = app.icon;
+      if (app.headerImage && (forceOverwrite || !cur?.header_image)) gpUpdates.header_image = app.headerImage;
+      if (app.screenshots?.length && (forceOverwrite || !(cur?.screenshots as string[] | undefined)?.length)) {
         gpUpdates.screenshots = app.screenshots.slice(0, 10);
       }
-      if ((app.video || app.previewVideo) && !cur?.trailer_url) {
+      if ((app.video || app.previewVideo) && (forceOverwrite || !cur?.trailer_url)) {
         gpUpdates.trailer_url = app.video || app.previewVideo;
         gpUpdates.trailer_thumbnail = app.videoImage || app.headerImage || null;
       }
-      if (app.developerWebsite && !cur?.website_url) gpUpdates.website_url = app.developerWebsite;
-      if (app.developer && !cur?.developer) gpUpdates.developer = app.developer;
-      if (app.developer && !cur?.publisher) gpUpdates.publisher = app.developer;
-      if (app.genre && !(cur?.genres as string[] | undefined)?.length) gpUpdates.genres = [app.genre];
-      if (app.released && !cur?.release_date) gpUpdates.release_date = app.released;
+      if (app.developerWebsite && (forceOverwrite || !cur?.website_url)) gpUpdates.website_url = app.developerWebsite;
+      if (app.developer && (forceOverwrite || !cur?.developer)) gpUpdates.developer = app.developer;
+      if (app.developer && (forceOverwrite || !cur?.publisher)) gpUpdates.publisher = app.developer;
+      if (app.genre && (forceOverwrite || !(cur?.genres as string[] | undefined)?.length)) gpUpdates.genres = [app.genre];
+      if (app.released && (forceOverwrite || !cur?.release_date)) gpUpdates.release_date = app.released;
 
       // Monetization
       const monetization = app.free ? (app.offersIAP ? "Free + IAP" : "Free") : "Paid";
-      if (!cur?.monetization) gpUpdates.monetization = monetization;
+      if (forceOverwrite || !cur?.monetization) gpUpdates.monetization = monetization;
       gpUpdates.is_free = app.free;
 
       // Platforms: ensure Android is included
@@ -422,19 +425,19 @@ export async function POST(
       const { data: currentGame } = await supabase.from("games").select("*").eq("id", id).maybeSingle();
       const cur = currentGame as Record<string, unknown> | null;
 
-      if (app.description && (!cur?.description || (cur.description as string).length < 100)) {
+      if (app.description && (forceOverwrite || !cur?.description || (cur.description as string).length < 100)) {
         asUpdates.description = app.description.length > 4000 ? app.description.slice(0, 4000) + "..." : app.description;
       }
-      if ((app.artworkUrl512 || app.artworkUrl100) && !cur?.cover_image) {
+      if ((app.artworkUrl512 || app.artworkUrl100) && (forceOverwrite || !cur?.cover_image)) {
         asUpdates.cover_image = app.artworkUrl512 || app.artworkUrl100;
       }
-      if (app.screenshotUrls?.length && !(cur?.screenshots as string[] | undefined)?.length) {
+      if (app.screenshotUrls?.length && (forceOverwrite || !(cur?.screenshots as string[] | undefined)?.length)) {
         asUpdates.screenshots = app.screenshotUrls.slice(0, 10);
       }
-      if (app.artistName && !cur?.developer) asUpdates.developer = app.artistName;
-      if ((app.sellerName || app.artistName) && !cur?.publisher) asUpdates.publisher = app.sellerName || app.artistName;
-      if (app.genres?.length && !(cur?.genres as string[] | undefined)?.length) asUpdates.genres = app.genres;
-      if (app.releaseDate && !cur?.release_date) asUpdates.release_date = app.releaseDate.split("T")[0];
+      if (app.artistName && (forceOverwrite || !cur?.developer)) asUpdates.developer = app.artistName;
+      if ((app.sellerName || app.artistName) && (forceOverwrite || !cur?.publisher)) asUpdates.publisher = app.sellerName || app.artistName;
+      if (app.genres?.length && (forceOverwrite || !(cur?.genres as string[] | undefined)?.length)) asUpdates.genres = app.genres;
+      if (app.releaseDate && (forceOverwrite || !cur?.release_date)) asUpdates.release_date = app.releaseDate.split("T")[0];
 
       // Platforms: ensure iOS is included
       const curPlatforms = (cur?.platforms as string[]) ?? [];
