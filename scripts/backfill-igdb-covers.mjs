@@ -199,6 +199,96 @@ function igdbImageUrl(imageId, size = "cover_big_2x") {
 }
 
 // ══════════════════════════════════════════════════
+// RAWG API (Fallback)
+// ══════════════════════════════════════════════════
+const RAWG_BASE = "https://api.rawg.io/api";
+const RAWG_KEY = process.env.RAWG_API_KEY;
+
+async function fetchRawgGame(rawgId) {
+  if (!RAWG_KEY) return null;
+  try {
+    const res = await fetch(`${RAWG_BASE}/games/${rawgId}?key=${RAWG_KEY}`, {
+      signal: AbortSignal.timeout(15000),
+    });
+    if (!res.ok) return null;
+    return res.json();
+  } catch {
+    return null;
+  }
+}
+
+async function searchRawgByTitle(title) {
+  if (!RAWG_KEY) return null;
+  try {
+    const res = await fetch(
+      `${RAWG_BASE}/games?key=${RAWG_KEY}&search=${encodeURIComponent(title)}&page_size=3&search_precise=true`,
+      { signal: AbortSignal.timeout(10000) }
+    );
+    if (!res.ok) return null;
+    const data = await res.json();
+    // Find best match with background_image
+    const match = data.results?.find(
+      (r) => r.background_image && r.name.toLowerCase() === title.toLowerCase()
+    ) || data.results?.find((r) => r.background_image);
+    return match ?? null;
+  } catch {
+    return null;
+  }
+}
+
+// ══════════════════════════════════════════════════
+// Steam API (Last Resort Fallback)
+// ══════════════════════════════════════════════════
+async function fetchSteamCoverViaGetItems(steamAppId) {
+  if (!steamAppId) return null;
+  try {
+    const inputJson = JSON.stringify({
+      ids: [{ appid: parseInt(steamAppId) }],
+      context: { country_code: "US" },
+      data_request: { include_assets: true }
+    });
+    const url = `https://api.steampowered.com/IStoreBrowseService/GetItems/v1/?input_json=${encodeURIComponent(inputJson)}`;
+    const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const item = data?.response?.store_items?.[0];
+    if (!item?.assets) return null;
+    
+    const { asset_url_format, library_capsule_2x, header } = item.assets;
+    if (!asset_url_format || !library_capsule_2x) return null;
+    
+    const baseUrl = "https://shared.akamai.steamstatic.com/store_item_assets";
+    const coverUrl = `${baseUrl}/${asset_url_format.replace("${FILENAME}", library_capsule_2x)}`;
+    const headerUrl = header ? `${baseUrl}/${asset_url_format.replace("${FILENAME}", header)}` : null;
+    
+    return { coverUrl, headerUrl };
+  } catch {
+    return null;
+  }
+}
+
+async function validateAndGetSteamCover(steamAppId) {
+  if (!steamAppId) return null;
+  
+  // Try standard CDN URL first
+  const cdnUrl = `https://cdn.akamai.steamstatic.com/steam/apps/${steamAppId}/library_600x900_2x.jpg`;
+  try {
+    const res = await fetch(cdnUrl, { method: "HEAD", signal: AbortSignal.timeout(5000) });
+    if (res.ok) {
+      return { coverUrl: cdnUrl, headerUrl: null, source: "steam-cdn" };
+    }
+  } catch { /* continue to fallback */ }
+  
+  // Fallback: Use GetItems API
+  const getItemsResult = await fetchSteamCoverViaGetItems(steamAppId);
+  if (getItemsResult?.coverUrl) {
+    return { ...getItemsResult, source: "steam-api" };
+  }
+  
+  return null;
+}
+
+// ══════════════════════════════════════════════════
 // Media Source Utilities
 // ══════════════════════════════════════════════════
 const MEDIA_SOURCE_PRIORITY = { igdb: 1, rawg: 2, steam: 3, unknown: 99 };
@@ -243,7 +333,7 @@ async function main() {
   let query;
   if (NO_COVER_ONLY) {
     query = sql`
-      SELECT id, title, slug, cover_image, media_source, igdb_id, release_date
+      SELECT id, title, slug, cover_image, media_source, igdb_id, rawg_id, steam_app_id, release_date
       FROM games
       WHERE cover_image IS NULL OR cover_image = ''
       ORDER BY created_at DESC
@@ -251,7 +341,7 @@ async function main() {
     `;
   } else if (STEAM_ONLY) {
     query = sql`
-      SELECT id, title, slug, cover_image, media_source, igdb_id, release_date
+      SELECT id, title, slug, cover_image, media_source, igdb_id, rawg_id, steam_app_id, release_date
       FROM games
       WHERE cover_image LIKE '%steamstatic%' OR cover_image LIKE '%steamcdn%' OR media_source = 'steam'
       ORDER BY created_at DESC
@@ -259,7 +349,7 @@ async function main() {
     `;
   } else {
     query = sql`
-      SELECT id, title, slug, cover_image, media_source, igdb_id, release_date
+      SELECT id, title, slug, cover_image, media_source, igdb_id, rawg_id, steam_app_id, release_date
       FROM games
       ORDER BY created_at DESC
       ${LIMIT ? sql`LIMIT ${LIMIT}` : sql``}
@@ -305,21 +395,73 @@ async function main() {
       igdbGame = await searchIgdb(game.title, releaseYear);
     }
     
-    // Check if we got a cover
-    if (!igdbGame?.cover?.image_id) {
-      console.log(`       ❌ No IGDB cover found`);
+    // ══════════════════════════════════════════════════
+    // COVER IMAGE PRIORITY: IGDB → RAWG → Steam
+    // ══════════════════════════════════════════════════
+    let newCoverUrl = null;
+    let newMediaSource = null;
+    let newIgdbId = null;
+    
+    // Priority 1: IGDB cover (best quality)
+    if (igdbGame?.cover?.image_id) {
+      newCoverUrl = igdbImageUrl(igdbGame.cover.image_id);
+      newMediaSource = "igdb";
+      newIgdbId = igdbGame.id;
+      console.log(`       ✅ [IGDB] Found: ${igdbGame.name} (cover: ${igdbGame.cover.image_id})`);
+    }
+    
+    // Priority 2: RAWG cover (fallback)
+    if (!newCoverUrl && RAWG_KEY) {
+      console.log(`       📡 [Fallback] Trying RAWG...`);
+      
+      // Try by RAWG ID first
+      if (game.rawg_id) {
+        const rawgGame = await fetchRawgGame(game.rawg_id);
+        if (rawgGame?.background_image) {
+          newCoverUrl = rawgGame.background_image;
+          newMediaSource = "rawg";
+          console.log(`       ✅ [RAWG] Found via ID: ${rawgGame.name}`);
+        }
+        await new Promise(r => setTimeout(r, 200));
+      }
+      
+      // Try search by title
+      if (!newCoverUrl) {
+        const rawgMatch = await searchRawgByTitle(game.title);
+        if (rawgMatch?.background_image) {
+          newCoverUrl = rawgMatch.background_image;
+          newMediaSource = "rawg";
+          console.log(`       ✅ [RAWG] Found via search: ${rawgMatch.name}`);
+        }
+        await new Promise(r => setTimeout(r, 200));
+      }
+    }
+    
+    // Priority 3: Steam cover (last resort)
+    if (!newCoverUrl && game.steam_app_id) {
+      console.log(`       📡 [Last Resort] Trying Steam (appid: ${game.steam_app_id})...`);
+      const steamResult = await validateAndGetSteamCover(game.steam_app_id);
+      if (steamResult?.coverUrl) {
+        newCoverUrl = steamResult.coverUrl;
+        newMediaSource = "steam";
+        console.log(`       ✅ [Steam] Found via ${steamResult.source}`);
+      } else {
+        console.log(`       ⚠️  Steam validation failed`);
+      }
+      await new Promise(r => setTimeout(r, 200));
+    }
+    
+    // No cover found from any source
+    if (!newCoverUrl) {
+      console.log(`       ❌ No cover found from any source`);
       noIgdb++;
-      // Rate limit
       await new Promise(r => setTimeout(r, 250));
       continue;
     }
     
-    const newCoverUrl = igdbImageUrl(igdbGame.cover.image_id);
-    console.log(`       ✅ Found: ${igdbGame.name} (cover: ${igdbGame.cover.image_id})`);
-    
     // Check if this is actually an upgrade
-    if (!FORCE && !isMediaUpgrade(currentSource, "igdb")) {
-      console.log(`       ⏭️  Current source (${currentSource}) is same or better`);
+    if (!FORCE && !isMediaUpgrade(currentSource, newMediaSource)) {
+      console.log(`       ⏭️  Current source (${currentSource}) is same or better than ${newMediaSource}`);
       skipped++;
       await new Promise(r => setTimeout(r, 250));
       continue;
@@ -328,16 +470,16 @@ async function main() {
     // Build update
     const updates = {
       cover_image: newCoverUrl,
-      media_source: "igdb",
+      media_source: newMediaSource,
     };
     
     // Also update igdb_id if we found it via search
-    if (!game.igdb_id && igdbGame.id) {
-      updates.igdb_id = igdbGame.id;
+    if (!game.igdb_id && newIgdbId) {
+      updates.igdb_id = newIgdbId;
     }
     
-    // Update screenshots if available and current are missing
-    if (igdbGame.screenshots?.length) {
+    // Update screenshots if available from IGDB and current are missing
+    if (igdbGame?.screenshots?.length) {
       const ssUrls = igdbGame.screenshots
         .slice(0, 6)
         .map(s => igdbImageUrl(s.image_id, "screenshot_big"));
