@@ -277,10 +277,35 @@ export async function GET(request: NextRequest) {
     if (error) throw error;
 
     // Apply public safety + media readiness filters
-    let rows = (data ?? []).filter((r) =>
-      isPublicSafeGame(r) &&
-      hasUsableCardImage(r)
-    );
+    // Also filter out games that will be converted to COMING SOON by mapper:
+    // - is_provisional = true
+    // - verdict_label = 'COMING SOON'
+    // - future release date
+    // - 0 reviews AND not a recent release (>14 days old)
+    const JUST_RELEASED_DAYS = 14;
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const todayMs = new Date(todayStr + "T00:00:00").getTime();
+
+    let rows = (data ?? []).filter((r) => {
+      if (!isPublicSafeGame(r) || !hasUsableCardImage(r)) return false;
+      
+      // Exclude explicit provisional
+      if ((r as GameRow & { is_provisional?: boolean }).is_provisional) return false;
+      if (r.verdict_label === "COMING SOON") return false;
+      
+      // Exclude future releases
+      if (r.release_date && r.release_date > todayStr) return false;
+      
+      // Exclude 0-review games that are past the "just released" window
+      const reviewCount = r.review_count ?? 0;
+      if (reviewCount === 0 && r.release_date) {
+        const releaseMs = new Date(r.release_date + "T00:00:00").getTime();
+        const daysSinceRelease = (todayMs - releaseMs) / (1000 * 60 * 60 * 24);
+        if (daysSinceRelease > JUST_RELEASED_DAYS) return false;
+      }
+      
+      return true;
+    });
 
     // ─── Relevance re-ranking: title similarity first ───
     if (isRelevanceWithQuery && rows.length > 0) {

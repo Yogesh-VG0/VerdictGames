@@ -401,12 +401,28 @@ export async function fetchNewReleases(limit = 20): Promise<Game[]> {
   );
   const filtered = filterQualityGames(ready, { section: "newReleases", minResults: 4 });
 
-  // Exclude provisional unless well-reviewed, exclude COMING SOON, exclude future dates
+  // Exclude games that will be converted to COMING SOON by mapper:
+  // - is_provisional = true (unless well-reviewed)
+  // - verdict_label = 'COMING SOON'
+  // - future release date
+  // - 0 reviews AND not a recent release (>14 days old)
+  const JUST_RELEASED_DAYS = 14;
   const today = new Date().toISOString().slice(0, 10);
+  const todayMs = new Date(today + "T00:00:00").getTime();
+  
   const final = filtered.filter((r) => {
     if ((r as GameRow & { is_provisional?: boolean }).is_provisional && r.review_count < 50) return false;
     if (r.verdict_label === "COMING SOON") return false;
     if (r.release_date && r.release_date > today) return false;
+    
+    // Exclude 0-review games that are past the "just released" window
+    const reviewCount = r.review_count ?? 0;
+    if (reviewCount === 0 && r.release_date) {
+      const releaseMs = new Date(r.release_date + "T00:00:00").getTime();
+      const daysSinceRelease = (todayMs - releaseMs) / (1000 * 60 * 60 * 24);
+      if (daysSinceRelease > JUST_RELEASED_DAYS) return false;
+    }
+    
     return true;
   });
 
