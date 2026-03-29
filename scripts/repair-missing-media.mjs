@@ -14,8 +14,13 @@
  *   Optional: IGDB_CLIENT_ID, IGDB_CLIENT_SECRET
  */
 
-import { config } from "dotenv";
-config(); // Load .env file
+// Load .env for local development; on Heroku, env vars are set via Config Vars
+try {
+  const dotenv = await import("dotenv");
+  dotenv.config();
+} catch {
+  // dotenv not installed on Heroku - env vars already set
+}
 
 import { createClient } from "@supabase/supabase-js";
 
