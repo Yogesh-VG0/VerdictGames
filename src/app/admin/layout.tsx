@@ -11,11 +11,12 @@ function isAdmin(user: { email: string; role?: string } | null): boolean {
   if (!user) return false;
   return user.role === "admin" || isAdminEmail(user.email);
 }
-import { LayoutDashboard, Gamepad2, FileText, Users, Clock, Database } from "lucide-react";
+import { LayoutDashboard, Gamepad2, FileText, Users, Clock, Database, PenSquare } from "lucide-react";
 
 const NAV_ITEMS: { href: string; label: string; icon: ReactNode }[] = [
   { href: "/admin", label: "Dashboard", icon: <LayoutDashboard className="w-4 h-4" /> },
   { href: "/admin/games", label: "Games", icon: <Gamepad2 className="w-4 h-4" /> },
+  { href: "/admin/editorial", label: "Editorial", icon: <PenSquare className="w-4 h-4" /> },
   { href: "/admin/reviews", label: "Reviews", icon: <FileText className="w-4 h-4" /> },
   { href: "/admin/users", label: "Users", icon: <Users className="w-4 h-4" /> },
   { href: "/admin/scheduler", label: "Scheduler", icon: <Clock className="w-4 h-4" /> },

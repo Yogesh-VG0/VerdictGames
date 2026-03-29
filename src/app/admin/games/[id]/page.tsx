@@ -134,6 +134,7 @@ export default function AdminGameEditor({ params }: { params: Promise<{ id: stri
   const [tagsText, setTagsText] = useState("");
   const [reingestSource, setReingestSource] = useState<string>("all");
   const [platformsText, setPlatformsText] = useState("");
+  const [uploading, setUploading] = useState<string | null>(null); // tracks which field is uploading
 
   // ── Sync form state from server data ──
   useEffect(() => {
@@ -277,6 +278,34 @@ export default function AdminGameEditor({ params }: { params: Promise<{ id: stri
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const setField = (key: string, value: any) => setForm((f) => ({ ...f, [key]: value }));
 
+  // ── Image upload handler ──
+  const handleImageUpload = async (file: File, fieldKey: string) => {
+    setUploading(fieldKey);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("folder", "verdict-games");
+      formData.append("gameSlug", game.data?.slug ?? "");
+
+      const res = await fetch("/api/admin/upload", {
+        method: "POST",
+        body: formData,
+      });
+      const json = await res.json();
+      if (json.success && json.data?.url) {
+        setField(fieldKey, json.data.url);
+        setSaveMsg(`Image uploaded successfully!`);
+        setTimeout(() => setSaveMsg(""), 3000);
+      } else {
+        setSaveMsg(`Error: ${json.error || "Upload failed"}`);
+      }
+    } catch (err) {
+      setSaveMsg(`Error: ${err instanceof Error ? err.message : "Upload failed"}`);
+    } finally {
+      setUploading(null);
+    }
+  };
+
   // ── Loading / Error states ──
   if (game.isLoading) {
     return (
@@ -305,7 +334,19 @@ export default function AdminGameEditor({ params }: { params: Promise<{ id: stri
             <Link href="/admin/games" className="text-xs text-tertiary hover:text-accent transition-colors">
               ← Back to Games
             </Link>
-            <h1 className="text-xl font-bold text-foreground mt-0.5">{game.data.title}</h1>
+            <div className="flex items-center gap-2 mt-0.5">
+              <h1 className="text-xl font-bold text-foreground">{game.data.title}</h1>
+              <Link
+                href={`/game/${game.data.slug}`}
+                target="_blank"
+                className="inline-flex items-center gap-1 text-xs text-secondary hover:text-accent font-medium transition-colors"
+                title="View public game page"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                </svg>
+              </Link>
+            </div>
             <p className="text-xs text-tertiary">{game.data.slug} • Score: {game.data.score}</p>
           </div>
         </div>
@@ -510,8 +551,33 @@ export default function AdminGameEditor({ params }: { params: Promise<{ id: stri
         {/* ═══ MEDIA TAB ═══ */}
         {tab === "media" && (
           <>
-            <Field label="Cover Image URL">
-              <input type="url" value={form.cover_image} onChange={(e) => setField("cover_image", e.target.value)} className={inputClass} placeholder="https://..." />
+            <Field label="Cover Image">
+              <div className="flex gap-2">
+                <input type="url" value={form.cover_image} onChange={(e) => setField("cover_image", e.target.value)} className={`flex-1 ${inputClass}`} placeholder="https://... or upload" />
+                <label className="px-3 py-2 rounded-xl text-xs font-medium bg-pixel-cyan/10 text-pixel-cyan border border-pixel-cyan/20 hover:bg-pixel-cyan/20 transition-all cursor-pointer shrink-0 flex items-center gap-1.5">
+                  {uploading === "cover_image" ? (
+                    <span className="animate-pulse">Uploading...</span>
+                  ) : (
+                    <>
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+                      </svg>
+                      Upload
+                    </>
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleImageUpload(file, "cover_image");
+                      e.target.value = "";
+                    }}
+                    disabled={uploading === "cover_image"}
+                  />
+                </label>
+              </div>
             </Field>
             {form.cover_image && (
               <div className="w-24 h-32 rounded-xl overflow-hidden bg-surface-2">
@@ -520,8 +586,33 @@ export default function AdminGameEditor({ params }: { params: Promise<{ id: stri
               </div>
             )}
 
-            <Field label="Header Image URL">
-              <input type="url" value={form.header_image} onChange={(e) => setField("header_image", e.target.value)} className={inputClass} placeholder="https://..." />
+            <Field label="Header Image">
+              <div className="flex gap-2">
+                <input type="url" value={form.header_image} onChange={(e) => setField("header_image", e.target.value)} className={`flex-1 ${inputClass}`} placeholder="https://... or upload" />
+                <label className="px-3 py-2 rounded-xl text-xs font-medium bg-pixel-cyan/10 text-pixel-cyan border border-pixel-cyan/20 hover:bg-pixel-cyan/20 transition-all cursor-pointer shrink-0 flex items-center gap-1.5">
+                  {uploading === "header_image" ? (
+                    <span className="animate-pulse">Uploading...</span>
+                  ) : (
+                    <>
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+                      </svg>
+                      Upload
+                    </>
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleImageUpload(file, "header_image");
+                      e.target.value = "";
+                    }}
+                    disabled={uploading === "header_image"}
+                  />
+                </label>
+              </div>
             </Field>
             {form.header_image && (
               <div className="aspect-[21/9] max-w-lg rounded-xl overflow-hidden bg-surface-2">

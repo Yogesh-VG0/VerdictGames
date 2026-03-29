@@ -6,7 +6,8 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { getGameBySlug, getGameReviews, getRelatedGames, getGameNews, getGameAchievements, getSystemRequirements } from "@/lib/api";
+import { getGameBySlug, getGameReviews, getRelatedGames, getGameNews, getGameAchievements, getSystemRequirements, getEditorialReviews } from "@/lib/api";
+import type { EditorialReview } from "@/lib/api";
 import SteamReviews from "@/components/SteamReviews";
 import type { SteamNewsArticle, SteamAchievementItem } from "@/lib/api";
 import { formatDate, scoreColor, cn, formatPrice, scoreGlowClass, formatTimeAgo } from "@/lib/utils";
@@ -118,6 +119,13 @@ export default function GameDetailPage({ params }: Props) {
     queryKey: ["systemRequirements", slug],
     queryFn: () => getSystemRequirements(slug),
     enabled: !!game && !!game.platforms?.includes("PC"),
+    staleTime: 60 * 60 * 1000,
+  });
+
+  const { data: editorialReviews } = useQuery({
+    queryKey: ["editorialReviews", slug],
+    queryFn: () => getEditorialReviews(slug),
+    enabled: !!game,
     staleTime: 60 * 60 * 1000,
   });
 
@@ -614,6 +622,91 @@ export default function GameDetailPage({ params }: Props) {
               )}
             </FadeInSection>
 
+            {/* ── Verdict Review (Editorial) ── */}
+            {editorialReviews && editorialReviews.length > 0 && (
+              <FadeInSection>
+                <section className="rounded-2xl border border-accent/30 bg-gradient-to-br from-accent/5 to-transparent p-5 md:p-6 space-y-4">
+                  <h3 className="text-sm font-bold text-foreground uppercase tracking-wider section-title-line flex items-center gap-2">
+                    <svg className="w-4 h-4 text-accent" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+                    </svg>
+                    Verdict Review
+                  </h3>
+                  {editorialReviews.map((review) => (
+                    <div key={review.id} className="space-y-4">
+                      {/* Author & Meta */}
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center overflow-hidden">
+                          {review.profiles.avatar_url ? (
+                            <Image src={review.profiles.avatar_url} alt="" width={40} height={40} className="object-cover" />
+                          ) : (
+                            <span className="text-accent font-bold text-sm">
+                              {(review.profiles.display_name || review.profiles.username).charAt(0).toUpperCase()}
+                            </span>
+                          )}
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-foreground">
+                            {review.profiles.display_name || review.profiles.username}
+                            <span className="ml-2 text-[10px] bg-accent/20 text-accent px-1.5 py-0.5 rounded-full font-medium">Editor</span>
+                          </p>
+                          <p className="text-xs text-tertiary">
+                            {review.playtime_hours && `${review.playtime_hours}h played`}
+                            {review.playtime_hours && review.platform_played && " • "}
+                            {review.platform_played && `on ${review.platform_played}`}
+                            {(review.playtime_hours || review.platform_played) && review.published_at && " • "}
+                            {review.published_at && formatTimeAgo(review.published_at)}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Title */}
+                      {review.title && (
+                        <h4 className="text-lg font-bold text-foreground">{review.title}</h4>
+                      )}
+
+                      {/* Content */}
+                      <div className="text-secondary text-sm leading-relaxed whitespace-pre-wrap">
+                        {review.content}
+                      </div>
+
+                      {/* Pros/Cons */}
+                      {(review.pros.length > 0 || review.cons.length > 0) && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                          {review.pros.length > 0 && (
+                            <div className="space-y-2">
+                              <h5 className="text-xs font-bold text-pixel-green uppercase tracking-wider flex items-center gap-1.5">
+                                <ThumbsUp className="w-3.5 h-3.5" />
+                                What works
+                              </h5>
+                              {review.pros.map((pro, i) => (
+                                <p key={i} className="text-sm text-secondary pl-3 border-l-2 border-pixel-green/30">
+                                  {pro}
+                                </p>
+                              ))}
+                            </div>
+                          )}
+                          {review.cons.length > 0 && (
+                            <div className="space-y-2">
+                              <h5 className="text-xs font-bold text-danger uppercase tracking-wider flex items-center gap-1.5">
+                                <ThumbsDown className="w-3.5 h-3.5" />
+                                What doesn&apos;t
+                              </h5>
+                              {review.cons.map((con, i) => (
+                                <p key={i} className="text-sm text-secondary pl-3 border-l-2 border-danger/30">
+                                  {con}
+                                </p>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </section>
+              </FadeInSection>
+            )}
+
             {/* ── Overview / Description ── */}
             <FadeInSection>
               <section className="rounded-2xl border border-border bg-surface p-5 md:p-6 space-y-4">
@@ -793,12 +886,12 @@ export default function GameDetailPage({ params }: Props) {
               </FadeInSection>
             )}
 
-            {/* ── Community Reviews ── */}
+            {/* ── Player Thoughts ── */}
             <FadeInSection>
               <section className="rounded-2xl border border-border bg-surface p-5 md:p-6 space-y-4">
                 <h3 className="text-sm font-bold text-foreground uppercase tracking-wider section-title-line flex items-center gap-2">
                   <MessageSquare className="w-4 h-4 text-accent" />
-                  Community Reviews
+                  Player Thoughts
                 </h3>
 
                 {/* Steam Review Summary Card — only show when we have actual Steam data */}
@@ -883,10 +976,10 @@ export default function GameDetailPage({ params }: Props) {
                 ) : (
                   <div className="rounded-xl border border-dashed border-border bg-surface-2 p-6 text-center space-y-2">
                     <p className="text-secondary text-sm font-medium">
-                      Be the first to review on Verdict.games!
+                      Be the first to share your thoughts on Verdict.games!
                     </p>
                     <p className="text-tertiary text-xs">
-                      Community reviews from Verdict.games members will appear here.
+                      Player thoughts from Verdict.games members will appear here.
                     </p>
                   </div>
                 )}

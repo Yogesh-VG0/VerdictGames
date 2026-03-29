@@ -186,6 +186,64 @@ export async function getGameReviews(
   return data ?? EMPTY_PAGE<Review>();
 }
 
+/** Editorial review from site editors */
+export interface EditorialReview {
+  id: string;
+  title: string | null;
+  content: string;
+  score: number | null;
+  verdict_label: string | null;
+  pros: string[];
+  cons: string[];
+  playtime_hours: number | null;
+  platform_played: string | null;
+  version_reviewed: string | null;
+  is_featured: boolean;
+  published_at: string | null;
+  profiles: {
+    id: string;
+    username: string;
+    display_name: string;
+    avatar_url: string | null;
+  };
+}
+
+/** Get editorial reviews for a game. */
+export async function getEditorialReviews(slug: string): Promise<EditorialReview[]> {
+  const data = await apiFetch<{ reviews: EditorialReview[] }>(
+    `/api/games/${encodeURIComponent(slug)}/editorial`
+  );
+  return data?.reviews ?? [];
+}
+
+/** Editorial review with game data for the reviews page. */
+export interface EditorialReviewWithGame extends EditorialReview {
+  games: {
+    id: string;
+    title: string;
+    slug: string;
+    cover_image: string;
+    developer: string;
+    release_date: string | null;
+  };
+}
+
+/** Get all published editorial reviews. */
+export async function getAllEditorialReviews(page: number = 1): Promise<{
+  reviews: EditorialReviewWithGame[];
+  total: number;
+  page: number;
+  pageSize: number;
+}> {
+  const data = await apiFetch<{
+    reviews: EditorialReviewWithGame[];
+    total: number;
+    page: number;
+    pageSize: number;
+  }>(`/api/editorial-reviews?page=${page}`);
+  return data ?? { reviews: [], total: 0, page: 1, pageSize: 20 };
+}
+
 /* ═══════════════════════════════════════════════════
    STEAM DATA — News & Achievements
    ═══════════════════════════════════════════════════ */

@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { getGlobalReviews, getTopRated, getSteamReviews, searchGames } from "@/lib/api";
+import { getGlobalReviews, getTopRated, getSteamReviews, searchGames, getAllEditorialReviews } from "@/lib/api";
+import type { EditorialReviewWithGame } from "@/lib/api";
 import type { SteamPlayerReview } from "@/lib/api";
 import ReviewCard from "@/components/ReviewCard";
 import FilterChips from "@/components/ui/FilterChips";
@@ -12,7 +13,7 @@ import SortDropdown from "@/components/ui/SortDropdown";
 import { ReviewCardSkeleton } from "@/components/ui/Skeleton";
 import type { Platform } from "@/lib/types";
 import { PLATFORM_FILTER_OPTIONS, platformFilterIcon } from "@/components/ui/PlatformIcon";
-import { PenLine, Star, ThumbsUp, ThumbsDown, Search, MessageSquare, ChevronLeft, ChevronRight } from "lucide-react";
+import { PenLine, Star, ThumbsUp, ThumbsDown, Search, MessageSquare, ChevronLeft, ChevronRight, PenSquare } from "lucide-react";
 import GradientText from "@/components/ui/GradientText";
 import Image from "next/image";
 import { slugify } from "@/lib/utils/slugify";
@@ -63,7 +64,7 @@ function SteamReviewCard({ review }: { review: SteamPlayerReview }) {
 }
 
 export default function ReviewsPage() {
-  const [source, setSource] = useState<"community" | "steam">("community");
+  const [source, setSource] = useState<"editorial" | "community" | "steam">("editorial");
   const [sort, setSort] = useState<"newest" | "helpful">("newest");
   const [platform, setPlatform] = useState<"All" | Platform>("All");
   const [steamGameQuery, setSteamGameQuery] = useState("");
@@ -110,6 +111,13 @@ export default function ReviewsPage() {
     staleTime: 30 * 60 * 1000,
   });
 
+  const editorialQuery = useQuery({
+    queryKey: ["allEditorialReviews"],
+    queryFn: () => getAllEditorialReviews(1),
+    enabled: source === "editorial",
+    staleTime: 60 * 60 * 1000,
+  });
+
   return (
     <div className="max-w-[1400px] mx-auto px-4 py-6 space-y-6 overflow-x-hidden">
       <motion.div
@@ -123,22 +131,34 @@ export default function ReviewsPage() {
           <GradientText text="Reviews" gradient="linear-gradient(90deg, #f43f5e 0%, #e879f9 25%, #c084fc 50%, #e879f9 75%, #f43f5e 100%)" />
         </h1>
         <p className="text-sm text-secondary">
-          Community verdicts and official Steam player reviews.
+          Editorial verdicts, player thoughts, and Steam reviews.
         </p>
       </motion.div>
 
       {/* Source tabs */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 overflow-x-auto -mx-4 px-4 scrollbar-hide">
+        <button
+          onClick={() => setSource("editorial")}
+          className={cn(
+            "px-4 py-2 rounded-xl text-sm font-medium transition-all flex items-center gap-2 shrink-0",
+            source === "editorial"
+              ? "bg-gradient-to-r from-amber-500/20 to-rose-500/20 text-amber-400 border border-amber-500/30"
+              : "bg-surface-2 text-secondary hover:text-foreground border border-border"
+          )}
+        >
+          <PenSquare className="w-3.5 h-3.5" />
+          Verdict Reviews
+        </button>
         <button
           onClick={() => setSource("community")}
           className={cn(
-            "px-4 py-2 rounded-xl text-sm font-medium transition-all",
+            "px-4 py-2 rounded-xl text-sm font-medium transition-all shrink-0",
             source === "community"
               ? "bg-accent text-white shadow-sm shadow-accent/20"
               : "bg-surface-2 text-secondary hover:text-foreground border border-border"
           )}
         >
-          Community Reviews
+          Player Thoughts
         </button>
         <button
           onClick={() => setSource("steam")}
@@ -156,11 +176,111 @@ export default function ReviewsPage() {
         </button>
       </div>
 
+      {/* Editorial tab content */}
+      {source === "editorial" && (
+        <div className="space-y-4">
+          <p className="text-xs text-tertiary">
+            In-depth reviews from Verdict.games editors. Our team plays and evaluates games to give you honest, detailed verdicts.
+          </p>
+          {editorialQuery.isLoading && (
+            <div className="grid grid-cols-1 gap-4">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="rounded-xl border border-border bg-surface p-4 h-40 animate-pulse" />
+              ))}
+            </div>
+          )}
+          {!editorialQuery.isLoading && editorialQuery.data && editorialQuery.data.reviews.length > 0 && (
+            <motion.div
+              className="grid grid-cols-1 gap-4"
+              initial="hidden"
+              animate="show"
+              variants={{ show: { transition: { staggerChildren: 0.05 } } }}
+            >
+              {editorialQuery.data.reviews.map((review) => (
+                <motion.div key={review.id} variants={listItem}>
+                  <Link
+                    href={`/game/${review.games.slug}`}
+                    className="block rounded-xl border border-accent/20 bg-gradient-to-br from-accent/5 to-transparent p-5 hover:border-accent/40 transition-all group"
+                  >
+                    <div className="flex gap-4">
+                      {/* Game Cover */}
+                      <div className="w-16 h-20 rounded-lg overflow-hidden bg-surface-2 shrink-0 relative">
+                        {review.games.cover_image ? (
+                          <Image
+                            src={review.games.cover_image}
+                            alt={review.games.title}
+                            fill
+                            className="object-cover"
+                            sizes="64px"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-tertiary text-xs">?</div>
+                        )}
+                      </div>
+
+                      {/* Content */}
+                      <div className="flex-1 min-w-0 space-y-2">
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <h3 className="font-semibold text-foreground group-hover:text-accent transition-colors line-clamp-1">
+                              {review.games.title}
+                            </h3>
+                            <p className="text-xs text-tertiary">
+                              {review.games.developer} • {review.games.release_date?.split("-")[0]}
+                            </p>
+                          </div>
+                          {review.is_featured && (
+                            <span className="text-[10px] bg-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded-full font-medium flex items-center gap-1 shrink-0">
+                              <Star className="w-3 h-3" />
+                              Featured
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Title */}
+                        {review.title && (
+                          <p className="text-sm font-medium text-foreground">{review.title}</p>
+                        )}
+
+                        {/* Content preview */}
+                        <p className="text-sm text-secondary line-clamp-2">
+                          {review.content.slice(0, 200)}...
+                        </p>
+
+                        {/* Meta */}
+                        <div className="flex items-center gap-3 text-[10px] text-tertiary">
+                          <span className="flex items-center gap-1">
+                            <PenSquare className="w-3 h-3 text-accent" />
+                            {review.profiles.display_name || review.profiles.username}
+                          </span>
+                          {review.playtime_hours && <span>{review.playtime_hours}h played</span>}
+                          {review.platform_played && <span>on {review.platform_played}</span>}
+                          {review.published_at && (
+                            <span>{new Date(review.published_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                </motion.div>
+              ))}
+            </motion.div>
+          )}
+          {!editorialQuery.isLoading && (!editorialQuery.data || editorialQuery.data.reviews.length === 0) && (
+            <div className="rounded-xl border border-dashed border-border bg-surface-2 p-8 text-center space-y-2">
+              <PenSquare className="w-8 h-8 text-tertiary mx-auto" />
+              <p className="text-secondary text-sm font-medium">No editorial reviews yet</p>
+              <p className="text-tertiary text-xs">Check back soon for in-depth game reviews from our editors.</p>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Steam tab content */}
       {source === "steam" && (
         <div className="space-y-4">
           <p className="text-xs text-tertiary">
-            Browse official Steam player reviews. These are separate from Verdict.games community reviews and sourced directly from Valve&apos;s Steam API.
+            Browse official Steam player reviews. These are separate from Verdict.games player thoughts and sourced directly from Valve&apos;s Steam API.
           </p>
           {/* Game search */}
           <form

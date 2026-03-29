@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useState, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { ImageOff, AlertTriangle, Clock, Database, Star, FileText, Tag, Video, ShoppingBag, CheckCircle, XCircle } from "lucide-react";
+import { ImageOff, AlertTriangle, Clock, Database, Star, FileText, Tag, Video, ShoppingBag, CheckCircle, XCircle, ExternalLink } from "lucide-react";
 import type { Game } from "@/lib/types";
 
 // Quality filter definitions with icons and labels
@@ -308,12 +308,22 @@ export default function AdminGamesPage() {
                     </div>
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <Link
-                      href={`/admin/games/${game.id}`}
-                      className="text-xs text-accent hover:text-accent-hover font-medium transition-colors"
-                    >
-                      Edit
-                    </Link>
+                    <div className="flex items-center justify-end gap-3">
+                      <Link
+                        href={`/game/${game.slug}`}
+                        target="_blank"
+                        className="inline-flex items-center gap-1 text-xs text-secondary hover:text-foreground font-medium transition-colors"
+                      >
+                        View
+                        <ExternalLink className="w-3 h-3" />
+                      </Link>
+                      <Link
+                        href={`/admin/games/${game.id}`}
+                        className="text-xs text-accent hover:text-accent-hover font-medium transition-colors"
+                      >
+                        Edit
+                      </Link>
+                    </div>
                   </td>
                 </tr>
                 );

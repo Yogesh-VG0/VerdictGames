@@ -299,6 +299,66 @@ export interface Database {
         };
         Relationships: [];
       };
+      editorial_reviews: {
+        Row: {
+          id: string;
+          game_id: string;
+          author_id: string;
+          title: string | null;
+          content: string;
+          score: number | null;
+          verdict_label: string | null;
+          pros: string[];
+          cons: string[];
+          playtime_hours: number | null;
+          platform_played: string | null;
+          version_reviewed: string | null;
+          is_published: boolean;
+          is_featured: boolean;
+          created_at: string;
+          updated_at: string;
+          published_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          game_id: string;
+          author_id: string;
+          title?: string | null;
+          content: string;
+          score?: number | null;
+          verdict_label?: string | null;
+          pros?: string[];
+          cons?: string[];
+          playtime_hours?: number | null;
+          platform_played?: string | null;
+          version_reviewed?: string | null;
+          is_published?: boolean;
+          is_featured?: boolean;
+          created_at?: string;
+          updated_at?: string;
+          published_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          game_id?: string;
+          author_id?: string;
+          title?: string | null;
+          content?: string;
+          score?: number | null;
+          verdict_label?: string | null;
+          pros?: string[];
+          cons?: string[];
+          playtime_hours?: number | null;
+          platform_played?: string | null;
+          version_reviewed?: string | null;
+          is_published?: boolean;
+          is_featured?: boolean;
+          created_at?: string;
+          updated_at?: string;
+          published_at?: string | null;
+        };
+        Relationships: [];
+      };
       game_sources: {
         Row: {
           id: string;

@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo, Suspense } from "react";
+import { useState, useEffect, useCallback, useMemo, Suspense, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
-import { searchGames, getGXDeals, getGXFreeToPlay } from "@/lib/api";
-import type { Game, SearchFilters, SortOption, MonetizationType, Platform, GXDeal, GXFreeGame } from "@/lib/types";
+import { searchGames, getGXDeals, getGXFreeToPlay, getGXTopGames } from "@/lib/api";
+import type { Game, SearchFilters, SortOption, MonetizationType, Platform, GXDeal, GXFreeGame, GXTopGame } from "@/lib/types";
 import { PLATFORM_FILTER_OPTIONS, platformFilterIcon } from "@/components/ui/PlatformIcon";
 import GXDealCard from "@/components/GXDealCard";
 
@@ -26,13 +26,22 @@ import FilterChips from "@/components/ui/FilterChips";
 import SortDropdown from "@/components/ui/SortDropdown";
 import GradientText from "@/components/ui/GradientText";
 import { GameGridSkeleton } from "@/components/ui/Skeleton";
-import { Flame, Trophy, Sparkles, Calendar, Clock, Search as SearchIcon, Tag, Gift, Gamepad2, ExternalLink } from "lucide-react";
+import { Flame, Trophy, Sparkles, Calendar, Clock, Search as SearchIcon, Tag, Gift, Gamepad2, ExternalLink, ChevronLeft, ChevronRight } from "lucide-react";
 import { slugify } from "@/lib/utils/slugify";
 import Link from "next/link";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 
 type BrowseTab = "games" | "deals" | "free";
+type FreeSubTab = "free" | "subscriptions";
+type DealsSortMode = "discount" | "price-low" | "price-high" | "name";
+
+const DEALS_SORT_OPTIONS: { value: DealsSortMode; label: string }[] = [
+  { value: "discount", label: "Biggest Discount" },
+  { value: "price-low", label: "Price: Low → High" },
+  { value: "price-high", label: "Price: High → Low" },
+  { value: "name", label: "A → Z" },
+];
 
 const MONETIZATION_OPTIONS = ["All", "Free", "Paid"] as const;
 
@@ -93,6 +102,24 @@ function SearchContent() {
   // GX tab filters (Deals / Free to Play)
   const [gxGenre, setGxGenre] = useState("All");
   const [gxPlatform, setGxPlatform] = useState("All");
+  const [gxStore, setGxStore] = useState("All");
+  const [dealsSortMode, setDealsSortMode] = useState<DealsSortMode>("discount");
+  const [freeSubTab, setFreeSubTab] = useState<FreeSubTab>("free");
+  const [gxService, setGxService] = useState("All");
+
+  // Scroll refs for genre filter containers
+  const dealsGenreRef = useRef<HTMLDivElement>(null);
+  const freeGenreRef = useRef<HTMLDivElement>(null);
+  const serviceRef = useRef<HTMLDivElement>(null);
+
+  const scrollContainer = (ref: React.RefObject<HTMLDivElement | null>, direction: "left" | "right") => {
+    if (!ref.current) return;
+    const scrollAmount = 200;
+    ref.current.scrollBy({
+      left: direction === "left" ? -scrollAmount : scrollAmount,
+      behavior: "smooth",
+    });
+  };
 
   // Debounce the query input
   useEffect(() => {
@@ -148,11 +175,52 @@ function SearchContent() {
     staleTime: 60 * 60 * 1000,
     enabled: browseTab === "free",
   });
+
+  const { data: topGamesData, isLoading: topGamesLoading } = useQuery({
+    queryKey: ["gx-top-games-browse"],
+    queryFn: () => getGXTopGames(),
+    staleTime: 60 * 60 * 1000,
+    enabled: browseTab === "free" && freeSubTab === "subscriptions",
+  });
+
+  // Extract unique stores from deals data
+  const availableStores = useMemo(() => {
+    if (!dealsData) return [];
+    const set = new Set<string>();
+    dealsData.forEach((d) => { if (d.storeName) set.add(d.storeName); });
+    return Array.from(set).sort();
+  }, [dealsData]);
+
+  // Extract unique services from top games data
+  const availableServices = useMemo(() => {
+    if (!topGamesData) return [];
+    const set = new Set<string>();
+    topGamesData.forEach((g) => { if (g.serviceName) set.add(g.serviceName); });
+    return Array.from(set).sort();
+  }, [topGamesData]);
+
+  // Extract dynamic genres from current data
+  const availableDealsGenres = useMemo(() => {
+    if (!dealsData) return [];
+    const set = new Set<string>();
+    dealsData.forEach((d) => d.genres.forEach((g) => set.add(g)));
+    return Array.from(set).sort();
+  }, [dealsData]);
+
+  const availableFreeGenres = useMemo(() => {
+    const data = freeSubTab === "free" ? freeData : topGamesData;
+    if (!data) return [];
+    const set = new Set<string>();
+    data.forEach((g) => g.genres.forEach((ge) => set.add(ge)));
+    return Array.from(set).sort();
+  }, [freeData, topGamesData, freeSubTab]);
   
   // Filter deals data based on selected filters
   const filteredDeals = useMemo(() => {
     if (!dealsData) return [];
-    return dealsData.filter((deal) => {
+    let result = dealsData.filter((deal) => {
+      // Store filter
+      if (gxStore !== "All" && deal.storeName !== gxStore) return false;
       // Genre filter
       if (gxGenre !== "All") {
         const hasGenre = deal.genres.some((g) => 
@@ -169,7 +237,25 @@ function SearchContent() {
       }
       return true;
     });
-  }, [dealsData, gxGenre, gxPlatform]);
+
+    // Sort
+    switch (dealsSortMode) {
+      case "discount":
+        result.sort((a, b) => (b.discount ?? 0) - (a.discount ?? 0));
+        break;
+      case "price-low":
+        result.sort((a, b) => (a.price ?? 999) - (b.price ?? 999));
+        break;
+      case "price-high":
+        result.sort((a, b) => (b.price ?? 0) - (a.price ?? 0));
+        break;
+      case "name":
+        result.sort((a, b) => a.title.localeCompare(b.title));
+        break;
+    }
+
+    return result;
+  }, [dealsData, gxGenre, gxPlatform, gxStore, dealsSortMode]);
   
   // Filter free-to-play data based on selected filters
   const filteredFreeGames = useMemo(() => {
@@ -192,6 +278,38 @@ function SearchContent() {
       return true;
     });
   }, [freeData, gxGenre, gxPlatform]);
+
+  // Filter subscription games
+  const filteredSubscriptionGames = useMemo(() => {
+    if (!topGamesData) return [];
+    return topGamesData.filter((game) => {
+      // Service filter
+      if (gxService !== "All" && game.serviceName !== gxService) return false;
+      // Genre filter
+      if (gxGenre !== "All") {
+        const hasGenre = game.genres.some((g) => 
+          g.toLowerCase().includes(gxGenre.toLowerCase())
+        );
+        if (!hasGenre) return false;
+      }
+      // Platform filter
+      if (gxPlatform !== "All") {
+        const hasPlatform = game.platforms.some((p) => 
+          p.toLowerCase().includes(gxPlatform.toLowerCase())
+        );
+        if (!hasPlatform) return false;
+      }
+      return true;
+    });
+  }, [topGamesData, gxGenre, gxPlatform, gxService]);
+
+  // Reset GX filters when switching tabs
+  const handleFreeSubTabChange = (tab: FreeSubTab) => {
+    setFreeSubTab(tab);
+    setGxGenre("All");
+    setGxPlatform("All");
+    setGxService("All");
+  };
 
   // Sync URL on filter/page change
   useEffect(() => {
@@ -543,48 +661,115 @@ function SearchContent() {
         <div>
           {/* Filters for Deals */}
           <div className="space-y-4 mb-6">
-            <div className="flex flex-wrap items-end gap-4">
-              {/* Genre filter */}
+            {/* Store filter chips */}
+            {availableStores.length > 1 && (
+              <div className="space-y-2">
+                <label className="text-[10px] uppercase tracking-wider text-tertiary font-medium">
+                  Store
+                </label>
+                <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1 -mx-4 px-4 sm:mx-0 sm:px-0">
+                  <button
+                    onClick={() => setGxStore("All")}
+                    className={cn(
+                      "px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all",
+                      gxStore === "All"
+                        ? "bg-pixel-green/20 text-pixel-green border border-pixel-green/30"
+                        : "bg-surface-2 text-secondary hover:text-foreground border border-transparent"
+                    )}
+                  >
+                    All Stores
+                  </button>
+                  {availableStores.map((s) => (
+                    <button
+                      key={s}
+                      onClick={() => setGxStore(s)}
+                      className={cn(
+                        "px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all",
+                        gxStore === s
+                          ? "bg-pixel-green/20 text-pixel-green border border-pixel-green/30"
+                          : "bg-surface-2 text-secondary hover:text-foreground border border-transparent"
+                      )}
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Genre filter chips */}
+            {availableDealsGenres.length > 1 && (
               <div className="space-y-2">
                 <label className="text-[10px] uppercase tracking-wider text-tertiary font-medium">
                   Genre
                 </label>
-                <select
-                  value={gxGenre}
-                  onChange={(e) => setGxGenre(e.target.value)}
-                  className="h-10 px-3 text-sm rounded-xl border border-border bg-surface-2 text-foreground focus:outline-none focus:border-accent/50 transition-colors"
-                >
-                  {GX_GENRE_OPTIONS.map((g) => (
-                    <option key={g} value={g}>{g}</option>
-                  ))}
-                </select>
+                <div className="relative group/scroll">
+                  {/* Left scroll arrow - desktop only */}
+                  <button
+                    onClick={() => scrollContainer(dealsGenreRef, "left")}
+                    className="hidden sm:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 items-center justify-center bg-background/90 backdrop-blur-sm border border-border rounded-full shadow-lg opacity-0 group-hover/scroll:opacity-100 transition-opacity hover:bg-surface-2"
+                    aria-label="Scroll left"
+                  >
+                    <ChevronLeft className="w-4 h-4 text-foreground" />
+                  </button>
+                  
+                  <div 
+                    ref={dealsGenreRef}
+                    className="flex gap-2 overflow-x-auto scrollbar-hide pb-1 -mx-4 px-4 sm:mx-0 sm:px-0 sm:scroll-smooth"
+                  >
+                    <button
+                      onClick={() => setGxGenre("All")}
+                      className={cn(
+                        "px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all",
+                        gxGenre === "All"
+                          ? "bg-accent/20 text-accent border border-accent/30"
+                          : "bg-surface-2 text-secondary hover:text-foreground border border-transparent"
+                      )}
+                    >
+                      All Genres
+                    </button>
+                    {availableDealsGenres.map((g) => (
+                      <button
+                        key={g}
+                        onClick={() => setGxGenre(g)}
+                        className={cn(
+                          "px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all",
+                          gxGenre === g
+                            ? "bg-accent/20 text-accent border border-accent/30"
+                            : "bg-surface-2 text-secondary hover:text-foreground border border-transparent"
+                        )}
+                      >
+                        {g}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Right scroll arrow - desktop only */}
+                  <button
+                    onClick={() => scrollContainer(dealsGenreRef, "right")}
+                    className="hidden sm:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 items-center justify-center bg-background/90 backdrop-blur-sm border border-border rounded-full shadow-lg opacity-0 group-hover/scroll:opacity-100 transition-opacity hover:bg-surface-2"
+                    aria-label="Scroll right"
+                  >
+                    <ChevronRight className="w-4 h-4 text-foreground" />
+                  </button>
+                </div>
               </div>
-              
-              {/* Platform filter */}
-              <div className="space-y-2">
-                <label className="text-[10px] uppercase tracking-wider text-tertiary font-medium">
-                  Platform
-                </label>
-                <select
-                  value={gxPlatform}
-                  onChange={(e) => setGxPlatform(e.target.value)}
-                  className="h-10 px-3 text-sm rounded-xl border border-border bg-surface-2 text-foreground focus:outline-none focus:border-accent/50 transition-colors"
-                >
-                  {GX_PLATFORM_OPTIONS.map((p) => (
-                    <option key={p.value} value={p.value}>{p.label}</option>
-                  ))}
-                </select>
-              </div>
-              
-              {/* Reset filters */}
-              {(gxGenre !== "All" || gxPlatform !== "All") && (
-                <button
-                  onClick={() => { setGxGenre("All"); setGxPlatform("All"); }}
-                  className="h-10 px-3 text-xs text-accent border border-accent/30 rounded-xl hover:bg-accent/10 transition-colors"
-                >
-                  Clear filters
-                </button>
-              )}
+            )}
+
+            {/* Sort + count bar */}
+            <div className="flex items-center justify-between pt-1">
+              <span className="text-xs text-tertiary">
+                {dealsLoading ? "Loading deals…" : `${filteredDeals.length} deal${filteredDeals.length !== 1 ? "s" : ""} found`}
+              </span>
+              <select
+                value={dealsSortMode}
+                onChange={(e) => setDealsSortMode(e.target.value as DealsSortMode)}
+                className="text-xs bg-surface-2 border border-border rounded-lg px-3 py-1.5 text-secondary focus:outline-none focus:border-accent/40"
+              >
+                {DEALS_SORT_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
             </div>
           </div>
           
@@ -601,40 +786,28 @@ function SearchContent() {
               ))}
             </div>
           ) : filteredDeals.length > 0 ? (
-            <>
-              <p className="text-xs text-tertiary mb-4">
-                {filteredDeals.length} deal{filteredDeals.length !== 1 ? "s" : ""} 
-                {(gxGenre !== "All" || gxPlatform !== "All") && dealsData ? ` (of ${dealsData.length} total)` : " available"}
-              </p>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-4">
-                {filteredDeals.map((deal, i) => (
-                  <motion.div
-                    key={deal.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: Math.min(i * 0.03, 0.5), duration: 0.4 }}
-                  >
-                    <GXDealCard deal={deal} />
-                  </motion.div>
-                ))}
-              </div>
-            </>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-4">
+              {filteredDeals.map((deal, i) => (
+                <motion.div
+                  key={deal.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: Math.min(i * 0.03, 0.5), duration: 0.4 }}
+                >
+                  <GXDealCard deal={deal} />
+                </motion.div>
+              ))}
+            </div>
           ) : (
             <div className="py-16 text-center">
               <Tag className="w-12 h-12 text-tertiary mx-auto mb-3" />
-              <p className="text-secondary">
-                {(gxGenre !== "All" || gxPlatform !== "All") 
-                  ? "No deals match your filters." 
-                  : "No deals available right now."}
-              </p>
-              {(gxGenre !== "All" || gxPlatform !== "All") && (
-                <button
-                  onClick={() => { setGxGenre("All"); setGxPlatform("All"); }}
-                  className="mt-3 px-4 py-2 text-sm text-accent border border-accent/30 rounded-xl hover:bg-accent/10 transition-colors"
-                >
-                  Clear filters
-                </button>
-              )}
+              <p className="text-secondary">No deals match your filters.</p>
+              <button
+                onClick={() => { setGxGenre("All"); setGxStore("All"); }}
+                className="mt-3 text-xs text-accent hover:underline"
+              >
+                Clear filters
+              </button>
             </div>
           )}
           <p className="text-center text-[10px] text-tertiary pt-6">
@@ -646,152 +819,344 @@ function SearchContent() {
       {/* Free to Play Tab */}
       {browseTab === "free" && (
         <div>
-          {/* Filters for Free to Play */}
-          <div className="space-y-4 mb-6">
-            <div className="flex flex-wrap items-end gap-4">
-              {/* Genre filter */}
+          {/* Sub-tabs: Free Games vs Subscriptions */}
+          <div className="flex gap-2.5 overflow-x-auto scrollbar-hide pb-1 -mx-4 px-4 sm:mx-0 sm:px-0 mb-4">
+            <button
+              onClick={() => handleFreeSubTabChange("free")}
+              className={cn(
+                "flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-all",
+                freeSubTab === "free"
+                  ? "bg-pixel-green/20 text-pixel-green border border-pixel-green/30 shadow-sm"
+                  : "bg-surface border border-border text-secondary hover:text-foreground hover:border-border-hover"
+              )}
+            >
+              <Gift className="w-4 h-4" />
+              Free Games
+            </button>
+            <button
+              onClick={() => handleFreeSubTabChange("subscriptions")}
+              className={cn(
+                "flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-all",
+                freeSubTab === "subscriptions"
+                  ? "bg-accent/20 text-accent border border-accent/30 shadow-sm"
+                  : "bg-surface border border-border text-secondary hover:text-foreground hover:border-border-hover"
+              )}
+            >
+              <Gamepad2 className="w-4 h-4" />
+              Game Pass & PS Plus
+            </button>
+          </div>
+
+          {/* Filters */}
+          <div className="space-y-3 mb-6">
+            {/* Service filter (subscriptions sub-tab only) */}
+            <AnimatePresence mode="wait">
+              {freeSubTab === "subscriptions" && availableServices.length > 1 && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="overflow-hidden space-y-2"
+                >
+                  <label className="text-[10px] uppercase tracking-wider text-tertiary font-medium">
+                    Service
+                  </label>
+                  <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1 -mx-4 px-4 sm:mx-0 sm:px-0">
+                    <button
+                      onClick={() => setGxService("All")}
+                      className={cn(
+                        "px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all",
+                        gxService === "All"
+                          ? "bg-accent/20 text-accent border border-accent/30"
+                          : "bg-surface-2 text-secondary hover:text-foreground border border-transparent"
+                      )}
+                    >
+                      All Services
+                    </button>
+                    {availableServices.map((s) => (
+                      <button
+                        key={s}
+                        onClick={() => setGxService(s)}
+                        className={cn(
+                          "px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all",
+                          gxService === s
+                            ? "bg-accent/20 text-accent border border-accent/30"
+                            : "bg-surface-2 text-secondary hover:text-foreground border border-transparent"
+                        )}
+                      >
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Genre filter */}
+            {availableFreeGenres.length > 1 && (
               <div className="space-y-2">
                 <label className="text-[10px] uppercase tracking-wider text-tertiary font-medium">
                   Genre
                 </label>
-                <select
-                  value={gxGenre}
-                  onChange={(e) => setGxGenre(e.target.value)}
-                  className="h-10 px-3 text-sm rounded-xl border border-border bg-surface-2 text-foreground focus:outline-none focus:border-accent/50 transition-colors"
-                >
-                  {GX_GENRE_OPTIONS.map((g) => (
-                    <option key={g} value={g}>{g}</option>
-                  ))}
-                </select>
+                <div className="relative group/scroll">
+                  {/* Left scroll arrow - desktop only */}
+                  <button
+                    onClick={() => scrollContainer(freeGenreRef, "left")}
+                    className="hidden sm:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 items-center justify-center bg-background/90 backdrop-blur-sm border border-border rounded-full shadow-lg opacity-0 group-hover/scroll:opacity-100 transition-opacity hover:bg-surface-2"
+                    aria-label="Scroll left"
+                  >
+                    <ChevronLeft className="w-4 h-4 text-foreground" />
+                  </button>
+
+                  <div 
+                    ref={freeGenreRef}
+                    className="flex gap-2 overflow-x-auto scrollbar-hide pb-1 -mx-4 px-4 sm:mx-0 sm:px-0 sm:scroll-smooth"
+                  >
+                    <button
+                      onClick={() => setGxGenre("All")}
+                      className={cn(
+                        "px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all",
+                        gxGenre === "All"
+                          ? "bg-accent/20 text-accent border border-accent/30"
+                          : "bg-surface-2 text-secondary hover:text-foreground border border-transparent"
+                      )}
+                    >
+                      All Genres
+                    </button>
+                    {availableFreeGenres.map((g) => (
+                      <button
+                        key={g}
+                        onClick={() => setGxGenre(g)}
+                        className={cn(
+                          "px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all",
+                          gxGenre === g
+                            ? "bg-accent/20 text-accent border border-accent/30"
+                            : "bg-surface-2 text-secondary hover:text-foreground border border-transparent"
+                        )}
+                      >
+                        {g}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Right scroll arrow - desktop only */}
+                  <button
+                    onClick={() => scrollContainer(freeGenreRef, "right")}
+                    className="hidden sm:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 items-center justify-center bg-background/90 backdrop-blur-sm border border-border rounded-full shadow-lg opacity-0 group-hover/scroll:opacity-100 transition-opacity hover:bg-surface-2"
+                    aria-label="Scroll right"
+                  >
+                    <ChevronRight className="w-4 h-4 text-foreground" />
+                  </button>
+                </div>
               </div>
-              
-              {/* Platform filter */}
-              <div className="space-y-2">
-                <label className="text-[10px] uppercase tracking-wider text-tertiary font-medium">
-                  Platform
-                </label>
-                <select
-                  value={gxPlatform}
-                  onChange={(e) => setGxPlatform(e.target.value)}
-                  className="h-10 px-3 text-sm rounded-xl border border-border bg-surface-2 text-foreground focus:outline-none focus:border-accent/50 transition-colors"
-                >
-                  {GX_PLATFORM_OPTIONS.map((p) => (
-                    <option key={p.value} value={p.value}>{p.label}</option>
-                  ))}
-                </select>
-              </div>
-              
-              {/* Reset filters */}
-              {(gxGenre !== "All" || gxPlatform !== "All") && (
-                <button
-                  onClick={() => { setGxGenre("All"); setGxPlatform("All"); }}
-                  className="h-10 px-3 text-xs text-accent border border-accent/30 rounded-xl hover:bg-accent/10 transition-colors"
-                >
-                  Clear filters
-                </button>
-              )}
+            )}
+
+            {/* Count */}
+            <div className="flex items-center justify-between pt-1">
+              <span className="text-xs text-tertiary">
+                {(freeSubTab === "free" ? freeLoading : topGamesLoading)
+                  ? "Loading games…"
+                  : `${freeSubTab === "free" ? filteredFreeGames.length : filteredSubscriptionGames.length} game${(freeSubTab === "free" ? filteredFreeGames.length : filteredSubscriptionGames.length) !== 1 ? "s" : ""} found`}
+              </span>
             </div>
           </div>
           
-          {freeLoading ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-4">
-              {Array.from({ length: 12 }).map((_, i) => (
-                <div key={i} className="rounded-2xl border border-border bg-surface overflow-hidden">
-                  <div className="aspect-[3/4] bg-surface-2 animate-pulse" />
-                  <div className="p-3.5 space-y-2">
-                    <div className="h-4 w-3/4 bg-surface-2 rounded animate-pulse" />
-                    <div className="h-3 w-1/2 bg-surface-2 rounded animate-pulse" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : filteredFreeGames.length > 0 ? (
+          {/* Free Games Grid */}
+          {freeSubTab === "free" && (
             <>
-              <p className="text-xs text-tertiary mb-4">
-                {filteredFreeGames.length} free game{filteredFreeGames.length !== 1 ? "s" : ""}
-                {(gxGenre !== "All" || gxPlatform !== "All") && freeData ? ` (of ${freeData.length} total)` : ""}
-              </p>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-4">
-                {filteredFreeGames.map((game, i) => (
-                  <motion.div
-                    key={game.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: Math.min(i * 0.03, 0.5), duration: 0.4 }}
-                  >
-                    <div className="flex flex-col group rounded-2xl border border-border bg-surface overflow-hidden card-shimmer hover:border-pixel-green/30 hover:shadow-lg transition-all duration-300">
-                      <Link href={`/game/${slugify(game.title)}`} className="block">
-                        <div className="relative aspect-[3/4] overflow-hidden">
-                          {game.cover ? (
-                            <Image
-                              src={game.cover}
-                              alt={game.title}
-                              fill
-                              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
-                              className="object-cover transition-transform duration-700 group-hover:scale-110"
-                            />
-                          ) : (
-                            <div className="w-full h-full bg-gradient-to-br from-pixel-green/20 via-surface-2 to-pixel-cyan/10 flex flex-col items-center justify-center gap-2 p-3">
-                              <Gamepad2 className="w-8 h-8 text-pixel-green/40" />
-                              <span className="text-tertiary text-[10px] font-semibold text-center line-clamp-2">{game.title}</span>
-                            </div>
-                          )}
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-                          <div className="absolute top-2.5 left-2.5">
-                            <span className="text-[10px] font-bold text-white bg-pixel-green/80 backdrop-blur-md px-2 py-0.5 rounded-lg border border-white/10">
-                              FREE
-                            </span>
-                          </div>
-                        </div>
-                      </Link>
-                      <div className="p-3 flex-1 flex flex-col gap-1.5">
-                        <Link href={`/game/${slugify(game.title)}`}>
-                          <h3 className="text-sm font-semibold text-foreground leading-tight line-clamp-1 group-hover:text-pixel-green transition-colors">
-                            {game.title}
-                          </h3>
-                        </Link>
-                        <span className="text-[10px] text-tertiary font-medium truncate min-h-[16px]">
-                          {game.genres.slice(0, 2).join(" · ") || "\u00A0"}
-                        </span>
-                        {game.url && (
-                          <a
-                            href={game.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className={cn(
-                              "mt-auto flex items-center justify-center gap-1.5 w-full px-3 py-2 rounded-xl text-xs font-bold transition-all duration-200",
-                              "bg-pixel-green/15 text-pixel-green border border-pixel-green/20",
-                              "hover:bg-pixel-green hover:text-black hover:border-pixel-green"
-                            )}
-                          >
-                            <ExternalLink className="w-3 h-3" />
-                            Play Free
-                          </a>
-                        )}
+              {freeLoading ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-4">
+                  {Array.from({ length: 12 }).map((_, i) => (
+                    <div key={i} className="rounded-2xl border border-border bg-surface overflow-hidden">
+                      <div className="aspect-[3/4] bg-surface-2 animate-pulse" />
+                      <div className="p-3.5 space-y-2">
+                        <div className="h-4 w-3/4 bg-surface-2 rounded animate-pulse" />
+                        <div className="h-3 w-1/2 bg-surface-2 rounded animate-pulse" />
                       </div>
                     </div>
-                  </motion.div>
-                ))}
-              </div>
-            </>
-          ) : (
-            <div className="py-16 text-center">
-              <Gift className="w-12 h-12 text-tertiary mx-auto mb-3" />
-              <p className="text-secondary">
-                {(gxGenre !== "All" || gxPlatform !== "All") 
-                  ? "No free games match your filters." 
-                  : "No free games available right now."}
-              </p>
-              {(gxGenre !== "All" || gxPlatform !== "All") && (
-                <button
-                  onClick={() => { setGxGenre("All"); setGxPlatform("All"); }}
-                  className="mt-3 px-4 py-2 text-sm text-accent border border-accent/30 rounded-xl hover:bg-accent/10 transition-colors"
-                >
-                  Clear filters
-                </button>
+                  ))}
+                </div>
+              ) : filteredFreeGames.length > 0 ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-4">
+                  {filteredFreeGames.map((game, i) => (
+                    <motion.div
+                      key={game.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: Math.min(i * 0.03, 0.5), duration: 0.4 }}
+                    >
+                      <div className="flex flex-col group rounded-2xl border border-border bg-surface overflow-hidden card-shimmer hover:border-pixel-green/30 hover:shadow-lg transition-all duration-300">
+                        <Link href={`/game/${slugify(game.title)}`} className="block">
+                          <div className="relative aspect-[3/4] overflow-hidden">
+                            {game.cover ? (
+                              <Image
+                                src={game.cover}
+                                alt={game.title}
+                                fill
+                                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
+                                className="object-cover transition-transform duration-700 group-hover:scale-110"
+                              />
+                            ) : (
+                              <div className="w-full h-full bg-surface-2 flex items-center justify-center">
+                                <Gamepad2 className="w-8 h-8 text-tertiary" />
+                              </div>
+                            )}
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                            <div className="absolute top-2.5 left-2.5">
+                              <span className="text-[10px] font-bold text-white bg-pixel-green/80 backdrop-blur-md px-2 py-0.5 rounded-lg border border-white/10">
+                                FREE
+                              </span>
+                            </div>
+                          </div>
+                        </Link>
+                        <div className="p-3 flex-1 flex flex-col gap-1.5">
+                          <Link href={`/game/${slugify(game.title)}`}>
+                            <h3 className="text-sm font-semibold text-foreground leading-tight line-clamp-1 group-hover:text-pixel-green transition-colors">
+                              {game.title}
+                            </h3>
+                          </Link>
+                          <span className="text-[10px] text-tertiary font-medium truncate min-h-[16px]">
+                            {game.genres.slice(0, 2).join(" · ") || "\u00A0"}
+                          </span>
+                          {game.url && (
+                            <a
+                              href={game.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className={cn(
+                                "mt-auto flex items-center justify-center gap-1.5 w-full px-3 py-2 rounded-xl text-xs font-bold transition-all duration-200",
+                                "bg-pixel-green/15 text-pixel-green border border-pixel-green/20",
+                                "hover:bg-pixel-green hover:text-black hover:border-pixel-green"
+                              )}
+                            >
+                              <ExternalLink className="w-3 h-3" />
+                              Play Free
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              ) : (
+                <div className="py-16 text-center">
+                  <Gift className="w-12 h-12 text-tertiary mx-auto mb-3" />
+                  <p className="text-secondary">No free games match your filters.</p>
+                  <button
+                    onClick={() => setGxGenre("All")}
+                    className="mt-3 text-xs text-accent hover:underline"
+                  >
+                    Clear filters
+                  </button>
+                </div>
               )}
-            </div>
+            </>
           )}
+
+          {/* Subscription Games Grid */}
+          {freeSubTab === "subscriptions" && (
+            <>
+              {topGamesLoading ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-4">
+                  {Array.from({ length: 12 }).map((_, i) => (
+                    <div key={i} className="rounded-2xl border border-border bg-surface overflow-hidden">
+                      <div className="aspect-[3/4] bg-surface-2 animate-pulse" />
+                      <div className="p-3.5 space-y-2">
+                        <div className="h-4 w-3/4 bg-surface-2 rounded animate-pulse" />
+                        <div className="h-3 w-1/2 bg-surface-2 rounded animate-pulse" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : filteredSubscriptionGames.length > 0 ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-4">
+                  {filteredSubscriptionGames.map((game, i) => (
+                    <motion.div
+                      key={game.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: Math.min(i * 0.03, 0.5), duration: 0.4 }}
+                    >
+                      <div className="flex flex-col group rounded-2xl border border-border bg-surface overflow-hidden card-shimmer hover:border-accent/30 hover:shadow-lg transition-all duration-300">
+                        <Link href={`/game/${slugify(game.title)}`} className="block">
+                          <div className="relative aspect-[3/4] overflow-hidden">
+                            {game.cover ? (
+                              <Image
+                                src={game.cover}
+                                alt={game.title}
+                                fill
+                                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
+                                className="object-cover transition-transform duration-700 group-hover:scale-110"
+                              />
+                            ) : (
+                              <div className="w-full h-full bg-surface-2 flex items-center justify-center">
+                                <Gamepad2 className="w-8 h-8 text-tertiary" />
+                              </div>
+                            )}
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                            {game.serviceName && (
+                              <div className="absolute top-2.5 left-2.5">
+                                <span
+                                  className="text-[10px] font-bold text-white backdrop-blur-md px-2 py-0.5 rounded-lg border border-white/10"
+                                  style={{ backgroundColor: game.serviceColor ? `${game.serviceColor}CC` : "rgba(139,92,246,0.8)" }}
+                                >
+                                  {game.serviceName}
+                                </span>
+                              </div>
+                            )}
+                            {game.serviceTag && (
+                              <div className="absolute top-2.5 right-2.5">
+                                <span className="text-[10px] font-bold text-white bg-black/50 backdrop-blur-md px-2 py-0.5 rounded-lg border border-white/10">
+                                  {game.serviceTag}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </Link>
+                        <div className="p-3 flex-1 flex flex-col gap-1.5">
+                          <Link href={`/game/${slugify(game.title)}`}>
+                            <h3 className="text-sm font-semibold text-foreground leading-tight line-clamp-1 group-hover:text-accent transition-colors">
+                              {game.title}
+                            </h3>
+                          </Link>
+                          <span className="text-[10px] text-tertiary font-medium truncate min-h-[16px]">
+                            {game.genres.slice(0, 2).join(" · ") || "\u00A0"}
+                          </span>
+                          {game.url && (
+                            <a
+                              href={game.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className={cn(
+                                "mt-auto flex items-center justify-center gap-1.5 w-full px-3 py-2 rounded-xl text-xs font-bold transition-all duration-200",
+                                "bg-accent/15 text-accent border border-accent/20",
+                                "hover:bg-accent hover:text-white hover:border-accent"
+                              )}
+                            >
+                              <ExternalLink className="w-3 h-3" />
+                              {game.serviceName ? `View on ${game.serviceName}` : "View"}
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              ) : (
+                <div className="py-16 text-center">
+                  <Gamepad2 className="w-12 h-12 text-tertiary mx-auto mb-3" />
+                  <p className="text-secondary">No subscription games match your filters.</p>
+                  <button
+                    onClick={() => { setGxGenre("All"); setGxService("All"); }}
+                    className="mt-3 text-xs text-accent hover:underline"
+                  >
+                    Clear filters
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+
           <p className="text-center text-[10px] text-tertiary pt-6">
             Game data powered by <a href="https://gxcorner.games" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">GX Corner</a>
           </p>
