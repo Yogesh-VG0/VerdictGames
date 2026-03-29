@@ -144,8 +144,11 @@ function applyGenreDiversity(rows: GameRow[], limit: number, maxPerGenre: number
 export async function fetchHeroCandidates(limit = 12): Promise<Game[]> {
   const supabase = getServerSupabase();
 
-  // Step 1: Manually featured games (editorial priority) — no age limit
+  // Step 1: Manually featured games (editorial priority) — with 36mo recency cap
+  // FIX: Old evergreen manual picks were dominating hero. Now capped at 3 years.
   // RULE: Hero sourced from is_featured_manual flag, NEVER from trending flag
+  const manualCutoff = monthsAgoISO(36);
+  const today = new Date().toISOString().slice(0, 10);
   const { data: manualFeatured } = await supabase
     .from("games")
     .select(GAME_CARD_COLUMNS_WITH_DESC)
@@ -154,15 +157,16 @@ export async function fetchHeroCandidates(limit = 12): Promise<Game[]> {
     .neq("header_image", "")
     .gte("score", 72)
     .gt("score", 0)
+    .gte("release_date", manualCutoff)
+    .lte("release_date", today)
     .order("verdict_score", { ascending: false, nullsFirst: false })
     .order("score", { ascending: false })
-    .limit(6) as { data: GameRow[] | null };
+    .limit(4) as { data: GameRow[] | null }; // Reduced from 6 to 4 to allow more auto-selected games
 
   // Step 2: Auto-selected recent high-quality games with header art
   const cutoff24 = monthsAgoISO(24);
   const cutoff36 = monthsAgoISO(36);
   const cutoff60 = monthsAgoISO(60);
-  const today = new Date().toISOString().slice(0, 10);
 
   let { data: autoPool } = await supabase
     .from("games")

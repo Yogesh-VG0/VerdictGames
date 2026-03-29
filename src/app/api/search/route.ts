@@ -99,7 +99,7 @@ export async function GET(request: NextRequest) {
     const { getServerSupabase } = await import("@/lib/supabase/server");
     const supabase = getServerSupabase();
 
-    let query = supabase.from("games").select(GAME_CARD_COLUMNS_WITH_DESC, { count: "planned" });
+    let query = supabase.from("games").select(GAME_CARD_COLUMNS_WITH_DESC, { count: "exact" });
 
     // Text search — ilike on title/developer/publisher (NOT description — too slow on large text)
     if (q) {
@@ -262,8 +262,8 @@ export async function GET(request: NextRequest) {
 
     // UNDERFILL FIX: All sort modes now overfetch to account for post-filtering
     // Post-filters (public safety, media readiness, provisional exclusion) can remove items
-    // Without overfetch, users get fewer than PAGE_SIZE items per page
-    const OVERFETCH_MULTIPLIER = 3; // Fetch 3x to ensure enough after filtering
+    // For upcoming/trending/etc with aggressive filters, overfetch significantly more
+    const OVERFETCH_MULTIPLIER = 5; // Fetch 5x to ensure enough after filtering
 
     if (isRelevanceWithQuery) {
       // Adaptive overfetch: 150 results for title similarity re-ranking
@@ -274,9 +274,10 @@ export async function GET(request: NextRequest) {
       const trFetchEnd = Math.max(page * PAGE_SIZE * 4, 200);
       query = query.range(0, trFetchEnd - 1);
     } else {
-      // All other sorts: overfetch from page start to allow for post-filter drops
-      const overfetchEnd = start + (PAGE_SIZE * OVERFETCH_MULTIPLIER) - 1;
-      query = query.range(start, overfetchEnd);
+      // All other sorts: overfetch from start=0 to get ALL candidates for proper filtering
+      // This ensures we don't miss valid items due to offset-based pagination before filtering
+      const overfetchEnd = Math.max(start + (PAGE_SIZE * OVERFETCH_MULTIPLIER), 150) - 1;
+      query = query.range(0, overfetchEnd);
     }
 
     const { data, error, count } = await query as unknown as { data: GameRow[] | null; error: unknown; count: number | null };
@@ -324,6 +325,9 @@ export async function GET(request: NextRequest) {
       return true;
     });
 
+    // Capture filtered total BEFORE any slicing - this is the true count of valid items
+    let filteredTotal = rows.length;
+
     // ─── Relevance re-ranking: title similarity first ───
     if (isRelevanceWithQuery && rows.length > 0) {
       // Compute composite relevance score:
@@ -346,6 +350,7 @@ export async function GET(request: NextRequest) {
       });
 
       scored.sort((a, b) => b.relevance - a.relevance);
+      filteredTotal = scored.length; // Update total after relevance filtering
       rows = scored.slice(start, start + PAGE_SIZE).map((s) => s.row);
     }
 
@@ -354,25 +359,16 @@ export async function GET(request: NextRequest) {
       rows.sort((a, b) => confidenceWeightedScore(b) - confidenceWeightedScore(a));
       rows = rows.slice(start, start + PAGE_SIZE);
     }
-
-    // For other sort modes: slice to PAGE_SIZE after overfetch + filter
     if (!isRelevanceWithQuery && !isTopRated) {
-      rows = rows.slice(0, PAGE_SIZE);
+      // Slice to the correct page range (we fetched from 0)
+      rows = rows.slice(start, start + PAGE_SIZE);
     }
 
     const games = rows.map(mapGameRow);
-    // Use filtered count for consistency - DB count may include items removed by post-filters
-    // For upcoming/trending/etc., the post-filter may remove items, so total should reflect actual results
-    let total = rows.length;
-    // For paginated queries, estimate total from DB count but cap at filtered reality
-    if (!isRelevanceWithQuery && !isTopRated) {
-      // If we got a full page, there are likely more - use DB count as estimate
-      // but if we got fewer items than requested after filtering, that's the real total
-      const dbCount = count ?? 0;
-      if (rows.length >= PAGE_SIZE) {
-        total = dbCount; // Likely more pages available
-      }
-    }
+    
+    // Total should reflect actual filtered count, not DB count
+    // DB count includes items that fail post-filters (public safety, media readiness, etc.)
+    let total = filteredTotal;
 
     // ── 3-layer search: DB → RAWG instant preview → background ingest ──
     const noFilters = platform === "All" && !genre && !year && monetization === "All";
