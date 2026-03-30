@@ -39,8 +39,8 @@ export default function ListDetailPage({ params }: Props) {
         <p className="text-sm text-secondary">
           This list doesn&apos;t exist or has been removed.
         </p>
-        <Link href="/lists">
-          <PixelButton variant="secondary">Browse Lists</PixelButton>
+        <Link href="/lists" prefetch={false}>
+          <PixelButton as="span" variant="secondary">Browse Lists</PixelButton>
         </Link>
       </div>
     );

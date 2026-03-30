@@ -10,7 +10,7 @@ import PixelButton from "@/components/ui/PixelButton";
 import PlatformIcon from "@/components/ui/PlatformIcon";
 import HeroImage from "@/components/ui/HeroImage";
 import { collapsePlatforms } from "@/lib/utils/platform";
-import { cn, sourceLabel } from "@/lib/utils";
+import { cn, sourceLabel, getStableYear, isFutureDate } from "@/lib/utils";
 
 interface HeroCarouselProps {
   games: Game[];
@@ -146,7 +146,7 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
   // Context-aware reason label per slide
   const getReasonLabel = (g: Game): string => {
     if (g.isFeaturedManual) return "Editor's Pick";
-    if (g.isProvisional || (g.releaseDate && new Date(g.releaseDate) > new Date())) return "Coming Soon";
+    if (g.isProvisional || isFutureDate(g.releaseDate)) return "Coming Soon";
     if (g.isTrendingManual || g.trending) return "Trending Now";
     if (g.score >= 90) return "Top Rated";
     if (g.priceCurrent === 0 || g.isFree) return "Free to Play";
@@ -251,7 +251,7 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
                 })()}
                 {game.releaseDate && (
                   <span className="text-xs hero-overlay-text-muted font-medium">
-                    {new Date(game.releaseDate).getFullYear()}
+                    {getStableYear(game.releaseDate)}
                   </span>
                 )}
               </div>
@@ -288,8 +288,8 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
 
             {/* CTAs */}
             <div className="flex gap-3 pt-0.5 sm:pt-1 flex-wrap" data-interactive>
-              <Link href={`/game/${game.slug}`} onClick={(e) => { if (isSwiping.current) e.preventDefault(); }}>
-                <PixelButton size="md">Read Verdict</PixelButton>
+              <Link href={`/game/${game.slug}`} prefetch={false} onClick={(e) => { if (isSwiping.current) e.preventDefault(); }}>
+                <PixelButton as="span" size="md">Read Verdict</PixelButton>
               </Link>
               {game.trailerUrl && (
                 <a

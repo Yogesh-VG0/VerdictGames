@@ -81,8 +81,8 @@ export default function ProfilePage({ params }: Props) {
         <p className="text-sm text-secondary">
           This profile doesn&apos;t exist.
         </p>
-        <Link href="/">
-          <PixelButton variant="secondary">Back to Home</PixelButton>
+        <Link href="/" prefetch={false}>
+          <PixelButton as="span" variant="secondary">Back to Home</PixelButton>
         </Link>
       </div>
     );

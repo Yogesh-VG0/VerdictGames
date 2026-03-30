@@ -365,8 +365,8 @@ export default function GameDetailClientPage({
         <p className="text-sm text-secondary">
           The game you&apos;re looking for doesn&apos;t exist or has been removed.
         </p>
-        <Link href="/">
-          <PixelButton variant="secondary">Back to Home</PixelButton>
+        <Link href="/" prefetch={false}>
+          <PixelButton as="span" variant="secondary">Back to Home</PixelButton>
         </Link>
       </div>
     );

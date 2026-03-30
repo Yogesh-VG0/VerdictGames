@@ -50,6 +50,7 @@ export default function SectionHeader({
         {href && (
           <Link
             href={href}
+            prefetch={false}
             className="text-xs text-accent hover:text-accent-hover font-semibold transition-colors flex items-center gap-1.5 shrink-0 whitespace-nowrap sm:pt-1"
           >
             {linkLabel}

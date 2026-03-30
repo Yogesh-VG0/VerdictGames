@@ -12,7 +12,7 @@ import {
 } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
 import { slugify } from "@/lib/utils/slugify";
-import { cn } from "@/lib/utils";
+import { cn, formatNumber, getStableYear } from "@/lib/utils";
 import type { Game, GXDeal } from "@/lib/types";
 import FadeInSection from "@/components/FadeInSection";
 import GameCard from "@/components/GameCard";
@@ -44,11 +44,92 @@ interface HomepageClientSectionsProps {
 
 const CARD_WIDTH = "shrink-0 w-44 sm:w-52 md:w-56 lg:w-60 h-full";
 
+const MOST_ANTICIPATED_SUBTITLE = "The most hyped upcoming games this year and beyond";
+
 const DISCOVER_TABS: { label: string; value: DiscoverTab; icon: ReactNode }[] = [
   { label: "New Releases", value: "new", icon: <Sparkles className="w-4 h-4" /> },
   { label: "Deals", value: "deals", icon: <Tag className="w-4 h-4" /> },
   { label: "Free to Play", value: "free", icon: <Gift className="w-4 h-4" /> },
 ];
+
+function MostAnticipatedSection() {
+  const anticipated = useQuery({
+    queryKey: ["rawg-anticipated"],
+    queryFn: () => getRawgList("best-of-year", { pageSize: 12 }),
+    staleTime: 10 * 60 * 1000,
+  });
+
+  if (!anticipated.data || anticipated.data.items.length === 0) {
+    return null;
+  }
+
+  return (
+    <section className="py-12 sm:py-16">
+      <div className="max-w-[1400px] mx-auto px-4">
+        <FadeInSection>
+          <SectionHeader
+            title="Most Anticipated"
+            href="/explore"
+            linkLabel="See all"
+            icon={<Rocket className="w-5 h-5" />}
+            subtitle={MOST_ANTICIPATED_SUBTITLE}
+            gradient="linear-gradient(90deg, #06b6d4 0%, #3b82f6 25%, #8b5cf6 50%, #06b6d4 75%, #3b82f6 100%)"
+          />
+          <HorizontalScroll>
+            {anticipated.data.items.filter((game) => game.image).map((game, index) => (
+              <div key={game.rawgId} className="shrink-0 w-64 sm:w-72 md:w-80 h-full">
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.04, duration: 0.4 }}
+                >
+                  <Link href={`/game/${game.slug}?rawgId=${game.rawgId}`} prefetch={false} className="block group">
+                    <div className="relative aspect-[16/9] rounded-2xl overflow-hidden border border-border bg-surface-2 group-hover:border-accent/40 transition-all">
+                      {game.image ? (
+                        <Image
+                          src={game.image}
+                          alt={game.name}
+                          fill
+                          sizes="(max-width: 640px) 80vw, (max-width: 1024px) 40vw, 320px"
+                          className="object-cover group-hover:scale-105 transition-transform duration-500"
+                          loading="lazy"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-accent/10 to-pixel-cyan/10" />
+                      )}
+                      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent p-3 pt-8">
+                        <p className="text-sm font-bold text-white line-clamp-1 drop-shadow-lg">{game.name}</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          {game.genres.slice(0, 2).map((genre, genreIndex) => (
+                            <span key={genre} className="text-[10px] text-white/60">
+                              {genreIndex > 0 && <span className="mr-1">·</span>}
+                              {genre}
+                            </span>
+                          ))}
+                          <span className="ml-auto text-[10px] font-medium">
+                            {game.tba ? (
+                              <span className="text-yellow-400">TBA</span>
+                            ) : game.released ? (
+                              <span className="text-white/50">{getStableYear(game.released)}</span>
+                            ) : null}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 mt-2 px-1 text-[10px] text-secondary">
+                      <span className="text-accent font-medium">{formatNumber(game.added)} wishlisted</span>
+                      {game.toplay > 0 && <span>{formatNumber(game.toplay)} want</span>}
+                    </div>
+                  </Link>
+                </motion.div>
+              </div>
+            ))}
+          </HorizontalScroll>
+        </FadeInSection>
+      </div>
+    </section>
+  );
+}
 
 export default function HomepageClientSections({
   initialRecommendations,
@@ -72,12 +153,6 @@ export default function HomepageClientSections({
     enabled: discoverTab === "free",
   });
 
-  const anticipated = useQuery({
-    queryKey: ["rawg-anticipated"],
-    queryFn: () => getRawgList("best-of-year", { pageSize: 12 }),
-    staleTime: 10 * 60 * 1000,
-  });
-
   const personalizedGames = personalized.data ?? [];
   const showingPersonalized = !!user && personalizedGames.length > 0;
   const recommendedGames = showingPersonalized ? personalizedGames : initialRecommendations;
@@ -87,72 +162,7 @@ export default function HomepageClientSections({
     <>
       {/* ── 2b. Most Anticipated ── */}
       <LazySection minHeight="320px">
-        {anticipated.data && anticipated.data.items.length > 0 && (
-          <section className="py-12 sm:py-16">
-            <div className="max-w-[1400px] mx-auto px-4">
-              <FadeInSection>
-                <SectionHeader
-                  title="Most Anticipated"
-                  href="/explore"
-                  linkLabel="See all"
-                  icon={<Rocket className="w-5 h-5" />}
-                  subtitle={`The most hyped upcoming games of ${new Date().getFullYear()} and beyond`}
-                  gradient="linear-gradient(90deg, #06b6d4 0%, #3b82f6 25%, #8b5cf6 50%, #06b6d4 75%, #3b82f6 100%)"
-                />
-                <HorizontalScroll>
-                  {anticipated.data.items.filter((game) => game.image).map((game, index) => (
-                    <div key={game.rawgId} className="shrink-0 w-64 sm:w-72 md:w-80 h-full">
-                      <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.04, duration: 0.4 }}
-                      >
-                        <Link href={`/game/${game.slug}?rawgId=${game.rawgId}`} className="block group">
-                          <div className="relative aspect-[16/9] rounded-2xl overflow-hidden border border-border bg-surface-2 group-hover:border-accent/40 transition-all">
-                            {game.image ? (
-                              <Image
-                                src={game.image}
-                                alt={game.name}
-                                fill
-                                sizes="(max-width: 640px) 80vw, (max-width: 1024px) 40vw, 320px"
-                                className="object-cover group-hover:scale-105 transition-transform duration-500"
-                                loading="lazy"
-                              />
-                            ) : (
-                              <div className="w-full h-full bg-gradient-to-br from-accent/10 to-pixel-cyan/10" />
-                            )}
-                            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent p-3 pt-8">
-                              <p className="text-sm font-bold text-white line-clamp-1 drop-shadow-lg">{game.name}</p>
-                              <div className="flex items-center gap-2 mt-1">
-                                {game.genres.slice(0, 2).map((genre, genreIndex) => (
-                                  <span key={genre} className="text-[10px] text-white/60">
-                                    {genreIndex > 0 && <span className="mr-1">·</span>}
-                                    {genre}
-                                  </span>
-                                ))}
-                                <span className="ml-auto text-[10px] font-medium">
-                                  {game.tba ? (
-                                    <span className="text-yellow-400">TBA</span>
-                                  ) : game.released ? (
-                                    <span className="text-white/50">{new Date(game.released).getFullYear()}</span>
-                                  ) : null}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-3 mt-2 px-1 text-[10px] text-secondary">
-                            <span className="text-accent font-medium">{game.added.toLocaleString()} wishlisted</span>
-                            {game.toplay > 0 && <span>{game.toplay.toLocaleString()} want</span>}
-                          </div>
-                        </Link>
-                      </motion.div>
-                    </div>
-                  ))}
-                </HorizontalScroll>
-              </FadeInSection>
-            </div>
-          </section>
-        )}
+        <MostAnticipatedSection />
       </LazySection>
 
       <div className="max-w-[1400px] mx-auto px-4">
@@ -184,7 +194,7 @@ export default function HomepageClientSections({
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: index * 0.03, duration: 0.4 }}
                       >
-                        <GameCard game={game} />
+                        <GameCard game={game} prefetch={false} />
                       </motion.div>
                     </div>
                   ))}
@@ -241,7 +251,7 @@ export default function HomepageClientSections({
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: index * 0.03, duration: 0.4 }}
                         >
-                          <GameCard game={game} />
+                          <GameCard game={game} prefetch={false} />
                         </motion.div>
                       </div>
                     ))}
@@ -289,7 +299,7 @@ export default function HomepageClientSections({
                         className={CARD_WIDTH}
                       >
                         <div className="flex flex-col h-full group rounded-2xl border border-border bg-surface overflow-hidden card-shimmer hover:border-pixel-green/30 transition-all duration-300">
-                          <Link href={`/game/${slugify(game.title)}`} className="block">
+                          <Link href={`/game/${slugify(game.title)}`} prefetch={false} className="block">
                             <div className="relative aspect-[3/4] overflow-hidden">
                               {game.cover && (
                                 <Image
@@ -309,7 +319,7 @@ export default function HomepageClientSections({
                             </div>
                           </Link>
                           <div className="p-3 flex-1 flex flex-col gap-1.5">
-                            <Link href={`/game/${slugify(game.title)}`}>
+                            <Link href={`/game/${slugify(game.title)}`} prefetch={false}>
                               <h3 className="text-sm font-semibold text-foreground leading-tight line-clamp-1 group-hover:text-pixel-green transition-colors">
                                 {game.title}
                               </h3>

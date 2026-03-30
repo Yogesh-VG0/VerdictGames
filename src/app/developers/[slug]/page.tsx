@@ -48,8 +48,8 @@ export default function DeveloperPage({ params }: Props) {
         <p className="text-sm text-secondary">
           We don&apos;t have data for this developer yet.
         </p>
-        <Link href="/">
-          <PixelButton variant="secondary">Back to Home</PixelButton>
+        <Link href="/" prefetch={false}>
+          <PixelButton as="span" variant="secondary">Back to Home</PixelButton>
         </Link>
       </div>
     );

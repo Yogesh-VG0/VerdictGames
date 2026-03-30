@@ -108,6 +108,34 @@ export function formatPrice(cents: number | undefined, currency = "USD"): string
   }).format(cents / 100);
 }
 
+const numberFormatter = new Intl.NumberFormat("en-US");
+
+export function formatNumber(value: number | null | undefined): string {
+  if (value === null || value === undefined || Number.isNaN(value)) return "0";
+  return numberFormatter.format(value);
+}
+
+export function getStableYear(dateStr: string | null | undefined): string | null {
+  if (!dateStr || dateStr === "null" || dateStr === "undefined") return null;
+  const yearMatch = dateStr.match(/^(\d{4})/);
+  if (yearMatch) return yearMatch[1];
+  const normalized = dateStr.length === 10 ? `${dateStr}T00:00:00Z` : dateStr;
+  const parsed = new Date(normalized);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return String(parsed.getUTCFullYear());
+}
+
+export function isFutureDate(dateStr: string | null | undefined, now = new Date()): boolean {
+  if (!dateStr || dateStr === "null" || dateStr === "undefined") return false;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+    return dateStr > now.toISOString().slice(0, 10);
+  }
+  const normalized = dateStr.length === 10 ? `${dateStr}T00:00:00Z` : dateStr;
+  const parsed = new Date(normalized);
+  if (Number.isNaN(parsed.getTime())) return false;
+  return parsed.getTime() > now.getTime();
+}
+
 /** CSS glow class for score tier. */
 export function scoreGlowClass(score: number): string {
   if (score >= 80) return "score-glow-great";

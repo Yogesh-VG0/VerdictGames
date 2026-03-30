@@ -248,7 +248,7 @@ export default function NavbarTop() {
       {/* ── Mobile header ── */}
       <header className="sticky top-0 z-50 md:hidden bg-background/80 backdrop-blur-xl border-b border-border">
         <div className="flex items-center justify-between px-4 h-14">
-          <Link href="/" className="flex items-center gap-2.5 group">
+          <Link href="/" prefetch={false} className="flex items-center gap-2.5 group">
             <Image
               src="/VERDICT_LOGO_main.png"
               alt="Verdict Games"
@@ -375,6 +375,7 @@ export default function NavbarTop() {
               {user ? (
                 <Link
                   href={`/profile/${user.username}`}
+                  prefetch={false}
                   onClick={() => setSidebarOpen(false)}
                   className="block px-4 py-4 border-b border-border hover:bg-surface-2 transition-colors"
                 >
@@ -407,6 +408,7 @@ export default function NavbarTop() {
                     <Link
                       key={link.href + link.label}
                       href={link.href}
+                      prefetch={false}
                       onClick={() => setSidebarOpen(false)}
                       aria-current={isActive ? "page" : undefined}
                       className={cn(
@@ -427,17 +429,17 @@ export default function NavbarTop() {
               {user && (
                 <div className="py-2 border-t border-border">
                   <p className="px-4 py-2 text-[10px] uppercase tracking-wider text-tertiary font-medium">Account</p>
-                  <Link href={`/profile/${user.username}`} onClick={() => setSidebarOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-secondary hover:text-foreground hover:bg-surface-2 transition-colors">
+                  <Link href={`/profile/${user.username}`} prefetch={false} onClick={() => setSidebarOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-secondary hover:text-foreground hover:bg-surface-2 transition-colors">
                     <User className="w-4 h-4 opacity-70" /> Profile
                   </Link>
-                  <Link href="/library" onClick={() => setSidebarOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-secondary hover:text-foreground hover:bg-surface-2 transition-colors">
+                  <Link href="/library" prefetch={false} onClick={() => setSidebarOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-secondary hover:text-foreground hover:bg-surface-2 transition-colors">
                     <BookOpen className="w-4 h-4 opacity-70" /> Library
                   </Link>
-                  <Link href="/settings" onClick={() => setSidebarOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-secondary hover:text-foreground hover:bg-surface-2 transition-colors">
+                  <Link href="/settings" prefetch={false} onClick={() => setSidebarOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-secondary hover:text-foreground hover:bg-surface-2 transition-colors">
                     <Settings className="w-4 h-4 opacity-70" /> Settings
                   </Link>
                   {isAdminEmail(user.email) && (
-                    <Link href="/admin" onClick={() => setSidebarOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-secondary hover:text-foreground hover:bg-surface-2 transition-colors">
+                    <Link href="/admin" prefetch={false} onClick={() => setSidebarOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-secondary hover:text-foreground hover:bg-surface-2 transition-colors">
                       <ShieldCheck className="w-4 h-4 opacity-70" /> Admin
                     </Link>
                   )}
@@ -459,7 +461,7 @@ export default function NavbarTop() {
       <header className="sticky top-0 z-50 hidden md:block bg-background/80 backdrop-blur-xl border-b border-border">
         <nav aria-label="Primary navigation" className="flex items-center gap-2 px-4 h-14 max-w-[1400px] mx-auto">
           {/* Logo */}
-          <Link href="/" className="shrink-0 flex items-center gap-3 pl-3 group">
+          <Link href="/" prefetch={false} className="shrink-0 flex items-center gap-3 pl-3 group">
             <Image
               src="/VERDICT_LOGO_main.png"
               alt="Verdict Games"
@@ -484,6 +486,7 @@ export default function NavbarTop() {
                 <Link
                   key={link.href}
                   href={link.href}
+                  prefetch={false}
                   aria-current={isActive ? "page" : undefined}
                   className={cn(
                     "relative px-4 py-2 text-sm font-medium transition-all duration-200 rounded-xl",
@@ -564,6 +567,7 @@ export default function NavbarTop() {
                       <div className="py-1">
                         <Link
                           href={`/profile/${user.username}`}
+                          prefetch={false}
                           onClick={closeDropdown}
                           className="flex items-center gap-3 px-4 py-2.5 text-sm text-secondary hover:text-foreground hover:bg-surface-2 transition-colors"
                         >
@@ -573,6 +577,7 @@ export default function NavbarTop() {
                         {isAdminEmail(user.email) && (
                           <Link
                             href="/admin"
+                            prefetch={false}
                             onClick={closeDropdown}
                             className="flex items-center gap-3 px-4 py-2.5 text-sm text-secondary hover:text-foreground hover:bg-surface-2 transition-colors"
                           >
@@ -582,6 +587,7 @@ export default function NavbarTop() {
                         )}
                         <Link
                           href="/library"
+                          prefetch={false}
                           onClick={closeDropdown}
                           className="flex items-center gap-3 px-4 py-2.5 text-sm text-secondary hover:text-foreground hover:bg-surface-2 transition-colors"
                         >
@@ -590,6 +596,7 @@ export default function NavbarTop() {
                         </Link>
                         <Link
                           href="/settings"
+                          prefetch={false}
                           onClick={closeDropdown}
                           className="flex items-center gap-3 px-4 py-2.5 text-sm text-secondary hover:text-foreground hover:bg-surface-2 transition-colors"
                         >

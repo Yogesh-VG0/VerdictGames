@@ -6,7 +6,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { Gamepad2 } from "lucide-react";
 import { Game } from "@/lib/types";
-import { scoreColor, cn, sourceLabel, scoreGlowClass } from "@/lib/utils";
+import { scoreColor, cn, sourceLabel, scoreGlowClass, getStableYear, isFutureDate } from "@/lib/utils";
 import { collapsePlatforms } from "@/lib/utils/platform";
 import VerdictBadge from "@/components/ui/VerdictBadge";
 import PlatformIcon from "@/components/ui/PlatformIcon";
@@ -14,6 +14,7 @@ import PlatformIcon from "@/components/ui/PlatformIcon";
 interface GameCardProps {
   game: Game;
   priority?: boolean;
+  prefetch?: boolean;
   className?: string;
   variant?: "default" | "spotlight";
 }
@@ -45,14 +46,11 @@ function BlurImage({ src, alt, priority, className }: {
 }
 
 function yearFromDate(date: string | undefined): string | null {
-  if (!date) return null;
-  const y = new Date(date).getFullYear();
-  return isNaN(y) ? null : String(y);
+  return getStableYear(date);
 }
 
 function isUnreleased(game: Game): boolean {
-  if (!game.releaseDate) return false;
-  return new Date(game.releaseDate) > new Date();
+  return isFutureDate(game.releaseDate);
 }
 
 function hasRealScore(game: Game): boolean {
@@ -73,12 +71,13 @@ function scoreGlowBorder(score: number): string {
 export default function GameCard({
   game,
   priority = false,
+  prefetch = false,
   className,
   variant = "default",
 }: GameCardProps) {
   if (variant === "spotlight") {
     return (
-      <Link href={`/game/${game.slug}`} className={cn("block group", className)}>
+      <Link href={`/game/${game.slug}`} prefetch={prefetch} className={cn("block group", className)}>
         <motion.article
           whileHover={{ y: -2 }}
           whileTap={{ scale: 0.98 }}
@@ -173,7 +172,7 @@ export default function GameCard({
   }
 
   return (
-    <Link href={`/game/${game.slug}`} className={cn("block group", className)}>
+    <Link href={`/game/${game.slug}`} prefetch={prefetch} className={cn("block group", className)}>
       <motion.article
         whileHover={{ y: -3 }}
         whileTap={{ scale: 0.98 }}

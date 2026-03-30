@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Game } from "@/lib/types";
+import { getStableYear } from "@/lib/utils";
 import VerdictBadge from "@/components/ui/VerdictBadge";
 import ScoreRing from "@/components/ui/ScoreRing";
 import PixelBadge from "@/components/ui/PixelBadge";
@@ -78,7 +79,7 @@ export default function FeaturedHero({ game }: FeaturedHeroProps) {
           ))}
           {game.releaseDate && (
             <span className="text-xs text-tertiary font-medium">
-              {new Date(game.releaseDate).getFullYear()}
+              {getStableYear(game.releaseDate)}
             </span>
           )}
         </motion.div>
@@ -100,8 +101,8 @@ export default function FeaturedHero({ game }: FeaturedHeroProps) {
           transition={{ delay: 0.5 }}
           className="flex gap-3 pt-1"
         >
-          <Link href={`/game/${game.slug}`}>
-            <PixelButton size="md">Read Verdict</PixelButton>
+          <Link href={`/game/${game.slug}`} prefetch={false}>
+            <PixelButton as="span" size="md">Read Verdict</PixelButton>
           </Link>
         </motion.div>
       </div>

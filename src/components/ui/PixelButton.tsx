@@ -3,12 +3,17 @@
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
-interface PixelButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+type PixelButtonAs = "button" | "span";
+
+type PixelButtonProps = {
   variant?: "primary" | "secondary" | "ghost" | "danger";
   size?: "sm" | "md" | "lg";
   children: React.ReactNode;
-}
+  as?: PixelButtonAs;
+} & (
+  | React.ButtonHTMLAttributes<HTMLButtonElement>
+  | React.HTMLAttributes<HTMLSpanElement>
+);
 
 const variantStyles = {
   primary:
@@ -32,20 +37,36 @@ export default function PixelButton({
   size = "md",
   children,
   className,
+  as = "button",
   ...props
 }: PixelButtonProps) {
+  const sharedClassName = cn(
+    "relative inline-flex items-center justify-center gap-2 font-medium",
+    "rounded-full border transition-all duration-200",
+    "focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2",
+    variantStyles[variant],
+    sizeStyles[size],
+    className
+  );
+
+  if (as === "span") {
+    return (
+      <motion.span
+        whileHover={{ scale: 1.03 }}
+        whileTap={{ scale: 0.97 }}
+        className={sharedClassName}
+        {...(props as React.ComponentProps<typeof motion.span>)}
+      >
+        {children}
+      </motion.span>
+    );
+  }
+
   return (
     <motion.button
       whileHover={{ scale: 1.03 }}
       whileTap={{ scale: 0.97 }}
-      className={cn(
-        "relative inline-flex items-center justify-center gap-2 font-medium",
-        "rounded-full border transition-all duration-200",
-        "focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2",
-        variantStyles[variant],
-        sizeStyles[size],
-        className
-      )}
+      className={sharedClassName}
       {...(props as React.ComponentProps<typeof motion.button>)}
     >
       {children}
