@@ -122,13 +122,9 @@ export function buildOptimizedUrl(
   
   const transformString = transforms.join(',');
   
-  // URL-encode the external URL for Cloudinary fetch
-  // encodeURIComponent encodes all special chars including /, :, etc.
-  const encodedUrl = encodeURIComponent(externalUrl);
-  
-  // Build the Cloudinary fetch URL
-  // Format: https://res.cloudinary.com/{cloud_name}/image/fetch/{transformations}/{encoded_url}
-  return `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/fetch/${transformString}/${encodedUrl}`;
+  // Cloudinary fetch expects the raw URL (NOT URL-encoded)
+  // Format: https://res.cloudinary.com/{cloud_name}/image/fetch/{transformations}/{raw_url}
+  return `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/fetch/${transformString}/${externalUrl}`;
 }
 
 /**
