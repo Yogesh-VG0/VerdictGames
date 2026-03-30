@@ -6,6 +6,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { Home, Compass, Search, Gamepad2, User, type LucideIcon } from "lucide-react";
 import { hasActiveNavHref, isNavHrefActive } from "@/lib/nav-active";
+import { SHARED_NAV_DESTINATIONS, SHARED_NAV_LABELS } from "@/lib/shared-nav";
 import { cn } from "@/lib/utils";
 
 type BottomNavLink = {
@@ -20,10 +21,10 @@ function getLinks(user: BottomNavUser): BottomNavLink[] {
   return [
     { href: "/", label: "Home", icon: Home },
     { href: "/explore", label: "Explore", icon: Compass },
-    { href: "/search", label: "Search", icon: Search },
+    { href: SHARED_NAV_DESTINATIONS.browse, label: SHARED_NAV_LABELS.browse, icon: Search },
     ...(user
       ? [{ href: "/library", label: "Library", icon: Gamepad2 }]
-      : [{ href: "/search?tab=deals", label: "Deals", icon: Gamepad2 }]),
+      : [{ href: SHARED_NAV_DESTINATIONS.deals, label: SHARED_NAV_LABELS.deals, icon: Gamepad2 }]),
     {
       href: user ? `/profile/${user.username}` : "/about",
       label: user ? "Profile" : "More",
@@ -83,14 +84,14 @@ function BottomNavFallback() {
   const pathname = usePathname();
   const { user } = useAuth();
   const links = getLinks(user);
-  const queryHrefCandidates = links.filter((link) => link.href.startsWith("/search?")).map((link) => link.href);
+  const queryHrefCandidates = links.filter((link) => link.href.startsWith(`${SHARED_NAV_DESTINATIONS.browse}?`)).map((link) => link.href);
 
   return (
     <BottomNavMarkup
       links={links}
       visible={true}
       isLinkActive={(href) => {
-        if (href === "/search") {
+        if (href === SHARED_NAV_DESTINATIONS.browse) {
           return isNavHrefActive(pathname, null, href, "exact")
             && !hasActiveNavHref(pathname, null, queryHrefCandidates);
         }
@@ -132,11 +133,11 @@ function BottomNavContent() {
   }, []);
 
   const links = getLinks(user);
-  const queryHrefCandidates = links.filter((link) => link.href.startsWith("/search?")).map((link) => link.href);
+  const queryHrefCandidates = links.filter((link) => link.href.startsWith(`${SHARED_NAV_DESTINATIONS.browse}?`)).map((link) => link.href);
   const hasExplicitSearchDestination = hasActiveNavHref(pathname, searchParams, queryHrefCandidates);
 
   const isLinkActive = (href: string) => {
-    if (href === "/search") {
+    if (href === SHARED_NAV_DESTINATIONS.browse) {
       return isNavHrefActive(pathname, searchParams, href, "exact") && !hasExplicitSearchDestination;
     }
 

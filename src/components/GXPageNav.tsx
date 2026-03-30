@@ -5,12 +5,13 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { Tag, Gift, Compass, Home } from "lucide-react";
 import { isNavHrefActive } from "@/lib/nav-active";
+import { SHARED_NAV_DESTINATIONS, SHARED_NAV_LABELS } from "@/lib/shared-nav";
 import { cn } from "@/lib/utils";
 
 const NAV_LINKS = [
   { href: "/", label: "Home", icon: Home },
-  { href: "/search?tab=deals", label: "Deals", icon: Tag },
-  { href: "/search?tab=free", label: "Free to Play", icon: Gift },
+  { href: SHARED_NAV_DESTINATIONS.deals, label: SHARED_NAV_LABELS.deals, icon: Tag },
+  { href: SHARED_NAV_DESTINATIONS.freeToPlay, label: SHARED_NAV_LABELS.freeToPlay, icon: Gift },
   { href: "/explore", label: "Explore", icon: Compass },
 ] as const;
 

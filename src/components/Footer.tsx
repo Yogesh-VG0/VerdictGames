@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import FadeInSection from "@/components/FadeInSection";
+import { SHARED_NAV_DESTINATIONS, SHARED_NAV_LABELS } from "@/lib/shared-nav";
 
 export default function Footer() {
   return (
@@ -24,8 +25,8 @@ export default function Footer() {
                 <li><Link href="/search?sort=trending" className="hover:text-accent transition-colors">Trending</Link></li>
                 <li><Link href="/search?sort=newest" className="hover:text-accent transition-colors">New Releases</Link></li>
                 <li><Link href="/search?sort=top-rated" className="hover:text-accent transition-colors">Top Rated</Link></li>
-                <li><Link href="/deals" className="hover:text-accent transition-colors">Deals</Link></li>
-                <li><Link href="/free-to-play" className="hover:text-accent transition-colors">Free to Play</Link></li>
+                <li><Link href={SHARED_NAV_DESTINATIONS.deals} className="hover:text-accent transition-colors">{SHARED_NAV_LABELS.deals}</Link></li>
+                <li><Link href={SHARED_NAV_DESTINATIONS.freeToPlay} className="hover:text-accent transition-colors">{SHARED_NAV_LABELS.freeToPlay}</Link></li>
                 <li><Link href="/calendar" className="hover:text-accent transition-colors">Upcoming</Link></li>
               </ul>
             </div>
