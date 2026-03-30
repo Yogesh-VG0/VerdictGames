@@ -387,6 +387,8 @@ export function mapListRow(
     slug: row.slug,
     title: row.title,
     description: row.description,
+    previewText: row.preview_text,
+    bodyText: row.body_text,
     coverImage,
     gameCount: games.length,
     games,
@@ -395,6 +397,12 @@ export function mapListRow(
     tags: row.tags,
     ownerId: row.owner_id ?? undefined,
     isPublic: row.is_public,
+    isSystemManaged: row.is_system_managed,
+    systemKey: row.system_key ?? undefined,
+    managedBy: row.managed_by ?? undefined,
+    seedVersion: row.seed_version ?? undefined,
+    seedHash: row.seed_hash ?? undefined,
+    lastSeededAt: row.last_seeded_at ?? undefined,
   };
 }
 

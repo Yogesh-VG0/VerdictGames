@@ -40,6 +40,10 @@ function parsePayload<T>(payload: unknown): T | null {
   return payload as T;
 }
 
+function hasServerSupabaseEnv(): boolean {
+  return Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY);
+}
+
 /**
  * Fetch with durable cache: try live, cache on success, fallback on failure.
  *
@@ -52,8 +56,9 @@ export async function gxFetchWithCache<T>(
   liveFetcher: () => Promise<T>,
   staleTtlMs = 6 * 60 * 60 * 1000
 ): Promise<{ data: T; source: "live" | "cache" | "empty" }> {
-  const supabase = getServerSupabase();
-  const cacheTable = supabase.from("gx_cache");
+  const cacheTable = hasServerSupabaseEnv()
+    ? getServerSupabase().from("gx_cache")
+    : null;
 
   // 1. Try live fetch
   try {
@@ -61,7 +66,7 @@ export async function gxFetchWithCache<T>(
 
     // Only cache non-empty results
     const isNonEmpty = Array.isArray(liveData) ? liveData.length > 0 : !!liveData;
-    if (isNonEmpty) {
+    if (isNonEmpty && cacheTable) {
       // Fire and forget — don't block the response on cache write
       void (async () => {
         const { error } = await cacheTable.upsert({
@@ -82,28 +87,30 @@ export async function gxFetchWithCache<T>(
   }
 
   // 2. Fallback to cache
-  try {
-    const { data: cached } = await cacheTable
-      .select("payload, fetched_at")
-      .eq("feed_key", feedKey)
-      .single() as { data: { payload: unknown; fetched_at: string } | null };
+  if (cacheTable) {
+    try {
+      const { data: cached } = await cacheTable
+        .select("payload, fetched_at")
+        .eq("feed_key", feedKey)
+        .single() as { data: { payload: unknown; fetched_at: string } | null };
 
-    if (cached?.payload) {
-      const age = Date.now() - new Date(cached.fetched_at).getTime();
-      const parsed = parsePayload<T>(cached.payload);
-      if (!parsed) {
-        throw new Error(`Invalid cached payload for ${feedKey}`);
+      if (cached?.payload) {
+        const age = Date.now() - new Date(cached.fetched_at).getTime();
+        const parsed = parsePayload<T>(cached.payload);
+        if (!parsed) {
+          throw new Error(`Invalid cached payload for ${feedKey}`);
+        }
+        const isStale = age > staleTtlMs;
+
+        if (isStale) {
+          console.warn(`[GX Cache] Serving stale cache for ${feedKey} (age: ${Math.round(age / 60000)}min)`);
+        }
+
+        return { data: parsed, source: "cache" };
       }
-      const isStale = age > staleTtlMs;
-
-      if (isStale) {
-        console.warn(`[GX Cache] Serving stale cache for ${feedKey} (age: ${Math.round(age / 60000)}min)`);
-      }
-
-      return { data: parsed, source: "cache" };
+    } catch (cacheErr) {
+      console.warn(`[GX Cache] Cache read failed for ${feedKey}:`, (cacheErr as Error).message);
     }
-  } catch (cacheErr) {
-    console.warn(`[GX Cache] Cache read failed for ${feedKey}:`, (cacheErr as Error).message);
   }
 
   // 3. Both failed — return empty
@@ -111,6 +118,7 @@ export async function gxFetchWithCache<T>(
 }
 
 async function readCalendarMonthSnapshot(month: string): Promise<{ items: GXCalendarGame[]; fetchedAt: string } | null> {
+  if (!hasServerSupabaseEnv()) return null;
   const supabase = getServerSupabase();
   const { data } = await supabase
     .from("gx_calendar_month_snapshots")
@@ -128,6 +136,7 @@ async function readCalendarMonthSnapshot(month: string): Promise<{ items: GXCale
 }
 
 async function writeCalendarMonthSnapshot(month: string, items: GXCalendarGame[], fetchedAt: string) {
+  if (!hasServerSupabaseEnv()) return;
   const supabase = getServerSupabase();
   const { error } = await supabase
     .from("gx_calendar_month_snapshots")
