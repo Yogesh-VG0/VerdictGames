@@ -24,7 +24,7 @@ import {
   GXCalendarMonthResponse,
   CalendarMonthResponse,
 } from "./types";
-import { getCalendarMonthKey } from "./utils/gx-calendar";
+import { buildCalendarApiPath, getCalendarMonthKey, resolveCalendarMonthKey } from "./utils/gx-calendar";
 import { buildSearchApiPath } from "@/lib/search";
 
 /** Must match `PAGE_SIZE` in `src/app/api/search/route.ts` */
@@ -521,9 +521,9 @@ export async function toggleFollow(profileId: string, action: "follow" | "unfoll
 
 /** Get games releasing in a specific month. */
 export async function getCalendarGames(month?: string): Promise<CalendarMonthResponse> {
-  const params = month ? `?month=${month}` : "";
-  return (await apiFetch<CalendarMonthResponse>(`/api/calendar${params}`)) ?? {
-    month: month ?? getCalendarMonthKey(),
+  const resolvedMonth = resolveCalendarMonthKey(month) ?? getCalendarMonthKey();
+  return (await apiFetch<CalendarMonthResponse>(buildCalendarApiPath(month))) ?? {
+    month: resolvedMonth,
     items: [],
     gxSource: "empty",
     gxCount: 0,
