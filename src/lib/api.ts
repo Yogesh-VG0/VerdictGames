@@ -25,6 +25,7 @@ import {
   CalendarMonthResponse,
 } from "./types";
 import { getCalendarMonthKey } from "./utils/gx-calendar";
+import { buildSearchApiPath } from "@/lib/search";
 
 /** Must match `PAGE_SIZE` in `src/app/api/search/route.ts` */
 const PAGE_SIZE = 24;
@@ -129,19 +130,8 @@ export async function getHomepageData(): Promise<HomepageData> {
 export async function searchGames(
   filters: SearchFilters
 ): Promise<PaginatedResponse<Game>> {
-  const params = new URLSearchParams();
-  if (filters.query) params.set("q", filters.query);
-  if (filters.platform && filters.platform !== "All") params.set("platform", filters.platform);
-  if (filters.genre) params.set("genre", filters.genre);
-  if (filters.year) params.set("year", filters.year);
-  if (filters.monetization && filters.monetization !== "All") params.set("monetization", filters.monetization);
-  if (filters.sort) params.set("sort", filters.sort);
-  if (filters.page) params.set("page", String(filters.page));
-
-  const data = await apiFetch<PaginatedResponse<Game>>(
-    `/api/search?${params.toString()}`
-  );
-  return data ?? EMPTY_PAGE<Game>();
+  const data = await apiFetch<PaginatedResponse<Game>>(buildSearchApiPath(filters));
+  return data ?? { ...EMPTY_PAGE<Game>(), pageSize: 25 };
 }
 
 /** Get a single game by slug. Pass rawgId for RAWG-sourced links to avoid slug collisions. */
