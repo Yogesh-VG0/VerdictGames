@@ -78,7 +78,7 @@ export default async function HomePage() {
                 <SectionHeader
                   title="Trending Right Now"
                   href="/search?sort=trending"
-                  linkLabel="See all trending"
+                  linkLabel="View all"
                   icon={<Flame className="w-5 h-5" />}
                   subtitle="Based on recent player activity & community signals"
                   gradient="linear-gradient(90deg, #f97316 0%, #ef4444 25%, #f97316 50%, #eab308 75%, #f97316 100%)"
@@ -116,7 +116,7 @@ export default async function HomePage() {
                 <SectionHeader
                   title="Top Rated"
                   href="/search?sort=top-rated"
-                  linkLabel="See all top rated"
+                  linkLabel="View all"
                   icon={<Trophy className="w-5 h-5" />}
                   subtitle="Highest-scoring recent releases"
                   gradient="linear-gradient(90deg, #facc15 0%, #f97316 25%, #eab308 50%, #22c55e 75%, #facc15 100%)"

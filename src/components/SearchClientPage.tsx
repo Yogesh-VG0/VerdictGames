@@ -1,14 +1,24 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
+import { Calendar, ChevronLeft, ChevronRight, Clock, ExternalLink, Flame, Gamepad2, Gift, RotateCcw, Search as SearchIcon, Sparkles, Tag, Trophy } from "lucide-react";
+import FilterChips from "@/components/ui/FilterChips";
+import GameGrid from "@/components/GameGrid";
+import GXDealCard from "@/components/GXDealCard";
+import SectionHeader from "@/components/SectionHeader";
+import SortDropdown from "@/components/ui/SortDropdown";
+import { GameGridSkeleton } from "@/components/ui/Skeleton";
+import { PLATFORM_FILTER_OPTIONS, platformFilterIcon } from "@/components/ui/PlatformIcon";
 import { searchGames, getGXDeals, getGXFreeToPlay, getGXTopGames } from "@/lib/api";
 import { buildSearchApiPath, buildSearchPagePath, normalizeSearchGamesState, searchGamesStateToFilters, type SearchBrowseTab, type SearchPageState } from "@/lib/search";
 import type { Game, MonetizationType, Platform, SortOption, PaginatedResponse } from "@/lib/types";
-import { PLATFORM_FILTER_OPTIONS, platformFilterIcon } from "@/components/ui/PlatformIcon";
-import GXDealCard from "@/components/GXDealCard";
+import { cn } from "@/lib/utils";
+import { slugify } from "@/lib/utils/slugify";
 
 const allGenres: string[] = [
   "Action", "Action RPG", "Adventure", "Battle Royale", "Card Game",
@@ -22,16 +32,6 @@ const allYears: string[] = [
   "2026", "2025", "2024", "2023", "2022", "2021", "2020",
   "2019", "2018", "2017", "2016", "2015", "2014", "2013", "2012", "2011",
 ];
-import GameGrid from "@/components/GameGrid";
-import FilterChips from "@/components/ui/FilterChips";
-import SortDropdown from "@/components/ui/SortDropdown";
-import GradientText from "@/components/ui/GradientText";
-import { GameGridSkeleton } from "@/components/ui/Skeleton";
-import { Flame, Trophy, Sparkles, Calendar, Clock, Search as SearchIcon, Tag, Gift, Gamepad2, ExternalLink, ChevronLeft, ChevronRight } from "lucide-react";
-import { slugify } from "@/lib/utils/slugify";
-import Link from "next/link";
-import Image from "next/image";
-import { cn } from "@/lib/utils";
 
 type FreeSubTab = "free" | "subscriptions";
 type DealsSortMode = "discount" | "price-low" | "price-high" | "name";
@@ -44,6 +44,82 @@ const DEALS_SORT_OPTIONS: { value: DealsSortMode; label: string }[] = [
 ];
 
 const MONETIZATION_OPTIONS = ["All", "Free", "Paid"] as const;
+const RESET_FILTERS_LABEL = "Reset filters";
+const RESET_FILTERS_BUTTON_CLASS = "inline-flex items-center gap-1.5 px-4 py-2 text-sm text-accent border border-accent rounded-full hover:bg-accent/10 transition-colors";
+
+function getSearchPageHeader(browseTab: SearchBrowseTab, freeSubTab: FreeSubTab, sort: SortOption) {
+  if (browseTab === "deals") {
+    return {
+      title: "Game Deals",
+      subtitle: "Browse live discounts and narrow them by store or genre.",
+      gradient: "linear-gradient(90deg, #22c55e 0%, #84cc16 50%, #f59e0b 100%)",
+      icon: <Tag className="w-6 h-6 text-pixel-green" />,
+    };
+  }
+
+  if (browseTab === "free") {
+    if (freeSubTab === "subscriptions") {
+      return {
+        title: "Included with Subscription",
+        subtitle: "Browse Game Pass and PlayStation Plus picks by service or genre.",
+        gradient: "linear-gradient(90deg, #8b5cf6 0%, #6366f1 50%, #06b6d4 100%)",
+        icon: <Gamepad2 className="w-6 h-6 text-accent" />,
+      };
+    }
+
+    return {
+      title: "Free to Play",
+      subtitle: "Browse free games across platforms and narrow the list by genre.",
+      gradient: "linear-gradient(90deg, #06b6d4 0%, #22c55e 50%, #38bdf8 100%)",
+      icon: <Gift className="w-6 h-6 text-pixel-cyan" />,
+    };
+  }
+
+  switch (sort) {
+    case "trending":
+      return {
+        title: "Trending Games",
+        subtitle: "Games gaining momentum right now based on player activity.",
+        gradient: "linear-gradient(90deg, #f97316, #ef4444, #f97316)",
+        icon: <Flame className="w-6 h-6 text-orange-500" />,
+      };
+    case "top-rated":
+      return {
+        title: "Top Rated Games",
+        subtitle: "Highest Verdict scores across all platforms.",
+        gradient: "linear-gradient(90deg, #facc15, #f97316, #22c55e)",
+        icon: <Trophy className="w-6 h-6 text-yellow-500" />,
+      };
+    case "newest":
+      return {
+        title: "New Releases",
+        subtitle: "The latest released games, sorted by release date.",
+        gradient: "linear-gradient(90deg, #06b6d4, #3b82f6, #8b5cf6)",
+        icon: <Sparkles className="w-6 h-6 text-cyan-500" />,
+      };
+    case "upcoming":
+      return {
+        title: "Upcoming Games",
+        subtitle: "Unreleased games arriving soonest.",
+        gradient: "linear-gradient(90deg, #a855f7, #6366f1, #ec4899)",
+        icon: <Calendar className="w-6 h-6 text-purple-500" />,
+      };
+    case "recently-added":
+      return {
+        title: "Recently Added",
+        subtitle: "Latest games added to Verdict — not necessarily new releases.",
+        gradient: "linear-gradient(90deg, #3b82f6, #06b6d4, #3b82f6)",
+        icon: <Clock className="w-6 h-6 text-blue-500" />,
+      };
+    default:
+      return {
+        title: "Browse Games",
+        subtitle: "Search, filter, and sort games across all platforms.",
+        gradient: "linear-gradient(90deg, #6366f1 0%, #8b5cf6 25%, #a78bfa 50%, #8b5cf6 75%, #6366f1 100%)",
+        icon: <SearchIcon className="w-6 h-6 text-accent" />,
+      };
+  }
+}
 
 interface SearchClientPageProps {
   initialState: SearchPageState;
@@ -266,36 +342,46 @@ export default function SearchClientPage({ initialState, initialGamesData }: Sea
   }, [normalizedPagePath, router]);
 
   const isInitialLoad = browseTab === "games" && isLoading && !data;
+  const pageHeader = useMemo(() => getSearchPageHeader(browseTab, freeSubTab, sort), [browseTab, freeSubTab, sort]);
+
+  const resetDealsFilters = useCallback(() => {
+    setGxGenre("All");
+    setGxPlatform("All");
+    setGxStore("All");
+  }, []);
+
+  const resetFreeFilters = useCallback(() => {
+    setGxGenre("All");
+    setGxPlatform("All");
+  }, []);
+
+  const resetSubscriptionFilters = useCallback(() => {
+    setGxGenre("All");
+    setGxPlatform("All");
+    setGxService("All");
+  }, []);
 
   return (
-    <div className="max-w-[1400px] mx-auto px-4 py-6 space-y-6 overflow-x-hidden page-enter">
+    <div className="max-w-[1400px] mx-auto px-4 py-8 sm:py-10 space-y-8 overflow-x-hidden page-enter">
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
-        className="space-y-1"
+        className="mb-0"
       >
-        <h1 className="text-2xl font-bold text-foreground flex items-center gap-3">
-          {sort === "trending" ? <><Flame className="w-6 h-6 text-orange-500" /><GradientText text="Trending Games" gradient="linear-gradient(90deg, #f97316, #ef4444, #f97316)" /></> :
-           sort === "top-rated" ? <><Trophy className="w-6 h-6 text-yellow-500" /><GradientText text="Top Rated Games" gradient="linear-gradient(90deg, #facc15, #f97316, #22c55e)" /></> :
-           sort === "newest" ? <><Sparkles className="w-6 h-6 text-cyan-500" /><GradientText text="New Releases" gradient="linear-gradient(90deg, #06b6d4, #3b82f6, #8b5cf6)" /></> :
-           sort === "upcoming" ? <><Calendar className="w-6 h-6 text-purple-500" /><GradientText text="Upcoming Games" gradient="linear-gradient(90deg, #a855f7, #6366f1, #ec4899)" /></> :
-           sort === "recently-added" ? <><Clock className="w-6 h-6 text-blue-500" /><GradientText text="Recently Added to Verdict" gradient="linear-gradient(90deg, #3b82f6, #06b6d4, #3b82f6)" /></> :
-           <><SearchIcon className="w-6 h-6 text-accent" /><GradientText text="Search Games" gradient="linear-gradient(90deg, #6366f1 0%, #8b5cf6 25%, #a78bfa 50%, #8b5cf6 75%, #6366f1 100%)" /></>}
-        </h1>
-        <p className="text-sm text-secondary">
-          {sort === "trending" ? "Games gaining momentum right now based on player activity." :
-           sort === "top-rated" ? "Highest Verdict scores across all platforms." :
-           sort === "newest" ? "The latest released games, sorted by release date." :
-           sort === "upcoming" ? "Unreleased games arriving soonest." :
-           sort === "recently-added" ? "Latest games added to Verdict — not necessarily new releases." :
-           "Discover and filter games across all platforms."}
-        </p>
+        <SectionHeader
+          title={pageHeader.title}
+          icon={pageHeader.icon}
+          subtitle={pageHeader.subtitle}
+          gradient={pageHeader.gradient}
+          headingTag="h1"
+          className="mb-0"
+        />
       </motion.div>
 
-      <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1 -mx-4 px-4 sm:mx-0 sm:px-0">
+      <div className="flex gap-2.5 overflow-x-auto scrollbar-hide pb-1 -mx-4 px-4 sm:mx-0 sm:px-0">
         {([
-          { key: "games" as SearchBrowseTab, label: "Games", icon: SearchIcon },
+          { key: "games" as SearchBrowseTab, label: "Browse", icon: SearchIcon },
           { key: "deals" as SearchBrowseTab, label: "Deals", icon: Tag },
           { key: "free" as SearchBrowseTab, label: "Free to Play", icon: Gift },
         ]).map(({ key, label, icon: Icon }) => (
@@ -565,12 +651,10 @@ export default function SearchClientPage({ initialState, initialGamesData }: Sea
               {(platform !== "All" || genre || year || monetization !== "All") && (
                 <button
                   onClick={resetFilters}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 text-sm text-accent border border-accent rounded-full hover:bg-accent/10 transition-colors"
+                  className={RESET_FILTERS_BUTTON_CLASS}
                 >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                  Clear all filters
+                  <RotateCcw className="w-4 h-4" />
+                  {RESET_FILTERS_LABEL}
                 </button>
               )}
               <div className="pt-4 text-xs text-tertiary">
@@ -722,10 +806,11 @@ export default function SearchClientPage({ initialState, initialGamesData }: Sea
               <Tag className="w-12 h-12 text-tertiary mx-auto mb-3" />
               <p className="text-secondary">No deals match your filters.</p>
               <button
-                onClick={() => { setGxGenre("All"); setGxStore("All"); }}
-                className="mt-3 text-xs text-accent hover:underline"
+                onClick={resetDealsFilters}
+                className={`${RESET_FILTERS_BUTTON_CLASS} mt-3`}
               >
-                Clear filters
+                <RotateCcw className="w-4 h-4" />
+                {RESET_FILTERS_LABEL}
               </button>
             </div>
           )}
@@ -953,10 +1038,11 @@ export default function SearchClientPage({ initialState, initialGamesData }: Sea
                   <Gift className="w-12 h-12 text-tertiary mx-auto mb-3" />
                   <p className="text-secondary">No free games match your filters.</p>
                   <button
-                    onClick={() => setGxGenre("All")}
-                    className="mt-3 text-xs text-accent hover:underline"
+                    onClick={resetFreeFilters}
+                    className={`${RESET_FILTERS_BUTTON_CLASS} mt-3`}
                   >
-                    Clear filters
+                    <RotateCcw className="w-4 h-4" />
+                    {RESET_FILTERS_LABEL}
                   </button>
                 </div>
               )}
@@ -1056,10 +1142,11 @@ export default function SearchClientPage({ initialState, initialGamesData }: Sea
                   <Gamepad2 className="w-12 h-12 text-tertiary mx-auto mb-3" />
                   <p className="text-secondary">No subscription games match your filters.</p>
                   <button
-                    onClick={() => { setGxGenre("All"); setGxService("All"); }}
-                    className="mt-3 text-xs text-accent hover:underline"
+                    onClick={resetSubscriptionFilters}
+                    className={`${RESET_FILTERS_BUTTON_CLASS} mt-3`}
                   >
-                    Clear filters
+                    <RotateCcw className="w-4 h-4" />
+                    {RESET_FILTERS_LABEL}
                   </button>
                 </div>
               )}

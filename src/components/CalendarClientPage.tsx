@@ -147,17 +147,19 @@ export default function CalendarClientPage({ initialMonth, initialMonthData }: C
   }, [initialMonth, router]);
 
   return (
-    <div className="max-w-[1400px] mx-auto px-4 py-6 sm:py-8 space-y-6 page-enter overflow-x-hidden">
+    <div className="max-w-[1400px] mx-auto px-4 py-8 sm:py-10 space-y-8 page-enter overflow-x-hidden">
       <FadeInSection>
         <SectionHeader
           title="Release Calendar"
           icon={<CalendarDays className="w-5 h-5" />}
           subtitle="Upcoming and recent game launches"
           gradient="linear-gradient(90deg, #f59e0b 0%, #f97316 25%, #ef4444 50%, #f97316 75%, #f59e0b 100%)"
+          headingTag="h1"
+          className="mb-0"
         />
       </FadeInSection>
 
-      <div className="sticky top-16 z-30 -mx-4 px-4 py-3 bg-background/80 backdrop-blur-xl border-b border-border">
+      <div className="sticky z-30 -mx-4 px-4 py-4 bg-background/80 backdrop-blur-xl border-b border-border" style={{ top: "var(--navbar-height, 56px)" }}>
         <div
           ref={monthNavRef}
           className="flex gap-1.5 overflow-x-auto py-1.5 scrollbar-hide cursor-grab"
@@ -198,7 +200,7 @@ export default function CalendarClientPage({ initialMonth, initialMonthData }: C
           })}
         </div>
 
-        <div className="flex gap-1.5 mt-2 overflow-x-auto scrollbar-hide">
+        <div className="flex gap-1.5 mt-3 overflow-x-auto scrollbar-hide">
           {PLATFORM_FILTER_OPTIONS.map((platformOption) => (
             <button
               key={platformOption.value}
