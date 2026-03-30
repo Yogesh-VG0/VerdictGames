@@ -1,7 +1,8 @@
 "use client";
 
+import { Suspense } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { Tag, Gift, Compass, Home } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -12,17 +13,16 @@ const NAV_LINKS = [
   { href: "/explore", label: "Explore", icon: Compass },
 ] as const;
 
-export default function GXPageNav() {
-  const pathname = usePathname();
-
+function GXPageNavMarkup({ isLinkActive }: { isLinkActive: (href: string) => boolean }) {
   return (
-    <nav className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide pb-1 -mx-4 px-4 sm:mx-0 sm:px-0">
+    <nav aria-label="GX navigation" className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide pb-1 -mx-4 px-4 sm:mx-0 sm:px-0">
       {NAV_LINKS.map(({ href, label, icon: Icon }) => {
-        const active = pathname === href;
+        const active = isLinkActive(href);
         return (
           <Link
             key={href}
             href={href}
+            aria-current={active ? "page" : undefined}
             className={cn(
               "flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all duration-200 border",
               active
@@ -36,5 +36,67 @@ export default function GXPageNav() {
         );
       })}
     </nav>
+  );
+}
+
+function GXPageNavFallback() {
+  const pathname = usePathname();
+
+  return (
+    <GXPageNavMarkup
+      isLinkActive={(href) => {
+        if (href === "/") {
+          return pathname === "/";
+        }
+
+        if (href.includes("?")) {
+          return false;
+        }
+
+        return pathname.startsWith(href);
+      }}
+    />
+  );
+}
+
+function GXPageNavContent() {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const matchesPathAndQuery = (href: string) => {
+    if (!href.includes("?")) {
+      return pathname === href;
+    }
+
+    const [basePath, queryString = ""] = href.split("?");
+    if (pathname !== basePath) {
+      return false;
+    }
+
+    const targetParams = new URLSearchParams(queryString);
+
+    return Array.from(targetParams.entries()).every(([key, value]) => searchParams.get(key) === value);
+  };
+
+  const isLinkActive = (href: string) => {
+    if (href === "/") {
+      return pathname === "/";
+    }
+
+    if (href.includes("?")) {
+      return matchesPathAndQuery(href);
+    }
+
+    return pathname.startsWith(href);
+  };
+
+  return <GXPageNavMarkup isLinkActive={isLinkActive} />;
+}
+
+export default function GXPageNav() {
+  return (
+    <Suspense fallback={<GXPageNavFallback />}>
+      <GXPageNavContent />
+    </Suspense>
   );
 }

@@ -29,6 +29,19 @@ export default function NavbarTop() {
   const { user, signOut } = useAuth();
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const mobileSearchButtonRef = useRef<HTMLButtonElement>(null);
+  const mobileSearchInputRef = useRef<HTMLInputElement>(null);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const sidebarRef = useRef<HTMLDivElement>(null);
+  const sidebarCloseButtonRef = useRef<HTMLButtonElement>(null);
+  const profileButtonRef = useRef<HTMLButtonElement>(null);
+  const profileMenuRef = useRef<HTMLDivElement>(null);
+  const signOutDialogRef = useRef<HTMLDivElement>(null);
+  const signOutCancelButtonRef = useRef<HTMLButtonElement>(null);
+  const lastSignOutTriggerRef = useRef<HTMLElement | null>(null);
+  const mobileSearchWasOpen = useRef(false);
+  const sidebarWasOpen = useRef(false);
+  const signOutConfirmWasOpen = useRef(false);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -39,7 +52,10 @@ export default function NavbarTop() {
       }
     }
     function handleKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setProfileDropdownOpen(false);
+      if (e.key === "Escape") {
+        setProfileDropdownOpen(false);
+        profileButtonRef.current?.focus();
+      }
     }
     document.addEventListener("mousedown", handleClick);
     document.addEventListener("keydown", handleKey);
@@ -65,7 +81,34 @@ export default function NavbarTop() {
     { href: "/lists", label: "Lists", icon: <List className="w-4 h-4" /> },
   ];
 
-  const handleSignOut = useCallback(() => {
+  const isNavLinkActive = useCallback((href: string) => {
+    if (href === "/") {
+      return pathname === "/";
+    }
+
+    return pathname.startsWith(href);
+  }, [pathname]);
+
+  const getFocusableElements = useCallback((container: HTMLElement | null) => {
+    if (!container) return [];
+
+    return Array.from(
+      container.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      )
+    );
+  }, []);
+
+  const handleSignOut = useCallback((trigger?: HTMLElement | null) => {
+    if (trigger && dropdownRef.current?.contains(trigger)) {
+      lastSignOutTriggerRef.current = profileButtonRef.current;
+      setProfileDropdownOpen(false);
+    } else if (trigger && sidebarRef.current?.contains(trigger)) {
+      lastSignOutTriggerRef.current = sidebarCloseButtonRef.current;
+    } else {
+      lastSignOutTriggerRef.current = trigger ?? null;
+    }
+
     setSignOutConfirmOpen(true);
   }, []);
 
@@ -86,13 +129,48 @@ export default function NavbarTop() {
     return () => { document.body.style.overflow = ""; };
   }, [sidebarOpen]);
 
+  useEffect(() => {
+    if (mobileSearchOpen) {
+      mobileSearchInputRef.current?.focus();
+    } else if (mobileSearchWasOpen.current) {
+      mobileSearchButtonRef.current?.focus();
+    }
+
+    mobileSearchWasOpen.current = mobileSearchOpen;
+  }, [mobileSearchOpen]);
+
+  useEffect(() => {
+    if (sidebarOpen) {
+      sidebarCloseButtonRef.current?.focus();
+    } else if (sidebarWasOpen.current) {
+      menuButtonRef.current?.focus();
+    }
+
+    sidebarWasOpen.current = sidebarOpen;
+  }, [sidebarOpen]);
+
+  useEffect(() => {
+    if (profileDropdownOpen) {
+      const [firstFocusable] = getFocusableElements(profileMenuRef.current);
+      firstFocusable?.focus();
+    }
+  }, [getFocusableElements, profileDropdownOpen]);
+
+  useEffect(() => {
+    if (signOutConfirmOpen) {
+      signOutCancelButtonRef.current?.focus();
+    } else if (signOutConfirmWasOpen.current) {
+      lastSignOutTriggerRef.current?.focus();
+    }
+
+    signOutConfirmWasOpen.current = signOutConfirmOpen;
+  }, [signOutConfirmOpen]);
+
   // Focus trap helper
-  const trapFocus = useCallback((e: React.KeyboardEvent, containerRef: React.RefObject<HTMLDivElement | null>) => {
+  const trapFocus = useCallback((e: ReactKbEvent<HTMLElement>, containerRef: React.RefObject<HTMLDivElement | null>) => {
     if (e.key === "Escape") return; // let escape handlers run
     if (e.key !== "Tab" || !containerRef.current) return;
-    const focusable = containerRef.current.querySelectorAll<HTMLElement>(
-      'a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
-    );
+    const focusable = getFocusableElements(containerRef.current);
     if (focusable.length === 0) return;
     const first = focusable[0];
     const last = focusable[focusable.length - 1];
@@ -103,10 +181,58 @@ export default function NavbarTop() {
       e.preventDefault();
       first.focus();
     }
+  }, [getFocusableElements]);
+
+  const handleProfileButtonKeyDown = useCallback((e: ReactKbEvent<HTMLButtonElement>) => {
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setProfileDropdownOpen(true);
+      return;
+    }
+
+    if (e.key === "Escape") {
+      e.preventDefault();
+      setProfileDropdownOpen(false);
+    }
   }, []);
 
-  const sidebarRef = useRef<HTMLDivElement>(null);
-  const signOutDialogRef = useRef<HTMLDivElement>(null);
+  const handleProfileMenuKeyDown = useCallback((e: ReactKbEvent<HTMLDivElement>) => {
+    if (e.key === "Escape") {
+      e.preventDefault();
+      setProfileDropdownOpen(false);
+      profileButtonRef.current?.focus();
+      return;
+    }
+
+    const focusable = getFocusableElements(profileMenuRef.current);
+    if (focusable.length === 0) return;
+
+    if (e.key === "Home") {
+      e.preventDefault();
+      focusable[0]?.focus();
+      return;
+    }
+
+    if (e.key === "End") {
+      e.preventDefault();
+      focusable[focusable.length - 1]?.focus();
+      return;
+    }
+
+    if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
+
+    e.preventDefault();
+    const currentIndex = focusable.findIndex((element) => element === document.activeElement);
+    const delta = e.key === "ArrowDown" ? 1 : -1;
+    const nextIndex =
+      currentIndex === -1
+        ? delta === 1
+          ? 0
+          : focusable.length - 1
+        : (currentIndex + delta + focusable.length) % focusable.length;
+
+    focusable[nextIndex]?.focus();
+  }, [getFocusableElements]);
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
@@ -137,19 +263,28 @@ export default function NavbarTop() {
           </Link>
           <div className="flex items-center gap-2">
             <motion.button
+              ref={mobileSearchButtonRef}
+              type="button"
               whileTap={{ scale: 0.9 }}
-              onClick={() => setMobileSearchOpen(!mobileSearchOpen)}
+              onClick={() => setMobileSearchOpen((open) => !open)}
               className="w-9 h-9 rounded-xl bg-surface-2 border border-border flex items-center justify-center text-secondary hover:text-foreground transition-colors"
-              aria-label="Search"
+              aria-controls="mobile-search-panel"
+              aria-expanded={mobileSearchOpen}
+              aria-label={mobileSearchOpen ? "Close search" : "Open search"}
             >
               <Search className="w-4 h-4" />
             </motion.button>
             <ThemeToggle />
             <motion.button
+              ref={menuButtonRef}
+              type="button"
               whileTap={{ scale: 0.9 }}
-              onClick={() => setSidebarOpen(true)}
+              onClick={() => setSidebarOpen((open) => !open)}
               className="w-9 h-9 rounded-xl bg-surface-2 border border-border flex items-center justify-center text-secondary hover:text-foreground transition-colors"
-              aria-label="Menu"
+              aria-controls="mobile-navigation-drawer"
+              aria-expanded={sidebarOpen}
+              aria-haspopup="dialog"
+              aria-label={sidebarOpen ? "Close menu" : "Open menu"}
             >
               <Menu className="w-4 h-4" />
             </motion.button>
@@ -162,20 +297,28 @@ export default function NavbarTop() {
               {/* Invisible backdrop to catch outside clicks */}
               <div className="fixed inset-0 z-[39]" onClick={() => setMobileSearchOpen(false)} />
               <motion.div
+                id="mobile-search-panel"
                 initial={{ height: 0, opacity: 0 }}
                 animate={{ height: "auto", opacity: 1 }}
                 exit={{ height: 0, opacity: 0 }}
                 transition={{ duration: 0.2 }}
                 className="overflow-hidden border-t border-border relative z-[40]"
               >
-                <form onSubmit={handleSearch} className="px-4 py-3">
+                <form onSubmit={handleSearch} role="search" aria-label="Site search" className="px-4 py-3">
                   <input
+                    ref={mobileSearchInputRef}
                     type="search"
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Escape") {
+                        e.preventDefault();
+                        setMobileSearchOpen(false);
+                      }
+                    }}
                     placeholder="Search games..."
+                    aria-label="Search games"
                     className="w-full h-10 px-4 text-sm rounded-xl bg-surface-2 border border-border text-foreground placeholder:text-tertiary focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/20 transition-all"
-                    autoFocus
                   />
                 </form>
               </motion.div>
@@ -200,9 +343,10 @@ export default function NavbarTop() {
             {/* Drawer */}
             <motion.div
               ref={sidebarRef}
+              id="mobile-navigation-drawer"
               role="dialog"
               aria-modal="true"
-              aria-label="Navigation menu"
+              aria-labelledby="mobile-navigation-title"
               onKeyDown={(e) => {
                 if (e.key === "Escape") setSidebarOpen(false);
                 trapFocus(e, sidebarRef);
@@ -215,10 +359,13 @@ export default function NavbarTop() {
             >
               {/* Header */}
               <div className="flex items-center justify-between px-4 h-14 border-b border-border">
-                <span className="font-bold text-foreground">Menu</span>
+                <span id="mobile-navigation-title" className="font-bold text-foreground">Menu</span>
                 <button
+                  ref={sidebarCloseButtonRef}
+                  type="button"
                   onClick={() => setSidebarOpen(false)}
                   className="w-8 h-8 rounded-lg flex items-center justify-center text-secondary hover:text-foreground hover:bg-surface-2 transition-colors"
+                  aria-label="Close menu"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -255,22 +402,13 @@ export default function NavbarTop() {
               <div className="py-2">
                 <p className="px-4 py-2 text-[10px] uppercase tracking-wider text-tertiary font-medium">Browse</p>
                 {navLinks.map((link) => {
-                  let isActive: boolean;
-                  if (link.href === "/") {
-                    isActive = pathname === "/";
-                  } else if (link.href.includes("?")) {
-                    // Links with query params: match both pathname and query
-                    const [basePath, qs] = link.href.split("?");
-                    isActive = pathname === basePath && typeof window !== "undefined" && window.location.search === `?${qs}`;
-                  } else {
-                    // Links without query params: match pathname prefix
-                    isActive = pathname.startsWith(link.href);
-                  }
+                  const isActive = isNavLinkActive(link.href);
                   return (
                     <Link
                       key={link.href + link.label}
                       href={link.href}
                       onClick={() => setSidebarOpen(false)}
+                      aria-current={isActive ? "page" : undefined}
                       className={cn(
                         "flex items-center gap-3 px-4 py-2.5 text-sm transition-colors",
                         isActive
@@ -304,7 +442,8 @@ export default function NavbarTop() {
                     </Link>
                   )}
                   <button
-                    onClick={handleSignOut}
+                    type="button"
+                    onClick={(e) => handleSignOut(e.currentTarget)}
                     className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-danger hover:bg-danger/5 transition-colors"
                   >
                     <LogOut className="w-4 h-4 opacity-70" /> Sign Out
@@ -318,7 +457,7 @@ export default function NavbarTop() {
 
       {/* ── Desktop navbar ── */}
       <header className="sticky top-0 z-50 hidden md:block bg-background/80 backdrop-blur-xl border-b border-border">
-        <nav className="flex items-center gap-2 px-4 h-14 max-w-[1400px] mx-auto">
+        <nav aria-label="Primary navigation" className="flex items-center gap-2 px-4 h-14 max-w-[1400px] mx-auto">
           {/* Logo */}
           <Link href="/" className="shrink-0 flex items-center gap-3 pl-3 group">
             <Image
@@ -340,19 +479,12 @@ export default function NavbarTop() {
           {/* Nav links */}
           <div className="flex items-center gap-1">
             {navLinks.map((link) => {
-              let isActive: boolean;
-              if (link.href === "/") {
-                isActive = pathname === "/";
-              } else if (link.href.includes("?")) {
-                const [basePath] = link.href.split("?");
-                isActive = pathname === basePath;
-              } else {
-                isActive = pathname.startsWith(link.href);
-              }
+              const isActive = isNavLinkActive(link.href);
               return (
                 <Link
                   key={link.href}
                   href={link.href}
+                  aria-current={isActive ? "page" : undefined}
                   className={cn(
                     "relative px-4 py-2 text-sm font-medium transition-all duration-200 rounded-xl",
                     isActive
@@ -377,7 +509,7 @@ export default function NavbarTop() {
           <div className="w-px h-6 bg-border mx-1" />
 
           {/* Search */}
-          <form onSubmit={handleSearch} className="relative w-52">
+          <form onSubmit={handleSearch} role="search" aria-label="Site search" className="relative w-52">
             <input
               ref={inputRef}
               type="search"
@@ -395,8 +527,15 @@ export default function NavbarTop() {
             {user ? (
               <div className="relative" ref={dropdownRef}>
                 <button
+                  id="desktop-profile-button"
+                  ref={profileButtonRef}
+                  type="button"
                   onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
+                  onKeyDown={handleProfileButtonKeyDown}
                   className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl hover:bg-surface-2 transition-colors"
+                  aria-haspopup="menu"
+                  aria-controls="desktop-profile-menu"
+                  aria-expanded={profileDropdownOpen}
                 >
                   <UserAvatar src={user.avatar} displayName={user.displayName} size="sm" />
                   <span className="text-sm text-secondary max-w-[80px] truncate">{user.displayName}</span>
@@ -405,10 +544,14 @@ export default function NavbarTop() {
                 <AnimatePresence>
                   {profileDropdownOpen && (
                     <motion.div
+                      id="desktop-profile-menu"
+                      ref={profileMenuRef}
                       initial={{ opacity: 0, y: -4, scale: 0.95 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: -4, scale: 0.95 }}
                       transition={{ duration: 0.15 }}
+                      onKeyDown={handleProfileMenuKeyDown}
+                      aria-labelledby="desktop-profile-button"
                       className="absolute right-0 top-full mt-2 w-56 rounded-xl bg-surface border border-border shadow-2xl overflow-hidden z-50"
                     >
                       <div className="px-4 py-3 border-b border-border flex items-center gap-3">
@@ -456,7 +599,8 @@ export default function NavbarTop() {
                       </div>
                       <div className="border-t border-border">
                         <button
-                          onClick={handleSignOut}
+                          type="button"
+                          onClick={(e) => handleSignOut(e.currentTarget)}
                           className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-danger hover:bg-danger/5 transition-colors"
                         >
                           <LogOut className="w-4 h-4 opacity-60" />
@@ -469,6 +613,7 @@ export default function NavbarTop() {
               </div>
             ) : (
               <button
+                type="button"
                 onClick={() => setAuthModalOpen(true)}
                 className="px-3.5 py-1.5 rounded-xl text-sm font-medium bg-accent text-white hover:bg-accent-hover transition-colors shadow-sm shadow-accent/20"
               >
@@ -498,7 +643,8 @@ export default function NavbarTop() {
               ref={signOutDialogRef}
               role="dialog"
               aria-modal="true"
-              aria-label="Sign out confirmation"
+              aria-labelledby="sign-out-dialog-title"
+              aria-describedby="sign-out-dialog-description"
               onKeyDown={(e) => {
                 if (e.key === "Escape") setSignOutConfirmOpen(false);
                 trapFocus(e, signOutDialogRef);
@@ -511,17 +657,20 @@ export default function NavbarTop() {
             >
               <div className="text-center space-y-2">
                 <LogOut className="w-8 h-8 text-danger mx-auto" />
-                <h3 className="text-lg font-bold text-foreground">Sign Out?</h3>
-                <p className="text-sm text-secondary">Are you sure you want to sign out of your account?</p>
+                <h3 id="sign-out-dialog-title" className="text-lg font-bold text-foreground">Sign Out?</h3>
+                <p id="sign-out-dialog-description" className="text-sm text-secondary">Are you sure you want to sign out of your account?</p>
               </div>
               <div className="flex gap-3">
                 <button
+                  ref={signOutCancelButtonRef}
+                  type="button"
                   onClick={() => setSignOutConfirmOpen(false)}
                   className="flex-1 px-4 py-2.5 rounded-xl text-sm font-medium bg-surface-2 border border-border text-secondary hover:text-foreground hover:bg-elevated transition-colors"
                 >
                   Cancel
                 </button>
                 <button
+                  type="button"
                   onClick={confirmSignOut}
                   className="flex-1 px-4 py-2.5 rounded-xl text-sm font-medium bg-danger text-white hover:bg-danger/90 transition-colors"
                 >
