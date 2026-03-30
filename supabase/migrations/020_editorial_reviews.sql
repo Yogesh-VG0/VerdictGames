@@ -37,21 +37,36 @@ CREATE TABLE IF NOT EXISTS editorial_reviews (
   UNIQUE(game_id, author_id)
 );
 
--- Indexes
-CREATE INDEX idx_editorial_reviews_game_id ON editorial_reviews(game_id);
-CREATE INDEX idx_editorial_reviews_author_id ON editorial_reviews(author_id);
-CREATE INDEX idx_editorial_reviews_published ON editorial_reviews(is_published, published_at DESC);
-CREATE INDEX idx_editorial_reviews_featured ON editorial_reviews(is_featured, published_at DESC);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint
+    WHERE conname = 'editorial_reviews_game_id_author_id_key'
+      AND conrelid = 'editorial_reviews'::regclass
+  ) THEN
+    ALTER TABLE editorial_reviews
+      ADD CONSTRAINT editorial_reviews_game_id_author_id_key UNIQUE (game_id, author_id);
+  END IF;
+END
+$$;
+
+CREATE INDEX IF NOT EXISTS idx_editorial_reviews_game_id ON editorial_reviews(game_id);
+CREATE INDEX IF NOT EXISTS idx_editorial_reviews_author_id ON editorial_reviews(author_id);
+CREATE INDEX IF NOT EXISTS idx_editorial_reviews_published ON editorial_reviews(is_published, published_at DESC);
+CREATE INDEX IF NOT EXISTS idx_editorial_reviews_featured ON editorial_reviews(is_featured, published_at DESC);
 
 -- RLS policies
 ALTER TABLE editorial_reviews ENABLE ROW LEVEL SECURITY;
 
 -- Anyone can read published editorial reviews
+DROP POLICY IF EXISTS "Public can read published editorial reviews" ON editorial_reviews;
 CREATE POLICY "Public can read published editorial reviews"
   ON editorial_reviews FOR SELECT
   USING (is_published = true);
 
 -- Admins can do everything
+DROP POLICY IF EXISTS "Admins can manage editorial reviews" ON editorial_reviews;
 CREATE POLICY "Admins can manage editorial reviews"
   ON editorial_reviews FOR ALL
   USING (
@@ -75,6 +90,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS editorial_reviews_updated_at ON editorial_reviews;
 CREATE TRIGGER editorial_reviews_updated_at
   BEFORE UPDATE ON editorial_reviews
   FOR EACH ROW

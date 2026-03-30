@@ -22,10 +22,12 @@ $$;
 ALTER TABLE admin_audit_log ENABLE ROW LEVEL SECURITY;
 
 -- Admins (via service_role) can read/write audit logs
+DROP POLICY IF EXISTS "Service manage audit_log" ON admin_audit_log;
 CREATE POLICY "Service manage audit_log" ON admin_audit_log
   FOR ALL TO service_role USING (true) WITH CHECK (true);
 
 -- Authenticated admins can read audit logs (role checked in app layer)
+DROP POLICY IF EXISTS "Public read audit_log" ON admin_audit_log;
 CREATE POLICY "Public read audit_log" ON admin_audit_log
   FOR SELECT USING (true);
 

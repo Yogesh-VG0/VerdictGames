@@ -9,6 +9,34 @@
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS auth_id UUID UNIQUE REFERENCES auth.users(id) ON DELETE CASCADE;
 CREATE INDEX IF NOT EXISTS idx_profiles_auth_id ON profiles (auth_id) WHERE auth_id IS NOT NULL;
 
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint
+    WHERE conname = 'profiles_auth_id_key'
+      AND conrelid = 'profiles'::regclass
+  ) THEN
+    ALTER TABLE profiles
+      ADD CONSTRAINT profiles_auth_id_key UNIQUE (auth_id);
+  END IF;
+END
+$$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint
+    WHERE conname = 'profiles_auth_id_fkey'
+      AND conrelid = 'profiles'::regclass
+  ) THEN
+    ALTER TABLE profiles
+      ADD CONSTRAINT profiles_auth_id_fkey FOREIGN KEY (auth_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+  END IF;
+END
+$$;
+
 -- ───────────────────────── USER GAMES (Library / Backlog) ─────────────────────────
 
 CREATE TABLE IF NOT EXISTS user_games (
@@ -25,11 +53,12 @@ CREATE TABLE IF NOT EXISTS user_games (
   updated_at      TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE UNIQUE INDEX idx_user_games_unique ON user_games (user_id, game_id);
-CREATE INDEX idx_user_games_user_id ON user_games (user_id);
-CREATE INDEX idx_user_games_game_id ON user_games (game_id);
-CREATE INDEX idx_user_games_status ON user_games (user_id, status);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_user_games_unique ON user_games (user_id, game_id);
+CREATE INDEX IF NOT EXISTS idx_user_games_user_id ON user_games (user_id);
+CREATE INDEX IF NOT EXISTS idx_user_games_game_id ON user_games (game_id);
+CREATE INDEX IF NOT EXISTS idx_user_games_status ON user_games (user_id, status);
 
+DROP TRIGGER IF EXISTS set_user_games_updated_at ON user_games;
 CREATE TRIGGER set_user_games_updated_at
   BEFORE UPDATE ON user_games
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
@@ -44,9 +73,9 @@ CREATE TABLE IF NOT EXISTS follows (
   CONSTRAINT no_self_follow CHECK (follower_id != following_id)
 );
 
-CREATE UNIQUE INDEX idx_follows_unique ON follows (follower_id, following_id);
-CREATE INDEX idx_follows_follower ON follows (follower_id);
-CREATE INDEX idx_follows_following ON follows (following_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_follows_unique ON follows (follower_id, following_id);
+CREATE INDEX IF NOT EXISTS idx_follows_follower ON follows (follower_id);
+CREATE INDEX IF NOT EXISTS idx_follows_following ON follows (following_id);
 
 -- ───────────────────────── REVIEW COMMENTS ─────────────────────────
 
@@ -60,9 +89,10 @@ CREATE TABLE IF NOT EXISTS review_comments (
   updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE INDEX idx_review_comments_review ON review_comments (review_id);
-CREATE INDEX idx_review_comments_parent ON review_comments (parent_id) WHERE parent_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_review_comments_review ON review_comments (review_id);
+CREATE INDEX IF NOT EXISTS idx_review_comments_parent ON review_comments (parent_id) WHERE parent_id IS NOT NULL;
 
+DROP TRIGGER IF EXISTS set_review_comments_updated_at ON review_comments;
 CREATE TRIGGER set_review_comments_updated_at
   BEFORE UPDATE ON review_comments
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
@@ -77,13 +107,27 @@ CREATE TABLE IF NOT EXISTS review_votes (
   created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE UNIQUE INDEX idx_review_votes_unique ON review_votes (review_id, profile_id);
-CREATE INDEX idx_review_votes_review ON review_votes (review_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_review_votes_unique ON review_votes (review_id, profile_id);
+CREATE INDEX IF NOT EXISTS idx_review_votes_review ON review_votes (review_id);
 
 -- ───────────────────────── LISTS: User-created lists ─────────────────────────
 
 ALTER TABLE lists ADD COLUMN IF NOT EXISTS owner_id UUID REFERENCES profiles(id) ON DELETE SET NULL;
 ALTER TABLE lists ADD COLUMN IF NOT EXISTS is_public BOOLEAN NOT NULL DEFAULT true;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint
+    WHERE conname = 'lists_owner_id_fkey'
+      AND conrelid = 'lists'::regclass
+  ) THEN
+    ALTER TABLE lists
+      ADD CONSTRAINT lists_owner_id_fkey FOREIGN KEY (owner_id) REFERENCES profiles(id) ON DELETE SET NULL;
+  END IF;
+END
+$$;
 
 -- ───────────────────────── GAMES: HLTB + Comparison columns ─────────────────────────
 
@@ -97,74 +141,98 @@ ALTER TABLE games ADD COLUMN IF NOT EXISTS franchise TEXT;
 
 -- user_games
 ALTER TABLE user_games ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Public read user_games" ON user_games;
 CREATE POLICY "Public read user_games" ON user_games FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Users insert own user_games" ON user_games;
 CREATE POLICY "Users insert own user_games" ON user_games FOR INSERT TO authenticated WITH CHECK (
   user_id = (SELECT id FROM profiles WHERE auth_id = auth.uid())
 );
+DROP POLICY IF EXISTS "Users update own user_games" ON user_games;
 CREATE POLICY "Users update own user_games" ON user_games FOR UPDATE TO authenticated USING (
   user_id = (SELECT id FROM profiles WHERE auth_id = auth.uid())
 );
+DROP POLICY IF EXISTS "Users delete own user_games" ON user_games;
 CREATE POLICY "Users delete own user_games" ON user_games FOR DELETE TO authenticated USING (
   user_id = (SELECT id FROM profiles WHERE auth_id = auth.uid())
 );
+DROP POLICY IF EXISTS "Service manage user_games" ON user_games;
 CREATE POLICY "Service manage user_games" ON user_games FOR ALL TO service_role USING (true) WITH CHECK (true);
 
 -- follows
 ALTER TABLE follows ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Public read follows" ON follows;
 CREATE POLICY "Public read follows" ON follows FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Users insert own follows" ON follows;
 CREATE POLICY "Users insert own follows" ON follows FOR INSERT TO authenticated WITH CHECK (
   follower_id = (SELECT id FROM profiles WHERE auth_id = auth.uid())
 );
+DROP POLICY IF EXISTS "Users delete own follows" ON follows;
 CREATE POLICY "Users delete own follows" ON follows FOR DELETE TO authenticated USING (
   follower_id = (SELECT id FROM profiles WHERE auth_id = auth.uid())
 );
+DROP POLICY IF EXISTS "Service manage follows" ON follows;
 CREATE POLICY "Service manage follows" ON follows FOR ALL TO service_role USING (true) WITH CHECK (true);
 
 -- review_comments
 ALTER TABLE review_comments ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Public read comments" ON review_comments;
 CREATE POLICY "Public read comments" ON review_comments FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Users insert own comments" ON review_comments;
 CREATE POLICY "Users insert own comments" ON review_comments FOR INSERT TO authenticated WITH CHECK (
   profile_id = (SELECT id FROM profiles WHERE auth_id = auth.uid())
 );
+DROP POLICY IF EXISTS "Users update own comments" ON review_comments;
 CREATE POLICY "Users update own comments" ON review_comments FOR UPDATE TO authenticated USING (
   profile_id = (SELECT id FROM profiles WHERE auth_id = auth.uid())
 );
+DROP POLICY IF EXISTS "Users delete own comments" ON review_comments;
 CREATE POLICY "Users delete own comments" ON review_comments FOR DELETE TO authenticated USING (
   profile_id = (SELECT id FROM profiles WHERE auth_id = auth.uid())
 );
+DROP POLICY IF EXISTS "Service manage comments" ON review_comments;
 CREATE POLICY "Service manage comments" ON review_comments FOR ALL TO service_role USING (true) WITH CHECK (true);
 
 -- review_votes
 ALTER TABLE review_votes ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Public read votes" ON review_votes;
 CREATE POLICY "Public read votes" ON review_votes FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Users insert own votes" ON review_votes;
 CREATE POLICY "Users insert own votes" ON review_votes FOR INSERT TO authenticated WITH CHECK (
   profile_id = (SELECT id FROM profiles WHERE auth_id = auth.uid())
 );
+DROP POLICY IF EXISTS "Users update own votes" ON review_votes;
 CREATE POLICY "Users update own votes" ON review_votes FOR UPDATE TO authenticated USING (
   profile_id = (SELECT id FROM profiles WHERE auth_id = auth.uid())
 );
+DROP POLICY IF EXISTS "Users delete own votes" ON review_votes;
 CREATE POLICY "Users delete own votes" ON review_votes FOR DELETE TO authenticated USING (
   profile_id = (SELECT id FROM profiles WHERE auth_id = auth.uid())
 );
+DROP POLICY IF EXISTS "Service manage votes" ON review_votes;
 CREATE POLICY "Service manage votes" ON review_votes FOR ALL TO service_role USING (true) WITH CHECK (true);
 
 -- Authenticated users can insert/update their own reviews
+DROP POLICY IF EXISTS "Users insert own reviews" ON reviews;
 CREATE POLICY "Users insert own reviews" ON reviews FOR INSERT TO authenticated WITH CHECK (
   profile_id = (SELECT id FROM profiles WHERE auth_id = auth.uid())
 );
+DROP POLICY IF EXISTS "Users update own reviews" ON reviews;
 CREATE POLICY "Users update own reviews" ON reviews FOR UPDATE TO authenticated USING (
   profile_id = (SELECT id FROM profiles WHERE auth_id = auth.uid())
 );
 
 -- Authenticated users can manage own lists
+DROP POLICY IF EXISTS "Users insert own lists" ON lists;
 CREATE POLICY "Users insert own lists" ON lists FOR INSERT TO authenticated WITH CHECK (
   owner_id = (SELECT id FROM profiles WHERE auth_id = auth.uid())
 );
+DROP POLICY IF EXISTS "Users update own lists" ON lists;
 CREATE POLICY "Users update own lists" ON lists FOR UPDATE TO authenticated USING (
   owner_id = (SELECT id FROM profiles WHERE auth_id = auth.uid())
 );
 
 -- Authenticated users can manage own profile
+DROP POLICY IF EXISTS "Users update own profile" ON profiles;
 CREATE POLICY "Users update own profile" ON profiles FOR UPDATE TO authenticated USING (
   auth_id = auth.uid()
 );
@@ -213,6 +281,7 @@ BEGIN
 END;
 $$;
 
+DROP TRIGGER IF EXISTS sync_votes_to_helpful ON review_votes;
 CREATE TRIGGER sync_votes_to_helpful
   AFTER INSERT OR UPDATE OR DELETE ON review_votes
   FOR EACH ROW EXECUTE FUNCTION sync_review_helpful_count();

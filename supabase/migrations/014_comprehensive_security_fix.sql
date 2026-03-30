@@ -139,14 +139,17 @@ CREATE POLICY "Service update reviews" ON reviews FOR UPDATE TO service_role USI
 DROP POLICY IF EXISTS "Service role full access on admin_audit_log" ON admin_audit_log;
 DROP POLICY IF EXISTS "Service manage audit_log" ON admin_audit_log;
 DROP POLICY IF EXISTS "Public read audit_log" ON admin_audit_log;
+DROP POLICY IF EXISTS "Service manage audit_log" ON admin_audit_log;
 CREATE POLICY "Service manage audit_log" ON admin_audit_log FOR ALL TO service_role USING (true) WITH CHECK (true);
 
 -- steam_reviews
 DROP POLICY IF EXISTS "Service role can manage steam reviews" ON steam_reviews;
+DROP POLICY IF EXISTS "Service manage steam_reviews" ON steam_reviews;
 CREATE POLICY "Service manage steam_reviews" ON steam_reviews FOR ALL TO service_role USING (true) WITH CHECK (true);
 
 -- ingest_runs
 DROP POLICY IF EXISTS "Service role can manage ingest runs" ON ingest_runs;
+DROP POLICY IF EXISTS "Service manage ingest_runs" ON ingest_runs;
 CREATE POLICY "Service manage ingest_runs" ON ingest_runs FOR ALL TO service_role USING (true) WITH CHECK (true);
 
 

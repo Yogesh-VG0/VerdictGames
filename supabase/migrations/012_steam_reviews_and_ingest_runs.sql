@@ -27,13 +27,29 @@ CREATE TABLE IF NOT EXISTS steam_reviews (
   UNIQUE(game_id, recommendation_id)
 );
 
-CREATE INDEX idx_steam_reviews_game_id ON steam_reviews(game_id);
-CREATE INDEX idx_steam_reviews_steam_app_id ON steam_reviews(steam_app_id);
-CREATE INDEX idx_steam_reviews_weighted ON steam_reviews(game_id, weighted_vote_score DESC);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint
+    WHERE conname = 'steam_reviews_game_id_recommendation_id_key'
+      AND conrelid = 'steam_reviews'::regclass
+  ) THEN
+    ALTER TABLE steam_reviews
+      ADD CONSTRAINT steam_reviews_game_id_recommendation_id_key UNIQUE (game_id, recommendation_id);
+  END IF;
+END
+$$;
+
+CREATE INDEX IF NOT EXISTS idx_steam_reviews_game_id ON steam_reviews(game_id);
+CREATE INDEX IF NOT EXISTS idx_steam_reviews_steam_app_id ON steam_reviews(steam_app_id);
+CREATE INDEX IF NOT EXISTS idx_steam_reviews_weighted ON steam_reviews(game_id, weighted_vote_score DESC);
 
 ALTER TABLE steam_reviews ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Steam reviews are publicly readable" ON steam_reviews;
 CREATE POLICY "Steam reviews are publicly readable"
   ON steam_reviews FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Service role can manage steam reviews" ON steam_reviews;
 CREATE POLICY "Service role can manage steam reviews"
   ON steam_reviews FOR ALL USING (
     (current_setting('request.jwt.claims', true)::json ->> 'role') = 'service_role'
@@ -57,11 +73,13 @@ CREATE TABLE IF NOT EXISTS ingest_runs (
   metadata JSONB DEFAULT '{}'::jsonb
 );
 
-CREATE INDEX idx_ingest_runs_type ON ingest_runs(run_type, started_at DESC);
+CREATE INDEX IF NOT EXISTS idx_ingest_runs_type ON ingest_runs(run_type, started_at DESC);
 
 ALTER TABLE ingest_runs ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Ingest runs are publicly readable" ON ingest_runs;
 CREATE POLICY "Ingest runs are publicly readable"
   ON ingest_runs FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Service role can manage ingest runs" ON ingest_runs;
 CREATE POLICY "Service role can manage ingest runs"
   ON ingest_runs FOR ALL USING (
     (current_setting('request.jwt.claims', true)::json ->> 'role') = 'service_role'

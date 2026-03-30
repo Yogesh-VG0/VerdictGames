@@ -51,6 +51,20 @@ CREATE TABLE IF NOT EXISTS api_provider_budgets (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint
+    WHERE conname = 'api_provider_budgets_provider_key'
+      AND conrelid = 'api_provider_budgets'::regclass
+  ) THEN
+    ALTER TABLE api_provider_budgets
+      ADD CONSTRAINT api_provider_budgets_provider_key UNIQUE (provider);
+  END IF;
+END
+$$;
+
 -- Seed default budgets for known providers
 INSERT INTO api_provider_budgets (provider, daily_limit, hourly_limit, monthly_limit, cost_per_request, notes)
 VALUES 
@@ -70,12 +84,14 @@ ALTER TABLE api_provider_usage ENABLE ROW LEVEL SECURITY;
 ALTER TABLE api_provider_budgets ENABLE ROW LEVEL SECURITY;
 
 -- Service role has full access
+DROP POLICY IF EXISTS "Service role full access to api_provider_usage" ON api_provider_usage;
 CREATE POLICY "Service role full access to api_provider_usage"
   ON api_provider_usage FOR ALL
   TO service_role
   USING (true)
   WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Service role full access to api_provider_budgets" ON api_provider_budgets;
 CREATE POLICY "Service role full access to api_provider_budgets"
   ON api_provider_budgets FOR ALL
   TO service_role
@@ -83,11 +99,13 @@ CREATE POLICY "Service role full access to api_provider_budgets"
   WITH CHECK (true);
 
 -- Authenticated users can read (for admin dashboard)
+DROP POLICY IF EXISTS "Authenticated users can read api_provider_usage" ON api_provider_usage;
 CREATE POLICY "Authenticated users can read api_provider_usage"
   ON api_provider_usage FOR SELECT
   TO authenticated
   USING (true);
 
+DROP POLICY IF EXISTS "Authenticated users can read api_provider_budgets" ON api_provider_budgets;
 CREATE POLICY "Authenticated users can read api_provider_budgets"
   ON api_provider_budgets FOR SELECT
   TO authenticated
