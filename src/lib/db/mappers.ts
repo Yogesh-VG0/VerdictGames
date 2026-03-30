@@ -10,6 +10,7 @@ import type { GameRow, ReviewRow, ProfileRow, ListRow, UserGameRow, ReviewCommen
 import { scoreToVerdict } from "../utils/score";
 import { getVerdictLabel } from "../utils/scoring";
 import { normalizePlatforms } from "../utils/platform";
+import { optimizeHeaderImage, needsOptimization } from "../utils/image-optimize";
 
 /**
  * Regenerate verdict summary from display score + title + genres.
@@ -223,7 +224,10 @@ export function mapGameRow(row: GameRow): Game {
     title: row.title,
     subtitle: row.subtitle ?? undefined,
     coverImage: row.cover_image,
-    headerImage: row.header_image,
+    // Optimize external header images on-the-fly for hero carousel performance
+    headerImage: row.header_image && needsOptimization(row.header_image)
+      ? optimizeHeaderImage(row.header_image)
+      : row.header_image,
     screenshots: row.screenshots ?? [],
     platforms: normalizePlatforms(row.platforms as string[]),
     genres: row.genres,

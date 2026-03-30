@@ -26,6 +26,13 @@ type QualityFilter =
   | "no-provider"
   | "zero-reviews";
 
+type SectionFilter =
+  | "featured"
+  | "trending"
+  | "top-rated"
+  | "new-releases"
+  | "hero-eligible";
+
 export async function GET(request: NextRequest) {
   const { error } = await requireAdmin();
   if (error) return error;
@@ -36,6 +43,7 @@ export async function GET(request: NextRequest) {
   const q = rawQ.replace(/[%_(),.;'"\\|{}\[\]]/g, "").trim().slice(0, 200);
   const page = Math.max(1, parseInt(params.get("page") ?? "1", 10));
   const filter = params.get("filter") as QualityFilter | null;
+  const sectionFilter = params.get("section") as SectionFilter | null;
   const sortBy = params.get("sort") ?? "updated"; // "updated" | "confidence" | "reviews" | "completeness"
   const limit = 20;
   const offset = (page - 1) * limit;
@@ -98,6 +106,37 @@ export async function GET(request: NextRequest) {
         break;
       case "zero-reviews":
         query = query.or("review_count.is.null,review_count.eq.0");
+        break;
+    }
+  }
+
+  // Homepage section filters
+  if (sectionFilter) {
+    const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    switch (sectionFilter) {
+      case "featured":
+        // Games marked as featured (appear in hero carousel)
+        query = query.eq("featured", true);
+        break;
+      case "trending":
+        // Games marked as trending
+        query = query.eq("trending", true);
+        break;
+      case "top-rated":
+        // High-scoring games (85+) with decent confidence
+        query = query.gte("score", 85).gte("confidence", 0.5);
+        break;
+      case "new-releases":
+        // Games released in the last 90 days
+        query = query.gte("release_date", ninetyDaysAgo);
+        break;
+      case "hero-eligible":
+        // Games that could appear in hero: has header image, good score, not provisional
+        query = query
+          .not("header_image", "is", null)
+          .neq("header_image", "")
+          .gte("score", 70)
+          .neq("is_provisional", true);
         break;
     }
   }

@@ -4,8 +4,19 @@ import { useQuery } from "@tanstack/react-query";
 import { useState, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { ImageOff, AlertTriangle, Clock, Database, Star, FileText, Tag, Video, ShoppingBag, CheckCircle, XCircle, ExternalLink } from "lucide-react";
+import { ImageOff, AlertTriangle, Clock, Database, Star, FileText, Tag, Video, ShoppingBag, CheckCircle, XCircle, ExternalLink, TrendingUp, Sparkles, Layout } from "lucide-react";
 import type { Game } from "@/lib/types";
+
+// Homepage section filters to see which games appear where
+const SECTION_FILTERS = [
+  { key: "featured", label: "Featured (Hero)", icon: Sparkles, color: "text-accent" },
+  { key: "trending", label: "Trending", icon: TrendingUp, color: "text-pixel-orange" },
+  { key: "top-rated", label: "Top Rated", icon: Star, color: "text-yellow-400" },
+  { key: "new-releases", label: "New Releases", icon: Clock, color: "text-green-400" },
+  { key: "hero-eligible", label: "Hero Eligible", icon: Layout, color: "text-purple-400" },
+] as const;
+
+type SectionFilter = typeof SECTION_FILTERS[number]["key"];
 
 // Quality filter definitions with icons and labels
 const QUALITY_FILTERS = [
@@ -45,11 +56,12 @@ interface AdminGamesResponse {
   pageSize: number;
 }
 
-async function fetchAdminGames(q: string, page: number, filter: QualityFilter | null, sort: SortOption): Promise<AdminGamesResponse> {
+async function fetchAdminGames(q: string, page: number, filter: QualityFilter | null, sectionFilter: SectionFilter | null, sort: SortOption): Promise<AdminGamesResponse> {
   const params = new URLSearchParams();
   if (q) params.set("q", q);
   params.set("page", String(page));
   if (filter) params.set("filter", filter);
+  if (sectionFilter) params.set("section", sectionFilter);
   params.set("sort", sort);
   const res = await fetch(`/api/admin/games?${params}`);
   const json = await res.json();
@@ -62,6 +74,7 @@ export default function AdminGamesPage() {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [page, setPage] = useState(1);
   const [activeFilter, setActiveFilter] = useState<QualityFilter | null>(null);
+  const [sectionFilter, setSectionFilter] = useState<SectionFilter | null>(null);
   const [sortBy, setSortBy] = useState<SortOption>("updated");
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -79,9 +92,14 @@ export default function AdminGamesPage() {
     setPage(1);
   };
 
+  const handleSectionFilterClick = (key: SectionFilter) => {
+    setSectionFilter((prev) => (prev === key ? null : key));
+    setPage(1);
+  };
+
   const games = useQuery({
-    queryKey: ["admin-games", debouncedSearch, page, activeFilter, sortBy],
-    queryFn: () => fetchAdminGames(debouncedSearch, page, activeFilter, sortBy),
+    queryKey: ["admin-games", debouncedSearch, page, activeFilter, sectionFilter, sortBy],
+    queryFn: () => fetchAdminGames(debouncedSearch, page, activeFilter, sectionFilter, sortBy),
     staleTime: 10_000,
   });
 
@@ -130,6 +148,39 @@ export default function AdminGamesPage() {
           <option value="reviews">Sort: Fewest Reviews</option>
           <option value="completeness">Sort: Least Complete</option>
         </select>
+      </div>
+
+      {/* Homepage Section Filters */}
+      <div className="space-y-2">
+        <p className="text-xs font-medium text-secondary uppercase tracking-wider">Homepage Sections</p>
+        <div className="flex flex-wrap gap-2">
+          {SECTION_FILTERS.map(({ key, label, icon: Icon, color }) => {
+            const isActive = sectionFilter === key;
+            return (
+              <button
+                key={key}
+                onClick={() => handleSectionFilterClick(key)}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                  isActive
+                    ? "bg-accent text-white"
+                    : "bg-surface-2 text-secondary hover:text-foreground hover:bg-white/5 border border-border"
+                }`}
+              >
+                <Icon className={`w-3.5 h-3.5 ${isActive ? "text-white" : color}`} />
+                {label}
+              </button>
+            );
+          })}
+          {sectionFilter && (
+            <button
+              onClick={() => { setSectionFilter(null); setPage(1); }}
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-all"
+            >
+              <XCircle className="w-3.5 h-3.5" />
+              Clear
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Quality Filter Chips */}
