@@ -18,10 +18,11 @@
  * • Quality scoring ≠ surface readiness (never conflated)
  * • Every public rail output passes isSurfaceReady('homepageRail')
  * • Global homepage dedup: each game appears in exactly one rail
- * • Hero/Featured is NEVER derived from trending
+ * • Hero/Featured is NEVER derived from trending. Only from is_featured_manual + auto pool.
  */
 
-import { getServerSupabase } from "@/lib/supabase/server";
+import { unstable_cache } from "next/cache";
+import { getPublicSupabase } from "@/lib/supabase/public";
 import { mapGameRow } from "@/lib/db/mappers";
 import { GAME_CARD_COLUMNS_WITH_DESC } from "@/lib/db/columns";
 import { filterQualityGames, confidenceWeightedScore, isQualityGame, isSurfaceReady } from "@/lib/utils/quality";
@@ -142,7 +143,7 @@ function applyGenreDiversity(rows: GameRow[], limit: number, maxPerGenre: number
    ═══════════════════════════════════════════════════ */
 
 export async function fetchHeroCandidates(limit = 12): Promise<Game[]> {
-  const supabase = getServerSupabase();
+  const supabase = getPublicSupabase();
 
   // Step 1: Manually featured games (editorial priority) — with 36mo recency cap
   // FIX: Old evergreen manual picks were dominating hero. Now capped at 3 years.
@@ -295,7 +296,7 @@ export async function fetchHeroCandidates(limit = 12): Promise<Game[]> {
    ═══════════════════════════════════════════════════ */
 
 export async function fetchTrendingGames(limit = 20, homepageOnly = true): Promise<Game[]> {
-  const supabase = getServerSupabase();
+  const supabase = getPublicSupabase();
 
   // Step 1: Load manually-flagged trending seeds (these get priority slots in the rail)
   const { data: flagged, error } = await supabase
@@ -396,7 +397,7 @@ function dateCutoff(yearsBack: number): string {
 }
 
 export async function fetchNewReleases(limit = 20): Promise<Game[]> {
-  const supabase = getServerSupabase();
+  const supabase = getPublicSupabase();
   const fetchLimit = limit * 3; // over-fetch for quality filtering + dedup
 
   // Try last 2 years first
@@ -434,7 +435,7 @@ export async function fetchNewReleases(limit = 20): Promise<Game[]> {
 
   if (error) throw error;
 
-  // Surface readiness + public safety + media readiness + quality filter
+  // Surface readiness + public safety + media readiness gate
   const ready = (data ?? []).filter((r) =>
     isSurfaceReady(r, "homepageRail") &&
     isPublicSafeGame(r) &&
@@ -485,7 +486,7 @@ export async function fetchNewReleases(limit = 20): Promise<Game[]> {
  * No recency filter.
  */
 export async function fetchTopRated(limit = 10): Promise<Game[]> {
-  const supabase = getServerSupabase();
+  const supabase = getPublicSupabase();
   const fetchLimit = limit * 4;
 
   const { data, error } = await supabase
@@ -526,7 +527,7 @@ export async function fetchTopRated(limit = 10): Promise<Game[]> {
  * Only recent releases (24mo, fallback 36mo) so the homepage feels current.
  */
 export async function fetchHomepageTopRated(limit = 20): Promise<Game[]> {
-  const supabase = getServerSupabase();
+  const supabase = getPublicSupabase();
   const fetchLimit = limit * 4;
   const cutoff = monthsAgoISO(HOMEPAGE_TOP_RATED_MONTHS);
 
@@ -607,7 +608,7 @@ export async function fetchHomepageTopRated(limit = 20): Promise<Game[]> {
    ═══════════════════════════════════════════════════ */
 
 export async function fetchHomepageRecommendations(limit = 20): Promise<Game[]> {
-  const supabase = getServerSupabase();
+  const supabase = getPublicSupabase();
   const fetchLimit = limit * 8;
   const cutoff = monthsAgoISO(HOMEPAGE_REC_MONTHS);
 
@@ -694,6 +695,36 @@ export interface HomepageData {
   newReleases: Game[];
   deals: GXDeal[];
   recommendations: Game[];  // anonymous recommendations
+}
+
+export const HOMEPAGE_REVALIDATE_SECONDS = 60;
+export const HOMEPAGE_API_CACHE_CONTROL = `s-maxage=${HOMEPAGE_REVALIDATE_SECONDS}, stale-while-revalidate=300`;
+
+export const EMPTY_HOMEPAGE_DATA: HomepageData = {
+  hero: [],
+  trending: [],
+  topRated: [],
+  newReleases: [],
+  deals: [],
+  recommendations: [],
+};
+
+const getCachedHomepageData = unstable_cache(
+  async () => fetchHomepageData(),
+  ["homepage-data-v1"],
+  { revalidate: HOMEPAGE_REVALIDATE_SECONDS }
+);
+
+export async function loadHomepageData(): Promise<HomepageData> {
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    return EMPTY_HOMEPAGE_DATA;
+  }
+
+  try {
+    return await getCachedHomepageData();
+  } catch {
+    return EMPTY_HOMEPAGE_DATA;
+  }
 }
 
 export async function fetchHomepageData(): Promise<HomepageData> {

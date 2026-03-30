@@ -10,21 +10,32 @@
  * recommendations are genre-diverse picks for anonymous users.
  */
 
-import { jsonOk } from "@/lib/api/response";
-import { fetchHomepageData } from "@/lib/services/homepage";
+import { NextResponse } from "next/server";
+import {
+  EMPTY_HOMEPAGE_DATA,
+  HOMEPAGE_API_CACHE_CONTROL,
+  HOMEPAGE_REVALIDATE_SECONDS,
+  loadHomepageData,
+} from "@/lib/services/homepage";
 
-export const revalidate = 60; // ISR: revalidate every 60s
+export const revalidate = 60;
+
+if (HOMEPAGE_REVALIDATE_SECONDS !== revalidate) {
+  throw new Error("Homepage API route revalidate must stay aligned with the shared homepage loader.");
+}
 
 export async function GET() {
   try {
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      return jsonOk({ trending: [], topRated: [], newReleases: [], deals: [], recommendations: [] });
-    }
-
-    const data = await fetchHomepageData();
-    return jsonOk(data, 200, { cache: true });
+    const data = await loadHomepageData();
+    return NextResponse.json(
+      { success: true, data },
+      { status: 200, headers: { "Cache-Control": HOMEPAGE_API_CACHE_CONTROL } }
+    );
   } catch (err) {
     console.error("[API] /homepage error:", err);
-    return jsonOk({ trending: [], topRated: [], newReleases: [], deals: [], recommendations: [] }, 200, { cache: true });
+    return NextResponse.json(
+      { success: true, data: EMPTY_HOMEPAGE_DATA },
+      { status: 200, headers: { "Cache-Control": HOMEPAGE_API_CACHE_CONTROL } }
+    );
   }
 }

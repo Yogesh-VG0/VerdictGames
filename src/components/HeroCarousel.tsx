@@ -41,7 +41,6 @@ const slideVariants: Variants = {
   },
 };
 
-
 const SWIPE_THRESHOLD = 40;
 const SWIPE_VELOCITY = 300;
 
@@ -56,6 +55,7 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
   const slideCount = games.length;
   const currentIndex = ((page % slideCount) + slideCount) % slideCount;
   const game = games[currentIndex];
+  const prioritizeHeroImage = page === 0 && direction === 0 && currentIndex === 0;
 
   const paginate = useCallback(
     (newDirection: number) => {
@@ -191,7 +191,7 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
                 src={game.headerImage || game.coverImage}
                 alt={game.title}
                 className="object-center"
-                priority={currentIndex === 0}
+                priority={prioritizeHeroImage}
               />
             ) : (
               <div className="w-full h-full bg-gradient-to-br from-accent/20 via-surface to-pixel-cyan/10" />
