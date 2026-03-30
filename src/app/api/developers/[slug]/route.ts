@@ -21,12 +21,12 @@ export async function GET(
   const name = slug.replace(/-/g, " ").replace(/[%_(),.;'"\\]/g, "").trim();
 
   try {
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
       return jsonNotFound("Developer");
     }
 
-    const { getServerSupabase } = await import("@/lib/supabase/server");
-    const supabase = getServerSupabase();
+    const { getPublicSupabase } = await import("@/lib/supabase/public");
+    const supabase = getPublicSupabase();
 
     // Case-insensitive search on developer name
     const { data, error } = await supabase

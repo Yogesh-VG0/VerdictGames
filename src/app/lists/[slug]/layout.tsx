@@ -13,11 +13,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   try {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
     if (!url || !key) return { title: "List | verdict.games" };
 
-    const { getServerSupabase } = await import("@/lib/supabase/server");
-    const supabase = getServerSupabase();
+    const { getPublicSupabase } = await import("@/lib/supabase/public");
+    const supabase = getPublicSupabase();
 
     const { data } = await supabase
       .from("lists")

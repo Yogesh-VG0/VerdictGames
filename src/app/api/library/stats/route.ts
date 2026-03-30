@@ -3,8 +3,7 @@
  */
 
 import { jsonOk, jsonError } from "@/lib/api/response";
-import { getCurrentUser } from "@/lib/supabase/auth";
-import { getServerSupabase } from "@/lib/supabase/server";
+import { getAuthSupabase, getCurrentUser } from "@/lib/supabase/auth";
 import type { LibraryStats } from "@/lib/types";
 
 export async function GET() {
@@ -12,7 +11,7 @@ export async function GET() {
   if (!user) return jsonError("Not authenticated", 401);
 
   try {
-    const supabase = getServerSupabase();
+    const supabase = await getAuthSupabase();
 
     // Get all user games with joined game data for genre breakdown
     const { data: userGames } = await supabase

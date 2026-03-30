@@ -17,12 +17,12 @@ export async function GET(
   const { slug } = await params;
 
   try {
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
       return jsonOk({ achievements: [], total: 0 });
     }
 
-    const { getServerSupabase } = await import("@/lib/supabase/server");
-    const supabase = getServerSupabase();
+    const { getPublicSupabase } = await import("@/lib/supabase/public");
+    const supabase = getPublicSupabase();
 
     // Fetch game to get steam_app_id
     const { data: game } = await supabase

@@ -91,8 +91,8 @@ export async function GET(request: NextRequest) {
     try {
       const rawgIds = items.map((i) => i.rawgId).filter(Boolean);
       if (rawgIds.length > 0) {
-        const { getServerSupabase } = await import("@/lib/supabase/server");
-        const supabase = getServerSupabase();
+        const { getPublicSupabase } = await import("@/lib/supabase/public");
+        const supabase = getPublicSupabase();
         const { data: dbGames } = await supabase
           .from("games")
           .select("rawg_id, slug")

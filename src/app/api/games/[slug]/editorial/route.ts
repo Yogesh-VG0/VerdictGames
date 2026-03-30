@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { jsonOk, jsonError } from "@/lib/api/response";
-import { getServerSupabase } from "@/lib/supabase/server";
+import { getPublicSupabase } from "@/lib/supabase/public";
 
 export async function GET(
   request: NextRequest,
@@ -8,7 +8,7 @@ export async function GET(
 ) {
   try {
     const { slug } = await params;
-    const supabase = await getServerSupabase();
+    const supabase = getPublicSupabase();
 
     // First get the game ID from slug
     const { data: game, error: gameError } = await supabase

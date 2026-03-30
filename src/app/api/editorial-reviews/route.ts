@@ -1,10 +1,10 @@
 import { NextRequest } from "next/server";
 import { jsonOk, jsonError } from "@/lib/api/response";
-import { getServerSupabase } from "@/lib/supabase/server";
+import { getPublicSupabase } from "@/lib/supabase/public";
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await getServerSupabase();
+    const supabase = getPublicSupabase();
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get("page") || "1", 10);
     const pageSize = 20;

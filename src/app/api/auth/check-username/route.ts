@@ -7,7 +7,7 @@
 
 import { NextRequest } from "next/server";
 import { jsonOk, jsonError } from "@/lib/api/response";
-import { getServerSupabase } from "@/lib/supabase/server";
+import { getPublicSupabase } from "@/lib/supabase/public";
 
 const USERNAME_RE = /^[a-zA-Z0-9_]+$/;
 const MIN_LEN = 3;
@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
   if (!USERNAME_RE.test(username)) return jsonOk({ available: false, reason: "Only letters, numbers, and underscores allowed" });
   if (RESERVED.has(username)) return jsonOk({ available: false, reason: "This username is reserved" });
 
-  const supabase = getServerSupabase();
+  const supabase = getPublicSupabase();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: existing } = await (supabase.from("profiles") as any)
     .select("id")

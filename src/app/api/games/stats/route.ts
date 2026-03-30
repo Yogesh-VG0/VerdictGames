@@ -8,8 +8,8 @@ import { jsonOk, jsonError } from "@/lib/api/response";
 
 export async function GET() {
   try {
-    const { getServerSupabase } = await import("@/lib/supabase/server");
-    const supabase = getServerSupabase();
+    const { getPublicSupabase } = await import("@/lib/supabase/public");
+    const supabase = getPublicSupabase();
 
     const [gamesRes, reviewsRes, usersRes] = await Promise.all([
       supabase.from("games").select("id", { count: "exact", head: true }),

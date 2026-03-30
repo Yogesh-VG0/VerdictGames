@@ -8,6 +8,7 @@ import { NextRequest } from "next/server";
 import { jsonOk, jsonNotFound } from "@/lib/api/response";
 import { mapProfileRow } from "@/lib/db/mappers";
 import type { ProfileRow } from "@/lib/supabase/types";
+import { getPublicSupabase } from "@/lib/supabase/public";
 
 export async function GET(
   _request: NextRequest,
@@ -16,12 +17,11 @@ export async function GET(
   const { username } = await params;
 
   try {
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
       return jsonNotFound("Profile");
     }
 
-    const { getServerSupabase } = await import("@/lib/supabase/server");
-    const supabase = getServerSupabase();
+    const supabase = getPublicSupabase();
 
     const { data: profile, error } = await supabase
       .from("profiles")

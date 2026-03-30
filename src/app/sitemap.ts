@@ -25,11 +25,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Dynamic game pages
   try {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
     if (!url || !key) return staticPages;
 
-    const { getServerSupabase } = await import("@/lib/supabase/server");
-    const supabase = getServerSupabase();
+    const { getPublicSupabase } = await import("@/lib/supabase/public");
+    const supabase = getPublicSupabase();
 
     // Fetch all games (up to 5000) for sitemap
     const { data: games } = await supabase

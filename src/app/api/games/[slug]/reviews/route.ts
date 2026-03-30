@@ -11,6 +11,7 @@
 import { NextRequest } from "next/server";
 import { jsonOk, jsonNotFound } from "@/lib/api/response";
 import { mapReviewRow } from "@/lib/db/mappers";
+import { getAuthSupabase, getCurrentUser } from "@/lib/supabase/auth";
 import type { PaginatedResponse, Review } from "@/lib/types";
 
 const PAGE_SIZE = 12;
@@ -25,18 +26,16 @@ export async function GET(
   const page = parseInt(searchParams.get("page") ?? "1", 10);
 
   try {
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
       const empty: PaginatedResponse<Review> = { items: [], total: 0, page, pageSize: PAGE_SIZE, hasMore: false };
       return jsonOk(empty);
     }
 
-    const { getServerSupabase } = await import("@/lib/supabase/server");
-    const supabase = getServerSupabase();
+    const supabase = await getAuthSupabase();
 
     // Get current user for their vote state (optional)
     let currentProfileId: string | null = null;
     try {
-      const { getCurrentUser } = await import("@/lib/supabase/auth");
       const user = await getCurrentUser();
       currentProfileId = user?.profileId ?? null;
     } catch {
