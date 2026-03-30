@@ -1,77 +1,57 @@
+﻿import { headers } from "next/headers";
 import type { Metadata } from "next";
-import type { GameRow } from "@/lib/supabase/types";
+import { getGameDetailRawgIdFromHeaders, loadGameDetail } from "@/lib/services/game-detail";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://www.verdict.games";
 const DEFAULT_OG_IMAGE = `${SITE_URL}/og-default.png`;
-
-type GameMeta = Pick<
-  GameRow,
-  "title" | "verdict_summary" | "cover_image" | "genres" | "platforms" | "score" | "developer" | "release_date" | "review_count"
->;
 
 interface Props {
   params: Promise<{ slug: string }>;
   children: React.ReactNode;
 }
 
-async function fetchGameMeta(slug: string): Promise<GameMeta | null> {
-  try {
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    if (!url || !key) return null;
-
-    const { getServerSupabase } = await import("@/lib/supabase/server");
-    const supabase = getServerSupabase();
-
-    const { data } = await supabase
-      .from("games")
-      .select("title, verdict_summary, cover_image, genres, platforms, score, developer, release_date, review_count")
-      .eq("slug", slug)
-      .maybeSingle() as { data: GameMeta | null };
-
-    return data;
-  } catch {
-    return null;
-  }
-}
-
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const data = await fetchGameMeta(slug);
+  const requestHeaders = await headers();
+  const rawgId = getGameDetailRawgIdFromHeaders(requestHeaders);
+  const detail = await loadGameDetail({ slug, rawgId });
 
-  if (!data) return { title: "Game Not Found | verdict.games" };
+  if (detail.status !== "ok") {
+    return { title: "Game Not Found | verdict.games" };
+  }
 
-  const description = data.verdict_summary
-    ? `${data.verdict_summary.slice(0, 155)}…`
-    : `${data.title} — ${data.score}/100 verdict score. ${data.genres.slice(0, 3).join(", ")} game by ${data.developer}.`;
-
-  const pageUrl = `${SITE_URL}/game/${slug}`;
-  const ogImage = data.cover_image || DEFAULT_OG_IMAGE;
+  const game = detail.game;
+  const description = game.verdictSummary
+    ? `${game.verdictSummary.slice(0, 155)}…`
+    : `${game.title} — ${game.score}/100 verdict score. ${game.genres.slice(0, 3).join(", ")} game by ${game.developer}.`;
+  const canonicalPath = `/game/${detail.canonicalSlug}`;
+  const pageUrl = `${SITE_URL}${canonicalPath}`;
+  const ogImage = game.coverImage || game.headerImage || DEFAULT_OG_IMAGE;
   const keywords = [
-    data.title,
-    ...data.genres.slice(0, 4),
-    ...data.platforms.slice(0, 3),
-    data.developer,
+    game.title,
+    ...game.genres.slice(0, 4),
+    ...game.platforms.slice(0, 3),
+    game.developer,
     "game review",
     "verdict",
   ].filter(Boolean);
 
   return {
-    title: `${data.title} — ${data.score}/100 Verdict`,
+    title: `${game.title} — ${game.score}/100 Verdict`,
     description,
     keywords,
-    alternates: { canonical: pageUrl },
+    alternates: { canonical: canonicalPath },
     openGraph: {
-      title: `${data.title} — ${data.score}/100 Verdict`,
+      title: `${game.title} — ${game.score}/100 Verdict`,
       description,
       url: pageUrl,
-      images: [{ url: ogImage, width: 400, height: 560 }],
+      images: [{ url: ogImage, width: 1200, height: 630, alt: `${game.title} — ${game.score}/100 Verdict` }],
       type: "article",
       siteName: "verdict.games",
     },
     twitter: {
       card: "summary_large_image",
-      title: `${data.title} — ${data.score}/100 Verdict`,
+      title: `${game.title} — ${game.score}/100 Verdict`,
       description,
       images: [ogImage],
     },
@@ -80,29 +60,33 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function GameLayout({ params, children }: Props) {
   const { slug } = await params;
-  const data = await fetchGameMeta(slug);
+  const requestHeaders = await headers();
+  const rawgId = getGameDetailRawgIdFromHeaders(requestHeaders);
+  const detail = await loadGameDetail({ slug, rawgId });
+  const game = detail.status === "ok" ? detail.game : null;
+  const canonicalSlug = detail.status === "ok" ? detail.canonicalSlug : slug;
 
-  // JSON-LD structured data for rich search results
-  const jsonLd = data
+  const jsonLd = game
     ? {
         "@context": "https://schema.org",
         "@type": "VideoGame",
-        name: data.title,
-        description: data.verdict_summary ?? undefined,
-        image: data.cover_image ?? undefined,
-        url: `${SITE_URL}/game/${slug}`,
-        genre: data.genres?.slice(0, 4),
-        gamePlatform: data.platforms?.slice(0, 6),
-        author: { "@type": "Organization", name: data.developer },
-        datePublished: data.release_date ?? undefined,
+        name: game.title,
+        description: game.verdictSummary || game.description || undefined,
+        image: game.headerImage || game.coverImage || undefined,
+        url: `${SITE_URL}/game/${canonicalSlug}`,
+        genre: game.genres.slice(0, 4),
+        gamePlatform: game.platforms.slice(0, 6),
+        author: game.developer ? { "@type": "Organization", name: game.developer } : undefined,
+        publisher: game.publisher ? { "@type": "Organization", name: game.publisher } : undefined,
+        datePublished: game.releaseDate || undefined,
         aggregateRating:
-          data.score > 0 && (data.review_count ?? 0) > 0
+          game.score > 0 && game.reviewCount > 0
             ? {
                 "@type": "AggregateRating",
-                ratingValue: data.score,
+                ratingValue: game.score,
                 bestRating: 100,
                 worstRating: 0,
-                ratingCount: data.review_count,
+                ratingCount: game.reviewCount,
               }
             : undefined,
       }
@@ -120,3 +104,4 @@ export default async function GameLayout({ params, children }: Props) {
     </>
   );
 }
+

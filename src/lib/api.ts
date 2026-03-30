@@ -376,6 +376,12 @@ export interface SteamReviewsData {
   coverImage?: string | null;
   source?: string;
   message?: string;
+  cache?: {
+    fetchedAt: string | null;
+    ageMs: number | null;
+    ttlMs: number;
+    isStale: boolean;
+  };
 }
 
 /** Get top Steam player reviews for a game. */

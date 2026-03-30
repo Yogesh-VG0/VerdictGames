@@ -9,6 +9,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 interface SteamReviewsProps {
   slug: string;
   className?: string;
+  initialData?: Awaited<ReturnType<typeof getSteamReviews>>;
 }
 
 function formatPlaytime(minutes: number): string {
@@ -135,12 +136,13 @@ function NumberedPagination({
 
 const REVIEWS_PER_PAGE = 3;
 
-export default function SteamReviews({ slug, className }: SteamReviewsProps) {
+export default function SteamReviews({ slug, className, initialData }: SteamReviewsProps) {
   const [page, setPage] = useState(1);
 
   const { data, isLoading } = useQuery({
     queryKey: ["steam-reviews", slug],
     queryFn: () => getSteamReviews(slug, 21),
+    initialData,
     staleTime: 30 * 60 * 1000,
   });
 
