@@ -288,6 +288,7 @@ export default function AdminGameEditor({ params }: { params: Promise<{ id: stri
       formData.append("file", processedFile);
       formData.append("folder", "verdict-games/screenshots");
       formData.append("gameSlug", game.data?.slug ?? "");
+      formData.append("assetType", "screenshot");
 
       const res = await fetch("/api/admin/upload", {
         method: "POST",
@@ -370,6 +371,7 @@ export default function AdminGameEditor({ params }: { params: Promise<{ id: stri
       formData.append("file", processedFile);
       formData.append("folder", "verdict-games");
       formData.append("gameSlug", game.data?.slug ?? "");
+      formData.append("assetType", fieldKey);
 
       const res = await fetch("/api/admin/upload", {
         method: "POST",

@@ -5,6 +5,7 @@ import { getServerSupabase } from "@/lib/supabase/server";
 import { mapGameRow } from "@/lib/db/mappers";
 import { GAME_CARD_COLUMNS } from "@/lib/db/columns";
 import type { GameRow } from "@/lib/supabase/types";
+import { fetchHomepageData } from "@/lib/services/homepage";
 import { slugify } from "@/lib/utils/slugify";
 
 /**
@@ -47,6 +48,7 @@ export async function GET(request: NextRequest) {
   const sortBy = params.get("sort") ?? "updated"; // "updated" | "confidence" | "reviews" | "completeness"
   const limit = 20;
   const offset = (page - 1) * limit;
+  let homepageSectionIds: string[] | null = null;
 
   // Extended columns for quality diagnostics
   const ADMIN_COLUMNS = `${GAME_CARD_COLUMNS},confidence,enrichment_sources,trailer_url,steam_url,play_store_url,created_at,updated_at,last_enriched_at,completeness_score,media_source`;
@@ -115,20 +117,44 @@ export async function GET(request: NextRequest) {
     const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
     switch (sectionFilter) {
       case "featured":
-        // Games marked as featured (appear in hero carousel)
-        query = query.eq("featured", true);
+        {
+          const homepage = await fetchHomepageData();
+          homepageSectionIds = homepage.hero.filter((game) => game.coverImage).slice(0, 6).map((game) => game.id);
+          if (homepageSectionIds.length === 0) {
+            return jsonOk({ games: [], total: 0, page, pageSize: limit });
+          }
+          query = query.in("id", homepageSectionIds);
+        }
         break;
       case "trending":
-        // Games marked as trending
-        query = query.eq("trending", true);
+        {
+          const homepage = await fetchHomepageData();
+          homepageSectionIds = homepage.trending.slice(0, 20).map((game) => game.id);
+          if (homepageSectionIds.length === 0) {
+            return jsonOk({ games: [], total: 0, page, pageSize: limit });
+          }
+          query = query.in("id", homepageSectionIds);
+        }
         break;
       case "top-rated":
-        // High-scoring games (85+) with decent confidence
-        query = query.gte("score", 85).gte("confidence", 0.5);
+        {
+          const homepage = await fetchHomepageData();
+          homepageSectionIds = homepage.topRated.slice(0, 20).map((game) => game.id);
+          if (homepageSectionIds.length === 0) {
+            return jsonOk({ games: [], total: 0, page, pageSize: limit });
+          }
+          query = query.in("id", homepageSectionIds);
+        }
         break;
       case "new-releases":
-        // Games released in the last 90 days
-        query = query.gte("release_date", ninetyDaysAgo);
+        {
+          const homepage = await fetchHomepageData();
+          homepageSectionIds = homepage.newReleases.slice(0, 20).map((game) => game.id);
+          if (homepageSectionIds.length === 0) {
+            return jsonOk({ games: [], total: 0, page, pageSize: limit });
+          }
+          query = query.in("id", homepageSectionIds);
+        }
         break;
       case "hero-eligible":
         // Games that could appear in hero: has header image, good score, not provisional
@@ -160,7 +186,7 @@ export async function GET(request: NextRequest) {
   const { data, count } = await query;
 
   // Map rows with extra admin fields
-  const games = ((data ?? []) as GameRow[]).map((row) => {
+  let games = ((data ?? []) as GameRow[]).map((row) => {
     const mapped = mapGameRow(row);
     return {
       ...mapped,
@@ -176,6 +202,11 @@ export async function GET(request: NextRequest) {
       mediaSource: (row as GameRow & { media_source?: string }).media_source ?? null,
     };
   });
+
+  if (homepageSectionIds) {
+    const order = new Map(homepageSectionIds.map((id, index) => [id, index]));
+    games = games.sort((a, b) => (order.get(a.id) ?? Number.MAX_SAFE_INTEGER) - (order.get(b.id) ?? Number.MAX_SAFE_INTEGER));
+  }
 
   return jsonOk({
     games,

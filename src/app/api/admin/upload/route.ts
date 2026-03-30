@@ -9,6 +9,30 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
+function getDeliveryTransformation(assetType: string | null) {
+  switch (assetType) {
+    case "header_image":
+      return [
+        { width: 1920, height: 1080, crop: "fill", gravity: "auto" },
+        { quality: "auto:good", fetch_format: "auto" },
+      ];
+    case "cover_image":
+      return [
+        { width: 600, height: 900, crop: "fill", gravity: "auto" },
+        { quality: "auto:good", fetch_format: "auto" },
+      ];
+    case "screenshot":
+      return [
+        { width: 1600, crop: "limit" },
+        { quality: "auto:good", fetch_format: "auto" },
+      ];
+    default:
+      return [
+        { quality: "auto:good", fetch_format: "auto" },
+      ];
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     await requireAdmin();
@@ -17,6 +41,7 @@ export async function POST(request: NextRequest) {
     const file = formData.get("file") as File | null;
     const folder = (formData.get("folder") as string) || "verdict-games";
     const gameSlug = formData.get("gameSlug") as string | null;
+    const assetType = (formData.get("assetType") as string | null) ?? null;
 
     if (!file) {
       return NextResponse.json({ success: false, error: "No file provided" }, { status: 400 });
@@ -52,21 +77,27 @@ export async function POST(request: NextRequest) {
       ? `${folder}/${gameSlug}/${timestamp}`
       : `${folder}/${timestamp}`;
 
+    const transformation = getDeliveryTransformation(assetType);
+
     // Upload to Cloudinary
     const result = await cloudinary.uploader.upload(dataUri, {
       public_id: publicId,
       folder: undefined, // Already included in public_id
       resource_type: "image",
-      transformation: [
-        { quality: "auto:good" },
-        { fetch_format: "auto" },
-      ],
+      transformation,
+    });
+
+    const optimizedUrl = cloudinary.url(result.public_id, {
+      secure: true,
+      resource_type: "image",
+      type: "upload",
+      transformation,
     });
 
     return NextResponse.json({
       success: true,
       data: {
-        url: result.secure_url,
+        url: optimizedUrl,
         publicId: result.public_id,
         width: result.width,
         height: result.height,
