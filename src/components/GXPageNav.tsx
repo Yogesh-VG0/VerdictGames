@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { Tag, Gift, Compass, Home } from "lucide-react";
+import { isNavHrefActive } from "@/lib/nav-active";
 import { cn } from "@/lib/utils";
 
 const NAV_LINKS = [
@@ -44,17 +45,7 @@ function GXPageNavFallback() {
 
   return (
     <GXPageNavMarkup
-      isLinkActive={(href) => {
-        if (href === "/") {
-          return pathname === "/";
-        }
-
-        if (href.includes("?")) {
-          return false;
-        }
-
-        return pathname.startsWith(href);
-      }}
+      isLinkActive={(href) => isNavHrefActive(pathname, null, href)}
     />
   );
 }
@@ -63,31 +54,8 @@ function GXPageNavContent() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const matchesPathAndQuery = (href: string) => {
-    if (!href.includes("?")) {
-      return pathname === href;
-    }
-
-    const [basePath, queryString = ""] = href.split("?");
-    if (pathname !== basePath) {
-      return false;
-    }
-
-    const targetParams = new URLSearchParams(queryString);
-
-    return Array.from(targetParams.entries()).every(([key, value]) => searchParams.get(key) === value);
-  };
-
   const isLinkActive = (href: string) => {
-    if (href === "/") {
-      return pathname === "/";
-    }
-
-    if (href.includes("?")) {
-      return matchesPathAndQuery(href);
-    }
-
-    return pathname.startsWith(href);
+    return isNavHrefActive(pathname, searchParams, href);
   };
 
   return <GXPageNavMarkup isLinkActive={isLinkActive} />;

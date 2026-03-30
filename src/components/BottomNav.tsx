@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { Home, Compass, Search, Gamepad2, User, type LucideIcon } from "lucide-react";
+import { hasActiveNavHref, isNavHrefActive } from "@/lib/nav-active";
 import { cn } from "@/lib/utils";
 
 type BottomNavLink = {
@@ -82,21 +83,19 @@ function BottomNavFallback() {
   const pathname = usePathname();
   const { user } = useAuth();
   const links = getLinks(user);
+  const queryHrefCandidates = links.filter((link) => link.href.startsWith("/search?")).map((link) => link.href);
 
   return (
     <BottomNavMarkup
       links={links}
       visible={true}
       isLinkActive={(href) => {
-        if (href === "/") {
-          return pathname === "/";
+        if (href === "/search") {
+          return isNavHrefActive(pathname, null, href, "exact")
+            && !hasActiveNavHref(pathname, null, queryHrefCandidates);
         }
 
-        if (href.includes("?")) {
-          return false;
-        }
-
-        return pathname.startsWith(href);
+        return isNavHrefActive(pathname, null, href);
       }}
     />
   );
@@ -133,38 +132,15 @@ function BottomNavContent() {
   }, []);
 
   const links = getLinks(user);
-
-  const matchesPathAndQuery = (href: string) => {
-    if (!href.includes("?")) {
-      return pathname === href;
-    }
-
-    const [basePath, queryString = ""] = href.split("?");
-    if (pathname !== basePath) {
-      return false;
-    }
-
-    const targetParams = new URLSearchParams(queryString);
-
-    return Array.from(targetParams.entries()).every(([key, value]) => searchParams.get(key) === value);
-  };
-
-  const hasExplicitSearchDestination = links.some((link) => link.href.startsWith("/search?") && matchesPathAndQuery(link.href));
+  const queryHrefCandidates = links.filter((link) => link.href.startsWith("/search?")).map((link) => link.href);
+  const hasExplicitSearchDestination = hasActiveNavHref(pathname, searchParams, queryHrefCandidates);
 
   const isLinkActive = (href: string) => {
-    if (href === "/") {
-      return pathname === "/";
-    }
-
     if (href === "/search") {
-      return pathname === "/search" && !hasExplicitSearchDestination;
+      return isNavHrefActive(pathname, searchParams, href, "exact") && !hasExplicitSearchDestination;
     }
 
-    if (href.includes("?")) {
-      return matchesPathAndQuery(href);
-    }
-
-    return pathname.startsWith(href);
+    return isNavHrefActive(pathname, searchParams, href);
   };
 
   return <BottomNavMarkup links={links} visible={visible} isLinkActive={isLinkActive} />;
