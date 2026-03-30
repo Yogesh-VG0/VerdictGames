@@ -64,6 +64,7 @@ export interface Game {
   appStoreUrl?: string;
 
   // Metadata
+  steamAppId?: number;
   reviewCount: number;
   userScore?: number;
   featured?: boolean;

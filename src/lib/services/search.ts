@@ -6,7 +6,8 @@ import { getPublicSupabase, hasPublicSupabaseEnv } from "@/lib/supabase/public";
 import type { Game, PaginatedResponse, Platform } from "@/lib/types";
 import type { GameRow } from "@/lib/supabase/types";
 import { hasUsableCardImage } from "@/lib/utils/mediaReadiness";
-import { confidenceWeightedScore, isSurfaceReady } from "@/lib/utils/quality";
+import { confidenceWeightedScore, isQualityGame, isSurfaceReady } from "@/lib/utils/quality";
+import { dedupePublicCanonicalRows } from "@/lib/utils/publicCanonical";
 import { isPublicSafeGame } from "@/lib/utils/publicSafety";
 import { normalizeTitle } from "@/lib/utils/slugify";
 
@@ -53,6 +54,40 @@ function titleSimilarity(query: string, title: string): number {
   }
 
   return 0;
+}
+
+function hasTrendingSearchSignal(row: GameRow): boolean {
+  const momentum = row.momentum ?? 0;
+  const currentPlayers = row.current_players ?? 0;
+  const reviewCount = row.review_count ?? 0;
+  const confidence = row.confidence ?? 0;
+
+  if (momentum < -0.1) {
+    return false;
+  }
+
+  if (reviewCount < 25) {
+    return false;
+  }
+
+  if (confidence < 0.15 && reviewCount < 100) {
+    return false;
+  }
+
+  if (row.steam_app_id != null && currentPlayers < 25 && momentum < 0.03 && !row.trending) {
+    return false;
+  }
+
+  return true;
+}
+
+function passesBrowseDiscoveryFloor(row: GameRow): boolean {
+  const reviewCount = row.review_count ?? 0;
+  const confidence = row.confidence ?? 0;
+  const currentPlayers = row.current_players ?? 0;
+  const verdictScore = row.verdict_score ?? row.score ?? 0;
+
+  return reviewCount >= 20 || confidence >= 0.2 || currentPlayers >= 50 || verdictScore >= 80;
 }
 
 async function fetchSearchResults(state: SearchGamesState): Promise<PaginatedResponse<Game>> {
@@ -157,7 +192,7 @@ async function fetchSearchResults(state: SearchGamesState): Promise<PaginatedRes
       break;
     case "top-rated":
       query = query
-        .gte("review_count", 10)
+        .gte("review_count", 25)
         .not("cover_image", "is", null)
         .neq("cover_image", "")
         .order("verdict_score", { ascending: false, nullsFirst: false })
@@ -255,15 +290,22 @@ async function fetchSearchResults(state: SearchGamesState): Promise<PaginatedRes
       }
     }
 
-    if (isTrending) {
-      const momentum = (row as GameRow & { momentum?: number }).momentum ?? 0;
-      if (momentum < -0.1) {
-        return false;
-      }
+    if (isTopRated && !isQualityGame(row, "topRated")) {
+      return false;
+    }
+
+    if (isTrending && !hasTrendingSearchSignal(row)) {
+      return false;
+    }
+
+    if (sort === "relevance" && !q && !passesBrowseDiscoveryFloor(row)) {
+      return false;
     }
 
     return true;
   });
+
+  rows = dedupePublicCanonicalRows(rows, { query: q });
 
   let filteredTotal = rows.length;
   if (isRelevanceWithQuery && rows.length > 0) {

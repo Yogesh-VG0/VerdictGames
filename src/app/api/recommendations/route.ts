@@ -12,6 +12,7 @@ import { jsonOk } from "@/lib/api/response";
 import { mapGameRow } from "@/lib/db/mappers";
 import { GAME_CARD_COLUMNS_WITH_DESC } from "@/lib/db/columns";
 import { confidenceWeightedScore, isQualityGame } from "@/lib/utils/quality";
+import { dedupePublicCanonicalRows } from "@/lib/utils/publicCanonical";
 import { isPublicSafeGame } from "@/lib/utils/publicSafety";
 import { hasUsableCardImage } from "@/lib/utils/mediaReadiness";
 import type { GameRow } from "@/lib/supabase/types";
@@ -21,12 +22,12 @@ export async function GET(request: NextRequest) {
   const limit = Number.isFinite(rawLimit) && rawLimit > 0 ? Math.min(rawLimit, 50) : 8;
 
   try {
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
       return jsonOk([]);
     }
 
-    const { getServerSupabase } = await import("@/lib/supabase/server");
-    const supabase = getServerSupabase();
+    const { getAuthSupabase } = await import("@/lib/supabase/auth");
+    const supabase = await getAuthSupabase();
 
     // Try to get user-specific recommendations
     let userGenres: string[] = [];
@@ -85,8 +86,10 @@ export async function GET(request: NextRequest) {
       .gte("release_date", cutoffStr)
       .lte("release_date", today)           // exclude unreleased/future games
       .gte("score", 70)
-      .gte("review_count", 20)              // minimum review threshold — no tiny-sample games
+      .gte("review_count", 50)              // minimum review threshold — no tiny-sample games
+      .gte("confidence", 0.25)
       .not("cover_image", "is", null)       // must have a cover image
+      .neq("cover_image", "")
       .order("verdict_score", { ascending: false, nullsFirst: false })
       .order("score", { ascending: false })
       .limit(fetchLimit);
@@ -107,18 +110,19 @@ export async function GET(request: NextRequest) {
       // Exclude provisional / coming soon
       if ((r as GameRow & { is_provisional?: boolean }).is_provisional) return false;
       if (r.verdict_label === "COMING SOON") return false;
-      // Quality gate (uses "topRated" thresholds: 50+ reviews, image, description)
-      return isQualityGame(r, "topRated");
+      return isQualityGame(r, "recommendations");
     });
-
-    // Sort by confidence-weighted score so low-review 100% games don't dominate
-    rows.sort((a, b) => confidenceWeightedScore(b) - confidenceWeightedScore(a));
 
     // Exclude games already in user's library
     if (userGameIds.length > 0) {
       const excludeSet = new Set(userGameIds);
       rows = rows.filter((r) => !excludeSet.has(r.id));
     }
+
+    rows = dedupePublicCanonicalRows(rows);
+
+    // Sort by confidence-weighted score so low-review 100% games don't dominate
+    rows.sort((a, b) => confidenceWeightedScore(b) - confidenceWeightedScore(a));
 
     // Ensure genre diversity: pick one per primary genre first
     const seen = new Set<string>();

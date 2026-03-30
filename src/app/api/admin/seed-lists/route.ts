@@ -3,6 +3,7 @@ import { jsonOk } from "@/lib/api/response";
 import { requireAdmin } from "@/lib/admin";
 import { getServerSupabase } from "@/lib/supabase/server";
 import { writeAuditLog } from "@/lib/auditLog";
+import { dedupePublicCanonicalRows } from "@/lib/utils/publicCanonical";
 import type { GameRow, ListRow } from "@/lib/supabase/types";
 
 /* ── 12 editorial list definitions ── */
@@ -166,9 +167,14 @@ export async function POST() {
       .slice(0, 12);
 
     // If we don't have enough matches, just take top-rated games
-    const finalGames = scored.length >= 4
+    const candidateGames = scored.length >= 4
       ? scored.map(s => s.game)
-      : gamesData.slice(0, 12);
+      : gamesData;
+    let finalGames = dedupePublicCanonicalRows(candidateGames).slice(0, 12);
+
+    if (finalGames.length < 4 && scored.length >= 4) {
+      finalGames = dedupePublicCanonicalRows(gamesData).slice(0, 12);
+    }
 
     // Pick a unique cover image — prefer a game with a header_image not yet used by another list
     const coverGame = finalGames.find(g => g.header_image && g.header_image.length > 10 && !usedCoverImages.has(g.header_image))

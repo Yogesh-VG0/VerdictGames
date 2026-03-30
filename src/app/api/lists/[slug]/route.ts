@@ -10,7 +10,8 @@ import { NextRequest } from "next/server";
 import { jsonOk, jsonNotFound } from "@/lib/api/response";
 import { mapGameRow, mapListRow } from "@/lib/db/mappers";
 import { GAME_CARD_COLUMNS_WITH_DESC } from "@/lib/db/columns";
-import { isSurfaceReady } from "@/lib/utils/quality";
+import { isQualityGame, isSurfaceReady } from "@/lib/utils/quality";
+import { dedupePublicCanonicalRows } from "@/lib/utils/publicCanonical";
 import { isPublicSafeGame } from "@/lib/utils/publicSafety";
 import { hasUsableCardImage } from "@/lib/utils/mediaReadiness";
 import type { ListRow, GameRow } from "@/lib/supabase/types";
@@ -22,12 +23,12 @@ export async function GET(
   const { slug } = await params;
 
   try {
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
       return jsonNotFound("List");
     }
 
-    const { getServerSupabase } = await import("@/lib/supabase/server");
-    const supabase = getServerSupabase();
+    const { getPublicSupabase } = await import("@/lib/supabase/public");
+    const supabase = getPublicSupabase();
 
     const { data: list, error } = await supabase
       .from("lists")
@@ -59,16 +60,24 @@ export async function GET(
         .in("id", gameIds) as { data: GameRow[] | null };
 
       // Filter for surface readiness + public safety + media readiness
-      const allGames = (gamesData ?? [])
-        .filter((r) =>
-          isSurfaceReady(r, "curatedList") &&
-          isPublicSafeGame(r) &&
-          hasUsableCardImage(r)
-        )
+      const rowsById = new Map(
+        (gamesData ?? [])
+          .filter((r) =>
+            isSurfaceReady(r, "curatedList") &&
+            isPublicSafeGame(r) &&
+            hasUsableCardImage(r)
+          )
+          .map((row) => [row.id, row])
+      );
+      const orderedRows = gameIds
+        .map((id) => rowsById.get(id))
+        .filter(Boolean) as GameRow[];
+      const visibleRows = list.is_system_managed
+        ? orderedRows.filter((row) => isQualityGame(row, "curatedList"))
+        : orderedRows;
+      const allGames = dedupePublicCanonicalRows(visibleRows)
         .map(mapGameRow);
-      games = gameIds
-        .map((id) => allGames.find((g) => g.id === id))
-        .filter(Boolean) as ReturnType<typeof mapGameRow>[];
+      games = allGames;
     }
 
     return jsonOk(mapListRow(list, games), 200, { cache: true });

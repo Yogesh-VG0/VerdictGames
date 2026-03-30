@@ -28,6 +28,7 @@ import { GAME_CARD_COLUMNS_WITH_DESC } from "@/lib/db/columns";
 import { filterQualityGames, confidenceWeightedScore, isQualityGame, isSurfaceReady } from "@/lib/utils/quality";
 import { isPublicSafeGame } from "@/lib/utils/publicSafety";
 import { hasUsableCardImage } from "@/lib/utils/mediaReadiness";
+import { dedupePublicCanonicalRows } from "@/lib/utils/publicCanonical";
 import type { GameRow } from "@/lib/supabase/types";
 import type { Game, GXDeal } from "@/lib/types";
 
@@ -67,17 +68,7 @@ function isHomepageTrendingEligible(row: GameRow): boolean {
 const DECAY_DAYS = 365;
 
 function deduplicateBySteamAppId(games: GameRow[]): GameRow[] {
-  const byAppId = new Map<number, GameRow>();
-  for (const g of games) {
-    const appId = g.steam_app_id;
-    if (appId == null) continue;
-    const existing = byAppId.get(appId);
-    if (!existing || (g.release_date && (!existing.release_date || g.release_date > existing.release_date))) {
-      byAppId.set(appId, g);
-    }
-  }
-  const chosenIds = new Set(Array.from(byAppId.values()).map((g) => g.id));
-  return games.filter((g) => g.steam_app_id == null || chosenIds.has(g.id));
+  return dedupePublicCanonicalRows(games);
 }
 
 function trendingRank(g: GameRow, minPlayers: number, maxPlayers: number): number {
@@ -191,10 +182,10 @@ export async function fetchHeroCandidates(limit = 12): Promise<Game[]> {
       .select(GAME_CARD_COLUMNS_WITH_DESC)
       .not("header_image", "is", null)
       .neq("header_image", "")
-      .gte("score", 72)
+      .gte("score", 76)
       .gt("score", 0)
       .gte("confidence", 0.5)
-      .gte("review_count", 3000)
+      .gte("review_count", 5000)
       .gte("release_date", cutoff36)
       .lte("release_date", today)
       .order("verdict_score", { ascending: false, nullsFirst: false })
@@ -203,17 +194,17 @@ export async function fetchHeroCandidates(limit = 12): Promise<Game[]> {
     autoPool = wider.data;
   }
 
-  // Last resort: widen to 60mo and drop confidence to 0.3
+  // Last resort: widen to 60mo
   if (!autoPool || autoPool.length < 4) {
     const widest = await supabase
       .from("games")
       .select(GAME_CARD_COLUMNS_WITH_DESC)
       .not("header_image", "is", null)
       .neq("header_image", "")
-      .gte("score", 72)
+      .gte("score", 76)
       .gt("score", 0)
-      .gte("confidence", 0.3)
-      .gte("review_count", 1000)
+      .gte("confidence", 0.5)
+      .gte("review_count", 5000)
       .gte("release_date", cutoff60)
       .lte("release_date", today)
       .order("verdict_score", { ascending: false, nullsFirst: false })
@@ -232,10 +223,7 @@ export async function fetchHeroCandidates(limit = 12): Promise<Game[]> {
     isPublicSafeGame(r) &&
     hasUsableCardImage(r)
   );
-  const strictFiltered = ready.filter((r) => isQualityGame(r, "hero"));
-  const qualityFiltered = strictFiltered.length >= 4
-    ? strictFiltered
-    : [...ready].sort((a, b) => confidenceWeightedScore(b) - confidenceWeightedScore(a)).slice(0, limit * 2);
+  const qualityFiltered = ready.filter((r) => isQualityGame(r, "hero"));
 
   // Rebalanced hero scoring for flagship showcase:
   // 20% editorial boost (reduced from 40%)
@@ -331,7 +319,11 @@ export async function fetchTrendingGames(limit = 20, homepageOnly = true): Promi
   const allCandidates = deduplicateBySteamAppId([...(flagged ?? []), ...poolDeduped]);
 
   // Step 4: Quality filter + surface readiness + public safety + media readiness
-  const qualityFiltered = filterQualityGames(allCandidates, { section: "trending", minResults: 4 });
+  const qualityFiltered = filterQualityGames(allCandidates, {
+    section: "trending",
+    minResults: 4,
+    allowReadinessFallback: false,
+  });
   const readyFiltered = qualityFiltered.filter((r) =>
     isSurfaceReady(r, "homepageRail") &&
     isPublicSafeGame(r) &&
@@ -468,7 +460,7 @@ export async function fetchNewReleases(limit = 20): Promise<Game[]> {
     return true;
   });
 
-  return final.slice(0, limit).map(mapGameRow);
+  return deduplicateBySteamAppId(final).slice(0, limit).map(mapGameRow);
 }
 
 /* ═══════════════════════════════════════════════════
@@ -502,12 +494,12 @@ export async function fetchTopRated(limit = 10): Promise<Game[]> {
 
   if (error) throw error;
 
-  const ready = (data ?? []).filter((r) =>
+  const ready = deduplicateBySteamAppId((data ?? []).filter((r) =>
     isSurfaceReady(r, "homepageRail") &&
     isPublicSafeGame(r) &&
     hasUsableCardImage(r)
-  );
-  const filtered = filterQualityGames(ready, { section: "topRated", minResults: 4 });
+  ));
+  const filtered = filterQualityGames(ready, { section: "topRated", minResults: 4, allowReadinessFallback: false });
 
   // Exclude provisional / coming soon
   const clean = filtered.filter((r) => {
@@ -547,12 +539,12 @@ export async function fetchHomepageTopRated(limit = 20): Promise<Game[]> {
 
   if (error) throw error;
 
-  let ready = (data ?? []).filter((r) =>
+  let ready = deduplicateBySteamAppId((data ?? []).filter((r) =>
     isSurfaceReady(r, "homepageRail") &&
     isPublicSafeGame(r) &&
     hasUsableCardImage(r)
-  );
-  let filtered = filterQualityGames(ready, { section: "topRated", minResults: 4 });
+  ));
+  let filtered = filterQualityGames(ready, { section: "topRated", minResults: 4, allowReadinessFallback: false });
 
   // Fallback: widen to 36 months if not enough
   if (filtered.length < limit) {
@@ -572,12 +564,12 @@ export async function fetchHomepageTopRated(limit = 20): Promise<Game[]> {
       .limit(fetchLimit) as { data: GameRow[] | null; error: unknown };
 
     if (!fallback.error && fallback.data) {
-      ready = fallback.data.filter((r) =>
+      ready = deduplicateBySteamAppId(fallback.data.filter((r) =>
         isSurfaceReady(r, "homepageRail") &&
         isPublicSafeGame(r) &&
         hasUsableCardImage(r)
-      );
-      filtered = filterQualityGames(ready, { section: "topRated", minResults: 4 });
+      ));
+      filtered = filterQualityGames(ready, { section: "topRated", minResults: 4, allowReadinessFallback: false });
     }
   }
 
@@ -630,11 +622,11 @@ export async function fetchHomepageRecommendations(limit = 20): Promise<Game[]> 
   if (error) throw error;
 
   // Surface readiness + public safety + media readiness gate
-  const ready = (data ?? []).filter((r) =>
+  const ready = deduplicateBySteamAppId((data ?? []).filter((r) =>
     isSurfaceReady(r, "homepageRail") &&
     isPublicSafeGame(r) &&
     hasUsableCardImage(r)
-  );
+  ));
 
   // Exclude provisional / coming soon
   const clean = ready.filter((r) => {
@@ -643,11 +635,17 @@ export async function fetchHomepageRecommendations(limit = 20): Promise<Game[]> 
     return true;
   });
 
+  const qualityFiltered = filterQualityGames(clean, {
+    section: "recommendations",
+    minResults: 4,
+    allowReadinessFallback: false,
+  });
+
   // Sort by confidence-weighted score
-  clean.sort((a, b) => confidenceWeightedScore(b) - confidenceWeightedScore(a));
+  qualityFiltered.sort((a, b) => confidenceWeightedScore(b) - confidenceWeightedScore(a));
 
   // Genre diversity: max 1 per genre for anonymous recs (broad discovery)
-  const diversified = applyGenreDiversity(clean, limit, 1);
+  const diversified = applyGenreDiversity(qualityFiltered, limit, 1);
 
   return diversified.map(mapGameRow);
 }

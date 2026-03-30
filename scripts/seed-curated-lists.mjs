@@ -569,6 +569,84 @@ const LIST_BLUEPRINTS = [
   },
 ];
 
+const CANONICAL_COUNTER_STRIKE_APPS = new Set([10, 80, 240, 730, 4465480]);
+const LEGACY_CANONICAL_APPS = new Set([4465480]);
+
+function normalizeCanonicalText(value) {
+  return String(value ?? "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function getCanonicalKey(row) {
+  if (row.steam_app_id != null && CANONICAL_COUNTER_STRIKE_APPS.has(row.steam_app_id)) {
+    return "special:counter-strike";
+  }
+
+  if (row.steam_app_id != null) {
+    return `steam:${row.steam_app_id}`;
+  }
+
+  return `title:${normalizeCanonicalText(row.title)}`;
+}
+
+function pickPreferredCanonicalRow(a, b) {
+  const score = (row) => {
+    let value = 0;
+
+    if (!LEGACY_CANONICAL_APPS.has(row.steam_app_id)) {
+      value += 1000;
+    }
+
+    if (row.steam_app_id === 730) {
+      value += 4000;
+    }
+
+    if (row.steam_app_id === 4465480) {
+      value -= 1000;
+    }
+
+    value += Math.min((row.current_players ?? 0) / 1000, 500);
+    value += (row.verdict_score ?? row.score ?? 0) * 2;
+    value += Math.min((row.review_count ?? 0) / 1000, 200);
+    value += (row.confidence ?? 0) * 150;
+
+    if (row.release_date) {
+      const ageDays = Math.max(0, (Date.now() - new Date(row.release_date).getTime()) / 86400000);
+      value += Math.max(0, 60 - Math.min(ageDays / 30, 60));
+    }
+
+    return value;
+  };
+
+  return score(b) > score(a) ? b : a;
+}
+
+async function dedupeCanonicalIds(ids) {
+  if (ids.length === 0) {
+    return [];
+  }
+
+  const rows = await sql`
+    SELECT id, title, steam_app_id, current_players, verdict_score, score, review_count, confidence, release_date
+    FROM games
+    WHERE id = ANY(${ids})
+  `;
+  const rowsById = new Map(rows.map((row) => [row.id, row]));
+  const byGroup = new Map();
+
+  for (const id of ids) {
+    const row = rowsById.get(id);
+    if (!row) continue;
+    const key = getCanonicalKey(row);
+    const existing = byGroup.get(key);
+    byGroup.set(key, existing ? pickPreferredCanonicalRow(existing, row) : row);
+  }
+
+  return Array.from(byGroup.values()).map((row) => row.id);
+}
+
 // ── Main ──
 
 console.log("═══════════════════════════════════════════");
@@ -598,7 +676,8 @@ for (const blueprint of LIST_BLUEPRINTS) {
   }
 
   // Apply overlap constraint: no game in more than 3 lists (relaxed for 22 lists)
-  const allIds = gameRows.map((r) => r.id);
+  let allIds = gameRows.map((r) => r.id);
+  allIds = await dedupeCanonicalIds(allIds);
   const constrainedIds = enforceOverlapConstraints(allIds, 3).slice(0, 12);
 
   if (constrainedIds.length < 4) {
@@ -623,7 +702,7 @@ for (const blueprint of LIST_BLUEPRINTS) {
     constrainedIds.push(...stricterIds);
   }
 
-  console.log(`  ✓ ${gameRows.length} raw → ${constrainedIds.length} after overlap enforcement`);
+  console.log(`  ✓ ${gameRows.length} raw → ${allIds.length} canonical → ${constrainedIds.length} after overlap enforcement`);
 
   // Get a unique cover image for this list (avoid duplicates across lists)
   let coverImage = "";

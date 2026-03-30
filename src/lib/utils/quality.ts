@@ -97,7 +97,7 @@ export function isSurfaceReady(row: GameRow, surface: ReadinessSurface): boolean
    Quality Scoring (internal ranking — unchanged)
    ═══════════════════════════════════════════════════ */
 
-export type SectionType = "trending" | "topRated" | "newReleases" | "deals" | "generic" | "hero";
+export type SectionType = "trending" | "topRated" | "newReleases" | "deals" | "generic" | "hero" | "recommendations" | "curatedList";
 
 interface QualityOpts {
   /** Minimum number of results — if filtering would go below this, return
@@ -105,15 +105,19 @@ interface QualityOpts {
   minResults?: number;
   /** Section type — determines thresholds */
   section?: SectionType;
+  allowReadinessFallback?: boolean;
+  fallbackSurface?: ReadinessSurface;
 }
 
 const THRESHOLDS: Record<SectionType, { minReviews: number; minDescLen: number; requireImage: boolean; minConfidence?: number; minCurrentPlayers?: number }> = {
-  hero:        { minReviews: 10000, minDescLen: 50, requireImage: true, minConfidence: 0.8, minCurrentPlayers: 500 },
-  trending:    { minReviews: 20,  minDescLen: 20, requireImage: true },
-  topRated:    { minReviews: 50,  minDescLen: 20, requireImage: true },
-  newReleases: { minReviews: 0,   minDescLen: 10, requireImage: true },
-  deals:       { minReviews: 0,   minDescLen: 0,  requireImage: false },
-  generic:     { minReviews: 10,  minDescLen: 20, requireImage: true },
+  hero:            { minReviews: 5000, minDescLen: 50, requireImage: true, minConfidence: 0.5 },
+  trending:        { minReviews: 50,   minDescLen: 20, requireImage: true, minConfidence: 0.2, minCurrentPlayers: 25 },
+  topRated:        { minReviews: 75,   minDescLen: 20, requireImage: true, minConfidence: 0.3 },
+  newReleases:     { minReviews: 0,    minDescLen: 20, requireImage: true },
+  recommendations: { minReviews: 75,   minDescLen: 20, requireImage: true, minConfidence: 0.35 },
+  curatedList:     { minReviews: 20,   minDescLen: 20, requireImage: true, minConfidence: 0.15 },
+  deals:           { minReviews: 0,    minDescLen: 0,  requireImage: false },
+  generic:         { minReviews: 10,   minDescLen: 20, requireImage: true },
 };
 
 /**
@@ -182,13 +186,24 @@ export function filterQualityGames(
   rows: GameRow[],
   opts: QualityOpts = {}
 ): GameRow[] {
-  const { minResults = 4, section = "generic" } = opts;
+  const {
+    minResults = 4,
+    section = "generic",
+    allowReadinessFallback = true,
+    fallbackSurface = "homepageRail",
+  } = opts;
   const filtered = rows.filter((r) => isQualityGame(r, section));
 
-  if (filtered.length >= minResults) return filtered;
+  if (filtered.length >= minResults || !allowReadinessFallback) return filtered;
 
   // Fallback: still enforce surface readiness — never return imageless games
   // to public-facing surfaces even when quality filtering is relaxed.
-  const readinessFiltered = rows.filter((r) => isSurfaceReady(r, "homepageRail"));
-  return readinessFiltered.length >= minResults ? readinessFiltered : rows.filter((r) => isSurfaceReady(r, "searchResult"));
+  const readinessFiltered = rows.filter((r) => isSurfaceReady(r, fallbackSurface));
+  if (readinessFiltered.length >= minResults) return readinessFiltered;
+
+  if (fallbackSurface !== "searchResult") {
+    return rows.filter((r) => isSurfaceReady(r, "searchResult"));
+  }
+
+  return readinessFiltered;
 }

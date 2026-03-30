@@ -242,6 +242,7 @@ export function mapGameRow(row: GameRow): Game {
     monetizationNotes: row.monetization_notes ?? "",
     steamUrl: row.steam_url ?? undefined,
     playStoreUrl: row.play_store_url ?? undefined,
+    steamAppId: row.steam_app_id ?? undefined,
     reviewCount: row.review_count,
     userScore: row.user_score ?? undefined,
     featured: row.featured,

@@ -9,19 +9,20 @@ export const revalidate = 300; // ISR: revalidate every 5 minutes
 import { jsonOk } from "@/lib/api/response";
 import { mapGameRow, mapListRow } from "@/lib/db/mappers";
 import { GAME_CARD_COLUMNS_WITH_DESC } from "@/lib/db/columns";
-import { isSurfaceReady } from "@/lib/utils/quality";
+import { isQualityGame, isSurfaceReady } from "@/lib/utils/quality";
+import { dedupePublicCanonicalRows } from "@/lib/utils/publicCanonical";
 import { isPublicSafeGame } from "@/lib/utils/publicSafety";
 import { hasUsableCardImage } from "@/lib/utils/mediaReadiness";
 import type { ListRow, GameRow } from "@/lib/supabase/types";
 
 export async function GET() {
   try {
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
       return jsonOk([]);
     }
 
-    const { getServerSupabase } = await import("@/lib/supabase/server");
-    const supabase = getServerSupabase();
+    const { getPublicSupabase } = await import("@/lib/supabase/public");
+    const supabase = getPublicSupabase();
 
     // Batch: fetch all lists + all list_items in parallel (2 queries instead of N*2)
     const [listsRes, itemsRes] = await Promise.all([
@@ -54,7 +55,7 @@ export async function GET() {
     }
 
     // Single batch query for all games (with description for filtering)
-    const gamesMap = new Map<string, ReturnType<typeof mapGameRow>>();
+    const gamesMap = new Map<string, GameRow>();
     if (allGameIds.size > 0) {
       const { data: gamesData } = await supabase
         .from("games")
@@ -64,7 +65,7 @@ export async function GET() {
       // Apply public safety + media readiness filters
       for (const row of gamesData ?? []) {
         if (isSurfaceReady(row, "curatedList") && isPublicSafeGame(row) && hasUsableCardImage(row)) {
-          gamesMap.set(row.id, mapGameRow(row));
+          gamesMap.set(row.id, row);
         }
       }
     }
@@ -72,10 +73,13 @@ export async function GET() {
     // Assemble results
     const results = listsData.map((list) => {
       const items = itemsByList.get(list.id) ?? [];
-      const orderedGames = items
+      const orderedRows = items
         .map((item) => gamesMap.get(item.game_id))
-        .filter(Boolean) as ReturnType<typeof mapGameRow>[];
-      return mapListRow(list, orderedGames);
+        .filter(Boolean) as GameRow[];
+      const visibleRows = list.is_system_managed
+        ? orderedRows.filter((row) => isQualityGame(row, "curatedList"))
+        : orderedRows;
+      return mapListRow(list, dedupePublicCanonicalRows(visibleRows).map(mapGameRow));
     });
 
     return jsonOk(results, 200, { cache: true });

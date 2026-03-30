@@ -40,6 +40,7 @@ import LibraryStatusSelector from "@/components/LibraryStatusSelector";
 import ReviewForm from "@/components/ReviewForm";
 import CommentThread from "@/components/CommentThread";
 import AuthModal from "@/components/AuthModal";
+import { getGameNotices } from "@/lib/utils/gameNotices";
 import {
   Zap, Trophy, Newspaper, MessageSquare, Clock,
   BarChart3, Target, ThumbsUp, ThumbsDown, Gamepad2,
@@ -375,6 +376,7 @@ export default function GameDetailClientPage({
   const lowestPrice = formatPrice(game.priceLowest, game.priceCurrency);
   const sc = scoreColor(game.score);
   const isProvisional = game.isProvisional || game.releaseStatus === "upcoming" || game.verdictLabel === "COMING SOON";
+  const notices = getGameNotices(game);
 
   return (
     <div className="space-y-0">
@@ -631,6 +633,31 @@ export default function GameDetailClientPage({
               </motion.section>
               )}
             </FadeInSection>
+
+            {notices.map((notice) => (
+              <FadeInSection key={notice.id}>
+                <section className="rounded-2xl border border-amber-500/25 bg-amber-500/5 p-5 md:p-6">
+                  <div className="flex items-start gap-3">
+                    <Tag className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+                    <div className="space-y-2">
+                      <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">
+                        {notice.title}
+                      </h3>
+                      <p className="text-sm text-secondary leading-relaxed">{notice.body}</p>
+                      {notice.ctaHref && notice.ctaLabel && (
+                        <Link
+                          href={notice.ctaHref}
+                          className="inline-flex items-center gap-1.5 text-sm font-medium text-accent hover:text-accent/80 transition-colors"
+                        >
+                          {notice.ctaLabel}
+                          <ChevronRight className="w-4 h-4" />
+                        </Link>
+                      )}
+                    </div>
+                  </div>
+                </section>
+              </FadeInSection>
+            ))}
 
             {/* ── Verdict Review (Editorial) ── */}
             {editorialReviews && editorialReviews.length > 0 && (
