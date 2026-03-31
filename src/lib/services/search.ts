@@ -6,6 +6,7 @@ import { getPublicSupabase, hasPublicSupabaseEnv } from "@/lib/supabase/public";
 import type { Game, PaginatedResponse, Platform } from "@/lib/types";
 import type { GameRow } from "@/lib/supabase/types";
 import { hasUsableCardImage } from "@/lib/utils/mediaReadiness";
+import { isPrimaryDiscoveryGame } from "@/lib/utils/discovery";
 import { confidenceWeightedScore, isQualityGame, isSurfaceReady } from "@/lib/utils/quality";
 import { dedupePublicCanonicalRows } from "@/lib/utils/publicCanonical";
 import { isPublicSafeGame } from "@/lib/utils/publicSafety";
@@ -61,6 +62,10 @@ function hasTrendingSearchSignal(row: GameRow): boolean {
   const currentPlayers = row.current_players ?? 0;
   const reviewCount = row.review_count ?? 0;
   const confidence = row.confidence ?? 0;
+  const isManual = row.is_trending_manual ?? false;
+  const ageDays = row.release_date
+    ? (Date.now() - new Date(`${row.release_date}T00:00:00`).getTime()) / 86400000
+    : Number.POSITIVE_INFINITY;
 
   if (momentum < -0.1) {
     return false;
@@ -71,6 +76,14 @@ function hasTrendingSearchSignal(row: GameRow): boolean {
   }
 
   if (confidence < 0.15 && reviewCount < 100) {
+    return false;
+  }
+
+  if (!isManual && ageDays > 365 * 3 && currentPlayers < 100) {
+    return false;
+  }
+
+  if (!isManual && ageDays > 365 * 6 && currentPlayers < 250) {
     return false;
   }
 
@@ -259,9 +272,14 @@ async function fetchSearchResults(state: SearchGamesState): Promise<PaginatedRes
   const todayMs = new Date(`${todayStr}T00:00:00`).getTime();
   const isUpcoming = sort === "upcoming";
   const isTrending = sort === "trending";
+  const isBroadDiscovery = !q && (isTopRated || isTrending || sort === "relevance");
 
   let rows = (data ?? []).filter((row) => {
     if (!isPublicSafeGame(row) || !hasUsableCardImage(row)) {
+      return false;
+    }
+
+    if (isBroadDiscovery && !isPrimaryDiscoveryGame(row)) {
       return false;
     }
 
@@ -291,6 +309,10 @@ async function fetchSearchResults(state: SearchGamesState): Promise<PaginatedRes
     }
 
     if (isTopRated && !isQualityGame(row, "topRated")) {
+      return false;
+    }
+
+    if (isTrending && !isQualityGame(row, "trending")) {
       return false;
     }
 

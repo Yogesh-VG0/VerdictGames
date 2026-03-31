@@ -29,7 +29,7 @@
  * 11. Sci-Fi Epics                         22. Best Action RPGs of All Time
  */
 
-import { startRun, finishRun } from './lib/scheduler-logger.mjs';
+import { startRun, finishRun, acquireLock, releaseLock } from './lib/scheduler-logger.mjs';
 import { connectDb } from './lib/db-connect.mjs';
 import { createHash } from 'node:crypto';
 
@@ -654,12 +654,17 @@ console.log("  VERDICT.GAMES — Seed Curated Lists");
 console.log(`  ${new Date().toISOString()}`);
 console.log("═══════════════════════════════════════════\n");
 
+const locked = await acquireLock(sql, 'seed-curated-lists');
+if (!locked) { await sql.end(); process.exit(0); }
+
 const run = await startRun(sql, 'seed-curated-lists');
+const startedAt = Date.now();
 
 let created = 0;
 let updated = 0;
 let skipped = 0;
 
+try {
 for (const blueprint of LIST_BLUEPRINTS) {
   console.log(`\n📋 Processing: "${blueprint.title}"`);
 
@@ -863,5 +868,15 @@ await finishRun(sql, run.id, {
   rows_updated: updated,
   rows_skipped: skipped,
   rows_scanned: LIST_BLUEPRINTS.length,
+  metadata: { elapsed: ((Date.now() - startedAt) / 1000).toFixed(1), cleaned },
 });
+} catch (err) {
+  console.error(`❌ Seed curated lists failed:`, err.message);
+  await finishRun(sql, run.id, { error_message: err.message });
+  await releaseLock(sql, 'seed-curated-lists');
+  await sql.end();
+  process.exit(1);
+}
+
+await releaseLock(sql, 'seed-curated-lists');
 await sql.end();

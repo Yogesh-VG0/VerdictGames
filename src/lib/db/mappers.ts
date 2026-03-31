@@ -9,6 +9,7 @@ import type { Game, Review, ReviewComment, User, GameList, UserGame, Platform, M
 import type { GameRow, ReviewRow, ProfileRow, ListRow, UserGameRow, ReviewCommentRow } from "../supabase/types";
 import { scoreToVerdict } from "../utils/score";
 import { getVerdictLabel } from "../utils/scoring";
+import { sanitizeDiscoveryDescription } from "../utils/discovery";
 import { normalizePlatforms } from "../utils/platform";
 
 /**
@@ -216,6 +217,7 @@ export function mapGameRow(row: GameRow): Game {
     : isJustReleased
       ? `${row.title} just launched — verdict pending as review data comes in.`
       : regenerateVerdictSummary(row.title, score, row.genres, row.verdict_summary);
+  const description = sanitizeDiscoveryDescription(row);
 
   return {
     id: row.id,
@@ -233,7 +235,7 @@ export function mapGameRow(row: GameRow): Game {
     developer: row.developer,
     publisher: row.publisher,
     releaseDate: row.release_date ?? "",
-    description: row.description ?? "",
+    description,
     score,
     verdictLabel,
     verdictSummary: verdictSummary,

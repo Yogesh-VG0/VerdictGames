@@ -290,7 +290,7 @@ export async function fetchTrendingGames(limit = 20, homepageOnly = true): Promi
   const { data: flagged, error } = await supabase
     .from("games")
     .select(GAME_CARD_COLUMNS_WITH_DESC)
-    .eq("trending", true)
+    .eq("is_trending_manual", true)
     .limit(40) as { data: GameRow[] | null; error: unknown };
 
   if (error) throw error;
@@ -309,6 +309,9 @@ export async function fetchTrendingGames(limit = 20, homepageOnly = true): Promi
     .gt("score", 0)
     .not("cover_image", "is", null)        // Cover image required at DB level
     .neq("cover_image", "")
+    .order("trending", { ascending: false, nullsFirst: false })
+    .order("momentum", { ascending: false, nullsFirst: false })
+    .order("current_players", { ascending: false, nullsFirst: false })
     .order("verdict_score", { ascending: false, nullsFirst: false })
     .order("score", { ascending: false })
     .limit(limit * 6) as { data: GameRow[] | null };
@@ -342,12 +345,14 @@ export async function fetchTrendingGames(limit = 20, homepageOnly = true): Promi
     }
     if (recencyFiltered.length < 4) recencyFiltered = readyFiltered;
 
-    // Step 5b: Exclude games with negative momentum from homepage trending
-    // Showing "📉 Falling" games in "Trending Right Now" is semantically inconsistent
-    const momentumFiltered = recencyFiltered.filter((r) => (r.momentum ?? 0) >= -0.1);
-    // Only apply if we still have enough games
-    if (momentumFiltered.length >= limit / 2) {
-      recencyFiltered = momentumFiltered;
+    const positiveMomentum = recencyFiltered.filter((r) => r.is_trending_manual || (r.momentum ?? 0) >= 0);
+    if (positiveMomentum.length >= 6) {
+      recencyFiltered = positiveMomentum;
+    } else {
+      const stableMomentum = recencyFiltered.filter((r) => r.is_trending_manual || (r.momentum ?? 0) >= -0.05);
+      if (stableMomentum.length >= 6) {
+        recencyFiltered = stableMomentum;
+      }
     }
   } else {
     recencyFiltered = readyFiltered;
@@ -360,9 +365,14 @@ export async function fetchTrendingGames(limit = 20, homepageOnly = true): Promi
 
   const ranked = [...recencyFiltered].sort((a, b) => {
     // Flagged games float to the top regardless of raw score
-    const aFlagged = (a as GameRow & { trending?: boolean }).trending ? 1 : 0;
-    const bFlagged = (b as GameRow & { trending?: boolean }).trending ? 1 : 0;
+    const aFlagged = a.is_trending_manual ? 1 : 0;
+    const bFlagged = b.is_trending_manual ? 1 : 0;
     if (bFlagged !== aFlagged) return bFlagged - aFlagged;
+
+    const aMomentumBucket = (a.momentum ?? 0) >= 0 ? 1 : 0;
+    const bMomentumBucket = (b.momentum ?? 0) >= 0 ? 1 : 0;
+    if (bMomentumBucket !== aMomentumBucket) return bMomentumBucket - aMomentumBucket;
+
     return trendingRank(b, minP, maxP) - trendingRank(a, minP, maxP);
   });
 

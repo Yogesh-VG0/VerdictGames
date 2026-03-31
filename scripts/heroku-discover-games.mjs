@@ -32,7 +32,7 @@ try {
 }
 
 import { startRun, finishRun, acquireLock, releaseLock, checkMinInterval } from './lib/scheduler-logger.mjs';
-import { connectDb, getDbUrl } from './lib/db-connect.mjs';
+import { connectDb } from './lib/db-connect.mjs';
 import { ingestGameDirect } from './lib/ingest-pipeline.mjs';
 
 const RAWG_BASE    = "https://api.rawg.io/api";
@@ -227,7 +227,7 @@ try {
   const newGames = [];
   const errors = [];
 
-  await withConcurrency(allGames, CONCURRENCY, async (game, idx) => {
+  await withConcurrency(allGames, CONCURRENCY, async (game) => {
     try {
       const result = await ingestGameDirect(sql, game.name, { expectedSlug: game.slug });
       if (result.alreadyExisted) {

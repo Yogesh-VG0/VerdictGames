@@ -14,6 +14,7 @@
  */
 
 import type { GameRow } from "@/lib/supabase/types";
+import { isPrimaryDiscoveryGame } from "@/lib/utils/discovery";
 
 /* ═══════════════════════════════════════════════════
    Surface-Specific Readiness Profiles
@@ -120,6 +121,8 @@ const THRESHOLDS: Record<SectionType, { minReviews: number; minDescLen: number; 
   generic:         { minReviews: 10,   minDescLen: 20, requireImage: true },
 };
 
+const DISCOVERY_SECTIONS = new Set<SectionType>(["hero", "trending", "topRated", "recommendations", "curatedList"]);
+
 /**
  * Confidence-weighted score for ranking.
  *
@@ -156,6 +159,8 @@ export function confidenceWeightedScore(row: GameRow): number {
 /** Check if a single game row passes quality gates for the given section. */
 export function isQualityGame(row: GameRow, section: SectionType = "generic"): boolean {
   const t = THRESHOLDS[section];
+
+  if (DISCOVERY_SECTIONS.has(section) && !isPrimaryDiscoveryGame(row)) return false;
 
   // Image check
   if (t.requireImage && !row.cover_image) return false;

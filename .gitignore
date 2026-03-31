@@ -57,6 +57,7 @@ scripts/analyze-live-responses.mjs
 scripts/apply-migration-*.mjs
 scripts/apply-schema.mjs
 scripts/backfill-*.mjs
+!scripts/backfill-mobile-listings.mjs
 scripts/check-igdb.mjs
 scripts/cleanup-public-safety.mjs
 scripts/fix-wrong-igdb-matches.mjs

@@ -1,4 +1,5 @@
 import type { GameRow } from "@/lib/supabase/types";
+import { getDiscoveryCanonicalTitle, isPackagingEditionTitle } from "@/lib/utils/discovery";
 import { normalizeTitle } from "@/lib/utils/slugify";
 
 export type PublicCanonicalPreference =
@@ -109,11 +110,16 @@ export function getPublicCanonicalGroup(row: Pick<GameRow, "steam_app_id" | "tit
     return `special:${PUBLIC_GROUP_BY_STEAM_APP_ID[row.steam_app_id]}`;
   }
 
+  const canonicalTitle = getDiscoveryCanonicalTitle(row.title);
+  if (canonicalTitle !== normalizeTitle(row.title)) {
+    return `title:${canonicalTitle}`;
+  }
+
   if (row.steam_app_id != null) {
     return `steam:${row.steam_app_id}`;
   }
 
-  return `title:${normalizeTitle(row.title)}`;
+  return `title:${canonicalTitle}`;
 }
 
 export function pickPreferredPublicRepresentative<T extends PublicCanonicalRow>(
@@ -126,6 +132,10 @@ export function pickPreferredPublicRepresentative<T extends PublicCanonicalRow>(
 
     if (!isLegacyStandaloneGame(row)) {
       value += 1000;
+    }
+
+    if (isPackagingEditionTitle(row.title)) {
+      value -= 150;
     }
 
     value += getCounterStrikePreferenceBoost(row, preference);
