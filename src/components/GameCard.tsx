@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import Image from "next/image";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Gamepad2 } from "lucide-react";
@@ -22,24 +21,48 @@ interface GameCardProps {
 function BlurImage({ src, alt, priority, className }: {
   src: string; alt: string; sizes?: string; priority?: boolean; className?: string;
 }) {
-  const [loaded, setLoaded] = useState(false);
+  const [status, setStatus] = useState<"loading" | "loaded" | "error">("loading");
+
+  const handleImageRef = useCallback((image: HTMLImageElement | null) => {
+    if (!image?.complete) return;
+    setStatus(image.naturalWidth > 0 ? "loaded" : "error");
+  }, []);
+
+  useEffect(() => {
+    if (status !== "loading") return;
+
+    const timeoutId = window.setTimeout(() => {
+      setStatus((current) => (current === "loading" ? "error" : current));
+    }, 10000);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [status]);
+
   return (
     <>
-      <div className={cn(
-        "absolute inset-0 bg-surface-2 transition-opacity duration-500",
-        loaded ? "opacity-0" : "opacity-100"
-      )} />
+      {status === "loading" ? (
+        <div className="absolute inset-0 bg-surface-2 transition-opacity duration-500" />
+      ) : null}
+      {status === "error" ? (
+        <div className="absolute inset-0 bg-gradient-to-br from-accent/20 via-surface-2 to-pixel-cyan/10 flex items-center justify-center">
+          <span className="text-tertiary text-xs font-medium">{alt.slice(0, 2).toUpperCase()}</span>
+        </div>
+      ) : null}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
+        ref={handleImageRef}
         src={src}
         alt={alt}
         className={cn(
           "absolute inset-0 w-full h-full object-cover transition-all duration-700",
-          loaded ? "opacity-100 scale-100" : "opacity-0 scale-105 blur-sm",
+          status === "loaded" ? "opacity-100 scale-100" : "opacity-0 scale-105 blur-sm",
           className
         )}
         loading={priority ? "eager" : "lazy"}
-        onLoad={() => setLoaded(true)}
+        decoding="async"
+        fetchPriority={priority ? "high" : undefined}
+        onLoad={() => setStatus("loaded")}
+        onError={() => setStatus("error")}
       />
     </>
   );
@@ -90,6 +113,7 @@ export default function GameCard({
           <div className="relative aspect-[3/4] overflow-hidden">
             {game.coverImage ? (
               <BlurImage
+                key={game.coverImage}
                 src={game.coverImage}
                 alt={game.title}
                 sizes="(max-width: 640px) 100vw, 33vw"
@@ -185,6 +209,7 @@ export default function GameCard({
         <div className="relative aspect-[3/4] overflow-hidden">
           {game.coverImage ? (
             <BlurImage
+              key={game.coverImage}
               src={game.coverImage}
               alt={game.title}
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"

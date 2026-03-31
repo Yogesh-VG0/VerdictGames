@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowLeft, Save, Search } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 const VERDICT_OPTIONS = ["MUST PLAY", "WORTH IT", "MIXED", "SKIP", "COMING SOON"];
 
@@ -172,7 +171,7 @@ export default function NewEditorialReviewPage() {
           )}
 
           {searchQuery.length >= 2 && !gameSearch.isLoading && gameSearch.data?.length === 0 && (
-            <div className="text-sm text-tertiary py-4 text-center">No games found for "{searchQuery}"</div>
+            <div className="text-sm text-tertiary py-4 text-center">No games found for &quot;{searchQuery}&quot;</div>
           )}
         </div>
       </div>

@@ -72,7 +72,7 @@ export default function GXDealCard({ deal }: GXDealCardProps) {
       {isExternal ? (
         <a href={cardHref} target="_blank" rel="noopener noreferrer" className="block">{imageContent}</a>
       ) : (
-        <Link href={cardHref} className="block">{imageContent}</Link>
+        <Link href={cardHref} prefetch={false} className="block">{imageContent}</Link>
       )}
 
       <div className="p-3.5 flex-1 flex flex-col gap-1.5">
@@ -88,6 +88,7 @@ export default function GXDealCard({ deal }: GXDealCardProps) {
         ) : (
           <Link
             href={cardHref}
+            prefetch={false}
             className="text-sm font-semibold text-foreground leading-tight line-clamp-1 group-hover:text-accent transition-colors"
           >
             {deal.title}

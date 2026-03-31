@@ -109,6 +109,7 @@ export default function ProfilePage({ params }: Props) {
                       Reviewed{" "}
                       <Link
                         href={`/game/${item.gameSlug}`}
+                        prefetch={false}
                         className="text-accent hover:text-accent-hover font-medium"
                       >
                         {item.gameTitle}
@@ -123,6 +124,7 @@ export default function ProfilePage({ params }: Props) {
                       Created list{" "}
                       <Link
                         href={`/lists/${item.listSlug}`}
+                        prefetch={false}
                         className="text-accent hover:text-accent-hover font-medium"
                       >
                         {item.listTitle}
@@ -134,6 +136,7 @@ export default function ProfilePage({ params }: Props) {
                       Rated{" "}
                       <Link
                         href={`/game/${item.gameSlug}`}
+                        prefetch={false}
                         className="text-accent hover:text-accent-hover font-medium"
                       >
                         {item.gameTitle}
@@ -182,6 +185,7 @@ export default function ProfilePage({ params }: Props) {
               <Link
                 key={list.id}
                 href={`/lists/${list.slug}`}
+                prefetch={false}
                 className="flex items-center gap-3 rounded-xl border border-border bg-surface p-3 hover:border-accent/30 hover:bg-surface-2 transition-all group"
               >
                 <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center shrink-0">

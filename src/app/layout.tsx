@@ -26,6 +26,7 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://www.verdict.games";
+const enableVercelObservability = Boolean(process.env.VERCEL || process.env.VERCEL_ENV);
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -119,8 +120,8 @@ export default function RootLayout({
           <ScrollToTop />
           <BottomNav />
         </Providers>
-        <Analytics />
-        <SpeedInsights />
+        {enableVercelObservability ? <Analytics /> : null}
+        {enableVercelObservability ? <SpeedInsights /> : null}
       </body>
     </html>
   );

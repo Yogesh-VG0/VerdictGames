@@ -266,9 +266,16 @@ export function getSearchSeoCopy(state: SearchPageState): { title: string; descr
   const pageSuffix = state.games.page > 1 ? ` - Page ${state.games.page}` : "";
 
   if (state.browseTab !== "games") {
+    if (state.browseTab === "deals") {
+      return {
+        title: "Game Deals",
+        description: "Browse live game deals and discounts on verdict.games.",
+      };
+    }
+
     return {
-      title: `Search Games${pageSuffix}`,
-      description: "Search and browse games on verdict.games.",
+      title: "Free to Play Games",
+      description: "Browse free-to-play and subscription-included games on verdict.games.",
     };
   }
 

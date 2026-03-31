@@ -95,6 +95,7 @@ export default function ReviewCard({
         {showGame && (
           <Link
             href={`/game/${review.gameSlug}`}
+            prefetch={false}
             className="shrink-0 relative w-16 h-20 sm:w-20 sm:h-28 rounded-xl overflow-hidden border border-border bg-surface-2 group/cover"
           >
             {review.gameCover ? (
@@ -115,6 +116,7 @@ export default function ReviewCard({
           {showGame && (
             <Link
               href={`/game/${review.gameSlug}`}
+              prefetch={false}
               className="text-sm font-semibold text-foreground hover:text-accent transition-colors line-clamp-1"
             >
               {review.gameTitle}
@@ -123,6 +125,7 @@ export default function ReviewCard({
           <div className="flex items-center gap-2 text-xs text-secondary flex-wrap">
             <Link
               href={`/profile/${review.username}`}
+              prefetch={false}
               className="hover:text-accent transition-colors font-medium"
             >
               {review.displayName || review.username}
@@ -139,6 +142,7 @@ export default function ReviewCard({
           {showGame && (
             <Link
               href={`/game/${review.gameSlug}`}
+              prefetch={false}
               className="inline-flex items-center gap-1 mt-1.5 text-[10px] text-accent hover:text-accent-hover transition-colors font-medium"
             >
               View game page →

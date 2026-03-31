@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState, useEffect, use } from "react";
+import { useState, use } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowLeft, Save, Eye, EyeOff, Star, ExternalLink } from "lucide-react";
@@ -39,58 +39,39 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-export default function EditEditorialReviewPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
+function createInitialForm(review: NonNullable<Awaited<ReturnType<typeof fetchEditorialReview>>>) {
+  return {
+    title: review.title || "",
+    content: review.content || "",
+    score: review.score,
+    verdict_label: review.verdict_label || "",
+    pros: review.pros || [],
+    cons: review.cons || [],
+    playtime_hours: review.playtime_hours,
+    platform_played: review.platform_played || "",
+    version_reviewed: review.version_reviewed || "",
+    is_published: review.is_published,
+    is_featured: review.is_featured,
+  };
+}
+
+function EditorialReviewForm({
+  id,
+  reviewData,
+}: {
+  id: string;
+  reviewData: NonNullable<Awaited<ReturnType<typeof fetchEditorialReview>>>;
+}) {
   const queryClient = useQueryClient();
   const [saveMsg, setSaveMsg] = useState("");
-
-  const review = useQuery({
-    queryKey: ["admin-editorial-review", id],
-    queryFn: () => fetchEditorialReview(id),
-  });
-
-  const [form, setForm] = useState({
-    title: "",
-    content: "",
-    score: null as number | null,
-    verdict_label: "",
-    pros: [] as string[],
-    cons: [] as string[],
-    playtime_hours: null as number | null,
-    platform_played: "",
-    version_reviewed: "",
-    is_published: false,
-    is_featured: false,
-  });
-
-  const [prosText, setProsText] = useState("");
-  const [consText, setConsText] = useState("");
-
-  useEffect(() => {
-    if (review.data) {
-      const r = review.data;
-      setForm({
-        title: r.title || "",
-        content: r.content || "",
-        score: r.score,
-        verdict_label: r.verdict_label || "",
-        pros: r.pros || [],
-        cons: r.cons || [],
-        playtime_hours: r.playtime_hours,
-        platform_played: r.platform_played || "",
-        version_reviewed: r.version_reviewed || "",
-        is_published: r.is_published,
-        is_featured: r.is_featured,
-      });
-      setProsText((r.pros || []).join("\n"));
-      setConsText((r.cons || []).join("\n"));
-    }
-  }, [review.data]);
+  const [form, setForm] = useState(() => createInitialForm(reviewData));
+  const [prosText, setProsText] = useState(() => (reviewData.pros || []).join("\n"));
+  const [consText, setConsText] = useState(() => (reviewData.cons || []).join("\n"));
 
   const saveMutation = useMutation({
     mutationFn: () => {
-      const pros = prosText.split("\n").map((s) => s.trim()).filter(Boolean);
-      const cons = consText.split("\n").map((s) => s.trim()).filter(Boolean);
+      const pros = prosText.split("\n").map((s: string) => s.trim()).filter(Boolean);
+      const cons = consText.split("\n").map((s: string) => s.trim()).filter(Boolean);
       return updateEditorialReview(id, { ...form, pros, cons });
     },
     onSuccess: () => {
@@ -105,25 +86,10 @@ export default function EditEditorialReviewPage({ params }: { params: Promise<{ 
   });
 
   const setField = (key: string, value: unknown) => setForm((f) => ({ ...f, [key]: value }));
-
-  if (review.isLoading) {
-    return (
-      <div className="space-y-4">
-        <div className="h-8 bg-white/5 rounded-lg animate-pulse w-1/3" />
-        <div className="h-64 bg-white/5 rounded-2xl animate-pulse" />
-      </div>
-    );
-  }
-
-  if (!review.data) {
-    return <p className="text-secondary text-sm">Editorial review not found</p>;
-  }
-
-  const game = review.data.games;
+  const game = reviewData.games;
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="flex items-center gap-4">
           {game.cover_image && (
@@ -190,14 +156,12 @@ export default function EditEditorialReviewPage({ params }: { params: Promise<{ 
         </div>
       </div>
 
-      {/* Status message */}
       {saveMsg && (
         <div className={`rounded-xl px-4 py-2 text-sm font-medium ${saveMsg.startsWith("Error") ? "bg-danger/10 text-danger" : "bg-pixel-green/10 text-pixel-green"}`}>
           {saveMsg}
         </div>
       )}
 
-      {/* Form */}
       <div className="rounded-2xl border border-border bg-surface p-6 space-y-6">
         <Field label="Review Title (Optional Headline)">
           <input
@@ -300,4 +264,43 @@ export default function EditEditorialReviewPage({ params }: { params: Promise<{ 
       </div>
     </div>
   );
+}
+
+export default function EditEditorialReviewPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
+
+  const review = useQuery({
+    queryKey: ["admin-editorial-review", id],
+    queryFn: () => fetchEditorialReview(id),
+  });
+
+  if (review.isLoading) {
+    return (
+      <div className="space-y-4">
+        <div className="h-8 bg-white/5 rounded-lg animate-pulse w-1/3" />
+        <div className="h-64 bg-white/5 rounded-2xl animate-pulse" />
+      </div>
+    );
+  }
+
+  if (!review.data) {
+    return <p className="text-secondary text-sm">Editorial review not found</p>;
+  }
+
+  const reviewVersion = JSON.stringify({
+    id: review.data.id,
+    title: review.data.title,
+    content: review.data.content,
+    score: review.data.score,
+    verdictLabel: review.data.verdict_label,
+    pros: review.data.pros,
+    cons: review.data.cons,
+    playtimeHours: review.data.playtime_hours,
+    platformPlayed: review.data.platform_played,
+    versionReviewed: review.data.version_reviewed,
+    isPublished: review.data.is_published,
+    isFeatured: review.data.is_featured,
+  });
+
+  return <EditorialReviewForm key={reviewVersion} id={id} reviewData={review.data} />;
 }
