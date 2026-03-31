@@ -7,7 +7,8 @@ import type { Game, PaginatedResponse, Platform } from "@/lib/types";
 import type { GameRow } from "@/lib/supabase/types";
 import { hasUsableCardImage } from "@/lib/utils/mediaReadiness";
 import { isPrimaryDiscoveryGame } from "@/lib/utils/discovery";
-import { confidenceWeightedScore, isQualityGame, isSurfaceReady } from "@/lib/utils/quality";
+import { getPublicTrendingScore, hasBrowseTrendingSignal } from "@/lib/utils/trending";
+import { confidenceWeightedScore, getEvidenceReviewCount, getCriticSourceCount, isQualityGame, isSurfaceReady } from "@/lib/utils/quality";
 import { dedupePublicCanonicalRows } from "@/lib/utils/publicCanonical";
 import { isPublicSafeGame } from "@/lib/utils/publicSafety";
 import { normalizeTitle } from "@/lib/utils/slugify";
@@ -58,40 +59,7 @@ function titleSimilarity(query: string, title: string): number {
 }
 
 function hasTrendingSearchSignal(row: GameRow): boolean {
-  const momentum = row.momentum ?? 0;
-  const currentPlayers = row.current_players ?? 0;
-  const reviewCount = row.review_count ?? 0;
-  const confidence = row.confidence ?? 0;
-  const isManual = row.is_trending_manual ?? false;
-  const ageDays = row.release_date
-    ? (Date.now() - new Date(`${row.release_date}T00:00:00`).getTime()) / 86400000
-    : Number.POSITIVE_INFINITY;
-
-  if (momentum < -0.1) {
-    return false;
-  }
-
-  if (reviewCount < 25) {
-    return false;
-  }
-
-  if (confidence < 0.15 && reviewCount < 100) {
-    return false;
-  }
-
-  if (!isManual && ageDays > 365 * 3 && currentPlayers < 100) {
-    return false;
-  }
-
-  if (!isManual && ageDays > 365 * 6 && currentPlayers < 250) {
-    return false;
-  }
-
-  if (row.steam_app_id != null && currentPlayers < 25 && momentum < 0.03 && !row.trending) {
-    return false;
-  }
-
-  return true;
+  return hasBrowseTrendingSignal(row);
 }
 
 function passesBrowseDiscoveryFloor(row: GameRow): boolean {
@@ -205,10 +173,10 @@ async function fetchSearchResults(state: SearchGamesState): Promise<PaginatedRes
       break;
     case "top-rated":
       query = query
-        .gte("review_count", 25)
         .not("cover_image", "is", null)
         .neq("cover_image", "")
         .order("verdict_score", { ascending: false, nullsFirst: false })
+        .order("confidence", { ascending: false, nullsFirst: false })
         .order("score", { ascending: false })
         .order("id", { ascending: true });
       break;
@@ -216,10 +184,12 @@ async function fetchSearchResults(state: SearchGamesState): Promise<PaginatedRes
       query = query
         .not("cover_image", "is", null)
         .neq("cover_image", "")
+        .order("is_trending_manual", { ascending: false, nullsFirst: false })
         .order("trending", { ascending: false, nullsFirst: false })
-        .order("momentum", { ascending: false, nullsFirst: false })
         .order("current_players", { ascending: false, nullsFirst: false })
+        .order("momentum", { ascending: false, nullsFirst: false })
         .order("verdict_score", { ascending: false, nullsFirst: false })
+        .order("review_count", { ascending: false, nullsFirst: false })
         .order("id", { ascending: true });
       break;
     default:
@@ -244,6 +214,7 @@ async function fetchSearchResults(state: SearchGamesState): Promise<PaginatedRes
 
   const isRelevanceWithQuery = sort === "relevance" && Boolean(q);
   const isTopRated = sort === "top-rated";
+  const isTrendingSort = sort === "trending";
   const start = (page - 1) * SEARCH_PAGE_SIZE;
   const overfetchMultiplier = 5;
 
@@ -252,7 +223,10 @@ async function fetchSearchResults(state: SearchGamesState): Promise<PaginatedRes
     requestedLimit = 150;
     query = query.range(0, requestedLimit - 1);
   } else if (isTopRated) {
-    requestedLimit = Math.max(page * SEARCH_PAGE_SIZE * 4, 200);
+    requestedLimit = Math.max(start + (SEARCH_PAGE_SIZE * overfetchMultiplier * 4), 400);
+    query = query.range(0, requestedLimit - 1);
+  } else if (isTrendingSort) {
+    requestedLimit = Math.max(start + (SEARCH_PAGE_SIZE * overfetchMultiplier * 6), 750);
     query = query.range(0, requestedLimit - 1);
   } else {
     requestedLimit = Math.max(start + (SEARCH_PAGE_SIZE * overfetchMultiplier), 150);
@@ -271,7 +245,7 @@ async function fetchSearchResults(state: SearchGamesState): Promise<PaginatedRes
   const todayStr = new Date().toISOString().slice(0, 10);
   const todayMs = new Date(`${todayStr}T00:00:00`).getTime();
   const isUpcoming = sort === "upcoming";
-  const isTrending = sort === "trending";
+  const isTrending = isTrendingSort;
   const isBroadDiscovery = !q && (isTopRated || isTrending || sort === "relevance");
 
   let rows = (data ?? []).filter((row) => {
@@ -329,6 +303,10 @@ async function fetchSearchResults(state: SearchGamesState): Promise<PaginatedRes
 
   rows = dedupePublicCanonicalRows(rows, { query: q });
 
+  if (isTrending && rows.length > 0) {
+    rows.sort((left, right) => getPublicTrendingScore(right) - getPublicTrendingScore(left));
+  }
+
   let filteredTotal = rows.length;
   if (isRelevanceWithQuery && rows.length > 0) {
     const scored = rows.map((row) => {
@@ -349,7 +327,15 @@ async function fetchSearchResults(state: SearchGamesState): Promise<PaginatedRes
   }
 
   if (isTopRated && rows.length > 0) {
-    rows.sort((left, right) => confidenceWeightedScore(right) - confidenceWeightedScore(left));
+    rows.sort((left, right) => {
+      const scoreDiff = confidenceWeightedScore(right) - confidenceWeightedScore(left);
+      if (scoreDiff !== 0) return scoreDiff;
+      const reviewDiff = getEvidenceReviewCount(right) - getEvidenceReviewCount(left);
+      if (reviewDiff !== 0) return reviewDiff;
+      const criticDiff = getCriticSourceCount(right) - getCriticSourceCount(left);
+      if (criticDiff !== 0) return criticDiff;
+      return (right.current_players ?? 0) - (left.current_players ?? 0);
+    });
     rows = rows.slice(start, start + SEARCH_PAGE_SIZE);
   }
 

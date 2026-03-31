@@ -5,7 +5,7 @@ import FadeInSection from "@/components/FadeInSection";
 import GameCard from "@/components/GameCard";
 import HorizontalScroll from "@/components/HorizontalScroll";
 import SectionHeader from "@/components/SectionHeader";
-import HomepageClientSections from "@/components/HomepageClientSections";
+import HomepageClientSections, { HomepageMostAnticipatedSection } from "@/components/HomepageClientSections";
 import HomepageNewsSection from "@/components/HomepageNewsSection";
 import GradientText from "@/components/ui/GradientText";
 import {
@@ -49,7 +49,7 @@ export const metadata: Metadata = {
 
 export default async function HomePage() {
   const homepage = await loadHomepageData();
-  const featured = homepage.hero.filter((game) => game.coverImage).slice(0, 6);
+  const featured = homepage.hero.filter((game) => game.headerImage || game.coverImage).slice(0, 6);
   const heroIds = new Set(featured.map((game) => game.id));
   const trendingGames = homepage.trending
     .filter((game) => !heroIds.has(game.id) && game.coverImage)
@@ -100,11 +100,11 @@ export default async function HomePage() {
         <hr className="border-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
       </div>
 
-      <HomepageClientSections
-        initialRecommendations={homepage.recommendations}
-        initialNewReleases={homepage.newReleases}
-        initialDeals={homepage.deals}
-      />
+      <HomepageMostAnticipatedSection />
+
+      <div className="max-w-[1400px] mx-auto px-4">
+        <hr className="border-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
+      </div>
 
       {/* ── 5. Top Rated ── */}
       <section className="relative py-12 sm:py-16">
@@ -137,6 +137,12 @@ export default async function HomePage() {
       <div className="max-w-[1400px] mx-auto px-4">
         <hr className="border-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
       </div>
+
+      <HomepageClientSections
+        initialRecommendations={homepage.recommendations}
+        initialNewReleases={homepage.newReleases}
+        initialDeals={homepage.deals}
+      />
 
       {/* ── 6. Gaming News ── */}
       <HomepageNewsSection />

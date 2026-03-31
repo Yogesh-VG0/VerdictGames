@@ -110,6 +110,15 @@ const run = await startRun(sql, 'refresh-trending');
 const trendingIds = [];
 const matched = [];
 
+const QUALITY_FLOOR_SQL = sql`
+  (
+    is_trending_manual = true
+    OR COALESCE(verdict_score, score, 0) >= 72
+    OR (COALESCE(current_players, 0) >= 5000 AND COALESCE(verdict_score, score, 0) >= 68)
+    OR (COALESCE(momentum, 0) >= 0.18 AND COALESCE(current_players, 0) >= 1000 AND COALESCE(verdict_score, score, 0) >= 68)
+  )
+`;
+
 // ── Step 0: Fetch Steam Global Top 100 ──
 console.log("🌍 Step 0: Fetching Steam Global Top 100 most-played...");
 let globalTop = [];
@@ -282,12 +291,13 @@ try {
 // RULE: Only games with cover_image can be trending (public-facing surface)
 console.log("🎮 Step 3: Steam Most Played (current_players DESC)...");
 const mostPlayed = await sql`
-  SELECT id, title, score, current_players
+  SELECT id, title, score, verdict_score, current_players, review_count, momentum, is_trending_manual
   FROM games
   WHERE current_players IS NOT NULL AND current_players > 0
     AND cover_image IS NOT NULL AND cover_image != ''
+    AND ${QUALITY_FLOOR_SQL}
   ORDER BY current_players DESC
-  LIMIT 20
+  LIMIT 30
 `;
 
 for (const g of mostPlayed) {
@@ -329,9 +339,9 @@ if (trendingIds.length < 20) {
       const igdbGame = igdbNameMap.get(igdbId);
       if (!igdbGame) continue;
       const ourSlug = slugify(igdbGame.name);
-      const [m] = await sql`SELECT id, title, score FROM games WHERE (slug = ${igdbGame.slug} OR slug = ${ourSlug}) AND cover_image IS NOT NULL AND cover_image != '' LIMIT 1`;
+      const [m] = await sql`SELECT id, title, score FROM games WHERE (slug = ${igdbGame.slug} OR slug = ${ourSlug}) AND cover_image IS NOT NULL AND cover_image != '' AND ${QUALITY_FLOOR_SQL} LIMIT 1`;
       if (m && !trendingIds.includes(m.id)) { trendingIds.push(m.id); matched.push({ title: m.title, score: m.score, source: "IGDB PopScore", popScore: popScore.toFixed(3) }); continue; }
-      const [nm] = await sql`SELECT id, title, score FROM games WHERE LOWER(title) = LOWER(${igdbGame.name}) AND cover_image IS NOT NULL AND cover_image != '' LIMIT 1`;
+      const [nm] = await sql`SELECT id, title, score FROM games WHERE LOWER(title) = LOWER(${igdbGame.name}) AND cover_image IS NOT NULL AND cover_image != '' AND ${QUALITY_FLOOR_SQL} LIMIT 1`;
       if (nm && !trendingIds.includes(nm.id)) { trendingIds.push(nm.id); matched.push({ title: nm.title, score: nm.score, source: "IGDB name", popScore: popScore.toFixed(3) }); }
     }
     console.log(`  Matched ${trendingIds.length} total after IGDB`);
@@ -350,6 +360,7 @@ if (trendingIds.length < 20) {
       (score * 0.25) + (CASE WHEN release_date >= CURRENT_DATE - INTERVAL '6 months' THEN 40 WHEN release_date >= CURRENT_DATE - INTERVAL '1 year' THEN 30 WHEN release_date >= CURRENT_DATE - INTERVAL '2 years' THEN 20 WHEN release_date >= CURRENT_DATE - INTERVAL '4 years' THEN 10 ELSE 0 END) + LEAST(COALESCE(review_count, 0) / 5000.0, 10)
     ) AS ts FROM games WHERE id != ALL(${exclude}) AND release_date IS NOT NULL
       AND cover_image IS NOT NULL AND cover_image != ''
+      AND COALESCE(verdict_score, score, 0) >= 70
     ORDER BY ts DESC LIMIT ${needed}
   `;
   for (const g of fill) { trendingIds.push(g.id); matched.push({ title: g.title, score: g.score, source: "recency-fill" }); }

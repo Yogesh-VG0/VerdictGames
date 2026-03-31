@@ -25,10 +25,24 @@ import { unstable_cache } from "next/cache";
 import { getPublicSupabase } from "@/lib/supabase/public";
 import { mapGameRow } from "@/lib/db/mappers";
 import { GAME_CARD_COLUMNS_WITH_DESC } from "@/lib/db/columns";
-import { filterQualityGames, confidenceWeightedScore, isQualityGame, isSurfaceReady } from "@/lib/utils/quality";
+import {
+  filterQualityGames,
+  confidenceWeightedScore,
+  getCriticSourceCount,
+  getEvidenceReviewCount,
+  hasStrongCriticEvidence,
+  isQualityGame,
+  isSurfaceReady,
+} from "@/lib/utils/quality";
 import { isPublicSafeGame } from "@/lib/utils/publicSafety";
 import { hasUsableCardImage } from "@/lib/utils/mediaReadiness";
 import { dedupePublicCanonicalRows } from "@/lib/utils/publicCanonical";
+import {
+  getPublicTrendingScore,
+  isAcceptableTrendingCandidate,
+  isPremiumTrendingCandidate,
+  preferTrendingMomentumPool,
+} from "@/lib/utils/trending";
 import type { GameRow } from "@/lib/supabase/types";
 import type { Game, GXDeal } from "@/lib/types";
 
@@ -38,12 +52,16 @@ import type { Game, GXDeal } from "@/lib/types";
    explore/search/top-rated pages, not the homepage.
    ═══════════════════════════════════════════════════ */
 
-const HOMEPAGE_TRENDING_MONTHS = 24;
-const HOMEPAGE_TRENDING_FALLBACK_MONTHS = 36;
-const HOMEPAGE_TRENDING_LAST_RESORT_MONTHS = 60;
-const HOMEPAGE_TOP_RATED_MONTHS = 24;
-const HOMEPAGE_TOP_RATED_FALLBACK_MONTHS = 36;
-const HOMEPAGE_REC_MONTHS = 36;
+const HOMEPAGE_TRENDING_MONTHS = 120;
+const HOMEPAGE_TRENDING_FALLBACK_MONTHS = 120;
+const HOMEPAGE_TRENDING_LAST_RESORT_MONTHS = 120;
+const HOMEPAGE_TOP_RATED_MONTHS = 120;
+const HOMEPAGE_TOP_RATED_FALLBACK_MONTHS = 120;
+const HOMEPAGE_REC_MONTHS = 120;
+const HOMEPAGE_HERO_TARGET = 6;
+const HOMEPAGE_RAIL_TARGET = 20;
+const HOMEPAGE_PRIORITY_FLOOR = 8;
+const HOMEPAGE_TOP_RATED_RESERVED_TARGET = 8;
 
 function monthsAgoISO(months: number): string {
   const d = new Date();
@@ -57,35 +75,22 @@ function isRecentEnoughForHome(row: GameRow, months: number): boolean {
 }
 
 function isHomepageTrendingEligible(row: GameRow): boolean {
-  // Strict recency — no evergreen/player-count override on homepage
-  return isRecentEnoughForHome(row, HOMEPAGE_TRENDING_MONTHS);
+  if (isRecentEnoughForHome(row, HOMEPAGE_TRENDING_MONTHS)) {
+    return true;
+  }
+
+  const qualityScore = confidenceWeightedScore(row);
+  const currentPlayers = row.current_players ?? 0;
+  const momentum = row.momentum ?? 0;
+
+  return (row.is_trending_manual ?? false)
+    || (currentPlayers >= 5000 && qualityScore >= 72)
+    || (currentPlayers >= 1500 && qualityScore >= 82)
+    || (((row.trending ?? false) || momentum >= 0.08) && currentPlayers >= 1000 && qualityScore >= 78);
 }
-
-/* ═══════════════════════════════════════════════════
-   Trending logic (extracted from /api/games/trending)
-   ═══════════════════════════════════════════════════ */
-
-const DECAY_DAYS = 365;
 
 function deduplicateBySteamAppId(games: GameRow[]): GameRow[] {
   return dedupePublicCanonicalRows(games);
-}
-
-function trendingRank(g: GameRow, minPlayers: number, maxPlayers: number): number {
-  const score = g.verdict_score ?? g.score ?? 0;
-  const playerCount = g.current_players ?? 0;
-  const logPlayers = Math.log10(playerCount + 1);
-  const logMin = Math.log10(Math.max(minPlayers, 0) + 1);
-  const logMax = Math.log10(Math.max(maxPlayers, 1) + 1);
-  const spread = logMax - logMin || 1;
-  const playerScore = Math.min(100, ((logPlayers - logMin) / spread) * 100);
-  const ageMs = Date.now() - new Date(g.release_date ?? "2000-01-01").getTime();
-  const ageDays = ageMs / 86400000;
-  const recency = Math.min(100, Math.exp(-ageDays / DECAY_DAYS) * 100);
-  // Factor in momentum (log-based, stored on the row) — raised to 25% weight
-  const momentum = (g as GameRow & { momentum?: number }).momentum ?? 0;
-  const momentumBoost = Math.max(0, Math.min(25, momentum * 65));
-  return (score * 0.20) + (playerScore * 0.30) + (recency * 0.25) + (momentumBoost * 0.25);
 }
 
 /* ═══════════════════════════════════════════════════
@@ -120,6 +125,229 @@ function applyGenreDiversity(rows: GameRow[], limit: number, maxPerGenre: number
   }
 
   return picks;
+}
+
+function getHomepageTopRatedScore(row: GameRow): number {
+  const qualityScore = confidenceWeightedScore(row);
+  const evidenceReviewCount = getEvidenceReviewCount(row);
+  const criticSources = getCriticSourceCount(row);
+  const reviewScore = Math.min(12, Math.log10(evidenceReviewCount + 1) * 2.8);
+  const activityScore = Math.min(8, Math.log10((row.current_players ?? 0) + 1) * 2.1);
+  const ageDays = row.release_date
+    ? (Date.now() - new Date(`${row.release_date}T00:00:00`).getTime()) / 86400000
+    : Number.POSITIVE_INFINITY;
+  const recencyScore = ageDays <= 90
+    ? 10
+    : ageDays <= 180
+      ? 8
+      : ageDays <= 365
+        ? 5
+        : ageDays <= 730
+          ? 2
+          : 0;
+  const criticBonus = criticSources >= 2 ? 4 : criticSources === 1 ? 1.5 : 0;
+  const livePresenceBonus = (row.current_players ?? 0) >= 5000
+    ? 8
+    : (row.current_players ?? 0) >= 1500
+      ? 5
+      : (row.current_players ?? 0) >= 500
+        ? 2
+        : 0;
+  const lowPresencePenalty = ageDays > 45 && (row.current_players ?? 0) < 500 && evidenceReviewCount < 5000 && criticSources < 2
+    ? 22
+    : ageDays > 7 && (row.current_players ?? 0) < 100 && evidenceReviewCount < 10000 && criticSources < 2
+      ? 18
+    : ageDays > 30 && (row.current_players ?? 0) < 300 && evidenceReviewCount < 25000 && criticSources < 2
+      ? 16
+      : ageDays > 180 && (row.current_players ?? 0) < 150 && evidenceReviewCount < 10000 && criticSources < 2
+        ? 8
+        : 0;
+  const scaleBonus = evidenceReviewCount >= 50000
+    ? 8
+    : evidenceReviewCount >= 10000
+      ? 4
+      : 0;
+
+  return qualityScore + reviewScore + activityScore + recencyScore + criticBonus + scaleBonus + livePresenceBonus - lowPresencePenalty;
+}
+
+function getHomepageTopRatedEvidenceTier(row: GameRow): number {
+  const evidenceReviewCount = getEvidenceReviewCount(row);
+  const currentPlayers = row.current_players ?? 0;
+
+  if (
+    evidenceReviewCount >= 50000
+    || (evidenceReviewCount >= 10000 && currentPlayers >= 250)
+    || (evidenceReviewCount >= 5000 && currentPlayers >= 750)
+    || hasStrongCriticEvidence(row)
+  ) {
+    return 2;
+  }
+
+  if (
+    evidenceReviewCount >= 10000
+    || (evidenceReviewCount >= 5000 && currentPlayers >= 250)
+    || (evidenceReviewCount >= 2500 && currentPlayers >= 500)
+    || hasStrongCriticEvidence(row)
+  ) {
+    return 1;
+  }
+
+  return 0;
+}
+
+function isHomepageTopRatedEligible(row: GameRow): boolean {
+  const evidenceReviewCount = getEvidenceReviewCount(row);
+  const currentPlayers = row.current_players ?? 0;
+
+  if (hasStrongCriticEvidence(row)) {
+    return true;
+  }
+
+  if (evidenceReviewCount >= 50000) {
+    return true;
+  }
+
+  if (evidenceReviewCount >= 10000 && currentPlayers >= 100) {
+    return true;
+  }
+
+  if (evidenceReviewCount >= 5000 && currentPlayers >= 250) {
+    return true;
+  }
+
+  return evidenceReviewCount >= 2500 && currentPlayers >= 500;
+}
+
+function preferHomepageTopRatedPool(rows: GameRow[], desiredCount: number): GameRow[] {
+  const elitePool = rows.filter((row) => confidenceWeightedScore(row) >= 88 && getHomepageTopRatedEvidenceTier(row) >= 2);
+  if (elitePool.length >= Math.min(desiredCount, 12)) {
+    return elitePool;
+  }
+
+  const strongPool = rows.filter((row) => confidenceWeightedScore(row) >= 84 && getHomepageTopRatedEvidenceTier(row) >= 1);
+  if (strongPool.length >= Math.min(desiredCount, 12)) {
+    return strongPool;
+  }
+
+  return rows;
+}
+
+function preferHomepageTrendingQualityPool(rows: GameRow[], desiredCount: number): GameRow[] {
+  const premiumPool = rows.filter((row) => {
+    const qualityScore = confidenceWeightedScore(row);
+    return qualityScore >= 78
+      || (row.is_trending_manual ?? false)
+      || (row.current_players ?? 0) >= 30000
+      || ((row.momentum ?? 0) >= 0.2 && (row.review_count ?? 0) >= 250);
+  });
+  if (premiumPool.length >= desiredCount) {
+    return premiumPool;
+  }
+
+  const strongPool = rows.filter((row) => {
+    const qualityScore = confidenceWeightedScore(row);
+    return qualityScore >= 72
+      || (row.is_trending_manual ?? false)
+      || (row.current_players ?? 0) >= 20000
+      || ((row.momentum ?? 0) >= 0.14 && (row.review_count ?? 0) >= 150);
+  });
+  if (strongPool.length >= desiredCount) {
+    return strongPool;
+  }
+
+  return rows;
+}
+
+function getHomepageTrendingScore(row: GameRow): number {
+  const base = getPublicTrendingScore(row);
+  const currentPlayers = row.current_players ?? 0;
+  const momentum = row.momentum ?? 0;
+  const ageDays = row.release_date
+    ? (Date.now() - new Date(`${row.release_date}T00:00:00`).getTime()) / 86400000
+    : Number.POSITIVE_INFINITY;
+
+  const highActivityBonus = currentPlayers >= 10000
+    ? 10
+    : currentPlayers >= 5000
+      ? 7
+      : currentPlayers >= 1500
+        ? 4
+        : 0;
+  const breakoutBonus = momentum >= 0.2 && currentPlayers >= 500
+    ? 8
+    : momentum >= 0.3 && currentPlayers >= 250
+      ? 5
+      : 0;
+  const lowActivityPenalty = ageDays > 30 && currentPlayers < 500
+    ? 18
+    : ageDays > 14 && currentPlayers < 250
+      ? 10
+      : 0;
+
+  return base + highActivityBonus + breakoutBonus - lowActivityPenalty;
+}
+
+function preferHomepageTrendingSignalPool(rows: GameRow[], desiredCount: number): GameRow[] {
+  const premiumPool = rows.filter((row) => {
+    const currentPlayers = row.current_players ?? 0;
+    const momentum = row.momentum ?? 0;
+    const ageDays = row.release_date
+      ? (Date.now() - new Date(`${row.release_date}T00:00:00`).getTime()) / 86400000
+      : Number.POSITIVE_INFINITY;
+
+    return (row.is_trending_manual ?? false)
+      || currentPlayers >= 750
+      || (ageDays <= 14 && currentPlayers >= 150)
+      || (ageDays <= 45 && currentPlayers >= 300 && momentum >= 0.08)
+      || (ageDays <= 90 && currentPlayers >= 500 && momentum >= 0);
+  });
+  if (premiumPool.length >= Math.min(desiredCount, 12)) {
+    return premiumPool;
+  }
+
+  const strongPool = rows.filter((row) => {
+    const currentPlayers = row.current_players ?? 0;
+    const momentum = row.momentum ?? 0;
+    const ageDays = row.release_date
+      ? (Date.now() - new Date(`${row.release_date}T00:00:00`).getTime()) / 86400000
+      : Number.POSITIVE_INFINITY;
+
+    return (row.is_trending_manual ?? false)
+      || currentPlayers >= 400
+      || (ageDays <= 21 && currentPlayers >= 120)
+      || (ageDays <= 60 && currentPlayers >= 250 && momentum >= 0.1)
+      || (ageDays <= 120 && currentPlayers >= 400 && momentum >= -0.02);
+  });
+  if (strongPool.length >= desiredCount) {
+    return strongPool;
+  }
+
+  return rows;
+}
+
+function isHomepageTrendingDisplayGame(row: GameRow): boolean {
+  const qualityScore = confidenceWeightedScore(row);
+  const currentPlayers = row.current_players ?? 0;
+  const momentum = row.momentum ?? 0;
+
+  return (row.is_trending_manual ?? false)
+    || qualityScore >= 72
+    || currentPlayers >= 15000
+    || ((row.trending ?? false) && currentPlayers >= 5000 && qualityScore >= 68)
+    || (momentum >= 0.18 && currentPlayers >= 1000 && qualityScore >= 68);
+}
+
+function isHomepageTrendingFallbackDisplayGame(row: GameRow): boolean {
+  const qualityScore = confidenceWeightedScore(row);
+  const currentPlayers = row.current_players ?? 0;
+  const momentum = row.momentum ?? 0;
+
+  return (row.is_trending_manual ?? false)
+    || qualityScore >= 68
+    || currentPlayers >= 25000
+    || ((row.trending ?? false) && currentPlayers >= 10000)
+    || (momentum >= 0.24 && currentPlayers >= 1500 && qualityScore >= 65);
 }
 
 /* ═══════════════════════════════════════════════════
@@ -297,7 +525,7 @@ export async function fetchTrendingGames(limit = 20, homepageOnly = true): Promi
 
   // Step 2: Always load a scoring-based pool to fill remaining slots
   // Over-fetch 4× limit so quality filtering + dedup still leaves enough
-  const cutoff4yr = monthsAgoISO(48);
+  const cutoff4yr = monthsAgoISO(120);
   const today = new Date().toISOString().slice(0, 10);
 
   const { data: pool } = await supabase
@@ -309,12 +537,14 @@ export async function fetchTrendingGames(limit = 20, homepageOnly = true): Promi
     .gt("score", 0)
     .not("cover_image", "is", null)        // Cover image required at DB level
     .neq("cover_image", "")
+    .order("is_trending_manual", { ascending: false, nullsFirst: false })
     .order("trending", { ascending: false, nullsFirst: false })
-    .order("momentum", { ascending: false, nullsFirst: false })
     .order("current_players", { ascending: false, nullsFirst: false })
+    .order("momentum", { ascending: false, nullsFirst: false })
     .order("verdict_score", { ascending: false, nullsFirst: false })
+    .order("review_count", { ascending: false, nullsFirst: false })
     .order("score", { ascending: false })
-    .limit(limit * 6) as { data: GameRow[] | null };
+    .limit(Math.max(limit * 12, 400)) as { data: GameRow[] | null };
 
   // Step 3: Build combined candidate set — flagged first, then scored pool
   const flaggedIds = new Set((flagged ?? []).map((g) => g.id));
@@ -336,45 +566,61 @@ export async function fetchTrendingGames(limit = 20, homepageOnly = true): Promi
   // Step 5: Apply recency gate (graduated) — but only for homepage
   let recencyFiltered: GameRow[];
   if (homepageOnly) {
+    const desiredCount = Math.min(limit, HOMEPAGE_RAIL_TARGET);
     recencyFiltered = readyFiltered.filter(isHomepageTrendingEligible);
-    if (recencyFiltered.length < limit) {
+    if (recencyFiltered.length < desiredCount) {
       recencyFiltered = readyFiltered.filter((r) => isRecentEnoughForHome(r, HOMEPAGE_TRENDING_FALLBACK_MONTHS));
     }
-    if (recencyFiltered.length < limit) {
+    if (recencyFiltered.length < desiredCount) {
       recencyFiltered = readyFiltered.filter((r) => isRecentEnoughForHome(r, HOMEPAGE_TRENDING_LAST_RESORT_MONTHS));
     }
-    if (recencyFiltered.length < 4) recencyFiltered = readyFiltered;
+    if (recencyFiltered.length < desiredCount) recencyFiltered = readyFiltered;
 
-    const positiveMomentum = recencyFiltered.filter((r) => r.is_trending_manual || (r.momentum ?? 0) >= 0);
-    if (positiveMomentum.length >= 6) {
-      recencyFiltered = positiveMomentum;
-    } else {
-      const stableMomentum = recencyFiltered.filter((r) => r.is_trending_manual || (r.momentum ?? 0) >= -0.05);
-      if (stableMomentum.length >= 6) {
-        recencyFiltered = stableMomentum;
-      }
+    recencyFiltered = preferTrendingMomentumPool(recencyFiltered, desiredCount);
+    const premiumRanked = recencyFiltered.filter(isPremiumTrendingCandidate);
+    const acceptableRanked = recencyFiltered.filter(isAcceptableTrendingCandidate);
+    if (premiumRanked.length >= HOMEPAGE_PRIORITY_FLOOR) {
+      recencyFiltered = prioritizeById(premiumRanked, recencyFiltered, recencyFiltered.length);
+    } else if (acceptableRanked.length >= HOMEPAGE_PRIORITY_FLOOR) {
+      recencyFiltered = prioritizeById(acceptableRanked, recencyFiltered, recencyFiltered.length);
+    }
+    recencyFiltered = preferHomepageTrendingQualityPool(recencyFiltered, desiredCount);
+    recencyFiltered = preferHomepageTrendingSignalPool(recencyFiltered, desiredCount);
+
+    const strongDisplayPool = recencyFiltered.filter(isHomepageTrendingDisplayGame);
+    const fallbackDisplayPool = recencyFiltered.filter(isHomepageTrendingFallbackDisplayGame);
+    if (strongDisplayPool.length >= desiredCount) {
+      recencyFiltered = strongDisplayPool;
+    } else if (fallbackDisplayPool.length >= desiredCount) {
+      recencyFiltered = fallbackDisplayPool;
+    } else if (strongDisplayPool.length >= HOMEPAGE_PRIORITY_FLOOR) {
+      recencyFiltered = prioritizeById(strongDisplayPool, recencyFiltered, recencyFiltered.length);
+    } else if (fallbackDisplayPool.length >= HOMEPAGE_PRIORITY_FLOOR) {
+      recencyFiltered = prioritizeById(fallbackDisplayPool, recencyFiltered, recencyFiltered.length);
     }
   } else {
     recencyFiltered = readyFiltered;
   }
 
   // Step 6: Rank by trending score — flagged games get a fixed boost
-  const players = recencyFiltered.map((g) => g.current_players ?? 0);
-  const minP = Math.min(...players);
-  const maxP = Math.max(1, ...players);
-
   const ranked = [...recencyFiltered].sort((a, b) => {
     // Flagged games float to the top regardless of raw score
     const aFlagged = a.is_trending_manual ? 1 : 0;
     const bFlagged = b.is_trending_manual ? 1 : 0;
     if (bFlagged !== aFlagged) return bFlagged - aFlagged;
 
-    const aMomentumBucket = (a.momentum ?? 0) >= 0 ? 1 : 0;
-    const bMomentumBucket = (b.momentum ?? 0) >= 0 ? 1 : 0;
-    if (bMomentumBucket !== aMomentumBucket) return bMomentumBucket - aMomentumBucket;
-
-    return trendingRank(b, minP, maxP) - trendingRank(a, minP, maxP);
+    return getHomepageTrendingScore(b) - getHomepageTrendingScore(a);
   });
+
+  if (homepageOnly) {
+    const premiumRanked = ranked.filter(isPremiumTrendingCandidate);
+    const acceptableRanked = ranked.filter(isAcceptableTrendingCandidate);
+    if (premiumRanked.length >= HOMEPAGE_PRIORITY_FLOOR) {
+      ranked.splice(0, ranked.length, ...prioritizeById(premiumRanked, ranked, ranked.length));
+    } else if (acceptableRanked.length >= HOMEPAGE_PRIORITY_FLOOR) {
+      ranked.splice(0, ranked.length, ...prioritizeById(acceptableRanked, ranked, ranked.length));
+    }
+  }
 
   // Genre diversity: max 3 per primary genre
   const diversified = applyGenreDiversity(ranked, limit, 3);
@@ -408,7 +654,7 @@ export async function fetchNewReleases(limit = 20): Promise<Game[]> {
     .select(GAME_CARD_COLUMNS_WITH_DESC)
     .not("release_date", "is", null)
     .lte("release_date", new Date().toISOString().slice(0, 10))
-    .gte("release_date", dateCutoff(2))
+    .gte("release_date", dateCutoff(10))
     .not("cover_image", "is", null)
     .neq("cover_image", "")
     .neq("description", "")
@@ -422,7 +668,7 @@ export async function fetchNewReleases(limit = 20): Promise<Game[]> {
       .select(GAME_CARD_COLUMNS_WITH_DESC)
       .not("release_date", "is", null)
       .lte("release_date", new Date().toISOString().slice(0, 10))
-      .gte("release_date", dateCutoff(5))
+      .gte("release_date", dateCutoff(10))
       .not("cover_image", "is", null)
       .neq("cover_image", "")
       .neq("description", "")
@@ -489,16 +735,15 @@ export async function fetchNewReleases(limit = 20): Promise<Game[]> {
  */
 export async function fetchTopRated(limit = 10): Promise<Game[]> {
   const supabase = getPublicSupabase();
-  const fetchLimit = limit * 4;
+  const fetchLimit = limit * 8;
 
   const { data, error } = await supabase
     .from("games")
     .select(GAME_CARD_COLUMNS_WITH_DESC)
     .not("cover_image", "is", null)
     .neq("cover_image", "")
-    .gte("review_count", 50)
-    .gte("confidence", 0.3)
     .order("verdict_score", { ascending: false, nullsFirst: false })
+    .order("confidence", { ascending: false, nullsFirst: false })
     .order("score", { ascending: false })
     .limit(fetchLimit) as { data: GameRow[] | null; error: unknown };
 
@@ -530,7 +775,7 @@ export async function fetchTopRated(limit = 10): Promise<Game[]> {
  */
 export async function fetchHomepageTopRated(limit = 20): Promise<Game[]> {
   const supabase = getPublicSupabase();
-  const fetchLimit = limit * 4;
+  const fetchLimit = limit * 8;
   const cutoff = monthsAgoISO(HOMEPAGE_TOP_RATED_MONTHS);
 
   const { data, error } = await supabase
@@ -541,9 +786,8 @@ export async function fetchHomepageTopRated(limit = 20): Promise<Game[]> {
     .lte("release_date", new Date().toISOString().slice(0, 10))
     .not("cover_image", "is", null)
     .neq("cover_image", "")
-    .gte("review_count", 50)
-    .gte("confidence", 0.3)
     .order("verdict_score", { ascending: false, nullsFirst: false })
+    .order("confidence", { ascending: false, nullsFirst: false })
     .order("score", { ascending: false })
     .limit(fetchLimit) as { data: GameRow[] | null; error: unknown };
 
@@ -567,9 +811,8 @@ export async function fetchHomepageTopRated(limit = 20): Promise<Game[]> {
       .lte("release_date", new Date().toISOString().slice(0, 10))
       .not("cover_image", "is", null)
       .neq("cover_image", "")
-      .gte("review_count", 50)
-      .gte("confidence", 0.3)
       .order("verdict_score", { ascending: false, nullsFirst: false })
+      .order("confidence", { ascending: false, nullsFirst: false })
       .order("score", { ascending: false })
       .limit(fetchLimit) as { data: GameRow[] | null; error: unknown };
 
@@ -591,8 +834,17 @@ export async function fetchHomepageTopRated(limit = 20): Promise<Game[]> {
     return true;
   });
 
-  // Sort by confidence-weighted score so games with few reviews don't dominate
-  filtered.sort((a, b) => confidenceWeightedScore(b) - confidenceWeightedScore(a));
+  const homepageEligible = filtered.filter(isHomepageTopRatedEligible);
+  if (homepageEligible.length >= Math.min(limit, 4)) {
+    filtered = homepageEligible;
+  }
+
+  filtered = preferHomepageTopRatedPool(filtered, limit);
+  filtered.sort((a, b) => {
+    const tierDiff = getHomepageTopRatedEvidenceTier(b) - getHomepageTopRatedEvidenceTier(a);
+    if (tierDiff !== 0) return tierDiff;
+    return getHomepageTopRatedScore(b) - getHomepageTopRatedScore(a);
+  });
 
   // Genre diversity: one per genre first, then fill
   const diversified = applyGenreDiversity(filtered, limit, 2);
@@ -719,7 +971,7 @@ export const EMPTY_HOMEPAGE_DATA: HomepageData = {
 
 const getCachedHomepageData = unstable_cache(
   async () => fetchHomepageData(),
-  ["homepage-data-v1"],
+  ["homepage-data-v2"],
   { revalidate: HOMEPAGE_REVALIDATE_SECONDS }
 );
 
@@ -735,15 +987,27 @@ export async function loadHomepageData(): Promise<HomepageData> {
   }
 }
 
+function isReservedHomepageTopRatedGame(game: Game): boolean {
+  const reviewCount = game.reviewCount ?? 0;
+  const currentPlayers = game.currentPlayers ?? 0;
+  const hasStrongCriticEvidence = (game.igdbRating ?? 0) >= 88 || (game.rawgMetacritic ?? 0) >= 88;
+
+  return hasStrongCriticEvidence
+    || reviewCount >= 50000
+    || (reviewCount >= 10000 && currentPlayers >= 100)
+    || (reviewCount >= 5000 && currentPlayers >= 250)
+    || (reviewCount >= 2500 && currentPlayers >= 500);
+}
+
 export async function fetchHomepageData(): Promise<HomepageData> {
   // Fetch all sections in parallel — each overfetches for dedup headroom
   const [heroRaw, trendingRaw, topRatedRaw, newReleasesRaw, deals, recsRaw] = await Promise.all([
-    fetchHeroCandidates(24).catch(() => [] as Game[]),         // 2× target for dedup
-    fetchTrendingGames(40, true).catch(() => [] as Game[]),    // 2× target
-    fetchHomepageTopRated(40).catch(() => [] as Game[]),       // 2× target
-    fetchNewReleases(40).catch(() => [] as Game[]),            // 2× target
+    fetchHeroCandidates(HOMEPAGE_HERO_TARGET * 4).catch(() => [] as Game[]),
+    fetchTrendingGames(HOMEPAGE_RAIL_TARGET * 2, true).catch(() => [] as Game[]),
+    fetchHomepageTopRated(HOMEPAGE_RAIL_TARGET * 2).catch(() => [] as Game[]),
+    fetchNewReleases(HOMEPAGE_RAIL_TARGET * 2).catch(() => [] as Game[]),
     fetchDeals().catch(() => [] as GXDeal[]),
-    fetchHomepageRecommendations(40).catch(() => [] as Game[]),// 2× target
+    fetchHomepageRecommendations(HOMEPAGE_RAIL_TARGET * 2).catch(() => [] as Game[]),
   ]);
 
   // ─── Global Dedup: each game in exactly one rail ───
@@ -761,12 +1025,30 @@ export async function fetchHomepageData(): Promise<HomepageData> {
     return result;
   }
 
+  const reservedTopRatedIds = new Set(
+    topRatedRaw
+      .filter(isReservedHomepageTopRatedGame)
+      .slice(0, HOMEPAGE_TOP_RATED_RESERVED_TARGET)
+      .map((game) => game.id)
+  );
+  const trendingPool = trendingRaw.filter((game) => !reservedTopRatedIds.has(game.id));
+  const trendingCandidates = prioritizeById(trendingPool, trendingRaw, trendingRaw.length);
+
   // Claim in priority order
-  const hero = claimSlots(heroRaw, 12);
-  const trending = claimSlots(trendingRaw, 20);
-  const topRated = claimSlots(topRatedRaw, 20);
-  const newReleases = claimSlots(newReleasesRaw, 20);
-  const recommendations = claimSlots(recsRaw, 20);
+  const hero = claimSlots(heroRaw, HOMEPAGE_HERO_TARGET);
+  const trending = claimSlots(trendingCandidates, HOMEPAGE_RAIL_TARGET);
+  const topRatedClaimed = claimSlots(topRatedRaw, HOMEPAGE_RAIL_TARGET);
+  const topRatedPremium = topRatedClaimed.filter(isReservedHomepageTopRatedGame);
+  const topRated = topRatedPremium.length >= HOMEPAGE_PRIORITY_FLOOR
+    ? prioritizeById(topRatedPremium, topRatedClaimed, HOMEPAGE_RAIL_TARGET)
+    : topRatedClaimed;
+  const newReleases = claimSlots(newReleasesRaw, HOMEPAGE_RAIL_TARGET);
+  const recommendations = claimSlots(recsRaw, HOMEPAGE_RAIL_TARGET);
 
   return { hero, trending, topRated, newReleases, deals, recommendations };
+}
+
+function prioritizeById<T extends { id: string }>(primary: T[], fallback: T[], limit: number): T[] {
+  const primaryIds = new Set(primary.map((item) => item.id));
+  return [...primary, ...fallback.filter((item) => !primaryIds.has(item.id))].slice(0, limit);
 }
