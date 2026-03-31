@@ -594,10 +594,10 @@ export default function GameDetailClientPage({
                     </div>
                     <ScoreChips game={game} variant="full" className="justify-center" />
                     <p className="text-[9px] text-tertiary text-center flex items-center justify-center gap-1">
-                      Verdict score derived from {game.scoreSource === "steam" ? "Steam reviews" : game.scoreSource === "igdb" ? "IGDB rating" : game.scoreSource === "metacritic" ? "Metacritic" : "RAWG/IGDB signals"}
+                      Verdict score based on {game.scoreSource === "steam" ? "confidence-adjusted Steam reviews" : game.scoreSource === "igdb" || game.scoreSource === "metacritic" ? "critic coverage and platform signals" : "limited cross-platform signals"}
                       <span
                         className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-surface-2 border border-border text-tertiary hover:text-accent hover:border-accent/30 cursor-help transition-colors"
-                        title="The Verdict Score is a weighted blend of critic reviews, user ratings, and community signals across multiple data sources including Steam, IGDB, Metacritic, and RAWG. Scores are normalized to a 0–100 scale and weighted by source reliability."
+                        title="The Verdict Score is not a raw store percentage. Steam-backed games use confidence-adjusted review evidence, while non-Steam titles rely more on critic coverage and weaker cross-platform community proxies. Premium homepage rails apply stricter evidence and activity requirements on top of this base score."
                       >
                         ?
                       </span>

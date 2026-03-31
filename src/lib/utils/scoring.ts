@@ -13,6 +13,40 @@
 
 import type { VerdictLabel } from "@/lib/types";
 
+export type CommunityEvidenceSource = "steam" | "fallback" | "none";
+
+export function resolveCommunityEvidenceSource({
+  steamTotalCount,
+  hasSteamData,
+  rawgRating,
+  reviewCount,
+}: {
+  steamTotalCount?: number | null;
+  hasSteamData?: boolean;
+  rawgRating?: number | null;
+  reviewCount?: number | null;
+}): CommunityEvidenceSource {
+  if ((steamTotalCount ?? 0) > 0 || (hasSteamData && (reviewCount ?? 0) > 0)) {
+    return "steam";
+  }
+
+  if ((rawgRating ?? 0) > 0 && (reviewCount ?? 0) > 0) {
+    return "fallback";
+  }
+
+  return "none";
+}
+
+export function effectiveEvidenceReviewCount(
+  reviewCount: number,
+  communitySource: CommunityEvidenceSource,
+): number {
+  if (reviewCount <= 0) return 0;
+  if (communitySource === "steam") return reviewCount;
+  if (communitySource === "fallback") return Math.min(300, Math.round(reviewCount * 0.12));
+  return 0;
+}
+
 /* ═══════════════════════════════════════════════════
    Wilson Lower Bound
    Gives a conservative estimate of the true positive
@@ -76,19 +110,23 @@ export function computeCriticScore(
 export function computeConfidence(
   reviewCount: number,
   criticSourceCount: number,
-  hasSteamData: boolean
+  communitySource: CommunityEvidenceSource
 ): number {
-  // Review volume component (0 to 0.65)
-  // 10 reviews → ~0.22, 50 → ~0.37, 500 → ~0.59, 5000+ → ~0.65
-  const reviewComponent = reviewCount <= 0
+  const evidenceReviewCount = effectiveEvidenceReviewCount(reviewCount, communitySource);
+  const reviewCap = communitySource === "steam"
+    ? 0.65
+    : communitySource === "fallback"
+      ? 0.28
+      : 0;
+  const reviewComponent = evidenceReviewCount <= 0 || reviewCap === 0
     ? 0
-    : Math.min(0.65, (Math.log10(reviewCount) / Math.log10(10000)) * 0.65);
+    : Math.min(reviewCap, (Math.log10(evidenceReviewCount) / Math.log10(10000)) * reviewCap);
 
-  // Source coverage component (0 to 0.35)
   let sourceComponent = 0;
-  if (hasSteamData) sourceComponent += 0.15;           // Steam reviews present
-  if (criticSourceCount >= 1) sourceComponent += 0.12; // At least one critic source
-  if (criticSourceCount >= 2) sourceComponent += 0.08; // Both IGDB + Metacritic
+  if (communitySource === "steam") sourceComponent += 0.15;
+  if (communitySource === "fallback") sourceComponent += 0.05;
+  if (criticSourceCount >= 1) sourceComponent += 0.12;
+  if (criticSourceCount >= 2) sourceComponent += 0.08;
 
   return Math.min(1, reviewComponent + sourceComponent);
 }

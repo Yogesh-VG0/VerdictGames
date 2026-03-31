@@ -28,6 +28,7 @@ import {
   computeVerdictScore,
   getVerdictLabel,
   rawgRatingToPositiveRatio,
+  resolveCommunityEvidenceSource,
 } from "@/lib/utils/scoring";
 
 export async function POST(request: Request) {
@@ -112,8 +113,13 @@ export async function POST(request: Request) {
       );
 
       // ── Confidence ──
-      const hasSteamData = game.steam_app_id != null || game.score_source === "steam";
-      const confidence = computeConfidence(reviewCount, criticSourceCount, hasSteamData);
+      const communitySource = resolveCommunityEvidenceSource({
+        steamTotalCount: steamTotalCount,
+        hasSteamData: game.steam_app_id != null || game.score_source === "steam",
+        rawgRating: game.rawg_rating ?? null,
+        reviewCount,
+      });
+      const confidence = computeConfidence(reviewCount, criticSourceCount, communitySource);
 
       // ── Verdict Score ──
       const verdictScoreValue = computeVerdictScore(communityScore, criticScore, confidence);

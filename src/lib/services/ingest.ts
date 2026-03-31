@@ -50,6 +50,7 @@ import {
   computeVerdictScore,
   getVerdictLabel,
   rawgRatingToPositiveRatio,
+  resolveCommunityEvidenceSource,
 } from "../utils/scoring";
 
 /* ───────── Types ───────── */
@@ -343,7 +344,13 @@ export async function ingestGame(options: IngestOptions): Promise<IngestResult> 
 
   // Confidence: how much we trust the verdict
   const reviewCount = steamReviewCount || fullGame.ratings_count || 0;
-  const confidence = computeConfidence(reviewCount, criticSourceCount, steamReviewData != null);
+  const communitySource = resolveCommunityEvidenceSource({
+    steamTotalCount: steamTotalCount,
+    hasSteamData: steamReviewData != null,
+    rawgRating: fullGame.rating ?? null,
+    reviewCount,
+  });
+  const confidence = computeConfidence(reviewCount, criticSourceCount, communitySource);
 
   // Verdict score: final blended score
   const verdictScoreValue = computeVerdictScore(communityScore, criticScore, confidence);

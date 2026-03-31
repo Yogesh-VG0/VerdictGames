@@ -104,36 +104,34 @@ function computeTrendingReason(row: GameRow): string | undefined {
     : displayScore(row.score ?? 0, row.review_count ?? 0);
   const currentPlayers = row.current_players ?? 0;
   const reviewCount = row.review_count ?? 0;
+  const ageDays = row.release_date
+    ? (Date.now() - new Date(`${row.release_date}T00:00:00`).getTime()) / 86400000
+    : Number.POSITIVE_INFINITY;
 
   // Priority: manual > momentum > recency > quality > popularity > deals > fallback
 
   // 1. Manual overrides (highest intent)
   if (r.is_trending_manual || r.is_featured_manual) return "⭐ Editor's Pick";
 
-  // 2. Momentum signals
-  if (momentum > 0.2) return "🔥 Trending Up";
-  if (momentum < -0.2) return "📉 Falling";
+  // 2. Recency signals
+  if (ageDays < 0) return "�️ Coming Soon";
+  if (ageDays <= 30 && (momentum >= 0.05 || currentPlayers >= 500 || reviewCount >= 150)) return "� New & Hot";
+  if (ageDays <= 30) return "✨ Just Released";
 
-  // 3. Recency signals
-  if (row.release_date) {
-    const age = Date.now() - new Date(row.release_date).getTime();
-    if (age < 0) return "🗓️ Coming Soon";
-    if (age < 30 * 86400000 && score >= 70) return "🚀 New & Hot";
-    if (age < 30 * 86400000) return "✨ Just Released";
-  }
+  // 3. Momentum signals
+  if (momentum > 0.2 && (currentPlayers >= 50 || reviewCount >= 250)) return "� Trending Up";
 
-  // 4. Quality tiers
-  if (score >= 90 && reviewCount >= 50) return "👑 Top Rated";
-  if (score >= 80 && reviewCount < 50 && currentPlayers < 5000) return "💎 Hidden Gem";
-
-  // 5. Popularity
+  // 4. Quality / popularity tiers
+  if (score >= 90 && reviewCount >= 150) return "� Top Rated";
   if (currentPlayers > 10000) return "🎮 Popular Now";
+  if (row.price_deal_url && row.price_lowest != null && score >= 75) return "� On Sale";
+  if (score >= 82 && reviewCount < 150 && currentPlayers < 5000) return "💎 Hidden Gem";
 
-  // 6. Deals (moved below quality/popularity so the rail doesn't look like a storefront)
-  if (row.price_deal_url && row.price_lowest != null) return "💰 On Sale";
+  // 5. Cooling-off signal — keep this narrow so strong top-rated games do not look weak by default
+  if (momentum < -0.35 && currentPlayers >= 2500 && score < 90) return "� Falling";
 
-  // 7. Generic fallback
-  if (row.trending) return "🔥 Trending";
+  // 6. Generic fallback
+  if (row.trending || momentum > 0.08) return "🔥 Trending";
   return undefined;
 }
 

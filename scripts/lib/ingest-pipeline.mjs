@@ -159,9 +159,22 @@ function criticScore(igdb, mc) {
   const s = []; if (igdb > 0) s.push(igdb); if (mc > 0) s.push(mc);
   return s.length ? { score: Math.round(s.reduce((a, b) => a + b) / s.length), n: s.length } : { score: null, n: 0 };
 }
-function confidence(revCnt, criticN, hasSteam) {
-  const rc = revCnt <= 0 ? 0 : Math.min(0.65, (Math.log10(revCnt) / Math.log10(10000)) * 0.65);
-  let sc = 0; if (hasSteam) sc += 0.15; if (criticN >= 1) sc += 0.12; if (criticN >= 2) sc += 0.08;
+function communityEvidenceSource({ steamTotalCount, hasSteamData, rawgRating, reviewCount }) {
+  if ((steamTotalCount ?? 0) > 0 || (hasSteamData && (reviewCount ?? 0) > 0)) return "steam";
+  if ((rawgRating ?? 0) > 0 && (reviewCount ?? 0) > 0) return "fallback";
+  return "none";
+}
+function effectiveEvidenceReviewCount(reviewCount, source) {
+  if (reviewCount <= 0) return 0;
+  if (source === "steam") return reviewCount;
+  if (source === "fallback") return Math.min(300, Math.round(reviewCount * 0.12));
+  return 0;
+}
+function confidence(revCnt, criticN, source) {
+  const evidenceCnt = effectiveEvidenceReviewCount(revCnt, source);
+  const reviewCap = source === "steam" ? 0.65 : source === "fallback" ? 0.28 : 0;
+  const rc = evidenceCnt <= 0 || reviewCap === 0 ? 0 : Math.min(reviewCap, (Math.log10(evidenceCnt) / Math.log10(10000)) * reviewCap);
+  let sc = 0; if (source === "steam") sc += 0.15; if (source === "fallback") sc += 0.05; if (criticN >= 1) sc += 0.12; if (criticN >= 2) sc += 0.08;
   return Math.min(1, rc + sc);
 }
 function verdictScore(comm, crit, conf) {
@@ -543,11 +556,12 @@ export async function ingestGameDirect(sql, query, options = {}) {
 
   const sPos = steamRev?.total_positive ?? null, sTot = steamRev?.total_reviews ?? null;
   let commScore = null;
-  if (sPos != null && sTot > 0) commScore = communityScore(sPos, sTot);
+  if (sPos != null && sTot != null && sTot > 0) commScore = communityScore(sPos, sTot);
   else if (fullGame.rating && fullGame.ratings_count > 0) { const { positive, total } = rawgRatio(fullGame.rating, fullGame.ratings_count); commScore = communityScore(positive, total); }
   const { score: critScore, n: critN } = criticScore(ie?.igdbRating ?? null, fullGame.metacritic ?? null);
   const revCount = sRevCount || fullGame.ratings_count || 0;
-  const conf = confidence(revCount, critN, steamRev != null);
+  const source = communityEvidenceSource({ steamTotalCount: sTot, hasSteamData: steamRev != null, rawgRating: fullGame.rating ?? null, reviewCount: revCount });
+  const conf = confidence(revCount, critN, source);
   const vs = verdictScore(commScore, critScore, conf);
   const finalScore = vs > 0 ? vs : legacy;
   const relDate = fullGame.released ?? null;

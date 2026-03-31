@@ -20,6 +20,7 @@ export const GAME_CARD_COLUMNS = [
   "developer", "publisher", "release_date",
   "score", "verdict_score", "verdict_label", "verdict_summary",
   "confidence", "review_count", "monetization",
+  "steam_total_count", "critic_source_count",
   "price_current", "price_currency", "is_free", "price_deal_url", "price_lowest",
   "current_players", "peak_players_24h", "momentum",
   "trending", "featured", "is_featured_manual", "is_trending_manual",

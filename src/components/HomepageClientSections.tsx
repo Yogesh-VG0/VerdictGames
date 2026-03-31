@@ -131,6 +131,14 @@ function MostAnticipatedSection() {
   );
 }
 
+export function HomepageMostAnticipatedSection() {
+  return (
+    <LazySection minHeight="320px">
+      <MostAnticipatedSection />
+    </LazySection>
+  );
+}
+
 export default function HomepageClientSections({
   initialRecommendations,
   initialNewReleases,
@@ -160,55 +168,6 @@ export default function HomepageClientSections({
 
   return (
     <>
-      {/* ── 2b. Most Anticipated ── */}
-      <LazySection minHeight="320px">
-        <MostAnticipatedSection />
-      </LazySection>
-
-      <div className="max-w-[1400px] mx-auto px-4">
-        <hr className="border-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
-      </div>
-
-      {/* ── 3. For You ── */}
-      <section className="py-12 sm:py-16">
-        <div className="max-w-[1400px] mx-auto px-4">
-          <FadeInSection>
-            {recommendedLoading ? (
-              <>
-                <SectionHeaderSkeleton />
-                <HorizontalScrollSkeleton count={6} />
-              </>
-            ) : recommendedGames.length > 0 ? (
-              <>
-                <SectionHeader
-                  title={showingPersonalized ? "Recommended For You" : "You Might Enjoy"}
-                  icon={<Gem className="w-5 h-5" />}
-                  subtitle={showingPersonalized ? "Based on your library & play history" : "Curated picks across diverse genres"}
-                  gradient="linear-gradient(90deg, #a855f7 0%, #6366f1 25%, #ec4899 50%, #a855f7 75%, #6366f1 100%)"
-                />
-                <HorizontalScroll>
-                  {recommendedGames.filter((game) => game.coverImage).map((game, index) => (
-                    <div key={game.id} className={CARD_WIDTH}>
-                      <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.03, duration: 0.4 }}
-                      >
-                        <GameCard game={game} prefetch={false} />
-                      </motion.div>
-                    </div>
-                  ))}
-                </HorizontalScroll>
-              </>
-            ) : null}
-          </FadeInSection>
-        </div>
-      </section>
-
-      <div className="max-w-[1400px] mx-auto px-4">
-        <hr className="border-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
-      </div>
-
       {/* ── 4. Discover — tabbed ── */}
       <section className="relative py-12 sm:py-16">
         <div className="absolute inset-0 mesh-gradient opacity-30 pointer-events-none" />
@@ -348,6 +307,46 @@ export default function HomepageClientSections({
                 )}
               </>
             )}
+          </FadeInSection>
+        </div>
+      </section>
+
+      <div className="max-w-[1400px] mx-auto px-4">
+        <hr className="border-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
+      </div>
+
+      {/* ── 3. For You ── */}
+      <section className="py-12 sm:py-16">
+        <div className="max-w-[1400px] mx-auto px-4">
+          <FadeInSection>
+            {recommendedLoading ? (
+              <>
+                <SectionHeaderSkeleton />
+                <HorizontalScrollSkeleton count={6} />
+              </>
+            ) : recommendedGames.length > 0 ? (
+              <>
+                <SectionHeader
+                  title={showingPersonalized ? "Recommended For You" : "You Might Enjoy"}
+                  icon={<Gem className="w-5 h-5" />}
+                  subtitle={showingPersonalized ? "Based on your library & play history" : "Curated picks across diverse genres"}
+                  gradient="linear-gradient(90deg, #a855f7 0%, #6366f1 25%, #ec4899 50%, #a855f7 75%, #6366f1 100%)"
+                />
+                <HorizontalScroll>
+                  {recommendedGames.filter((game) => game.coverImage).map((game, index) => (
+                    <div key={game.id} className={CARD_WIDTH}>
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.03, duration: 0.4 }}
+                      >
+                        <GameCard game={game} prefetch={false} />
+                      </motion.div>
+                    </div>
+                  ))}
+                </HorizontalScroll>
+              </>
+            ) : null}
           </FadeInSection>
         </div>
       </section>

@@ -15,6 +15,7 @@
 
 import type { GameRow } from "@/lib/supabase/types";
 import { isPrimaryDiscoveryGame } from "@/lib/utils/discovery";
+import { effectiveEvidenceReviewCount, resolveCommunityEvidenceSource } from "@/lib/utils/scoring";
 
 /* ═══════════════════════════════════════════════════
    Surface-Specific Readiness Profiles
@@ -112,8 +113,8 @@ interface QualityOpts {
 
 const THRESHOLDS: Record<SectionType, { minReviews: number; minDescLen: number; requireImage: boolean; minConfidence?: number; minCurrentPlayers?: number }> = {
   hero:            { minReviews: 5000, minDescLen: 50, requireImage: true, minConfidence: 0.5 },
-  trending:        { minReviews: 50,   minDescLen: 20, requireImage: true, minConfidence: 0.2, minCurrentPlayers: 25 },
-  topRated:        { minReviews: 75,   minDescLen: 20, requireImage: true, minConfidence: 0.3 },
+  trending:        { minReviews: 75,   minDescLen: 20, requireImage: true, minConfidence: 0.25, minCurrentPlayers: 40 },
+  topRated:        { minReviews: 500,  minDescLen: 20, requireImage: true, minConfidence: 0.35 },
   newReleases:     { minReviews: 0,    minDescLen: 20, requireImage: true },
   recommendations: { minReviews: 75,   minDescLen: 20, requireImage: true, minConfidence: 0.35 },
   curatedList:     { minReviews: 20,   minDescLen: 20, requireImage: true, minConfidence: 0.15 },
@@ -122,6 +123,60 @@ const THRESHOLDS: Record<SectionType, { minReviews: number; minDescLen: number; 
 };
 
 const DISCOVERY_SECTIONS = new Set<SectionType>(["hero", "trending", "topRated", "recommendations", "curatedList"]);
+
+type EvidenceRow = Pick<GameRow,
+  | "critic_score"
+  | "critic_source_count"
+  | "confidence"
+  | "igdb_rating"
+  | "rawg_metacritic"
+  | "rawg_rating"
+  | "review_count"
+  | "score_source"
+  | "steam_app_id"
+  | "steam_total_count"
+  | "user_score"
+>;
+
+export function getCriticSourceCount(row: Pick<GameRow, "critic_source_count" | "igdb_rating" | "rawg_metacritic">): number {
+  if (row.critic_source_count != null && row.critic_source_count > 0) {
+    return row.critic_source_count;
+  }
+
+  let count = 0;
+  if ((row.igdb_rating ?? 0) > 0) count += 1;
+  if ((row.rawg_metacritic ?? 0) > 0) count += 1;
+  return count;
+}
+
+export function getCommunityEvidenceSource(row: Pick<GameRow,
+  "rawg_rating" | "review_count" | "score_source" | "steam_app_id" | "steam_total_count" | "user_score"
+>) {
+  return resolveCommunityEvidenceSource({
+    steamTotalCount: row.steam_total_count,
+    hasSteamData: row.score_source === "steam" || row.user_score != null || row.steam_app_id != null,
+    rawgRating: row.rawg_rating,
+    reviewCount: row.review_count,
+  });
+}
+
+export function getEvidenceReviewCount(row: Pick<GameRow,
+  "rawg_rating" | "review_count" | "score_source" | "steam_app_id" | "steam_total_count" | "user_score"
+>): number {
+  return effectiveEvidenceReviewCount(row.review_count ?? 0, getCommunityEvidenceSource(row));
+}
+
+export function hasStrongCriticEvidence(row: EvidenceRow): boolean {
+  const criticSources = getCriticSourceCount(row);
+  const criticScore = row.critic_score ?? Math.max(row.igdb_rating ?? 0, row.rawg_metacritic ?? 0);
+  const confidence = row.confidence ?? 0;
+
+  if (criticSources >= 2 && criticScore >= 82) {
+    return true;
+  }
+
+  return criticSources >= 1 && criticScore >= 88 && confidence >= 0.3;
+}
 
 /**
  * Confidence-weighted score for ranking.
@@ -156,9 +211,15 @@ export function confidenceWeightedScore(row: GameRow): number {
   return (score * reviews + C * m) / (reviews + m);
 }
 
+export function hasStrongTopRatedEvidence(row: GameRow): boolean {
+  return getEvidenceReviewCount(row) >= THRESHOLDS.topRated.minReviews || hasStrongCriticEvidence(row);
+}
+
 /** Check if a single game row passes quality gates for the given section. */
 export function isQualityGame(row: GameRow, section: SectionType = "generic"): boolean {
   const t = THRESHOLDS[section];
+  const evidenceReviewCount = getEvidenceReviewCount(row);
+  const canUseCriticFallback = section === "topRated" && hasStrongCriticEvidence(row);
 
   if (DISCOVERY_SECTIONS.has(section) && !isPrimaryDiscoveryGame(row)) return false;
 
@@ -169,13 +230,15 @@ export function isQualityGame(row: GameRow, section: SectionType = "generic"): b
   if (t.minDescLen > 0 && row.description != null && row.description.length < t.minDescLen) return false;
 
   // Review count check
-  if (row.review_count < t.minReviews) return false;
+  if (t.minReviews > 0 && evidenceReviewCount < t.minReviews && !canUseCriticFallback) return false;
 
   // Confidence check (hero section requires multi-source validation)
-  if (t.minConfidence && (row.confidence ?? 0) < t.minConfidence) return false;
+  if (t.minConfidence && (row.confidence ?? 0) < t.minConfidence && !canUseCriticFallback) return false;
 
   // Current players check (hero section requires active player base)
   if (t.minCurrentPlayers && (row.current_players ?? 0) < t.minCurrentPlayers) return false;
+
+  if (section === "topRated" && !hasStrongTopRatedEvidence(row)) return false;
 
   return true;
 }
