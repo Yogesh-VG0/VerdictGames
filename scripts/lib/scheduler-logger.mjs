@@ -23,6 +23,17 @@ function jobNameToLockId(jobName) {
   return Math.abs(hash) + 86710000;
 }
 
+const reservedLocks = new WeakMap();
+
+function getLockStore(sql) {
+  let store = reservedLocks.get(sql);
+  if (!store) {
+    store = new Map();
+    reservedLocks.set(sql, store);
+  }
+  return store;
+}
+
 /**
  * Try to acquire a Postgres advisory lock (non-blocking).
  * Returns true if lock acquired, false if another instance holds it.
@@ -30,13 +41,21 @@ function jobNameToLockId(jobName) {
  */
 export async function acquireLock(sql, jobName) {
   const lockId = jobNameToLockId(jobName);
+  let reserved = null;
   try {
-    const [{ acquired }] = await sql`SELECT pg_try_advisory_lock(${lockId}) AS acquired`;
+    reserved = await sql.reserve();
+    const [{ acquired }] = await reserved`SELECT pg_try_advisory_lock(${lockId}) AS acquired`;
     if (!acquired) {
+      reserved.release();
       console.log(`🔒 Advisory lock ${lockId} (${jobName}) already held — another instance is running. Skipping.`);
+      return false;
     }
-    return acquired;
+    getLockStore(sql).set(jobName, reserved);
+    return true;
   } catch (err) {
+    if (reserved) {
+      try { reserved.release(); } catch {}
+    }
     console.warn(`⚠ Advisory lock check failed: ${err.message}. Proceeding anyway.`);
     return true; // fail-open: if locking fails, proceed rather than skip
   }
@@ -47,10 +66,22 @@ export async function acquireLock(sql, jobName) {
  */
 export async function releaseLock(sql, jobName) {
   const lockId = jobNameToLockId(jobName);
+  const store = reservedLocks.get(sql);
+  const reserved = store?.get(jobName);
+  if (!reserved) return;
   try {
-    await sql`SELECT pg_advisory_unlock(${lockId})`;
+    const [{ released }] = await reserved`SELECT pg_advisory_unlock(${lockId}) AS released`;
+    if (!released) {
+      console.warn(`⚠ Advisory lock ${lockId} (${jobName}) was not held during release.`);
+    }
   } catch (err) {
     console.warn(`⚠ Advisory lock release failed: ${err.message}`);
+  } finally {
+    store.delete(jobName);
+    if (store.size === 0) {
+      reservedLocks.delete(sql);
+    }
+    try { reserved.release(); } catch {}
   }
 }
 
