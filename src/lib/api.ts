@@ -142,14 +142,13 @@ export async function getGameBySlug(slug: string, rawgId?: number): Promise<Game
 
 /** Get related games for a given game slug. */
 export async function getRelatedGames(slug: string, limit = 4): Promise<Game[]> {
-  const game = await getGameBySlug(slug);
-  if (!game) return [];
-  const genre = game.genres[0];
-  if (genre) {
-    const results = await searchGames({ genre, sort: "top-rated", page: 1 });
-    return results.items.filter((g) => g.slug !== slug).slice(0, limit);
+  const params = new URLSearchParams();
+  if (limit > 0) {
+    params.set("limit", String(limit));
   }
-  return [];
+
+  const suffix = params.toString();
+  return (await apiFetch<Game[]>(`/api/games/${encodeURIComponent(slug)}/related${suffix ? `?${suffix}` : ""}`)) ?? [];
 }
 
 /** "You Might Enjoy" — recent high-quality genre-diverse picks (anonymous users). */

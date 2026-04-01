@@ -1,5 +1,5 @@
 import type { GXCalendarEntry } from "@/lib/external/gxcorner";
-import type { Game, GXCalendarGame, Platform } from "@/lib/types";
+import type { CalendarGame, Game, GXCalendarGame, Platform } from "@/lib/types";
 import { slugify } from "@/lib/utils/slugify";
 
 type CalendarParamRecord = Record<string, string | string[] | undefined>;
@@ -163,6 +163,7 @@ function mapGXPlatformName(platform: string): Platform | null {
   if (value.includes("windows") || value === "pc") return "PC";
   if (value.includes("playstation") || value === "ps5") return "PlayStation 5";
   if (value.includes("xbox")) return "Xbox Series X|S";
+  if (value.includes("switch 2")) return "Nintendo Switch 2";
   if (value.includes("switch")) return "Nintendo Switch";
   if (value.includes("android")) return "Android";
   if (value.includes("ios")) return "iOS";
@@ -171,17 +172,174 @@ function mapGXPlatformName(platform: string): Platform | null {
   return null;
 }
 
+function mapGXPlatformNames(platforms: string[]): Platform[] {
+  const mapped: Platform[] = [];
+  const seen = new Set<Platform>();
+
+  for (const platform of platforms) {
+    const resolved = mapGXPlatformName(platform);
+    if (!resolved || seen.has(resolved)) {
+      continue;
+    }
+
+    seen.add(resolved);
+    mapped.push(resolved);
+  }
+
+  return mapped;
+}
+
+function getGXCalendarPlatformNames(entry: GXCalendarEntry): string[] {
+  const source = entry.platforms.length > 0 ? entry.platforms : entry.game.platforms;
+  return source.map((platform) => platform.name).filter(Boolean);
+}
+
+function normalizeCalendarIdentity(value: string): string {
+  return value.trim().toLowerCase();
+}
+
+function getCalendarMatchKey(item: { slug?: string | null; title: string }): string {
+  const slug = item.slug?.trim();
+  return slug ? `slug:${slug}` : `title:${normalizeCalendarIdentity(item.title)}`;
+}
+
+function inferCalendarTagFromPlatforms(platforms: string[]): { label: string; color: string | null } | null {
+  const normalized = platforms.map((platform) => platform.toLowerCase());
+
+  if (normalized.some((platform) => platform.includes("vr"))) {
+    return { label: "VR", color: "#7c3aed" };
+  }
+
+  const labels = new Set<string>();
+  for (const platform of normalized) {
+    if (platform.includes("switch 2")) {
+      labels.add("SWITCH 2");
+      continue;
+    }
+
+    if (platform.includes("switch")) {
+      labels.add("SWITCH");
+      continue;
+    }
+
+    if (platform.includes("windows") || platform === "pc") {
+      labels.add("PC");
+      continue;
+    }
+
+    if (platform.includes("playstation") || platform === "ps5") {
+      labels.add("PLAYSTATION");
+      continue;
+    }
+
+    if (platform.includes("xbox")) {
+      labels.add("XBOX");
+      continue;
+    }
+
+    if (platform.includes("android")) {
+      labels.add("ANDROID");
+      continue;
+    }
+
+    if (platform.includes("ios")) {
+      labels.add("IOS");
+      continue;
+    }
+
+    if (platform.includes("mac")) {
+      labels.add("MAC");
+      continue;
+    }
+
+    if (platform.includes("linux")) {
+      labels.add("LINUX");
+    }
+  }
+
+  const [label] = Array.from(labels);
+  return labels.size === 1 && label ? { label, color: "#4d4dff" } : null;
+}
+
+function resolveGXCalendarTag(gx: GXCalendarGame): { label: string; color: string | null } | null {
+  if (gx.tagLabel) {
+    return { label: gx.tagLabel, color: gx.tagColor };
+  }
+
+  if (gx.hotGame) {
+    return { label: "HOT", color: "#f10808" };
+  }
+
+  const originalDay = gx.originalReleaseDate?.slice(0, 10) ?? null;
+  const entryDay = gx.releaseDate?.slice(0, 10) ?? null;
+  if (!originalDay || !entryDay || originalDay >= entryDay) {
+    return inferCalendarTagFromPlatforms(gx.platforms);
+  }
+
+  return inferCalendarTagFromPlatforms(gx.platforms) ?? { label: "PLATFORM LAUNCH", color: "#4d4dff" };
+}
+
+function buildCalendarEntryId(item: {
+  title: string;
+  slug?: string | null;
+  releaseDate: string;
+  platforms: string[];
+  tagLabel?: string | null;
+}): string {
+  const slug = item.slug ?? slugify(item.title);
+  const day = item.releaseDate.slice(0, 10) || "tba";
+  const platformKey = item.platforms
+    .map((platform) => platform.toLowerCase().replace(/[^a-z0-9]+/g, "-"))
+    .filter(Boolean)
+    .join(".") || "all";
+  const tagKey = (item.tagLabel ?? "none").toLowerCase().replace(/[^a-z0-9]+/g, "-") || "none";
+  return `gx-cal:${slug}:${day}:${platformKey}:${tagKey}`;
+}
+
+function toCalendarGame(game: Game): CalendarGame {
+  return {
+    ...game,
+    calendarEntryPlatforms: game.platforms,
+    calendarEntryPlatformNames: game.platforms.map((platform) => String(platform)),
+    calendarHasDetailPage: Boolean(game.slug),
+  };
+}
+
+function applyGXCalendarContext(baseGame: Game, gx: GXCalendarGame): CalendarGame {
+  const calendarPlatforms = mapGXPlatformNames(gx.platforms);
+  const resolvedTag = resolveGXCalendarTag(gx);
+
+  return {
+    ...baseGame,
+    id: buildCalendarEntryId(gx),
+    releaseDate: gx.releaseDate,
+    platforms: calendarPlatforms.length > 0 ? calendarPlatforms : baseGame.platforms,
+    calendarOriginalReleaseDate: gx.originalReleaseDate ?? baseGame.releaseDate ?? undefined,
+    calendarEntryTag: resolvedTag?.label ?? null,
+    calendarEntryTagColor: resolvedTag?.color ?? null,
+    calendarEntryPlatforms: calendarPlatforms.length > 0 ? calendarPlatforms : baseGame.platforms,
+    calendarEntryPlatformNames: gx.platforms,
+    calendarUrl: gx.url,
+    calendarCtaLabel: gx.ctaLabel,
+    calendarIsHot: gx.hotGame,
+    calendarHasDetailPage: Boolean(baseGame.slug),
+  };
+}
+
 export function mapGXCalendarEntry(entry: GXCalendarEntry): GXCalendarGame {
   return {
     title: entry.game.title,
     slug: entry.game.slug,
     cover: entry.game.imageCoverVertical?.url ?? null,
     releaseDate: entry.release,
+    originalReleaseDate: entry.game.releaseDate ?? null,
     hotGame: entry.hotGame ?? false,
     url: entry.url,
     ctaLabel: entry.cta?.label ?? null,
+    tagLabel: entry.tag?.name ?? null,
+    tagColor: entry.tag?.color ?? null,
     genres: entry.game.genres.map((genre) => genre.name),
-    platforms: entry.game.platforms.map((platform) => platform.name),
+    platforms: getGXCalendarPlatformNames(entry),
   };
 }
 
@@ -192,14 +350,13 @@ export function filterGXCalendarEntriesByMonth(entries: GXCalendarEntry[], month
     .sort((a, b) => a.releaseDate.localeCompare(b.releaseDate) || a.title.localeCompare(b.title));
 }
 
-export function gxCalendarToGame(gx: GXCalendarGame): Game {
-  const platforms = (gx.platforms ?? [])
-    .map(mapGXPlatformName)
-    .filter(Boolean) as Platform[];
+export function gxCalendarToGame(gx: GXCalendarGame): CalendarGame {
+  const platforms = mapGXPlatformNames(gx.platforms ?? []);
   const slug = gx.slug ?? slugify(gx.title);
+  const resolvedTag = resolveGXCalendarTag(gx);
 
   return {
-    id: `gx-cal-${slug}`,
+    id: buildCalendarEntryId(gx),
     slug,
     title: gx.title,
     subtitle: undefined,
@@ -226,17 +383,44 @@ export function gxCalendarToGame(gx: GXCalendarGame): Game {
     trending: false,
     isProvisional: true,
     scoreSource: "gx",
+    calendarOriginalReleaseDate: gx.originalReleaseDate ?? undefined,
+    calendarEntryTag: resolvedTag?.label ?? null,
+    calendarEntryTagColor: resolvedTag?.color ?? null,
+    calendarEntryPlatforms: platforms,
+    calendarEntryPlatformNames: gx.platforms,
+    calendarUrl: gx.url,
+    calendarCtaLabel: gx.ctaLabel,
+    calendarIsHot: gx.hotGame,
+    calendarHasDetailPage: false,
   };
 }
 
-export function mergeCalendarGames(dbGames: Game[], gxGames: GXCalendarGame[]): Game[] {
+export function mergeCalendarGames(dbGames: Game[], gxGames: GXCalendarGame[]): CalendarGame[] {
   const normalizedDbGames = [...dbGames].sort((a, b) => (a.releaseDate ?? "").localeCompare(b.releaseDate ?? "") || a.title.localeCompare(b.title));
-  const dbSlugs = new Set(normalizedDbGames.map((game) => game.slug));
-  const dbTitles = new Set(normalizedDbGames.map((game) => game.title.toLowerCase()));
-  const gxOnlyGames = gxGames
-    .map(gxCalendarToGame)
-    .filter((game) => !dbSlugs.has(game.slug) && !dbTitles.has(game.title.toLowerCase()));
+  const dbByKey = new Map(normalizedDbGames.map((game) => [getCalendarMatchKey(game), game]));
+  const matchedDbKeys = new Set<string>();
+  const mergedGames: CalendarGame[] = [];
 
-  return [...normalizedDbGames, ...gxOnlyGames]
+  for (const gxGame of gxGames) {
+    const match = dbByKey.get(getCalendarMatchKey(gxGame));
+    if (match) {
+      matchedDbKeys.add(getCalendarMatchKey(match));
+      mergedGames.push(applyGXCalendarContext(match, gxGame));
+      continue;
+    }
+
+    mergedGames.push(gxCalendarToGame(gxGame));
+  }
+
+  for (const dbGame of normalizedDbGames) {
+    const key = getCalendarMatchKey(dbGame);
+    if (matchedDbKeys.has(key)) {
+      continue;
+    }
+
+    mergedGames.push(toCalendarGame(dbGame));
+  }
+
+  return mergedGames
     .sort((a, b) => (a.releaseDate ?? "").localeCompare(b.releaseDate ?? "") || a.title.localeCompare(b.title));
 }

@@ -13,8 +13,8 @@ import PlatformIcon, {
 } from "@/components/ui/PlatformIcon";
 import { collapsePlatforms } from "@/lib/utils/platform";
 import { buildCalendarMonthOptions, buildCalendarPagePath } from "@/lib/utils/gx-calendar";
-import type { CalendarMonthResponse, Game, Platform } from "@/lib/types";
-import { CalendarDays, Gamepad2, CalendarX } from "lucide-react";
+import type { CalendarGame, CalendarMonthResponse, Platform } from "@/lib/types";
+import { ArrowUpRight, CalendarDays, Gamepad2, CalendarX } from "lucide-react";
 
 interface CalendarClientPageProps {
   initialMonth: string;
@@ -30,26 +30,131 @@ const calendarDayFormatter = new Intl.DateTimeFormat("en-US", {
   timeZone: "UTC",
 });
 
+const calendarMetaFormatter = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+  timeZone: "UTC",
+});
+
 function formatCalendarDay(date: string): string {
   return calendarDayFormatter.format(new Date(`${date}T00:00:00Z`));
 }
 
-function getCalendarStatus(game: Game, today: string): { label: string; className: string } {
-  if (game.isProvisional || game.verdictLabel === "COMING SOON") {
+function formatCalendarMetaDate(date: string): string {
+  return calendarMetaFormatter.format(new Date(`${date}T00:00:00Z`));
+}
+
+function formatCalendarTagLabel(value: string): string {
+  const normalized = value.trim();
+  const upper = normalized.toUpperCase();
+
+  switch (upper) {
+    case "EARLY ACCESS":
+      return "Early Access";
+    case "PC":
+    case "WINDOWS":
+      return "PC";
+    case "SWITCH":
+      return "Switch";
+    case "SWITCH 2":
+      return "Switch 2";
+    case "PLAYSTATION":
+    case "PS5":
+      return "PlayStation";
+    case "XBOX":
+      return "Xbox";
+    case "ANDROID":
+      return "Android";
+    case "IOS":
+      return "iOS";
+    case "MAC":
+    case "MACOS":
+      return "Mac";
+    case "LINUX":
+      return "Linux";
+    case "VR":
+      return "VR";
+    case "HOT":
+      return "Hot";
+    case "EVENT":
+      return "Event";
+    default:
+      return normalized
+        .toLowerCase()
+        .replace(/\b\w/g, (char) => char.toUpperCase());
+  }
+}
+
+function getCalendarLaunchLabel(game: CalendarGame): string | null {
+  const originalDay = game.calendarOriginalReleaseDate?.slice(0, 10) ?? null;
+  const entryDay = game.releaseDate?.slice(0, 10) ?? null;
+  const platformLaunchTags = ["PC", "Switch", "Switch 2", "PlayStation", "Xbox", "Android", "iOS", "Mac", "Linux", "VR"];
+
+  if (!originalDay || !entryDay || originalDay >= entryDay) {
+    return null;
+  }
+
+  if (game.calendarEntryTag) {
+    const formattedTag = formatCalendarTagLabel(game.calendarEntryTag);
+    if (platformLaunchTags.includes(formattedTag)) {
+      return `${formattedTag} Launch`;
+    }
+
+    return null;
+  }
+
+  const fallbackPlatform = game.calendarEntryPlatformNames?.[0] ?? game.calendarEntryPlatforms?.[0];
+  if (fallbackPlatform) {
+    return `${formatCalendarTagLabel(String(fallbackPlatform))} Launch`;
+  }
+
+  return "Platform Launch";
+}
+
+function getCalendarContextBadge(game: CalendarGame): { label: string; color: string | null } | null {
+  const launchLabel = getCalendarLaunchLabel(game);
+  if (launchLabel) {
+    return { label: launchLabel, color: game.calendarEntryTagColor ?? "#4d4dff" };
+  }
+
+  if (game.calendarEntryTag) {
+    return {
+      label: formatCalendarTagLabel(game.calendarEntryTag),
+      color: game.calendarEntryTagColor ?? null,
+    };
+  }
+
+  if (game.calendarIsHot) {
+    return { label: "Hot", color: "#f10808" };
+  }
+
+  return null;
+}
+
+function getCalendarContextNote(game: CalendarGame): string | null {
+  const originalDay = game.calendarOriginalReleaseDate?.slice(0, 10) ?? null;
+  const entryDay = game.releaseDate?.slice(0, 10) ?? null;
+
+  if (!originalDay || !entryDay || originalDay >= entryDay) {
+    return null;
+  }
+
+  return `Originally released ${formatCalendarMetaDate(originalDay)}`;
+}
+
+function getCalendarStatus(game: CalendarGame, today: string): { label: string; className: string } {
+  if (!game.releaseDate) {
+    return { label: "TBA", className: "text-tertiary bg-surface-2" };
+  }
+
+  const entryDay = game.releaseDate.slice(0, 10);
+  if (entryDay > today) {
     return { label: "Coming Soon", className: "text-accent bg-accent/10" };
   }
 
   if (game.score > 0) {
     return { label: "", className: "" };
-  }
-
-  if (!game.releaseDate) {
-    return { label: "TBA", className: "text-tertiary bg-surface-2" };
-  }
-
-  const releaseDay = game.releaseDate.slice(0, 10);
-  if (releaseDay > today) {
-    return { label: "Coming Soon", className: "text-accent bg-accent/10" };
   }
 
   return { label: "Released", className: "text-score-good bg-score-good/10" };
@@ -123,12 +228,15 @@ export default function CalendarClientPage({ initialMonth, initialMonthData, tod
     }
 
     const familyPlatforms = getFilterPlatforms(selectedPlatform);
-    return initialMonthData.items.filter((game) => familyPlatforms.some((platform) => game.platforms.includes(platform)));
+    return initialMonthData.items.filter((game) => {
+      const platforms = game.calendarEntryPlatforms ?? game.platforms;
+      return familyPlatforms.some((platform) => platforms.includes(platform));
+    });
   }, [initialMonthData.items, selectedPlatform]);
 
   const grouped = useMemo(() => {
-    if (!games.length) return {} as Record<string, Game[]>;
-    const map: Record<string, Game[]> = {};
+    if (!games.length) return {} as Record<string, CalendarGame[]>;
+    const map: Record<string, CalendarGame[]> = {};
     for (const game of games) {
       const day = game.releaseDate?.slice(0, 10) ?? "TBA";
       (map[day] ??= []).push(game);
@@ -286,12 +394,14 @@ export default function CalendarClientPage({ initialMonth, initialMonthData, tod
                           <div className="divide-y divide-border/50">
                             {dayGames.map((game) => {
                               const status = getCalendarStatus(game, today);
-                              return (
-                                <Link
-                                  key={game.id}
-                                  href={`/game/${game.slug}`}
-                                  className="group flex items-center gap-3 sm:gap-4 px-4 py-3.5 hover:bg-surface-2 transition-colors"
-                                >
+                              const contextBadge = getCalendarContextBadge(game);
+                              const contextNote = getCalendarContextNote(game);
+                              const href = game.calendarHasDetailPage ? `/game/${game.slug}` : game.calendarUrl;
+                              const isExternal = !game.calendarHasDetailPage && Boolean(game.calendarUrl);
+                              const rowClassName = `flex items-center gap-3 sm:gap-4 px-4 py-3.5 ${href ? "group hover:bg-surface-2 transition-colors" : ""}`;
+
+                              const rowContent = (
+                                <>
                                   <div className="relative w-14 h-[74px] sm:w-[72px] sm:h-24 shrink-0 rounded-lg overflow-hidden bg-surface-2">
                                     {game.coverImage ? (
                                       <Image
@@ -308,14 +418,39 @@ export default function CalendarClientPage({ initialMonth, initialMonthData, tod
                                     )}
                                   </div>
 
-                                  <div className="flex-1 min-w-0 space-y-1">
-                                    <h4 className="text-sm font-semibold text-foreground line-clamp-1 group-hover:text-accent transition-colors">
-                                      {game.title}
-                                    </h4>
+                                  <div className="flex-1 min-w-0 space-y-1.5">
+                                    <div className="flex items-center gap-1.5 min-w-0">
+                                      <h4 className={`text-sm font-semibold text-foreground line-clamp-1 ${href ? "group-hover:text-accent transition-colors" : ""}`}>
+                                        {game.title}
+                                      </h4>
+                                      {isExternal && <ArrowUpRight className="w-3.5 h-3.5 text-tertiary shrink-0" />}
+                                    </div>
+
+                                    {(contextBadge || contextNote) && (
+                                      <div className="flex items-center gap-2 flex-wrap">
+                                        {contextBadge && (
+                                          <span
+                                            className="text-[10px] font-medium px-2 py-1 rounded-lg border bg-surface-2"
+                                            style={{
+                                              color: contextBadge.color ?? undefined,
+                                              borderColor: contextBadge.color ?? undefined,
+                                            }}
+                                          >
+                                            {contextBadge.label}
+                                          </span>
+                                        )}
+                                        {contextNote && (
+                                          <span className="text-[11px] text-secondary">
+                                            {contextNote}
+                                          </span>
+                                        )}
+                                      </div>
+                                    )}
+
                                     <div className="flex items-center gap-2 flex-wrap">
                                       <div className="flex items-center gap-1">
                                         {(() => {
-                                          const { visible, overflow } = collapsePlatforms(game.platforms, 4);
+                                          const { visible, overflow } = collapsePlatforms(game.calendarEntryPlatforms ?? game.platforms, 4);
                                           return (
                                             <>
                                               {visible.map((platform) => (
@@ -354,7 +489,25 @@ export default function CalendarClientPage({ initialMonth, initialMonthData, tod
                                       </span>
                                     )}
                                   </div>
-                                </Link>
+                                </>
+                              );
+
+                              return (
+                                href ? (
+                                  <Link
+                                    key={game.id}
+                                    href={href}
+                                    target={isExternal ? "_blank" : undefined}
+                                    rel={isExternal ? "noreferrer" : undefined}
+                                    className={rowClassName}
+                                  >
+                                    {rowContent}
+                                  </Link>
+                                ) : (
+                                  <div key={game.id} className={rowClassName}>
+                                    {rowContent}
+                                  </div>
+                                )
                               );
                             })}
                           </div>

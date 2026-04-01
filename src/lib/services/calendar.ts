@@ -31,6 +31,50 @@ export function createEmptyCalendarMonthResponse(month: string): CalendarMonthRe
   };
 }
 
+function dedupeRowsById(rows: GameRow[]): GameRow[] {
+  const byId = new Map<string, GameRow>();
+  for (const row of rows) {
+    byId.set(row.id, row);
+  }
+  return Array.from(byId.values());
+}
+
+async function fetchCalendarContextMatches(args: {
+  supabase: ReturnType<typeof getPublicSupabase>;
+  slugs: string[];
+  titles: string[];
+}): Promise<GameRow[]> {
+  const queries: Array<Promise<{ data: GameRow[] | null; error: unknown }>> = [];
+
+  if (args.slugs.length > 0) {
+    queries.push(
+      args.supabase
+        .from("games")
+        .select(GAME_CARD_COLUMNS_WITH_DESC)
+        .in("slug", args.slugs)
+        .limit(Math.max(args.slugs.length * 2, 25)) as unknown as Promise<{ data: GameRow[] | null; error: unknown }>
+    );
+  }
+
+  if (args.titles.length > 0) {
+    queries.push(
+      args.supabase
+        .from("games")
+        .select(GAME_CARD_COLUMNS_WITH_DESC)
+        .in("title", args.titles)
+        .limit(Math.max(args.titles.length * 2, 25)) as unknown as Promise<{ data: GameRow[] | null; error: unknown }>
+    );
+  }
+
+  if (queries.length === 0) {
+    return [];
+  }
+
+  const results = await Promise.all(queries);
+  const rows = results.flatMap((result) => result.data ?? []);
+  return dedupeRowsById(rows);
+}
+
 async function fetchCalendarMonth(month: string, limit: number): Promise<CalendarMonthResponse> {
   if (!hasPublicSupabaseEnv()) {
     return createEmptyCalendarMonthResponse(month);
@@ -63,16 +107,34 @@ async function fetchCalendarMonth(month: string, limit: number): Promise<Calenda
     throw error;
   }
 
-  const dbGames = (data ?? [])
+  const monthRows = (data ?? [])
     .filter((row) => isPublicSafeGame(row) && hasUsableCardImage(row))
-    .map(mapGameRow);
+    ;
+
+  const gxSlugs = Array.from(new Set(gxCalendar.items.map((item) => item.slug).filter((slug): slug is string => Boolean(slug))));
+  const gxTitles = Array.from(new Set(gxCalendar.items.map((item) => item.title).filter(Boolean)));
+
+  let contextRows: GameRow[] = [];
+  try {
+    contextRows = (await fetchCalendarContextMatches({
+      supabase,
+      slugs: gxSlugs,
+      titles: gxTitles,
+    })).filter((row) => isPublicSafeGame(row) && hasUsableCardImage(row));
+  } catch {
+    contextRows = [];
+  }
+
+  const dbMonthGames = monthRows.map(mapGameRow);
+  const dbContextGames = contextRows.map(mapGameRow);
+  const dbGames = Array.from(new Map([...dbMonthGames, ...dbContextGames].map((game) => [game.id, game])).values());
 
   return {
     month,
     items: mergeCalendarGames(dbGames, gxCalendar.items).slice(0, limit),
     gxSource: gxCalendar.source,
     gxCount: gxCalendar.items.length,
-    dbCount: dbGames.length,
+    dbCount: dbMonthGames.length,
     gxFetchedAt: gxCalendar.fetchedAt,
   };
 }

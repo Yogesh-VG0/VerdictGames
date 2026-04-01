@@ -7,7 +7,6 @@ import {
   getGameReviews,
   getSteamReviews,
   getSystemRequirements,
-  searchGames,
 } from "@/lib/api";
 import GameDetailClientPage from "@/components/GameDetailClientPage";
 import {
@@ -16,7 +15,7 @@ import {
   loadGameDetail,
   parseGameDetailRawgId,
 } from "@/lib/services/game-detail";
-import type { Game } from "@/lib/types";
+import { getRelatedGamesForGame } from "@/lib/services/relatedGames";
 
 export const dynamic = "force-dynamic";
 
@@ -27,21 +26,6 @@ if (!GAME_DETAIL_REVALIDATE_SECONDS) {
 interface GameDetailPageProps {
   params: Promise<{ slug: string }>;
   searchParams?: Promise<{ rawgId?: string | string[] | undefined }>;
-}
-
-async function getInitialRelatedGames(game: Game): Promise<Game[]> {
-  const primaryGenre = game.genres[0];
-
-  if (!primaryGenre) {
-    return [];
-  }
-
-  try {
-    const results = await searchGames({ genre: primaryGenre, sort: "top-rated", page: 1 });
-    return results.items.filter((candidate) => candidate.slug !== game.slug).slice(0, 4);
-  } catch {
-    return [];
-  }
 }
 
 export default async function GameDetailPage({ params, searchParams }: GameDetailPageProps) {
@@ -68,7 +52,7 @@ export default async function GameDetailPage({ params, searchParams }: GameDetai
     getGameAchievements(canonicalSlug, 50),
     detail.game.platforms.includes("PC") ? getSystemRequirements(canonicalSlug) : Promise.resolve({ requirements: null }),
     getSteamReviews(canonicalSlug, 21),
-    getInitialRelatedGames(detail.game),
+    getRelatedGamesForGame(detail.game),
   ]);
 
   return (

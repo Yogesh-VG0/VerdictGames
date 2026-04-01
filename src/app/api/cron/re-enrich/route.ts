@@ -14,6 +14,9 @@
 
 import { NextRequest } from "next/server";
 import { jsonOk, jsonError } from "@/lib/api/response";
+import { gxFetchCalendarMonthSnapshot } from "@/lib/external/gx-cache";
+import { getGXCalendar } from "@/lib/external/gxcorner";
+import { getCalendarMonthKey } from "@/lib/utils/gx-calendar";
 
 export const maxDuration = 300; // 5 min max for Vercel
 
@@ -44,6 +47,14 @@ export async function GET(request: NextRequest) {
   const STALE_HOURS = 24;
   const cutoff = new Date(Date.now() - STALE_HOURS * 60 * 60 * 1000).toISOString();
   const lockCutoff = new Date(Date.now() - 10 * 60 * 1000).toISOString(); // 10 min lock TTL
+
+  try {
+    const calendarMonth = getCalendarMonthKey();
+    const snapshot = await gxFetchCalendarMonthSnapshot(calendarMonth, getGXCalendar);
+    log.push(`📅 Calendar snapshot warmup: ${calendarMonth} (${snapshot.items.length} items, source: ${snapshot.source})`);
+  } catch (err) {
+    log.push(`⚠ Calendar snapshot warmup failed: ${(err as Error).message}`);
+  }
 
   // ── 1a. FAST-PATH: Prioritize recently released games that are under-enriched ──
   // Games released in the last 14 days with few reviews are likely major launches

@@ -345,9 +345,12 @@ export interface GXCalendarGame {
   slug: string | null;
   cover: string | null;
   releaseDate: string;
+  originalReleaseDate: string | null;
   hotGame: boolean;
   url: string | null;
   ctaLabel: string | null;
+  tagLabel: string | null;
+  tagColor: string | null;
   genres: string[];
   platforms: string[];
 }
@@ -361,9 +364,21 @@ export interface GXCalendarMonthResponse {
   fetchedAt?: string;
 }
 
+export interface CalendarGame extends Game {
+  calendarOriginalReleaseDate?: string;
+  calendarEntryTag?: string | null;
+  calendarEntryTagColor?: string | null;
+  calendarEntryPlatforms?: Platform[];
+  calendarEntryPlatformNames?: string[];
+  calendarUrl?: string | null;
+  calendarCtaLabel?: string | null;
+  calendarIsHot?: boolean;
+  calendarHasDetailPage?: boolean;
+}
+
 export interface CalendarMonthResponse {
   month: string;
-  items: Game[];
+  items: CalendarGame[];
   gxSource: GXCalendarSource;
   gxCount: number;
   dbCount: number;
