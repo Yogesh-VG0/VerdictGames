@@ -122,13 +122,14 @@ export default function GameDetailClientPage({
     queryKey: ["game", slug, rawgId ?? null],
     queryFn: () => getGameBySlug(slug, rawgId ?? undefined),
     initialData: initialGame,
+    enabled: !initialGame.isPreview,
     staleTime: 60 * 1000,
   });
 
   const { data: reviewsData } = useQuery({
     queryKey: ["gameReviews", slug],
     queryFn: () => getGameReviews(slug, { sort: "helpful" }),
-    enabled: !!game,
+    enabled: !!game && !initialGame.isPreview,
     initialData: initialReviewsData,
     staleTime: 60 * 1000,
   });
@@ -136,7 +137,7 @@ export default function GameDetailClientPage({
   const { data: related } = useQuery({
     queryKey: ["relatedGames", slug],
     queryFn: () => getRelatedGames(slug),
-    enabled: !!game,
+    enabled: !!game && !initialGame.isPreview,
     initialData: initialRelated,
     staleTime: 10 * 60 * 1000,
   });
@@ -144,7 +145,7 @@ export default function GameDetailClientPage({
   const { data: newsData } = useQuery({
     queryKey: ["gameNews", slug],
     queryFn: () => getGameNews(slug, 5),
-    enabled: !!game,
+    enabled: !!game && !initialGame.isPreview,
     initialData: initialNewsData,
     staleTime: 10 * 60 * 1000,
   });
@@ -152,7 +153,7 @@ export default function GameDetailClientPage({
   const { data: achievementsData } = useQuery({
     queryKey: ["gameAchievements", slug],
     queryFn: () => getGameAchievements(slug, 50),
-    enabled: !!game,
+    enabled: !!game && !initialGame.isPreview,
     initialData: initialAchievementsData,
     staleTime: 10 * 60 * 1000,
   });
@@ -160,7 +161,7 @@ export default function GameDetailClientPage({
   const { data: sysReqData } = useQuery({
     queryKey: ["systemRequirements", slug],
     queryFn: () => getSystemRequirements(slug),
-    enabled: !!game && !!game.platforms?.includes("PC"),
+    enabled: !!game && !initialGame.isPreview && !!game.platforms?.includes("PC"),
     initialData: initialSystemRequirements,
     staleTime: 60 * 60 * 1000,
   });
@@ -168,7 +169,7 @@ export default function GameDetailClientPage({
   const { data: editorialReviews } = useQuery({
     queryKey: ["editorialReviews", slug],
     queryFn: () => getEditorialReviews(slug),
-    enabled: !!game,
+    enabled: !!game && !initialGame.isPreview,
     initialData: initialEditorialReviews,
     staleTime: 60 * 60 * 1000,
   });
@@ -377,6 +378,7 @@ export default function GameDetailClientPage({
   const currentPrice = formatPrice(game.priceCurrent, game.priceCurrency);
   const lowestPrice = formatPrice(game.priceLowest, game.priceCurrency);
   const sc = scoreColor(game.score);
+  const isPreviewGame = game.isPreview === true;
   const isProvisional = game.isProvisional || game.releaseStatus === "upcoming" || game.verdictLabel === "COMING SOON";
   const notices = getGameNotices(game);
   const developerName = game.developer?.trim() || null;
@@ -541,7 +543,7 @@ export default function GameDetailClientPage({
 
             {/* ── Verdict Card / Provisional Banner ── */}
             <FadeInSection>
-              {isProvisional ? (
+              {isProvisional || isPreviewGame ? (
                 <motion.section
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -553,15 +555,24 @@ export default function GameDetailClientPage({
                     <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 border border-accent/20">
                       <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />
                       <span className="text-sm font-bold text-accent uppercase tracking-wider">
-                        {game.releaseStatus === "tba" ? "To Be Announced" : game.releaseStatus === "announced" ? "Announced" : "Coming Soon"}
+                        {isPreviewGame
+                          ? "Preview"
+                          : game.releaseStatus === "tba"
+                            ? "To Be Announced"
+                            : game.releaseStatus === "announced"
+                              ? "Announced"
+                              : "Coming Soon"}
                       </span>
                     </div>
                     <p className="text-sm text-secondary max-w-md mx-auto leading-relaxed">
-                      This game page is awaiting full data enrichment. Scores, reviews, and detailed information will be populated automatically when source data becomes available.
+                      {isPreviewGame
+                        ? `This page uses external metadata while verdict.games prepares full tracking, reviews, and richer coverage for ${game.title}.`
+                        : "This game page is awaiting full data enrichment. Scores, reviews, and detailed information will be populated automatically when source data becomes available."}
                     </p>
                     {game.releaseDate && (
                       <p className="text-xs text-tertiary">
-                        Expected release: <span className="text-foreground font-medium">{formatDate(game.releaseDate)}</span>
+                        {isPreviewGame && !isProvisional ? "Release date: " : "Expected release: "}
+                        <span className="text-foreground font-medium">{formatDate(game.releaseDate)}</span>
                       </p>
                     )}
                   </div>
@@ -948,12 +959,14 @@ export default function GameDetailClientPage({
             <div className="lg:sticky space-y-6" style={{ top: "calc(var(--navbar-height, 56px) + 16px)" }}>
 
               {/* ── Add to Library ── */}
-              <FadeInSection>
-                <LibraryStatusSelector
-                  gameId={game.id}
-                  onAuthRequired={() => setAuthModalOpen(true)}
-                />
-              </FadeInSection>
+              {!isPreviewGame && (
+                <FadeInSection>
+                  <LibraryStatusSelector
+                    gameId={game.id}
+                    onAuthRequired={() => setAuthModalOpen(true)}
+                  />
+                </FadeInSection>
+              )}
 
               {/* ── HLTB Data ── */}
               {(game.hltbMain || game.hltbExtras || game.hltbCompletionist) && (
@@ -988,7 +1001,7 @@ export default function GameDetailClientPage({
 
               {/* ── Where to Play ── */}
               <FadeInSection>
-                {(game.steamUrl || game.playStoreUrl || currentPrice) && (
+                {(game.steamUrl || game.playStoreUrl || game.appStoreUrl || game.websiteUrl || currentPrice) && (
                   <section className="rounded-2xl border border-border bg-surface p-5 space-y-4">
                     <h3 className="text-sm font-bold text-foreground uppercase tracking-wider section-title-line">
                       Where to Play
@@ -1247,118 +1260,118 @@ export default function GameDetailClientPage({
           <div className="order-3 lg:col-span-8 space-y-8">
 
             {/* ── Player Thoughts ── */}
-            <FadeInSection>
-              <section className="rounded-2xl border border-border bg-surface p-5 md:p-6 space-y-4">
-                <h3 className="text-sm font-bold text-foreground uppercase tracking-wider section-title-line flex items-center gap-2">
-                  <MessageSquare className="w-4 h-4 text-accent" />
-                  Player Thoughts
-                </h3>
+            {!isPreviewGame && (
+              <FadeInSection>
+                <section className="rounded-2xl border border-border bg-surface p-5 md:p-6 space-y-4">
+                  <h3 className="text-sm font-bold text-foreground uppercase tracking-wider section-title-line flex items-center gap-2">
+                    <MessageSquare className="w-4 h-4 text-accent" />
+                    Player Thoughts
+                  </h3>
 
-                {/* Steam Review Summary Card — only show when we have actual Steam data */}
-                {(game.reviewCount > 0 || game.userScore) && (game.steamUrl || game.scoreSource === "steam" || game.steamRatingLabel) && (
-                  <div className="rounded-xl border border-border bg-surface-2 p-4 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Gamepad2 className="w-4 h-4 text-accent" />
-                        <span className="text-sm font-semibold text-foreground">Steam Reviews</span>
+                  {(game.reviewCount > 0 || game.userScore) && (game.steamUrl || game.scoreSource === "steam" || game.steamRatingLabel) && (
+                    <div className="rounded-xl border border-border bg-surface-2 p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Gamepad2 className="w-4 h-4 text-accent" />
+                          <span className="text-sm font-semibold text-foreground">Steam Reviews</span>
+                        </div>
+                        {game.steamRatingLabel && (
+                          <span className={cn(
+                            "text-xs font-bold px-2 py-0.5 rounded-full border",
+                            game.userScore && game.userScore >= 80
+                              ? "bg-score-great/15 text-score-great border-score-great/25"
+                              : game.userScore && game.userScore >= 70
+                                ? "bg-score-good/15 text-score-good border-score-good/25"
+                                : game.userScore && game.userScore >= 50
+                                  ? "bg-score-mixed/15 text-score-mixed border-score-mixed/25"
+                                  : "bg-score-bad/15 text-score-bad border-score-bad/25"
+                          )}>
+                            {game.steamRatingLabel}
+                          </span>
+                        )}
                       </div>
-                      {game.steamRatingLabel && (
-                        <span className={cn(
-                          "text-xs font-bold px-2 py-0.5 rounded-full border",
-                          game.userScore && game.userScore >= 80
-                            ? "bg-score-great/15 text-score-great border-score-great/25"
-                            : game.userScore && game.userScore >= 70
-                              ? "bg-score-good/15 text-score-good border-score-good/25"
-                              : game.userScore && game.userScore >= 50
-                                ? "bg-score-mixed/15 text-score-mixed border-score-mixed/25"
-                                : "bg-score-bad/15 text-score-bad border-score-bad/25"
-                        )}>
-                          {game.steamRatingLabel}
-                        </span>
+
+                      {game.userScore != null && (
+                        <div className="space-y-1.5">
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="text-secondary">
+                              <span className="text-score-great font-semibold">{game.userScore}%</span> positive
+                            </span>
+                            <span className="text-tertiary">
+                              {game.reviewCount.toLocaleString()} reviews
+                            </span>
+                          </div>
+                          <div
+                            className="steam-review-bar"
+                            style={{ "--positive-pct": `${game.userScore}%` } as React.CSSProperties}
+                          />
+                          <div className="flex items-center justify-between text-[10px] text-tertiary">
+                            <span className="flex items-center gap-1"><ThumbsUp className="w-3 h-3" /> ~{Math.round(game.reviewCount * (game.userScore / 100)).toLocaleString()} positive</span>
+                            <span className="flex items-center gap-1"><ThumbsDown className="w-3 h-3" /> ~{Math.round(game.reviewCount * ((100 - game.userScore) / 100)).toLocaleString()} negative</span>
+                          </div>
+                        </div>
+                      )}
+
+                      {game.steamUrl && (
+                        <a
+                          href={game.steamUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block text-center text-xs text-accent hover:text-accent-hover font-medium transition-colors pt-1"
+                        >
+                          View all reviews on Steam →
+                        </a>
                       )}
                     </div>
+                  )}
 
-                    {/* Review percentage bar */}
-                    {game.userScore != null && (
-                      <div className="space-y-1.5">
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="text-secondary">
-                            <span className="text-score-great font-semibold">{game.userScore}%</span> positive
-                          </span>
-                          <span className="text-tertiary">
-                            {game.reviewCount.toLocaleString()} reviews
-                          </span>
+                  {reviewsData?.items && reviewsData.items.length > 0 ? (
+                    <div className="space-y-3">
+                      <h4 className="text-xs font-semibold text-secondary uppercase tracking-wider">
+                        Verdict.games Community
+                      </h4>
+                      {reviewsData.items.map((review) => (
+                        <div key={review.id} className="space-y-2">
+                          <ReviewCard
+                            review={review}
+                            showGame={false}
+                            onAuthRequired={() => setAuthModalOpen(true)}
+                          />
+                          <CommentThread
+                            reviewId={review.id}
+                            onAuthRequired={() => setAuthModalOpen(true)}
+                          />
                         </div>
-                        <div
-                          className="steam-review-bar"
-                          style={{ "--positive-pct": `${game.userScore}%` } as React.CSSProperties}
-                        />
-                        <div className="flex items-center justify-between text-[10px] text-tertiary">
-                          <span className="flex items-center gap-1"><ThumbsUp className="w-3 h-3" /> ~{Math.round(game.reviewCount * (game.userScore / 100)).toLocaleString()} positive</span>
-                          <span className="flex items-center gap-1"><ThumbsDown className="w-3 h-3" /> ~{Math.round(game.reviewCount * ((100 - game.userScore) / 100)).toLocaleString()} negative</span>
-                        </div>
-                      </div>
-                    )}
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="rounded-xl border border-dashed border-border bg-surface-2 p-6 text-center space-y-2">
+                      <p className="text-secondary text-sm font-medium">
+                        Be the first to share your thoughts on Verdict.games!
+                      </p>
+                      <p className="text-tertiary text-xs">
+                        Player thoughts from Verdict.games members will appear here.
+                      </p>
+                    </div>
+                  )}
 
-                    {game.steamUrl && (
-                      <a
-                        href={game.steamUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="block text-center text-xs text-accent hover:text-accent-hover font-medium transition-colors pt-1"
-                      >
-                        View all reviews on Steam →
-                      </a>
-                    )}
-                  </div>
-                )}
-
-                {/* Verdict.games community reviews */}
-                {reviewsData?.items && reviewsData.items.length > 0 ? (
-                  <div className="space-y-3">
-                    <h4 className="text-xs font-semibold text-secondary uppercase tracking-wider">
-                      Verdict.games Community
-                    </h4>
-                    {reviewsData.items.map((review) => (
-                      <div key={review.id} className="space-y-2">
-                        <ReviewCard
-                          review={review}
-                          showGame={false}
-                          onAuthRequired={() => setAuthModalOpen(true)}
-                        />
-                        <CommentThread
-                          reviewId={review.id}
-                          onAuthRequired={() => setAuthModalOpen(true)}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="rounded-xl border border-dashed border-border bg-surface-2 p-6 text-center space-y-2">
-                    <p className="text-secondary text-sm font-medium">
-                      Be the first to share your thoughts on Verdict.games!
-                    </p>
-                    <p className="text-tertiary text-xs">
-                      Player thoughts from Verdict.games members will appear here.
-                    </p>
-                  </div>
-                )}
-
-                {/* Review submission form */}
-                <ReviewForm
-                  gameId={game.id}
-                  gameSlug={slug}
-                  onAuthRequired={() => setAuthModalOpen(true)}
-                />
-              </section>
-            </FadeInSection>
+                  <ReviewForm
+                    gameId={game.id}
+                    gameSlug={slug}
+                    onAuthRequired={() => setAuthModalOpen(true)}
+                  />
+                </section>
+              </FadeInSection>
+            )}
 
             {/* ── Steam Player Reviews ── */}
-            <FadeInSection>
-              <section className="rounded-2xl border border-border bg-surface p-5 md:p-6">
-                <SteamReviews slug={slug} initialData={initialSteamReviewsData} />
-              </section>
-            </FadeInSection>
+            {!isPreviewGame && (
+              <FadeInSection>
+                <section className="rounded-2xl border border-border bg-surface p-5 md:p-6">
+                  <SteamReviews slug={slug} initialData={initialSteamReviewsData} />
+                </section>
+              </FadeInSection>
+            )}
           </div>
         </div>
 

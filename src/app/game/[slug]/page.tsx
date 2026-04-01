@@ -45,20 +45,21 @@ export default async function GameDetailPage({ params, searchParams }: GameDetai
   }
 
   const canonicalSlug = detail.game.slug;
+  const isPreview = detail.game.isPreview === true;
   const [reviewsData, editorialReviews, newsData, achievementsData, systemRequirements, steamReviewsData, related] = await Promise.all([
-    getGameReviews(canonicalSlug, { sort: "helpful" }),
-    getEditorialReviews(canonicalSlug),
-    getGameNews(canonicalSlug, 5),
-    getGameAchievements(canonicalSlug, 50),
-    detail.game.platforms.includes("PC") ? getSystemRequirements(canonicalSlug) : Promise.resolve({ requirements: null }),
-    getSteamReviews(canonicalSlug, 21),
+    isPreview ? Promise.resolve({ items: [], total: 0, page: 1, pageSize: 24, hasMore: false }) : getGameReviews(canonicalSlug, { sort: "helpful" }),
+    isPreview ? Promise.resolve([]) : getEditorialReviews(canonicalSlug),
+    isPreview ? Promise.resolve({ title: detail.game.title, news: [] }) : getGameNews(canonicalSlug, 5),
+    isPreview ? Promise.resolve({ title: detail.game.title, total: 0, achievements: [] }) : getGameAchievements(canonicalSlug, 50),
+    isPreview ? Promise.resolve({ requirements: null }) : detail.game.platforms.includes("PC") ? getSystemRequirements(canonicalSlug) : Promise.resolve({ requirements: null }),
+    isPreview ? Promise.resolve({ reviews: [], total: 0, steamAppId: null }) : getSteamReviews(canonicalSlug, 21),
     getRelatedGamesForGame(detail.game),
   ]);
 
   return (
     <GameDetailClientPage
       slug={canonicalSlug}
-      rawgId={null}
+      rawgId={detail.game.rawgId ?? null}
       initialGame={detail.game}
       initialReviewsData={reviewsData}
       initialRelated={related}

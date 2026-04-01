@@ -143,6 +143,15 @@ function getCalendarContextNote(game: CalendarGame): string | null {
   return `Originally released ${formatCalendarMetaDate(originalDay)}`;
 }
 
+function getCalendarExternalLabel(game: CalendarGame): string {
+  const rawLabel = game.calendarCtaLabel?.trim();
+  if (!rawLabel) {
+    return "Store";
+  }
+
+  return rawLabel.toLowerCase() === "check" ? "Check Store" : rawLabel;
+}
+
 function getCalendarStatus(game: CalendarGame, today: string): { label: string; className: string } {
   if (!game.releaseDate) {
     return { label: "TBA", className: "text-tertiary bg-surface-2" };
@@ -396,9 +405,11 @@ export default function CalendarClientPage({ initialMonth, initialMonthData, tod
                               const status = getCalendarStatus(game, today);
                               const contextBadge = getCalendarContextBadge(game);
                               const contextNote = getCalendarContextNote(game);
-                              const href = game.calendarHasDetailPage ? `/game/${game.slug}` : game.calendarUrl;
-                              const isExternal = !game.calendarHasDetailPage && Boolean(game.calendarUrl);
-                              const rowClassName = `flex items-center gap-3 sm:gap-4 px-4 py-3.5 ${href ? "group hover:bg-surface-2 transition-colors" : ""}`;
+                              const primaryHref = game.calendarHasDetailPage && game.slug ? `/game/${game.slug}` : game.calendarUrl;
+                              const primaryIsExternal = !game.calendarHasDetailPage && Boolean(game.calendarUrl);
+                              const externalHref = game.calendarHasDetailPage ? game.calendarUrl : null;
+                              const rowClassName = "flex items-center gap-3 sm:gap-4 px-4 py-3.5";
+                              const mainContentClassName = `flex min-w-0 flex-1 items-center gap-3 sm:gap-4 ${primaryHref ? "group hover:bg-surface-2 transition-colors rounded-xl -m-2 p-2" : ""}`;
 
                               const rowContent = (
                                 <>
@@ -420,10 +431,10 @@ export default function CalendarClientPage({ initialMonth, initialMonthData, tod
 
                                   <div className="flex-1 min-w-0 space-y-1.5">
                                     <div className="flex items-center gap-1.5 min-w-0">
-                                      <h4 className={`text-sm font-semibold text-foreground line-clamp-1 ${href ? "group-hover:text-accent transition-colors" : ""}`}>
+                                      <h4 className={`text-sm font-semibold text-foreground line-clamp-1 ${primaryHref ? "group-hover:text-accent transition-colors" : ""}`}>
                                         {game.title}
                                       </h4>
-                                      {isExternal && <ArrowUpRight className="w-3.5 h-3.5 text-tertiary shrink-0" />}
+                                      {primaryIsExternal && <ArrowUpRight className="w-3.5 h-3.5 text-tertiary shrink-0" />}
                                     </div>
 
                                     {(contextBadge || contextNote) && (
@@ -493,21 +504,35 @@ export default function CalendarClientPage({ initialMonth, initialMonthData, tod
                               );
 
                               return (
-                                href ? (
-                                  <Link
-                                    key={game.id}
-                                    href={href}
-                                    target={isExternal ? "_blank" : undefined}
-                                    rel={isExternal ? "noreferrer" : undefined}
-                                    className={rowClassName}
-                                  >
-                                    {rowContent}
-                                  </Link>
-                                ) : (
-                                  <div key={game.id} className={rowClassName}>
-                                    {rowContent}
-                                  </div>
-                                )
+                                <div key={game.id} className={rowClassName}>
+                                  {primaryHref ? (
+                                    <Link
+                                      href={primaryHref}
+                                      target={primaryIsExternal ? "_blank" : undefined}
+                                      rel={primaryIsExternal ? "noreferrer" : undefined}
+                                      prefetch={primaryIsExternal ? undefined : false}
+                                      className={mainContentClassName}
+                                    >
+                                      {rowContent}
+                                    </Link>
+                                  ) : (
+                                    <div className={mainContentClassName}>
+                                      {rowContent}
+                                    </div>
+                                  )}
+
+                                  {externalHref && (
+                                    <a
+                                      href={externalHref}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="shrink-0 inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-medium text-secondary border border-border bg-surface-2 hover:text-accent hover:border-accent/30 hover:bg-accent/5 transition-colors"
+                                    >
+                                      {getCalendarExternalLabel(game)}
+                                      <ArrowUpRight className="w-3.5 h-3.5" />
+                                    </a>
+                                  )}
+                                </div>
                               );
                             })}
                           </div>

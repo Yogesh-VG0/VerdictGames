@@ -21,12 +21,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 
   const game = detail.game;
+  const isPreview = game.isPreview === true;
   const description = game.verdictSummary
     ? `${game.verdictSummary.slice(0, 155)}…`
     : `${game.title} — ${game.score}/100 verdict score. ${game.genres.slice(0, 3).join(", ")} game by ${game.developer}.`;
   const canonicalPath = `/game/${detail.canonicalSlug}`;
   const pageUrl = `${SITE_URL}${canonicalPath}`;
   const ogImage = game.coverImage || game.headerImage || DEFAULT_OG_IMAGE;
+  const metaTitle = isPreview ? `${game.title} — Preview` : `${game.title} — ${game.score}/100 Verdict`;
+  const ogAlt = isPreview ? `${game.title} — Preview` : `${game.title} — ${game.score}/100 Verdict`;
   const keywords = [
     game.title,
     ...game.genres.slice(0, 4),
@@ -37,21 +40,21 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   ].filter(Boolean);
 
   return {
-    title: `${game.title} — ${game.score}/100 Verdict`,
+    title: metaTitle,
     description,
     keywords,
     alternates: { canonical: canonicalPath },
     openGraph: {
-      title: `${game.title} — ${game.score}/100 Verdict`,
+      title: metaTitle,
       description,
       url: pageUrl,
-      images: [{ url: ogImage, width: 1200, height: 630, alt: `${game.title} — ${game.score}/100 Verdict` }],
+      images: [{ url: ogImage, width: 1200, height: 630, alt: ogAlt }],
       type: "article",
       siteName: "verdict.games",
     },
     twitter: {
       card: "summary_large_image",
-      title: `${game.title} — ${game.score}/100 Verdict`,
+      title: metaTitle,
       description,
       images: [ogImage],
     },

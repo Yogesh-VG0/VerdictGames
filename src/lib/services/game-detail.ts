@@ -1,5 +1,18 @@
 import { unstable_cache } from "next/cache";
 import { mapGameRow } from "@/lib/db/mappers";
+import {
+  extractPlayStoreUrl,
+  extractSteamAppId,
+  getRawgGame,
+  getRawgScreenshots,
+  getRawgStoreLinks,
+  mapRawgPlatforms,
+  searchRawg,
+  type RawgGameDetail,
+  type RawgScreenshot,
+  type RawgSearchResult,
+  type RawgStoreLink,
+} from "@/lib/external/rawg";
 import { getPublicSupabase, hasPublicSupabaseEnv } from "@/lib/supabase/public";
 import type { GameRow } from "@/lib/supabase/types";
 import type { Game } from "@/lib/types";
@@ -24,6 +37,11 @@ type CachedGameRecord = {
   mobileListings: MobileStoreListing[];
 };
 
+type PreviewGameRecord = {
+  game: Game;
+  canonicalSlug: string;
+};
+
 export type GameDetailLookupResult =
   | {
       status: "ok";
@@ -31,7 +49,7 @@ export type GameDetailLookupResult =
       requestedSlug: string;
       canonicalSlug: string;
       shouldRedirect: boolean;
-      resolvedVia: "slug" | "redirect" | "rawgId";
+      resolvedVia: "slug" | "redirect" | "rawgId" | "preview";
       blockedRequestedSlug: boolean;
       redirectSlug: string | null;
     }
@@ -60,6 +78,152 @@ function withVerifiedMobileStoreUrls(game: Game, mobileListings: MobileStoreList
   }
 
   return nextGame;
+}
+
+function normalizePreviewIdentity(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/-/g, " ")
+    .replace(/[^a-z0-9\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function humanizePreviewSlug(slug: string): string {
+  return slug.replace(/-/g, " ").replace(/\s+/g, " ").trim();
+}
+
+function pickRawgPreviewCandidate(requestedSlug: string, results: RawgSearchResult[]): RawgSearchResult | null {
+  const normalizedRequestedSlug = requestedSlug.trim().toLowerCase();
+  const requestedTitleKey = normalizePreviewIdentity(humanizePreviewSlug(requestedSlug));
+
+  return results.find((result) => result.slug.trim().toLowerCase() === normalizedRequestedSlug)
+    ?? results.find((result) => normalizePreviewIdentity(result.name) === requestedTitleKey)
+    ?? null;
+}
+
+function mapRawgPreviewGame(args: {
+  detail: RawgGameDetail;
+  screenshots: RawgScreenshot[];
+  storeLinks: RawgStoreLink[];
+}): Game {
+  const { detail, screenshots, storeLinks } = args;
+  const today = new Date().toISOString().slice(0, 10);
+  const releaseDate = detail.released ?? "";
+  const isUpcoming = Boolean(releaseDate && releaseDate > today);
+  const score = isUpcoming
+    ? 0
+    : detail.metacritic ?? Math.round((detail.rating ?? 0) * 20);
+  const verdictLabel: Game["verdictLabel"] = isUpcoming
+    ? "COMING SOON"
+    : score >= 80
+      ? "MUST PLAY"
+      : score >= 65
+        ? "WORTH IT"
+        : "MIXED";
+  const steamAppId = extractSteamAppId(detail.stores, storeLinks) ?? undefined;
+  const screenshotsList = screenshots.length > 0
+    ? screenshots.map((item) => item.image).filter(Boolean)
+    : (detail.short_screenshots ?? []).map((item) => item.image).filter(Boolean);
+
+  return {
+    id: `rawg-${detail.id}`,
+    slug: detail.slug,
+    title: detail.name,
+    subtitle: detail.name_original && detail.name_original !== detail.name ? detail.name_original : undefined,
+    coverImage: detail.background_image ?? detail.background_image_additional ?? screenshotsList[0] ?? "",
+    headerImage: detail.background_image_additional ?? detail.background_image ?? screenshotsList[0] ?? "",
+    screenshots: screenshotsList,
+    platforms: mapRawgPlatforms(detail.platforms) as Game["platforms"],
+    genres: (detail.genres ?? []).map((genre) => genre.name),
+    tags: (detail.tags ?? []).slice(0, 8).map((tag) => tag.name),
+    developer: (detail.developers ?? []).map((developer) => developer.name).join(", "),
+    publisher: (detail.publishers ?? []).map((publisher) => publisher.name).join(", "),
+    releaseDate,
+    description: detail.description_raw ?? "",
+    score,
+    verdictLabel,
+    verdictSummary: isUpcoming
+      ? `${detail.name} is scheduled to launch on ${releaseDate}.`
+      : `Preview data sourced from RAWG while verdict.games builds a full tracked page for ${detail.name}.`,
+    pros: [],
+    cons: [],
+    monetization: "Paid",
+    performanceNotes: "",
+    monetizationNotes: "",
+    steamUrl: steamAppId ? `https://store.steampowered.com/app/${steamAppId}` : undefined,
+    playStoreUrl: extractPlayStoreUrl(detail.stores, storeLinks) ?? undefined,
+    steamAppId,
+    reviewCount: detail.ratings_count ?? 0,
+    rawgId: detail.id,
+    isPreview: true,
+    previewSource: "rawg",
+    websiteUrl: detail.website ?? undefined,
+    redditUrl: detail.reddit_url ?? undefined,
+    metacriticUrl: detail.metacritic_url ?? undefined,
+    rawgMetacritic: detail.metacritic ?? undefined,
+    rawgRating: detail.rating ?? undefined,
+    scoreSource: "rawg",
+    enrichmentSources: ["rawg"],
+    isProvisional: isUpcoming,
+    releaseStatus: isUpcoming ? "upcoming" : undefined,
+  };
+}
+
+async function fetchRawgPreviewRecordByRawgId(rawgId: number): Promise<PreviewGameRecord | null> {
+  try {
+    const detail = await getRawgGame(rawgId);
+    if (!detail.slug) {
+      return null;
+    }
+
+    const [screenshots, storeLinks] = await Promise.all([
+      getRawgScreenshots(rawgId).catch(() => []),
+      getRawgStoreLinks(rawgId).catch(() => []),
+    ]);
+
+    return {
+      game: mapRawgPreviewGame({ detail, screenshots, storeLinks }),
+      canonicalSlug: detail.slug,
+    };
+  } catch {
+    return null;
+  }
+}
+
+async function getCachedRawgPreviewRecordByRawgId(rawgId: number): Promise<PreviewGameRecord | null> {
+  return unstable_cache(
+    async () => fetchRawgPreviewRecordByRawgId(rawgId),
+    ["game-detail-preview-v1", `rawg:${rawgId}`],
+    { revalidate: 3600 }
+  )();
+}
+
+async function fetchRawgPreviewRecordBySlug(slug: string): Promise<PreviewGameRecord | null> {
+  try {
+    const query = humanizePreviewSlug(slug);
+    if (!query) {
+      return null;
+    }
+
+    const searchResults = await searchRawg(query, 1, 5);
+    const candidate = pickRawgPreviewCandidate(slug, searchResults.results);
+    if (!candidate) {
+      return null;
+    }
+
+    return fetchRawgPreviewRecordByRawgId(candidate.id);
+  } catch {
+    return null;
+  }
+}
+
+async function getCachedRawgPreviewRecordBySlug(slug: string): Promise<PreviewGameRecord | null> {
+  return unstable_cache(
+    async () => fetchRawgPreviewRecordBySlug(slug),
+    ["game-detail-preview-v1", `slug:${slug}`],
+    { revalidate: 3600 }
+  )();
 }
 
 async function fetchGameRecord(args: {
@@ -214,6 +378,23 @@ export async function loadGameDetail(args: {
   const record = await getCachedGameRecord({ slug: lookupSlug });
 
   if (!record) {
+    const previewRecord = rawgId != null
+      ? (await getCachedRawgPreviewRecordByRawgId(rawgId)) ?? await getCachedRawgPreviewRecordBySlug(lookupSlug)
+      : await getCachedRawgPreviewRecordBySlug(lookupSlug);
+
+    if (previewRecord) {
+      return {
+        status: "ok",
+        game: previewRecord.game,
+        requestedSlug,
+        canonicalSlug: previewRecord.canonicalSlug,
+        shouldRedirect: previewRecord.canonicalSlug !== requestedSlug,
+        resolvedVia: "preview",
+        blockedRequestedSlug,
+        redirectSlug,
+      };
+    }
+
     return {
       status: "not-found",
       requestedSlug,

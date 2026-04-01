@@ -14,7 +14,7 @@
 import { getServerSupabase } from "@/lib/supabase/server";
 import type { GXCalendarEntry } from "@/lib/external/gxcorner";
 import type { GXCalendarGame, GXCalendarMonthResponse } from "@/lib/types";
-import { filterGXCalendarEntriesByMonth, getCalendarMonthKey, isPastCalendarMonth } from "@/lib/utils/gx-calendar";
+import { dedupeGXCalendarGames, filterGXCalendarEntriesByMonth, getCalendarMonthKey, isPastCalendarMonth } from "@/lib/utils/gx-calendar";
 
 type FeedKey =
   | "highlights"
@@ -80,9 +80,11 @@ function normalizeGXCalendarPayload(payload: unknown): GXCalendarGame[] | null {
     return null;
   }
 
-  return parsed
-    .map(normalizeGXCalendarGame)
-    .filter((item): item is GXCalendarGame => item !== null);
+  return dedupeGXCalendarGames(
+    parsed
+      .map(normalizeGXCalendarGame)
+      .filter((item): item is GXCalendarGame => item !== null)
+  );
 }
 
 function getGXCalendarSnapshotKey(item: GXCalendarGame): string {

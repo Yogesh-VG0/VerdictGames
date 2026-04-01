@@ -203,6 +203,68 @@ function getCalendarMatchKey(item: { slug?: string | null; title: string }): str
   return slug ? `slug:${slug}` : `title:${normalizeCalendarIdentity(item.title)}`;
 }
 
+function getGXCalendarDedupKey(item: Pick<GXCalendarGame, "slug" | "title" | "releaseDate">): string {
+  const identity = item.slug?.trim()
+    ? `slug:${item.slug.trim().toLowerCase()}`
+    : `title:${normalizeCalendarIdentity(item.title)}`;
+  const day = item.releaseDate.slice(0, 10) || "tba";
+  return `${identity}:${day}`;
+}
+
+function getGXCalendarSpecificityScore(item: GXCalendarGame): number {
+  const originalDay = item.originalReleaseDate?.slice(0, 10) ?? null;
+  const entryDay = item.releaseDate?.slice(0, 10) ?? null;
+  let score = 0;
+
+  if (item.tagLabel) score += 8;
+  if (item.tagColor) score += 1;
+  if (item.hotGame) score += 2;
+  if (item.url) score += 1;
+  if (item.cover) score += 1;
+  if (item.ctaLabel) score += 1;
+  if (originalDay && entryDay && originalDay < entryDay) score += 6;
+  if (item.platforms.length > 0) score += Math.max(0, 6 - Math.min(item.platforms.length, 5));
+
+  return score;
+}
+
+function mergeGXCalendarDuplicatePair(preferred: GXCalendarGame, fallback: GXCalendarGame): GXCalendarGame {
+  return {
+    ...preferred,
+    cover: preferred.cover ?? fallback.cover,
+    originalReleaseDate: preferred.originalReleaseDate ?? fallback.originalReleaseDate,
+    hotGame: preferred.hotGame || fallback.hotGame,
+    url: preferred.url ?? fallback.url,
+    ctaLabel: preferred.ctaLabel ?? fallback.ctaLabel,
+    tagLabel: preferred.tagLabel ?? fallback.tagLabel,
+    tagColor: preferred.tagColor ?? fallback.tagColor,
+    genres: preferred.genres.length > 0 ? preferred.genres : fallback.genres,
+    platforms: preferred.platforms.length > 0 ? preferred.platforms : fallback.platforms,
+  };
+}
+
+export function dedupeGXCalendarGames(items: GXCalendarGame[]): GXCalendarGame[] {
+  const byKey = new Map<string, GXCalendarGame>();
+
+  for (const item of items) {
+    const key = getGXCalendarDedupKey(item);
+    const existing = byKey.get(key);
+
+    if (!existing) {
+      byKey.set(key, item);
+      continue;
+    }
+
+    const preferred = getGXCalendarSpecificityScore(item) > getGXCalendarSpecificityScore(existing)
+      ? item
+      : existing;
+    const fallback = preferred === item ? existing : item;
+    byKey.set(key, mergeGXCalendarDuplicatePair(preferred, fallback));
+  }
+
+  return Array.from(byKey.values());
+}
+
 function inferCalendarTagFromPlatforms(platforms: string[]): { label: string; color: string | null } | null {
   const normalized = platforms.map((platform) => platform.toLowerCase());
 
@@ -344,10 +406,11 @@ export function mapGXCalendarEntry(entry: GXCalendarEntry): GXCalendarGame {
 }
 
 export function filterGXCalendarEntriesByMonth(entries: GXCalendarEntry[], month: string): GXCalendarGame[] {
-  return entries
-    .map(mapGXCalendarEntry)
-    .filter((entry) => (entry.releaseDate ?? "").slice(0, 7) === month)
-    .sort((a, b) => a.releaseDate.localeCompare(b.releaseDate) || a.title.localeCompare(b.title));
+  return dedupeGXCalendarGames(
+    entries
+      .map(mapGXCalendarEntry)
+      .filter((entry) => (entry.releaseDate ?? "").slice(0, 7) === month)
+  ).sort((a, b) => a.releaseDate.localeCompare(b.releaseDate) || a.title.localeCompare(b.title));
 }
 
 export function gxCalendarToGame(gx: GXCalendarGame): CalendarGame {
@@ -391,17 +454,19 @@ export function gxCalendarToGame(gx: GXCalendarGame): CalendarGame {
     calendarUrl: gx.url,
     calendarCtaLabel: gx.ctaLabel,
     calendarIsHot: gx.hotGame,
-    calendarHasDetailPage: false,
+    calendarHasDetailPage: Boolean(gx.slug),
   };
 }
 
 export function mergeCalendarGames(dbGames: Game[], gxGames: GXCalendarGame[]): CalendarGame[] {
   const normalizedDbGames = [...dbGames].sort((a, b) => (a.releaseDate ?? "").localeCompare(b.releaseDate ?? "") || a.title.localeCompare(b.title));
+  const normalizedGXGames = dedupeGXCalendarGames(gxGames)
+    .sort((a, b) => a.releaseDate.localeCompare(b.releaseDate) || a.title.localeCompare(b.title));
   const dbByKey = new Map(normalizedDbGames.map((game) => [getCalendarMatchKey(game), game]));
   const matchedDbKeys = new Set<string>();
   const mergedGames: CalendarGame[] = [];
 
-  for (const gxGame of gxGames) {
+  for (const gxGame of normalizedGXGames) {
     const match = dbByKey.get(getCalendarMatchKey(gxGame));
     if (match) {
       matchedDbKeys.add(getCalendarMatchKey(match));
