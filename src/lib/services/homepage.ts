@@ -45,6 +45,7 @@ import {
 } from "@/lib/utils/trending";
 import type { GameRow } from "@/lib/supabase/types";
 import type { Game, GXDeal } from "@/lib/types";
+import type { RawgListItem } from "@/lib/external/rawg";
 
 /* ═══════════════════════════════════════════════════
    Homepage Recency Helpers
@@ -234,24 +235,12 @@ function preferHomepageTopRatedPool(rows: GameRow[], desiredCount: number): Game
 }
 
 function preferHomepageTrendingQualityPool(rows: GameRow[], desiredCount: number): GameRow[] {
-  const premiumPool = rows.filter((row) => {
-    const qualityScore = confidenceWeightedScore(row);
-    return qualityScore >= 78
-      || (row.is_trending_manual ?? false)
-      || (row.current_players ?? 0) >= 30000
-      || ((row.momentum ?? 0) >= 0.2 && (row.review_count ?? 0) >= 250);
-  });
+  const premiumPool = rows.filter(isPremiumTrendingCandidate);
   if (premiumPool.length >= desiredCount) {
     return premiumPool;
   }
 
-  const strongPool = rows.filter((row) => {
-    const qualityScore = confidenceWeightedScore(row);
-    return qualityScore >= 72
-      || (row.is_trending_manual ?? false)
-      || (row.current_players ?? 0) >= 20000
-      || ((row.momentum ?? 0) >= 0.14 && (row.review_count ?? 0) >= 150);
-  });
+  const strongPool = rows.filter(isAcceptableTrendingCandidate);
   if (strongPool.length >= desiredCount) {
     return strongPool;
   }
@@ -267,11 +256,11 @@ function getHomepageTrendingScore(row: GameRow): number {
     ? (Date.now() - new Date(`${row.release_date}T00:00:00`).getTime()) / 86400000
     : Number.POSITIVE_INFINITY;
 
-  const highActivityBonus = currentPlayers >= 10000
+  const highActivityBonus = currentPlayers >= 10000 && momentum >= 0.03
     ? 10
-    : currentPlayers >= 5000
+    : currentPlayers >= 5000 && momentum >= 0.04
       ? 7
-      : currentPlayers >= 1500
+      : currentPlayers >= 1500 && momentum >= 0.05
         ? 4
         : 0;
   const breakoutBonus = momentum >= 0.2 && currentPlayers >= 500
@@ -297,10 +286,10 @@ function preferHomepageTrendingSignalPool(rows: GameRow[], desiredCount: number)
       : Number.POSITIVE_INFINITY;
 
     return (row.is_trending_manual ?? false)
-      || currentPlayers >= 750
-      || (ageDays <= 14 && currentPlayers >= 150)
-      || (ageDays <= 45 && currentPlayers >= 300 && momentum >= 0.08)
-      || (ageDays <= 90 && currentPlayers >= 500 && momentum >= 0);
+      || (currentPlayers >= 5000 && momentum >= 0.04)
+      || ((row.trending ?? false) && currentPlayers >= 3500 && momentum >= -0.02)
+      || (ageDays <= 21 && currentPlayers >= 120 && momentum >= 0.06)
+      || (ageDays <= 60 && currentPlayers >= 220 && momentum >= 0.08);
   });
   if (premiumPool.length >= Math.min(desiredCount, 12)) {
     return premiumPool;
@@ -314,10 +303,10 @@ function preferHomepageTrendingSignalPool(rows: GameRow[], desiredCount: number)
       : Number.POSITIVE_INFINITY;
 
     return (row.is_trending_manual ?? false)
-      || currentPlayers >= 400
-      || (ageDays <= 21 && currentPlayers >= 120)
-      || (ageDays <= 60 && currentPlayers >= 250 && momentum >= 0.1)
-      || (ageDays <= 120 && currentPlayers >= 400 && momentum >= -0.02);
+      || (currentPlayers >= 2500 && momentum >= 0.04)
+      || ((row.trending ?? false) && currentPlayers >= 2200 && momentum >= -0.03)
+      || (ageDays <= 45 && currentPlayers >= 100 && momentum >= 0.05)
+      || (ageDays <= 120 && currentPlayers >= 150 && momentum >= 0.03);
   });
   if (strongPool.length >= desiredCount) {
     return strongPool;
@@ -331,11 +320,9 @@ function isHomepageTrendingDisplayGame(row: GameRow): boolean {
   const currentPlayers = row.current_players ?? 0;
   const momentum = row.momentum ?? 0;
 
-  return (row.is_trending_manual ?? false)
-    || qualityScore >= 72
-    || currentPlayers >= 15000
-    || ((row.trending ?? false) && currentPlayers >= 5000 && qualityScore >= 68)
-    || (momentum >= 0.18 && currentPlayers >= 1000 && qualityScore >= 68);
+  return isPremiumTrendingCandidate(row)
+    || ((row.trending ?? false) && currentPlayers >= 5000 && momentum >= -0.02 && qualityScore >= 68)
+    || (momentum >= 0.12 && currentPlayers >= 250 && qualityScore >= 68);
 }
 
 function isHomepageTrendingFallbackDisplayGame(row: GameRow): boolean {
@@ -343,11 +330,9 @@ function isHomepageTrendingFallbackDisplayGame(row: GameRow): boolean {
   const currentPlayers = row.current_players ?? 0;
   const momentum = row.momentum ?? 0;
 
-  return (row.is_trending_manual ?? false)
-    || qualityScore >= 68
-    || currentPlayers >= 25000
-    || ((row.trending ?? false) && currentPlayers >= 10000)
-    || (momentum >= 0.24 && currentPlayers >= 1500 && qualityScore >= 65);
+  return isAcceptableTrendingCandidate(row)
+    || ((row.trending ?? false) && currentPlayers >= 3000 && momentum >= -0.03 && qualityScore >= 68)
+    || (momentum >= 0.08 && currentPlayers >= 175 && qualityScore >= 66);
 }
 
 /* ═══════════════════════════════════════════════════
@@ -957,6 +942,18 @@ export interface HomepageData {
   recommendations: Game[];  // anonymous recommendations
 }
 
+export interface HomepageAnticipatedGame {
+  rawgId: number;
+  slug: string;
+  name: string;
+  released: string | null;
+  tba: boolean;
+  image: string | null;
+  added: number;
+  toplay: number;
+  genres: string[];
+}
+
 export const HOMEPAGE_REVALIDATE_SECONDS = 60;
 export const HOMEPAGE_API_CACHE_CONTROL = `s-maxage=${HOMEPAGE_REVALIDATE_SECONDS}, stale-while-revalidate=300`;
 
@@ -969,10 +966,78 @@ export const EMPTY_HOMEPAGE_DATA: HomepageData = {
   recommendations: [],
 };
 
+function mapHomepageAnticipatedItem(item: RawgListItem): HomepageAnticipatedGame {
+  return {
+    rawgId: item.id,
+    slug: item.slug,
+    name: item.name,
+    released: item.released,
+    tba: item.tba,
+    image: item.background_image,
+    added: item.added,
+    toplay: item.added_by_status?.toplay ?? 0,
+    genres: (item.genres ?? []).map((genre) => genre.name),
+  };
+}
+
+async function fetchHomepageMostAnticipated(limit = 12): Promise<HomepageAnticipatedGame[]> {
+  const { getRawgBestOfYear } = await import("@/lib/external/rawg");
+  const response = await getRawgBestOfYear(1, Math.max(limit * 2, 24));
+  const today = new Date().toISOString().slice(0, 10);
+  const mapped = response.results
+    .map(mapHomepageAnticipatedItem)
+    .filter((item) => item.image);
+
+  let items = mapped.filter((item) => item.tba || !item.released || item.released >= today);
+  if (items.length < limit) {
+    items = mapped;
+  }
+
+  items = items.slice(0, limit);
+  if (items.length === 0) {
+    return [];
+  }
+
+  try {
+    const supabase = getPublicSupabase();
+    const rawgIds = items.map((item) => item.rawgId).filter(Boolean);
+    if (rawgIds.length > 0) {
+      const { data: dbGames } = await supabase
+        .from("games")
+        .select("rawg_id, slug")
+        .in("rawg_id", rawgIds);
+
+      if (dbGames && dbGames.length > 0) {
+        const slugMap = new Map<number, string>();
+        for (const game of dbGames) {
+          if (game.rawg_id) {
+            slugMap.set(game.rawg_id, game.slug);
+          }
+        }
+
+        items = items.map((item) => ({
+          ...item,
+          slug: slugMap.get(item.rawgId) ?? item.slug,
+        }));
+      }
+    }
+  } catch {
+    return items;
+  }
+
+  return items;
+}
+
 const getCachedHomepageData = unstable_cache(
   async () => fetchHomepageData(),
   ["homepage-data-v2"],
   { revalidate: HOMEPAGE_REVALIDATE_SECONDS }
+);
+
+const getCachedHomepageMostAnticipated = unstable_cache(
+  async () => fetchHomepageMostAnticipated(),
+  ["homepage-most-anticipated"],
+  { revalidate: 3600 }
 );
 
 export async function loadHomepageData(): Promise<HomepageData> {
@@ -984,6 +1049,18 @@ export async function loadHomepageData(): Promise<HomepageData> {
     return await getCachedHomepageData();
   } catch {
     return EMPTY_HOMEPAGE_DATA;
+  }
+}
+
+export async function loadHomepageMostAnticipated(): Promise<HomepageAnticipatedGame[]> {
+  if (!process.env.RAWG_API_KEY) {
+    return [];
+  }
+
+  try {
+    return await getCachedHomepageMostAnticipated();
+  } catch {
+    return [];
   }
 }
 

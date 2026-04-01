@@ -6,20 +6,42 @@ function getTrendingAgeDays(row: Pick<GameRow, "release_date">): number {
   return (Date.now() - new Date(`${row.release_date}T00:00:00`).getTime()) / 86400000;
 }
 
+function hasStrongFlaggedTrendingSignal(row: GameRow, qualityScore: number, ageDays: number): boolean {
+  const currentPlayers = row.current_players ?? 0;
+  const momentum = row.momentum ?? 0;
+  return (row.trending ?? false)
+    && qualityScore >= 68
+    && currentPlayers >= (ageDays <= 120 ? 1200 : 3500)
+    && momentum >= -0.03;
+}
+
 export function isPremiumTrendingCandidate(row: GameRow): boolean {
   const qualityScore = confidenceWeightedScore(row);
-  return qualityScore >= 78
-    || (row.is_trending_manual ?? false)
-    || (row.current_players ?? 0) >= 30000
-    || ((row.momentum ?? 0) >= 0.2 && (row.review_count ?? 0) >= 250);
+  const currentPlayers = row.current_players ?? 0;
+  const momentum = row.momentum ?? 0;
+  const reviewCount = row.review_count ?? 0;
+  const ageDays = getTrendingAgeDays(row);
+
+  return (row.is_trending_manual ?? false)
+    || hasStrongFlaggedTrendingSignal(row, qualityScore, ageDays)
+    || (currentPlayers >= 20000 && momentum >= 0.03 && qualityScore >= 72)
+    || (momentum >= 0.18 && currentPlayers >= 400 && reviewCount >= 200 && qualityScore >= 70)
+    || (ageDays <= 60 && momentum >= 0.08 && currentPlayers >= 180 && reviewCount >= 120 && qualityScore >= 72);
 }
 
 export function isAcceptableTrendingCandidate(row: GameRow): boolean {
   const qualityScore = confidenceWeightedScore(row);
-  return qualityScore >= 72
+  const currentPlayers = row.current_players ?? 0;
+  const momentum = row.momentum ?? 0;
+  const reviewCount = row.review_count ?? 0;
+  const ageDays = getTrendingAgeDays(row);
+
+  return isPremiumTrendingCandidate(row)
     || (row.is_trending_manual ?? false)
-    || (row.current_players ?? 0) >= 20000
-    || ((row.momentum ?? 0) >= 0.14 && (row.review_count ?? 0) >= 150);
+    || (currentPlayers >= 8000 && momentum >= 0.04 && qualityScore >= 68)
+    || (momentum >= 0.1 && currentPlayers >= 175 && reviewCount >= 90 && qualityScore >= 68)
+    || (ageDays <= 120 && momentum >= 0.05 && currentPlayers >= 120 && reviewCount >= 75 && qualityScore >= 70)
+    || hasStrongFlaggedTrendingSignal(row, qualityScore, ageDays);
 }
 
 export function getPublicTrendingScore(row: GameRow): number {
@@ -33,9 +55,9 @@ export function getPublicTrendingScore(row: GameRow): number {
 
   const manualBoost = isManual ? 25 : 0;
   const trendingBoost = isFlagged ? (momentum >= 0 ? 12 : currentPlayers >= 10000 ? 8 : 3) : 0;
-  const playerScore = Math.min(42, Math.log10(currentPlayers + 1) * 10.5);
+  const playerScore = Math.min(38, Math.log10(currentPlayers + 1) * 9.75);
   const momentumScore = momentum >= 0
-    ? Math.min(26, momentum * 75)
+    ? Math.min(32, momentum * 90)
     : currentPlayers >= 20000
       ? Math.max(-8, momentum * 28)
       : Math.max(-24, momentum * 85);
@@ -53,7 +75,7 @@ export function getPublicTrendingScore(row: GameRow): number {
             : ageDays <= 1825
               ? 2
               : 0;
-  const qualityComponent = Math.min(24, qualityScore * 0.24);
+  const qualityComponent = Math.min(18, qualityScore * 0.18);
   const scorePenalty = qualityScore < 70 ? (70 - qualityScore) * 0.8 : 0;
   const hardFallPenalty = momentum < -0.15
     ? currentPlayers >= 10000
@@ -61,10 +83,10 @@ export function getPublicTrendingScore(row: GameRow): number {
       : Math.min(12, Math.abs(momentum + 0.15) * 22)
     : 0;
   const stalePenalty = ageDays > 365 * 4
-    ? currentPlayers < 5000
+    ? currentPlayers < 10000 || momentum < 0.03
       ? 8
       : 0
-    : ageDays > 365 * 2 && currentPlayers < 1000
+    : ageDays > 365 * 2 && (currentPlayers < 2500 || momentum < 0.03)
       ? 6
       : 0;
 
@@ -89,11 +111,10 @@ export function hasBrowseTrendingSignal(row: GameRow): boolean {
   const isManual = row.is_trending_manual ?? false;
   const isFlagged = row.trending ?? false;
   const ageDays = getTrendingAgeDays(row);
-  const hasStrongEngagement = currentPlayers >= 500 && qualityScore >= 68;
+  const hasStrongEngagement = currentPlayers >= 600 && momentum >= 0.04 && qualityScore >= 68;
   const hasMomentumBreakout = momentum >= 0.08 && currentPlayers >= 150 && reviewCount >= 75 && qualityScore >= 68;
-  const hasRecentBreakout = ageDays <= 120 && momentum >= 0.15 && reviewCount >= 200 && qualityScore >= 68;
-  const hasEvergreenQualityFallback = qualityScore >= 92 && reviewCount >= 5000 && currentPlayers >= 750;
-  const hasHighActivityFallback = currentPlayers >= 1500 && qualityScore >= 68;
+  const hasRecentBreakout = ageDays <= 120 && momentum >= 0.12 && currentPlayers >= 120 && reviewCount >= 120 && qualityScore >= 70;
+  const hasHighActivityFallback = currentPlayers >= 12000 && momentum >= 0.03 && qualityScore >= 68;
   const hasPremiumCandidate = isPremiumTrendingCandidate(row);
   const hasAcceptableCandidate = isAcceptableTrendingCandidate(row);
 
@@ -105,23 +126,23 @@ export function hasBrowseTrendingSignal(row: GameRow): boolean {
     return false;
   }
 
-  if (!isManual && !isFlagged && currentPlayers < 40 && !(ageDays <= 120 && momentum >= 0.18 && reviewCount >= 150)) {
+  if (!isManual && !isFlagged && currentPlayers < 40 && !(ageDays <= 120 && momentum >= 0.12 && reviewCount >= 100)) {
     return false;
   }
 
-  if (momentum < -0.08 && currentPlayers < 2500 && !isManual) {
+  if (momentum < -0.08 && currentPlayers < 4000 && !isManual) {
     return false;
   }
 
-  if (momentum < -0.18 && currentPlayers < 10000 && !isManual && !isFlagged) {
+  if (momentum < -0.15 && currentPlayers < 12000 && !isManual && !isFlagged) {
     return false;
   }
 
-  if (!isManual && !isFlagged && ageDays > 365 * 2 && currentPlayers < 250 && momentum < 0.08) {
+  if (!isManual && !isFlagged && ageDays > 365 * 2 && currentPlayers < 1500 && momentum < 0.04) {
     return false;
   }
 
-  if (!isManual && !isFlagged && ageDays > 365 * 4 && currentPlayers < 1000) {
+  if (!isManual && !isFlagged && ageDays > 365 * 4 && (currentPlayers < 5000 || momentum < 0.03)) {
     return false;
   }
 
@@ -131,29 +152,30 @@ export function hasBrowseTrendingSignal(row: GameRow): boolean {
     || hasStrongEngagement
     || hasMomentumBreakout
     || hasRecentBreakout
-    || hasEvergreenQualityFallback
     || isManual
-    || (isFlagged && currentPlayers >= 5000 && qualityScore >= 68);
+    || hasStrongFlaggedTrendingSignal(row, qualityScore, ageDays);
 }
 
 export function preferTrendingMomentumPool(rows: GameRow[], desiredCount: number): GameRow[] {
-  const risingMomentum = rows.filter((row) => row.is_trending_manual || (row.momentum ?? 0) >= 0.05);
+  const risingMomentum = rows.filter((row) => row.is_trending_manual
+    || (row.momentum ?? 0) >= 0.08
+    || ((row.trending ?? false) && (row.current_players ?? 0) >= 5000 && (row.momentum ?? 0) >= -0.02));
   if (risingMomentum.length >= desiredCount) {
     return risingMomentum;
   }
 
   const steadyMomentum = rows.filter((row) => row.is_trending_manual
-    || (row.momentum ?? 0) >= 0
-    || (row.current_players ?? 0) >= 15000
-    || ((row.trending ?? false) && (row.current_players ?? 0) >= 5000));
+    || (row.momentum ?? 0) >= 0.03
+    || ((row.trending ?? false) && (row.current_players ?? 0) >= 3500 && (row.momentum ?? 0) >= -0.02)
+    || ((row.current_players ?? 0) >= 12000 && (row.momentum ?? 0) >= 0.04));
   if (steadyMomentum.length >= desiredCount) {
     return steadyMomentum;
   }
 
   const durableMomentum = rows.filter((row) => row.is_trending_manual
-    || (row.momentum ?? 0) >= -0.05
-    || (row.current_players ?? 0) >= 25000
-    || ((row.trending ?? false) && (row.current_players ?? 0) >= 10000));
+    || (row.momentum ?? 0) >= 0
+    || ((row.trending ?? false) && (row.current_players ?? 0) >= 7000 && (row.momentum ?? 0) >= -0.03)
+    || ((row.current_players ?? 0) >= 20000 && (row.momentum ?? 0) >= 0.03));
   if (durableMomentum.length >= desiredCount) {
     return durableMomentum;
   }

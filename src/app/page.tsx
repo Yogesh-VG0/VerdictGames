@@ -4,13 +4,15 @@ import HeroCarousel from "@/components/HeroCarousel";
 import FadeInSection from "@/components/FadeInSection";
 import GameCard from "@/components/GameCard";
 import HorizontalScroll from "@/components/HorizontalScroll";
+import HomepageMostAnticipatedSection from "@/components/HomepageMostAnticipatedSection";
 import SectionHeader from "@/components/SectionHeader";
-import HomepageClientSections, { HomepageMostAnticipatedSection } from "@/components/HomepageClientSections";
+import HomepageClientSections from "@/components/HomepageClientSections";
 import HomepageNewsSection from "@/components/HomepageNewsSection";
 import GradientText from "@/components/ui/GradientText";
 import {
   HOMEPAGE_REVALIDATE_SECONDS,
   loadHomepageData,
+  loadHomepageMostAnticipated,
 } from "@/lib/services/homepage";
 
 const CARD_WIDTH = "shrink-0 w-44 sm:w-52 md:w-56 lg:w-60 h-full";
@@ -48,13 +50,17 @@ export const metadata: Metadata = {
 };
 
 export default async function HomePage() {
-  const homepage = await loadHomepageData();
+  const [homepage, mostAnticipatedGames] = await Promise.all([
+    loadHomepageData(),
+    loadHomepageMostAnticipated(),
+  ]);
   const featured = homepage.hero.filter((game) => game.headerImage || game.coverImage).slice(0, 6);
   const heroIds = new Set(featured.map((game) => game.id));
   const trendingGames = homepage.trending
     .filter((game) => !heroIds.has(game.id) && game.coverImage)
     .slice(0, 20);
   const hasTrendingGames = trendingGames.length > 0;
+  const hasMostAnticipatedGames = mostAnticipatedGames.length > 0;
   const topRatedGames = homepage.topRated
     .filter((game) => game.coverImage)
     .slice(0, 20);
@@ -101,11 +107,15 @@ export default async function HomePage() {
         </>
       ) : null}
 
-      <HomepageMostAnticipatedSection />
+      {hasMostAnticipatedGames ? (
+        <>
+          <HomepageMostAnticipatedSection games={mostAnticipatedGames} />
 
-      <div className="max-w-[1400px] mx-auto px-4">
-        <hr className="border-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
-      </div>
+          <div className="max-w-[1400px] mx-auto px-4">
+            <hr className="border-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
+          </div>
+        </>
+      ) : null}
 
       {/* ── 5. Top Rated ── */}
       <section className="relative py-12 sm:py-16">
@@ -119,7 +129,7 @@ export default async function HomePage() {
                   href="/search?sort=top-rated"
                   linkLabel="View all"
                   icon={<Trophy className="w-5 h-5" />}
-                  subtitle="Highest-scoring recent releases"
+                  subtitle="Highest-scoring releases across the last decade"
                   gradient="linear-gradient(90deg, #facc15 0%, #f97316 25%, #eab308 50%, #22c55e 75%, #facc15 100%)"
                 />
                 <HorizontalScroll>

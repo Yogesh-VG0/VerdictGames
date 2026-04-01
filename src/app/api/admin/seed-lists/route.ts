@@ -6,8 +6,16 @@ import { writeAuditLog } from "@/lib/auditLog";
 import { dedupePublicCanonicalRows } from "@/lib/utils/publicCanonical";
 import type { GameRow, ListRow } from "@/lib/supabase/types";
 
+type SeedListDefinition = {
+  slug: string;
+  title: string;
+  description: string;
+  tags: string[];
+  query: string;
+};
+
 /* ── 12 editorial list definitions ── */
-const SEED_LISTS = [
+const SEED_LISTS: SeedListDefinition[] = [
   {
     slug: "best-action-rpgs",
     title: "Best Action RPGs of All Time",
@@ -16,16 +24,16 @@ const SEED_LISTS = [
     query: "action rpg",
   },
   {
-    slug: "cozy-games-to-relax",
+    slug: "cozy-games-to-unwind",
     title: "Cozy Games to Unwind With",
-    description: "Stress-free, relaxing games perfect for when you want to decompress after a long day.",
+    description: "Gentle, relaxing experiences perfect for unwinding — farming, crafting, and wholesome adventures.",
     tags: ["cozy", "relaxing"],
     query: "simulation",
   },
   {
-    slug: "best-indie-gems",
+    slug: "hidden-indie-gems",
     title: "Hidden Indie Gems",
-    description: "Under-the-radar indie masterpieces that prove you don't need a big budget to make a great game.",
+    description: "Under-the-radar indie games with outstanding quality — small studios, big impact.",
     tags: ["indie", "hidden gems"],
     query: "indie",
   },
@@ -95,7 +103,7 @@ const SEED_LISTS = [
 ];
 
 const SYSTEM_LIST_MANAGER = "system-curated-lists";
-const SYSTEM_LIST_SEED_VERSION = 2;
+const SYSTEM_LIST_SEED_VERSION = 3;
 
 function buildSeedHash(seed: { slug: string; title: string; previewText: string; bodyText: string; tags: string[] }, gameIds: string[]) {
   return createHash("sha256")
@@ -109,6 +117,104 @@ function buildSeedHash(seed: { slug: string; title: string; previewText: string;
       seedVersion: SYSTEM_LIST_SEED_VERSION,
     }))
     .digest("hex");
+}
+
+function hasAny(values: string[] | null | undefined, expected: string[]): boolean {
+  return expected.some((value) => values?.includes(value));
+}
+
+function hasNone(values: string[] | null | undefined, blocked: string[]): boolean {
+  return !blocked.some((value) => values?.includes(value));
+}
+
+function passesEditorialListFloor(game: GameRow): boolean {
+  const today = new Date().toISOString().slice(0, 10);
+  return Boolean(game.cover_image)
+    && (game.score ?? 0) > 0
+    && game.verdict_label !== "COMING SOON"
+    && (!game.release_date || game.release_date <= today);
+}
+
+function matchesSeedRules(seed: SeedListDefinition, game: GameRow): boolean {
+  switch (seed.slug) {
+    case "best-action-rpgs":
+      return hasAny(game.genres, ["RPG"])
+        && (hasAny(game.tags, ["Action RPG", "Souls-like", "Hack and Slash"])
+          || (hasAny(game.genres, ["Action"]) && hasAny(game.tags, ["Action RPG"])))
+        && (hasNone(game.tags, ["Action-Adventure"]) || hasAny(game.tags, ["Action RPG"]));
+    case "cozy-games-to-unwind":
+      return hasAny(game.tags, ["Relaxing", "Casual", "Wholesome", "Cozy", "Farming Sim", "Life Sim"])
+        && (game.review_count ?? 0) >= 20
+        && (game.score ?? 0) >= 76;
+    case "hidden-indie-gems":
+      return (hasAny(game.genres, ["Indie"]) || hasAny(game.tags, ["Indie"]))
+        && (game.review_count ?? 0) >= 20
+        && (game.review_count ?? 0) < 500
+        && (game.score ?? 0) >= 84;
+    case "essential-metroidvanias":
+      return hasAny(game.tags, ["Metroidvania"]);
+    case "top-open-world-adventures":
+      return hasAny(game.tags, ["Open World"])
+        && (hasAny(game.genres, ["Adventure", "Action", "RPG"])
+          || hasAny(game.tags, ["Exploration", "Story Rich", "Action RPG", "Action-Adventure"]))
+        && hasNone(game.genres, ["Sports", "Racing", "Simulation", "Strategy"])
+        && hasNone(game.tags, ["City Builder", "Base Building", "Colony Sim", "Management", "Competitive", "PvP", "MMO", "MMORPG"]);
+    case "best-strategy-games":
+      return hasAny(game.genres, ["Strategy"]);
+    case "survival-horror-essentials":
+      return hasAny(game.tags, ["Survival Horror", "Psychological Horror", "Horror"])
+        && (hasAny(game.tags, ["Survival", "Resource Management", "Atmospheric", "Dark"])
+          || hasAny(game.genres, ["Horror"]))
+        && hasNone(game.genres, ["Strategy", "Sports", "Racing", "Puzzle"])
+        && hasNone(game.tags, ["Comedy", "Funny", "Cute", "Relaxing"]);
+    case "best-multiplayer-experiences":
+      return hasAny(game.tags, ["Multiplayer", "Online Co-Op", "Local Multiplayer", "Local Co-Op", "Party Game"])
+        || hasAny(game.genres, ["Massively Multiplayer"]);
+    case "critically-acclaimed-2024":
+      return game.release_date != null
+        && game.release_date >= "2024-01-01"
+        && game.release_date <= "2024-12-31"
+        && (game.score ?? 0) >= 80
+        && (game.review_count ?? 0) >= 50;
+    case "best-roguelikes-roguelites":
+      return hasAny(game.tags, ["Roguelike", "Roguelite", "Roguevania", "Roguelike Deckbuilder"]);
+    case "best-platformers":
+      return (hasAny(game.genres, ["Platformer"])
+        || hasAny(game.tags, ["Platformer", "2D Platformer", "3D Platformer", "Precision Platformer", "Collectathon"]))
+        && hasNone(game.genres, ["Sports", "Racing", "Strategy", "Simulation"])
+        && hasNone(game.tags, ["Multiplayer", "PvP", "MMO", "MMORPG"]);
+    case "sci-fi-epics":
+      return hasAny(game.tags, ["Sci-fi", "Space", "Cyberpunk", "Futuristic"]);
+    default:
+      return true;
+  }
+}
+
+function getSeedRuleBonus(seed: SeedListDefinition, game: GameRow): number {
+  switch (seed.slug) {
+    case "best-action-rpgs":
+      return hasAny(game.tags, ["Action RPG"])
+        ? 6
+        : hasAny(game.tags, ["Souls-like", "Hack and Slash"])
+          ? 4
+          : 0;
+    case "cozy-games-to-unwind":
+      return hasAny(game.tags, ["Cozy", "Wholesome", "Farming Sim", "Life Sim"]) ? 4 : 0;
+    case "hidden-indie-gems":
+      return (game.review_count ?? 0) < 250 ? 3 : 1;
+    case "top-open-world-adventures":
+      return hasAny(game.tags, ["Exploration", "Story Rich", "Open World"]) ? 4 : 0;
+    case "survival-horror-essentials":
+      return hasAny(game.tags, ["Survival Horror", "Psychological Horror"]) ? 4 : 0;
+    case "best-multiplayer-experiences":
+      return hasAny(game.tags, ["Online Co-Op", "Local Co-Op", "Party Game"]) ? 3 : 0;
+    case "best-platformers":
+      return hasAny(game.tags, ["Precision Platformer", "2D Platformer", "3D Platformer"]) ? 3 : 0;
+    case "sci-fi-epics":
+      return hasAny(game.tags, ["Space", "Cyberpunk"]) ? 3 : 0;
+    default:
+      return 0;
+  }
 }
 
 export async function POST() {
@@ -145,9 +251,16 @@ export async function POST() {
 
     // Filter and pick best matches (by genre/tag overlap with query keywords)
     const queryWords = seed.query.toLowerCase().split(/\s+/);
-    const scored = gamesData
+    const curatedPool = gamesData.filter((game) => passesEditorialListFloor(game) && matchesSeedRules(seed, game));
+
+    if (curatedPool.length < 4) {
+      results.push(`⚠️ Skipped "${seed.title}" because only ${curatedPool.length} strong matches passed the editorial rules.`);
+      continue;
+    }
+
+    const scored = curatedPool
       .map(g => {
-        let match = 0;
+        let match = getSeedRuleBonus(seed, g);
         const genresLower = (g.genres ?? []).map(x => x.toLowerCase());
         const tagsLower = (g.tags ?? []).map(x => x.toLowerCase());
         const descLower = (g.description ?? "").toLowerCase();
@@ -162,18 +275,14 @@ export async function POST() {
         if ((g.review_count ?? 0) > 1000) match += 1;
         return { game: g, match };
       })
-      .filter(x => x.match > 0)
-      .sort((a, b) => b.match - a.match || (b.game.score ?? 0) - (a.game.score ?? 0))
+      .sort((a, b) => b.match - a.match || (b.game.verdict_score ?? b.game.score ?? 0) - (a.game.verdict_score ?? a.game.score ?? 0))
       .slice(0, 12);
 
-    // If we don't have enough matches, just take top-rated games
-    const candidateGames = scored.length >= 4
-      ? scored.map(s => s.game)
-      : gamesData;
-    let finalGames = dedupePublicCanonicalRows(candidateGames).slice(0, 12);
+    let finalGames = dedupePublicCanonicalRows(scored.map(s => s.game)).slice(0, 12);
 
-    if (finalGames.length < 4 && scored.length >= 4) {
-      finalGames = dedupePublicCanonicalRows(gamesData).slice(0, 12);
+    if (finalGames.length < 4) {
+      results.push(`⚠️ Skipped "${seed.title}" because only ${finalGames.length} canonical matches remained after dedupe.`);
+      continue;
     }
 
     // Pick a unique cover image — prefer a game with a header_image not yet used by another list

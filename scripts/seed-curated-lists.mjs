@@ -48,7 +48,7 @@ try {
 
 const sql = connectDb("seed-curated-lists");
 const SYSTEM_LIST_MANAGER = "system-curated-lists";
-const SYSTEM_LIST_SEED_VERSION = 2;
+const SYSTEM_LIST_SEED_VERSION = 3;
 
 function yearsAgoISO(years) {
   const d = new Date();
@@ -129,10 +129,10 @@ const LIST_BLUEPRINTS = [
     query: async () => sql`
       SELECT id FROM games
       WHERE genres && ARRAY['RPG']
-        AND (tags && ARRAY['Singleplayer', 'Story Rich', 'RPG', 'Action RPG', 'JRPG', 'Open World'] 
-             OR NOT (tags && ARRAY['Multiplayer', 'Online Co-Op', 'PvP', 'MMO']))
+        AND (tags && ARRAY['Singleplayer', 'Story Rich', 'Choices Matter', 'CRPG', 'JRPG', 'Action RPG']
+             OR (tags && ARRAY['Open World'] AND NOT (tags && ARRAY['Multiplayer', 'Online Co-Op', 'Co-op Campaign', 'PvP', 'MMO', 'MMORPG'])))
         AND NOT (genres && ARRAY['Massively Multiplayer'])
-        AND NOT (tags && ARRAY['MMO', 'MMORPG', 'Battle Royale'])
+        AND NOT (tags && ARRAY['Multiplayer', 'Online Co-Op', 'Co-op Campaign', 'PvP', 'MMO', 'MMORPG', 'Battle Royale'])
         AND release_date >= ${yearsAgoISO(4)}
         AND release_date <= CURRENT_DATE
         AND score >= 78
@@ -236,7 +236,8 @@ const LIST_BLUEPRINTS = [
     query: async () => sql`
       SELECT id FROM games
       WHERE (genres && ARRAY['Indie'] OR tags && ARRAY['Indie'])
-        AND (hltb_main IS NULL OR hltb_main <= 20)
+        AND hltb_main IS NOT NULL
+        AND hltb_main <= 20
         AND release_date >= ${yearsAgoISO(4)}
         AND release_date <= CURRENT_DATE
         AND score >= 80
@@ -283,10 +284,20 @@ const LIST_BLUEPRINTS = [
       const today = new Date().toISOString().slice(0, 10);
       return sql`
         SELECT id FROM games
-        WHERE release_date > ${today}
-          AND release_date <= ${yearStr + "-12-31"}
+        WHERE (
+            (release_date > ${today} AND release_date <= ${yearStr + "-12-31"})
+            OR (
+              release_date IS NULL
+              AND (
+                is_provisional = true
+                OR verdict_label = 'COMING SOON'
+                OR COALESCE(release_status, '') IN ('announced', 'coming_soon', 'upcoming', 'tba')
+              )
+            )
+          )
           AND cover_image IS NOT NULL AND cover_image != ''
-        ORDER BY release_date ASC,
+        ORDER BY CASE WHEN release_date IS NULL THEN 1 ELSE 0 END,
+               release_date ASC NULLS LAST,
                (score::float * GREATEST(COALESCE(review_count, 0), 0) + 75.0 * 200.0) / (GREATEST(COALESCE(review_count, 0), 0) + 200.0) DESC NULLS LAST
         LIMIT 24
       `;
@@ -484,6 +495,10 @@ const LIST_BLUEPRINTS = [
     query: async () => sql`
       SELECT id FROM games
       WHERE tags && ARRAY['Open World']
+        AND (genres && ARRAY['Adventure', 'Action', 'RPG']
+             OR tags && ARRAY['Exploration', 'Story Rich', 'Action RPG', 'Action-Adventure'])
+        AND NOT (genres && ARRAY['Sports', 'Racing', 'Simulation', 'Strategy'])
+        AND NOT (tags && ARRAY['City Builder', 'Base Building', 'Colony Sim', 'Management', 'Competitive', 'PvP', 'MMO', 'MMORPG'])
         AND release_date <= CURRENT_DATE
         AND score >= 78
         AND review_count >= ${MIN_ALLTIME_REVIEWS}
@@ -557,7 +572,9 @@ const LIST_BLUEPRINTS = [
     query: async () => sql`
       SELECT id FROM games
       WHERE genres && ARRAY['RPG']
-        AND (genres && ARRAY['Action'] OR tags && ARRAY['Action RPG', 'Action-Adventure', 'Souls-like', 'Hack and Slash'])
+        AND (tags && ARRAY['Action RPG', 'Souls-like', 'Hack and Slash']
+             OR (genres && ARRAY['Action'] AND tags && ARRAY['Action RPG']))
+        AND (NOT (tags && ARRAY['Action-Adventure']) OR tags && ARRAY['Action RPG'])
         AND release_date <= CURRENT_DATE
         AND score >= 80
         AND review_count >= ${MIN_ALLTIME_REVIEWS}
