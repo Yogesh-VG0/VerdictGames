@@ -39,6 +39,7 @@ import { hasUsableCardImage } from "@/lib/utils/mediaReadiness";
 import { dedupePublicCanonicalRows } from "@/lib/utils/publicCanonical";
 import {
   getPublicTrendingScore,
+  hasBrowseTrendingSignal,
   isAcceptableTrendingCandidate,
   isPremiumTrendingCandidate,
   preferTrendingMomentumPool,
@@ -76,18 +77,29 @@ function isRecentEnoughForHome(row: GameRow, months: number): boolean {
 }
 
 function isHomepageTrendingEligible(row: GameRow): boolean {
+  const currentPlayers = row.current_players ?? 0;
+  const momentum = row.momentum ?? 0;
+  const ageDays = row.release_date
+    ? (Date.now() - new Date(`${row.release_date}T00:00:00`).getTime()) / 86400000
+    : Number.POSITIVE_INFINITY;
+  const hasSharedTrendingSignal = hasBrowseTrendingSignal(row);
+
+  if (row.is_trending_manual ?? false) {
+    return true;
+  }
+
+  if (!hasSharedTrendingSignal) {
+    return false;
+  }
+
   if (isRecentEnoughForHome(row, HOMEPAGE_TRENDING_MONTHS)) {
     return true;
   }
 
-  const qualityScore = confidenceWeightedScore(row);
-  const currentPlayers = row.current_players ?? 0;
-  const momentum = row.momentum ?? 0;
-
-  return (row.is_trending_manual ?? false)
-    || (currentPlayers >= 5000 && qualityScore >= 72)
-    || (currentPlayers >= 1500 && qualityScore >= 82)
-    || (((row.trending ?? false) || momentum >= 0.08) && currentPlayers >= 1000 && qualityScore >= 78);
+  return ((row.trending ?? false) && currentPlayers >= 12000 && momentum >= 0.04)
+    || (ageDays <= 730 && currentPlayers >= 8000 && momentum >= 0.05)
+    || (currentPlayers >= 18000 && momentum >= 0.05)
+    || (momentum >= 0.14 && currentPlayers >= 700);
 }
 
 function deduplicateBySteamAppId(games: GameRow[]): GameRow[] {
@@ -286,9 +298,9 @@ function preferHomepageTrendingSignalPool(rows: GameRow[], desiredCount: number)
       : Number.POSITIVE_INFINITY;
 
     return (row.is_trending_manual ?? false)
-      || (currentPlayers >= 5000 && momentum >= 0.04)
-      || ((row.trending ?? false) && currentPlayers >= 3500 && momentum >= -0.02)
-      || (ageDays <= 21 && currentPlayers >= 120 && momentum >= 0.06)
+      || isPremiumTrendingCandidate(row)
+      || ((row.trending ?? false) && currentPlayers >= 10000 && momentum >= 0.04)
+      || (ageDays <= 21 && currentPlayers >= 120 && momentum >= 0.08)
       || (ageDays <= 60 && currentPlayers >= 220 && momentum >= 0.08);
   });
   if (premiumPool.length >= Math.min(desiredCount, 12)) {
@@ -303,10 +315,10 @@ function preferHomepageTrendingSignalPool(rows: GameRow[], desiredCount: number)
       : Number.POSITIVE_INFINITY;
 
     return (row.is_trending_manual ?? false)
-      || (currentPlayers >= 2500 && momentum >= 0.04)
-      || ((row.trending ?? false) && currentPlayers >= 2200 && momentum >= -0.03)
+      || isAcceptableTrendingCandidate(row)
+      || ((row.trending ?? false) && currentPlayers >= 7000 && momentum >= 0.04)
       || (ageDays <= 45 && currentPlayers >= 100 && momentum >= 0.05)
-      || (ageDays <= 120 && currentPlayers >= 150 && momentum >= 0.03);
+      || (ageDays <= 120 && currentPlayers >= 150 && momentum >= 0.05);
   });
   if (strongPool.length >= desiredCount) {
     return strongPool;
@@ -321,8 +333,8 @@ function isHomepageTrendingDisplayGame(row: GameRow): boolean {
   const momentum = row.momentum ?? 0;
 
   return isPremiumTrendingCandidate(row)
-    || ((row.trending ?? false) && currentPlayers >= 5000 && momentum >= -0.02 && qualityScore >= 68)
-    || (momentum >= 0.12 && currentPlayers >= 250 && qualityScore >= 68);
+    || (((row.trending ?? false) || hasBrowseTrendingSignal(row)) && currentPlayers >= 10000 && momentum >= 0.04 && qualityScore >= 68)
+    || (momentum >= 0.14 && currentPlayers >= 250 && qualityScore >= 68);
 }
 
 function isHomepageTrendingFallbackDisplayGame(row: GameRow): boolean {
@@ -331,7 +343,7 @@ function isHomepageTrendingFallbackDisplayGame(row: GameRow): boolean {
   const momentum = row.momentum ?? 0;
 
   return isAcceptableTrendingCandidate(row)
-    || ((row.trending ?? false) && currentPlayers >= 3000 && momentum >= -0.03 && qualityScore >= 68)
+    || (((row.trending ?? false) || hasBrowseTrendingSignal(row)) && currentPlayers >= 7000 && momentum >= 0.04 && qualityScore >= 68)
     || (momentum >= 0.08 && currentPlayers >= 175 && qualityScore >= 66);
 }
 

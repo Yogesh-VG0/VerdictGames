@@ -110,6 +110,23 @@ describe("trending signal gates", () => {
     expect(hasBrowseTrendingSignal(evergreen)).toBe(false);
   });
 
+  it("rejects old flagged evergreen games that are no longer rising", () => {
+    const staleFlagged = makeGameRow({
+      release_date: isoDaysAgo(365 * 5),
+      trending: true,
+      current_players: 7200,
+      momentum: 0.01,
+      review_count: 8000,
+      score: 86,
+      verdict_score: 87,
+      confidence: 0.72,
+    });
+
+    expect(isPremiumTrendingCandidate(staleFlagged)).toBe(false);
+    expect(isAcceptableTrendingCandidate(staleFlagged)).toBe(false);
+    expect(hasBrowseTrendingSignal(staleFlagged)).toBe(false);
+  });
+
   it("accepts a recent breakout with momentum and activity", () => {
     const breakout = makeGameRow({
       release_date: isoDaysAgo(20),
@@ -127,10 +144,10 @@ describe("trending signal gates", () => {
 
   it("keeps strongly flagged high-activity games while ranking breakouts higher", () => {
     const flagged = makeGameRow({
-      release_date: isoDaysAgo(400),
+      release_date: isoDaysAgo(320),
       trending: true,
-      current_players: 7000,
-      momentum: -0.01,
+      current_players: 7600,
+      momentum: 0.04,
       score: 80,
       verdict_score: 81,
     });

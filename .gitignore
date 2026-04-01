@@ -12,6 +12,8 @@
 
 # testing
 /coverage
+src/lib/utils/__tests__/quality.test.ts
+src/lib/utils/__tests__/scoring.test.ts
 
 # next.js
 /.next/

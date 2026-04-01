@@ -99,80 +99,82 @@ export default function ListsPage() {
           initial="hidden"
           animate="show"
           variants={{ show: { transition: { staggerChildren: 0.07 } } }}
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 [&>*:last-child:nth-child(3n-2)]:sm:col-start-1 [&>*:last-child:nth-child(3n-2)]:lg:col-start-2"
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
         >
           {displayLists.map((list) => (
             <motion.div key={list.id} variants={gridItem}>
-            <Link
-              href={`/lists/${list.slug}`}
-              className="group rounded-2xl border border-border bg-surface overflow-hidden hover:border-border-hover hover:shadow-lg hover:shadow-accent/5 transition-all duration-300 block"
-            >
-              <div className="relative aspect-video overflow-hidden">
-                {(() => {
-                  const coverGames = list.games
-                    .filter((g) => g.coverImage)
-                    .slice(0, 4);
-                  if (coverGames.length >= 4) {
-                    return (
-                      <div className="grid grid-cols-2 grid-rows-2 w-full h-full">
-                        {coverGames.map((g) => (
-                          <div key={g.id} className="relative overflow-hidden">
-                            <Image
-                              src={g.coverImage}
-                              alt={g.title}
-                              fill
-                              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 17vw"
-                              className="object-cover transition-transform duration-300 group-hover:scale-105"
-                            />
-                          </div>
-                        ))}
-                      </div>
-                    );
-                  } else if (list.coverImage) {
-                    return (
-                      <Image
-                        src={list.coverImage}
-                        alt={list.title}
-                        fill
-                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                        className="object-cover transition-transform duration-300 group-hover:scale-105"
-                      />
-                    );
-                  } else {
-                    return (
-                      <div className="w-full h-full bg-surface-2 flex items-center justify-center">
-                        <ListPlus className="w-8 h-8 text-tertiary" />
-                      </div>
-                    );
-                  }
-                })()}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent pointer-events-none" />
-                <div className="absolute bottom-2 left-2">
-                  <PixelBadge variant="accent" size="sm">
-                    {list.gameCount} games
-                  </PixelBadge>
-                </div>
-              </div>
-              <div className="p-4 space-y-1.5">
-                <h3 className="text-sm font-semibold text-foreground group-hover:text-accent transition-colors line-clamp-1">
-                  {list.title}
-                </h3>
-                <p className="text-xs text-secondary line-clamp-2">
-                  {list.description}
-                </p>
-                <div className="flex items-center gap-2 text-[10px] text-tertiary">
-                  <span>by {list.curatedBy}</span>
-                  <span>·</span>
-                  <div className="flex gap-1">
-                    {list.tags.slice(0, 2).map((tag) => (
-                      <span key={tag} className="uppercase tracking-wider">
-                        {tag}
-                      </span>
-                    ))}
+              <Link
+                href={`/lists/${list.slug}`}
+                className="group rounded-2xl border border-border bg-surface overflow-hidden hover:border-border-hover hover:shadow-lg hover:shadow-accent/5 transition-all duration-300 block"
+              >
+                <div className="relative aspect-video overflow-hidden">
+                  {(() => {
+                    const coverGames = list.games
+                      .filter((g) => g.coverImage)
+                      .slice(0, 4);
+                    if (coverGames.length >= 4) {
+                      return (
+                        <div className="grid grid-cols-2 grid-rows-2 w-full h-full">
+                          {coverGames.map((g) => (
+                            <div key={g.id} className="relative overflow-hidden">
+                              <Image
+                                src={g.coverImage}
+                                alt={g.title}
+                                fill
+                                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 17vw"
+                                className="object-cover transition-transform duration-300 group-hover:scale-105"
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    } else if (list.coverImage) {
+                      return (
+                        <Image
+                          src={list.coverImage}
+                          alt={list.title}
+                          fill
+                          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                          className="object-cover transition-transform duration-300 group-hover:scale-105"
+                        />
+                      );
+                    } else {
+                      return (
+                        <div className="w-full h-full bg-surface-2 flex items-center justify-center">
+                          <ListPlus className="w-8 h-8 text-tertiary" />
+                        </div>
+                      );
+                    }
+                  })()}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent pointer-events-none" />
+                  <div className="absolute bottom-2 left-2">
+                    <PixelBadge variant="accent" size="sm">
+                      {list.gameCount} games
+                    </PixelBadge>
                   </div>
                 </div>
-              </div>
-            </Link>
+                <div className="p-4 space-y-1.5">
+                  <h3 className="text-sm font-semibold text-foreground group-hover:text-accent transition-colors line-clamp-1">
+                    {list.title}
+                  </h3>
+                  <p className="text-xs text-secondary line-clamp-2">
+                    {list.description}
+                  </p>
+                  <div className="flex gap-1">
+                    <div className="flex items-center gap-2 text-[10px] text-tertiary">
+                      <span>by {list.curatedBy}</span>
+                      <span>·</span>
+                      <div className="flex gap-1">
+                        {list.tags.slice(0, 2).map((tag) => (
+                          <span key={tag} className="uppercase tracking-wider">
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </Link>
             </motion.div>
           ))}
         </motion.div>

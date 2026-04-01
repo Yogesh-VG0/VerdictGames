@@ -10,7 +10,7 @@ import { NextRequest } from "next/server";
 import { jsonOk, jsonNotFound } from "@/lib/api/response";
 import { mapGameRow, mapListRow } from "@/lib/db/mappers";
 import { GAME_CARD_COLUMNS_WITH_DESC } from "@/lib/db/columns";
-import { isQualityGame, isSurfaceReady } from "@/lib/utils/quality";
+import { passesCuratedListSelection } from "@/lib/utils/curatedLists";
 import { dedupePublicCanonicalRows } from "@/lib/utils/publicCanonical";
 import { isPublicSafeGame } from "@/lib/utils/publicSafety";
 import { hasUsableCardImage } from "@/lib/utils/mediaReadiness";
@@ -63,7 +63,6 @@ export async function GET(
       const rowsById = new Map(
         (gamesData ?? [])
           .filter((r) =>
-            isSurfaceReady(r, "curatedList") &&
             isPublicSafeGame(r) &&
             hasUsableCardImage(r)
           )
@@ -72,9 +71,7 @@ export async function GET(
       const orderedRows = gameIds
         .map((id) => rowsById.get(id))
         .filter(Boolean) as GameRow[];
-      const visibleRows = list.is_system_managed
-        ? orderedRows.filter((row) => isQualityGame(row, "curatedList"))
-        : orderedRows;
+      const visibleRows = orderedRows.filter((row) => passesCuratedListSelection(list, row));
       const allGames = dedupePublicCanonicalRows(visibleRows)
         .map(mapGameRow);
       games = allGames;

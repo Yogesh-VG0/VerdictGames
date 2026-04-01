@@ -9,7 +9,7 @@ export const revalidate = 300; // ISR: revalidate every 5 minutes
 import { jsonOk } from "@/lib/api/response";
 import { mapGameRow, mapListRow } from "@/lib/db/mappers";
 import { GAME_CARD_COLUMNS_WITH_DESC } from "@/lib/db/columns";
-import { isQualityGame, isSurfaceReady } from "@/lib/utils/quality";
+import { passesCuratedListSelection } from "@/lib/utils/curatedLists";
 import { dedupePublicCanonicalRows } from "@/lib/utils/publicCanonical";
 import { isPublicSafeGame } from "@/lib/utils/publicSafety";
 import { hasUsableCardImage } from "@/lib/utils/mediaReadiness";
@@ -64,7 +64,7 @@ export async function GET() {
 
       // Apply public safety + media readiness filters
       for (const row of gamesData ?? []) {
-        if (isSurfaceReady(row, "curatedList") && isPublicSafeGame(row) && hasUsableCardImage(row)) {
+        if (isPublicSafeGame(row) && hasUsableCardImage(row)) {
           gamesMap.set(row.id, row);
         }
       }
@@ -76,9 +76,7 @@ export async function GET() {
       const orderedRows = items
         .map((item) => gamesMap.get(item.game_id))
         .filter(Boolean) as GameRow[];
-      const visibleRows = list.is_system_managed
-        ? orderedRows.filter((row) => isQualityGame(row, "curatedList"))
-        : orderedRows;
+      const visibleRows = orderedRows.filter((row) => passesCuratedListSelection(list, row));
       return mapListRow(list, dedupePublicCanonicalRows(visibleRows).map(mapGameRow));
     });
 
