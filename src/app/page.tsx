@@ -54,6 +54,7 @@ export default async function HomePage() {
   const trendingGames = homepage.trending
     .filter((game) => !heroIds.has(game.id) && game.coverImage)
     .slice(0, 20);
+  const hasTrendingGames = trendingGames.length > 0;
   const topRatedGames = homepage.topRated
     .filter((game) => game.coverImage)
     .slice(0, 20);
@@ -69,12 +70,12 @@ export default async function HomePage() {
       </section>
 
       {/* ── 2. Trending Now ── */}
-      <section className="relative py-12 sm:py-16">
-        <div className="absolute inset-0 mesh-gradient opacity-50 pointer-events-none" />
-        <div className="max-w-[1400px] mx-auto px-4 relative">
-          <FadeInSection>
-            {trendingGames.length > 0 ? (
-              <>
+      {hasTrendingGames ? (
+        <>
+          <section className="relative py-12 sm:py-16">
+            <div className="absolute inset-0 mesh-gradient opacity-50 pointer-events-none" />
+            <div className="max-w-[1400px] mx-auto px-4 relative">
+              <FadeInSection>
                 <SectionHeader
                   title="Trending Right Now"
                   href="/search?sort=trending"
@@ -90,15 +91,15 @@ export default async function HomePage() {
                     </div>
                   ))}
                 </HorizontalScroll>
-              </>
-            ) : null}
-          </FadeInSection>
-        </div>
-      </section>
+              </FadeInSection>
+            </div>
+          </section>
 
-      <div className="max-w-[1400px] mx-auto px-4">
-        <hr className="border-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
-      </div>
+          <div className="max-w-[1400px] mx-auto px-4">
+            <hr className="border-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
+          </div>
+        </>
+      ) : null}
 
       <HomepageMostAnticipatedSection />
 

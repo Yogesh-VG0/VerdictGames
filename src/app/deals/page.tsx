@@ -172,8 +172,11 @@ export default function DealsPage() {
             {isLoading ? "Loading deals…" : `${filtered.length} deal${filtered.length !== 1 ? "s" : ""} found`}
           </span>
           <select
+            id="deals-page-sort"
+            name="sort"
             value={sortMode}
             onChange={(e) => setSortMode(e.target.value as SortMode)}
+            aria-label="Sort deals"
             className="text-xs bg-surface-2 border border-border rounded-lg px-3 py-1.5 text-secondary focus:outline-none focus:border-accent/40"
           >
             {SORT_OPTIONS.map((opt) => (
@@ -216,7 +219,7 @@ export default function DealsPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: Math.min(i * 0.03, 0.5), duration: 0.4 }}
             >
-              <GXDealCard deal={deal} />
+              <GXDealCard deal={deal} priority={i < 5} />
             </motion.div>
           ))}
         </div>

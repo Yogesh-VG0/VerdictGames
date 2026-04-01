@@ -58,7 +58,7 @@ function mapPlatform(name: string): string | null {
   return null;
 }
 
-function GameCard({ game, rank }: { game: RawgListGameItem; rank?: number }) {
+function GameCard({ game, rank, priority = false }: { game: RawgListGameItem; rank?: number; priority?: boolean }) {
   const platforms = game.platforms.map(mapPlatform).filter(Boolean) as string[];
   // Dedupe
   const uniquePlatforms = [...new Set(platforms)].slice(0, 4);
@@ -77,7 +77,7 @@ function GameCard({ game, rank }: { game: RawgListGameItem; rank?: number }) {
             fill
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
             className="object-cover group-hover:scale-105 transition-transform duration-500"
-            loading="lazy"
+            priority={priority}
           />
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-accent/10 to-pixel-cyan/10 flex items-center justify-center">
@@ -279,6 +279,7 @@ export default function ExplorePage() {
               key={game.rawgId}
               game={game}
               rank={activeTab === "all-time" ? (page - 1) * PAGE_SIZE + i + 1 : undefined}
+              priority={i < 5}
             />
           ))
         )}

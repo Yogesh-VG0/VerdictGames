@@ -103,7 +103,7 @@ export default function DeveloperPage({ params }: Props) {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.05, duration: 0.3 }}
             >
-              <GameCard game={game} />
+              <GameCard game={game} priority={i < 4} />
             </motion.div>
           ))}
         </div>

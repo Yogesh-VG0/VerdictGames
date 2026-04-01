@@ -223,6 +223,8 @@ export default function SettingsPage() {
             <p className="text-[10px] text-tertiary">JPG, PNG or WebP. Max 2MB.</p>
           </div>
           <input
+            id="settings-avatar"
+            name="avatar"
             ref={fileInputRef}
             type="file"
             accept="image/jpeg,image/png,image/webp"
@@ -243,8 +245,10 @@ export default function SettingsPage() {
         <h2 className="text-sm font-bold text-foreground uppercase tracking-wider">Profile Info</h2>
 
         <div>
-          <label className="block text-xs font-medium text-secondary mb-1.5">Display Name</label>
+          <label htmlFor="settings-display-name" className="block text-xs font-medium text-secondary mb-1.5">Display Name</label>
           <input
+            id="settings-display-name"
+            name="displayName"
             value={displayName}
             onChange={e => setDisplayName(e.target.value)}
             maxLength={50}
@@ -255,8 +259,10 @@ export default function SettingsPage() {
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-secondary mb-1.5">Bio</label>
+          <label htmlFor="settings-bio" className="block text-xs font-medium text-secondary mb-1.5">Bio</label>
           <textarea
+            id="settings-bio"
+            name="bio"
             value={bio}
             onChange={e => setBio(e.target.value)}
             maxLength={250}

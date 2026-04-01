@@ -41,10 +41,12 @@ import ReviewForm from "@/components/ReviewForm";
 import CommentThread from "@/components/CommentThread";
 import AuthModal from "@/components/AuthModal";
 import { getGameNotices } from "@/lib/utils/gameNotices";
+import { slugify } from "@/lib/utils/slugify";
 import {
   Zap, Trophy, Newspaper, MessageSquare, Clock,
   BarChart3, Target, ThumbsUp, ThumbsDown, Gamepad2,
   Smartphone, Tag, Globe, ChevronLeft, ChevronRight, Monitor, Share2, Home, Copy, Check,
+  ArrowUpRight, Building2,
 } from "lucide-react";
 
 interface GameDetailClientPageProps {
@@ -377,6 +379,8 @@ export default function GameDetailClientPage({
   const sc = scoreColor(game.score);
   const isProvisional = game.isProvisional || game.releaseStatus === "upcoming" || game.verdictLabel === "COMING SOON";
   const notices = getGameNotices(game);
+  const developerName = game.developer?.trim() || null;
+  const developerHref = developerName ? `/developers/${encodeURIComponent(slugify(developerName))}` : null;
 
   return (
     <div className="space-y-0">
@@ -437,11 +441,25 @@ export default function GameDetailClientPage({
 
               {/* Quick info chips */}
               <div className="flex flex-wrap items-center gap-2 text-xs hero-overlay-text-muted">
-                {game.developer && (
+                {developerName && developerHref ? (
+                  <Link
+                    href={developerHref}
+                    prefetch={false}
+                    className="group inline-flex items-center gap-2 rounded-full border border-accent/35 bg-accent/12 px-3 py-1.5 text-white transition-all hover:border-accent hover:bg-accent/18 hover:shadow-[0_0_20px_-10px_rgba(34,211,238,0.65)]"
+                    aria-label={`Open developer page for ${developerName}`}
+                  >
+                    <Building2 className="w-3.5 h-3.5 text-accent" />
+                    <span className="font-semibold text-white">{developerName}</span>
+                    <span className="hidden sm:inline text-[10px] font-bold uppercase tracking-[0.14em] text-accent/90">
+                      Developer Hub
+                    </span>
+                    <ArrowUpRight className="w-3.5 h-3.5 text-accent transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+                  </Link>
+                ) : developerName ? (
                   <span className="bg-black/40 backdrop-blur-sm px-2.5 py-1 rounded-full border border-white/15">
-                    {game.developer}
+                    {developerName}
                   </span>
-                )}
+                ) : null}
                 {game.genres.slice(0, 3).map((g) => (
                   <span key={g} className="bg-black/40 backdrop-blur-sm px-2.5 py-1 rounded-full border border-white/15">
                     {g}
@@ -914,7 +932,7 @@ export default function GameDetailClientPage({
                             </span>
                           )}
                           {article.author && <span>by {article.author}</span>}
-                          <span>{new Date(article.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
+                          <span>{formatDate(article.date)}</span>
                         </div>
                       </a>
                     ))}
@@ -1179,15 +1197,24 @@ export default function GameDetailClientPage({
                     Details
                   </h3>
                   <dl className="space-y-3 text-sm">
-                    <div className="flex justify-between">
-                      <dt className="text-tertiary">Developer</dt>
-                      <dd className="text-foreground font-medium text-right">
-                        {game.developer ? (
+                    <div className="flex items-start justify-between gap-4">
+                      <dt className="text-tertiary pt-1">Developer</dt>
+                      <dd className="text-right">
+                        {developerName && developerHref ? (
                           <Link
-                            href={`/developers/${encodeURIComponent(game.developer.toLowerCase().replace(/\s+/g, "-"))}`}
-                            className="hover:text-accent transition-colors"
+                            href={developerHref}
+                            prefetch={false}
+                            className="group inline-flex flex-col items-end gap-1 rounded-xl border border-accent/20 bg-accent/10 px-3 py-2 transition-all hover:border-accent/40 hover:bg-accent/15 hover:shadow-[0_0_20px_-12px_rgba(34,211,238,0.55)]"
+                            aria-label={`Open developer page for ${developerName}`}
                           >
-                            {game.developer}
+                            <span className="inline-flex items-center gap-1.5 text-foreground font-semibold">
+                              <Building2 className="w-3.5 h-3.5 text-accent" />
+                              <span>{developerName}</span>
+                              <ArrowUpRight className="w-3.5 h-3.5 text-accent transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+                            </span>
+                            <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-accent">
+                              Open developer page
+                            </span>
                           </Link>
                         ) : "—"}
                       </dd>

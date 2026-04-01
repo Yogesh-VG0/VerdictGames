@@ -7,6 +7,8 @@ interface SortDropdownProps<T extends string> {
   selected: T;
   onChange: (value: T) => void;
   className?: string;
+  id?: string;
+  name?: string;
 }
 
 export default function SortDropdown<T extends string>({
@@ -14,9 +16,13 @@ export default function SortDropdown<T extends string>({
   selected,
   onChange,
   className,
+  id,
+  name,
 }: SortDropdownProps<T>) {
   return (
     <select
+      id={id}
+      name={name}
       value={selected}
       onChange={(e) => onChange(e.target.value as T)}
       className={cn(

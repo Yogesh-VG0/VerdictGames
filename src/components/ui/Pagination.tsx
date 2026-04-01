@@ -123,12 +123,15 @@ export default function Pagination({
         >
           <span className="text-xs text-secondary">Go to</span>
           <input
+            id="pagination-go-to-page"
+            name="page"
             type="number"
             min={1}
             max={totalPages}
             value={goToValue}
             onChange={(e) => setGoToValue(e.target.value)}
             placeholder={String(currentPage)}
+            aria-label="Go to page"
             className="w-20 h-7 px-2 text-xs text-center rounded-lg border border-border bg-surface-2 text-foreground placeholder:text-tertiary focus:outline-none focus:ring-1 focus:ring-accent/40 tabular-nums [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
             autoFocus
           />

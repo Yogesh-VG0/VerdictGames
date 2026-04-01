@@ -17,7 +17,7 @@ import { PenLine, Star, ThumbsUp, ThumbsDown, Search, MessageSquare, ChevronLeft
 import GradientText from "@/components/ui/GradientText";
 import Image from "next/image";
 import { slugify } from "@/lib/utils/slugify";
-import { cn } from "@/lib/utils";
+import { cn, formatDate } from "@/lib/utils";
 
 const listItem = {
   hidden: { opacity: 0, y: 16 },
@@ -55,7 +55,7 @@ function SteamReviewCard({ review }: { review: SteamPlayerReview }) {
       <div className="flex items-center gap-3 text-[10px] text-tertiary">
         {review.votesUp > 0 && <span>{review.votesUp} found helpful</span>}
         {review.authoredAt && (
-          <span>{new Date(review.authoredAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
+          <span>{formatDate(review.authoredAt)}</span>
         )}
         {review.steamPurchase && <span className="text-pixel-cyan/70">Steam Purchase</span>}
       </div>
@@ -256,7 +256,7 @@ export default function ReviewsPage() {
                           {review.playtime_hours && <span>{review.playtime_hours}h played</span>}
                           {review.platform_played && <span>on {review.platform_played}</span>}
                           {review.published_at && (
-                            <span>{new Date(review.published_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
+                            <span>{formatDate(review.published_at)}</span>
                           )}
                         </div>
                       </div>
@@ -294,12 +294,15 @@ export default function ReviewsPage() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-tertiary" />
               <input
+                id="community-reviews-game-search"
+                name="gameQuery"
                 type="text"
                 value={steamGameQuery}
                 onChange={(e) => { setSteamGameQuery(e.target.value); setShowSuggestions(true); }}
                 onFocus={() => setShowSuggestions(true)}
                 onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
                 placeholder="Enter a game title e.g. Elden Ring…"
+                aria-label="Search games for community reviews"
                 className="w-full pl-9 pr-4 py-2.5 text-sm rounded-xl border border-border bg-surface-2 text-foreground placeholder:text-tertiary focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/50"
               />
               {/* Suggestions dropdown */}
@@ -498,10 +501,12 @@ export default function ReviewsPage() {
         </div>
         <div className="flex items-end gap-4">
           <div className="space-y-2 ml-auto">
-            <label className="text-[10px] uppercase tracking-wider text-tertiary font-medium">
+            <label htmlFor="reviews-sort" className="text-[10px] uppercase tracking-wider text-tertiary font-medium">
               Sort
             </label>
             <SortDropdown
+              id="reviews-sort"
+              name="sort"
               options={[
                 { label: "Newest First", value: "newest" as const },
                 { label: "Most Helpful", value: "helpful" as const },

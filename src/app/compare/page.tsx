@@ -45,10 +45,12 @@ function CompareCell({ label, v1, v2, higher = "none" }: {
   );
 }
 
-function GameSearchInput({ value, onSelect, placeholder }: {
+function GameSearchInput({ value, onSelect, placeholder, inputId, inputName }: {
   value: string;
   onSelect: (slug: string) => void;
   placeholder: string;
+  inputId: string;
+  inputName: string;
 }) {
   const [query, setQuery] = useState(value);
   const [open, setOpen] = useState(false);
@@ -63,6 +65,8 @@ function GameSearchInput({ value, onSelect, placeholder }: {
   return (
     <div className="relative">
       <input
+        id={inputId}
+        name={inputName}
         type="text"
         value={query}
         onChange={(e) => {
@@ -71,6 +75,7 @@ function GameSearchInput({ value, onSelect, placeholder }: {
         }}
         onFocus={() => setOpen(true)}
         placeholder={placeholder}
+        aria-label={placeholder}
         className="w-full h-11 px-4 text-sm rounded-xl bg-surface border border-border text-foreground placeholder:text-tertiary focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/20 transition-all"
       />
       {open && results && results.items.length > 0 && (
@@ -172,8 +177,8 @@ function CompareContent() {
       {/* Search inputs */}
       <FadeInSection>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <GameSearchInput value={g1} onSelect={(s) => handleSelect(1, s)} placeholder="Search first game..." />
-          <GameSearchInput value={g2} onSelect={(s) => handleSelect(2, s)} placeholder="Search second game..." />
+          <GameSearchInput value={g1} onSelect={(s) => handleSelect(1, s)} placeholder="Search first game..." inputId="compare-first-game" inputName="firstGame" />
+          <GameSearchInput value={g2} onSelect={(s) => handleSelect(2, s)} placeholder="Search second game..." inputId="compare-second-game" inputName="secondGame" />
         </div>
       </FadeInSection>
 

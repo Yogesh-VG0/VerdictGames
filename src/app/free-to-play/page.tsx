@@ -14,7 +14,7 @@ import GXPageNav from "@/components/GXPageNav";
 
 type ActiveTab = "free" | "subscriptions";
 
-function FreeGameCard({ game }: { game: GXFreeGame }) {
+function FreeGameCard({ game, priority = false }: { game: GXFreeGame; priority?: boolean }) {
   return (
     <div className="flex flex-col group rounded-2xl border border-border bg-surface overflow-hidden card-shimmer hover:border-pixel-green/30 hover:shadow-lg transition-all duration-300">
       <Link href={`/game/${slugify(game.title)}`} className="block">
@@ -26,6 +26,7 @@ function FreeGameCard({ game }: { game: GXFreeGame }) {
               fill
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
               className="object-cover transition-transform duration-700 group-hover:scale-110"
+              priority={priority}
             />
           ) : (
             <div className="w-full h-full bg-surface-2 flex items-center justify-center">
@@ -69,7 +70,7 @@ function FreeGameCard({ game }: { game: GXFreeGame }) {
   );
 }
 
-function SubscriptionGameCard({ game }: { game: GXTopGame }) {
+function SubscriptionGameCard({ game, priority = false }: { game: GXTopGame; priority?: boolean }) {
   return (
     <div className="flex flex-col group rounded-2xl border border-border bg-surface overflow-hidden card-shimmer hover:border-accent/30 hover:shadow-lg transition-all duration-300">
       <Link href={`/game/${slugify(game.title)}`} className="block">
@@ -81,6 +82,7 @@ function SubscriptionGameCard({ game }: { game: GXTopGame }) {
               fill
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
               className="object-cover transition-transform duration-700 group-hover:scale-110"
+              priority={priority}
             />
           ) : (
             <div className="w-full h-full bg-surface-2 flex items-center justify-center">
@@ -379,7 +381,7 @@ export default function FreeToPlayPage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: Math.min(i * 0.03, 0.5), duration: 0.4 }}
                 >
-                  <FreeGameCard game={game} />
+                  <FreeGameCard game={game} priority={i < 5} />
                 </motion.div>
               ))
             : filteredSubs.map((game, i) => (
@@ -389,7 +391,7 @@ export default function FreeToPlayPage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: Math.min(i * 0.03, 0.5), duration: 0.4 }}
                 >
-                  <SubscriptionGameCard game={game} />
+                  <SubscriptionGameCard game={game} priority={i < 5} />
                 </motion.div>
               ))}
         </div>

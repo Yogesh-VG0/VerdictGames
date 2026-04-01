@@ -10,7 +10,7 @@ import PixelButton from "@/components/ui/PixelButton";
 import PlatformIcon from "@/components/ui/PlatformIcon";
 import HeroImage from "@/components/ui/HeroImage";
 import { collapsePlatforms } from "@/lib/utils/platform";
-import { cn, sourceLabel, getStableYear, isFutureDate } from "@/lib/utils";
+import { cn, sourceLabel, getStableYear } from "@/lib/utils";
 
 interface HeroCarouselProps {
   games: Game[];
@@ -146,7 +146,7 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
   // Context-aware reason label per slide
   const getReasonLabel = (g: Game): string => {
     if (g.isFeaturedManual) return "Editor's Pick";
-    if (g.isProvisional || isFutureDate(g.releaseDate)) return "Coming Soon";
+    if (g.isProvisional || g.verdictLabel === "COMING SOON") return "Coming Soon";
     if (g.isTrendingManual || g.trending) return "Trending Now";
     if (g.score >= 90) return "Top Rated";
     if (g.priceCurrent === 0 || g.isFree) return "Free to Play";

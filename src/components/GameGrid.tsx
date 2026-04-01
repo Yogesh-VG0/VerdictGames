@@ -41,7 +41,7 @@ export default function GameGrid({
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35, ease: "easeOut", delay: Math.min(i * 0.04, 0.48) }}
         >
-          <GameCard game={game} priority={i < 4} />
+          <GameCard game={game} priority={i < columns} />
         </motion.div>
       ))}
     </div>

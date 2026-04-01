@@ -555,7 +555,7 @@ export async function fetchTrendingGames(limit = 20, homepageOnly = true): Promi
   const qualityFiltered = filterQualityGames(allCandidates, {
     section: "trending",
     minResults: 4,
-    allowReadinessFallback: false,
+    allowReadinessFallback: homepageOnly,
   });
   const readyFiltered = qualityFiltered.filter((r) =>
     isSurfaceReady(r, "homepageRail") &&
@@ -1001,7 +1001,7 @@ function isReservedHomepageTopRatedGame(game: Game): boolean {
 
 export async function fetchHomepageData(): Promise<HomepageData> {
   // Fetch all sections in parallel — each overfetches for dedup headroom
-  const [heroRaw, trendingRaw, topRatedRaw, newReleasesRaw, deals, recsRaw] = await Promise.all([
+  const [heroRaw, trendingPrimaryRaw, topRatedRaw, newReleasesRaw, deals, recsRaw] = await Promise.all([
     fetchHeroCandidates(HOMEPAGE_HERO_TARGET * 4).catch(() => [] as Game[]),
     fetchTrendingGames(HOMEPAGE_RAIL_TARGET * 2, true).catch(() => [] as Game[]),
     fetchHomepageTopRated(HOMEPAGE_RAIL_TARGET * 2).catch(() => [] as Game[]),
@@ -1009,6 +1009,10 @@ export async function fetchHomepageData(): Promise<HomepageData> {
     fetchDeals().catch(() => [] as GXDeal[]),
     fetchHomepageRecommendations(HOMEPAGE_RAIL_TARGET * 2).catch(() => [] as Game[]),
   ]);
+
+  const trendingRaw = trendingPrimaryRaw.length > 0
+    ? trendingPrimaryRaw
+    : await fetchTrendingGames(HOMEPAGE_RAIL_TARGET * 2, false).catch(() => [] as Game[]);
 
   // ─── Global Dedup: each game in exactly one rail ───
   const usedIds = new Set<string>();

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getSteamReviews, type SteamPlayerReview } from "@/lib/api";
-import { cn } from "@/lib/utils";
+import { cn, formatDate } from "@/lib/utils";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface SteamReviewsProps {
@@ -59,7 +59,7 @@ function ReviewCard({ review }: { review: SteamPlayerReview }) {
           <span>{review.votesUp} found helpful</span>
         )}
         {review.authoredAt && (
-          <span>{new Date(review.authoredAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
+          <span>{formatDate(review.authoredAt)}</span>
         )}
         {review.steamPurchase && (
           <span className="text-pixel-cyan/70">Steam Purchase</span>

@@ -418,6 +418,8 @@ export default function SearchClientPage({ initialState, initialGamesData }: Sea
             <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
           </svg>
           <input
+            id="search-games-query"
+            name="query"
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -477,10 +479,12 @@ export default function SearchClientPage({ initialState, initialGamesData }: Sea
 
         <div className="flex flex-wrap items-end gap-4">
           <div className="space-y-2">
-            <label className="text-[10px] uppercase tracking-wider text-tertiary font-medium">
+            <label htmlFor="search-genre-filter" className="text-[10px] uppercase tracking-wider text-tertiary font-medium">
               Genre
             </label>
             <select
+              id="search-genre-filter"
+              name="genre"
               value={genre}
               onChange={(e) => {
                 setGenre(e.target.value);
@@ -498,10 +502,12 @@ export default function SearchClientPage({ initialState, initialGamesData }: Sea
           </div>
 
           <div className="space-y-2">
-            <label className="text-[10px] uppercase tracking-wider text-tertiary font-medium">
+            <label htmlFor="search-year-filter" className="text-[10px] uppercase tracking-wider text-tertiary font-medium">
               Year
             </label>
             <select
+              id="search-year-filter"
+              name="year"
               value={year}
               onChange={(e) => {
                 setYear(e.target.value);
@@ -519,10 +525,12 @@ export default function SearchClientPage({ initialState, initialGamesData }: Sea
           </div>
 
           <div className="space-y-1 ml-auto">
-            <label className="text-[10px] uppercase tracking-wider text-tertiary font-medium">
+            <label htmlFor="search-sort" className="text-[10px] uppercase tracking-wider text-tertiary font-medium">
               Sort
             </label>
             <SortDropdown
+              id="search-sort"
+              name="sort"
               options={[
                 { label: "Relevance", value: "relevance" as SortOption },
                 { label: "Newest Released", value: "newest" as SortOption },
@@ -765,8 +773,11 @@ export default function SearchClientPage({ initialState, initialGamesData }: Sea
                 {dealsLoading ? "Loading deals…" : `${filteredDeals.length} deal${filteredDeals.length !== 1 ? "s" : ""} found`}
               </span>
               <select
+                id="deals-sort"
+                name="dealsSort"
                 value={dealsSortMode}
                 onChange={(e) => setDealsSortMode(e.target.value as DealsSortMode)}
+                aria-label="Sort deals"
                 className="text-xs bg-surface-2 border border-border rounded-lg px-3 py-1.5 text-secondary focus:outline-none focus:border-accent/40"
               >
                 {DEALS_SORT_OPTIONS.map((option) => (
@@ -797,7 +808,7 @@ export default function SearchClientPage({ initialState, initialGamesData }: Sea
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: Math.min(index * 0.03, 0.5), duration: 0.4 }}
                 >
-                  <GXDealCard deal={deal} />
+                  <GXDealCard deal={deal} priority={index < 5} />
                 </motion.div>
               ))}
             </div>
@@ -990,6 +1001,7 @@ export default function SearchClientPage({ initialState, initialGamesData }: Sea
                                 fill
                                 sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
                                 className="object-cover transition-transform duration-700 group-hover:scale-110"
+                                priority={index < 5}
                               />
                             ) : (
                               <div className="w-full h-full bg-surface-2 flex items-center justify-center">
@@ -1082,6 +1094,7 @@ export default function SearchClientPage({ initialState, initialGamesData }: Sea
                                 fill
                                 sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
                                 className="object-cover transition-transform duration-700 group-hover:scale-110"
+                                priority={index < 5}
                               />
                             ) : (
                               <div className="w-full h-full bg-surface-2 flex items-center justify-center">

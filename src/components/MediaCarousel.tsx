@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -39,6 +38,8 @@ export default function MediaCarousel({
               src={images[active]}
               alt={`${alt} screenshot ${active + 1}`}
               className="w-full h-full object-cover"
+              loading="lazy"
+              decoding="async"
             />
           </motion.div>
         </AnimatePresence>
@@ -86,6 +87,8 @@ export default function MediaCarousel({
                 src={src}
                 alt={`Thumbnail ${i + 1}`}
                 className="w-full h-full object-cover"
+                loading="lazy"
+                decoding="async"
               />
             </button>
           ))}

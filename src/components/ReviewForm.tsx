@@ -120,10 +120,12 @@ export default function ReviewForm({ gameId, gameSlug, onAuthRequired, onSuccess
             {/* Rating Slider */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <label className="text-xs text-secondary font-medium">Rating</label>
+                <label htmlFor="review-rating" className="text-xs text-secondary font-medium">Rating</label>
                 <span className={cn("text-lg font-bold tabular-nums", scoreColor)}>{rating}</span>
               </div>
               <input
+                id="review-rating"
+                name="rating"
                 type="range"
                 min={0}
                 max={100}
@@ -164,8 +166,10 @@ export default function ReviewForm({ gameId, gameSlug, onAuthRequired, onSuccess
 
             {/* Title */}
             <div className="space-y-1.5">
-              <label className="text-xs text-secondary font-medium">Title</label>
+              <label htmlFor="review-title" className="text-xs text-secondary font-medium">Title</label>
               <input
+                id="review-title"
+                name="title"
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
@@ -177,8 +181,10 @@ export default function ReviewForm({ gameId, gameSlug, onAuthRequired, onSuccess
 
             {/* Body */}
             <div className="space-y-1.5">
-              <label className="text-xs text-secondary font-medium">Review</label>
+              <label htmlFor="review-body" className="text-xs text-secondary font-medium">Review</label>
               <textarea
+                id="review-body"
+                name="body"
                 value={body}
                 onChange={(e) => setBody(e.target.value)}
                 placeholder="Share your thoughts..."
@@ -191,8 +197,10 @@ export default function ReviewForm({ gameId, gameSlug, onAuthRequired, onSuccess
             {/* Pros & Cons */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="text-xs text-success font-medium">+ Pros (one per line)</label>
+                <label htmlFor="review-pros" className="text-xs text-success font-medium">+ Pros (one per line)</label>
                 <textarea
+                  id="review-pros"
+                  name="pros"
                   value={prosText}
                   onChange={(e) => setProsText(e.target.value)}
                   placeholder="Great combat&#10;Beautiful graphics"
@@ -201,8 +209,10 @@ export default function ReviewForm({ gameId, gameSlug, onAuthRequired, onSuccess
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-xs text-danger font-medium">− Cons (one per line)</label>
+                <label htmlFor="review-cons" className="text-xs text-danger font-medium">− Cons (one per line)</label>
                 <textarea
+                  id="review-cons"
+                  name="cons"
                   value={consText}
                   onChange={(e) => setConsText(e.target.value)}
                   placeholder="Short story&#10;Buggy multiplayer"

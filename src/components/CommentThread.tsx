@@ -29,6 +29,7 @@ function CommentNode({
   const queryClient = useQueryClient();
   const [showReply, setShowReply] = useState(false);
   const [replyText, setReplyText] = useState("");
+  const replyInputId = `review-reply-${reviewId}-${comment.id}`;
 
   const replyMutation = useMutation({
     mutationFn: () => addReviewComment(reviewId, replyText.trim(), comment.id),
@@ -81,10 +82,13 @@ function CommentNode({
           >
             <div className="flex gap-2 py-1">
               <input
+                id={replyInputId}
+                name="reply"
                 type="text"
                 value={replyText}
                 onChange={(e) => setReplyText(e.target.value)}
                 placeholder="Write a reply..."
+                aria-label="Write a reply"
                 maxLength={2000}
                 className="flex-1 h-9 px-3 text-sm rounded-lg bg-white/5 border border-white/[0.08] text-foreground placeholder:text-tertiary focus:outline-none focus:border-accent/50 transition-all"
                 onKeyDown={(e) => {
@@ -128,6 +132,7 @@ export default function CommentThread({ reviewId, onAuthRequired }: CommentThrea
   const queryClient = useQueryClient();
   const [newComment, setNewComment] = useState("");
   const [isExpanded, setIsExpanded] = useState(false);
+  const newCommentInputId = `review-comment-${reviewId}`;
 
   const { data: comments, isLoading } = useQuery({
     queryKey: ["reviewComments", reviewId],
@@ -182,10 +187,13 @@ export default function CommentThread({ reviewId, onAuthRequired }: CommentThrea
             {/* New comment input */}
             <div className="flex gap-2">
               <input
+                id={newCommentInputId}
+                name="comment"
                 type="text"
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
                 placeholder={user ? "Add a comment..." : "Sign in to comment"}
+                aria-label="Add a comment"
                 maxLength={2000}
                 disabled={!user}
                 className="flex-1 h-9 px-3 text-sm rounded-lg bg-white/5 border border-white/[0.08] text-foreground placeholder:text-tertiary focus:outline-none focus:border-accent/50 disabled:opacity-50 transition-all"

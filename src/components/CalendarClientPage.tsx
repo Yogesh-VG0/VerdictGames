@@ -12,13 +12,26 @@ import PlatformIcon, {
   getFilterPlatforms,
 } from "@/components/ui/PlatformIcon";
 import { collapsePlatforms } from "@/lib/utils/platform";
-import { buildCalendarMonthOptions, buildCalendarPagePath, getCalendarMonthKey } from "@/lib/utils/gx-calendar";
+import { buildCalendarMonthOptions, buildCalendarPagePath } from "@/lib/utils/gx-calendar";
 import type { CalendarMonthResponse, Game, Platform } from "@/lib/types";
 import { CalendarDays, Gamepad2, CalendarX } from "lucide-react";
 
 interface CalendarClientPageProps {
   initialMonth: string;
   initialMonthData: CalendarMonthResponse;
+  today: string;
+  currentMonth: string;
+}
+
+const calendarDayFormatter = new Intl.DateTimeFormat("en-US", {
+  weekday: "long",
+  month: "long",
+  day: "numeric",
+  timeZone: "UTC",
+});
+
+function formatCalendarDay(date: string): string {
+  return calendarDayFormatter.format(new Date(`${date}T00:00:00Z`));
 }
 
 function getCalendarStatus(game: Game, today: string): { label: string; className: string } {
@@ -42,7 +55,7 @@ function getCalendarStatus(game: Game, today: string): { label: string; classNam
   return { label: "Released", className: "text-score-good bg-score-good/10" };
 }
 
-export default function CalendarClientPage({ initialMonth, initialMonthData }: CalendarClientPageProps) {
+export default function CalendarClientPage({ initialMonth, initialMonthData, today, currentMonth }: CalendarClientPageProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [selectedPlatform, setSelectedPlatform] = useState<Platform | "All">("All");
@@ -52,8 +65,7 @@ export default function CalendarClientPage({ initialMonth, initialMonthData }: C
   const dragStartX = useRef(0);
   const scrollStartX = useRef(0);
   const hasDragged = useRef(false);
-  const today = new Date().toISOString().slice(0, 10);
-  const currentMonth = getCalendarMonthKey();
+  const currentMonthDate = useMemo(() => new Date(`${currentMonth}-01T00:00:00Z`), [currentMonth]);
 
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
     const element = monthNavRef.current;
@@ -88,7 +100,7 @@ export default function CalendarClientPage({ initialMonth, initialMonthData }: C
     }, 100);
   }, []);
 
-  const monthOptions = useMemo(() => buildCalendarMonthOptions(initialMonth), [initialMonth]);
+  const monthOptions = useMemo(() => buildCalendarMonthOptions(initialMonth, currentMonthDate), [currentMonthDate, initialMonth]);
 
   useEffect(() => {
     if (!monthNavRef.current) {
@@ -238,11 +250,7 @@ export default function CalendarClientPage({ initialMonth, initialMonthData }: C
             {Object.entries(grouped).map(([date, dayGames]) => {
               const formatted = date === "TBA"
                 ? "TBA"
-                : new Date(`${date}T00:00:00`).toLocaleDateString("en-US", {
-                    weekday: "long",
-                    month: "long",
-                    day: "numeric",
-                  });
+                : formatCalendarDay(date);
               const isCollapsed = collapsedDays.has(date);
               const isToday = date === today;
 

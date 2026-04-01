@@ -325,10 +325,13 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login", messa
                   <div className="relative">
                     <User className={inputIconCls} />
                     <input
+                      id="auth-username"
+                      name="username"
                       type="text"
                       value={username}
                       onChange={(e) => handleUsernameChange(e.target.value)}
                       placeholder="Username"
+                      aria-label="Username"
                       required
                       autoComplete="username"
                       className={cn(inputCls, "pr-9", usernameStatus === "available" && "border-success/50", usernameStatus === "taken" && "border-danger/50")}
@@ -352,10 +355,13 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login", messa
               <div className="relative">
                 <Mail className={inputIconCls} />
                 <input
+                  id="auth-email"
+                  name="email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Email"
+                  aria-label="Email"
                   required
                   autoComplete="email"
                   className={inputCls}
@@ -366,10 +372,13 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login", messa
                 <div className="relative">
                   <Lock className={inputIconCls} />
                   <input
+                    id="auth-password"
+                    name="password"
                     type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Password"
+                    aria-label="Password"
                     required
                     autoComplete={tab === "login" ? "current-password" : "new-password"}
                     className={cn(inputCls, "pr-10")}

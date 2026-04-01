@@ -158,15 +158,18 @@ function LibraryContent() {
             </div>
           ) : library.data && library.data.length > 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-              {library.data.map((item) => (
+              {library.data.map((item, index) => (
                 <div key={item.id} className="relative group">
-                  {item.game && <GameCard game={item.game} />}
+                  {item.game && <GameCard game={item.game} priority={index < 4} />}
 
                   {/* Status overlay */}
                   <div className="absolute top-2 left-2 z-10">
                     <select
+                      id={`library-status-${item.gameId}`}
+                      name="status"
                       value={item.status}
                       onChange={(e) => statusMutation.mutate({ gameId: item.gameId, status: e.target.value as LibraryStatus })}
+                      aria-label={`Update library status for ${item.game?.title ?? "game"}`}
                       className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-lg bg-black/70 backdrop-blur-sm text-white border border-white/20 cursor-pointer appearance-none"
                     >
                       <option value="playing">Playing</option>

@@ -1,11 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Gamepad2 } from "lucide-react";
 import { Game } from "@/lib/types";
-import { scoreColor, cn, sourceLabel, scoreGlowClass, getStableYear, isFutureDate } from "@/lib/utils";
+import { scoreColor, cn, sourceLabel, scoreGlowClass, getStableYear } from "@/lib/utils";
 import { collapsePlatforms } from "@/lib/utils/platform";
 import VerdictBadge from "@/components/ui/VerdictBadge";
 import PlatformIcon from "@/components/ui/PlatformIcon";
@@ -18,62 +18,17 @@ interface GameCardProps {
   variant?: "default" | "spotlight";
 }
 
-function BlurImage({ src, alt, priority, className }: {
-  src: string; alt: string; sizes?: string; priority?: boolean; className?: string;
-}) {
-  const [status, setStatus] = useState<"loading" | "loaded" | "error">("loading");
-
-  const handleImageRef = useCallback((image: HTMLImageElement | null) => {
-    if (!image?.complete) return;
-    setStatus(image.naturalWidth > 0 ? "loaded" : "error");
-  }, []);
-
-  useEffect(() => {
-    if (status !== "loading") return;
-
-    const timeoutId = window.setTimeout(() => {
-      setStatus((current) => (current === "loading" ? "error" : current));
-    }, 10000);
-
-    return () => window.clearTimeout(timeoutId);
-  }, [status]);
-
-  return (
-    <>
-      {status === "loading" ? (
-        <div className="absolute inset-0 bg-surface-2 transition-opacity duration-500" />
-      ) : null}
-      {status === "error" ? (
-        <div className="absolute inset-0 bg-gradient-to-br from-accent/20 via-surface-2 to-pixel-cyan/10 flex items-center justify-center">
-          <span className="text-tertiary text-xs font-medium">{alt.slice(0, 2).toUpperCase()}</span>
-        </div>
-      ) : null}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        ref={handleImageRef}
-        src={src}
-        alt={alt}
-        className={cn(
-          "absolute inset-0 w-full h-full object-cover transition-all duration-700",
-          status === "loaded" ? "opacity-100 scale-100" : "opacity-0 scale-105 blur-sm",
-          className
-        )}
-        loading={priority ? "eager" : "lazy"}
-        decoding="async"
-        fetchPriority={priority ? "high" : undefined}
-        onLoad={() => setStatus("loaded")}
-        onError={() => setStatus("error")}
-      />
-    </>
-  );
-}
-
 function yearFromDate(date: string | undefined): string | null {
   return getStableYear(date);
 }
 
+function fallbackPosterLabel(title: string): string {
+  const label = title.replace(/[^A-Za-z0-9]/g, "").slice(0, 2).toUpperCase();
+  return label || "VG";
+}
+
 function isUnreleased(game: Game): boolean {
-  return isFutureDate(game.releaseDate);
+  return game.isProvisional || game.verdictLabel === "COMING SOON";
 }
 
 function hasRealScore(game: Game): boolean {
@@ -89,6 +44,61 @@ function scoreGlowBorder(score: number): string {
   if (score >= 65) return "hover:shadow-[0_0_20px_-8px_rgba(163,230,53,0.15)]";
   if (score >= 45) return "hover:shadow-[0_0_20px_-8px_rgba(250,204,21,0.15)]";
   return "hover:shadow-[0_0_20px_-8px_rgba(248,113,113,0.15)]";
+}
+
+function BlurImage({ src, alt, priority, className }: {
+  src: string; alt: string; sizes?: string; priority?: boolean; className?: string;
+}) {
+  const [status, setStatus] = useState<"loading" | "loaded" | "error">("loading");
+  const imageRef = useRef<HTMLImageElement | null>(null);
+  const fallbackLabel = fallbackPosterLabel(alt);
+
+  const handleImageRef = useCallback((node: HTMLImageElement | null) => {
+    imageRef.current = node;
+
+    if (node?.complete) {
+      setStatus(node.naturalWidth > 0 ? "loaded" : "error");
+    }
+  }, []);
+
+  useEffect(() => {
+    if (status !== "loading") return;
+
+    const timeoutId = window.setTimeout(() => {
+      setStatus((current) => (current === "loading" ? "error" : current));
+    }, 10000);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [status, src]);
+
+  return (
+    <>
+      <div
+        className={cn(
+          "absolute inset-0 bg-gradient-to-br from-accent/20 via-surface-2 to-pixel-cyan/10 flex items-center justify-center transition-opacity duration-500",
+          status === "loaded" ? "opacity-0" : "opacity-100"
+        )}
+      >
+        <span className="text-tertiary text-xs font-medium">{fallbackLabel}</span>
+      </div>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        ref={handleImageRef}
+        src={src}
+        alt={alt}
+        className={cn(
+          "absolute inset-0 w-full h-full object-cover transition-all duration-700",
+          status === "loaded" ? "opacity-100 scale-100" : "opacity-0 scale-105 blur-sm",
+          className
+        )}
+        loading={priority ? "eager" : "lazy"}
+        decoding="async"
+        fetchPriority={priority ? "high" : undefined}
+        onLoad={(event) => setStatus(event.currentTarget.naturalWidth > 0 ? "loaded" : "error")}
+        onError={() => setStatus("error")}
+      />
+    </>
+  );
 }
 
 export default function GameCard({

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import CalendarClientPage from "@/components/CalendarClientPage";
 import { loadCalendarMonth, CALENDAR_REVALIDATE_SECONDS } from "@/lib/services/calendar";
-import { buildCalendarPagePath, getCalendarSeoCopy, parseCalendarPageState } from "@/lib/utils/gx-calendar";
+import { buildCalendarPagePath, getCalendarMonthKey, getCalendarSeoCopy, parseCalendarPageState } from "@/lib/utils/gx-calendar";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://www.verdict.games";
 
@@ -45,6 +45,8 @@ export default async function CalendarPage({ searchParams }: CalendarPageProps) 
   const resolvedSearchParams = searchParams ? await searchParams : undefined;
   const state = parseCalendarPageState(resolvedSearchParams);
   const initialMonthData = await loadCalendarMonth(state.month);
+  const today = new Date().toISOString().slice(0, 10);
+  const currentMonth = getCalendarMonthKey();
 
-  return <CalendarClientPage initialMonth={state.month} initialMonthData={initialMonthData} />;
+  return <CalendarClientPage initialMonth={state.month} initialMonthData={initialMonthData} today={today} currentMonth={currentMonth} />;
 }

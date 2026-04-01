@@ -39,18 +39,21 @@ export function verdictBgClass(label: VerdictLabel): string {
   }
 }
 
+const dateFormatter = new Intl.DateTimeFormat("en-US", {
+  year: "numeric",
+  month: "short",
+  day: "numeric",
+  timeZone: "UTC",
+});
+
 /** Format a date string to a readable format. Handles ISO dates, "YYYY-MM-DD", etc. */
 export function formatDate(dateStr: string): string {
   if (!dateStr || dateStr === "null" || dateStr === "undefined") return "TBA";
   // Handle YYYY-MM-DD format (append T00:00:00 to avoid timezone issues)
-  const normalized = dateStr.length === 10 ? dateStr + "T00:00:00" : dateStr;
+  const normalized = dateStr.length === 10 ? `${dateStr}T00:00:00Z` : dateStr;
   const d = new Date(normalized);
   if (isNaN(d.getTime())) return "TBA";
-  return d.toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
+  return dateFormatter.format(d);
 }
 
 /** Truncate text to a maximum length with ellipsis. */

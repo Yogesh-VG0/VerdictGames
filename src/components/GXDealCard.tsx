@@ -10,9 +10,10 @@ import { slugify } from "@/lib/utils/slugify";
 
 interface GXDealCardProps {
   deal: GXDeal;
+  priority?: boolean;
 }
 
-export default function GXDealCard({ deal }: GXDealCardProps) {
+export default function GXDealCard({ deal, priority = false }: GXDealCardProps) {
   const hasDiscount = deal.discount && deal.discount > 0;
   const gameHref = `/game/${slugify(deal.title)}`;
   // Bundle deals go directly to the store — they have no meaningful internal page
@@ -38,6 +39,7 @@ export default function GXDealCard({ deal }: GXDealCardProps) {
           fill
           sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
           className="object-cover transition-transform duration-700 group-hover:scale-110"
+          priority={priority}
         />
       ) : (
         <div className="w-full h-full bg-surface-2 flex items-center justify-center">

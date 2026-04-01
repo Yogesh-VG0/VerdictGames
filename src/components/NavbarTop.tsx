@@ -306,6 +306,8 @@ export default function NavbarTop() {
               >
                 <form onSubmit={handleSearch} role="search" aria-label="Site search" className="px-4 py-3">
                   <input
+                    id="mobile-site-search"
+                    name="query"
                     ref={mobileSearchInputRef}
                     type="search"
                     value={query}
@@ -514,6 +516,8 @@ export default function NavbarTop() {
           {/* Search */}
           <form onSubmit={handleSearch} role="search" aria-label="Site search" className="relative w-52">
             <input
+              id="desktop-site-search"
+              name="query"
               ref={inputRef}
               type="search"
               value={query}
