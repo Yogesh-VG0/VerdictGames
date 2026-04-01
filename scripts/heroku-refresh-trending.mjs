@@ -91,6 +91,48 @@ async function getSteamAppName(appId) {
   } catch { return null; }
 }
 
+async function applyPlayerCountUpdates(updates, timestamp) {
+  let applied = 0;
+  for (let i = 0; i < updates.length; i += 250) {
+    const batch = updates.slice(i, i + 250);
+    const payload = JSON.stringify(batch);
+    const result = await sql`
+      WITH incoming AS (
+        SELECT *
+        FROM jsonb_to_recordset(${payload}::jsonb) AS incoming(id uuid, players integer)
+      )
+      UPDATE games AS g
+      SET current_players = incoming.players,
+          players_updated_at = ${timestamp}
+      FROM incoming
+      WHERE g.id = incoming.id
+    `;
+    applied += Number(result.count ?? batch.length);
+  }
+  return applied;
+}
+
+async function refreshMomentumFromLatestSnapshots() {
+  const result = await sql`
+    WITH latest_snapshots AS (
+      SELECT DISTINCT ON (game_id) game_id, player_count
+      FROM player_snapshots
+      WHERE player_count > 0
+      ORDER BY game_id, recorded_at DESC
+    )
+    UPDATE games AS g
+    SET momentum = ROUND(
+      LN((g.current_players + 1)::numeric) - LN((latest_snapshots.player_count + 1)::numeric),
+      4
+    )
+    FROM latest_snapshots
+    WHERE g.id = latest_snapshots.game_id
+      AND g.current_players IS NOT NULL
+      AND g.current_players > 0
+  `;
+  return Number(result.count ?? 0);
+}
+
 // ═══════════════════════ MAIN ═══════════════════════
 
 const start = Date.now();
@@ -109,6 +151,7 @@ if (!locked) { await sql.end(); process.exit(0); }
 const run = await startRun(sql, 'refresh-trending');
 const trendingIds = [];
 const matched = [];
+let caughtError = null;
 
 const QUALITY_FLOOR_SQL = sql`
   (
@@ -118,6 +161,8 @@ const QUALITY_FLOOR_SQL = sql`
     OR (COALESCE(momentum, 0) >= 0.18 AND COALESCE(current_players, 0) >= 1000 AND COALESCE(verdict_score, score, 0) >= 68)
   )
 `;
+
+try {
 
 // ── Step 0: Fetch Steam Global Top 100 ──
 console.log("🌍 Step 0: Fetching Steam Global Top 100 most-played...");
@@ -219,11 +264,11 @@ for (let i = 0; i < steamGames.length; i += 10) {
     })
   );
 
-  for (const r of results) {
-    if (r.status === "fulfilled" && r.value) {
-      await sql`UPDATE games SET current_players = ${r.value.players}, players_updated_at = ${now} WHERE id = ${r.value.id}`;
-      playerUpdates++;
-    }
+  const updates = results
+    .filter((r) => r.status === "fulfilled" && r.value)
+    .map((r) => r.value);
+  if (updates.length > 0) {
+    playerUpdates += await applyPlayerCountUpdates(updates, now);
   }
 
   // Rate limit: 500ms between batches
@@ -242,21 +287,7 @@ try {
   if (gamesWithPlayers.length > 0) {
     // 1) FIRST: compute momentum by comparing fresh current_players against LATEST existing snapshot
     //    This works even if the snapshot was from a previous run hours ago
-    let momentumUpdated = 0;
-    for (const game of gamesWithPlayers) {
-      const [latestSnap] = await sql`
-        SELECT player_count FROM player_snapshots
-        WHERE game_id = ${game.id}
-        ORDER BY recorded_at DESC
-        LIMIT 1
-      `;
-      if (latestSnap) {
-        const momentum = Math.log(game.current_players + 1) - Math.log(latestSnap.player_count + 1);
-        const rounded = Math.round(momentum * 10000) / 10000;
-        await sql`UPDATE games SET momentum = ${rounded} WHERE id = ${game.id}`;
-        momentumUpdated++;
-      }
-    }
+    const momentumUpdated = await refreshMomentumFromLatestSnapshots();
     console.log(`  📈 Updated momentum for ${momentumUpdated} games`);
 
     // 2) THEN: insert new snapshot (throttled to avoid duplicates from retries)
@@ -396,6 +427,17 @@ await finishRun(sql, run.id, {
   rows_updated: playerUpdates + uniqueIds.length,
   metadata: { totalGames: Number(count), trending: Number(tc), elapsed },
 });
-await releaseLock(sql, 'refresh-trending');
-await sql.end();
 console.log("✅ Done!");
+} catch (err) {
+  caughtError = err;
+  const errorMessage = err?.message ?? String(err);
+  console.error(`❌ Refresh trending failed: ${errorMessage}`);
+  await finishRun(sql, run.id, { error_message: errorMessage });
+} finally {
+  await releaseLock(sql, 'refresh-trending');
+  await sql.end();
+}
+
+if (caughtError) {
+  process.exit(1);
+}

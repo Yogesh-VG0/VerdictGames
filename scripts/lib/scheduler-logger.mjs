@@ -66,13 +66,13 @@ export async function releaseLock(sql, jobName) {
 export async function checkMinInterval(sql, jobName, minIntervalHours) {
   try {
     const [row] = await sql`
-      SELECT started_at FROM scheduler_runs
+      SELECT COALESCE(finished_at, started_at) AS completed_at FROM scheduler_runs
       WHERE job_name = ${jobName} AND status = 'success'
-      ORDER BY started_at DESC LIMIT 1
+      ORDER BY COALESCE(finished_at, started_at) DESC LIMIT 1
     `;
     if (!row) return true; // no previous run found, should run
 
-    const lastRun = new Date(row.started_at);
+    const lastRun = new Date(row.completed_at);
     const hoursSince = (Date.now() - lastRun.getTime()) / (1000 * 60 * 60);
 
     if (hoursSince < minIntervalHours) {
