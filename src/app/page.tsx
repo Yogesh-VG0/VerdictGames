@@ -65,6 +65,12 @@ export default async function HomePage() {
     .filter((game) => game.coverImage)
     .slice(0, 20);
   const hasTopRatedGames = topRatedGames.length > 0;
+  const excludedRecommendationIds = [
+    ...featured,
+    ...trendingGames,
+    ...topRatedGames,
+    ...homepage.newReleases,
+  ].map((game) => game.id);
 
   return (
     <div className="space-y-0 page-enter">
@@ -130,7 +136,7 @@ export default async function HomePage() {
                   href="/search?sort=top-rated"
                   linkLabel="View all"
                   icon={<Trophy className="w-5 h-5" />}
-                  subtitle="Highest-scoring releases across the last decade"
+                  subtitle="Highest-scoring recent releases with strong popularity and staying power"
                   gradient="linear-gradient(90deg, #facc15 0%, #f97316 25%, #eab308 50%, #22c55e 75%, #facc15 100%)"
                 />
                 <HorizontalScroll>
@@ -154,6 +160,7 @@ export default async function HomePage() {
         initialRecommendations={homepage.recommendations}
         initialNewReleases={homepage.newReleases}
         initialDeals={homepage.deals}
+        excludedRecommendationIds={excludedRecommendationIds}
       />
 
       {/* ── 6. Gaming News ── */}

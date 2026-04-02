@@ -37,6 +37,7 @@ interface HomepageClientSectionsProps {
   initialRecommendations: Game[];
   initialNewReleases: Game[];
   initialDeals: GXDeal[];
+  excludedRecommendationIds: string[];
 }
 
 const CARD_WIDTH = "shrink-0 w-44 sm:w-52 md:w-56 lg:w-60 h-full";
@@ -51,6 +52,7 @@ export default function HomepageClientSections({
   initialRecommendations,
   initialNewReleases,
   initialDeals,
+  excludedRecommendationIds,
 }: HomepageClientSectionsProps) {
   const { user } = useAuth();
   const [discoverTab, setDiscoverTab] = useState<DiscoverTab>("new");
@@ -62,6 +64,7 @@ export default function HomepageClientSections({
     staleTime: 5 * 60 * 1000,
   });
 
+  const excludedRecommendationIdSet = new Set(excludedRecommendationIds);
   const gxFreeToPlay = useQuery({
     queryKey: ["gx-free-to-play"],
     queryFn: () => getGXFreeToPlay(),
@@ -69,9 +72,12 @@ export default function HomepageClientSections({
     enabled: discoverTab === "free",
   });
 
-  const personalizedGames = personalized.data ?? [];
-  const showingPersonalized = !!user && personalizedGames.length > 0;
-  const recommendedGames = showingPersonalized ? personalizedGames : initialRecommendations;
+  const personalizedGames = (personalized.data ?? []).filter((game) => !excludedRecommendationIdSet.has(game.id));
+  const fallbackRecommendationIds = new Set(personalizedGames.map((game) => game.id));
+  const fallbackRecommendations = initialRecommendations.filter((game) => !fallbackRecommendationIds.has(game.id));
+  const mergedPersonalizedGames = [...personalizedGames, ...fallbackRecommendations];
+  const showingPersonalized = !!user && mergedPersonalizedGames.length > 0;
+  const recommendedGames = showingPersonalized ? mergedPersonalizedGames : initialRecommendations;
   const recommendedLoading = !!user && personalized.isLoading && initialRecommendations.length === 0;
 
   return (

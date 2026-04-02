@@ -302,7 +302,7 @@ export function getSearchSeoCopy(state: SearchPageState): { title: string; descr
     case "top-rated":
       return {
         title: `Top Rated Games${pageSuffix}`,
-        description: "Browse the highest-rated games on verdict.games.",
+        description: "Browse the highest-rated games with strong popularity and current relevance on verdict.games.",
       };
     case "newest":
       return {

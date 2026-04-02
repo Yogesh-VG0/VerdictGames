@@ -144,45 +144,48 @@ function applyGenreDiversity(rows: GameRow[], limit: number, maxPerGenre: number
   return picks;
 }
 
-function getHomepageTopRatedScore(row: GameRow): number {
+export function getHomepageTopRatedScore(row: GameRow): number {
   const qualityScore = confidenceWeightedScore(row);
   const evidenceReviewCount = getEvidenceReviewCount(row);
   const criticSources = getCriticSourceCount(row);
-  const reviewScore = Math.min(12, Math.log10(evidenceReviewCount + 1) * 2.8);
-  const activityScore = Math.min(8, Math.log10((row.current_players ?? 0) + 1) * 2.1);
+  const currentPlayers = row.current_players ?? 0;
+  const reviewScore = Math.min(14, Math.log10(evidenceReviewCount + 1) * 3.1);
+  const activityScore = Math.min(16, Math.log10(currentPlayers + 1) * 4);
   const ageDays = row.release_date
     ? (Date.now() - new Date(`${row.release_date}T00:00:00`).getTime()) / 86400000
     : Number.POSITIVE_INFINITY;
   const recencyScore = ageDays <= 90
-    ? 10
+    ? 14
     : ageDays <= 180
-      ? 8
-      : ageDays <= 365
-        ? 5
+      ? 10
+    : ageDays <= 365
+        ? 6
         : ageDays <= 730
           ? 2
           : 0;
   const criticBonus = criticSources >= 2 ? 4 : criticSources === 1 ? 1.5 : 0;
-  const livePresenceBonus = (row.current_players ?? 0) >= 5000
-    ? 8
-    : (row.current_players ?? 0) >= 1500
-      ? 5
-      : (row.current_players ?? 0) >= 500
-        ? 2
+  const livePresenceBonus = currentPlayers >= 15000
+    ? 14
+    : currentPlayers >= 7000
+      ? 10
+      : currentPlayers >= 2500
+        ? 6
+        : currentPlayers >= 1000
+          ? 3
         : 0;
-  const lowPresencePenalty = ageDays > 45 && (row.current_players ?? 0) < 500 && evidenceReviewCount < 5000 && criticSources < 2
+  const lowPresencePenalty = ageDays > 365 && currentPlayers < 500
     ? 22
-    : ageDays > 7 && (row.current_players ?? 0) < 100 && evidenceReviewCount < 10000 && criticSources < 2
-      ? 18
-    : ageDays > 30 && (row.current_players ?? 0) < 300 && evidenceReviewCount < 25000 && criticSources < 2
-      ? 16
-      : ageDays > 180 && (row.current_players ?? 0) < 150 && evidenceReviewCount < 10000 && criticSources < 2
+    : ageDays > 180 && currentPlayers < 750
+      ? 14
+      : ageDays > 90 && currentPlayers < 1000
         ? 8
         : 0;
-  const scaleBonus = evidenceReviewCount >= 50000
+  const scaleBonus = evidenceReviewCount >= 100000
     ? 8
+    : evidenceReviewCount >= 50000
+      ? 6
     : evidenceReviewCount >= 10000
-      ? 4
+      ? 3
       : 0;
 
   return qualityScore + reviewScore + activityScore + recencyScore + criticBonus + scaleBonus + livePresenceBonus - lowPresencePenalty;
@@ -220,29 +223,37 @@ export function isHomepageTopRatedEligible(row: GameRow): boolean {
     ? (Date.now() - new Date(`${row.release_date}T00:00:00`).getTime()) / 86400000
     : Number.POSITIVE_INFINITY;
 
+  if (evidenceReviewCount >= 100000) {
+    return currentPlayers >= 250 || ageDays <= 60;
+  }
+
   if (evidenceReviewCount >= 50000) {
+    return currentPlayers >= 400 || ageDays <= 45;
+  }
+
+  if (evidenceReviewCount >= 25000 && currentPlayers >= 400) {
     return true;
   }
 
   if (hasStrongCriticEvidence(row)) {
-    return currentPlayers >= 1000
+    return currentPlayers >= 1500
       || (ageDays <= 90 && evidenceReviewCount >= 10000 && currentPlayers >= 500)
       || (ageDays <= 45 && evidenceReviewCount >= 2500 && currentPlayers >= 150);
   }
 
-  if (evidenceReviewCount >= 10000 && currentPlayers >= 250) {
+  if (evidenceReviewCount >= 10000 && currentPlayers >= 500) {
     return true;
   }
 
-  if (evidenceReviewCount >= 5000 && currentPlayers >= 750) {
+  if (evidenceReviewCount >= 5000 && currentPlayers >= 1000) {
     return true;
   }
 
-  if (ageDays <= 60 && evidenceReviewCount >= 5000 && currentPlayers >= 250) {
+  if (ageDays <= 60 && evidenceReviewCount >= 5000 && currentPlayers >= 400) {
     return true;
   }
 
-  return evidenceReviewCount >= 2500 && currentPlayers >= 1000;
+  return evidenceReviewCount >= 2500 && currentPlayers >= 1500;
 }
 
 function preferHomepageTopRatedPool(rows: GameRow[], desiredCount: number): GameRow[] {
@@ -633,28 +644,35 @@ export function getHomepageRecommendationScore(row: GameRow): number {
     ? (Date.now() - new Date(`${row.release_date}T00:00:00`).getTime()) / 86400000
     : Number.POSITIVE_INFINITY;
   const recencyBonus = ageDays <= 180
-    ? 14
+    ? 12
     : ageDays <= 365
+      ? 8
+    : ageDays <= 730
+        ? 4
+        : 0;
+  const activityBonus = currentPlayers >= 15000
+    ? 14
+    : currentPlayers >= 7000
       ? 10
-      : ageDays <= 730
+      : currentPlayers >= 2500
         ? 6
-        : ageDays <= 1095
+        : currentPlayers >= 1000
           ? 3
           : 0;
-  const activityBonus = currentPlayers >= 5000
+  const scaleBonus = evidenceReviewCount >= 100000
     ? 8
-    : currentPlayers >= 1500
-      ? 5
-      : currentPlayers >= 250
-        ? 2
-        : 0;
-  const scaleBonus = evidenceReviewCount >= 50000
+    : evidenceReviewCount >= 50000
     ? 6
     : evidenceReviewCount >= 10000
       ? 3
       : 0;
+  const lowPresencePenalty = ageDays > 365 && currentPlayers < 500
+    ? 14
+    : ageDays > 180 && currentPlayers < 750
+      ? 8
+      : 0;
 
-  return qualityScore + recencyBonus + activityBonus + scaleBonus;
+  return qualityScore + recencyBonus + activityBonus + scaleBonus - lowPresencePenalty;
 }
 
 export function isHomepageRecommendationEligible(row: GameRow): boolean {
@@ -668,7 +686,7 @@ export function isHomepageRecommendationEligible(row: GameRow): boolean {
     return true;
   }
 
-  if (evidenceReviewCount >= 10000 && currentPlayers >= 500) {
+  if (evidenceReviewCount >= 10000 && currentPlayers >= 750) {
     return true;
   }
 
@@ -676,13 +694,13 @@ export function isHomepageRecommendationEligible(row: GameRow): boolean {
     return true;
   }
 
-  if (ageDays <= 60 && evidenceReviewCount >= 5000 && currentPlayers >= 250) {
+  if (ageDays <= 60 && evidenceReviewCount >= 5000 && currentPlayers >= 400) {
     return true;
   }
 
   if (hasStrongCriticEvidence(row)) {
     return currentPlayers >= 1000
-      || (ageDays <= 90 && evidenceReviewCount >= 5000 && currentPlayers >= 250)
+      || (ageDays <= 90 && evidenceReviewCount >= 5000 && currentPlayers >= 400)
       || (ageDays <= 45 && evidenceReviewCount >= 1500 && currentPlayers >= 100);
   }
 
@@ -1144,7 +1162,7 @@ async function fetchHomepageMostAnticipated(limit = 12): Promise<HomepageAnticip
 
 const getCachedHomepageData = unstable_cache(
   async () => fetchHomepageData(),
-  ["homepage-data-v7"],
+  ["homepage-data-v8"],
   { revalidate: HOMEPAGE_REVALIDATE_SECONDS }
 );
 
@@ -1252,9 +1270,9 @@ function isReservedHomepageTopRatedGame(game: Game): boolean {
 
   return hasStrongCriticEvidence
     || reviewCount >= 50000
-    || (reviewCount >= 10000 && currentPlayers >= 100)
-    || (reviewCount >= 5000 && currentPlayers >= 250)
-    || (reviewCount >= 2500 && currentPlayers >= 500);
+    || (reviewCount >= 10000 && currentPlayers >= 500)
+    || (reviewCount >= 5000 && currentPlayers >= 1000)
+    || (reviewCount >= 2500 && currentPlayers >= 1500);
 }
 
 export async function fetchHomepageData(): Promise<HomepageData> {

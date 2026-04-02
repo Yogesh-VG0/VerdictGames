@@ -86,7 +86,7 @@ function getSearchPageHeader(browseTab: SearchBrowseTab, freeSubTab: FreeSubTab,
     case "top-rated":
       return {
         title: "Top Rated Games",
-        subtitle: "Highest Verdict scores across all platforms.",
+        subtitle: "Highest-rated games with strong popularity and current relevance.",
         gradient: "linear-gradient(90deg, #facc15, #f97316, #22c55e)",
         icon: <Trophy className="w-6 h-6 text-yellow-500" />,
       };

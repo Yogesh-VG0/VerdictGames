@@ -13,6 +13,7 @@ import {
   getCriticSourceCount,
   getEvidenceReviewCount,
   getNewReleaseDiscoveryScore,
+  hasStrongCriticEvidence,
   isQualityGame,
   isSurfaceReady,
 } from "@/lib/utils/quality";
@@ -122,6 +123,88 @@ function getBrowseRelevanceDiscoveryScore(row: GameRow): number {
     + Math.min(10, Math.log10(evidenceReviewCount + 1) * 2.8)
     + Math.min(8, Math.log10(currentPlayers + 1) * 2.2)
     + Math.min(6, momentum * 22);
+}
+
+function getBrowseTopRatedAgeDays(row: GameRow): number {
+  return getDateAgeDays(row.release_date);
+}
+
+export function isBrowseTopRatedEligible(row: GameRow): boolean {
+  const evidenceReviewCount = getEvidenceReviewCount(row);
+  const currentPlayers = row.current_players ?? 0;
+  const ageDays = getBrowseTopRatedAgeDays(row);
+
+  if (evidenceReviewCount >= 300000) {
+    return currentPlayers >= 500 || ageDays <= 3650;
+  }
+
+  if (evidenceReviewCount >= 100000) {
+    return currentPlayers >= 250 || ageDays <= 2555;
+  }
+
+  if (evidenceReviewCount >= 50000) {
+    return currentPlayers >= 300 || ageDays <= 1825;
+  }
+
+  if (hasStrongCriticEvidence(row)) {
+    return currentPlayers >= 1500
+      || (ageDays <= 365 && evidenceReviewCount >= 10000 && currentPlayers >= 400)
+      || (ageDays <= 120 && evidenceReviewCount >= 2500 && currentPlayers >= 100);
+  }
+
+  if (evidenceReviewCount >= 10000 && currentPlayers >= 500) {
+    return true;
+  }
+
+  if (evidenceReviewCount >= 5000 && currentPlayers >= 1000) {
+    return true;
+  }
+
+  return ageDays <= 180 && evidenceReviewCount >= 2500 && currentPlayers >= 400;
+}
+
+export function getBrowseTopRatedScore(row: GameRow): number {
+  const qualityScore = confidenceWeightedScore(row);
+  const evidenceReviewCount = getEvidenceReviewCount(row);
+  const criticSources = getCriticSourceCount(row);
+  const currentPlayers = row.current_players ?? 0;
+  const momentum = Math.max(0, row.momentum ?? 0);
+  const ageDays = getBrowseTopRatedAgeDays(row);
+  const reviewScore = Math.min(14, Math.log10(evidenceReviewCount + 1) * 3.1);
+  const activityScore = Math.min(18, Math.log10(currentPlayers + 1) * 4.6);
+  const recencyScore = ageDays <= 90
+    ? 14
+    : ageDays <= 180
+      ? 11
+      : ageDays <= 365
+        ? 8
+        : ageDays <= 730
+          ? 4
+          : ageDays <= 1825
+            ? 1
+            : 0;
+  const criticBonus = criticSources >= 2 ? 4 : criticSources === 1 ? 1.5 : 0;
+  const scaleBonus = evidenceReviewCount >= 300000
+    ? 10
+    : evidenceReviewCount >= 100000
+      ? 8
+      : evidenceReviewCount >= 50000
+        ? 6
+        : evidenceReviewCount >= 10000
+          ? 3
+          : 0;
+  const momentumBonus = Math.min(4, momentum * 18);
+  const lowPresencePenalty = ageDays > 3650 && currentPlayers < 1500
+    ? 32
+    : ageDays > 2555 && currentPlayers < 1000
+      ? 24
+      : ageDays > 1825 && currentPlayers < 750
+        ? 18
+        : ageDays > 730 && currentPlayers < 500
+          ? 10
+          : 0;
+
+  return qualityScore + reviewScore + activityScore + recencyScore + criticBonus + scaleBonus + momentumBonus - lowPresencePenalty;
 }
 
 function passesRecentlyAddedDiscoveryFloor(row: GameRow): boolean {
@@ -462,6 +545,16 @@ async function fetchSearchResults(state: SearchGamesState): Promise<PaginatedRes
 
   rows = dedupePublicCanonicalRows(rows, { query: q });
 
+  if (isTopRated && rows.length > 0) {
+    const browseEligible = rows.filter(isBrowseTopRatedEligible);
+    if (browseEligible.length >= Math.min(Math.max(start + SEARCH_PAGE_SIZE, 20), 80)) {
+      rows = browseEligible;
+    } else if (browseEligible.length >= 12) {
+      const eligibleIds = new Set(browseEligible.map((row) => row.id));
+      rows = [...browseEligible, ...rows.filter((row) => !eligibleIds.has(row.id))];
+    }
+  }
+
   if (isTrending && rows.length > 0) {
     rows.sort((left, right) => getPublicTrendingScore(right) - getPublicTrendingScore(left));
   } else if (isNewest && rows.length > 0) {
@@ -517,13 +610,15 @@ async function fetchSearchResults(state: SearchGamesState): Promise<PaginatedRes
 
   if (isTopRated && rows.length > 0) {
     rows.sort((left, right) => {
-      const scoreDiff = confidenceWeightedScore(right) - confidenceWeightedScore(left);
+      const scoreDiff = getBrowseTopRatedScore(right) - getBrowseTopRatedScore(left);
       if (scoreDiff !== 0) return scoreDiff;
       const reviewDiff = getEvidenceReviewCount(right) - getEvidenceReviewCount(left);
       if (reviewDiff !== 0) return reviewDiff;
+      const playerDiff = (right.current_players ?? 0) - (left.current_players ?? 0);
+      if (playerDiff !== 0) return playerDiff;
       const criticDiff = getCriticSourceCount(right) - getCriticSourceCount(left);
       if (criticDiff !== 0) return criticDiff;
-      return (right.current_players ?? 0) - (left.current_players ?? 0);
+      return (right.release_date ?? "").localeCompare(left.release_date ?? "");
     });
     rows = rows.slice(start, start + SEARCH_PAGE_SIZE);
   }
