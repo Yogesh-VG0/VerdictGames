@@ -216,13 +216,18 @@ function getHomepageTopRatedEvidenceTier(row: GameRow): number {
 function isHomepageTopRatedEligible(row: GameRow): boolean {
   const evidenceReviewCount = getEvidenceReviewCount(row);
   const currentPlayers = row.current_players ?? 0;
-
-  if (hasStrongCriticEvidence(row)) {
-    return true;
-  }
+  const ageDays = row.release_date
+    ? (Date.now() - new Date(`${row.release_date}T00:00:00`).getTime()) / 86400000
+    : Number.POSITIVE_INFINITY;
 
   if (evidenceReviewCount >= 50000) {
     return true;
+  }
+
+  if (hasStrongCriticEvidence(row)) {
+    return evidenceReviewCount >= 5000
+      || currentPlayers >= 250
+      || (ageDays <= 45 && evidenceReviewCount >= 1500 && currentPlayers >= 100);
   }
 
   if (evidenceReviewCount >= 10000 && currentPlayers >= 100) {
@@ -233,7 +238,7 @@ function isHomepageTopRatedEligible(row: GameRow): boolean {
     return true;
   }
 
-  return evidenceReviewCount >= 2500 && currentPlayers >= 500;
+  return evidenceReviewCount >= 2500 && currentPlayers >= 1000;
 }
 
 function preferHomepageTopRatedPool(rows: GameRow[], desiredCount: number): GameRow[] {
@@ -616,7 +621,7 @@ function dateCutoff(yearsBack: number): string {
   return d.toISOString().slice(0, 10);
 }
 
-function getHomepageRecommendationScore(row: GameRow): number {
+export function getHomepageRecommendationScore(row: GameRow): number {
   const qualityScore = confidenceWeightedScore(row);
   const evidenceReviewCount = getEvidenceReviewCount(row);
   const currentPlayers = row.current_players ?? 0;
@@ -646,6 +651,34 @@ function getHomepageRecommendationScore(row: GameRow): number {
       : 0;
 
   return qualityScore + recencyBonus + activityBonus + scaleBonus;
+}
+
+export function isHomepageRecommendationEligible(row: GameRow): boolean {
+  const evidenceReviewCount = getEvidenceReviewCount(row);
+  const currentPlayers = row.current_players ?? 0;
+  const ageDays = row.release_date
+    ? (Date.now() - new Date(`${row.release_date}T00:00:00`).getTime()) / 86400000
+    : Number.POSITIVE_INFINITY;
+
+  if (evidenceReviewCount >= 50000 || currentPlayers >= 2500) {
+    return true;
+  }
+
+  if (evidenceReviewCount >= 10000 && currentPlayers >= 250) {
+    return true;
+  }
+
+  if (evidenceReviewCount >= 5000 && currentPlayers >= 500) {
+    return true;
+  }
+
+  if (hasStrongCriticEvidence(row)) {
+    return currentPlayers >= 250
+      || evidenceReviewCount >= 5000
+      || (ageDays <= 45 && evidenceReviewCount >= 1500 && currentPlayers >= 100);
+  }
+
+  return evidenceReviewCount >= 2500 && currentPlayers >= 1000;
 }
 
 export async function fetchNewReleases(limit = 20): Promise<Game[]> {
@@ -853,7 +886,7 @@ export async function fetchHomepageTopRated(limit = 20): Promise<Game[]> {
   });
 
   const homepageEligible = filtered.filter(isHomepageTopRatedEligible);
-  if (homepageEligible.length >= Math.min(limit, 4)) {
+  if (homepageEligible.length > 0) {
     filtered = homepageEligible;
   }
 
@@ -955,6 +988,11 @@ export async function fetchHomepageRecommendations(limit = 20): Promise<Game[]> 
         allowReadinessFallback: false,
       });
     }
+  }
+
+  const homepageEligible = qualityFiltered.filter(isHomepageRecommendationEligible);
+  if (homepageEligible.length > 0) {
+    qualityFiltered = homepageEligible;
   }
 
   qualityFiltered.sort((a, b) => getHomepageRecommendationScore(b) - getHomepageRecommendationScore(a));
@@ -1098,7 +1136,7 @@ async function fetchHomepageMostAnticipated(limit = 12): Promise<HomepageAnticip
 
 const getCachedHomepageData = unstable_cache(
   async () => fetchHomepageData(),
-  ["homepage-data-v4"],
+  ["homepage-data-v5"],
   { revalidate: HOMEPAGE_REVALIDATE_SECONDS }
 );
 

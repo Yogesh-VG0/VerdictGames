@@ -43,6 +43,15 @@ const SUPPLEMENTAL_DESCRIPTION_PATTERNS = [
   /\bcontent can be downloaded from the store\b/i,
 ];
 
+const GENERIC_DESCRIPTION_SUBJECTS = new Set([
+  "the game",
+  "this game",
+  "the player",
+  "players",
+  "it",
+  "you",
+]);
+
 function stripPackagingSuffix(title: string): string {
   let stripped = title.trim();
   let changed = true;
@@ -85,6 +94,47 @@ export function hasSupplementalDescription(description?: string | null): boolean
   return SUPPLEMENTAL_DESCRIPTION_PATTERNS.some((pattern) => pattern.test(description));
 }
 
+function extractLeadingDescriptionSubject(description: string): string | null {
+  const firstSentence = description.trim().split(/[.!?]/, 1)[0]?.trim();
+  if (!firstSentence) {
+    return null;
+  }
+
+  const match = firstSentence.match(/^["“'‘]?([^.!?]{2,100}?)\s+(?:is|was|are)\b/);
+  if (!match) {
+    return null;
+  }
+
+  const candidate = match[1].replace(/^["“'‘]+|["”'’]+$/g, "").trim();
+  if (!candidate) {
+    return null;
+  }
+
+  if (GENERIC_DESCRIPTION_SUBJECTS.has(candidate.toLowerCase())) {
+    return null;
+  }
+
+  const words = candidate.split(/\s+/).filter(Boolean);
+  if (words.length < 2 && !/\d/.test(candidate) && !/[-:]/.test(candidate)) {
+    return null;
+  }
+
+  return candidate;
+}
+
+function hasMismatchedDescriptionTitle(title: string, description?: string | null): boolean {
+  if (!description) {
+    return false;
+  }
+
+  const subject = extractLeadingDescriptionSubject(description);
+  if (!subject) {
+    return false;
+  }
+
+  return getDiscoveryCanonicalTitle(subject) !== getDiscoveryCanonicalTitle(title);
+}
+
 export function isPrimaryDiscoveryGame(row: Pick<GameRow, "title" | "description">): boolean {
   if (isPackagingEditionTitle(row.title)) {
     return false;
@@ -98,11 +148,23 @@ export function isPrimaryDiscoveryGame(row: Pick<GameRow, "title" | "description
 }
 
 export function sanitizeDiscoveryDescription(
-  row: Pick<GameRow, "description" | "wikipedia_excerpt">
+  row: Pick<GameRow, "title" | "description" | "igdb_summary" | "wikipedia_excerpt">
 ): string {
-  if (!hasSupplementalDescription(row.description)) {
-    return row.description ?? "";
+  const candidates = [row.description, row.igdb_summary, row.wikipedia_excerpt]
+    .map((value) => value?.trim() || "")
+    .filter(Boolean);
+
+  for (const candidate of candidates) {
+    if (hasSupplementalDescription(candidate)) {
+      continue;
+    }
+
+    if (hasMismatchedDescriptionTitle(row.title, candidate)) {
+      continue;
+    }
+
+    return candidate;
   }
 
-  return row.wikipedia_excerpt?.trim() || "";
+  return "";
 }

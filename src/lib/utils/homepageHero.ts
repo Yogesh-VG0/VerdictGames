@@ -13,7 +13,8 @@ export function isHomepageHeroAutoCandidate(row: GameRow): boolean {
   const momentum = row.momentum ?? 0;
   const verdictScore = row.verdict_score ?? row.score ?? 0;
   const ageDays = getHomepageHeroAgeDays(row);
-  const hasSpotlightPresence = currentPlayers >= 250 || momentum >= 0.03 || evidenceReviewCount >= 50000;
+  const hasSpotlightPresence = currentPlayers >= 1000 || momentum >= 0.05 || evidenceReviewCount >= 50000;
+  const isFreshHeroWindow = ageDays <= 90;
 
   if (row.is_featured_manual ?? false) {
     return true;
@@ -23,7 +24,7 @@ export function isHomepageHeroAutoCandidate(row: GameRow): boolean {
     return false;
   }
 
-  return (hasStrongCriticEvidence(row) && verdictScore >= 82 && (ageDays <= 120 || hasSpotlightPresence))
+  return (hasStrongCriticEvidence(row) && verdictScore >= 82 && (isFreshHeroWindow || hasSpotlightPresence))
     || (evidenceReviewCount >= 50000 && verdictScore >= 84)
     || (evidenceReviewCount >= 25000 && currentPlayers >= 250 && verdictScore >= 86)
     || (evidenceReviewCount >= 20000 && currentPlayers >= 3500 && verdictScore >= 84)

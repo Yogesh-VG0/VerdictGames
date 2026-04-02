@@ -255,6 +255,19 @@ describe("mapGameRow", () => {
     expect(game.score).toBe(92);
   });
 
+  it("rejects wrong-franchise description text and falls back to the matching summary", () => {
+    const game = mapGameRow(makeGameRow({
+      title: "Monster Train 2",
+      slug: "monster-train-2",
+      description: "Monster Train is a roguelike deck-building game developed by American studio Shiny Shoe and published by Good Shepherd Entertainment.",
+      igdb_summary: "Monster Train 2 expands the deckbuilding roguelike formula with new clans, runs, and strategic layers.",
+      wikipedia_excerpt: "Monster Train is a roguelike deck-building game released in 2020.",
+    }));
+
+    expect(game.description).toBe("Monster Train 2 expands the deckbuilding roguelike formula with new clans, runs, and strategic layers.");
+    expect(game.description).not.toContain("Monster Train is a roguelike deck-building game");
+  });
+
   it("game released 20 days ago with few reviews gets a real verdict (past JUST RELEASED window)", () => {
     const twentyDaysAgo = new Date();
     twentyDaysAgo.setDate(twentyDaysAgo.getDate() - 20);

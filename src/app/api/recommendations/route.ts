@@ -9,9 +9,10 @@ export const revalidate = 120; // ISR: revalidate every 2 minutes
 
 import { NextRequest } from "next/server";
 import { jsonOk } from "@/lib/api/response";
+import { getHomepageRecommendationScore, isHomepageRecommendationEligible } from "@/lib/services/homepage";
 import { mapGameRow } from "@/lib/db/mappers";
 import { GAME_CARD_COLUMNS_WITH_DESC } from "@/lib/db/columns";
-import { confidenceWeightedScore, isQualityGame } from "@/lib/utils/quality";
+import { isQualityGame } from "@/lib/utils/quality";
 import { dedupePublicCanonicalRows } from "@/lib/utils/publicCanonical";
 import { isPublicSafeGame } from "@/lib/utils/publicSafety";
 import { hasUsableCardImage } from "@/lib/utils/mediaReadiness";
@@ -121,8 +122,12 @@ export async function GET(request: NextRequest) {
 
     rows = dedupePublicCanonicalRows(rows);
 
-    // Sort by confidence-weighted score so low-review 100% games don't dominate
-    rows.sort((a, b) => confidenceWeightedScore(b) - confidenceWeightedScore(a));
+    const homepageEligible = rows.filter(isHomepageRecommendationEligible);
+    if (homepageEligible.length > 0) {
+      rows = homepageEligible;
+    }
+
+    rows.sort((a, b) => getHomepageRecommendationScore(b) - getHomepageRecommendationScore(a));
 
     // Ensure genre diversity: pick one per primary genre first
     const seen = new Set<string>();

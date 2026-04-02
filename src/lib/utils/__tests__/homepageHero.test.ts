@@ -110,6 +110,28 @@ describe("homepage hero auto candidates", () => {
     expect(isHomepageHeroAutoCandidate(candidate)).toBe(false);
   });
 
+  it("rejects an older critically-backed game with only modest live presence", () => {
+    const candidate = makeGameRow({
+      title: "Monster Train 2",
+      slug: "monster-train-2",
+      genres: ["Strategy", "Indie"],
+      release_date: isoDaysAgo(320),
+      review_count: 9252,
+      steam_total_count: 9252,
+      steam_positive_count: 8882,
+      current_players: 679,
+      momentum: 0,
+      verdict_score: 94,
+      score: 94,
+      critic_score: 91,
+      igdb_rating: 91,
+      confidence: 0.91,
+      trending: false,
+    });
+
+    expect(isHomepageHeroAutoCandidate(candidate)).toBe(false);
+  });
+
   it("accepts a breakout-scale recent game with strong current player demand", () => {
     const breakout = makeGameRow({
       id: "00000000-0000-0000-0000-000000000200",
