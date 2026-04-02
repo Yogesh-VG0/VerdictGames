@@ -42,6 +42,7 @@ export default function NavbarTop() {
   const mobileSearchWasOpen = useRef(false);
   const sidebarWasOpen = useRef(false);
   const signOutConfirmWasOpen = useRef(false);
+  const [navReady, setNavReady] = useState(false);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -65,6 +66,10 @@ export default function NavbarTop() {
     };
   }, [profileDropdownOpen]);
 
+  useEffect(() => {
+    setNavReady(true);
+  }, []);
+
   // Close dropdown on route change
   const closeDropdown = useCallback(() => setProfileDropdownOpen(false), []);
   useEffect(() => {
@@ -82,12 +87,16 @@ export default function NavbarTop() {
   ];
 
   const isNavLinkActive = useCallback((href: string) => {
+    if (!navReady) {
+      return false;
+    }
+
     if (href === "/") {
       return pathname === "/";
     }
 
     return pathname.startsWith(href);
-  }, [pathname]);
+  }, [navReady, pathname]);
 
   const getFocusableElements = useCallback((container: HTMLElement | null) => {
     if (!container) return [];

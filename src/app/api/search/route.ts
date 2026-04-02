@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { parseSearchPageState } from "@/lib/search";
-import { createEmptySearchResult, loadSearchResults, SEARCH_API_CACHE_CONTROL, SEARCH_REVALIDATE_SECONDS } from "@/lib/services/search";
+import { loadSearchResults, SEARCH_API_CACHE_CONTROL, SEARCH_REVALIDATE_SECONDS } from "@/lib/services/search";
 
 export const revalidate = 30;
 
@@ -27,13 +27,8 @@ export async function GET(request: NextRequest) {
     console.error("[API] /search error:", error);
 
     return NextResponse.json(
-      { success: true, data: createEmptySearchResult(state.games.page) },
-      {
-        status: 200,
-        headers: {
-          "Cache-Control": SEARCH_API_CACHE_CONTROL,
-        },
-      }
+      { success: false, error: "Failed to load search results." },
+      { status: 500 }
     );
   }
 }

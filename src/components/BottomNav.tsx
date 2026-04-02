@@ -83,14 +83,23 @@ function BottomNavMarkup({
 function BottomNavFallback() {
   const pathname = usePathname();
   const { user } = useAuth();
+  const [activeReady, setActiveReady] = useState(false);
   const links = getLinks(user);
   const queryHrefCandidates = links.filter((link) => link.href.startsWith(`${SHARED_NAV_DESTINATIONS.browse}?`)).map((link) => link.href);
+
+  useEffect(() => {
+    setActiveReady(true);
+  }, []);
 
   return (
     <BottomNavMarkup
       links={links}
       visible={true}
       isLinkActive={(href) => {
+        if (!activeReady) {
+          return false;
+        }
+
         if (href === SHARED_NAV_DESTINATIONS.browse) {
           return isNavHrefActive(pathname, null, href, "exact")
             && !hasActiveNavHref(pathname, null, queryHrefCandidates);
@@ -106,9 +115,14 @@ function BottomNavContent() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { user } = useAuth();
+  const [activeReady, setActiveReady] = useState(false);
   const [visible, setVisible] = useState(true);
   const lastScrollY = useRef(0);
   const ticking = useRef(false);
+
+  useEffect(() => {
+    setActiveReady(true);
+  }, []);
 
   useEffect(() => {
     const onScroll = () => {
@@ -137,6 +151,10 @@ function BottomNavContent() {
   const hasExplicitSearchDestination = hasActiveNavHref(pathname, searchParams, queryHrefCandidates);
 
   const isLinkActive = (href: string) => {
+    if (!activeReady) {
+      return false;
+    }
+
     if (href === SHARED_NAV_DESTINATIONS.browse) {
       return isNavHrefActive(pathname, searchParams, href, "exact") && !hasExplicitSearchDestination;
     }

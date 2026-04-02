@@ -73,6 +73,18 @@ async function apiFetch<T>(
   }
 }
 
+async function apiFetchOrThrow<T>(
+  path: string,
+  options?: RequestInit
+): Promise<T> {
+  const data = await apiFetch<T>(path, options);
+  if (data === null) {
+    throw new Error(`Failed to fetch ${path}`);
+  }
+
+  return data;
+}
+
 /* ═══════════════════════════════════════════════════
    GAME QUERIES
    ═══════════════════════════════════════════════════ */
@@ -122,16 +134,14 @@ export interface HomepageData {
 
 /** Fetch all homepage sections in a single call. */
 export async function getHomepageData(): Promise<HomepageData> {
-  const data = await apiFetch<HomepageData>("/api/homepage");
-  return data ?? { hero: [], trending: [], topRated: [], newReleases: [], deals: [], recommendations: [] };
+  return apiFetchOrThrow<HomepageData>("/api/homepage");
 }
 
 /** Search games with filters and pagination. */
 export async function searchGames(
   filters: SearchFilters
 ): Promise<PaginatedResponse<Game>> {
-  const data = await apiFetch<PaginatedResponse<Game>>(buildSearchApiPath(filters));
-  return data ?? { ...EMPTY_PAGE<Game>(), pageSize: 25 };
+  return apiFetchOrThrow<PaginatedResponse<Game>>(buildSearchApiPath(filters));
 }
 
 /** Get a single game by slug. Pass rawgId for RAWG-sourced links to avoid slug collisions. */

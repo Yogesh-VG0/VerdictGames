@@ -33,6 +33,10 @@ yarn-error.log*
 
 # backfill pipeline checkpoint (local state, not committed)
 .backfill-checkpoint.json
+.import-games-checkpoint.json
+.import-games-failures.json
+.import-games-*-checkpoint.json
+.import-games-*-failures.json
 .pnpm-debug.log*
 
 # env files (can opt-in for committing if needed)

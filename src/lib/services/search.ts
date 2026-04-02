@@ -12,6 +12,7 @@ import { confidenceWeightedScore, getEvidenceReviewCount, getCriticSourceCount, 
 import { dedupePublicCanonicalRows } from "@/lib/utils/publicCanonical";
 import { isPublicSafeGame } from "@/lib/utils/publicSafety";
 import { normalizeTitle } from "@/lib/utils/slugify";
+import { isFutureDate } from "@/lib/utils";
 
 export const SEARCH_REVALIDATE_SECONDS = 30;
 export const SEARCH_API_CACHE_CONTROL = `s-maxage=${SEARCH_REVALIDATE_SECONDS}, stale-while-revalidate=300`;
@@ -258,7 +259,7 @@ async function fetchSearchResults(state: SearchGamesState): Promise<PaginatedRes
     }
 
     if (isUpcoming) {
-      return Boolean(row.release_date && row.release_date > todayStr);
+      return Boolean(row.release_date && isFutureDate(row.release_date));
     }
 
     if ((row as GameRow & { is_provisional?: boolean }).is_provisional) {
@@ -269,13 +270,21 @@ async function fetchSearchResults(state: SearchGamesState): Promise<PaginatedRes
       return false;
     }
 
-    if (row.release_date && row.release_date > todayStr) {
+    if (isFutureDate(row.release_date)) {
       return false;
     }
 
     const reviewCount = row.review_count ?? 0;
     if (reviewCount === 0 && row.release_date) {
-      const releaseMs = new Date(`${row.release_date}T00:00:00`).getTime();
+      const normalizedReleaseDate = /^\d{4}-\d{2}-\d{2}$/.test(row.release_date)
+        ? `${row.release_date}T00:00:00Z`
+        : /^\d{4}$/.test(row.release_date)
+          ? `${row.release_date}-01-01T00:00:00Z`
+          : row.release_date;
+      const releaseMs = new Date(normalizedReleaseDate).getTime();
+      if (Number.isNaN(releaseMs)) {
+        return false;
+      }
       const daysSinceRelease = (todayMs - releaseMs) / 86400000;
       if (daysSinceRelease > justReleasedDays) {
         return false;

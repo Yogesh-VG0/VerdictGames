@@ -64,6 +64,7 @@ export default async function HomePage() {
   const topRatedGames = homepage.topRated
     .filter((game) => game.coverImage)
     .slice(0, 20);
+  const hasTopRatedGames = topRatedGames.length > 0;
 
   return (
     <div className="space-y-0 page-enter">
@@ -117,13 +118,13 @@ export default async function HomePage() {
         </>
       ) : null}
 
-      {/* ── 5. Top Rated ── */}
-      <section className="relative py-12 sm:py-16">
-        <div className="absolute inset-0 mesh-gradient opacity-30 pointer-events-none" />
-        <div className="max-w-[1400px] mx-auto px-4 relative">
-          <FadeInSection>
-            {topRatedGames.length > 0 ? (
-              <>
+      {hasTopRatedGames ? (
+        <>
+          {/* ── 5. Top Rated ── */}
+          <section className="relative py-12 sm:py-16">
+            <div className="absolute inset-0 mesh-gradient opacity-30 pointer-events-none" />
+            <div className="max-w-[1400px] mx-auto px-4 relative">
+              <FadeInSection>
                 <SectionHeader
                   title="Top Rated"
                   href="/search?sort=top-rated"
@@ -139,15 +140,15 @@ export default async function HomePage() {
                     </div>
                   ))}
                 </HorizontalScroll>
-              </>
-            ) : null}
-          </FadeInSection>
-        </div>
-      </section>
+              </FadeInSection>
+            </div>
+          </section>
 
-      <div className="max-w-[1400px] mx-auto px-4">
-        <hr className="border-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
-      </div>
+          <div className="max-w-[1400px] mx-auto px-4">
+            <hr className="border-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
+          </div>
+        </>
+      ) : null}
 
       <HomepageClientSections
         initialRecommendations={homepage.recommendations}

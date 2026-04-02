@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { Tag, Gift, Compass, Home } from "lucide-react";
@@ -43,10 +43,15 @@ function GXPageNavMarkup({ isLinkActive }: { isLinkActive: (href: string) => boo
 
 function GXPageNavFallback() {
   const pathname = usePathname();
+  const [activeReady, setActiveReady] = useState(false);
+
+  useEffect(() => {
+    setActiveReady(true);
+  }, []);
 
   return (
     <GXPageNavMarkup
-      isLinkActive={(href) => isNavHrefActive(pathname, null, href)}
+      isLinkActive={(href) => activeReady ? isNavHrefActive(pathname, null, href) : false}
     />
   );
 }
@@ -54,8 +59,17 @@ function GXPageNavFallback() {
 function GXPageNavContent() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const [activeReady, setActiveReady] = useState(false);
+
+  useEffect(() => {
+    setActiveReady(true);
+  }, []);
 
   const isLinkActive = (href: string) => {
+    if (!activeReady) {
+      return false;
+    }
+
     return isNavHrefActive(pathname, searchParams, href);
   };
 

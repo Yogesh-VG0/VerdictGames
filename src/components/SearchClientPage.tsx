@@ -182,13 +182,14 @@ export default function SearchClientPage({ initialState, initialGamesData }: Sea
   );
   const shouldUseInitialGamesData = browseTab === "games" && searchApiPath === initialSearchApiPath;
 
-  const { data, isLoading, isFetching } = useQuery({
+  const { data, error, isError, isLoading, isFetching } = useQuery({
     queryKey: ["search", searchApiPath],
     queryFn: () => searchGames(filters),
     enabled: browseTab === "games",
     placeholderData: (prev) => prev,
     initialData: shouldUseInitialGamesData ? initialGamesData ?? undefined : undefined,
     staleTime: 30_000,
+    retry: 1,
   });
 
   const games = data?.items ?? [];
@@ -342,6 +343,11 @@ export default function SearchClientPage({ initialState, initialGamesData }: Sea
   }, [normalizedPagePath, router]);
 
   const isInitialLoad = browseTab === "games" && isLoading && !data;
+  const searchErrorMessage = browseTab === "games" && isError
+    ? error instanceof Error
+      ? error.message
+      : "Failed to load search results."
+    : null;
   const pageHeader = useMemo(() => getSearchPageHeader(browseTab, freeSubTab, sort), [browseTab, freeSubTab, sort]);
 
   const resetDealsFilters = useCallback(() => {
@@ -580,6 +586,11 @@ export default function SearchClientPage({ initialState, initialGamesData }: Sea
               transition={{ duration: 0.3 }}
               className={isFetching ? "opacity-60 pointer-events-none transition-opacity relative" : "transition-opacity relative"}
             >
+              {searchErrorMessage && (
+                <div className="mb-4 rounded-2xl border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger">
+                  Browse results could not be refreshed just now. Showing the last successful results.
+                </div>
+              )}
               <div className="flex items-center gap-2 mb-4">
                 <p className="text-xs text-tertiary">
                   Showing {(page - 1) * (data?.pageSize ?? 25) + 1}–{Math.min(page * (data?.pageSize ?? 25), totalCount)} of {totalCount} game{totalCount !== 1 ? "s" : ""}
@@ -639,6 +650,28 @@ export default function SearchClientPage({ initialState, initialGamesData }: Sea
                   </button>
                 </div>
               )}
+            </motion.div>
+          ) : searchErrorMessage ? (
+            <motion.div
+              key="error"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="text-center py-16 space-y-4"
+            >
+              <div className="text-5xl">⚠️</div>
+              <p className="text-foreground font-semibold text-lg">Browse results are temporarily unavailable</p>
+              <p className="text-sm text-secondary max-w-md mx-auto">
+                We couldn&apos;t load this game list right now. Please try again in a moment.
+              </p>
+              <button
+                onClick={() => window.location.reload()}
+                className={RESET_FILTERS_BUTTON_CLASS}
+              >
+                <RotateCcw className="w-4 h-4" />
+                Retry
+              </button>
             </motion.div>
           ) : !isLoading ? (
             <motion.div

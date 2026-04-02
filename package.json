@@ -15,6 +15,7 @@
     "scheduler:trending": "node scripts/heroku-refresh-trending.mjs",
     "scheduler:discover": "node scripts/heroku-discover-games.mjs",
     "scheduler:re-enrich": "node scripts/heroku-re-enrich.mjs",
+    "import:games:file": "node scripts/import-games-from-file.mjs",
     "test": "vitest run",
     "test:watch": "vitest"
   },

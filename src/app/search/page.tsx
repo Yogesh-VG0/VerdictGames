@@ -46,7 +46,9 @@ export async function generateMetadata({ searchParams }: SearchPageProps): Promi
 export default async function SearchPage({ searchParams }: SearchPageProps) {
   const resolvedSearchParams = searchParams ? await searchParams : undefined;
   const state = parseSearchPageState(resolvedSearchParams);
-  const initialGamesData = state.browseTab === "games" ? await loadSearchResults(state.games) : null;
+  const initialGamesData = state.browseTab === "games"
+    ? await loadSearchResults(state.games).catch(() => null)
+    : null;
 
   return <SearchClientPage initialState={state} initialGamesData={initialGamesData} />;
 }

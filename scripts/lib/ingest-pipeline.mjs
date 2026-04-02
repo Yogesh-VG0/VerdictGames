@@ -464,14 +464,14 @@ const BLOCKED = new Set(["grand-theft-aito-vi"]);
  * @param {object} [options]
  * @param {boolean} [options.forceRefresh] - re-enrich even if exists
  * @param {string}  [options.expectedSlug] - hint for best-match selection
- * @returns {Promise<{success:boolean, gameId:string|null, slug:string|null, message:string, alreadyExisted:boolean}>}
+ * @returns {Promise<{success:boolean, gameId:string|null, slug:string|null, title:string|null, rawgId:number|null, message:string, alreadyExisted:boolean}>}
  */
 export async function ingestGameDirect(sql, query, options = {}) {
   const { forceRefresh = false, expectedSlug } = options;
 
   // ── 1. Search RAWG ──
   const search = await searchRawg(query);
-  if (!search.results?.length) return { success: false, gameId: null, slug: null, message: `No RAWG results for "${query}".`, alreadyExisted: false };
+  if (!search.results?.length) return { success: false, gameId: null, slug: null, title: null, rawgId: null, message: `No RAWG results for "${query}".`, alreadyExisted: false };
 
   // ── 2. Pick best match ──
   const norm = s => s.toLowerCase().replace(/[^a-z0-9]/g, "");
@@ -491,14 +491,14 @@ export async function ingestGameDirect(sql, query, options = {}) {
     return s;
   };
   const best = search.results.reduce((b, c) => sc(c) > sc(b) ? c : b, search.results[0]);
-  if (sc(best) < 30) return { success: false, gameId: null, slug: null, message: `No confident match for "${query}".`, alreadyExisted: false };
+  if (sc(best) < 30) return { success: false, gameId: null, slug: null, title: best?.name ?? null, rawgId: best?.id ?? null, message: `No confident match for "${query}".`, alreadyExisted: false };
 
   const slug = slugify(best.name);
-  if (BLOCKED.has(slug)) return { success: false, gameId: null, slug: null, message: `"${slug}" is blocklisted.`, alreadyExisted: false };
+  if (BLOCKED.has(slug)) return { success: false, gameId: null, slug: null, title: best.name, rawgId: best.id, message: `"${slug}" is blocklisted.`, alreadyExisted: false };
 
   // ── 3. Check existence ──
   const [existing] = await sql`SELECT id, slug FROM games WHERE slug = ${slug} OR rawg_id = ${best.id} LIMIT 1`;
-  if (existing && !forceRefresh) return { success: true, gameId: existing.id, slug: existing.slug, message: "Already exists.", alreadyExisted: true };
+  if (existing && !forceRefresh) return { success: true, gameId: existing.id, slug: existing.slug, title: best.name, rawgId: best.id, message: "Already exists.", alreadyExisted: true };
 
   // ── 4. Fetch full details ──
   const [fullGame, screenshots, storeLinks] = await Promise.all([
@@ -729,7 +729,7 @@ export async function ingestGameDirect(sql, query, options = {}) {
     else { const [ex] = await sql`SELECT id FROM games WHERE slug = ${slug} LIMIT 1`; gameId = ex?.id ?? null; }
   }
 
-  if (!gameId) return { success: false, gameId: null, slug, message: "DB insert failed.", alreadyExisted: false };
+  if (!gameId) return { success: false, gameId: null, slug, title: fullGame.name, rawgId: fullGame.id, message: "DB insert failed.", alreadyExisted: false };
 
   // ── 7. Source mappings ──
   await sql`INSERT INTO game_sources (game_id, source_name, source_game_id, source_url)
@@ -745,7 +745,7 @@ export async function ingestGameDirect(sql, query, options = {}) {
     VALUES (${gameId}, 'cheapshark', ${csId}, ${pDealUrl})
     ON CONFLICT (source_name, source_game_id) DO UPDATE SET game_id = ${gameId}`.catch(() => {});
 
-  return { success: true, gameId, slug, message: existing ? `"${fullGame.name}" refreshed.` : `"${fullGame.name}" ingested.`, alreadyExisted: !!existing };
+  return { success: true, gameId, slug, title: fullGame.name, rawgId: fullGame.id, message: existing ? `"${fullGame.name}" refreshed.` : `"${fullGame.name}" ingested.`, alreadyExisted: !!existing };
 }
 
 // ══════════════════════════════════════════════════

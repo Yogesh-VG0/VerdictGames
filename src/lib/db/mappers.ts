@@ -7,6 +7,7 @@
 
 import type { Game, Review, ReviewComment, User, GameList, UserGame, Platform, MonetizationType, VerdictLabel, LibraryStatus } from "../types";
 import type { GameRow, ReviewRow, ProfileRow, ListRow, UserGameRow, ReviewCommentRow } from "../supabase/types";
+import { isFutureDate } from "../utils";
 import { scoreToVerdict } from "../utils/score";
 import { getVerdictLabel } from "../utils/scoring";
 import { sanitizeDiscoveryDescription } from "../utils/discovery";
@@ -114,21 +115,21 @@ function computeTrendingReason(row: GameRow): string | undefined {
   if (r.is_trending_manual || r.is_featured_manual) return "⭐ Editor's Pick";
 
   // 2. Recency signals
-  if (ageDays < 0) return "�️ Coming Soon";
-  if (ageDays <= 30 && (momentum >= 0.05 || currentPlayers >= 500 || reviewCount >= 150)) return "� New & Hot";
+  if (ageDays < 0) return "Coming Soon";
+  if (ageDays <= 30 && (momentum >= 0.05 || currentPlayers >= 500 || reviewCount >= 150)) return "New & Hot";
   if (ageDays <= 30) return "✨ Just Released";
 
   // 3. Momentum signals
-  if (momentum > 0.2 && (currentPlayers >= 50 || reviewCount >= 250)) return "� Trending Up";
+  if (momentum > 0.2 && (currentPlayers >= 50 || reviewCount >= 250)) return "Trending Up";
 
   // 4. Quality / popularity tiers
-  if (score >= 90 && reviewCount >= 150) return "� Top Rated";
+  if (score >= 90 && reviewCount >= 150) return "Top Rated";
   if (currentPlayers > 10000) return "🎮 Popular Now";
-  if (row.price_deal_url && row.price_lowest != null && score >= 75) return "� On Sale";
+  if (row.price_deal_url && row.price_lowest != null && score >= 75) return "On Sale";
   if (score >= 82 && reviewCount < 150 && currentPlayers < 5000) return "💎 Hidden Gem";
 
   // 5. Cooling-off signal — keep this narrow so strong top-rated games do not look weak by default
-  if (momentum < -0.35 && currentPlayers >= 2500 && score < 90) return "� Falling";
+  if (momentum < -0.35 && currentPlayers >= 2500 && score < 90) return "Falling";
 
   // 6. Generic fallback
   if (row.trending || momentum > 0.08) return "🔥 Trending";
@@ -159,7 +160,7 @@ export function mapGameRow(row: GameRow): Game {
   // Force future/unreleased games into Coming Soon state — no real verdicts until released
   const today = new Date().toISOString().slice(0, 10);
   const isFutureRelease = row.release_date
-    ? row.release_date > today
+    ? isFutureDate(row.release_date)
     : false;
 
   // Games with 0 reviews should not display real verdicts — their score is just a RAWG rating guess

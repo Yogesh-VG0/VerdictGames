@@ -12,7 +12,6 @@
 
 import { NextResponse } from "next/server";
 import {
-  EMPTY_HOMEPAGE_DATA,
   HOMEPAGE_API_CACHE_CONTROL,
   HOMEPAGE_REVALIDATE_SECONDS,
   loadHomepageData,
@@ -34,8 +33,8 @@ export async function GET() {
   } catch (err) {
     console.error("[API] /homepage error:", err);
     return NextResponse.json(
-      { success: true, data: EMPTY_HOMEPAGE_DATA },
-      { status: 200, headers: { "Cache-Control": HOMEPAGE_API_CACHE_CONTROL } }
+      { success: false, error: "Failed to load homepage data." },
+      { status: 500 }
     );
   }
 }

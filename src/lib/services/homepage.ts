@@ -25,6 +25,7 @@ import { unstable_cache } from "next/cache";
 import { getPublicSupabase } from "@/lib/supabase/public";
 import { mapGameRow } from "@/lib/db/mappers";
 import { GAME_CARD_COLUMNS_WITH_DESC } from "@/lib/db/columns";
+import { isFutureDate } from "@/lib/utils";
 import {
   filterQualityGames,
   confidenceWeightedScore,
@@ -447,7 +448,8 @@ export async function fetchHeroCandidates(limit = 12): Promise<Game[]> {
   const ready = combined.filter((r) =>
     isSurfaceReady(r, "homepageRail") &&
     isPublicSafeGame(r) &&
-    hasUsableCardImage(r)
+    hasUsableCardImage(r) &&
+    !isFutureDate(r.release_date)
   );
   const qualityFiltered = ready.filter((r) => isQualityGame(r, "hero"));
   const heroFiltered = qualityFiltered.filter(isHomepageHeroAutoCandidate);
@@ -584,7 +586,14 @@ export async function fetchTrendingGames(limit = 20, homepageOnly = true): Promi
   // Genre diversity: max 3 per primary genre
   const diversified = applyGenreDiversity(ranked, limit, 3);
 
-  return diversified.map(mapGameRow);
+  const final = diversified.filter((row) => {
+    if ((row as GameRow & { is_provisional?: boolean }).is_provisional) return false;
+    if (row.verdict_label === "COMING SOON") return false;
+    if (!row.release_date || isFutureDate(row.release_date)) return false;
+    return true;
+  });
+
+  return final.map(mapGameRow);
 }
 
 /* ═══════════════════════════════════════════════════
@@ -662,12 +671,18 @@ export async function fetchNewReleases(limit = 20): Promise<Game[]> {
   const final = filtered.filter((r) => {
     if ((r as GameRow & { is_provisional?: boolean }).is_provisional && r.review_count < 50) return false;
     if (r.verdict_label === "COMING SOON") return false;
-    if (r.release_date && r.release_date > today) return false;
+    if (isFutureDate(r.release_date)) return false;
     
     // Exclude 0-review games that are past the "just released" window
     const reviewCount = r.review_count ?? 0;
     if (reviewCount === 0 && r.release_date) {
-      const releaseMs = new Date(r.release_date + "T00:00:00").getTime();
+      const normalizedReleaseDate = /^\d{4}-\d{2}-\d{2}$/.test(r.release_date)
+        ? `${r.release_date}T00:00:00Z`
+        : /^\d{4}$/.test(r.release_date)
+          ? `${r.release_date}-01-01T00:00:00Z`
+          : r.release_date;
+      const releaseMs = new Date(normalizedReleaseDate).getTime();
+      if (Number.isNaN(releaseMs)) return false;
       const daysSinceRelease = (todayMs - releaseMs) / (1000 * 60 * 60 * 24);
       if (daysSinceRelease > JUST_RELEASED_DAYS) return false;
     }
@@ -719,7 +734,7 @@ export async function fetchTopRated(limit = 10): Promise<Game[]> {
   const clean = filtered.filter((r) => {
     if ((r as GameRow & { is_provisional?: boolean }).is_provisional) return false;
     if (r.verdict_label === "COMING SOON") return false;
-    if (r.release_date && r.release_date > new Date().toISOString().slice(0, 10)) return false;
+    if (isFutureDate(r.release_date)) return false;
     return true;
   });
 
@@ -789,7 +804,7 @@ export async function fetchHomepageTopRated(limit = 20): Promise<Game[]> {
   filtered = filtered.filter((r) => {
     if ((r as GameRow & { is_provisional?: boolean }).is_provisional) return false;
     if (r.verdict_label === "COMING SOON") return false;
-    if (r.release_date && r.release_date > new Date().toISOString().slice(0, 10)) return false;
+    if (isFutureDate(r.release_date)) return false;
     return true;
   });
 
@@ -853,6 +868,7 @@ export async function fetchHomepageRecommendations(limit = 20): Promise<Game[]> 
   const clean = ready.filter((r) => {
     if ((r as GameRow & { is_provisional?: boolean }).is_provisional) return false;
     if (r.verdict_label === "COMING SOON") return false;
+    if (isFutureDate(r.release_date)) return false;
     return true;
   });
 
@@ -1004,7 +1020,7 @@ async function fetchHomepageMostAnticipated(limit = 12): Promise<HomepageAnticip
 
 const getCachedHomepageData = unstable_cache(
   async () => fetchHomepageData(),
-  ["homepage-data-v2"],
+  ["homepage-data-v3"],
   { revalidate: HOMEPAGE_REVALIDATE_SECONDS }
 );
 
@@ -1038,6 +1054,73 @@ export async function loadHomepageMostAnticipated(): Promise<HomepageAnticipated
   }
 }
 
+function resolveHomepageSection<T>(result: PromiseSettledResult<T>, label: string, fallback: T): T {
+  if (result.status === "fulfilled") {
+    return result.value;
+  }
+
+  console.error(`[homepage] Failed to load ${label}:`, result.reason);
+  return fallback;
+}
+
+function isHomepageTrendingFallbackCandidate(game: Game): boolean {
+  const currentPlayers = game.currentPlayers ?? 0;
+  const momentum = game.momentum ?? 0;
+  const reviewCount = game.reviewCount ?? 0;
+  const score = game.verdictScore ?? game.score ?? 0;
+  const today = new Date().toISOString().slice(0, 10);
+
+  if (!game.coverImage || !game.releaseDate || game.releaseDate > today) {
+    return false;
+  }
+
+  if (game.verdictLabel === "COMING SOON") {
+    return false;
+  }
+
+  return Boolean(game.isTrendingManual)
+    || Boolean(game.trending)
+    || (momentum >= 0.05 && (currentPlayers >= 100 || reviewCount >= 150))
+    || currentPlayers >= 10000
+    || (currentPlayers >= 3000 && score >= 80)
+    || (reviewCount >= 10000 && currentPlayers >= 250);
+}
+
+function getHomepageTrendingFallbackScore(game: Game): number {
+  const currentPlayers = game.currentPlayers ?? 0;
+  const momentum = game.momentum ?? 0;
+  const reviewCount = game.reviewCount ?? 0;
+  const score = game.verdictScore ?? game.score ?? 0;
+
+  return (game.isTrendingManual ? 500 : 0)
+    + (game.trending ? 120 : 0)
+    + Math.min(120, Math.log10(currentPlayers + 1) * 30)
+    + Math.min(100, momentum * 1000)
+    + Math.min(60, Math.log10(reviewCount + 1) * 15)
+    + score;
+}
+
+function buildHomepageTrendingFallback(pools: Game[][], limit: number): Game[] {
+  const seenIds = new Set<string>();
+  const merged: Game[] = [];
+
+  for (const pool of pools) {
+    for (const game of pool) {
+      if (seenIds.has(game.id)) {
+        continue;
+      }
+
+      seenIds.add(game.id);
+      merged.push(game);
+    }
+  }
+
+  return merged
+    .filter(isHomepageTrendingFallbackCandidate)
+    .sort((left, right) => getHomepageTrendingFallbackScore(right) - getHomepageTrendingFallbackScore(left))
+    .slice(0, limit);
+}
+
 function isReservedHomepageTopRatedGame(game: Game): boolean {
   const reviewCount = game.reviewCount ?? 0;
   const currentPlayers = game.currentPlayers ?? 0;
@@ -1052,18 +1135,37 @@ function isReservedHomepageTopRatedGame(game: Game): boolean {
 
 export async function fetchHomepageData(): Promise<HomepageData> {
   // Fetch all sections in parallel — each overfetches for dedup headroom
-  const [heroRaw, trendingPrimaryRaw, topRatedRaw, newReleasesRaw, deals, recsRaw] = await Promise.all([
-    fetchHeroCandidates(HOMEPAGE_HERO_TARGET * 4).catch(() => [] as Game[]),
-    fetchTrendingGames(HOMEPAGE_RAIL_TARGET * 2, true).catch(() => [] as Game[]),
-    fetchHomepageTopRated(HOMEPAGE_RAIL_TARGET * 2).catch(() => [] as Game[]),
-    fetchNewReleases(HOMEPAGE_RAIL_TARGET * 2).catch(() => [] as Game[]),
-    fetchDeals().catch(() => [] as GXDeal[]),
-    fetchHomepageRecommendations(HOMEPAGE_RAIL_TARGET * 2).catch(() => [] as Game[]),
+  const [heroResult, trendingPrimaryResult, topRatedResult, newReleasesResult, dealsResult, recsResult] = await Promise.allSettled([
+    fetchHeroCandidates(HOMEPAGE_HERO_TARGET * 4),
+    fetchTrendingGames(HOMEPAGE_RAIL_TARGET * 2, true),
+    fetchHomepageTopRated(HOMEPAGE_RAIL_TARGET * 2),
+    fetchNewReleases(HOMEPAGE_RAIL_TARGET * 2),
+    fetchDeals(),
+    fetchHomepageRecommendations(HOMEPAGE_RAIL_TARGET * 2),
   ]);
 
-  const trendingRaw = trendingPrimaryRaw.length > 0
-    ? trendingPrimaryRaw
-    : await fetchTrendingGames(HOMEPAGE_RAIL_TARGET * 2, false).catch(() => [] as Game[]);
+  const heroRaw = resolveHomepageSection(heroResult, "hero rail", [] as Game[]);
+  let trendingRaw = resolveHomepageSection(trendingPrimaryResult, "trending rail", [] as Game[]);
+  const topRatedRaw = resolveHomepageSection(topRatedResult, "top rated rail", [] as Game[]);
+  const newReleasesRaw = resolveHomepageSection(newReleasesResult, "new releases rail", [] as Game[]);
+  const deals = resolveHomepageSection(dealsResult, "deals rail", [] as GXDeal[]);
+  const recsRaw = resolveHomepageSection(recsResult, "recommendations rail", [] as Game[]);
+
+  if (trendingRaw.length === 0) {
+    try {
+      trendingRaw = await fetchTrendingGames(HOMEPAGE_RAIL_TARGET * 2, false);
+    } catch (error) {
+      console.error("[homepage] Failed to load trending rail fallback:", error);
+    }
+  }
+
+  if (trendingRaw.length === 0) {
+    trendingRaw = buildHomepageTrendingFallback([
+      newReleasesRaw,
+      recsRaw,
+      topRatedRaw,
+    ], HOMEPAGE_RAIL_TARGET * 2);
+  }
 
   // ─── Global Dedup: each game in exactly one rail ───
   const usedIds = new Set<string>();
