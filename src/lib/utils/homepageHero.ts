@@ -13,6 +13,7 @@ export function isHomepageHeroAutoCandidate(row: GameRow): boolean {
   const momentum = row.momentum ?? 0;
   const verdictScore = row.verdict_score ?? row.score ?? 0;
   const ageDays = getHomepageHeroAgeDays(row);
+  const hasSpotlightPresence = currentPlayers >= 250 || momentum >= 0.03 || evidenceReviewCount >= 50000;
 
   if (row.is_featured_manual ?? false) {
     return true;
@@ -22,8 +23,9 @@ export function isHomepageHeroAutoCandidate(row: GameRow): boolean {
     return false;
   }
 
-  return (hasStrongCriticEvidence(row) && verdictScore >= 82)
+  return (hasStrongCriticEvidence(row) && verdictScore >= 82 && (ageDays <= 120 || hasSpotlightPresence))
     || (evidenceReviewCount >= 50000 && verdictScore >= 84)
+    || (evidenceReviewCount >= 25000 && currentPlayers >= 250 && verdictScore >= 86)
     || (evidenceReviewCount >= 20000 && currentPlayers >= 3500 && verdictScore >= 84)
     || (ageDays <= 180 && evidenceReviewCount >= 10000 && currentPlayers >= 5000 && momentum >= 0.04 && verdictScore >= 83)
     || (ageDays <= 120 && hasBrowseTrendingSignal(row) && currentPlayers >= 10000 && momentum >= 0.08 && verdictScore >= 82)
@@ -35,6 +37,7 @@ export function getHomepageHeroScore(row: GameRow): number {
   const verdict = Math.min(25, ((row.verdict_score ?? row.score ?? 0) / 100) * 25);
   const momentum = row.momentum ?? 0;
   const players = row.current_players ?? 0;
+  const evidenceReviewCount = getEvidenceReviewCount(row);
   const signalBoost = hasBrowseTrendingSignal(row) ? 6 : 0;
   const momentumBoost = Math.min(4, Math.max(0, momentum * 20));
   const playerBoost = Math.min(6, Math.log10(players + 1) * 1.8);
@@ -51,9 +54,14 @@ export function getHomepageHeroScore(row: GameRow): number {
           : ageDays < 1825
             ? 3
             : 0;
-  const volume = Math.min(8, Math.log10(getEvidenceReviewCount(row) + 1) * 2);
+  const volume = Math.min(8, Math.log10(evidenceReviewCount + 1) * 2);
   const hasScreenshots = Array.isArray(row.screenshots) ? row.screenshots.length > 0 : Boolean(row.screenshots);
   const mediaQuality = (hasScreenshots ? 2.5 : 0) + (row.header_image ? 2.5 : 0);
+  const lowPresencePenalty = ageDays > 60 && players < 150 && momentum < 0.03 && evidenceReviewCount < 50000
+    ? 16
+    : ageDays > 30 && players < 250 && momentum < 0.03 && evidenceReviewCount < 25000
+      ? 10
+      : 0;
 
-  return editorial + verdict + significance + freshness + volume + mediaQuality;
+  return editorial + verdict + significance + freshness + volume + mediaQuality - lowPresencePenalty;
 }

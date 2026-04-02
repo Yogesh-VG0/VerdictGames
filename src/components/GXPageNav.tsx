@@ -1,12 +1,14 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { Tag, Gift, Compass, Home } from "lucide-react";
 import { isNavHrefActive } from "@/lib/nav-active";
 import { SHARED_NAV_DESTINATIONS, SHARED_NAV_LABELS } from "@/lib/shared-nav";
 import { cn } from "@/lib/utils";
+
+const subscribeClientReady = () => () => {};
 
 const NAV_LINKS = [
   { href: "/", label: "Home", icon: Home },
@@ -43,11 +45,7 @@ function GXPageNavMarkup({ isLinkActive }: { isLinkActive: (href: string) => boo
 
 function GXPageNavFallback() {
   const pathname = usePathname();
-  const [activeReady, setActiveReady] = useState(false);
-
-  useEffect(() => {
-    setActiveReady(true);
-  }, []);
+  const activeReady = useSyncExternalStore(subscribeClientReady, () => true, () => false);
 
   return (
     <GXPageNavMarkup
@@ -59,11 +57,7 @@ function GXPageNavFallback() {
 function GXPageNavContent() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [activeReady, setActiveReady] = useState(false);
-
-  useEffect(() => {
-    setActiveReady(true);
-  }, []);
+  const activeReady = useSyncExternalStore(subscribeClientReady, () => true, () => false);
 
   const isLinkActive = (href: string) => {
     if (!activeReady) {

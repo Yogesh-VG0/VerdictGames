@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState, useEffect, useRef } from "react";
+import { Suspense, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
@@ -8,6 +8,8 @@ import { Home, Compass, Search, Gamepad2, User, type LucideIcon } from "lucide-r
 import { hasActiveNavHref, isNavHrefActive } from "@/lib/nav-active";
 import { SHARED_NAV_DESTINATIONS, SHARED_NAV_LABELS } from "@/lib/shared-nav";
 import { cn } from "@/lib/utils";
+
+const subscribeClientReady = () => () => {};
 
 type BottomNavLink = {
   href: string;
@@ -83,13 +85,9 @@ function BottomNavMarkup({
 function BottomNavFallback() {
   const pathname = usePathname();
   const { user } = useAuth();
-  const [activeReady, setActiveReady] = useState(false);
+  const activeReady = useSyncExternalStore(subscribeClientReady, () => true, () => false);
   const links = getLinks(user);
   const queryHrefCandidates = links.filter((link) => link.href.startsWith(`${SHARED_NAV_DESTINATIONS.browse}?`)).map((link) => link.href);
-
-  useEffect(() => {
-    setActiveReady(true);
-  }, []);
 
   return (
     <BottomNavMarkup
@@ -115,14 +113,10 @@ function BottomNavContent() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { user } = useAuth();
-  const [activeReady, setActiveReady] = useState(false);
+  const activeReady = useSyncExternalStore(subscribeClientReady, () => true, () => false);
   const [visible, setVisible] = useState(true);
   const lastScrollY = useRef(0);
   const ticking = useRef(false);
-
-  useEffect(() => {
-    setActiveReady(true);
-  }, []);
 
   useEffect(() => {
     const onScroll = () => {

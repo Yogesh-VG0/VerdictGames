@@ -265,6 +265,29 @@ export function dedupeGXCalendarGames(items: GXCalendarGame[]): GXCalendarGame[]
   return Array.from(byKey.values());
 }
 
+function hasGXCalendarPromoTitleSignal(value: string | null | undefined): boolean {
+  if (!value) {
+    return false;
+  }
+
+  return /\b(demo|playtest|trial)\b/i.test(value);
+}
+
+function hasGXCalendarPromoMetaSignal(value: string | null | undefined): boolean {
+  if (!value) {
+    return false;
+  }
+
+  return /\b(demo|playtest|trial|free trial|alpha|beta|closed beta|open beta|technical test|stress test|server slam)\b/i.test(value);
+}
+
+export function shouldHideGXCalendarEntry(item: GXCalendarGame): boolean {
+  return hasGXCalendarPromoTitleSignal(item.title)
+    || hasGXCalendarPromoTitleSignal(item.slug)
+    || hasGXCalendarPromoMetaSignal(item.tagLabel)
+    || hasGXCalendarPromoMetaSignal(item.ctaLabel);
+}
+
 function inferCalendarTagFromPlatforms(platforms: string[]): { label: string; color: string | null } | null {
   const normalized = platforms.map((platform) => platform.toLowerCase());
 
@@ -410,6 +433,7 @@ export function filterGXCalendarEntriesByMonth(entries: GXCalendarEntry[], month
     entries
       .map(mapGXCalendarEntry)
       .filter((entry) => (entry.releaseDate ?? "").slice(0, 7) === month)
+      .filter((entry) => !shouldHideGXCalendarEntry(entry))
   ).sort((a, b) => a.releaseDate.localeCompare(b.releaseDate) || a.title.localeCompare(b.title));
 }
 
@@ -461,6 +485,7 @@ export function gxCalendarToGame(gx: GXCalendarGame): CalendarGame {
 export function mergeCalendarGames(dbGames: Game[], gxGames: GXCalendarGame[]): CalendarGame[] {
   const normalizedDbGames = [...dbGames].sort((a, b) => (a.releaseDate ?? "").localeCompare(b.releaseDate ?? "") || a.title.localeCompare(b.title));
   const normalizedGXGames = dedupeGXCalendarGames(gxGames)
+    .filter((game) => !shouldHideGXCalendarEntry(game))
     .sort((a, b) => a.releaseDate.localeCompare(b.releaseDate) || a.title.localeCompare(b.title));
   const dbByKey = new Map(normalizedDbGames.map((game) => [getCalendarMatchKey(game), game]));
   const matchedDbKeys = new Set<string>();

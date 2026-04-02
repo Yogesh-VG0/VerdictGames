@@ -9,7 +9,7 @@ function getTrendingAgeDays(row: Pick<GameRow, "release_date">): number {
 function hasStrongFlaggedTrendingSignal(row: GameRow, qualityScore: number, ageDays: number): boolean {
   const currentPlayers = row.current_players ?? 0;
   const momentum = row.momentum ?? 0;
-  if (!(row.trending ?? false) || qualityScore < 68) {
+  if (!(row.trending ?? false) || qualityScore < 72) {
     return false;
   }
 
@@ -35,14 +35,14 @@ export function isPremiumTrendingCandidate(row: GameRow): boolean {
   const reviewCount = row.review_count ?? 0;
   const ageDays = getTrendingAgeDays(row);
   const hasLegacyHighActivityBreakout = ageDays > 365 * 2
-    ? currentPlayers >= 18000 && momentum >= 0.05 && qualityScore >= 72
-    : currentPlayers >= 20000 && momentum >= 0.03 && qualityScore >= 72;
+    ? currentPlayers >= 18000 && momentum >= 0.05 && qualityScore >= 76
+    : currentPlayers >= 20000 && momentum >= 0.03 && qualityScore >= 74;
 
   return (row.is_trending_manual ?? false)
     || hasStrongFlaggedTrendingSignal(row, qualityScore, ageDays)
     || hasLegacyHighActivityBreakout
-    || (momentum >= 0.18 && currentPlayers >= 400 && reviewCount >= 200 && qualityScore >= 70)
-    || (ageDays <= 60 && momentum >= 0.08 && currentPlayers >= 180 && reviewCount >= 120 && qualityScore >= 72);
+    || (momentum >= 0.18 && currentPlayers >= 400 && reviewCount >= 200 && qualityScore >= 76)
+    || (ageDays <= 60 && momentum >= 0.08 && currentPlayers >= 180 && reviewCount >= 120 && qualityScore >= 78);
 }
 
 export function isAcceptableTrendingCandidate(row: GameRow): boolean {
@@ -52,14 +52,14 @@ export function isAcceptableTrendingCandidate(row: GameRow): boolean {
   const reviewCount = row.review_count ?? 0;
   const ageDays = getTrendingAgeDays(row);
   const hasLegacyHighActivitySignal = ageDays > 365 * 2
-    ? currentPlayers >= 12000 && momentum >= 0.05 && qualityScore >= 68
-    : currentPlayers >= 8000 && momentum >= 0.04 && qualityScore >= 68;
+    ? currentPlayers >= 12000 && momentum >= 0.05 && qualityScore >= 74
+    : currentPlayers >= 8000 && momentum >= 0.04 && qualityScore >= 72;
 
   return isPremiumTrendingCandidate(row)
     || (row.is_trending_manual ?? false)
     || hasLegacyHighActivitySignal
-    || (momentum >= 0.1 && currentPlayers >= 175 && reviewCount >= 90 && qualityScore >= 68)
-    || (ageDays <= 120 && momentum >= 0.05 && currentPlayers >= 120 && reviewCount >= 75 && qualityScore >= 70)
+    || (momentum >= 0.1 && currentPlayers >= 175 && reviewCount >= 90 && qualityScore >= 74)
+    || (ageDays <= 120 && momentum >= 0.05 && currentPlayers >= 120 && reviewCount >= 75 && qualityScore >= 74)
     || hasStrongFlaggedTrendingSignal(row, qualityScore, ageDays);
 }
 
@@ -128,14 +128,15 @@ export function hasBrowseTrendingSignal(row: GameRow): boolean {
   const confidence = row.confidence ?? 0;
   const qualityScore = confidenceWeightedScore(row);
   const isManual = row.is_trending_manual ?? false;
+  const verdictScore = row.verdict_score ?? row.score ?? 0;
   const ageDays = getTrendingAgeDays(row);
   const hasStrongFlaggedSignal = hasStrongFlaggedTrendingSignal(row, qualityScore, ageDays);
-  const hasStrongEngagement = currentPlayers >= 600 && momentum >= 0.04 && qualityScore >= 68;
-  const hasMomentumBreakout = momentum >= 0.08 && currentPlayers >= 150 && reviewCount >= 75 && qualityScore >= 68;
-  const hasRecentBreakout = ageDays <= 120 && momentum >= 0.12 && currentPlayers >= 120 && reviewCount >= 120 && qualityScore >= 70;
+  const hasStrongEngagement = currentPlayers >= 600 && momentum >= 0.04 && qualityScore >= 74;
+  const hasMomentumBreakout = momentum >= 0.08 && currentPlayers >= 150 && reviewCount >= 75 && qualityScore >= 74;
+  const hasRecentBreakout = ageDays <= 120 && momentum >= 0.12 && currentPlayers >= 120 && reviewCount >= 120 && qualityScore >= 76;
   const hasHighActivityFallback = ageDays > 365 * 2
-    ? currentPlayers >= 15000 && momentum >= 0.05 && qualityScore >= 68
-    : currentPlayers >= 12000 && momentum >= 0.03 && qualityScore >= 68;
+    ? currentPlayers >= 15000 && momentum >= 0.05 && qualityScore >= 74
+    : currentPlayers >= 12000 && momentum >= 0.03 && qualityScore >= 72;
   const hasPremiumCandidate = isPremiumTrendingCandidate(row);
   const hasAcceptableCandidate = isAcceptableTrendingCandidate(row);
 
@@ -144,6 +145,10 @@ export function hasBrowseTrendingSignal(row: GameRow): boolean {
   }
 
   if (confidence < 0.2 && reviewCount < 150) {
+    return false;
+  }
+
+  if (!isManual && verdictScore < 74) {
     return false;
   }
 

@@ -1,5 +1,9 @@
 import type { GameRow } from "@/lib/supabase/types";
-import { getDiscoveryCanonicalTitle, isPackagingEditionTitle } from "@/lib/utils/discovery";
+import {
+  getDiscoveryCanonicalTitle,
+  hasTitleDisambiguationYearSuffix,
+  isPackagingEditionTitle,
+} from "@/lib/utils/discovery";
 import { normalizeTitle } from "@/lib/utils/slugify";
 
 export type PublicCanonicalPreference =
@@ -13,6 +17,8 @@ type PublicCanonicalRow = Pick<
   GameRow,
   | "title"
   | "franchise"
+  | "developer"
+  | "publisher"
   | "steam_app_id"
   | "current_players"
   | "verdict_score"
@@ -105,13 +111,52 @@ function getCounterStrikePreferenceBoost(
   }
 }
 
-export function getPublicCanonicalGroup(row: Pick<GameRow, "steam_app_id" | "title" | "franchise">): string {
+function getReleaseDateDiffDays(left: string | null | undefined, right: string | null | undefined): number {
+  if (!left || !right) {
+    return Number.POSITIVE_INFINITY;
+  }
+
+  const leftMs = new Date(left).getTime();
+  const rightMs = new Date(right).getTime();
+  if (!Number.isFinite(leftMs) || !Number.isFinite(rightMs)) {
+    return Number.POSITIVE_INFINITY;
+  }
+
+  return Math.abs(leftMs - rightMs) / 86400000;
+}
+
+function hasMatchingCanonicalIdentity(left: PublicCanonicalRow, right: PublicCanonicalRow): boolean {
+  const leftFranchise = normalizeTitle(left.franchise ?? "");
+  const rightFranchise = normalizeTitle(right.franchise ?? "");
+  if (leftFranchise && leftFranchise === rightFranchise) {
+    return true;
+  }
+
+  const leftDeveloper = normalizeTitle(left.developer ?? "");
+  const rightDeveloper = normalizeTitle(right.developer ?? "");
+  if (leftDeveloper && leftDeveloper === rightDeveloper) {
+    return true;
+  }
+
+  const leftPublisher = normalizeTitle(left.publisher ?? "");
+  const rightPublisher = normalizeTitle(right.publisher ?? "");
+  if (leftPublisher && leftPublisher === rightPublisher) {
+    return true;
+  }
+
+  return getReleaseDateDiffDays(left.release_date, right.release_date) <= 730;
+}
+
+export function getPublicCanonicalGroup(
+  row: Pick<GameRow, "steam_app_id" | "title" | "franchise">,
+  options: { forceCanonicalTitles?: Set<string> } = {}
+): string {
   if (row.steam_app_id != null && PUBLIC_GROUP_BY_STEAM_APP_ID[row.steam_app_id]) {
     return `special:${PUBLIC_GROUP_BY_STEAM_APP_ID[row.steam_app_id]}`;
   }
 
   const canonicalTitle = getDiscoveryCanonicalTitle(row.title);
-  if (canonicalTitle !== normalizeTitle(row.title)) {
+  if (options.forceCanonicalTitles?.has(canonicalTitle) || canonicalTitle !== normalizeTitle(row.title)) {
     return `title:${canonicalTitle}`;
   }
 
@@ -160,10 +205,36 @@ export function dedupePublicCanonicalRows<T extends PublicCanonicalRow>(
   options: { query?: string } = {}
 ): T[] {
   const preference = getPublicCanonicalPreference(options.query ?? "");
+  const canonicalBuckets = new Map<string, T[]>();
+
+  for (const row of rows) {
+    const canonicalTitle = getDiscoveryCanonicalTitle(row.title);
+    const bucket = canonicalBuckets.get(canonicalTitle);
+    if (bucket) {
+      bucket.push(row);
+    } else {
+      canonicalBuckets.set(canonicalTitle, [row]);
+    }
+  }
+
+  const forceCanonicalTitles = new Set<string>();
+  for (const [canonicalTitle, bucket] of canonicalBuckets) {
+    if (bucket.some((row) => isPackagingEditionTitle(row.title))) {
+      forceCanonicalTitles.add(canonicalTitle);
+      continue;
+    }
+
+    const yearVariantRows = bucket.filter((row) => hasTitleDisambiguationYearSuffix(row.title));
+    const baseRows = bucket.filter((row) => !hasTitleDisambiguationYearSuffix(row.title));
+    if (yearVariantRows.some((variant) => baseRows.some((base) => hasMatchingCanonicalIdentity(variant, base)))) {
+      forceCanonicalTitles.add(canonicalTitle);
+    }
+  }
+
   const byGroup = new Map<string, T>();
 
   for (const row of rows) {
-    const key = getPublicCanonicalGroup(row);
+    const key = getPublicCanonicalGroup(row, { forceCanonicalTitles });
     const existing = byGroup.get(key);
     if (!existing) {
       byGroup.set(key, row);

@@ -8,7 +8,14 @@ import type { GameRow } from "@/lib/supabase/types";
 import { hasUsableCardImage } from "@/lib/utils/mediaReadiness";
 import { isPrimaryDiscoveryGame } from "@/lib/utils/discovery";
 import { getPublicTrendingScore, hasBrowseTrendingSignal } from "@/lib/utils/trending";
-import { confidenceWeightedScore, getEvidenceReviewCount, getCriticSourceCount, isQualityGame, isSurfaceReady } from "@/lib/utils/quality";
+import {
+  confidenceWeightedScore,
+  getCriticSourceCount,
+  getEvidenceReviewCount,
+  getNewReleaseDiscoveryScore,
+  isQualityGame,
+  isSurfaceReady,
+} from "@/lib/utils/quality";
 import { dedupePublicCanonicalRows } from "@/lib/utils/publicCanonical";
 import { isPublicSafeGame } from "@/lib/utils/publicSafety";
 import { normalizeTitle } from "@/lib/utils/slugify";
@@ -64,12 +71,133 @@ function hasTrendingSearchSignal(row: GameRow): boolean {
 }
 
 function passesBrowseDiscoveryFloor(row: GameRow): boolean {
-  const reviewCount = row.review_count ?? 0;
+  const reviewCount = getEvidenceReviewCount(row);
   const confidence = row.confidence ?? 0;
   const currentPlayers = row.current_players ?? 0;
-  const verdictScore = row.verdict_score ?? row.score ?? 0;
+  const qualityScore = confidenceWeightedScore(row);
 
-  return reviewCount >= 20 || confidence >= 0.2 || currentPlayers >= 50 || verdictScore >= 80;
+  if (qualityScore < 74) {
+    return false;
+  }
+
+  return reviewCount >= 50 || confidence >= 0.25 || currentPlayers >= 150 || qualityScore >= 84;
+}
+
+function getDateAgeDays(value: string | null | undefined): number {
+  if (!value) {
+    return Number.POSITIVE_INFINITY;
+  }
+
+  const normalizedValue = /^\d{4}-\d{2}-\d{2}$/.test(value)
+    ? `${value}T00:00:00Z`
+    : /^\d{4}$/.test(value)
+      ? `${value}-01-01T00:00:00Z`
+      : value;
+  const timestamp = new Date(normalizedValue).getTime();
+  if (!Number.isFinite(timestamp)) {
+    return Number.POSITIVE_INFINITY;
+  }
+
+  return (Date.now() - timestamp) / 86400000;
+}
+
+function getBrowseRelevanceDiscoveryScore(row: GameRow): number {
+  const qualityScore = confidenceWeightedScore(row);
+  const evidenceReviewCount = getEvidenceReviewCount(row);
+  const currentPlayers = row.current_players ?? 0;
+  const momentum = Math.max(0, row.momentum ?? 0);
+  const ageDays = getDateAgeDays(row.release_date);
+  const freshness = ageDays <= 180
+    ? 10
+    : ageDays <= 365
+      ? 8
+      : ageDays <= 730
+        ? 5
+        : ageDays <= 1825
+          ? 2
+          : 0;
+
+  return qualityScore
+    + freshness
+    + Math.min(10, Math.log10(evidenceReviewCount + 1) * 2.8)
+    + Math.min(8, Math.log10(currentPlayers + 1) * 2.2)
+    + Math.min(6, momentum * 22);
+}
+
+function passesRecentlyAddedDiscoveryFloor(row: GameRow): boolean {
+  const qualityScore = confidenceWeightedScore(row);
+  const evidenceReviewCount = getEvidenceReviewCount(row);
+  const currentPlayers = row.current_players ?? 0;
+  const releaseAgeDays = getDateAgeDays(row.release_date);
+
+  if (!isPrimaryDiscoveryGame(row)) {
+    return false;
+  }
+
+  if (qualityScore < 68) {
+    return false;
+  }
+
+  if (releaseAgeDays > 365 * 5) {
+    return false;
+  }
+
+  if (releaseAgeDays > 365 * 3 && qualityScore < 82 && evidenceReviewCount < 5000) {
+    return false;
+  }
+
+  return evidenceReviewCount >= 20 || currentPlayers >= 50 || qualityScore >= 78;
+}
+
+function getRecentlyAddedDiscoveryScore(row: GameRow): number {
+  const createdAgeDays = getDateAgeDays(row.created_at);
+  const releaseAgeDays = getDateAgeDays(row.release_date);
+  const qualityScore = confidenceWeightedScore(row);
+  const evidenceReviewCount = getEvidenceReviewCount(row);
+  const currentPlayers = row.current_players ?? 0;
+  const addedFreshness = createdAgeDays <= 7
+    ? 24
+    : createdAgeDays <= 30
+      ? 20
+      : createdAgeDays <= 90
+        ? 14
+        : createdAgeDays <= 180
+          ? 8
+          : 2;
+  const releaseFreshness = releaseAgeDays <= 180
+    ? 18
+    : releaseAgeDays <= 365
+      ? 14
+      : releaseAgeDays <= 365 * 3
+        ? 9
+        : releaseAgeDays <= 365 * 5
+          ? 4
+          : -18;
+
+  return qualityScore
+    + addedFreshness
+    + releaseFreshness
+    + Math.min(8, Math.log10(evidenceReviewCount + 1) * 2.3)
+    + Math.min(6, Math.log10(currentPlayers + 1) * 1.8);
+}
+
+function getUpcomingMetadataScore(row: GameRow): number {
+  const hasCredits = Boolean(row.developer?.trim() || row.publisher?.trim());
+  const hasPlatforms = (row.platforms?.length ?? 0) > 0;
+  const hasGenres = (row.genres?.length ?? 0) > 0;
+  const hasDescription = Boolean(row.description && row.description.length >= 20);
+
+  return Number(hasCredits) + Number(hasPlatforms) + Number(hasGenres) + Number(hasDescription);
+}
+
+function isUpcomingDiscoveryReady(row: GameRow): boolean {
+  const hasCredits = Boolean(row.developer?.trim() || row.publisher?.trim());
+  const hasPlatforms = (row.platforms?.length ?? 0) > 0;
+
+  return Boolean(row.release_date && isFutureDate(row.release_date))
+    && isPrimaryDiscoveryGame(row)
+    && getUpcomingMetadataScore(row) >= 2
+    && (hasCredits || hasPlatforms);
 }
 
 async function fetchSearchResults(state: SearchGamesState): Promise<PaginatedResponse<Game>> {
@@ -80,7 +208,7 @@ async function fetchSearchResults(state: SearchGamesState): Promise<PaginatedRes
   }
 
   const supabase = getPublicSupabase();
-  let query = supabase.from("games").select(GAME_CARD_COLUMNS_WITH_DESC, { count: "exact" });
+  let query = supabase.from("games").select(GAME_CARD_COLUMNS_WITH_DESC);
 
   if (q) {
     query = query.or(`title.ilike.%${q}%,developer.ilike.%${q}%,publisher.ilike.%${q}%`);
@@ -143,6 +271,9 @@ async function fetchSearchResults(state: SearchGamesState): Promise<PaginatedRes
   }
 
   const today = new Date().toISOString().slice(0, 10);
+  const recentlyAddedReleaseCutoff = new Date();
+  recentlyAddedReleaseCutoff.setFullYear(recentlyAddedReleaseCutoff.getFullYear() - 5);
+  const recentlyAddedReleaseCutoffStr = recentlyAddedReleaseCutoff.toISOString().slice(0, 10);
   switch (sort) {
     case "newest":
       query = query
@@ -164,6 +295,9 @@ async function fetchSearchResults(state: SearchGamesState): Promise<PaginatedRes
       break;
     case "recently-added":
       query = query
+        .not("release_date", "is", null)
+        .gte("release_date", recentlyAddedReleaseCutoffStr)
+        .lte("release_date", today)
         .not("cover_image", "is", null)
         .neq("cover_image", "")
         .gt("score", 0)
@@ -216,6 +350,9 @@ async function fetchSearchResults(state: SearchGamesState): Promise<PaginatedRes
   const isRelevanceWithQuery = sort === "relevance" && Boolean(q);
   const isTopRated = sort === "top-rated";
   const isTrendingSort = sort === "trending";
+  const isNewest = sort === "newest";
+  const isUpcoming = sort === "upcoming";
+  const isRecentlyAdded = sort === "recently-added";
   const start = (page - 1) * SEARCH_PAGE_SIZE;
   const overfetchMultiplier = 5;
 
@@ -228,6 +365,12 @@ async function fetchSearchResults(state: SearchGamesState): Promise<PaginatedRes
     query = query.range(0, requestedLimit - 1);
   } else if (isTrendingSort) {
     requestedLimit = Math.max(start + (SEARCH_PAGE_SIZE * overfetchMultiplier * 6), 750);
+    query = query.range(0, requestedLimit - 1);
+  } else if (isRecentlyAdded) {
+    requestedLimit = Math.max(start + (SEARCH_PAGE_SIZE * overfetchMultiplier * 12), 1200);
+    query = query.range(0, requestedLimit - 1);
+  } else if (isNewest || isUpcoming || isRecentlyAdded) {
+    requestedLimit = Math.max(start + (SEARCH_PAGE_SIZE * overfetchMultiplier * 4), 300);
     query = query.range(0, requestedLimit - 1);
   } else {
     requestedLimit = Math.max(start + (SEARCH_PAGE_SIZE * overfetchMultiplier), 150);
@@ -245,9 +388,8 @@ async function fetchSearchResults(state: SearchGamesState): Promise<PaginatedRes
   const justReleasedDays = 14;
   const todayStr = new Date().toISOString().slice(0, 10);
   const todayMs = new Date(`${todayStr}T00:00:00`).getTime();
-  const isUpcoming = sort === "upcoming";
   const isTrending = isTrendingSort;
-  const isBroadDiscovery = !q && (isTopRated || isTrending || sort === "relevance");
+  const isBroadDiscovery = !q && (isTopRated || isTrending || sort === "relevance" || isNewest || isUpcoming || isRecentlyAdded);
 
   let rows = (data ?? []).filter((row) => {
     if (!isPublicSafeGame(row) || !hasUsableCardImage(row)) {
@@ -259,7 +401,7 @@ async function fetchSearchResults(state: SearchGamesState): Promise<PaginatedRes
     }
 
     if (isUpcoming) {
-      return Boolean(row.release_date && isFutureDate(row.release_date));
+      return isUpcomingDiscoveryReady(row);
     }
 
     if ((row as GameRow & { is_provisional?: boolean }).is_provisional) {
@@ -303,6 +445,14 @@ async function fetchSearchResults(state: SearchGamesState): Promise<PaginatedRes
       return false;
     }
 
+    if (isNewest && !isQualityGame(row, "newReleases")) {
+      return false;
+    }
+
+    if (isRecentlyAdded && !passesRecentlyAddedDiscoveryFloor(row)) {
+      return false;
+    }
+
     if (sort === "relevance" && !q && !passesBrowseDiscoveryFloor(row)) {
       return false;
     }
@@ -314,6 +464,36 @@ async function fetchSearchResults(state: SearchGamesState): Promise<PaginatedRes
 
   if (isTrending && rows.length > 0) {
     rows.sort((left, right) => getPublicTrendingScore(right) - getPublicTrendingScore(left));
+  } else if (isNewest && rows.length > 0) {
+    rows.sort((left, right) => {
+      const releaseDiff = (right.release_date ?? "").localeCompare(left.release_date ?? "");
+      if (releaseDiff !== 0) return releaseDiff;
+      const launchDiff = getNewReleaseDiscoveryScore(right) - getNewReleaseDiscoveryScore(left);
+      if (launchDiff !== 0) return launchDiff;
+      const reviewDiff = getEvidenceReviewCount(right) - getEvidenceReviewCount(left);
+      if (reviewDiff !== 0) return reviewDiff;
+      return (right.current_players ?? 0) - (left.current_players ?? 0);
+    });
+  } else if (isRecentlyAdded && rows.length > 0) {
+    rows.sort((left, right) => {
+      const scoreDiff = getRecentlyAddedDiscoveryScore(right) - getRecentlyAddedDiscoveryScore(left);
+      if (scoreDiff !== 0) return scoreDiff;
+      const createdDiff = (right.created_at ?? "").localeCompare(left.created_at ?? "");
+      if (createdDiff !== 0) return createdDiff;
+      return (right.release_date ?? "").localeCompare(left.release_date ?? "");
+    });
+  } else if (isUpcoming && rows.length > 0) {
+    rows.sort((left, right) => {
+      const releaseDiff = (left.release_date ?? "").localeCompare(right.release_date ?? "");
+      if (releaseDiff !== 0) return releaseDiff;
+      const metadataDiff = getUpcomingMetadataScore(right) - getUpcomingMetadataScore(left);
+      if (metadataDiff !== 0) return metadataDiff;
+      const qualityDiff = confidenceWeightedScore(right) - confidenceWeightedScore(left);
+      if (qualityDiff !== 0) return qualityDiff;
+      return getEvidenceReviewCount(right) - getEvidenceReviewCount(left);
+    });
+  } else if (sort === "relevance" && !q && rows.length > 0) {
+    rows.sort((left, right) => getBrowseRelevanceDiscoveryScore(right) - getBrowseRelevanceDiscoveryScore(left));
   }
 
   let filteredTotal = rows.length;
@@ -425,7 +605,7 @@ export async function loadSearchResults(state: SearchGamesState): Promise<Pagina
   const cacheKey = JSON.stringify(searchGamesStateToFilters(state));
   return unstable_cache(
     () => fetchSearchResults(state),
-    ["search-results", cacheKey],
+    ["search-results-v2", cacheKey],
     { revalidate: SEARCH_REVALIDATE_SECONDS }
   )();
 }

@@ -300,7 +300,7 @@ export async function getRelatedGamesForGame(game: Game, limit = 4): Promise<Gam
 
   return unstable_cache(
     async () => fetchRelatedGames(game, safeLimit),
-    ["related-games-v2", game.id, String(safeLimit)],
+    ["related-games-v4", game.id, String(safeLimit)],
     { revalidate: RELATED_GAMES_REVALIDATE_SECONDS }
   )();
 }

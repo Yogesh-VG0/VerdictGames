@@ -211,6 +211,78 @@ export function confidenceWeightedScore(row: GameRow): number {
   return (score * reviews + C * m) / (reviews + m);
 }
 
+function getReleaseAgeDays(row: Pick<GameRow, "release_date">): number {
+  if (!row.release_date) {
+    return Number.POSITIVE_INFINITY;
+  }
+
+  return (Date.now() - new Date(`${row.release_date}T00:00:00`).getTime()) / 86400000;
+}
+
+export function isStrongNewReleaseCandidate(row: GameRow): boolean {
+  const qualityScore = confidenceWeightedScore(row);
+  const evidenceReviewCount = getEvidenceReviewCount(row);
+  const currentPlayers = row.current_players ?? 0;
+  const momentum = row.momentum ?? 0;
+  const verdictScore = row.verdict_score ?? row.score ?? 0;
+  const ageDays = getReleaseAgeDays(row);
+
+  if (!row.release_date || !Number.isFinite(ageDays) || ageDays < 0) {
+    return false;
+  }
+
+  if (qualityScore < 68) {
+    return ageDays <= 3 && currentPlayers >= 2500 && momentum >= 0.08 && verdictScore >= 70;
+  }
+
+  if (evidenceReviewCount >= 25 && qualityScore >= 72) {
+    return true;
+  }
+
+  if (ageDays <= 21 && evidenceReviewCount >= 10 && qualityScore >= 70) {
+    return true;
+  }
+
+  if (ageDays <= 14 && evidenceReviewCount >= 5 && qualityScore >= 72) {
+    return true;
+  }
+
+  if (ageDays <= 7 && hasStrongCriticEvidence(row) && verdictScore >= 75) {
+    return true;
+  }
+
+  if (ageDays <= 7 && currentPlayers >= 500 && momentum >= 0.05 && verdictScore >= 70) {
+    return true;
+  }
+
+  return ageDays <= 3 && currentPlayers >= 1200 && verdictScore >= 68;
+}
+
+export function getNewReleaseDiscoveryScore(row: GameRow): number {
+  const qualityScore = confidenceWeightedScore(row);
+  const evidenceReviewCount = getEvidenceReviewCount(row);
+  const currentPlayers = row.current_players ?? 0;
+  const momentum = Math.max(0, row.momentum ?? 0);
+  const ageDays = getReleaseAgeDays(row);
+  const freshness = ageDays <= 7
+    ? 16
+    : ageDays <= 14
+      ? 14
+      : ageDays <= 30
+        ? 10
+        : ageDays <= 60
+          ? 6
+          : ageDays <= 120
+            ? 2
+            : 0;
+
+  return qualityScore
+    + freshness
+    + Math.min(8, Math.log10(evidenceReviewCount + 1) * 2.6)
+    + Math.min(6, Math.log10(currentPlayers + 1) * 1.8)
+    + Math.min(6, momentum * 24);
+}
+
 export function hasStrongTopRatedEvidence(row: GameRow): boolean {
   return getEvidenceReviewCount(row) >= THRESHOLDS.topRated.minReviews || hasStrongCriticEvidence(row);
 }
@@ -237,6 +309,8 @@ export function isQualityGame(row: GameRow, section: SectionType = "generic"): b
 
   // Current players check (hero section requires active player base)
   if (t.minCurrentPlayers && (row.current_players ?? 0) < t.minCurrentPlayers) return false;
+
+  if (section === "newReleases" && !isStrongNewReleaseCandidate(row)) return false;
 
   if (section === "topRated" && !hasStrongTopRatedEvidence(row)) return false;
 

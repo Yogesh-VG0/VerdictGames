@@ -7,11 +7,14 @@ const PACKAGING_SUFFIX_PATTERNS = [
   /(?:\s*[-–:]\s*)?complete edition$/i,
   /(?:\s*[-–:]\s*)?ultimate edition$/i,
   /(?:\s*[-–:]\s*)?definitive edition$/i,
+  /(?:\s*[-–:]\s*)?enhanced edition$/i,
   /(?:\s*[-–:]\s*)?digital deluxe edition$/i,
   /(?:\s*[-–:]\s*)?deluxe edition$/i,
   /(?:\s*[-–:]\s*)?director'?s cut$/i,
   /(?:\s*[-–:]\s*)?anniversary edition$/i,
 ];
+
+const TITLE_YEAR_DISAMBIGUATION_PATTERN = /\s*\((?:19|20)\d{2}\)$/i;
 
 const SUPPLEMENTAL_TITLE_PATTERNS = [
   /\bseason pass\b/i,
@@ -58,12 +61,20 @@ function stripPackagingSuffix(title: string): string {
   return stripped;
 }
 
+function stripTitleDisambiguationYear(title: string): string {
+  return title.replace(TITLE_YEAR_DISAMBIGUATION_PATTERN, "").trim();
+}
+
 export function isPackagingEditionTitle(title: string): boolean {
   return PACKAGING_SUFFIX_PATTERNS.some((pattern) => pattern.test(title));
 }
 
+export function hasTitleDisambiguationYearSuffix(title: string): boolean {
+  return TITLE_YEAR_DISAMBIGUATION_PATTERN.test(title);
+}
+
 export function getDiscoveryCanonicalTitle(title: string): string {
-  return normalizeTitle(stripPackagingSuffix(title));
+  return normalizeTitle(stripTitleDisambiguationYear(stripPackagingSuffix(title)));
 }
 
 export function hasSupplementalDescription(description?: string | null): boolean {

@@ -182,7 +182,7 @@ export default function SearchClientPage({ initialState, initialGamesData }: Sea
   );
   const shouldUseInitialGamesData = browseTab === "games" && searchApiPath === initialSearchApiPath;
 
-  const { data, error, isError, isLoading, isFetching } = useQuery({
+  const { data, error, isError, isLoading, isFetching, isPlaceholderData } = useQuery({
     queryKey: ["search", searchApiPath],
     queryFn: () => searchGames(filters),
     enabled: browseTab === "games",
@@ -343,6 +343,7 @@ export default function SearchClientPage({ initialState, initialGamesData }: Sea
   }, [normalizedPagePath, router]);
 
   const isInitialLoad = browseTab === "games" && isLoading && !data;
+  const isResultsRefreshing = browseTab === "games" && isFetching && isPlaceholderData;
   const searchErrorMessage = browseTab === "games" && isError
     ? error instanceof Error
       ? error.message
@@ -559,32 +560,36 @@ export default function SearchClientPage({ initialState, initialGamesData }: Sea
       {browseTab === "games" && (
       <div>
         <AnimatePresence mode="wait">
-          {isInitialLoad ? (
+          {isInitialLoad || isResultsRefreshing ? (
             <motion.div
-              key="loading"
+              key={isInitialLoad ? "loading" : `refresh-${searchApiPath}`}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
             >
-              {debouncedQuery && (
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="w-4 h-4 border-2 border-accent border-t-transparent rounded-full animate-spin" />
-                  <p className="text-xs text-tertiary">
-                    Searching for &ldquo;{debouncedQuery}&rdquo;...
-                  </p>
-                </div>
-              )}
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-4 h-4 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+                <p className="text-xs text-tertiary">
+                  {isInitialLoad
+                    ? debouncedQuery
+                      ? `Searching for “${debouncedQuery}”...`
+                      : "Loading games..."
+                    : debouncedQuery
+                      ? `Updating results for “${debouncedQuery}”...`
+                      : "Updating results..."}
+                </p>
+              </div>
               <GameGridSkeleton count={8} />
             </motion.div>
           ) : games.length > 0 ? (
             <motion.div
-              key="results"
+              key={`results-${searchApiPath}`}
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
-              className={isFetching ? "opacity-60 pointer-events-none transition-opacity relative" : "transition-opacity relative"}
+              className="transition-opacity relative"
             >
               {searchErrorMessage && (
                 <div className="mb-4 rounded-2xl border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger">
@@ -595,7 +600,7 @@ export default function SearchClientPage({ initialState, initialGamesData }: Sea
                 <p className="text-xs text-tertiary">
                   Showing {(page - 1) * (data?.pageSize ?? 25) + 1}–{Math.min(page * (data?.pageSize ?? 25), totalCount)} of {totalCount} game{totalCount !== 1 ? "s" : ""}
                 </p>
-                {isFetching && (
+                {isFetching && !isPlaceholderData && (
                   <div className="w-3.5 h-3.5 border-2 border-accent border-t-transparent rounded-full animate-spin" />
                 )}
               </div>

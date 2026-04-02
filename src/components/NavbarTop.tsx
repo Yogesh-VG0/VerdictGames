@@ -2,12 +2,12 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useRef, useState, useEffect, useCallback, type KeyboardEvent as ReactKbEvent } from "react";
+import { useRef, useState, useEffect, useCallback, useSyncExternalStore, type KeyboardEvent as ReactKbEvent } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Home, Search, Flame, Sparkles, Trophy, CalendarDays,
-  Star, List, Scale, Info, User, BookOpen, Settings,
+  Home, Search, Flame, Sparkles, CalendarDays,
+  Star, List, User, BookOpen, Settings,
   ShieldCheck, LogOut, ChevronDown, X, Menu,
 } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
@@ -16,6 +16,8 @@ import UserAvatar from "./UserAvatar";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { isAdminEmail } from "@/lib/adminEmails";
+
+const subscribeClientReady = () => () => {};
 
 export default function NavbarTop() {
   const router = useRouter();
@@ -42,7 +44,7 @@ export default function NavbarTop() {
   const mobileSearchWasOpen = useRef(false);
   const sidebarWasOpen = useRef(false);
   const signOutConfirmWasOpen = useRef(false);
-  const [navReady, setNavReady] = useState(false);
+  const navReady = useSyncExternalStore(subscribeClientReady, () => true, () => false);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -65,10 +67,6 @@ export default function NavbarTop() {
       document.removeEventListener("keydown", handleKey);
     };
   }, [profileDropdownOpen]);
-
-  useEffect(() => {
-    setNavReady(true);
-  }, []);
 
   // Close dropdown on route change
   const closeDropdown = useCallback(() => setProfileDropdownOpen(false), []);
