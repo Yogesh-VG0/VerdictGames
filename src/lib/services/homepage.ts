@@ -213,7 +213,7 @@ function getHomepageTopRatedEvidenceTier(row: GameRow): number {
   return 0;
 }
 
-function isHomepageTopRatedEligible(row: GameRow): boolean {
+export function isHomepageTopRatedEligible(row: GameRow): boolean {
   const evidenceReviewCount = getEvidenceReviewCount(row);
   const currentPlayers = row.current_players ?? 0;
   const ageDays = row.release_date
@@ -225,16 +225,20 @@ function isHomepageTopRatedEligible(row: GameRow): boolean {
   }
 
   if (hasStrongCriticEvidence(row)) {
-    return evidenceReviewCount >= 5000
-      || currentPlayers >= 250
-      || (ageDays <= 45 && evidenceReviewCount >= 1500 && currentPlayers >= 100);
+    return evidenceReviewCount >= 10000
+      || currentPlayers >= 1000
+      || (ageDays <= 45 && evidenceReviewCount >= 2500 && currentPlayers >= 150);
   }
 
-  if (evidenceReviewCount >= 10000 && currentPlayers >= 100) {
+  if (evidenceReviewCount >= 10000 && currentPlayers >= 250) {
     return true;
   }
 
-  if (evidenceReviewCount >= 5000 && currentPlayers >= 250) {
+  if (evidenceReviewCount >= 5000 && currentPlayers >= 750) {
+    return true;
+  }
+
+  if (ageDays <= 60 && evidenceReviewCount >= 5000 && currentPlayers >= 250) {
     return true;
   }
 
@@ -1136,7 +1140,7 @@ async function fetchHomepageMostAnticipated(limit = 12): Promise<HomepageAnticip
 
 const getCachedHomepageData = unstable_cache(
   async () => fetchHomepageData(),
-  ["homepage-data-v5"],
+  ["homepage-data-v6"],
   { revalidate: HOMEPAGE_REVALIDATE_SECONDS }
 );
 
