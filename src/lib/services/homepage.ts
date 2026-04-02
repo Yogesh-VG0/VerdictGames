@@ -225,8 +225,8 @@ export function isHomepageTopRatedEligible(row: GameRow): boolean {
   }
 
   if (hasStrongCriticEvidence(row)) {
-    return evidenceReviewCount >= 10000
-      || currentPlayers >= 1000
+    return currentPlayers >= 1000
+      || (ageDays <= 90 && evidenceReviewCount >= 10000 && currentPlayers >= 500)
       || (ageDays <= 45 && evidenceReviewCount >= 2500 && currentPlayers >= 150);
   }
 
@@ -668,21 +668,25 @@ export function isHomepageRecommendationEligible(row: GameRow): boolean {
     return true;
   }
 
-  if (evidenceReviewCount >= 10000 && currentPlayers >= 250) {
+  if (evidenceReviewCount >= 10000 && currentPlayers >= 500) {
     return true;
   }
 
-  if (evidenceReviewCount >= 5000 && currentPlayers >= 500) {
+  if (evidenceReviewCount >= 5000 && currentPlayers >= 1000) {
+    return true;
+  }
+
+  if (ageDays <= 60 && evidenceReviewCount >= 5000 && currentPlayers >= 250) {
     return true;
   }
 
   if (hasStrongCriticEvidence(row)) {
-    return currentPlayers >= 250
-      || evidenceReviewCount >= 5000
+    return currentPlayers >= 1000
+      || (ageDays <= 90 && evidenceReviewCount >= 5000 && currentPlayers >= 250)
       || (ageDays <= 45 && evidenceReviewCount >= 1500 && currentPlayers >= 100);
   }
 
-  return evidenceReviewCount >= 2500 && currentPlayers >= 1000;
+  return evidenceReviewCount >= 2500 && currentPlayers >= 1500;
 }
 
 export async function fetchNewReleases(limit = 20): Promise<Game[]> {
@@ -1140,7 +1144,7 @@ async function fetchHomepageMostAnticipated(limit = 12): Promise<HomepageAnticip
 
 const getCachedHomepageData = unstable_cache(
   async () => fetchHomepageData(),
-  ["homepage-data-v6"],
+  ["homepage-data-v7"],
   { revalidate: HOMEPAGE_REVALIDATE_SECONDS }
 );
 
