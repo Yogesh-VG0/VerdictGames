@@ -222,39 +222,55 @@ function getReleaseAgeDays(row: Pick<GameRow, "release_date">): number {
 export function isStrongNewReleaseCandidate(row: GameRow): boolean {
   const qualityScore = confidenceWeightedScore(row);
   const evidenceReviewCount = getEvidenceReviewCount(row);
+  const hasCriticSupport = hasStrongCriticEvidence(row);
+  const hasTrustedCommunityEvidence = getCommunityEvidenceSource(row) === "steam";
   const currentPlayers = row.current_players ?? 0;
   const momentum = row.momentum ?? 0;
   const verdictScore = row.verdict_score ?? row.score ?? 0;
   const ageDays = getReleaseAgeDays(row);
-
+ 
   if (!row.release_date || !Number.isFinite(ageDays) || ageDays < 0) {
     return false;
   }
-
+ 
   if (qualityScore < 68) {
     return ageDays <= 3 && currentPlayers >= 2500 && momentum >= 0.08 && verdictScore >= 70;
   }
-
-  if (evidenceReviewCount >= 25 && qualityScore >= 72) {
+ 
+  if (evidenceReviewCount >= 1000 && qualityScore >= 74) {
     return true;
   }
-
-  if (ageDays <= 21 && evidenceReviewCount >= 10 && qualityScore >= 70) {
+ 
+  if (evidenceReviewCount >= 250 && qualityScore >= 84) {
+    return (hasTrustedCommunityEvidence && evidenceReviewCount >= 400)
+      || hasCriticSupport
+      || currentPlayers >= 50;
+  }
+ 
+  if (evidenceReviewCount >= 100 && currentPlayers >= 75 && qualityScore >= 74) {
     return true;
   }
-
-  if (ageDays <= 14 && evidenceReviewCount >= 5 && qualityScore >= 72) {
+ 
+  if (evidenceReviewCount >= 50 && currentPlayers >= 150 && qualityScore >= 72) {
     return true;
   }
-
-  if (ageDays <= 7 && hasStrongCriticEvidence(row) && verdictScore >= 75) {
+ 
+  if (ageDays <= 21 && evidenceReviewCount >= 20 && currentPlayers >= 150 && qualityScore >= 70) {
     return true;
   }
-
+ 
+  if (ageDays <= 14 && evidenceReviewCount >= 10 && currentPlayers >= 250 && qualityScore >= 72) {
+    return true;
+  }
+ 
+  if (ageDays <= 7 && hasCriticSupport && verdictScore >= 75) {
+    return true;
+  }
+ 
   if (ageDays <= 7 && currentPlayers >= 500 && momentum >= 0.05 && verdictScore >= 70) {
     return true;
   }
-
+ 
   return ageDays <= 3 && currentPlayers >= 1200 && verdictScore >= 68;
 }
 

@@ -644,7 +644,8 @@ async function fetchSearchResults(state: SearchGamesState): Promise<PaginatedRes
   let total = filteredTotal;
 
   const noFilters = platform === "All" && !genre && !year && monetization === "All";
-  if (total < 3 && q.length >= 2 && page === 1 && noFilters) {
+  const allowPreviewFallback = sort === "relevance" && q.length >= 2 && page === 1 && noFilters;
+  if (total < 3 && allowPreviewFallback) {
     try {
       const { searchRawg, mapRawgPlatforms } = await import("@/lib/external/rawg");
       const rawgResults = await searchRawg(q, 1, 5);

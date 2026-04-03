@@ -62,8 +62,10 @@ const HOMEPAGE_TRENDING_FALLBACK_MONTHS = 60;
 const HOMEPAGE_TRENDING_LAST_RESORT_MONTHS = 120;
 const HOMEPAGE_TOP_RATED_MONTHS = 24;
 const HOMEPAGE_TOP_RATED_FALLBACK_MONTHS = 60; // Widened from 36 to 60
-const HOMEPAGE_REC_MONTHS = 36;
-const HOMEPAGE_REC_FALLBACK_MONTHS = 60;
+const HOMEPAGE_TOP_RATED_EVERGREEN_MONTHS = 180;
+const HOMEPAGE_REC_MONTHS = 48;
+const HOMEPAGE_REC_FALLBACK_MONTHS = 72;
+const HOMEPAGE_REC_LAST_RESORT_MONTHS = 120;
 const HOMEPAGE_HERO_TARGET = 6;
 const HOMEPAGE_RAIL_TARGET = 20;
 const HOMEPAGE_PRIORITY_FLOOR = 8;
@@ -296,6 +298,37 @@ function preferHomepageTopRatedPool(rows: GameRow[], desiredCount: number): Game
   }
 
   return rows;
+}
+
+export function isHomepageTopRatedEvergreenBackfillCandidate(row: GameRow): boolean {
+  const evidenceReviewCount = getEvidenceReviewCount(row);
+  const currentPlayers = row.current_players ?? 0;
+  const verdictScore = row.verdict_score ?? row.score ?? 0;
+  const ageDays = row.release_date
+    ? (Date.now() - new Date(`${row.release_date}T00:00:00`).getTime()) / 86400000
+    : Number.POSITIVE_INFINITY;
+
+  if (!row.release_date || ageDays <= 365 || !isRecentEnoughForHome(row, HOMEPAGE_TOP_RATED_EVERGREEN_MONTHS) || verdictScore < 88) {
+    return false;
+  }
+
+  if (evidenceReviewCount >= 250000) {
+    return currentPlayers >= 250;
+  }
+
+  if (evidenceReviewCount >= 100000) {
+    return currentPlayers >= 400;
+  }
+
+  if (evidenceReviewCount >= 50000) {
+    return currentPlayers >= 750;
+  }
+
+  if (hasStrongCriticEvidence(row)) {
+    return evidenceReviewCount >= 10000 && currentPlayers >= 2500;
+  }
+
+  return evidenceReviewCount >= 25000 && currentPlayers >= 1500;
 }
 
 function preferHomepageTrendingQualityPool(rows: GameRow[], desiredCount: number): GameRow[] {
@@ -625,10 +658,40 @@ export async function fetchTrendingGames(limit = 20, homepageOnly = true): Promi
     const desiredCount = Math.min(limit, HOMEPAGE_RAIL_TARGET);
     recencyFiltered = readyFiltered.filter(isHomepageTrendingEligible);
     if (recencyFiltered.length < desiredCount) {
-      recencyFiltered = readyFiltered.filter((r) => isRecentEnoughForHome(r, HOMEPAGE_TRENDING_FALLBACK_MONTHS));
+      const signalFallbackPool = readyFiltered.filter((r) =>
+        isRecentEnoughForHome(r, HOMEPAGE_TRENDING_FALLBACK_MONTHS)
+        && (isHomepageTrendingFallbackDisplayGame(r) || hasBrowseTrendingSignal(r))
+      );
+      if (signalFallbackPool.length > recencyFiltered.length) {
+        recencyFiltered = signalFallbackPool;
+      }
     }
     if (recencyFiltered.length < desiredCount) {
-      recencyFiltered = readyFiltered.filter((r) => isRecentEnoughForHome(r, HOMEPAGE_TRENDING_LAST_RESORT_MONTHS));
+      const broaderSignalPool = readyFiltered.filter((r) =>
+        isRecentEnoughForHome(r, HOMEPAGE_TRENDING_LAST_RESORT_MONTHS)
+        && (isHomepageTrendingFallbackDisplayGame(r) || hasBrowseTrendingSignal(r))
+      );
+      if (broaderSignalPool.length > recencyFiltered.length) {
+        recencyFiltered = broaderSignalPool;
+      }
+    }
+    if (recencyFiltered.length < desiredCount) {
+      const displayBackfillPool = readyFiltered.filter((r) =>
+        isHomepageTrendingDisplayGame(r)
+        || isHomepageTrendingFallbackDisplayGame(r)
+        || hasBrowseTrendingSignal(r)
+      );
+      if (displayBackfillPool.length > 0) {
+        recencyFiltered = displayBackfillPool;
+      }
+    }
+    if (recencyFiltered.length < desiredCount) {
+      const acceptableSignalPool = readyFiltered.filter((r) =>
+        isPremiumTrendingCandidate(r) || isAcceptableTrendingCandidate(r)
+      );
+      if (acceptableSignalPool.length > 0) {
+        recencyFiltered = acceptableSignalPool;
+      }
     }
     if (recencyFiltered.length < desiredCount) recencyFiltered = readyFiltered;
 
@@ -753,6 +816,14 @@ export function isHomepageRecommendationEligible(row: GameRow): boolean {
     ? (Date.now() - new Date(`${row.release_date}T00:00:00`).getTime()) / 86400000
     : Number.POSITIVE_INFINITY;
 
+  if (ageDays > 365 && currentPlayers < 1000 && evidenceReviewCount < 25000) {
+    return false;
+  }
+
+  if (ageDays > 180 && currentPlayers < 800 && evidenceReviewCount < 10000) {
+    return false;
+  }
+
   if (evidenceReviewCount >= 50000 || currentPlayers >= 2500) {
     return true;
   }
@@ -776,6 +847,76 @@ export function isHomepageRecommendationEligible(row: GameRow): boolean {
   }
 
   return evidenceReviewCount >= 2500 && currentPlayers >= 1500;
+}
+
+export function isHomepageRecommendationDistinctCandidate(row: GameRow): boolean {
+  const evidenceReviewCount = getEvidenceReviewCount(row);
+  const currentPlayers = row.current_players ?? 0;
+  const verdictScore = row.verdict_score ?? row.score ?? 0;
+  const ageDays = row.release_date
+    ? (Date.now() - new Date(`${row.release_date}T00:00:00`).getTime()) / 86400000
+    : Number.POSITIVE_INFINITY;
+
+  if (!row.release_date || verdictScore < 82) {
+    return false;
+  }
+
+  if (
+    isHomepageHeroAutoCandidate(row)
+    || isPremiumTrendingCandidate(row)
+    || isHomepageTrendingEligible(row)
+    || isHomepageTopRatedEligible(row)
+  ) {
+    return false;
+  }
+
+  if (ageDays > 365 && currentPlayers < 1000 && evidenceReviewCount < 25000) {
+    return false;
+  }
+
+  if (ageDays > 180 && currentPlayers < 500 && evidenceReviewCount < 10000 && !hasStrongCriticEvidence(row)) {
+    return false;
+  }
+
+  return hasStrongCriticEvidence(row)
+    || evidenceReviewCount >= 5000
+    || (evidenceReviewCount >= 2500 && currentPlayers >= 250)
+    || currentPlayers >= 1500;
+}
+
+export function isHomepageRecommendationBackfillCandidate(row: GameRow): boolean {
+  const evidenceReviewCount = getEvidenceReviewCount(row);
+  const currentPlayers = row.current_players ?? 0;
+  const verdictScore = row.verdict_score ?? row.score ?? 0;
+  const ageDays = row.release_date
+    ? (Date.now() - new Date(`${row.release_date}T00:00:00`).getTime()) / 86400000
+    : Number.POSITIVE_INFINITY;
+
+  if (!row.release_date || verdictScore < 80) {
+    return false;
+  }
+
+  if (
+    isHomepageHeroAutoCandidate(row)
+    || isPremiumTrendingCandidate(row)
+    || isHomepageTrendingEligible(row)
+    || isHomepageTopRatedEligible(row)
+  ) {
+    return false;
+  }
+
+  if (ageDays > 730 && currentPlayers < 750 && evidenceReviewCount < 25000) {
+    return false;
+  }
+
+  if (ageDays > 365 && currentPlayers < 350 && evidenceReviewCount < 5000 && !hasStrongCriticEvidence(row)) {
+    return false;
+  }
+
+  return hasStrongCriticEvidence(row)
+    || evidenceReviewCount >= 2500
+    || (evidenceReviewCount >= 1000 && currentPlayers >= 100)
+    || currentPlayers >= 750;
 }
 
 export async function fetchNewReleases(limit = 20): Promise<Game[]> {
@@ -1019,14 +1160,57 @@ export async function fetchHomepageTopRated(limit = 20): Promise<Game[]> {
 
   const homepageEligible = filtered.filter(isHomepageTopRatedEligible);
   const desiredCount = Math.min(limit, HOMEPAGE_RAIL_TARGET);
-  if (homepageEligible.length >= desiredCount) {
-    filtered = homepageEligible;
-  } else if (homepageEligible.length >= HOMEPAGE_PRIORITY_FLOOR) {
-    filtered = prioritizeById(homepageEligible, filtered, filtered.length);
+  const primaryPool = homepageEligible.length > 0
+    ? preferHomepageTopRatedPool(homepageEligible, desiredCount)
+    : [];
+  let evergreenBackfill: GameRow[] = [];
+
+  if (primaryPool.length < desiredCount) {
+    const evergreenCutoff = monthsAgoISO(HOMEPAGE_TOP_RATED_EVERGREEN_MONTHS);
+    const evergreen = await supabase
+      .from("games")
+      .select(GAME_CARD_COLUMNS_WITH_DESC)
+      .not("release_date", "is", null)
+      .gte("release_date", evergreenCutoff)
+      .lte("release_date", new Date().toISOString().slice(0, 10))
+      .not("cover_image", "is", null)
+      .neq("cover_image", "")
+      .gte("score", 75)
+      .gte("confidence", 0.4)
+      .gte("review_count", 500)
+      .order("verdict_score", { ascending: false, nullsFirst: false })
+      .order("confidence", { ascending: false, nullsFirst: false })
+      .order("score", { ascending: false })
+      .limit(getHomepageQueryFetchLimit(limit, 5)) as { data: GameRow[] | null; error: unknown };
+
+    if (!evergreen.error && evergreen.data) {
+      const evergreenReady = deduplicateBySteamAppId(evergreen.data.filter((r) =>
+        isSurfaceReady(r, "homepageRail") &&
+        isPublicSafeGame(r) &&
+        hasUsableCardImage(r)
+      ));
+      evergreenBackfill = filterQualityGames(evergreenReady, {
+        section: "topRated",
+        minResults: 4,
+        allowReadinessFallback: false,
+      }).filter((r) => {
+        if ((r as GameRow & { is_provisional?: boolean }).is_provisional) return false;
+        if (r.verdict_label === "COMING SOON") return false;
+        if (isFutureDate(r.release_date)) return false;
+        return isHomepageTopRatedEvergreenBackfillCandidate(r);
+      });
+    }
   }
 
-  filtered = preferHomepageTopRatedPool(filtered, desiredCount);
+  const mergedTopRated = prioritizeById(primaryPool, evergreenBackfill, primaryPool.length + evergreenBackfill.length);
+  if (mergedTopRated.length > 0) {
+    filtered = mergedTopRated;
+  } else {
+    filtered = preferHomepageTopRatedPool(filtered, desiredCount);
+  }
   filtered.sort((a, b) => {
+    const homepageEligibleDiff = Number(isHomepageTopRatedEligible(b)) - Number(isHomepageTopRatedEligible(a));
+    if (homepageEligibleDiff !== 0) return homepageEligibleDiff;
     const tierDiff = getHomepageTopRatedEvidenceTier(b) - getHomepageTopRatedEvidenceTier(a);
     if (tierDiff !== 0) return tierDiff;
     return getHomepageTopRatedScore(b) - getHomepageTopRatedScore(a);
@@ -1049,7 +1233,7 @@ export async function fetchHomepageTopRated(limit = 20): Promise<Game[]> {
 
 export async function fetchHomepageRecommendations(limit = 20): Promise<Game[]> {
   const supabase = getPublicSupabase();
-  const fetchLimit = getHomepageQueryFetchLimit(limit);
+  const fetchLimit = Math.max(getHomepageQueryFetchLimit(limit, 5), 160);
   const cutoff = monthsAgoISO(HOMEPAGE_REC_MONTHS);
  
   const { data, error } = await supabase
@@ -1106,11 +1290,14 @@ export async function fetchHomepageRecommendations(limit = 20): Promise<Game[]> 
       .limit(fetchLimit) as { data: GameRow[] | null; error: unknown };
 
     if (!fallback.error && fallback.data) {
-      ready = deduplicateBySteamAppId(fallback.data.filter((r) =>
-        isSurfaceReady(r, "homepageRail") &&
-        isPublicSafeGame(r) &&
-        hasUsableCardImage(r)
-      ));
+      ready = deduplicateBySteamAppId([
+        ...ready,
+        ...fallback.data.filter((r) =>
+          isSurfaceReady(r, "homepageRail") &&
+          isPublicSafeGame(r) &&
+          hasUsableCardImage(r)
+        ),
+      ]);
       clean = ready.filter((r) => {
         if ((r as GameRow & { is_provisional?: boolean }).is_provisional) return false;
         if (r.verdict_label === "COMING SOON") return false;
@@ -1125,12 +1312,70 @@ export async function fetchHomepageRecommendations(limit = 20): Promise<Game[]> 
     }
   }
 
+  if (qualityFiltered.length < limit) {
+    const lastResortCutoff = monthsAgoISO(HOMEPAGE_REC_LAST_RESORT_MONTHS);
+    const lastResort = await supabase
+      .from("games")
+      .select(GAME_CARD_COLUMNS_WITH_DESC)
+      .not("release_date", "is", null)
+      .gte("release_date", lastResortCutoff)
+      .lte("release_date", new Date().toISOString().slice(0, 10))
+      .gte("score", 75)
+      .gte("review_count", 75)
+      .gte("confidence", 0.4)
+      .not("cover_image", "is", null)
+      .neq("cover_image", "")
+      .order("verdict_score", { ascending: false, nullsFirst: false })
+      .order("score", { ascending: false })
+      .limit(fetchLimit) as { data: GameRow[] | null; error: unknown };
+
+    if (!lastResort.error && lastResort.data) {
+      ready = deduplicateBySteamAppId([
+        ...ready,
+        ...lastResort.data.filter((r) =>
+          isSurfaceReady(r, "homepageRail") &&
+          isPublicSafeGame(r) &&
+          hasUsableCardImage(r)
+        ),
+      ]);
+      clean = ready.filter((r) => {
+        if ((r as GameRow & { is_provisional?: boolean }).is_provisional) return false;
+        if (r.verdict_label === "COMING SOON") return false;
+        if (isFutureDate(r.release_date)) return false;
+        return true;
+      });
+      qualityFiltered = filterQualityGames(clean, {
+        section: "recommendations",
+        minResults: 4,
+        allowReadinessFallback: false,
+      });
+    }
+  }
+
+  const desiredCount = Math.min(limit, HOMEPAGE_RAIL_TARGET);
   const homepageEligible = qualityFiltered.filter(isHomepageRecommendationEligible);
-  if (homepageEligible.length > 0) {
-    qualityFiltered = homepageEligible;
+  const distinctPool = qualityFiltered.filter(isHomepageRecommendationDistinctCandidate);
+  const backfillPool = qualityFiltered.filter(isHomepageRecommendationBackfillCandidate);
+  const displayPool = qualityFiltered.filter((row) =>
+    isHomepageRecommendationEligible(row) || isHomepageRecommendationDistinctCandidate(row)
+  );
+  if (displayPool.length >= desiredCount) {
+    qualityFiltered = displayPool;
+  } else if (displayPool.length >= HOMEPAGE_PRIORITY_FLOOR) {
+    qualityFiltered = prioritizeById(displayPool, qualityFiltered, qualityFiltered.length);
+  }
+  if (displayPool.length < desiredCount && backfillPool.length > 0) {
+    qualityFiltered = prioritizeById(displayPool, backfillPool, displayPool.length + backfillPool.length);
+    qualityFiltered = prioritizeById(qualityFiltered, qualityFiltered, qualityFiltered.length);
   }
 
   qualityFiltered.sort((a, b) => getHomepageRecommendationScore(b) - getHomepageRecommendationScore(a));
+  if (homepageEligible.length > 0) {
+    qualityFiltered = prioritizeById(homepageEligible, qualityFiltered, qualityFiltered.length);
+  }
+  if (distinctPool.length > 0) {
+    qualityFiltered = prioritizeById(distinctPool, qualityFiltered, qualityFiltered.length);
+  }
 
   // Genre diversity: max 1 per genre for anonymous recs (broad discovery)
   const diversified = applyGenreDiversity(qualityFiltered, limit, 1);
@@ -1271,7 +1516,7 @@ async function fetchHomepageMostAnticipated(limit = 12): Promise<HomepageAnticip
 
 const getCachedHomepageData = unstable_cache(
   async () => fetchHomepageData(),
-  ["homepage-data-v12"],
+  ["homepage-data-v15"],
   { revalidate: HOMEPAGE_REVALIDATE_SECONDS }
 );
 
@@ -1444,6 +1689,9 @@ export async function fetchHomepageData(): Promise<HomepageData> {
   );
   const trendingPool = trendingRaw.filter((game) => !reservedTopRatedIds.has(game.id));
   const trendingCandidates = prioritizeById(trendingPool, trendingRaw, trendingRaw.length);
+  const reservedRecommendationIds = new Set(recsRaw.map((game) => game.id));
+  const newReleasePool = newReleasesRaw.filter((game) => !reservedRecommendationIds.has(game.id));
+  const newReleaseCandidates = prioritizeById(newReleasePool, newReleasesRaw, newReleasesRaw.length);
 
   // Claim in priority order
   const hero = claimSlots(heroRaw, HOMEPAGE_HERO_TARGET);
@@ -1453,7 +1701,7 @@ export async function fetchHomepageData(): Promise<HomepageData> {
   const topRated = topRatedPremium.length >= HOMEPAGE_PRIORITY_FLOOR
     ? prioritizeById(topRatedPremium, topRatedClaimed, HOMEPAGE_RAIL_TARGET)
     : topRatedClaimed;
-  const newReleases = claimSlots(newReleasesRaw, HOMEPAGE_RAIL_TARGET);
+  const newReleases = claimSlots(newReleaseCandidates, HOMEPAGE_RAIL_TARGET);
   const recommendations = claimSlots(recsRaw, HOMEPAGE_RAIL_TARGET);
 
   return { hero, trending, topRated, newReleases, deals, recommendations };

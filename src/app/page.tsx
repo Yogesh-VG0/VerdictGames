@@ -136,7 +136,7 @@ export default async function HomePage() {
                   href="/search?sort=top-rated"
                   linkLabel="View all"
                   icon={<Trophy className="w-5 h-5" />}
-                  subtitle="Highest-scoring recent releases with strong popularity and staying power"
+                  subtitle="Highest-scoring standout games with strong popularity and staying power"
                   gradient="linear-gradient(90deg, #facc15 0%, #f97316 25%, #eab308 50%, #22c55e 75%, #facc15 100%)"
                 />
                 <HorizontalScroll>

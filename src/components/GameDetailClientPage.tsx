@@ -81,6 +81,15 @@ function StatBar({ value, max, label, color }: { value: number; max: number; lab
   );
 }
 
+const LIVE_PLAYER_FRESHNESS_HOURS = 8;
+
+function getTimestampAgeHours(iso?: string | null): number {
+  if (!iso) return Number.POSITIVE_INFINITY;
+  const timestamp = new Date(iso).getTime();
+  if (!Number.isFinite(timestamp)) return Number.POSITIVE_INFINITY;
+  return Math.max(0, (Date.now() - timestamp) / 3600000);
+}
+
 export default function GameDetailClientPage({
   slug,
   rawgId = null,
@@ -383,6 +392,12 @@ export default function GameDetailClientPage({
   const notices = getGameNotices(game);
   const developerName = game.developer?.trim() || null;
   const developerHref = developerName ? `/developers/${encodeURIComponent(slugify(developerName))}` : null;
+  const playerStatsAgeHours = getTimestampAgeHours(game.playersUpdatedAt);
+  const hasFreshPlayerStats = playerStatsAgeHours <= LIVE_PLAYER_FRESHNESS_HOURS;
+  const playerStatsLabel = hasFreshPlayerStats ? "Playing Now" : "Recent Players";
+  const playerStatsTimestampLabel = game.playersUpdatedAt
+    ? `${hasFreshPlayerStats ? "Updated" : "Last updated"} ${formatTimeAgo(game.playersUpdatedAt)}`
+    : null;
 
   return (
     <div className="space-y-0">
@@ -1184,14 +1199,14 @@ export default function GameDetailClientPage({
                     {(game.currentPlayers !== undefined && game.currentPlayers > 0) && (
                       <div className="pt-3 border-t border-border/50">
                         <div className="flex items-baseline justify-between">
-                          <span className="text-xs text-tertiary">Playing Now</span>
+                          <span className="text-xs text-tertiary">{playerStatsLabel}</span>
                           <span className="text-lg font-bold text-accent tabular-nums">
                             {game.currentPlayers.toLocaleString()}
                           </span>
                         </div>
-                        {game.playersUpdatedAt && (
+                        {playerStatsTimestampLabel && (
                           <p className="text-[10px] text-tertiary/60 mt-0.5">
-                            Updated {formatTimeAgo(game.playersUpdatedAt)}
+                            {playerStatsTimestampLabel}
                           </p>
                         )}
                       </div>

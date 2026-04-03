@@ -16,6 +16,24 @@ const PACKAGING_SUFFIX_PATTERNS = [
 
 const TITLE_YEAR_DISAMBIGUATION_PATTERN = /\s*\((?:19|20)\d{2}\)$/i;
 
+const ROMAN_NUMERAL_TOKENS: Record<string, string> = {
+  ii: "2",
+  iii: "3",
+  iv: "4",
+  v: "5",
+  vi: "6",
+  vii: "7",
+  viii: "8",
+  ix: "9",
+  x: "10",
+  xi: "11",
+  xii: "12",
+  xiii: "13",
+  xiv: "14",
+  xv: "15",
+  xvi: "16",
+};
+
 const SUPPLEMENTAL_TITLE_PATTERNS = [
   /\bseason pass\b/i,
   /\bexpansion pass\b/i,
@@ -86,6 +104,15 @@ export function getDiscoveryCanonicalTitle(title: string): string {
   return normalizeTitle(stripTitleDisambiguationYear(stripPackagingSuffix(title)));
 }
 
+function getDescriptionMatchCanonicalTitle(title: string): string {
+  return normalizeTitle(
+    stripTitleDisambiguationYear(stripPackagingSuffix(title)).replace(
+      /\b(ii|iii|iv|v|vi|vii|viii|ix|x|xi|xii|xiii|xiv|xv|xvi)\b/gi,
+      (token) => ROMAN_NUMERAL_TOKENS[token.toLowerCase()] ?? token,
+    ),
+  );
+}
+
 export function hasSupplementalDescription(description?: string | null): boolean {
   if (!description) {
     return false;
@@ -132,7 +159,7 @@ function hasMismatchedDescriptionTitle(title: string, description?: string | nul
     return false;
   }
 
-  return getDiscoveryCanonicalTitle(subject) !== getDiscoveryCanonicalTitle(title);
+  return getDescriptionMatchCanonicalTitle(subject) !== getDescriptionMatchCanonicalTitle(title);
 }
 
 export function isPrimaryDiscoveryGame(row: Pick<GameRow, "title" | "description">): boolean {
