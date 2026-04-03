@@ -61,13 +61,13 @@ const HOMEPAGE_TRENDING_MONTHS = 36;
 const HOMEPAGE_TRENDING_FALLBACK_MONTHS = 60;
 const HOMEPAGE_TRENDING_LAST_RESORT_MONTHS = 120;
 const HOMEPAGE_TOP_RATED_MONTHS = 24;
-const HOMEPAGE_TOP_RATED_FALLBACK_MONTHS = 36;
+const HOMEPAGE_TOP_RATED_FALLBACK_MONTHS = 60; // Widened from 36 to 60
 const HOMEPAGE_REC_MONTHS = 36;
 const HOMEPAGE_REC_FALLBACK_MONTHS = 60;
 const HOMEPAGE_HERO_TARGET = 6;
 const HOMEPAGE_RAIL_TARGET = 20;
 const HOMEPAGE_PRIORITY_FLOOR = 8;
-const HOMEPAGE_TOP_RATED_RESERVED_TARGET = 8;
+const HOMEPAGE_TOP_RATED_RESERVED_TARGET = HOMEPAGE_RAIL_TARGET;
 const HOMEPAGE_HERO_FETCH_TARGET = 12;
 const HOMEPAGE_SECTION_FETCH_TARGET = HOMEPAGE_RAIL_TARGET + 12;
 const HOMEPAGE_QUERY_MIN_ROWS = 60;
@@ -180,7 +180,7 @@ export function getHomepageTopRatedScore(row: GameRow): number {
         ? 6
         : currentPlayers >= 1000
           ? 3
-        : 0;
+          : 0;
   const lowPresencePenalty = ageDays > 365 && currentPlayers < 500
     ? 22
     : ageDays > 180 && currentPlayers < 750
@@ -192,9 +192,9 @@ export function getHomepageTopRatedScore(row: GameRow): number {
     ? 8
     : evidenceReviewCount >= 50000
       ? 6
-    : evidenceReviewCount >= 10000
-      ? 3
-      : 0;
+      : evidenceReviewCount >= 10000
+        ? 3
+        : 0;
 
   return qualityScore + reviewScore + activityScore + recencyScore + criticBonus + scaleBonus + livePresenceBonus - lowPresencePenalty;
 }
@@ -278,13 +278,21 @@ export function isHomepageTopRatedEligible(row: GameRow): boolean {
 
 function preferHomepageTopRatedPool(rows: GameRow[], desiredCount: number): GameRow[] {
   const elitePool = rows.filter((row) => confidenceWeightedScore(row) >= 88 && getHomepageTopRatedEvidenceTier(row) >= 2);
-  if (elitePool.length >= Math.min(desiredCount, 12)) {
+  if (elitePool.length >= desiredCount) {
     return elitePool;
   }
 
   const strongPool = rows.filter((row) => confidenceWeightedScore(row) >= 84 && getHomepageTopRatedEvidenceTier(row) >= 1);
-  if (strongPool.length >= Math.min(desiredCount, 12)) {
+  if (strongPool.length >= desiredCount) {
     return strongPool;
+  }
+
+  if (elitePool.length >= HOMEPAGE_PRIORITY_FLOOR) {
+    return prioritizeById(elitePool, rows, rows.length);
+  }
+
+  if (strongPool.length >= HOMEPAGE_PRIORITY_FLOOR) {
+    return prioritizeById(strongPool, rows, rows.length);
   }
 
   return rows;
@@ -866,7 +874,7 @@ export async function fetchNewReleases(limit = 20): Promise<Game[]> {
    Requires: cover_image, review_count>=50, confidence>=0.3
    Excludes: is_provisional, COMING SOON
    Scoring:  confidenceWeightedScore()
-   Homepage: 24mo, fallback 36mo
+   Homepage: 24mo, fallback 36mo, last resort 72mo
    ═══════════════════════════════════════════════════ */
 
 /**
@@ -911,7 +919,7 @@ export async function fetchTopRated(limit = 10): Promise<Game[]> {
 
 /**
  * Homepage top rated — "Top Rated Right Now".
- * Only recent releases (24mo, fallback 36mo) so the homepage feels current.
+ * Only recent releases (24mo, fallback 36mo, last resort 72mo) so the homepage feels current.
  */
 export async function fetchHomepageTopRated(limit = 20): Promise<Game[]> {
   const supabase = getPublicSupabase();
@@ -972,6 +980,35 @@ export async function fetchHomepageTopRated(limit = 20): Promise<Game[]> {
     }
   }
 
+  // Last resort: widen to 72 months if still not enough
+  if (filtered.length < limit) {
+    const widestCutoff = monthsAgoISO(HOMEPAGE_TOP_RATED_FALLBACK_MONTHS + 36);
+    const widest = await supabase
+      .from("games")
+      .select(GAME_CARD_COLUMNS_WITH_DESC)
+      .not("release_date", "is", null)
+      .gte("release_date", widestCutoff)
+      .lte("release_date", new Date().toISOString().slice(0, 10))
+      .not("cover_image", "is", null)
+      .neq("cover_image", "")
+      .gte("score", 70)
+      .gte("confidence", 0.3)
+      .gte("review_count", 75)
+      .order("verdict_score", { ascending: false, nullsFirst: false })
+      .order("confidence", { ascending: false, nullsFirst: false })
+      .order("score", { ascending: false })
+      .limit(fetchLimit) as { data: GameRow[] | null; error: unknown };
+
+    if (!widest.error && widest.data) {
+      ready = deduplicateBySteamAppId(widest.data.filter((r) =>
+        isSurfaceReady(r, "homepageRail") &&
+        isPublicSafeGame(r) &&
+        hasUsableCardImage(r)
+      ));
+      filtered = filterQualityGames(ready, { section: "topRated", minResults: 4, allowReadinessFallback: false });
+    }
+  }
+
   // Exclude provisional / coming soon
   filtered = filtered.filter((r) => {
     if ((r as GameRow & { is_provisional?: boolean }).is_provisional) return false;
@@ -981,11 +1018,14 @@ export async function fetchHomepageTopRated(limit = 20): Promise<Game[]> {
   });
 
   const homepageEligible = filtered.filter(isHomepageTopRatedEligible);
-  if (homepageEligible.length > 0) {
+  const desiredCount = Math.min(limit, HOMEPAGE_RAIL_TARGET);
+  if (homepageEligible.length >= desiredCount) {
     filtered = homepageEligible;
+  } else if (homepageEligible.length >= HOMEPAGE_PRIORITY_FLOOR) {
+    filtered = prioritizeById(homepageEligible, filtered, filtered.length);
   }
 
-  filtered = preferHomepageTopRatedPool(filtered, limit);
+  filtered = preferHomepageTopRatedPool(filtered, desiredCount);
   filtered.sort((a, b) => {
     const tierDiff = getHomepageTopRatedEvidenceTier(b) - getHomepageTopRatedEvidenceTier(a);
     if (tierDiff !== 0) return tierDiff;
@@ -1231,7 +1271,7 @@ async function fetchHomepageMostAnticipated(limit = 12): Promise<HomepageAnticip
 
 const getCachedHomepageData = unstable_cache(
   async () => fetchHomepageData(),
-  ["homepage-data-v9"],
+  ["homepage-data-v12"],
   { revalidate: HOMEPAGE_REVALIDATE_SECONDS }
 );
 
@@ -1399,7 +1439,6 @@ export async function fetchHomepageData(): Promise<HomepageData> {
 
   const reservedTopRatedIds = new Set(
     topRatedRaw
-      .filter(isReservedHomepageTopRatedGame)
       .slice(0, HOMEPAGE_TOP_RATED_RESERVED_TARGET)
       .map((game) => game.id)
   );

@@ -338,13 +338,12 @@ export async function GET(request: NextRequest) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const gamesTable = supabase.from("games") as any;
   await gamesTable.update({ trending: false })
-    .eq("is_trending_manual", false);
+    .eq("is_trending_manual", false)
+    .eq("trending", true);
 
   if (trendingIds.length > 0) {
     // Mark trending
-    for (const id of trendingIds) {
-      await gamesTable.update({ trending: true }).eq("id", id);
-    }
+    await gamesTable.update({ trending: true }).in("id", trendingIds);
   }
 
   // ── 5. Featured is editorial-only — just log count for observability ──
@@ -389,25 +388,8 @@ export async function GET(request: NextRequest) {
       }
 
       // Compute momentum for each game: log(current+1) - log(previous+1)
-      let momentumUpdated = 0;
-      for (const game of gamesWithPlayers) {
-        const { data: prevSnapshots } = await supabase
-          .from("player_snapshots")
-          .select("player_count")
-          .eq("game_id", game.id)
-          .order("recorded_at", { ascending: false })
-          .range(1, 1) as { data: { player_count: number }[] | null };
-
-        if (prevSnapshots && prevSnapshots.length > 0) {
-          const previous = prevSnapshots[0].player_count;
-          const current = game.current_players;
-          const momentum = Math.log(current + 1) - Math.log(previous + 1);
-          // Round to 4 decimal places
-          const rounded = Math.round(momentum * 10000) / 10000;
-          await gamesTable.update({ momentum: rounded }).eq("id", game.id);
-          momentumUpdated++;
-        }
-      }
+      const { data: momentumUpdated, error: momentumError } = await ((supabase as any).rpc("refresh_recent_game_momentum") as Promise<{ data: number | null; error: { message: string } | null }>);
+      if (momentumError) throw momentumError;
       log.push(`📈 Updated momentum for ${momentumUpdated} games`);
 
       // Cleanup: delete snapshots older than 7 days

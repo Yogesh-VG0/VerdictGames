@@ -179,9 +179,8 @@ async function flushUsageBufferAsync(): Promise<void> {
     const supabase = getServerSupabase();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const usageTable = supabase.from("api_provider_usage") as any;
-    
-    for (const [, agg] of aggregated) {
-      await usageTable.upsert({
+
+    const rows = Array.from(aggregated.values()).map((agg) => ({
         provider: agg.provider,
         endpoint: agg.endpoint,
         hour_bucket: hourBucketISO,
@@ -189,11 +188,12 @@ async function flushUsageBufferAsync(): Promise<void> {
         success_count: agg.successCount,
         error_count: agg.errorCount,
         total_latency_ms: agg.totalLatencyMs,
-      }, {
-        onConflict: "provider,endpoint,hour_bucket",
-        ignoreDuplicates: false,
-      });
-    }
+      }));
+
+    await usageTable.upsert(rows, {
+      onConflict: "provider,endpoint,hour_bucket",
+      ignoreDuplicates: false,
+    });
   } catch (err) {
     // Best effort - don't break the app if tracking fails
     console.warn("[ProviderUsage] Failed to flush usage:", (err as Error).message);
