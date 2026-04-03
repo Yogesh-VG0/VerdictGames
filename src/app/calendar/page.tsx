@@ -2,8 +2,7 @@ import type { Metadata } from "next";
 import CalendarClientPage from "@/components/CalendarClientPage";
 import { loadCalendarMonth, CALENDAR_REVALIDATE_SECONDS } from "@/lib/services/calendar";
 import { buildCalendarPagePath, getCalendarMonthKey, getCalendarSeoCopy, parseCalendarPageState } from "@/lib/utils/gx-calendar";
-
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://www.verdict.games";
+import { buildSocialMetadata, SITE_URL } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 
@@ -27,17 +26,11 @@ export async function generateMetadata({ searchParams }: CalendarPageProps): Pro
     description,
     keywords: ["game release calendar", "upcoming games", "game launch dates", "new game releases"],
     alternates: { canonical: canonicalPath },
-    openGraph: {
+    ...buildSocialMetadata({
       title,
       description,
       url: pageUrl,
-      siteName: "verdict.games",
-    },
-    twitter: {
-      card: "summary",
-      title,
-      description,
-    },
+    }),
   };
 }
 

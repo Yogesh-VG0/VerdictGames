@@ -1,17 +1,20 @@
 import type { Metadata } from "next";
+import { buildSocialMetadata, SITE_URL } from "@/lib/seo";
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://www.verdict.games";
+const title = "Explore Games";
+const description = "Discover the most anticipated, popular, and highest-rated games. Browse by year, genre, or all-time rankings powered by RAWG community data.";
+const socialTitle = "Explore Games | verdict.games";
 
 export const metadata: Metadata = {
-  title: "Explore Games",
-  description: "Discover the most anticipated, popular, and highest-rated games. Browse by year, genre, or all-time rankings powered by RAWG community data.",
+  title,
+  description,
   keywords: ["explore games", "most anticipated games", "best games of the year", "all-time top games", "game rankings", "browse by genre"],
   alternates: { canonical: `${SITE_URL}/explore` },
-  openGraph: {
-    title: "Explore Games | verdict.games",
-    description: "Discover the most anticipated, popular, and highest-rated games.",
+  ...buildSocialMetadata({
+    title: socialTitle,
+    description,
     url: `${SITE_URL}/explore`,
-  },
+  }),
 };
 
 export default function ExploreLayout({ children }: { children: React.ReactNode }) {

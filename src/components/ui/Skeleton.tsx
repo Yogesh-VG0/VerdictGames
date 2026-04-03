@@ -9,7 +9,7 @@ export function Skeleton({
     <div
       className={cn(
         "rounded-2xl animate-shimmer",
-        "bg-gradient-to-r from-border/40 via-border/70 to-border/40",
+        "bg-gradient-to-r from-surface-2 via-accent/10 to-pixel-cyan/10",
         className
       )}
       {...props}

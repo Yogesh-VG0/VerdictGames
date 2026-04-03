@@ -2,8 +2,7 @@ import type { Metadata } from "next";
 import SearchClientPage from "@/components/SearchClientPage";
 import { buildSearchPagePath, getSearchRobotsRule, getSearchSeoCopy, parseSearchPageState } from "@/lib/search";
 import { loadSearchResults, SEARCH_REVALIDATE_SECONDS } from "@/lib/services/search";
-
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://www.verdict.games";
+import { buildSocialMetadata, SITE_URL } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 
@@ -29,17 +28,11 @@ export async function generateMetadata({ searchParams }: SearchPageProps): Promi
     keywords: ["search games", "game reviews", "game filter", "verdict scores", "game discovery"],
     alternates: { canonical: canonicalPath },
     robots: robotsRule === "index,follow" ? { index: true, follow: true } : { index: false, follow: true },
-    openGraph: {
+    ...buildSocialMetadata({
       title,
       description,
       url: pageUrl,
-      siteName: "verdict.games",
-    },
-    twitter: {
-      card: "summary",
-      title,
-      description,
-    },
+    }),
   };
 }
 

@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { Calendar, ChevronLeft, ChevronRight, Clock, ExternalLink, Flame, Gamepad2, Gift, RotateCcw, Search as SearchIcon, Sparkles, Tag, Trophy } from "lucide-react";
@@ -127,8 +126,6 @@ interface SearchClientPageProps {
 }
 
 export default function SearchClientPage({ initialState, initialGamesData }: SearchClientPageProps) {
-  const router = useRouter();
-
   const [browseTab, setBrowseTab] = useState<SearchBrowseTab>(initialState.browseTab);
   const [query, setQuery] = useState(initialState.games.query);
   const [debouncedQuery, setDebouncedQuery] = useState(initialState.games.query);
@@ -149,6 +146,27 @@ export default function SearchClientPage({ initialState, initialGamesData }: Sea
   const dealsGenreRef = useRef<HTMLDivElement>(null);
   const freeGenreRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => {
+    setBrowseTab(initialState.browseTab);
+    setQuery(initialState.games.query);
+    setDebouncedQuery(initialState.games.query);
+    setPlatform(initialState.games.platform);
+    setGenre(initialState.games.genre);
+    setYear(initialState.games.year);
+    setMonetization(initialState.games.monetization);
+    setSort(initialState.games.sort);
+    setPage(initialState.games.page);
+  }, [
+    initialState.browseTab,
+    initialState.games.genre,
+    initialState.games.monetization,
+    initialState.games.page,
+    initialState.games.platform,
+    initialState.games.query,
+    initialState.games.sort,
+    initialState.games.year,
+  ]);
+
   const scrollContainer = (ref: React.RefObject<HTMLDivElement | null>, direction: "left" | "right") => {
     if (!ref.current) return;
     const scrollAmount = 200;
@@ -159,12 +177,17 @@ export default function SearchClientPage({ initialState, initialGamesData }: Sea
   };
 
   useEffect(() => {
+    const normalizedQuery = normalizeSearchGamesState({ query }).query;
     const timer = setTimeout(() => {
-      setDebouncedQuery(normalizeSearchGamesState({ query }).query);
+      if (normalizedQuery === debouncedQuery) {
+        return;
+      }
+
+      setDebouncedQuery(normalizedQuery);
       setPage(1);
     }, 400);
     return () => clearTimeout(timer);
-  }, [query]);
+  }, [debouncedQuery, query]);
 
   const normalizedGamesState = useMemo(
     () => normalizeSearchGamesState({ query: debouncedQuery, platform, genre, year, monetization, sort, page }),
@@ -332,15 +355,17 @@ export default function SearchClientPage({ initialState, initialGamesData }: Sea
   };
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const currentPath = `${window.location.pathname}${window.location.search}`;
-      if (currentPath === normalizedPagePath) {
-        return;
-      }
+    if (typeof window === "undefined") {
+      return;
     }
 
-    router.replace(normalizedPagePath, { scroll: false });
-  }, [normalizedPagePath, router]);
+    const currentPath = `${window.location.pathname}${window.location.search}`;
+    if (currentPath === normalizedPagePath) {
+      return;
+    }
+
+    window.history.replaceState(window.history.state, "", normalizedPagePath);
+  }, [normalizedPagePath]);
 
   const isInitialLoad = browseTab === "games" && isLoading && !data;
   const isResultsRefreshing = browseTab === "games" && isFetching && isPlaceholderData;
@@ -560,9 +585,9 @@ export default function SearchClientPage({ initialState, initialGamesData }: Sea
       {browseTab === "games" && (
       <div>
         <AnimatePresence mode="wait">
-          {isInitialLoad || isResultsRefreshing ? (
+          {isInitialLoad ? (
             <motion.div
-              key={isInitialLoad ? "loading" : `refresh-${searchApiPath}`}
+              key="loading"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -575,9 +600,7 @@ export default function SearchClientPage({ initialState, initialGamesData }: Sea
                     ? debouncedQuery
                       ? `Searching for “${debouncedQuery}”...`
                       : "Loading games..."
-                    : debouncedQuery
-                      ? `Updating results for “${debouncedQuery}”...`
-                      : "Updating results..."}
+                    : "Loading games..."}
                 </p>
               </div>
               <GameGridSkeleton count={8} />
@@ -590,10 +613,23 @@ export default function SearchClientPage({ initialState, initialGamesData }: Sea
               exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
               className="transition-opacity relative"
+              aria-busy={isResultsRefreshing}
             >
               {searchErrorMessage && (
                 <div className="mb-4 rounded-2xl border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger">
                   Browse results could not be refreshed just now. Showing the last successful results.
+                </div>
+              )}
+              {isResultsRefreshing && (
+                <div className="mb-4 rounded-2xl border border-accent/20 bg-accent/10 px-4 py-3 text-sm text-secondary">
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+                    <p>
+                      {debouncedQuery
+                        ? `Updating results for “${debouncedQuery}”...`
+                        : "Updating results..."}
+                    </p>
+                  </div>
                 </div>
               )}
               <div className="flex items-center gap-2 mb-4">
@@ -604,7 +640,12 @@ export default function SearchClientPage({ initialState, initialGamesData }: Sea
                   <div className="w-3.5 h-3.5 border-2 border-accent border-t-transparent rounded-full animate-spin" />
                 )}
               </div>
-              <GameGrid games={games} columns={5} />
+              <div className="relative">
+                {isResultsRefreshing && (
+                  <div className="absolute inset-0 z-10 rounded-3xl bg-background/30 backdrop-blur-[1px] pointer-events-none" />
+                )}
+                <GameGrid games={games} columns={5} className={cn(isResultsRefreshing && "opacity-80")} />
+              </div>
 
               {totalPages > 1 && (
                 <div className="flex items-center justify-center gap-2 pt-8">

@@ -132,6 +132,50 @@ describe("homepage hero auto candidates", () => {
     expect(isHomepageHeroAutoCandidate(candidate)).toBe(false);
   });
 
+  it("rejects an older premium-scored critical hit that no longer has flagship live demand", () => {
+    const candidate = makeGameRow({
+      title: "Two Point Museum",
+      slug: "two-point-museum",
+      genres: ["Strategy", "Simulation"],
+      release_date: isoDaysAgo(395),
+      review_count: 11352,
+      steam_total_count: 11352,
+      steam_positive_count: 10784,
+      current_players: 1200,
+      momentum: 0.01,
+      verdict_score: 93,
+      score: 93,
+      critic_score: 90,
+      igdb_rating: 90,
+      critic_source_count: 1,
+      confidence: 0.9,
+      trending: false,
+    });
+
+    expect(isHomepageHeroAutoCandidate(candidate)).toBe(false);
+  });
+
+  it("rejects a stale manual featured pick without enough current spotlight presence", () => {
+    const candidate = makeGameRow({
+      title: "Stale Editorial Pick",
+      slug: "stale-editorial-pick",
+      release_date: isoDaysAgo(420),
+      review_count: 12000,
+      steam_total_count: 12000,
+      steam_positive_count: 11280,
+      current_players: 1100,
+      momentum: 0.01,
+      verdict_score: 92,
+      score: 92,
+      critic_score: 90,
+      igdb_rating: 90,
+      confidence: 0.88,
+      is_featured_manual: true,
+    });
+
+    expect(isHomepageHeroAutoCandidate(candidate)).toBe(false);
+  });
+
   it("accepts a breakout-scale recent game with strong current player demand", () => {
     const breakout = makeGameRow({
       id: "00000000-0000-0000-0000-000000000200",
@@ -158,10 +202,10 @@ describe("homepage hero auto candidates", () => {
       slug: "prestige-release",
       title: "Prestige Release",
       release_date: isoDaysAgo(80),
-      review_count: 9000,
-      steam_total_count: 9000,
-      steam_positive_count: 8100,
-      current_players: 1200,
+      review_count: 12000,
+      steam_total_count: 12000,
+      steam_positive_count: 10800,
+      current_players: 2200,
       momentum: 0.02,
       verdict_score: 90,
       score: 90,
@@ -204,5 +248,28 @@ describe("homepage hero auto candidates", () => {
 
     expect(isHomepageHeroAutoCandidate(criticBacked)).toBe(true);
     expect(getHomepageHeroScore(breakout)).toBeGreaterThan(getHomepageHeroScore(midScale));
+  });
+
+  it("still accepts a fresh manual featured prestige release", () => {
+    const candidate = makeGameRow({
+      id: "00000000-0000-0000-0000-000000000204",
+      slug: "fresh-editorial-pick",
+      title: "Fresh Editorial Pick",
+      release_date: isoDaysAgo(45),
+      review_count: 9500,
+      steam_total_count: 9500,
+      steam_positive_count: 8740,
+      current_players: 2400,
+      momentum: 0.03,
+      verdict_score: 89,
+      score: 89,
+      critic_score: 91,
+      igdb_rating: 90,
+      critic_source_count: 1,
+      confidence: 0.78,
+      is_featured_manual: true,
+    });
+
+    expect(isHomepageHeroAutoCandidate(candidate)).toBe(true);
   });
 });

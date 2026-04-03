@@ -36,7 +36,7 @@ export default function LazySection({
 
   const defaultFallback = (
     <div
-      className="animate-pulse rounded bg-surface"
+      className="rounded-3xl border border-border bg-gradient-to-br from-surface via-surface-2 to-accent/5"
       style={{ minHeight }}
     />
   );

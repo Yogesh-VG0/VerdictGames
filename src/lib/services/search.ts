@@ -134,6 +134,22 @@ export function isBrowseTopRatedEligible(row: GameRow): boolean {
   const currentPlayers = row.current_players ?? 0;
   const ageDays = getBrowseTopRatedAgeDays(row);
 
+  if (ageDays <= 120 && currentPlayers < 400 && evidenceReviewCount < 50000) {
+    return false;
+  }
+
+  if (ageDays > 120 && ageDays <= 365 && currentPlayers < 500 && evidenceReviewCount < 100000) {
+    return false;
+  }
+
+  if (ageDays > 365 && ageDays <= 1825 && currentPlayers < 750 && evidenceReviewCount < 150000) {
+    return false;
+  }
+
+  if (ageDays > 1825 && currentPlayers < 500 && evidenceReviewCount < 300000) {
+    return false;
+  }
+
   if (evidenceReviewCount >= 300000) {
     return currentPlayers >= 500 || ageDays <= 3650;
   }
@@ -194,15 +210,17 @@ export function getBrowseTopRatedScore(row: GameRow): number {
           ? 3
           : 0;
   const momentumBonus = Math.min(4, momentum * 18);
-  const lowPresencePenalty = ageDays > 3650 && currentPlayers < 1500
-    ? 32
-    : ageDays > 2555 && currentPlayers < 1000
-      ? 24
-      : ageDays > 1825 && currentPlayers < 750
-        ? 18
-        : ageDays > 730 && currentPlayers < 500
-          ? 10
-          : 0;
+  const lowPresencePenalty = ageDays > 3650 && currentPlayers < 1800
+    ? 36
+    : ageDays > 2555 && currentPlayers < 1200
+      ? 28
+      : ageDays > 1825 && currentPlayers < 800
+        ? 20
+        : ageDays > 730 && currentPlayers < 750
+          ? 12
+          : ageDays > 365 && currentPlayers < 500
+            ? 6
+            : 0;
 
   return qualityScore + reviewScore + activityScore + recencyScore + criticBonus + scaleBonus + momentumBonus - lowPresencePenalty;
 }
@@ -547,12 +565,7 @@ async function fetchSearchResults(state: SearchGamesState): Promise<PaginatedRes
 
   if (isTopRated && rows.length > 0) {
     const browseEligible = rows.filter(isBrowseTopRatedEligible);
-    if (browseEligible.length >= Math.min(Math.max(start + SEARCH_PAGE_SIZE, 20), 80)) {
-      rows = browseEligible;
-    } else if (browseEligible.length >= 12) {
-      const eligibleIds = new Set(browseEligible.map((row) => row.id));
-      rows = [...browseEligible, ...rows.filter((row) => !eligibleIds.has(row.id))];
-    }
+    rows = browseEligible;
   }
 
   if (isTrending && rows.length > 0) {

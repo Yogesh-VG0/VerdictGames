@@ -1,11 +1,18 @@
 import type { Metadata } from "next";
+import { buildSocialMetadata, SITE_URL } from "@/lib/seo";
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://www.verdict.games";
+const title = "Terms of Service";
+const description = "Terms of service for verdict.games — your trusted source for honest game reviews.";
 
 export const metadata: Metadata = {
-  title: "Terms of Service",
-  description: "Terms of service for verdict.games — your trusted source for honest game reviews.",
+  title,
+  description,
   alternates: { canonical: `${SITE_URL}/terms` },
+  ...buildSocialMetadata({
+    title: `${title} | verdict.games`,
+    description,
+    url: `${SITE_URL}/terms`,
+  }),
 };
 
 export default function TermsPage() {

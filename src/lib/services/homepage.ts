@@ -68,6 +68,10 @@ const HOMEPAGE_HERO_TARGET = 6;
 const HOMEPAGE_RAIL_TARGET = 20;
 const HOMEPAGE_PRIORITY_FLOOR = 8;
 const HOMEPAGE_TOP_RATED_RESERVED_TARGET = 8;
+const HOMEPAGE_HERO_FETCH_TARGET = 12;
+const HOMEPAGE_SECTION_FETCH_TARGET = HOMEPAGE_RAIL_TARGET + 12;
+const HOMEPAGE_QUERY_MIN_ROWS = 60;
+const HOMEPAGE_QUERY_MAX_ROWS = 120;
 
 function monthsAgoISO(months: number): string {
   const d = new Date();
@@ -78,6 +82,10 @@ function monthsAgoISO(months: number): string {
 function isRecentEnoughForHome(row: GameRow, months: number): boolean {
   if (!row.release_date) return false;
   return row.release_date >= monthsAgoISO(months);
+}
+
+function getHomepageQueryFetchLimit(limit: number, multiplier = 3): number {
+  return Math.min(Math.max(limit * multiplier, HOMEPAGE_QUERY_MIN_ROWS), HOMEPAGE_QUERY_MAX_ROWS);
 }
 
 function isHomepageTrendingEligible(row: GameRow): boolean {
@@ -222,6 +230,18 @@ export function isHomepageTopRatedEligible(row: GameRow): boolean {
   const ageDays = row.release_date
     ? (Date.now() - new Date(`${row.release_date}T00:00:00`).getTime()) / 86400000
     : Number.POSITIVE_INFINITY;
+
+  if (ageDays <= 120 && currentPlayers < 400 && evidenceReviewCount < 50000) {
+    return false;
+  }
+
+  if (ageDays > 120 && ageDays <= 365 && currentPlayers < 750 && evidenceReviewCount < 100000) {
+    return false;
+  }
+
+  if (ageDays > 365 && currentPlayers < 1000 && evidenceReviewCount < 100000) {
+    return false;
+  }
 
   if (evidenceReviewCount >= 100000) {
     return currentPlayers >= 250 || ageDays <= 60;
@@ -373,6 +393,39 @@ function isHomepageTrendingFallbackDisplayGame(row: GameRow): boolean {
     || (momentum >= 0.08 && currentPlayers >= 175 && qualityScore >= 74);
 }
 
+function isHomepageHeroBackfillCandidate(row: GameRow): boolean {
+  const evidenceReviewCount = getEvidenceReviewCount(row);
+  const currentPlayers = row.current_players ?? 0;
+  const momentum = row.momentum ?? 0;
+  const verdictScore = row.verdict_score ?? row.score ?? 0;
+  const ageDays = row.release_date
+    ? (Date.now() - new Date(`${row.release_date}T00:00:00`).getTime()) / 86400000
+    : Number.POSITIVE_INFINITY;
+
+  if (!row.release_date || verdictScore < 80 || currentPlayers < 2000) {
+    return false;
+  }
+
+  if (ageDays <= 180) {
+    return (hasStrongCriticEvidence(row) && verdictScore >= 82)
+      || evidenceReviewCount >= 7500
+      || currentPlayers >= 3000
+      || momentum >= 0.05
+      || (hasBrowseTrendingSignal(row) && momentum >= 0.03);
+  }
+
+  if (ageDays <= 365) {
+    return (hasStrongCriticEvidence(row) && verdictScore >= 84)
+      || evidenceReviewCount >= 15000
+      || currentPlayers >= 5000
+      || (currentPlayers >= 3000 && momentum >= 0.03);
+  }
+
+  return (hasStrongCriticEvidence(row) && verdictScore >= 86 && currentPlayers >= 5000)
+    || evidenceReviewCount >= 50000
+    || (currentPlayers >= 8000 && momentum >= 0.02);
+}
+
 /* ═══════════════════════════════════════════════════
    Hero Candidates — CONTRACT
    ─────────────────────────────────────────────────
@@ -478,10 +531,20 @@ export async function fetchHeroCandidates(limit = 12): Promise<Game[]> {
   const qualityFiltered = ready.filter((r) => isQualityGame(r, "hero"));
   const heroFiltered = qualityFiltered.filter(isHomepageHeroAutoCandidate);
 
-  heroFiltered.sort((a, b) => getHomepageHeroScore(b) - getHomepageHeroScore(a));
+  let ranked = [...heroFiltered].sort((a, b) => getHomepageHeroScore(b) - getHomepageHeroScore(a));
+
+  if (ranked.length < Math.min(limit, HOMEPAGE_HERO_FETCH_TARGET)) {
+    const rankedIds = new Set(ranked.map((row) => row.id));
+    const backfill = qualityFiltered
+      .filter((row) => !rankedIds.has(row.id))
+      .filter(isHomepageHeroBackfillCandidate)
+      .sort((a, b) => getHomepageHeroScore(b) - getHomepageHeroScore(a));
+
+    ranked = prioritizeById(ranked, backfill, limit);
+  }
 
   // Genre diversity: max 2 per primary genre
-  const diversified = applyGenreDiversity(heroFiltered, limit, 2);
+  const diversified = applyGenreDiversity(ranked, limit, 2);
 
   return diversified.map(mapGameRow);
 }
@@ -529,7 +592,7 @@ export async function fetchTrendingGames(limit = 20, homepageOnly = true): Promi
     .order("verdict_score", { ascending: false, nullsFirst: false })
     .order("review_count", { ascending: false, nullsFirst: false })
     .order("score", { ascending: false })
-    .limit(Math.max(limit * 12, 400)) as { data: GameRow[] | null };
+    .limit(getHomepageQueryFetchLimit(limit)) as { data: GameRow[] | null };
 
   // Step 3: Build combined candidate set — flagged first, then scored pool
   const flaggedIds = new Set((flagged ?? []).map((g) => g.id));
@@ -709,7 +772,7 @@ export function isHomepageRecommendationEligible(row: GameRow): boolean {
 
 export async function fetchNewReleases(limit = 20): Promise<Game[]> {
   const supabase = getPublicSupabase();
-  const fetchLimit = limit * 6;
+  const fetchLimit = getHomepageQueryFetchLimit(limit);
 
   // Try last 2 years first
   let { data, error } = await supabase
@@ -852,7 +915,7 @@ export async function fetchTopRated(limit = 10): Promise<Game[]> {
  */
 export async function fetchHomepageTopRated(limit = 20): Promise<Game[]> {
   const supabase = getPublicSupabase();
-  const fetchLimit = limit * 8;
+  const fetchLimit = getHomepageQueryFetchLimit(limit);
   const cutoff = monthsAgoISO(HOMEPAGE_TOP_RATED_MONTHS);
 
   const { data, error } = await supabase
@@ -863,6 +926,9 @@ export async function fetchHomepageTopRated(limit = 20): Promise<Game[]> {
     .lte("release_date", new Date().toISOString().slice(0, 10))
     .not("cover_image", "is", null)
     .neq("cover_image", "")
+    .gte("score", 70)
+    .gte("confidence", 0.3)
+    .gte("review_count", 75)
     .order("verdict_score", { ascending: false, nullsFirst: false })
     .order("confidence", { ascending: false, nullsFirst: false })
     .order("score", { ascending: false })
@@ -888,6 +954,9 @@ export async function fetchHomepageTopRated(limit = 20): Promise<Game[]> {
       .lte("release_date", new Date().toISOString().slice(0, 10))
       .not("cover_image", "is", null)
       .neq("cover_image", "")
+      .gte("score", 70)
+      .gte("confidence", 0.3)
+      .gte("review_count", 75)
       .order("verdict_score", { ascending: false, nullsFirst: false })
       .order("confidence", { ascending: false, nullsFirst: false })
       .order("score", { ascending: false })
@@ -940,7 +1009,7 @@ export async function fetchHomepageTopRated(limit = 20): Promise<Game[]> {
 
 export async function fetchHomepageRecommendations(limit = 20): Promise<Game[]> {
   const supabase = getPublicSupabase();
-  const fetchLimit = limit * 8;
+  const fetchLimit = getHomepageQueryFetchLimit(limit);
   const cutoff = monthsAgoISO(HOMEPAGE_REC_MONTHS);
  
   const { data, error } = await supabase
@@ -950,7 +1019,7 @@ export async function fetchHomepageRecommendations(limit = 20): Promise<Game[]> 
     .gte("release_date", cutoff)
     .lte("release_date", new Date().toISOString().slice(0, 10))
     .gte("score", 75)
-    .gte("review_count", 50)
+    .gte("review_count", 75)
     .gte("confidence", 0.4)
     .not("cover_image", "is", null)
     .neq("cover_image", "")
@@ -988,7 +1057,7 @@ export async function fetchHomepageRecommendations(limit = 20): Promise<Game[]> 
       .gte("release_date", fallbackCutoff)
       .lte("release_date", new Date().toISOString().slice(0, 10))
       .gte("score", 75)
-      .gte("review_count", 50)
+      .gte("review_count", 75)
       .gte("confidence", 0.4)
       .not("cover_image", "is", null)
       .neq("cover_image", "")
@@ -1162,7 +1231,7 @@ async function fetchHomepageMostAnticipated(limit = 12): Promise<HomepageAnticip
 
 const getCachedHomepageData = unstable_cache(
   async () => fetchHomepageData(),
-  ["homepage-data-v8"],
+  ["homepage-data-v9"],
   { revalidate: HOMEPAGE_REVALIDATE_SECONDS }
 );
 
@@ -1276,14 +1345,18 @@ function isReservedHomepageTopRatedGame(game: Game): boolean {
 }
 
 export async function fetchHomepageData(): Promise<HomepageData> {
-  // Fetch all sections in parallel — each overfetches for dedup headroom
-  const [heroResult, trendingPrimaryResult, topRatedResult, newReleasesResult, dealsResult, recsResult] = await Promise.allSettled([
-    fetchHeroCandidates(HOMEPAGE_HERO_TARGET * 4),
-    fetchTrendingGames(HOMEPAGE_RAIL_TARGET * 2, true),
-    fetchHomepageTopRated(HOMEPAGE_RAIL_TARGET * 2),
-    fetchNewReleases(HOMEPAGE_RAIL_TARGET * 2),
+  // Fetch the heaviest DB-backed rails with less concurrency to avoid build-time statement timeouts.
+  const [heroResult, trendingPrimaryResult, newReleasesResult, dealsResult] = await Promise.allSettled([
+    fetchHeroCandidates(HOMEPAGE_HERO_FETCH_TARGET),
+    fetchTrendingGames(HOMEPAGE_SECTION_FETCH_TARGET, true),
+    fetchNewReleases(HOMEPAGE_SECTION_FETCH_TARGET),
     fetchDeals(),
-    fetchHomepageRecommendations(HOMEPAGE_RAIL_TARGET * 2),
+  ]);
+  const [topRatedResult] = await Promise.allSettled([
+    fetchHomepageTopRated(HOMEPAGE_SECTION_FETCH_TARGET),
+  ]);
+  const [recsResult] = await Promise.allSettled([
+    fetchHomepageRecommendations(HOMEPAGE_SECTION_FETCH_TARGET),
   ]);
 
   const heroRaw = resolveHomepageSection(heroResult, "hero rail", [] as Game[]);

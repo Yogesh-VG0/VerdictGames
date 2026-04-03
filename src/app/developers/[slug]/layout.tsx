@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://www.verdict.games";
+import { buildSocialMetadata, SITE_URL } from "@/lib/seo";
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -17,24 +16,21 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     .join(" ");
 
   const pageUrl = `${SITE_URL}/developers/${slug}`;
+  const title = `${name} — Developer Hub`;
+  const description = `Browse all games by ${name}. See scores, reviews, genres, and platforms for every title from this developer.`;
+  const socialTitle = `${name} — Developer Hub | verdict.games`;
 
   return {
-    title: `${name} — Developer Hub`,
-    description: `Browse all games by ${name}. See scores, reviews, genres, and platforms for every title from this developer.`,
+    title,
+    description,
     keywords: [name, "game developer", "developer games", "verdict scores"],
     alternates: { canonical: pageUrl },
-    openGraph: {
-      title: `${name} — Developer Hub | verdict.games`,
-      description: `All games by ${name} with verdict scores and reviews.`,
+    ...buildSocialMetadata({
+      title: socialTitle,
+      description,
       url: pageUrl,
       type: "profile",
-      siteName: "verdict.games",
-    },
-    twitter: {
-      card: "summary",
-      title: `${name} — Developer Hub | verdict.games`,
-      description: `All games by ${name} with verdict scores and reviews.`,
-    },
+    }),
   };
 }
 

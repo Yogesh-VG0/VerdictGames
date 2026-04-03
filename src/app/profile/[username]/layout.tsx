@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://www.verdict.games";
+import { buildSocialMetadata, SITE_URL } from "@/lib/seo";
 
 interface Props {
   params: Promise<{ username: string }>;
@@ -10,18 +9,20 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { username } = await params;
   const pageUrl = `${SITE_URL}/profile/${username}`;
+  const title = `${username}'s Profile`;
+  const description = `View ${username}'s game library, reviews, and activity on verdict.games.`;
+  const socialTitle = `${username}'s Profile | verdict.games`;
 
   return {
-    title: `${username}'s Profile`,
-    description: `View ${username}'s game library, reviews, and activity on verdict.games.`,
+    title,
+    description,
     alternates: { canonical: pageUrl },
-    openGraph: {
-      title: `${username}'s Profile | verdict.games`,
-      description: `${username}'s game library, reviews, and activity.`,
+    ...buildSocialMetadata({
+      title: socialTitle,
+      description,
       url: pageUrl,
       type: "profile",
-      siteName: "verdict.games",
-    },
+    }),
   };
 }
 

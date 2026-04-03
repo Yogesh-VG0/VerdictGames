@@ -22,11 +22,6 @@ function yearFromDate(date: string | undefined): string | null {
   return getStableYear(date);
 }
 
-function fallbackPosterLabel(title: string): string {
-  const label = title.replace(/[^A-Za-z0-9]/g, "").slice(0, 2).toUpperCase();
-  return label || "VG";
-}
-
 function isUnreleased(game: Game): boolean {
   return game.isProvisional || game.verdictLabel === "COMING SOON";
 }
@@ -51,7 +46,6 @@ function BlurImage({ src, alt, priority, className }: {
 }) {
   const [status, setStatus] = useState<"loading" | "loaded" | "error">("loading");
   const imageRef = useRef<HTMLImageElement | null>(null);
-  const fallbackLabel = fallbackPosterLabel(alt);
 
   const handleImageRef = useCallback((node: HTMLImageElement | null) => {
     imageRef.current = node;
@@ -79,7 +73,7 @@ function BlurImage({ src, alt, priority, className }: {
           status === "loaded" ? "opacity-0" : "opacity-100"
         )}
       >
-        <span className="text-tertiary text-xs font-medium">{fallbackLabel}</span>
+        <Gamepad2 className="w-7 h-7 text-accent/30" />
       </div>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
@@ -131,8 +125,8 @@ export default function GameCard({
                 priority={priority}
               />
             ) : (
-              <div className="absolute inset-0 bg-surface-2 flex items-center justify-center">
-                <span className="text-tertiary text-xs font-medium">{game.title.slice(0, 2).toUpperCase()}</span>
+              <div className="absolute inset-0 bg-gradient-to-br from-accent/20 via-surface-2 to-pixel-cyan/10 flex items-center justify-center">
+                <Gamepad2 className="w-8 h-8 text-accent/35" />
               </div>
             )}
             <div className="absolute inset-0 card-image-gradient" />
@@ -227,9 +221,8 @@ export default function GameCard({
               priority={priority}
             />
           ) : (
-            <div className="absolute inset-0 bg-gradient-to-br from-accent/20 via-surface-2 to-pixel-cyan/10 flex flex-col items-center justify-center gap-2 p-3">
-              <Gamepad2 className="w-8 h-8 text-accent/40" />
-              <span className="text-tertiary text-[10px] font-semibold text-center leading-tight line-clamp-3">{game.title}</span>
+            <div className="absolute inset-0 bg-gradient-to-br from-accent/20 via-surface-2 to-pixel-cyan/10 flex items-center justify-center">
+              <Gamepad2 className="w-8 h-8 text-accent/35" />
             </div>
           )}
 

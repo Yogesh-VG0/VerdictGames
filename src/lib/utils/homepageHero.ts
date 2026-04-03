@@ -7,26 +7,68 @@ function getHomepageHeroAgeDays(row: Pick<GameRow, "release_date">): number {
   return (Date.now() - new Date(`${row.release_date}T00:00:00`).getTime()) / 86400000;
 }
 
+function isHomepageHeroManualCandidate(row: GameRow): boolean {
+  const evidenceReviewCount = getEvidenceReviewCount(row);
+  const currentPlayers = row.current_players ?? 0;
+  const momentum = row.momentum ?? 0;
+  const verdictScore = row.verdict_score ?? row.score ?? 0;
+  const ageDays = getHomepageHeroAgeDays(row);
+
+  if (!row.release_date || verdictScore < 80) {
+    return false;
+  }
+
+  if (currentPlayers < 2000) {
+    return false;
+  }
+
+  if (ageDays <= 120) {
+    return hasStrongCriticEvidence(row)
+      || evidenceReviewCount >= 10000
+      || momentum >= 0.04;
+  }
+
+  if (ageDays <= 240) {
+    return (hasStrongCriticEvidence(row) && verdictScore >= 84)
+      || evidenceReviewCount >= 25000
+      || currentPlayers >= 4000
+      || momentum >= 0.03;
+  }
+
+  return (hasStrongCriticEvidence(row) && verdictScore >= 86 && currentPlayers >= 3000)
+    || evidenceReviewCount >= 75000
+    || currentPlayers >= 8000
+    || (currentPlayers >= 5000 && momentum >= 0.03);
+}
+
 export function isHomepageHeroAutoCandidate(row: GameRow): boolean {
   const evidenceReviewCount = getEvidenceReviewCount(row);
   const currentPlayers = row.current_players ?? 0;
   const momentum = row.momentum ?? 0;
   const verdictScore = row.verdict_score ?? row.score ?? 0;
   const ageDays = getHomepageHeroAgeDays(row);
-  const hasSpotlightPresence = currentPlayers >= 1000 || momentum >= 0.05 || evidenceReviewCount >= 50000;
-  const isFreshHeroWindow = ageDays <= 90;
 
   if (row.is_featured_manual ?? false) {
-    return true;
+    return isHomepageHeroManualCandidate(row);
   }
 
   if (!row.release_date || verdictScore < 80) {
     return false;
   }
 
-  return (hasStrongCriticEvidence(row) && verdictScore >= 82 && (isFreshHeroWindow || hasSpotlightPresence))
-    || (evidenceReviewCount >= 50000 && verdictScore >= 84)
-    || (evidenceReviewCount >= 25000 && currentPlayers >= 250 && verdictScore >= 86)
+  if (currentPlayers < 2000) {
+    return false;
+  }
+
+  if (hasStrongCriticEvidence(row)) {
+    return (ageDays <= 120 && verdictScore >= 82 && (evidenceReviewCount >= 10000 || momentum >= 0.04))
+      || (ageDays <= 180 && verdictScore >= 84 && (momentum >= 0.03 || evidenceReviewCount >= 15000))
+      || (ageDays <= 270 && verdictScore >= 85 && currentPlayers >= 3000 && evidenceReviewCount >= 20000)
+      || (ageDays <= 365 && verdictScore >= 86 && currentPlayers >= 5000 && evidenceReviewCount >= 25000);
+  }
+
+  return (evidenceReviewCount >= 50000 && verdictScore >= 84 && (ageDays <= 365 || currentPlayers >= 1500))
+    || (ageDays <= 240 && evidenceReviewCount >= 25000 && verdictScore >= 86)
     || (evidenceReviewCount >= 20000 && currentPlayers >= 3500 && verdictScore >= 84)
     || (ageDays <= 180 && evidenceReviewCount >= 10000 && currentPlayers >= 5000 && momentum >= 0.04 && verdictScore >= 83)
     || (ageDays <= 120 && hasBrowseTrendingSignal(row) && currentPlayers >= 10000 && momentum >= 0.08 && verdictScore >= 82)
