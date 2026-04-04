@@ -34,6 +34,27 @@ function getLockStore(sql) {
   return store;
 }
 
+function getErrorMessage(error) {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function isSchedulerRunsTableMissing(error) {
+  const code = String(error?.code ?? "").toUpperCase();
+  const message = getErrorMessage(error);
+  return code === "42P01" || /relation\s+['\"]?scheduler_runs['\"]?\s+does not exist/i.test(message);
+}
+
+function isInfrastructureDbError(error) {
+  const code = String(error?.code ?? "").toUpperCase();
+  const message = getErrorMessage(error);
+
+  if (["CONNECTION_CLOSED", "CONNECT_TIMEOUT", "CONNECTION_DESTROYED", "CONNECTION_ENDED"].includes(code)) {
+    return true;
+  }
+
+  return /maxclientsinsessionmode|max clients reached|too many clients|connection closed|connection destroyed|connection ended|connect timeout/i.test(message);
+}
+
 /**
  * Try to acquire a Postgres advisory lock (non-blocking).
  * Returns true if lock acquired, false if another instance holds it.
@@ -56,8 +77,13 @@ export async function acquireLock(sql, jobName) {
     if (reserved) {
       try { reserved.release(); } catch {}
     }
-    console.warn(`⚠ Advisory lock check failed: ${err.message}. Proceeding anyway.`);
-    return true; // fail-open: if locking fails, proceed rather than skip
+    const message = getErrorMessage(err);
+    if (isInfrastructureDbError(err)) {
+      console.warn(`⚠ Advisory lock check failed: ${message}. Skipping this run to avoid overlap while DB capacity is degraded.`);
+      return false;
+    }
+    console.warn(`⚠ Advisory lock check failed: ${message}. Proceeding without advisory lock.`);
+    return true;
   }
 }
 
@@ -112,8 +138,17 @@ export async function checkMinInterval(sql, jobName, minIntervalHours) {
     }
     return true;
   } catch (err) {
-    console.warn(`⚠ Interval check failed: ${err.message}. Proceeding anyway.`);
-    return true; // fail-open
+    const message = getErrorMessage(err);
+    if (isSchedulerRunsTableMissing(err)) {
+      console.warn(`⚠ Interval check failed: ${message}. Proceeding without interval guard.`);
+      return true;
+    }
+    if (isInfrastructureDbError(err)) {
+      console.warn(`⚠ Interval check failed: ${message}. Skipping this run because DB capacity is degraded.`);
+      return false;
+    }
+    console.warn(`⚠ Interval check failed: ${message}. Proceeding anyway.`);
+    return true;
   }
 }
 
@@ -129,7 +164,12 @@ export async function startRun(sql, jobName, metadata = {}) {
     `;
     return { id: row.id, startedAt: row.started_at };
   } catch (err) {
-    console.warn(`⚠ scheduler_runs logging failed (table may not exist): ${err.message}`);
+    const message = getErrorMessage(err);
+    if (isSchedulerRunsTableMissing(err)) {
+      console.warn(`⚠ scheduler_runs logging failed (table may not exist): ${message}`);
+    } else {
+      console.warn(`⚠ scheduler_runs logging failed: ${message}`);
+    }
     return { id: null, startedAt: new Date().toISOString() };
   }
 }
@@ -164,6 +204,6 @@ export async function finishRun(sql, runId, {
       WHERE id = ${runId}
     `;
   } catch (err) {
-    console.warn(`⚠ scheduler_runs finish logging failed: ${err.message}`);
+    console.warn(`⚠ scheduler_runs finish logging failed: ${getErrorMessage(err)}`);
   }
 }

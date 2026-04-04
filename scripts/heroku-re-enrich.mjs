@@ -32,7 +32,7 @@ try {
 }
 
 import { startRun, finishRun, acquireLock, releaseLock, checkMinInterval } from './lib/scheduler-logger.mjs';
-import { connectDb } from './lib/db-connect.mjs';
+import { connectDb, closeDb } from './lib/db-connect.mjs';
 import { reEnrichBatch } from './lib/ingest-pipeline.mjs';
 
 const LIMIT = process.argv.includes("--limit")
@@ -51,10 +51,10 @@ console.log("══════════════════════�
 // Skip if last successful run was less than 5 hours ago
 const MIN_INTERVAL_HOURS = parseFloat(process.env.RE_ENRICH_INTERVAL_HOURS || "5");
 const shouldRun = await checkMinInterval(sql, 're-enrich', MIN_INTERVAL_HOURS);
-if (!shouldRun) { await sql.end(); process.exit(0); }
+if (!shouldRun) { await closeDb(sql, 're-enrich'); process.exit(0); }
 
 const locked = await acquireLock(sql, 're-enrich');
-if (!locked) { await sql.end(); process.exit(0); }
+if (!locked) { await closeDb(sql, 're-enrich'); process.exit(0); }
 const run = await startRun(sql, 're-enrich', { limit: LIMIT });
 
 try {
@@ -85,9 +85,9 @@ try {
   console.error(`❌ Re-enrichment failed:`, err.message);
   await finishRun(sql, run.id, { error_message: err.message });
   await releaseLock(sql, 're-enrich');
-  await sql.end();
+  await closeDb(sql, 're-enrich');
   process.exit(1);
 }
 
 await releaseLock(sql, 're-enrich');
-await sql.end();
+await closeDb(sql, 're-enrich');

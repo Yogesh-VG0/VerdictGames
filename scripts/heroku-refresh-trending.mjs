@@ -19,7 +19,7 @@
  */
 
 import { startRun, finishRun, acquireLock, releaseLock, checkMinInterval } from './lib/scheduler-logger.mjs';
-import { connectDb } from './lib/db-connect.mjs';
+import { connectDb, closeDb } from './lib/db-connect.mjs';
 import { ingestGameDirect } from './lib/ingest-pipeline.mjs';
 
 // Load .env for local dev; Heroku has Config Vars
@@ -75,6 +75,59 @@ async function igdbQuery(endpoint, body, auth) {
 
 function slugify(str) {
   return str.toLowerCase().replace(/['']/g, "").replace(/&/g, "and").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+}
+
+const ROMAN_NUMERAL_TOKENS = {
+  ii: "2",
+  iii: "3",
+  iv: "4",
+  v: "5",
+  vi: "6",
+  vii: "7",
+  viii: "8",
+  ix: "9",
+  x: "10",
+  xi: "11",
+  xii: "12",
+  xiii: "13",
+  xiv: "14",
+  xv: "15",
+  xvi: "16",
+};
+
+const COUNTER_STRIKE_FAMILY_APP_IDS = new Set([10, 80, 240, 730, 4465480]);
+
+function normalizeTrendingCanonicalTitle(title) {
+  return title
+    .toLowerCase()
+    .replace(/\s*\((?:19|20)\d{2}\)$/g, "")
+    .replace(/\b(ii|iii|iv|v|vi|vii|viii|ix|x|xi|xii|xiii|xiv|xv|xvi)\b/gi, (token) => ROMAN_NUMERAL_TOKENS[token.toLowerCase()] ?? token)
+    .replace(/[^a-z0-9]+/g, "");
+}
+
+function getTrendingGroupKey(row) {
+  const steamAppId = Number(row?.steam_app_id);
+  if (Number.isFinite(steamAppId) && COUNTER_STRIKE_FAMILY_APP_IDS.has(steamAppId)) {
+    return "special:counter-strike";
+  }
+
+  return `title:${normalizeTrendingCanonicalTitle(row?.title ?? "")}`;
+}
+
+function appendTrendingCandidate(row, match, trendingIds, trendingGroupKeys, matched) {
+  if (!row?.id) {
+    return false;
+  }
+
+  const key = getTrendingGroupKey(row);
+  if (!key || trendingGroupKeys.has(key) || trendingIds.includes(row.id)) {
+    return false;
+  }
+
+  trendingIds.push(row.id);
+  trendingGroupKeys.add(key);
+  matched.push(match);
+  return true;
 }
 
 /** Resolve Steam App ID → game name via store API */
@@ -154,12 +207,13 @@ console.log("══════════════════════�
 // Skip if last successful run was less than 5 hours ago (effective "every 6h" with hourly trigger)
 const MIN_INTERVAL_HOURS = parseFloat(process.env.TRENDING_INTERVAL_HOURS || "5");
 const shouldRun = await checkMinInterval(sql, 'refresh-trending', MIN_INTERVAL_HOURS);
-if (!shouldRun) { await sql.end(); process.exit(0); }
+if (!shouldRun) { await closeDb(sql, 'refresh-trending'); process.exit(0); }
 
 const locked = await acquireLock(sql, 'refresh-trending');
-if (!locked) { await sql.end(); process.exit(0); }
+if (!locked) { await closeDb(sql, 'refresh-trending'); process.exit(0); }
 const run = await startRun(sql, 'refresh-trending');
 const trendingIds = [];
+const trendingGroupKeys = new Set();
 const matched = [];
 let caughtError = null;
 
@@ -332,7 +386,7 @@ try {
 // RULE: Only games with cover_image can be trending (public-facing surface)
 console.log("🎮 Step 3: Steam Most Played (current_players DESC)...");
 const mostPlayed = await sql`
-  SELECT id, title, score, verdict_score, current_players, review_count, momentum, is_trending_manual
+  SELECT id, title, score, verdict_score, current_players, review_count, momentum, is_trending_manual, steam_app_id
   FROM games
   WHERE current_players IS NOT NULL AND current_players > 0
     AND cover_image IS NOT NULL AND cover_image != ''
@@ -343,8 +397,13 @@ const mostPlayed = await sql`
 
 for (const g of mostPlayed) {
   if (trendingIds.length >= 20) break;
-  trendingIds.push(g.id);
-  matched.push({ title: g.title, score: g.score, source: "Steam Most Played", players: g.current_players });
+  appendTrendingCandidate(
+    g,
+    { title: g.title, score: g.score, source: "Steam Most Played", players: g.current_players },
+    trendingIds,
+    trendingGroupKeys,
+    matched,
+  );
 }
 console.log(`  ${trendingIds.length} games from Steam Most Played`);
 
@@ -380,10 +439,10 @@ if (trendingIds.length < 20) {
       const igdbGame = igdbNameMap.get(igdbId);
       if (!igdbGame) continue;
       const ourSlug = slugify(igdbGame.name);
-      const [m] = await sql`SELECT id, title, score FROM games WHERE (slug = ${igdbGame.slug} OR slug = ${ourSlug}) AND cover_image IS NOT NULL AND cover_image != '' AND ${QUALITY_FLOOR_SQL} LIMIT 1`;
-      if (m && !trendingIds.includes(m.id)) { trendingIds.push(m.id); matched.push({ title: m.title, score: m.score, source: "IGDB PopScore", popScore: popScore.toFixed(3) }); continue; }
-      const [nm] = await sql`SELECT id, title, score FROM games WHERE LOWER(title) = LOWER(${igdbGame.name}) AND cover_image IS NOT NULL AND cover_image != '' AND ${QUALITY_FLOOR_SQL} LIMIT 1`;
-      if (nm && !trendingIds.includes(nm.id)) { trendingIds.push(nm.id); matched.push({ title: nm.title, score: nm.score, source: "IGDB name", popScore: popScore.toFixed(3) }); }
+      const [m] = await sql`SELECT id, title, score, steam_app_id FROM games WHERE (slug = ${igdbGame.slug} OR slug = ${ourSlug}) AND cover_image IS NOT NULL AND cover_image != '' AND ${QUALITY_FLOOR_SQL} LIMIT 1`;
+      if (m && appendTrendingCandidate(m, { title: m.title, score: m.score, source: "IGDB PopScore", popScore: popScore.toFixed(3) }, trendingIds, trendingGroupKeys, matched)) { continue; }
+      const [nm] = await sql`SELECT id, title, score, steam_app_id FROM games WHERE LOWER(title) = LOWER(${igdbGame.name}) AND cover_image IS NOT NULL AND cover_image != '' AND ${QUALITY_FLOOR_SQL} LIMIT 1`;
+      appendTrendingCandidate(nm, { title: nm?.title, score: nm?.score, source: "IGDB name", popScore: popScore.toFixed(3) }, trendingIds, trendingGroupKeys, matched);
     }
     console.log(`  Matched ${trendingIds.length} total after IGDB`);
   } else {
@@ -394,17 +453,26 @@ if (trendingIds.length < 20) {
 // ── Step 5: Recency fill ──
 if (trendingIds.length < 20) {
   const needed = 20 - trendingIds.length;
+  const fillLimit = Math.max(needed * 3, 20);
   console.log(`\n📊 Step 5: Filling ${needed} with recency-weighted games...`);
   const exclude = trendingIds.length > 0 ? trendingIds : ["00000000-0000-0000-0000-000000000000"];
   const fill = await sql`
-    SELECT id, title, score, release_date, (
+    SELECT id, title, score, release_date, steam_app_id, (
       (score * 0.25) + (CASE WHEN release_date >= CURRENT_DATE - INTERVAL '6 months' THEN 40 WHEN release_date >= CURRENT_DATE - INTERVAL '1 year' THEN 30 WHEN release_date >= CURRENT_DATE - INTERVAL '2 years' THEN 20 WHEN release_date >= CURRENT_DATE - INTERVAL '4 years' THEN 10 ELSE 0 END) + LEAST(COALESCE(review_count, 0) / 5000.0, 10)
     ) AS ts FROM games WHERE id != ALL(${exclude}) AND release_date IS NOT NULL
       AND cover_image IS NOT NULL AND cover_image != ''
       AND COALESCE(verdict_score, score, 0) >= 70
-    ORDER BY ts DESC LIMIT ${needed}
+    ORDER BY ts DESC LIMIT ${fillLimit}
   `;
-  for (const g of fill) { trendingIds.push(g.id); matched.push({ title: g.title, score: g.score, source: "recency-fill" }); }
+  for (const g of fill) {
+    appendTrendingCandidate(
+      g,
+      { title: g.title, score: g.score, source: "recency-fill" },
+      trendingIds,
+      trendingGroupKeys,
+      matched,
+    );
+  }
 }
 
 // ── Step 6: Apply ──
@@ -445,7 +513,7 @@ console.log("✅ Done!");
   await finishRun(sql, run.id, { error_message: errorMessage });
 } finally {
   await releaseLock(sql, 'refresh-trending');
-  await sql.end();
+  await closeDb(sql, 'refresh-trending');
 }
 
 if (caughtError) {

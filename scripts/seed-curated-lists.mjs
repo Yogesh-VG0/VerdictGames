@@ -30,7 +30,7 @@
  */
 
 import { startRun, finishRun, acquireLock, releaseLock } from './lib/scheduler-logger.mjs';
-import { connectDb } from './lib/db-connect.mjs';
+import { connectDb, closeDb } from './lib/db-connect.mjs';
 import { createHash } from 'node:crypto';
 
 try {
@@ -672,7 +672,7 @@ console.log(`  ${new Date().toISOString()}`);
 console.log("═══════════════════════════════════════════\n");
 
 const locked = await acquireLock(sql, 'seed-curated-lists');
-if (!locked) { await sql.end(); process.exit(0); }
+if (!locked) { await closeDb(sql, 'seed-curated-lists'); process.exit(0); }
 
 const run = await startRun(sql, 'seed-curated-lists');
 const startedAt = Date.now();
@@ -891,9 +891,9 @@ await finishRun(sql, run.id, {
   console.error(`❌ Seed curated lists failed:`, err.message);
   await finishRun(sql, run.id, { error_message: err.message });
   await releaseLock(sql, 'seed-curated-lists');
-  await sql.end();
+  await closeDb(sql, 'seed-curated-lists');
   process.exit(1);
 }
 
 await releaseLock(sql, 'seed-curated-lists');
-await sql.end();
+await closeDb(sql, 'seed-curated-lists');

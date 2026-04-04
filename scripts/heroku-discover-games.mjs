@@ -32,7 +32,7 @@ try {
 }
 
 import { startRun, finishRun, acquireLock, releaseLock, checkMinInterval } from './lib/scheduler-logger.mjs';
-import { connectDb } from './lib/db-connect.mjs';
+import { connectDb, closeDb } from './lib/db-connect.mjs';
 import { ingestGameDirect } from './lib/ingest-pipeline.mjs';
 
 const RAWG_BASE    = "https://api.rawg.io/api";
@@ -88,10 +88,10 @@ console.log("══════════════════════�
 let run = null;
 const MIN_INTERVAL = parseFloat(process.env.DISCOVER_INTERVAL_HOURS || "5");
 const shouldRun = await checkMinInterval(sql, 'discover-games', MIN_INTERVAL);
-if (!shouldRun) { console.log("⏭ Skipping — last run too recent"); await sql.end(); process.exit(0); }
+if (!shouldRun) { console.log("⏭ Skipping — last run too recent"); await closeDb(sql, 'discover-games'); process.exit(0); }
 
 const locked = await acquireLock(sql, 'discover-games');
-if (!locked) { console.log("🔒 Another discover run is active"); await sql.end(); process.exit(0); }
+if (!locked) { console.log("🔒 Another discover run is active"); await closeDb(sql, 'discover-games'); process.exit(0); }
 run = await startRun(sql, 'discover-games', { mode: DEEP ? 'deep' : 'standard' });
 
 try {
@@ -277,9 +277,9 @@ try {
   console.error(`❌ Discovery failed:`, err.message);
   if (run) await finishRun(sql, run.id, { error_message: err.message });
   await releaseLock(sql, 'discover-games');
-  await sql.end();
+  await closeDb(sql, 'discover-games');
   process.exit(1);
 }
 
 await releaseLock(sql, 'discover-games');
-await sql.end();
+await closeDb(sql, 'discover-games');

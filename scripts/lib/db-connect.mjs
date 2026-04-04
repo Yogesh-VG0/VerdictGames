@@ -11,6 +11,11 @@
 
 import postgres from "postgres";
 
+function parsePositiveInteger(value, fallback) {
+  const parsed = Number.parseInt(String(value ?? ""), 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
 export function getDbUrl() {
   // Priority 1: Explicit DATABASE_URL
   if (process.env.DATABASE_URL) {
@@ -70,6 +75,18 @@ export function connectDb(scriptName = "scheduler") {
   }
 
   let ssl = { rejectUnauthorized: false };
+  const maxConnections = parsePositiveInteger(
+    process.env.SCHEDULER_DB_MAX_CONNECTIONS,
+    2,
+  );
+  const connectTimeoutSeconds = parsePositiveInteger(
+    process.env.SCHEDULER_DB_CONNECT_TIMEOUT_SECONDS,
+    20,
+  );
+  const idleTimeoutSeconds = parsePositiveInteger(
+    process.env.SCHEDULER_DB_IDLE_TIMEOUT_SECONDS,
+    20,
+  );
 
   try {
     const url = new URL(dbUrl);
@@ -80,5 +97,24 @@ export function connectDb(scriptName = "scheduler") {
     // Keep remote-safe default when URL parsing fails.
   }
 
-  return postgres(dbUrl, { ssl });
+  return postgres(dbUrl, {
+    ssl,
+    max: maxConnections,
+    connect_timeout: connectTimeoutSeconds,
+    idle_timeout: idleTimeoutSeconds,
+  });
+}
+
+export async function closeDb(sql, scriptName = "scheduler") {
+  const closeTimeoutSeconds = parsePositiveInteger(
+    process.env.SCHEDULER_DB_CLOSE_TIMEOUT_SECONDS,
+    5,
+  );
+
+  try {
+    await sql.end({ timeout: closeTimeoutSeconds });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.warn(`⚠ DB close warning (${scriptName}): ${message}`);
+  }
 }
