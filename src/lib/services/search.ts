@@ -25,6 +25,7 @@ import { isFutureDate } from "@/lib/utils";
 export const SEARCH_REVALIDATE_SECONDS = 30;
 export const SEARCH_API_CACHE_CONTROL = `s-maxage=${SEARCH_REVALIDATE_SECONDS}, stale-while-revalidate=300`;
 export const SEARCH_PAGE_SIZE = 25;
+const SEARCH_RESULTS_CACHE_NAMESPACE = "search-results-v3";
 
 export function createEmptySearchResult(page: number): PaginatedResponse<Game> {
   return {
@@ -714,7 +715,7 @@ export async function loadSearchResults(state: SearchGamesState): Promise<Pagina
   const cacheKey = JSON.stringify(searchGamesStateToFilters(state));
   return unstable_cache(
     () => fetchSearchResults(state),
-    ["search-results-v2", cacheKey],
+    [SEARCH_RESULTS_CACHE_NAMESPACE, cacheKey],
     { revalidate: SEARCH_REVALIDATE_SECONDS }
   )();
 }

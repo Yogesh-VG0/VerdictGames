@@ -1,5 +1,6 @@
 import type { GXCalendarEntry } from "@/lib/external/gxcorner";
 import type { CalendarGame, Game, GXCalendarGame, Platform } from "@/lib/types";
+import { getDiscoveryCanonicalTitle } from "@/lib/utils/discovery";
 import { slugify } from "@/lib/utils/slugify";
 
 type CalendarParamRecord = Record<string, string | string[] | undefined>;
@@ -17,6 +18,33 @@ const MONTHS = [
   "January", "February", "March", "April", "May", "June",
   "July", "August", "September", "October", "November", "December",
 ];
+const CALENDAR_CONFUSABLE_ASCII_MAP: Record<string, string> = {
+  А: "A",
+  а: "a",
+  В: "B",
+  Е: "E",
+  е: "e",
+  К: "K",
+  М: "M",
+  Н: "H",
+  О: "O",
+  о: "o",
+  Р: "P",
+  р: "p",
+  С: "C",
+  с: "c",
+  Т: "T",
+  У: "Y",
+  у: "y",
+  Х: "X",
+  х: "x",
+  І: "I",
+  і: "i",
+  Ј: "J",
+  ј: "j",
+  Ѕ: "S",
+  ѕ: "s",
+};
 
 function isCalendarParamRecord(source: CalendarParamSource): source is CalendarParamRecord {
   return typeof source === "object"
@@ -194,19 +222,48 @@ function getGXCalendarPlatformNames(entry: GXCalendarEntry): string[] {
   return source.map((platform) => platform.name).filter(Boolean);
 }
 
+function normalizeCalendarComparableText(value: string): string {
+  return value
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .split("")
+    .map((char) => CALENDAR_CONFUSABLE_ASCII_MAP[char] ?? char)
+    .join("");
+}
+
 function normalizeCalendarIdentity(value: string): string {
-  return value.trim().toLowerCase();
+  return getDiscoveryCanonicalTitle(normalizeCalendarComparableText(value));
+}
+
+function getCalendarShortTitleAlias(title: string): string | null {
+  const rawTitle = title.trim();
+  const separatorIndex = rawTitle.search(/\s*:\s*|\s+[–-]\s+/);
+  if (separatorIndex < 0) {
+    return null;
+  }
+
+  const rawShortTitle = rawTitle.slice(0, separatorIndex).trim();
+  const shortTitleWordCount = rawShortTitle.split(/\s+/).filter(Boolean).length;
+  if (!rawShortTitle || shortTitleWordCount !== 1) {
+    return null;
+  }
+
+  const shortTitle = normalizeCalendarComparableText(rawShortTitle).trim();
+  const canonical = normalizeCalendarIdentity(shortTitle);
+  return canonical.length >= 3 && canonical.length <= 6 ? canonical : null;
+}
+
+function getCalendarIdentityKey(item: { title: string }): string {
+  const shortAlias = getCalendarShortTitleAlias(item.title);
+  return `title:${shortAlias ?? normalizeCalendarIdentity(item.title)}`;
 }
 
 function getCalendarMatchKey(item: { slug?: string | null; title: string }): string {
-  const slug = item.slug?.trim();
-  return slug ? `slug:${slug}` : `title:${normalizeCalendarIdentity(item.title)}`;
+  return getCalendarIdentityKey(item);
 }
 
 function getGXCalendarDedupKey(item: Pick<GXCalendarGame, "slug" | "title" | "releaseDate">): string {
-  const identity = item.slug?.trim()
-    ? `slug:${item.slug.trim().toLowerCase()}`
-    : `title:${normalizeCalendarIdentity(item.title)}`;
+  const identity = getCalendarIdentityKey(item);
   const day = item.releaseDate.slice(0, 10) || "tba";
   return `${identity}:${day}`;
 }
@@ -224,13 +281,42 @@ function getGXCalendarSpecificityScore(item: GXCalendarGame): number {
   if (item.ctaLabel) score += 1;
   if (originalDay && entryDay && originalDay < entryDay) score += 6;
   if (item.platforms.length > 0) score += Math.max(0, 6 - Math.min(item.platforms.length, 5));
+  score += Math.min(2, normalizeCalendarIdentity(item.title).length / 10);
 
   return score;
 }
 
+function mergeUniqueStrings(primary: string[], secondary: string[]): string[] {
+  const merged: string[] = [];
+  const seen = new Set<string>();
+
+  for (const value of [...primary, ...secondary]) {
+    const normalized = value.trim();
+    if (!normalized) {
+      continue;
+    }
+
+    const key = normalized.toLowerCase();
+    if (seen.has(key)) {
+      continue;
+    }
+
+    seen.add(key);
+    merged.push(normalized);
+  }
+
+  return merged;
+}
+
 function mergeGXCalendarDuplicatePair(preferred: GXCalendarGame, fallback: GXCalendarGame): GXCalendarGame {
+  const titleSource = normalizeCalendarIdentity(preferred.title).length >= normalizeCalendarIdentity(fallback.title).length
+    ? preferred
+    : fallback;
+
   return {
     ...preferred,
+    title: titleSource.title,
+    slug: titleSource.slug ?? preferred.slug ?? fallback.slug,
     cover: preferred.cover ?? fallback.cover,
     originalReleaseDate: preferred.originalReleaseDate ?? fallback.originalReleaseDate,
     hotGame: preferred.hotGame || fallback.hotGame,
@@ -238,8 +324,8 @@ function mergeGXCalendarDuplicatePair(preferred: GXCalendarGame, fallback: GXCal
     ctaLabel: preferred.ctaLabel ?? fallback.ctaLabel,
     tagLabel: preferred.tagLabel ?? fallback.tagLabel,
     tagColor: preferred.tagColor ?? fallback.tagColor,
-    genres: preferred.genres.length > 0 ? preferred.genres : fallback.genres,
-    platforms: preferred.platforms.length > 0 ? preferred.platforms : fallback.platforms,
+    genres: mergeUniqueStrings(preferred.genres, fallback.genres),
+    platforms: mergeUniqueStrings(preferred.platforms, fallback.platforms),
   };
 }
 
@@ -286,6 +372,13 @@ export function shouldHideGXCalendarEntry(item: GXCalendarGame): boolean {
     || hasGXCalendarPromoTitleSignal(item.slug)
     || hasGXCalendarPromoMetaSignal(item.tagLabel)
     || hasGXCalendarPromoMetaSignal(item.ctaLabel);
+}
+
+function shouldHideCalendarGame(item: Pick<CalendarGame, "title" | "slug" | "calendarEntryTag" | "calendarCtaLabel">): boolean {
+  return hasGXCalendarPromoTitleSignal(item.title)
+    || hasGXCalendarPromoTitleSignal(item.slug)
+    || hasGXCalendarPromoMetaSignal(item.calendarEntryTag)
+    || hasGXCalendarPromoMetaSignal(item.calendarCtaLabel);
 }
 
 function inferCalendarTagFromPlatforms(platforms: string[]): { label: string; color: string | null } | null {
@@ -379,6 +472,37 @@ function buildCalendarEntryId(item: {
     .join(".") || "all";
   const tagKey = (item.tagLabel ?? "none").toLowerCase().replace(/[^a-z0-9]+/g, "-") || "none";
   return `gx-cal:${slug}:${day}:${platformKey}:${tagKey}`;
+}
+
+function getCalendarDbSpecificityScore(game: Game): number {
+  let score = 0;
+
+  score += Math.min(6, normalizeCalendarComparableText(game.title).trim().length / 12);
+  score += Math.min(4, game.platforms.length);
+  score += Math.min(4, game.genres.length);
+  score += Math.min(6, Math.log10((game.reviewCount ?? 0) + 1) * 2);
+
+  if (game.description && game.description.trim().length >= 40) score += 5;
+  if (game.developer?.trim()) score += 2;
+  if (game.publisher?.trim()) score += 2;
+  if (game.coverImage) score += 1;
+  if ((game.confidence ?? 0) > 0) score += (game.confidence ?? 0) * 4;
+
+  return score;
+}
+
+function buildCalendarDbMatchMap(games: Game[]): Map<string, Game> {
+  const byKey = new Map<string, Game>();
+
+  for (const game of games) {
+    const key = getCalendarMatchKey(game);
+    const existing = byKey.get(key);
+    if (!existing || getCalendarDbSpecificityScore(game) > getCalendarDbSpecificityScore(existing)) {
+      byKey.set(key, game);
+    }
+  }
+
+  return byKey;
 }
 
 function toCalendarGame(game: Game): CalendarGame {
@@ -487,7 +611,7 @@ export function mergeCalendarGames(dbGames: Game[], gxGames: GXCalendarGame[]): 
   const normalizedGXGames = dedupeGXCalendarGames(gxGames)
     .filter((game) => !shouldHideGXCalendarEntry(game))
     .sort((a, b) => a.releaseDate.localeCompare(b.releaseDate) || a.title.localeCompare(b.title));
-  const dbByKey = new Map(normalizedDbGames.map((game) => [getCalendarMatchKey(game), game]));
+  const dbByKey = buildCalendarDbMatchMap(normalizedDbGames);
   const matchedDbKeys = new Set<string>();
   const mergedGames: CalendarGame[] = [];
 
@@ -502,8 +626,7 @@ export function mergeCalendarGames(dbGames: Game[], gxGames: GXCalendarGame[]): 
     mergedGames.push(gxCalendarToGame(gxGame));
   }
 
-  for (const dbGame of normalizedDbGames) {
-    const key = getCalendarMatchKey(dbGame);
+  for (const [key, dbGame] of dbByKey.entries()) {
     if (matchedDbKeys.has(key)) {
       continue;
     }
@@ -512,5 +635,6 @@ export function mergeCalendarGames(dbGames: Game[], gxGames: GXCalendarGame[]): 
   }
 
   return mergedGames
+    .filter((game) => !shouldHideCalendarGame(game))
     .sort((a, b) => (a.releaseDate ?? "").localeCompare(b.releaseDate ?? "") || a.title.localeCompare(b.title));
 }

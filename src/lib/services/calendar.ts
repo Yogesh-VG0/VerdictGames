@@ -14,6 +14,7 @@ export const CALENDAR_REVALIDATE_SECONDS = 300;
 export const CALENDAR_API_CACHE_CONTROL = `s-maxage=${CALENDAR_REVALIDATE_SECONDS}, stale-while-revalidate=3600`;
 export const CALENDAR_DEFAULT_LIMIT = 50;
 export const CALENDAR_MAX_LIMIT = 200;
+const CALENDAR_MONTH_CACHE_NAMESPACE = "calendar-month-v2";
 
 export function normalizeCalendarLimit(limit?: number): number {
   return Number.isFinite(limit) && Number(limit) > 0
@@ -143,7 +144,7 @@ export async function loadCalendarMonth(month: string, limit = CALENDAR_DEFAULT_
   const normalizedLimit = normalizeCalendarLimit(limit);
   return unstable_cache(
     () => fetchCalendarMonth(month, normalizedLimit),
-    ["calendar-month", month, String(normalizedLimit)],
+    [CALENDAR_MONTH_CACHE_NAMESPACE, month, String(normalizedLimit)],
     { revalidate: CALENDAR_REVALIDATE_SECONDS }
   )();
 }
