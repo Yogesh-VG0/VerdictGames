@@ -13,15 +13,10 @@
 import { NextResponse } from "next/server";
 import {
   HOMEPAGE_API_CACHE_CONTROL,
-  HOMEPAGE_REVALIDATE_SECONDS,
   loadHomepageData,
 } from "@/lib/services/homepage";
 
-export const revalidate = 60;
-
-if (HOMEPAGE_REVALIDATE_SECONDS !== revalidate) {
-  throw new Error("Homepage API route revalidate must stay aligned with the shared homepage loader.");
-}
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {

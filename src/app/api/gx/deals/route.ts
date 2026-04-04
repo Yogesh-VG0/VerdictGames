@@ -3,7 +3,7 @@ import { getGXDeals } from "@/lib/external/gxcorner";
 import { gxFetchWithCache } from "@/lib/external/gx-cache";
 import type { GXDeal } from "@/lib/types";
 
-export const revalidate = 3600;
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   const { data: raw } = await gxFetchWithCache(

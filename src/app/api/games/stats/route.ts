@@ -4,6 +4,8 @@
  * Returns site-wide statistics: total games, reviews, users, and data sources.
  */
 
+export const dynamic = "force-dynamic";
+
 import { jsonOk, jsonError } from "@/lib/api/response";
 
 export async function GET() {

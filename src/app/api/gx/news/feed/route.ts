@@ -3,7 +3,7 @@ import { getGXNewsFeed } from "@/lib/external/gxcorner";
 import { gxFetchWithCache } from "@/lib/external/gx-cache";
 import type { GXNewsItem } from "@/lib/types";
 
-export const revalidate = 3600;
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   // News uses fresher 1-hour stale policy (vs 6h default for calendar/deals)

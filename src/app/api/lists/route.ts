@@ -4,7 +4,7 @@
  * Returns all curated game lists.
  */
 
-export const revalidate = 300; // ISR: revalidate every 5 minutes
+export const dynamic = "force-dynamic";
 
 import { jsonOk } from "@/lib/api/response";
 import { mapGameRow, mapListRow } from "@/lib/db/mappers";

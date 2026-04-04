@@ -10,7 +10,6 @@ import HomepageClientSections from "@/components/HomepageClientSections";
 import HomepageNewsSection from "@/components/HomepageNewsSection";
 import GradientText from "@/components/ui/GradientText";
 import {
-  HOMEPAGE_REVALIDATE_SECONDS,
   loadHomepageData,
   loadHomepageMostAnticipated,
 } from "@/lib/services/homepage";
@@ -18,11 +17,7 @@ import {
 const CARD_WIDTH = "shrink-0 w-44 sm:w-52 md:w-56 lg:w-60 h-full";
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://www.verdict.games";
 
-export const revalidate = 60;
-
-if (HOMEPAGE_REVALIDATE_SECONDS !== revalidate) {
-  throw new Error("Homepage page revalidate must stay aligned with the shared homepage loader.");
-}
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "The Verdict on Every Game",
