@@ -334,13 +334,21 @@ export async function GET(request: NextRequest) {
   // NOTE: Featured is editorial-only (is_featured_manual). We NEVER touch featured here.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const gamesTable = supabase.from("games") as any;
-  await gamesTable.update({ trending: false })
+  const uniqueIds = [...new Set(trendingIds)].slice(0, 20);
+  const { data: currentAlgorithmicTrending } = await gamesTable
+    .select("id")
     .eq("is_trending_manual", false)
-    .eq("trending", true);
+    .eq("trending", true) as { data: { id: string }[] | null };
+  const staleTrendingIds = (currentAlgorithmicTrending ?? [])
+    .map((game) => game.id)
+    .filter((id) => !trendingIdSet.has(id));
 
-  if (trendingIds.length > 0) {
-    // Mark trending
-    await gamesTable.update({ trending: true }).in("id", trendingIds);
+  if (uniqueIds.length > 0) {
+    await gamesTable.update({ trending: true }).in("id", uniqueIds);
+  }
+
+  if (staleTrendingIds.length > 0) {
+    await gamesTable.update({ trending: false }).in("id", staleTrendingIds);
   }
 
   // ── 5. Featured is editorial-only — just log count for observability ──
@@ -411,14 +419,14 @@ export async function GET(request: NextRequest) {
         finished_at: finishedAt,
         status: "success",
         duration_ms: durationMs,
-        rows_updated: trendingIds.length,
+        rows_updated: uniqueIds.length,
         metadata: { featuredCount, logLines: log.length },
       })
       .eq("id", runId);
   }
 
   return jsonOk({
-    trendingCount: trendingIds.length,
+    trendingCount: uniqueIds.length,
     featuredCount,
     log,
     durationMs,

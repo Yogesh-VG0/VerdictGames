@@ -637,7 +637,7 @@ export async function getGXNewsFeed(): Promise<GXNewsItem[]> {
 }
 
 export async function getGXTopGames(): Promise<GXTopGame[]> {
-  return (await apiFetch<GXTopGame[]>("/api/gx/top-games?v=2", { cache: "no-store" })) ?? [];
+  return (await apiFetch<GXTopGame[]>("/api/gx/top-games?v=2")) ?? [];
 }
 
 export async function getGXFreeToPlay(): Promise<GXFreeGame[]> {

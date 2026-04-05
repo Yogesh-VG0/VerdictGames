@@ -1,6 +1,7 @@
 import { jsonOk } from "@/lib/api/response";
 import { getGXTopLiked } from "@/lib/external/gxcorner";
 import { gxFetchWithCache } from "@/lib/external/gx-cache";
+import { GX_FEEDS_API_CACHE_CONTROL } from "@/lib/services/gx-feeds";
 import type { GXMostLiked } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -20,5 +21,5 @@ export async function GET() {
     likes: g.likesCount,
     genres: g.genres.map((ge) => ge.name),
   }));
-  return jsonOk(games);
+  return jsonOk(games, 200, { cacheControl: GX_FEEDS_API_CACHE_CONTROL });
 }

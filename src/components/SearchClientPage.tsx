@@ -15,7 +15,7 @@ import HeroImage from "@/components/ui/HeroImage";
 import { PLATFORM_FILTER_OPTIONS, platformFilterIcon } from "@/components/ui/PlatformIcon";
 import { searchGames, getGXDeals, getGXFreeToPlay, getGXTopGames } from "@/lib/api";
 import { buildSearchApiPath, buildSearchPagePath, normalizeSearchGamesState, SEARCH_GENRE_OPTIONS, searchGamesStateToFilters, type SearchBrowseTab, type SearchPageState } from "@/lib/search";
-import type { Game, MonetizationType, Platform, SortOption, PaginatedResponse } from "@/lib/types";
+import type { Game, GXDeal, GXFreeGame, GXTopGame, MonetizationType, Platform, SortOption, PaginatedResponse } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const allYears: string[] = [
@@ -33,6 +33,7 @@ const DEALS_SORT_OPTIONS: { value: DealsSortMode; label: string }[] = [
   { value: "name", label: "A → Z" },
 ];
 
+const GX_QUERY_STALE_TIME = 5 * 60 * 1000;
 const MONETIZATION_OPTIONS = ["All", "Free", "Paid"] as const;
 const RESET_FILTERS_LABEL = "Reset filters";
 const RESET_FILTERS_BUTTON_CLASS = "inline-flex items-center gap-1.5 px-4 py-2 text-sm text-accent border border-accent rounded-full hover:bg-accent/10 transition-colors";
@@ -114,6 +115,9 @@ function getSearchPageHeader(browseTab: SearchBrowseTab, freeSubTab: FreeSubTab,
 interface SearchClientPageProps {
   initialState: SearchPageState;
   initialGamesData: PaginatedResponse<Game> | null;
+  initialDealsData?: GXDeal[] | null;
+  initialFreeData?: GXFreeGame[] | null;
+  initialTopGamesData?: GXTopGame[] | null;
 }
 
 function getSearchClientPageStateKey(initialState: SearchPageState): string {
@@ -129,17 +133,32 @@ function getSearchClientPageStateKey(initialState: SearchPageState): string {
   ].join("|");
 }
 
-export default function SearchClientPage({ initialState, initialGamesData }: SearchClientPageProps) {
+export default function SearchClientPage({
+  initialState,
+  initialGamesData,
+  initialDealsData,
+  initialFreeData,
+  initialTopGamesData,
+}: SearchClientPageProps) {
   return (
     <SearchClientPageContent
       key={getSearchClientPageStateKey(initialState)}
       initialState={initialState}
       initialGamesData={initialGamesData}
+      initialDealsData={initialDealsData}
+      initialFreeData={initialFreeData}
+      initialTopGamesData={initialTopGamesData}
     />
   );
 }
 
-function SearchClientPageContent({ initialState, initialGamesData }: SearchClientPageProps) {
+function SearchClientPageContent({
+  initialState,
+  initialGamesData,
+  initialDealsData,
+  initialFreeData,
+  initialTopGamesData,
+}: SearchClientPageProps) {
   const [browseTab, setBrowseTab] = useState<SearchBrowseTab>(initialState.browseTab);
   const [query, setQuery] = useState(initialState.games.query);
   const [debouncedQuery, setDebouncedQuery] = useState(initialState.games.query);
@@ -227,21 +246,24 @@ function SearchClientPageContent({ initialState, initialGamesData }: SearchClien
   const { data: dealsData, isLoading: dealsLoading } = useQuery({
     queryKey: ["gx-deals-browse"],
     queryFn: () => getGXDeals(),
-    staleTime: 60 * 60 * 1000,
+    initialData: browseTab === "deals" ? initialDealsData ?? undefined : undefined,
+    staleTime: GX_QUERY_STALE_TIME,
     enabled: browseTab === "deals",
   });
 
   const { data: freeData, isLoading: freeLoading } = useQuery({
     queryKey: ["gx-free-browse"],
     queryFn: () => getGXFreeToPlay(),
-    staleTime: 60 * 60 * 1000,
+    initialData: browseTab === "free" ? initialFreeData ?? undefined : undefined,
+    staleTime: GX_QUERY_STALE_TIME,
     enabled: browseTab === "free",
   });
 
   const { data: topGamesData, isLoading: topGamesLoading } = useQuery({
     queryKey: ["gx-top-games-browse"],
     queryFn: () => getGXTopGames(),
-    staleTime: 60 * 60 * 1000,
+    initialData: browseTab === "free" ? initialTopGamesData ?? undefined : undefined,
+    staleTime: GX_QUERY_STALE_TIME,
     enabled: browseTab === "free" && freeSubTab === "subscriptions",
   });
 

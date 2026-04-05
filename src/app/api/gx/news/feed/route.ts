@@ -1,6 +1,7 @@
 import { jsonOk } from "@/lib/api/response";
 import { getGXNewsFeed } from "@/lib/external/gxcorner";
 import { gxFetchWithCache } from "@/lib/external/gx-cache";
+import { GX_FEEDS_API_CACHE_CONTROL } from "@/lib/services/gx-feeds";
 import type { GXNewsItem } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -20,5 +21,5 @@ export async function GET() {
     publisherName: a.publisher_name,
     publisherFavicon: a.publisher_favicon,
   }));
-  return jsonOk(news);
+  return jsonOk(news, 200, { cacheControl: GX_FEEDS_API_CACHE_CONTROL });
 }

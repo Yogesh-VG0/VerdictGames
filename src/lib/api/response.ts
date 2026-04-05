@@ -8,9 +8,13 @@ import { NextResponse } from "next/server";
 
 const CACHE_PUBLIC = "s-maxage=60, stale-while-revalidate=300";
 
-export function jsonOk<T>(data: T, status = 200, options?: { cache?: boolean }) {
+export function jsonOk<T>(data: T, status = 200, options?: { cache?: boolean; cacheControl?: string }) {
   const headers: HeadersInit = {};
-  if (options?.cache) headers["Cache-Control"] = CACHE_PUBLIC;
+  if (options?.cacheControl) {
+    headers["Cache-Control"] = options.cacheControl;
+  } else if (options?.cache) {
+    headers["Cache-Control"] = CACHE_PUBLIC;
+  }
   return NextResponse.json({ success: true, data }, { status, headers: Object.keys(headers).length ? headers : undefined });
 }
 

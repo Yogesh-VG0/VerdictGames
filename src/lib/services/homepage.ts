@@ -50,6 +50,7 @@ import {
 import type { GameRow } from "@/lib/supabase/types";
 import type { Game, GXDeal } from "@/lib/types";
 import type { RawgListItem } from "@/lib/external/rawg";
+import { loadGXDeals } from "@/lib/services/gx-feeds";
 
 /* ═══════════════════════════════════════════════════
    Homepage Recency Helpers
@@ -1453,23 +1454,7 @@ export async function fetchHomepageRecommendations(limit = 20): Promise<Game[]> 
 
 export async function fetchDeals(): Promise<GXDeal[]> {
   try {
-    const { getGXDeals } = await import("@/lib/external/gxcorner");
-    const raw = await getGXDeals();
-    return raw.map((entry) => ({
-      id: entry.id,
-      title: entry.game.title,
-      cover: entry.game.imageCoverVertical?.url ?? null,
-      discount: entry.game.prices?.[0]?.discount ?? null,
-      price: entry.game.prices?.[0]?.price ?? null,
-      currency: entry.game.prices?.[0]?.currency?.abbr ?? null,
-      buyUrl: entry.game.prices?.[0]?.url ?? entry.url ?? null,
-      storeName: entry.store?.name ?? null,
-      storeColor: entry.store?.color ?? null,
-      badge: entry.tag?.name ?? null,
-      dealType: entry.dealType,
-      genres: entry.game.genres.map((g) => g.name),
-      platforms: entry.game.platforms.map((p) => p.name),
-    }));
+    return await loadGXDeals();
   } catch {
     return [];
   }
