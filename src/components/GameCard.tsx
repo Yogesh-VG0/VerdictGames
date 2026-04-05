@@ -1,7 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import Image from "next/image";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Gamepad2 } from "lucide-react";
@@ -10,6 +9,7 @@ import { scoreColor, cn, sourceLabel, scoreGlowClass, getStableYear } from "@/li
 import { collapsePlatforms } from "@/lib/utils/platform";
 import VerdictBadge from "@/components/ui/VerdictBadge";
 import PlatformIcon from "@/components/ui/PlatformIcon";
+import SafeImage from "@/components/ui/SafeImage";
 
 interface GameCardProps {
   game: Game;
@@ -46,16 +46,6 @@ function BlurImage({ src, alt, sizes, priority, className }: {
   src: string; alt: string; sizes?: string; priority?: boolean; className?: string;
 }) {
   const [status, setStatus] = useState<"loading" | "loaded" | "error">("loading");
-  const [useFallback, setUseFallback] = useState(false);
-  const imageRef = useRef<HTMLImageElement | null>(null);
-
-  const handleImageRef = useCallback((node: HTMLImageElement | null) => {
-    imageRef.current = node;
-
-    if (node?.complete) {
-      setStatus(node.naturalWidth > 0 ? "loaded" : "error");
-    }
-  }, []);
 
   useEffect(() => {
     if (status !== "loading") return;
@@ -77,40 +67,21 @@ function BlurImage({ src, alt, sizes, priority, className }: {
       >
         <Gamepad2 className="w-7 h-7 text-accent/30" />
       </div>
-      {useFallback ? (
-        /* eslint-disable-next-line @next/next/no-img-element */
-        <img
-          ref={handleImageRef}
-          src={src}
-          alt={alt}
-          className={cn(
-            "absolute inset-0 w-full h-full object-cover transition-all duration-700",
-            status === "loaded" ? "opacity-100 scale-100" : "opacity-0 scale-105 blur-sm",
-            className
-          )}
-          loading={priority ? "eager" : "lazy"}
-          decoding="async"
-          fetchPriority={priority ? "high" : undefined}
-          onLoad={(event) => setStatus(event.currentTarget.naturalWidth > 0 ? "loaded" : "error")}
-          onError={() => setStatus("error")}
-        />
-      ) : (
-        <Image
-          src={src}
-          alt={alt}
-          fill
-          sizes={sizes ?? "(max-width: 640px) 44vw, (max-width: 768px) 208px, (max-width: 1024px) 224px, 240px"}
-          priority={priority}
-          quality={75}
-          className={cn(
-            "object-cover transition-all duration-700",
-            status === "loaded" ? "opacity-100 scale-100" : "opacity-0 scale-105 blur-sm",
-            className
-          )}
-          onLoad={(event) => setStatus(event.currentTarget.naturalWidth > 0 ? "loaded" : "error")}
-          onError={() => setUseFallback(true)}
-        />
-      )}
+      <SafeImage
+        src={src}
+        alt={alt}
+        fill
+        sizes={sizes ?? "(max-width: 640px) 44vw, (max-width: 768px) 208px, (max-width: 1024px) 224px, 240px"}
+        priority={priority}
+        quality={75}
+        className={cn(
+          "object-cover transition-all duration-700",
+          status === "loaded" ? "opacity-100 scale-100" : "opacity-0 scale-105 blur-sm",
+          className
+        )}
+        onLoad={(event) => setStatus(event.currentTarget.naturalWidth > 0 ? "loaded" : "error")}
+        onError={() => setStatus("error")}
+      />
     </>
   );
 }

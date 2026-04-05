@@ -197,13 +197,16 @@ function SearchClientPageContent({ initialState, initialGamesData }: SearchClien
     [browseTab, normalizedGamesState]
   );
   const shouldUseInitialGamesData = browseTab === "games" && searchApiPath === initialSearchApiPath;
+  const shouldRevalidateInitialGamesData = shouldUseInitialGamesData && normalizedGamesState.sort === "trending";
 
   const { data, error, isError, isLoading, isFetching } = useQuery({
     queryKey: ["search", searchApiPath],
     queryFn: () => searchGames(filters),
     enabled: browseTab === "games",
     initialData: shouldUseInitialGamesData ? initialGamesData ?? undefined : undefined,
+    initialDataUpdatedAt: shouldRevalidateInitialGamesData ? 0 : undefined,
     staleTime: 30_000,
+    refetchOnMount: shouldRevalidateInitialGamesData ? "always" : undefined,
     retry: 1,
   });
 

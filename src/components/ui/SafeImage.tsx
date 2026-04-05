@@ -36,10 +36,12 @@ function SafeImageContent({
   style,
   onLoad,
   onError,
+  unoptimized,
   ...rest
 }: SafeImageProps & { nativeSrc: string }) {
   const [useNativeFallback, setUseNativeFallback] = useState(false);
   const [nativeFailed, setNativeFailed] = useState(false);
+  const resolvedUnoptimized = unoptimized ?? /^https?:\/\//i.test(nativeSrc);
 
   if (!nativeSrc || nativeFailed) {
     if (!fallback) {
@@ -85,6 +87,7 @@ function SafeImageContent({
       height={height}
       loading={loading}
       priority={priority}
+      unoptimized={resolvedUnoptimized}
       style={style}
       onLoad={onLoad}
       onError={(event) => {

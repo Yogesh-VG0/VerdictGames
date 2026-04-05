@@ -4,8 +4,14 @@ import { buildSearchPagePath, getSearchRobotsRule, getSearchSeoCopy, parseSearch
 import { loadSearchResults, SEARCH_REVALIDATE_SECONDS } from "@/lib/services/search";
 import { buildSocialMetadata, SITE_URL } from "@/lib/seo";
 
+export const revalidate = 30;
+
 if (!SEARCH_REVALIDATE_SECONDS) {
   throw new Error("Search page requires the shared search loader revalidate contract.");
+}
+
+if (SEARCH_REVALIDATE_SECONDS !== revalidate) {
+  throw new Error("Search page revalidate must match the shared search loader contract.");
 }
 
 interface SearchPageProps {

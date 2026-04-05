@@ -162,15 +162,23 @@ async function applyPlayerCountUpdates(updates, timestamp) {
       })
       .filter(Boolean);
 
-    for (const update of batch) {
-      const result = await sql`
-        UPDATE games
-        SET current_players = ${update.players},
-            players_updated_at = ${timestamp}
-        WHERE id = ${update.id}
-      `;
-      applied += Number(result.count ?? 0);
+    if (batch.length === 0) {
+      continue;
     }
+
+    const payload = JSON.stringify(batch);
+    const result = await sql`
+      WITH updates AS (
+        SELECT id::uuid AS id, players::integer AS players
+        FROM jsonb_to_recordset(${payload}::jsonb) AS updates(id text, players integer)
+      )
+      UPDATE games AS g
+      SET current_players = updates.players,
+          players_updated_at = ${timestamp}
+      FROM updates
+      WHERE g.id = updates.id
+    `;
+    applied += Number(result.count ?? 0);
   }
   return applied;
 }
@@ -306,6 +314,7 @@ for (const g of globalTop) {
 
 let playerUpdates = 0;
 const now = new Date().toISOString();
+const pendingPlayerUpdates = [];
 
 for (let i = 0; i < steamGames.length; i += 10) {
   const batch = steamGames.slice(i, i + 10);
@@ -332,11 +341,15 @@ for (let i = 0; i < steamGames.length; i += 10) {
     .filter((r) => r.status === "fulfilled" && r.value)
     .map((r) => r.value);
   if (updates.length > 0) {
-    playerUpdates += await applyPlayerCountUpdates(updates, now);
+    pendingPlayerUpdates.push(...updates);
   }
 
   // Rate limit: 500ms between batches
   if (i + 10 < steamGames.length) await new Promise((r) => setTimeout(r, 500));
+}
+
+if (pendingPlayerUpdates.length > 0) {
+  playerUpdates = await applyPlayerCountUpdates(pendingPlayerUpdates, now);
 }
 console.log(`  Updated ${playerUpdates} player counts`);
 
@@ -478,10 +491,14 @@ if (trendingIds.length < 20) {
 console.log("\n═══════════════════════════════════════════");
 console.log("  TRENDING RESULTS");
 console.log("═══════════════════════════════════════════");
-// ONLY reset trending flag — featured is editorial-only (is_featured_manual), never auto-derived
-await sql`UPDATE games SET trending = false`;
 const uniqueIds = [...new Set(trendingIds)].slice(0, 20);
-if (uniqueIds.length > 0) await sql`UPDATE games SET trending = true WHERE id = ANY(${uniqueIds})`;
+await sql`
+  UPDATE games
+  SET trending = CASE
+    WHEN id = ANY(${uniqueIds.length > 0 ? uniqueIds : ["00000000-0000-0000-0000-000000000000"]}) THEN true
+    ELSE false
+  END
+`;
 for (const m of matched) {
   const icon = m.source.includes("Steam") ? "🎮" : m.source.includes("IGDB") ? "🎯" : "📊";
   const extra = m.players ? ` players:${m.players.toLocaleString()}` : m.popScore ? ` pop:${m.popScore}` : "";
