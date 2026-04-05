@@ -71,11 +71,16 @@ const HOMEPAGE_RAIL_TARGET = 20;
 const HOMEPAGE_MOST_ANTICIPATED_TARGET = 20;
 const HOMEPAGE_PRIORITY_FLOOR = 8;
 const HOMEPAGE_HERO_FETCH_TARGET = 12;
-const HOMEPAGE_SECTION_FETCH_TARGET = HOMEPAGE_RAIL_TARGET + 12;
+const HOMEPAGE_SECTION_FETCH_TARGET = HOMEPAGE_RAIL_TARGET * 5;
 const HOMEPAGE_TOP_RATED_FETCH_TARGET = 180;
 const HOMEPAGE_TOP_RATED_EVERGREEN_FETCH_TARGET = 240;
 const HOMEPAGE_QUERY_MIN_ROWS = 60;
 const HOMEPAGE_QUERY_MAX_ROWS = 120;
+const HOMEPAGE_MAX_APPEARANCES_PER_GAME = 3;
+const HOMEPAGE_TRENDING_REPEAT_BUDGET = 3;
+const HOMEPAGE_NEW_RELEASE_REPEAT_BUDGET = 8;
+const HOMEPAGE_TOP_RATED_REPEAT_BUDGET = 4;
+const HOMEPAGE_RECOMMENDATION_REPEAT_BUDGET = 8;
 
 function monthsAgoISO(months: number): string {
   const d = new Date();
@@ -758,7 +763,6 @@ export async function fetchTrendingGames(limit = 20, homepageOnly = true): Promi
         recencyFiltered = acceptableSignalPool;
       }
     }
-    if (recencyFiltered.length < desiredCount) recencyFiltered = readyFiltered;
 
     recencyFiltered = preferTrendingMomentumPool(recencyFiltered, desiredCount);
     const premiumRanked = recencyFiltered.filter(isPremiumTrendingCandidate);
@@ -1578,7 +1582,7 @@ async function fetchHomepageMostAnticipated(limit = 20): Promise<HomepageAnticip
 
 const getCachedHomepageData = unstable_cache(
   async () => fetchHomepageData(),
-  ["homepage-data-v17"],
+  ["homepage-data-v21"],
   { revalidate: HOMEPAGE_REVALIDATE_SECONDS }
 );
 
@@ -1627,6 +1631,7 @@ function isHomepageTrendingFallbackCandidate(game: Game): boolean {
   const reviewCount = game.reviewCount ?? 0;
   const score = game.verdictScore ?? game.score ?? 0;
   const today = new Date().toISOString().slice(0, 10);
+  const ageDays = getHomepageReleaseAgeDays(game.releaseDate);
 
   if (!game.coverImage || !game.releaseDate || game.releaseDate > today) {
     return false;
@@ -1636,12 +1641,29 @@ function isHomepageTrendingFallbackCandidate(game: Game): boolean {
     return false;
   }
 
+  if (!game.isTrendingManual && score < 74) {
+    return false;
+  }
+
+  if (ageDays > 365 * 4) {
+    return Boolean(game.isTrendingManual)
+      || ((game.trending ?? false) && currentPlayers >= 16000 && momentum >= 0.07 && score >= 76)
+      || (currentPlayers >= 22000 && momentum >= 0.07 && score >= 78);
+  }
+
+  if (ageDays > 365 * 3) {
+    return Boolean(game.isTrendingManual)
+      || ((game.trending ?? false) && currentPlayers >= 12000 && momentum >= 0.06 && score >= 74)
+      || (currentPlayers >= 18000 && momentum >= 0.06 && score >= 76);
+  }
+
   return Boolean(game.isTrendingManual)
     || Boolean(game.trending)
-    || (momentum >= 0.05 && (currentPlayers >= 100 || reviewCount >= 150))
+    || (momentum >= 0.08 && currentPlayers >= 175 && reviewCount >= 90 && score >= 74)
+    || (momentum >= 0.05 && currentPlayers >= 2500 && score >= 76)
     || currentPlayers >= 10000
-    || (currentPlayers >= 3000 && score >= 80)
-    || (reviewCount >= 10000 && currentPlayers >= 250);
+    || (currentPlayers >= 4000 && score >= 80)
+    || (reviewCount >= 10000 && currentPlayers >= 750);
 }
 
 function getHomepageTrendingFallbackScore(game: Game): number {
@@ -1676,6 +1698,71 @@ function buildHomepageTrendingFallback(pools: Game[][], limit: number): Game[] {
   return merged
     .filter(isHomepageTrendingFallbackCandidate)
     .sort((left, right) => getHomepageTrendingFallbackScore(right) - getHomepageTrendingFallbackScore(left))
+    .slice(0, limit);
+}
+
+function isHomepageNewReleaseFallbackCandidate(game: Game): boolean {
+  const score = game.score ?? 0;
+  const currentPlayers = game.currentPlayers ?? 0;
+  const reviewCount = game.reviewCount ?? 0;
+  const today = new Date().toISOString().slice(0, 10);
+  const ageDays = getHomepageReleaseAgeDays(game.releaseDate);
+
+  if (!game.coverImage || !game.releaseDate || game.releaseDate > today) {
+    return false;
+  }
+
+  if (game.verdictLabel === "COMING SOON" || ageDays > 365 * 5) {
+    return false;
+  }
+
+  return ageDays <= 365 * 2
+    || score >= 80
+    || currentPlayers >= 1000
+    || reviewCount >= 1000;
+}
+
+function getHomepageNewReleaseFallbackScore(game: Game): number {
+  const ageDays = getHomepageReleaseAgeDays(game.releaseDate);
+  const score = game.score ?? 0;
+  const currentPlayers = game.currentPlayers ?? 0;
+  const reviewCount = game.reviewCount ?? 0;
+  const recencyBoost = ageDays <= 30
+    ? 40
+    : ageDays <= 90
+      ? 28
+      : ageDays <= 180
+        ? 18
+        : ageDays <= 365
+          ? 12
+          : ageDays <= 365 * 2
+            ? 8
+            : 0;
+
+  return recencyBoost
+    + score
+    + Math.min(18, Math.log10(currentPlayers + 1) * 4.5)
+    + Math.min(12, Math.log10(reviewCount + 1) * 3);
+}
+
+function buildHomepageNewReleaseFallback(pools: Game[][], limit: number): Game[] {
+  const seenIds = new Set<string>();
+  const merged: Game[] = [];
+
+  for (const pool of pools) {
+    for (const game of pool) {
+      if (seenIds.has(game.id)) {
+        continue;
+      }
+
+      seenIds.add(game.id);
+      merged.push(game);
+    }
+  }
+
+  return merged
+    .filter(isHomepageNewReleaseFallbackCandidate)
+    .sort((left, right) => getHomepageNewReleaseFallbackScore(right) - getHomepageNewReleaseFallbackScore(left))
     .slice(0, limit);
 }
 
@@ -1732,26 +1819,36 @@ export async function fetchHomepageData(): Promise<HomepageData> {
   const deals = resolveHomepageSection(dealsResult, "deals rail", [] as GXDeal[]);
   const recsRaw = resolveHomepageSection(recsResult, "recommendations rail", [] as Game[]);
 
-  if (trendingRaw.length === 0) {
+  if (trendingRaw.length < HOMEPAGE_RAIL_TARGET) {
     try {
-      trendingRaw = await fetchTrendingGames(HOMEPAGE_RAIL_TARGET * 2, false);
+      const expandedTrending = await fetchTrendingGames(HOMEPAGE_RAIL_TARGET * 2, true);
+      if (expandedTrending.length > 0) {
+        trendingRaw = prioritizeById(trendingRaw, expandedTrending, HOMEPAGE_RAIL_TARGET * 2);
+      }
     } catch (error) {
       console.error("[homepage] Failed to load trending rail fallback:", error);
     }
   }
 
-  if (trendingRaw.length === 0) {
-    trendingRaw = buildHomepageTrendingFallback([
+  if (trendingRaw.length < HOMEPAGE_RAIL_TARGET) {
+    const fallbackTrending = buildHomepageTrendingFallback([
+      trendingRaw,
       newReleasesRaw,
       recsRaw,
       topRatedRaw,
     ], HOMEPAGE_RAIL_TARGET * 2);
+    if (fallbackTrending.length > 0) {
+      trendingRaw = prioritizeById(trendingRaw, fallbackTrending, HOMEPAGE_RAIL_TARGET * 2);
+    }
   }
 
   // ─── Global Dedup: each game in exactly one rail ───
-  function claimSlots(candidates: Game[], max: number): Game[] {
+  const appearanceCounts = new Map<string, number>();
+
+  function claimSlots(candidates: Game[], max: number, repeatBudget = 0): Game[] {
     const result: Game[] = [];
     const railIds = new Set<string>();
+    let repeatedItems = 0;
 
     for (const g of candidates) {
       if (result.length >= max) break;
@@ -1760,27 +1857,67 @@ export async function fetchHomepageData(): Promise<HomepageData> {
         continue;
       }
 
+      const appearanceCount = appearanceCounts.get(g.id) ?? 0;
+      if (appearanceCount > 0) {
+        if (repeatedItems >= repeatBudget || appearanceCount >= HOMEPAGE_MAX_APPEARANCES_PER_GAME) {
+          continue;
+        }
+
+        repeatedItems += 1;
+      }
+
       railIds.add(g.id);
 
       result.push(g);
+    }
+
+    if (result.length < max) {
+      for (const g of candidates) {
+        if (result.length >= max) break;
+
+        if (railIds.has(g.id)) {
+          continue;
+        }
+
+        const appearanceCount = appearanceCounts.get(g.id) ?? 0;
+        if (appearanceCount >= HOMEPAGE_MAX_APPEARANCES_PER_GAME) {
+          continue;
+        }
+
+        railIds.add(g.id);
+        result.push(g);
+      }
+    }
+
+    for (const game of result) {
+      appearanceCounts.set(game.id, (appearanceCounts.get(game.id) ?? 0) + 1);
     }
 
     return result;
   }
 
   const trendingCandidates = trendingRaw;
-  const newReleaseCandidates = newReleasesRaw;
+  let newReleaseCandidates = newReleasesRaw;
+  const fallbackNewReleases = buildHomepageNewReleaseFallback([
+    newReleaseCandidates,
+    trendingRaw,
+    topRatedRaw,
+    recsRaw,
+  ], HOMEPAGE_RAIL_TARGET * 2);
+  if (fallbackNewReleases.length > 0) {
+    newReleaseCandidates = prioritizeById(newReleaseCandidates, fallbackNewReleases, HOMEPAGE_RAIL_TARGET * 2);
+  }
 
   // Claim in priority order
   const hero = claimSlots(heroRaw, HOMEPAGE_HERO_TARGET);
-  const trending = claimSlots(trendingCandidates, HOMEPAGE_RAIL_TARGET);
-  const topRatedClaimed = claimSlots(topRatedRaw, HOMEPAGE_RAIL_TARGET);
+  const trending = claimSlots(trendingCandidates, HOMEPAGE_RAIL_TARGET, HOMEPAGE_TRENDING_REPEAT_BUDGET);
+  const newReleases = claimSlots(newReleaseCandidates, HOMEPAGE_RAIL_TARGET, HOMEPAGE_NEW_RELEASE_REPEAT_BUDGET);
+  const topRatedClaimed = claimSlots(topRatedRaw, HOMEPAGE_RAIL_TARGET, HOMEPAGE_TOP_RATED_REPEAT_BUDGET);
   const topRatedPremium = topRatedClaimed.filter(isReservedHomepageTopRatedGame);
   const topRated = topRatedPremium.length >= HOMEPAGE_PRIORITY_FLOOR
     ? prioritizeById(topRatedPremium, topRatedClaimed, HOMEPAGE_RAIL_TARGET)
     : topRatedClaimed;
-  const newReleases = claimSlots(newReleaseCandidates, HOMEPAGE_RAIL_TARGET);
-  const recommendations = claimSlots(recsRaw, HOMEPAGE_RAIL_TARGET);
+  const recommendations = claimSlots(recsRaw, HOMEPAGE_RAIL_TARGET, HOMEPAGE_RECOMMENDATION_REPEAT_BUDGET);
 
   return { hero, trending, topRated, newReleases, deals, recommendations };
 }
