@@ -15,7 +15,6 @@ import AuthModal from "./AuthModal";
 import UserAvatar from "./UserAvatar";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
-import { isAdminEmail } from "@/lib/adminEmails";
 
 const subscribeClientReady = () => () => {};
 
@@ -38,6 +37,7 @@ export default function NavbarTop() {
   const sidebarCloseButtonRef = useRef<HTMLButtonElement>(null);
   const profileButtonRef = useRef<HTMLButtonElement>(null);
   const profileMenuRef = useRef<HTMLDivElement>(null);
+  const canAccessAdmin = user?.role === "admin";
   const signOutDialogRef = useRef<HTMLDivElement>(null);
   const signOutCancelButtonRef = useRef<HTMLButtonElement>(null);
   const lastSignOutTriggerRef = useRef<HTMLElement | null>(null);
@@ -447,7 +447,7 @@ export default function NavbarTop() {
                   <Link href="/settings" prefetch={false} onClick={() => setSidebarOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-secondary hover:text-foreground hover:bg-surface-2 transition-colors">
                     <Settings className="w-4 h-4 opacity-70" /> Settings
                   </Link>
-                  {isAdminEmail(user.email) && (
+                  {canAccessAdmin && (
                     <Link href="/admin" prefetch={false} onClick={() => setSidebarOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-secondary hover:text-foreground hover:bg-surface-2 transition-colors">
                       <ShieldCheck className="w-4 h-4 opacity-70" /> Admin
                     </Link>
@@ -585,7 +585,7 @@ export default function NavbarTop() {
                           <User className="w-4 h-4 opacity-60" />
                           Profile
                         </Link>
-                        {isAdminEmail(user.email) && (
+                        {canAccessAdmin && (
                           <Link
                             href="/admin"
                             prefetch={false}

@@ -6,7 +6,6 @@
 
 import { getCurrentUser } from "./supabase/auth";
 import { jsonError } from "./api/response";
-import { isAdminEmail } from "./adminEmails";
 
 /**
  * Checks if the current request is from an admin user.
@@ -19,10 +18,7 @@ export async function requireAdmin() {
     return { user: null, error: jsonError("Not authenticated", 401) };
   }
 
-  // Allow access if DB role is 'admin' OR email is in the hardcoded allow-list.
-  // This lets us manage admin access via DB without code deploys,
-  // while keeping the email list as a fallback.
-  if (user.role !== "admin" && !isAdminEmail(user.email)) {
+  if (user.role !== "admin") {
     return { user: null, error: jsonError("Forbidden: admin access required", 403) };
   }
 

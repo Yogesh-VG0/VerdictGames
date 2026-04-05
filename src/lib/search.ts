@@ -2,6 +2,14 @@ import type { MonetizationType, Platform, SearchFilters, SortOption } from "@/li
 
 export type SearchBrowseTab = "games" | "deals" | "free";
 
+export const SEARCH_GENRE_OPTIONS = [
+  "Action", "Action RPG", "Adventure", "Battle Royale", "Card Game",
+  "Detective", "Endless Runner", "Horror", "Indie", "Metroidvania",
+  "MMORPG", "Open World", "Party", "Platformer", "Puzzle",
+  "Roguelike", "RPG", "Sandbox", "Shooter", "Simulation",
+  "Social Deduction", "Strategy", "Survival", "Turn-Based Strategy",
+] as const;
+
 export interface SearchGamesState {
   query: string;
   platform: Platform | "All";
@@ -52,6 +60,9 @@ const VALID_MONETIZATION = new Set<MonetizationType | "All">([
   "Unknown",
 ]);
 const INDEXABLE_SORTS = new Set<SortOption>(["relevance", "newest", "upcoming", "recently-added", "top-rated", "trending"]);
+const SEARCH_GENRE_LOOKUP = new Map(
+  SEARCH_GENRE_OPTIONS.map((genre) => [normalizeGenreKey(genre), genre])
+);
 
 export const DEFAULT_SEARCH_GAMES_STATE: SearchGamesState = {
   query: "",
@@ -130,6 +141,23 @@ function normalizeYear(value: string | null | undefined): string {
   return /^\d{4}$/.test(candidate) ? candidate : "";
 }
 
+function normalizeGenreKey(value: string | null | undefined): string {
+  return (value ?? "")
+    .trim()
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .toLowerCase();
+}
+
+function normalizeGenre(value: string | null | undefined): string {
+  const candidate = (value ?? "").trim().slice(0, 80);
+  if (!candidate) {
+    return "";
+  }
+
+  return SEARCH_GENRE_LOOKUP.get(normalizeGenreKey(candidate)) ?? candidate;
+}
+
 function normalizeFreeText(value: string | null | undefined, limit: number): string {
   return (value ?? "").trim().slice(0, limit);
 }
@@ -176,7 +204,7 @@ export function normalizeSearchGamesState(input: {
   return {
     query: sanitizeSearchQuery(input.query),
     platform: normalizePlatform(input.platform),
-    genre: normalizeFreeText(input.genre, 80),
+    genre: normalizeGenre(input.genre),
     year: normalizeYear(input.year),
     monetization: normalizeMonetization(input.monetization),
     sort: normalizeSort(input.sort),
@@ -301,8 +329,8 @@ export function getSearchSeoCopy(state: SearchPageState): { title: string; descr
       };
     case "top-rated":
       return {
-        title: `Top Rated Games${pageSuffix}`,
-        description: "Browse the highest-rated games with strong popularity and current relevance on verdict.games.",
+        title: `Top Rated & Active Games${pageSuffix}`,
+        description: "Browse games ranked by verdict score, evidence strength, player activity, and current relevance on verdict.games.",
       };
     case "newest":
       return {

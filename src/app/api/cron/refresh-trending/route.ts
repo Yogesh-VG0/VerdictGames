@@ -391,16 +391,15 @@ export async function GET(request: NextRequest) {
       const { data: momentumUpdated, error: momentumError } = await ((supabase as any).rpc("refresh_recent_game_momentum") as Promise<{ data: number | null; error: { message: string } | null }>);
       if (momentumError) throw momentumError;
       log.push(`📈 Updated momentum for ${momentumUpdated} games`);
+    }
 
-      // Cleanup: delete snapshots older than 7 days
-      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-      const { count: deletedCount } = await supabase
-        .from("player_snapshots")
-        .delete()
-        .lt("recorded_at", sevenDaysAgo) as unknown as { count: number };
-      if (deletedCount > 0) {
-        log.push(`🗑️ Cleaned up ${deletedCount} old snapshots`);
-      }
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    const { count: deletedCount } = await supabase
+      .from("player_snapshots")
+      .delete({ count: "exact" })
+      .lt("recorded_at", sevenDaysAgo) as unknown as { count: number | null };
+    if ((deletedCount ?? 0) > 0) {
+      log.push(`🗑️ Cleaned up ${deletedCount} old snapshots`);
     }
   } catch (err) {
     log.push(`Momentum tracking error: ${(err as Error).message}`);

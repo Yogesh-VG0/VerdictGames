@@ -5,11 +5,10 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
-import { isAdminEmail } from "@/lib/adminEmails";
 
 function isAdmin(user: { email: string; role?: string } | null): boolean {
   if (!user) return false;
-  return user.role === "admin" || isAdminEmail(user.email);
+  return user.role === "admin";
 }
 import { LayoutDashboard, Gamepad2, FileText, Users, Clock, Database, PenSquare } from "lucide-react";
 

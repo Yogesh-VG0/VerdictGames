@@ -58,8 +58,8 @@ import type { RawgListItem } from "@/lib/external/rawg";
    ═══════════════════════════════════════════════════ */
 
 const HOMEPAGE_TRENDING_MONTHS = 36;
-const HOMEPAGE_TRENDING_FALLBACK_MONTHS = 60;
-const HOMEPAGE_TRENDING_LAST_RESORT_MONTHS = 120;
+const HOMEPAGE_TRENDING_FALLBACK_MONTHS = 48;
+const HOMEPAGE_TRENDING_LAST_RESORT_MONTHS = 60;
 const HOMEPAGE_TOP_RATED_MONTHS = 24;
 const HOMEPAGE_TOP_RATED_FALLBACK_MONTHS = 60; // Widened from 36 to 60
 const HOMEPAGE_TOP_RATED_EVERGREEN_MONTHS = 180;
@@ -86,11 +86,11 @@ function isRecentEnoughForHome(row: GameRow, months: number): boolean {
   return row.release_date >= monthsAgoISO(months);
 }
 
-function getHomepageQueryFetchLimit(limit: number, multiplier = 3): number {
+function getHomepageQueryFetchLimit(limit: number, multiplier = 4): number {
   return Math.min(Math.max(limit * multiplier, HOMEPAGE_QUERY_MIN_ROWS), HOMEPAGE_QUERY_MAX_ROWS);
 }
 
-function isHomepageTrendingEligible(row: GameRow): boolean {
+export function isHomepageTrendingEligible(row: GameRow): boolean {
   const currentPlayers = row.current_players ?? 0;
   const momentum = row.momentum ?? 0;
   const ageDays = row.release_date
@@ -110,10 +110,20 @@ function isHomepageTrendingEligible(row: GameRow): boolean {
     return true;
   }
 
+  if (ageDays > 365 * 4) {
+    return ((row.trending ?? false) && currentPlayers >= 22000 && momentum >= 0.07)
+      || (currentPlayers >= 26000 && momentum >= 0.08);
+  }
+
+  if (ageDays > 365 * 3) {
+    return ((row.trending ?? false) && currentPlayers >= 17000 && momentum >= 0.06)
+      || (currentPlayers >= 22000 && momentum >= 0.06);
+  }
+
   return ((row.trending ?? false) && currentPlayers >= 12000 && momentum >= 0.04)
     || (ageDays <= 730 && currentPlayers >= 8000 && momentum >= 0.05)
     || (currentPlayers >= 18000 && momentum >= 0.05)
-    || (momentum >= 0.14 && currentPlayers >= 700);
+    || (ageDays <= 365 * 3 && momentum >= 0.14 && currentPlayers >= 700);
 }
 
 function deduplicateBySteamAppId(games: GameRow[]): GameRow[] {
@@ -370,8 +380,19 @@ function getHomepageTrendingScore(row: GameRow): number {
     : ageDays > 14 && currentPlayers < 250
       ? 10
       : 0;
+  const staleAgePenalty = ageDays > 365 * 4
+    ? currentPlayers < 15000 || momentum < 0.07
+      ? 26
+      : 12
+    : ageDays > 365 * 3
+      ? currentPlayers < 12000 || momentum < 0.06
+        ? 18
+        : 8
+      : ageDays > 365 * 2 && (currentPlayers < 8000 || momentum < 0.05)
+        ? 8
+        : 0;
 
-  return base + highActivityBonus + breakoutBonus - lowActivityPenalty;
+  return base + highActivityBonus + breakoutBonus - lowActivityPenalty - staleAgePenalty;
 }
 
 function preferHomepageTrendingSignalPool(rows: GameRow[], desiredCount: number): GameRow[] {
@@ -418,6 +439,23 @@ function isHomepageTrendingDisplayGame(row: GameRow): boolean {
   const qualityScore = confidenceWeightedScore(row);
   const currentPlayers = row.current_players ?? 0;
   const momentum = row.momentum ?? 0;
+  const ageDays = row.release_date
+    ? (Date.now() - new Date(`${row.release_date}T00:00:00`).getTime()) / 86400000
+    : Number.POSITIVE_INFINITY;
+
+  if (ageDays > 365 * 4) {
+    return isPremiumTrendingCandidate(row)
+      && currentPlayers >= 18000
+      && momentum >= 0.07
+      && qualityScore >= 78;
+  }
+
+  if (ageDays > 365 * 3) {
+    return isPremiumTrendingCandidate(row)
+      && currentPlayers >= 14000
+      && momentum >= 0.06
+      && qualityScore >= 76;
+  }
 
   return isPremiumTrendingCandidate(row)
     || (((row.trending ?? false) || hasBrowseTrendingSignal(row)) && currentPlayers >= 10000 && momentum >= 0.04 && qualityScore >= 74)
@@ -428,6 +466,23 @@ function isHomepageTrendingFallbackDisplayGame(row: GameRow): boolean {
   const qualityScore = confidenceWeightedScore(row);
   const currentPlayers = row.current_players ?? 0;
   const momentum = row.momentum ?? 0;
+  const ageDays = row.release_date
+    ? (Date.now() - new Date(`${row.release_date}T00:00:00`).getTime()) / 86400000
+    : Number.POSITIVE_INFINITY;
+
+  if (ageDays > 365 * 4) {
+    return isAcceptableTrendingCandidate(row)
+      && currentPlayers >= 16000
+      && momentum >= 0.07
+      && qualityScore >= 76;
+  }
+
+  if (ageDays > 365 * 3) {
+    return isAcceptableTrendingCandidate(row)
+      && currentPlayers >= 12000
+      && momentum >= 0.06
+      && qualityScore >= 74;
+  }
 
   return isAcceptableTrendingCandidate(row)
     || (((row.trending ?? false) || hasBrowseTrendingSignal(row)) && currentPlayers >= 7000 && momentum >= 0.04 && qualityScore >= 72)
@@ -964,14 +1019,19 @@ export async function fetchNewReleases(limit = 20): Promise<Game[]> {
     isPublicSafeGame(r) &&
     hasUsableCardImage(r)
   );
-  const filtered = filterQualityGames(ready, { section: "newReleases", minResults: 4, allowReadinessFallback: false });
+  const filtered = filterQualityGames(ready, {
+    section: "newReleases",
+    minResults: Math.min(limit, HOMEPAGE_RAIL_TARGET),
+    allowReadinessFallback: true,
+    fallbackSurface: "homepageRail",
+  });
 
   // Exclude games that will be converted to COMING SOON by mapper:
   // - is_provisional = true (unless well-reviewed)
   // - verdict_label = 'COMING SOON'
   // - future release date
   // - 0 reviews AND not a recent release (>14 days old)
-  const JUST_RELEASED_DAYS = 14;
+  const JUST_RELEASED_DAYS = 45;
   const today = new Date().toISOString().slice(0, 10);
   const todayMs = new Date(today + "T00:00:00").getTime();
   
@@ -1670,15 +1730,31 @@ export async function fetchHomepageData(): Promise<HomepageData> {
   // ─── Global Dedup: each game in exactly one rail ───
   const usedIds = new Set<string>();
 
-  function claimSlots(candidates: Game[], max: number): Game[] {
+  function claimSlots(candidates: Game[], max: number, options?: { crossRailDedup?: boolean }): Game[] {
     const result: Game[] = [];
+    const railIds = new Set<string>();
+    const shouldCrossRailDedup = options?.crossRailDedup ?? true;
+
     for (const g of candidates) {
       if (result.length >= max) break;
-      if (!usedIds.has(g.id)) {
-        usedIds.add(g.id);
-        result.push(g);
+
+      if (railIds.has(g.id)) {
+        continue;
       }
+
+      if (shouldCrossRailDedup && usedIds.has(g.id)) {
+        continue;
+      }
+
+      railIds.add(g.id);
+
+      if (shouldCrossRailDedup) {
+        usedIds.add(g.id);
+      }
+
+      result.push(g);
     }
+
     return result;
   }
 
@@ -1689,9 +1765,7 @@ export async function fetchHomepageData(): Promise<HomepageData> {
   );
   const trendingPool = trendingRaw.filter((game) => !reservedTopRatedIds.has(game.id));
   const trendingCandidates = prioritizeById(trendingPool, trendingRaw, trendingRaw.length);
-  const reservedRecommendationIds = new Set(recsRaw.map((game) => game.id));
-  const newReleasePool = newReleasesRaw.filter((game) => !reservedRecommendationIds.has(game.id));
-  const newReleaseCandidates = prioritizeById(newReleasePool, newReleasesRaw, newReleasesRaw.length);
+  const newReleaseCandidates = newReleasesRaw;
 
   // Claim in priority order
   const hero = claimSlots(heroRaw, HOMEPAGE_HERO_TARGET);
@@ -1701,8 +1775,8 @@ export async function fetchHomepageData(): Promise<HomepageData> {
   const topRated = topRatedPremium.length >= HOMEPAGE_PRIORITY_FLOOR
     ? prioritizeById(topRatedPremium, topRatedClaimed, HOMEPAGE_RAIL_TARGET)
     : topRatedClaimed;
-  const newReleases = claimSlots(newReleaseCandidates, HOMEPAGE_RAIL_TARGET);
-  const recommendations = claimSlots(recsRaw, HOMEPAGE_RAIL_TARGET);
+  const newReleases = claimSlots(newReleaseCandidates, HOMEPAGE_RAIL_TARGET, { crossRailDedup: false });
+  const recommendations = claimSlots(recsRaw, HOMEPAGE_RAIL_TARGET, { crossRailDedup: false });
 
   return { hero, trending, topRated, newReleases, deals, recommendations };
 }

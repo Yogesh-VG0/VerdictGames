@@ -1,9 +1,9 @@
 import Link from "next/link";
-import Image from "next/image";
 import { Rocket } from "lucide-react";
 import FadeInSection from "@/components/FadeInSection";
 import HorizontalScroll from "@/components/HorizontalScroll";
 import SectionHeader from "@/components/SectionHeader";
+import HeroImage from "@/components/ui/HeroImage";
 import { formatNumber, getStableYear } from "@/lib/utils";
 import type { HomepageAnticipatedGame } from "@/lib/services/homepage";
 
@@ -38,13 +38,13 @@ export default function HomepageMostAnticipatedSection({
                 <Link href={`/game/${game.slug}?rawgId=${game.rawgId}`} prefetch={false} className="block group">
                   <div className="relative aspect-[16/9] rounded-2xl overflow-hidden border border-border bg-surface-2 group-hover:border-accent/40 transition-all">
                     {game.image ? (
-                      <Image
+                      <HeroImage
                         src={game.image}
                         alt={game.name}
-                        fill
                         sizes="(max-width: 640px) 80vw, (max-width: 1024px) 40vw, 320px"
-                        className="object-cover group-hover:scale-105 transition-transform duration-500"
+                        className="group-hover:scale-105 transition-transform duration-500"
                         priority={index < 2}
+                        fallbackClassName="bg-surface-2"
                       />
                     ) : (
                       <div className="w-full h-full bg-gradient-to-br from-accent/10 to-pixel-cyan/10" />

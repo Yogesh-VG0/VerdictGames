@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Review } from "@/lib/types";
 import { scoreColor, formatDate, cn } from "@/lib/utils";
 import { voteOnReview } from "@/lib/api";
+import HeroImage from "@/components/ui/HeroImage";
 import PlatformIcon from "@/components/ui/PlatformIcon";
 import { ThumbsUp, ThumbsDown } from "lucide-react";
 
@@ -99,11 +100,12 @@ export default function ReviewCard({
             className="shrink-0 relative w-16 h-20 sm:w-20 sm:h-28 rounded-xl overflow-hidden border border-border bg-surface-2 group/cover"
           >
             {review.gameCover ? (
-              /* eslint-disable-next-line @next/next/no-img-element */
-              <img
+              <HeroImage
                 src={review.gameCover}
                 alt={review.gameTitle}
-                className="w-full h-full object-cover group-hover/cover:scale-105 transition-transform duration-300"
+                className="group-hover/cover:scale-105 transition-transform duration-300"
+                sizes="80px"
+                fallbackClassName="bg-surface-2"
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-xs text-tertiary">🎮</div>

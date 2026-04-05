@@ -370,14 +370,13 @@ try {
     } else {
       console.log("  ⏭️ Snapshot insert skipped (duplicate protection)");
     }
-
-    // 3) Cleanup snapshots older than 7 days
-    const deleted = await sql`
-      DELETE FROM player_snapshots
-      WHERE recorded_at < NOW() - INTERVAL '7 days'
-    `;
-    if (deleted.count > 0) console.log(`  🗑️ Cleaned ${deleted.count} old snapshots`);
   }
+
+  const deleted = await sql`
+    DELETE FROM player_snapshots
+    WHERE recorded_at < NOW() - INTERVAL '7 days'
+  `;
+  if (deleted.count > 0) console.log(`  🗑️ Cleaned ${deleted.count} old snapshots`);
 } catch (e) {
   console.log(`  ⚠ Momentum tracking error: ${e.message}`);
 }

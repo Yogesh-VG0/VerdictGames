@@ -3,7 +3,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { motion } from "framer-motion";
 import {
   getRecommendations,
@@ -17,6 +16,7 @@ import FadeInSection from "@/components/FadeInSection";
 import GameCard from "@/components/GameCard";
 import HorizontalScroll from "@/components/HorizontalScroll";
 import SectionHeader from "@/components/SectionHeader";
+import HeroImage from "@/components/ui/HeroImage";
 import GXDealCard from "@/components/GXDealCard";
 import {
   HorizontalScrollSkeleton,
@@ -175,12 +175,12 @@ export default function HomepageClientSections({
                           <Link href={`/game/${slugify(game.title)}`} prefetch={false} className="block">
                             <div className="relative aspect-[3/4] overflow-hidden">
                               {game.cover && (
-                                <Image
+                                <HeroImage
                                   src={game.cover}
                                   alt={game.title}
-                                  fill
                                   sizes="(max-width: 640px) 50vw, 20vw"
-                                  className="object-cover transition-transform duration-700 group-hover:scale-110"
+                                  className="transition-transform duration-700 group-hover:scale-110"
+                                  fallbackClassName="bg-surface-2"
                                 />
                               )}
                               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />

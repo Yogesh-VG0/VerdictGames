@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import FadeInSection from "@/components/FadeInSection";
 import SectionHeader from "@/components/SectionHeader";
 import LazySection from "@/components/LazySection";
+import HeroImage from "@/components/ui/HeroImage";
 import { Newspaper } from "lucide-react";
 
 export default function HomepageNewsSection() {
@@ -71,12 +72,12 @@ export default function HomepageNewsSection() {
                     >
                       <div className="relative aspect-video overflow-hidden">
                         {article.image ? (
-                          <Image
+                          <HeroImage
                             src={article.image}
                             alt={article.title}
-                            fill
-                            className="object-cover group-hover:scale-105 transition-transform duration-500"
                             sizes="(max-width: 1024px) 100vw, 40vw"
+                            className="group-hover:scale-105 transition-transform duration-500"
+                            fallbackClassName="bg-surface-2"
                           />
                         ) : (
                           <div className="w-full h-full bg-gradient-to-br from-accent/20 to-pixel-cyan/20 flex items-center justify-center">
@@ -121,12 +122,12 @@ export default function HomepageNewsSection() {
                     >
                       <div className="relative w-20 h-14 shrink-0 rounded-lg overflow-hidden">
                         {article.image ? (
-                          <Image
+                          <HeroImage
                             src={article.image}
                             alt=""
-                            fill
-                            className="object-cover"
                             sizes="80px"
+                            className="object-cover"
+                            fallbackClassName="bg-surface-2"
                           />
                         ) : (
                           <div className="w-full h-full bg-gradient-to-br from-accent/10 to-pixel-cyan/10 flex items-center justify-center">

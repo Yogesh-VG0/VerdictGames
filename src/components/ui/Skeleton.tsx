@@ -1,5 +1,12 @@
 import { cn } from "@/lib/utils";
 
+const gameGridColMap = {
+  2: "grid-cols-2",
+  3: "grid-cols-2 sm:grid-cols-3",
+  4: "grid-cols-2 sm:grid-cols-3 md:grid-cols-4",
+  5: "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5",
+} as const;
+
 /** Generic skeleton block with shimmer animation. */
 export function Skeleton({
   className,
@@ -128,10 +135,22 @@ export function SectionHeaderSkeleton() {
 }
 
 /** Full row of game card skeletons. */
-export function GameGridSkeleton({ count = 4 }: { count?: number }) {
+export function GameGridSkeleton({
+  count,
+  columns = 4,
+  rows = 1,
+  className,
+}: {
+  count?: number;
+  columns?: 2 | 3 | 4 | 5;
+  rows?: number;
+  className?: string;
+}) {
+  const resolvedCount = count ?? Math.max(columns * rows, 1);
+
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-      {Array.from({ length: count }).map((_, i) => (
+    <div className={cn("grid gap-4", gameGridColMap[columns], className)}>
+      {Array.from({ length: resolvedCount }).map((_, i) => (
         <GameCardSkeleton key={i} />
       ))}
     </div>

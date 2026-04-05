@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import Image from "next/image";
+import { Gamepad2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /**
@@ -15,13 +16,38 @@ export default function HeroImage({
   alt,
   priority = false,
   className,
+  sizes = "100vw",
+  fallback,
+  fallbackClassName,
 }: {
   src: string;
   alt: string;
   priority?: boolean;
   className?: string;
+  sizes?: string;
+  fallback?: ReactNode;
+  fallbackClassName?: string;
 }) {
   const [useFallback, setUseFallback] = useState(false);
+  const [hasFailed, setHasFailed] = useState(false);
+
+  useEffect(() => {
+    setUseFallback(false);
+    setHasFailed(false);
+  }, [src]);
+
+  if (!src || hasFailed) {
+    return (
+      <div
+        className={cn(
+          "absolute inset-0 flex items-center justify-center bg-gradient-to-br from-accent/10 via-surface-2 to-pixel-cyan/10",
+          fallbackClassName
+        )}
+      >
+        {fallback ?? <Gamepad2 className="w-8 h-8 text-accent/35" />}
+      </div>
+    );
+  }
 
   if (useFallback) {
     return (
@@ -32,6 +58,7 @@ export default function HeroImage({
         className={cn("absolute inset-0 w-full h-full object-cover", className)}
         loading={priority ? "eager" : "lazy"}
         fetchPriority={priority ? "high" : "auto"}
+        onError={() => setHasFailed(true)}
       />
     );
   }
@@ -42,7 +69,7 @@ export default function HeroImage({
       alt={alt}
       fill
       className={cn("object-cover", className)}
-      sizes="100vw"
+      sizes={sizes}
       priority={priority}
       quality={85}
       onError={() => setUseFallback(true)}

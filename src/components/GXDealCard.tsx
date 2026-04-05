@@ -1,9 +1,9 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { ExternalLink } from "lucide-react";
+import HeroImage from "@/components/ui/HeroImage";
 import type { GXDeal } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { slugify } from "@/lib/utils/slugify";
@@ -33,13 +33,13 @@ export default function GXDealCard({ deal, priority = false }: GXDealCardProps) 
   const imageContent = (
     <div className="relative aspect-[3/4] overflow-hidden">
       {deal.cover ? (
-        <Image
+        <HeroImage
           src={deal.cover}
           alt={deal.title}
-          fill
           sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
-          className="object-cover transition-transform duration-700 group-hover:scale-110"
+          className="transition-transform duration-700 group-hover:scale-110"
           priority={priority}
+          fallbackClassName="bg-surface-2"
         />
       ) : (
         <div className="w-full h-full bg-surface-2 flex items-center justify-center">

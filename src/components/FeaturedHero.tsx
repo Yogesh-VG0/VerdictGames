@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Game } from "@/lib/types";
@@ -10,6 +9,7 @@ import ScoreRing from "@/components/ui/ScoreRing";
 import PixelBadge from "@/components/ui/PixelBadge";
 import PixelButton from "@/components/ui/PixelButton";
 import PlatformIcon from "@/components/ui/PlatformIcon";
+import HeroImage from "@/components/ui/HeroImage";
 
 interface FeaturedHeroProps {
   game: Game;
@@ -21,11 +21,11 @@ export default function FeaturedHero({ game }: FeaturedHeroProps) {
       {/* Background image */}
       <div className="relative aspect-[16/9] sm:aspect-[16/9] md:aspect-[21/9]">
         {game.headerImage ? (
-          /* eslint-disable-next-line @next/next/no-img-element */
-          <img
+          <HeroImage
             src={game.headerImage}
             alt={game.title}
-            className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.02]"
+            className="transition-transform duration-700 group-hover:scale-[1.02]"
+            sizes="100vw"
           />
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-accent/20 via-surface to-pixel-cyan/10 flex items-center justify-center">

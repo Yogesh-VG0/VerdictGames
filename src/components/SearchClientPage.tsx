@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
@@ -12,20 +11,13 @@ import GXDealCard from "@/components/GXDealCard";
 import SectionHeader from "@/components/SectionHeader";
 import SortDropdown from "@/components/ui/SortDropdown";
 import { GameGridSkeleton } from "@/components/ui/Skeleton";
+import HeroImage from "@/components/ui/HeroImage";
 import { PLATFORM_FILTER_OPTIONS, platformFilterIcon } from "@/components/ui/PlatformIcon";
 import { searchGames, getGXDeals, getGXFreeToPlay, getGXTopGames } from "@/lib/api";
-import { buildSearchApiPath, buildSearchPagePath, normalizeSearchGamesState, searchGamesStateToFilters, type SearchBrowseTab, type SearchPageState } from "@/lib/search";
+import { buildSearchApiPath, buildSearchPagePath, normalizeSearchGamesState, SEARCH_GENRE_OPTIONS, searchGamesStateToFilters, type SearchBrowseTab, type SearchPageState } from "@/lib/search";
 import type { Game, MonetizationType, Platform, SortOption, PaginatedResponse } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { slugify } from "@/lib/utils/slugify";
-
-const allGenres: string[] = [
-  "Action", "Action RPG", "Adventure", "Battle Royale", "Card Game",
-  "Detective", "Endless Runner", "Horror", "Indie", "Metroidvania",
-  "MMORPG", "Open World", "Party", "Platformer", "Puzzle",
-  "Roguelike", "RPG", "Sandbox", "Shooter", "Simulation",
-  "Social Deduction", "Strategy", "Survival", "Turn-Based Strategy",
-];
 
 const allYears: string[] = [
   "2026", "2025", "2024", "2023", "2022", "2021", "2020",
@@ -84,8 +76,8 @@ function getSearchPageHeader(browseTab: SearchBrowseTab, freeSubTab: FreeSubTab,
       };
     case "top-rated":
       return {
-        title: "Top Rated Games",
-        subtitle: "Highest-rated games with strong popularity and current relevance.",
+        title: "Top Rated & Active Games",
+        subtitle: "High verdict scores backed by strong evidence, live activity, and current relevance.",
         gradient: "linear-gradient(90deg, #facc15, #f97316, #22c55e)",
         icon: <Trophy className="w-6 h-6 text-yellow-500" />,
       };
@@ -205,11 +197,10 @@ export default function SearchClientPage({ initialState, initialGamesData }: Sea
   );
   const shouldUseInitialGamesData = browseTab === "games" && searchApiPath === initialSearchApiPath;
 
-  const { data, error, isError, isLoading, isFetching, isPlaceholderData } = useQuery({
+  const { data, error, isError, isLoading, isFetching } = useQuery({
     queryKey: ["search", searchApiPath],
     queryFn: () => searchGames(filters),
     enabled: browseTab === "games",
-    placeholderData: (prev) => prev,
     initialData: shouldUseInitialGamesData ? initialGamesData ?? undefined : undefined,
     staleTime: 30_000,
     retry: 1,
@@ -367,14 +358,15 @@ export default function SearchClientPage({ initialState, initialGamesData }: Sea
     window.history.replaceState(window.history.state, "", normalizedPagePath);
   }, [normalizedPagePath]);
 
-  const isInitialLoad = browseTab === "games" && isLoading && !data;
-  const isResultsRefreshing = browseTab === "games" && isFetching && isPlaceholderData;
+  const isInitialLoad = browseTab === "games" && !data && (isLoading || isFetching);
+  const isResultsRefreshing = browseTab === "games" && !!data && isFetching;
   const searchErrorMessage = browseTab === "games" && isError
     ? error instanceof Error
       ? error.message
       : "Failed to load search results."
     : null;
   const pageHeader = useMemo(() => getSearchPageHeader(browseTab, freeSubTab, sort), [browseTab, freeSubTab, sort]);
+  const isTopRatedSort = browseTab === "games" && sort === "top-rated";
 
   const resetDealsFilters = useCallback(() => {
     setGxGenre("All");
@@ -525,7 +517,7 @@ export default function SearchClientPage({ initialState, initialGamesData }: Sea
               className="h-10 px-3 text-sm rounded-xl border border-border bg-surface-2 text-foreground focus:outline-none focus:border-accent/50 transition-colors"
             >
               <option value="">All Genres</option>
-              {allGenres.map((candidate) => (
+              {SEARCH_GENRE_OPTIONS.map((candidate) => (
                 <option key={candidate} value={candidate}>
                   {candidate}
                 </option>
@@ -568,7 +560,7 @@ export default function SearchClientPage({ initialState, initialGamesData }: Sea
                 { label: "Newest Released", value: "newest" as SortOption },
                 { label: "Upcoming", value: "upcoming" as SortOption },
                 { label: "Recently Added", value: "recently-added" as SortOption },
-                { label: "Top Rated", value: "top-rated" as SortOption },
+                { label: "Top Rated & Active", value: "top-rated" as SortOption },
                 { label: "Trending", value: "trending" as SortOption },
               ]}
               selected={sort}
@@ -582,6 +574,19 @@ export default function SearchClientPage({ initialState, initialGamesData }: Sea
       </div>
       )}
 
+      {isTopRatedSort && (
+      <motion.div
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.25 }}
+        className="rounded-2xl border border-yellow-500/20 bg-yellow-500/5 px-4 py-3"
+      >
+        <p className="text-sm text-secondary">
+          Ranked by verdict score, review evidence, player activity, and current relevance — not by the visible card score alone.
+        </p>
+      </motion.div>
+      )}
+
       {browseTab === "games" && (
       <div>
         <AnimatePresence mode="wait">
@@ -592,18 +597,27 @@ export default function SearchClientPage({ initialState, initialGamesData }: Sea
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
+              className="space-y-4"
             >
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-4 h-4 border-2 border-accent border-t-transparent rounded-full animate-spin" />
-                <p className="text-xs text-tertiary">
-                  {isInitialLoad
-                    ? debouncedQuery
-                      ? `Searching for “${debouncedQuery}”...`
-                      : "Loading games..."
-                    : "Loading games..."}
-                </p>
+              <div className="flex flex-col gap-3 rounded-2xl border border-accent/20 bg-accent/10 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-foreground">
+                    {debouncedQuery
+                      ? `Loading results for “${debouncedQuery}”`
+                      : isTopRatedSort
+                        ? "Loading top-rated browse results"
+                        : "Loading browse results"}
+                  </p>
+                  <p className="text-xs text-secondary">
+                    Preparing responsive game cards for your current filters.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-secondary">
+                  <div className="w-4 h-4 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+                  <span>Updating…</span>
+                </div>
               </div>
-              <GameGridSkeleton count={8} />
+              <GameGridSkeleton columns={5} rows={2} />
             </motion.div>
           ) : games.length > 0 ? (
             <motion.div
@@ -620,31 +634,16 @@ export default function SearchClientPage({ initialState, initialGamesData }: Sea
                   Browse results could not be refreshed just now. Showing the last successful results.
                 </div>
               )}
-              {isResultsRefreshing && (
-                <div className="mb-4 rounded-2xl border border-accent/20 bg-accent/10 px-4 py-3 text-sm text-secondary">
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 border-2 border-accent border-t-transparent rounded-full animate-spin" />
-                    <p>
-                      {debouncedQuery
-                        ? `Updating results for “${debouncedQuery}”...`
-                        : "Updating results..."}
-                    </p>
-                  </div>
-                </div>
-              )}
               <div className="flex items-center gap-2 mb-4">
                 <p className="text-xs text-tertiary">
                   Showing {(page - 1) * (data?.pageSize ?? 25) + 1}–{Math.min(page * (data?.pageSize ?? 25), totalCount)} of {totalCount} game{totalCount !== 1 ? "s" : ""}
                 </p>
-                {isFetching && !isPlaceholderData && (
+                {isResultsRefreshing && (
                   <div className="w-3.5 h-3.5 border-2 border-accent border-t-transparent rounded-full animate-spin" />
                 )}
               </div>
-              <div className="relative">
-                {isResultsRefreshing && (
-                  <div className="absolute inset-0 z-10 rounded-3xl bg-background/30 backdrop-blur-[1px] pointer-events-none" />
-                )}
-                <GameGrid games={games} columns={5} className={cn(isResultsRefreshing && "opacity-80")} />
+              <div className="relative min-h-[260px]">
+                <GameGrid games={games} columns={5} className="transition-opacity duration-200" />
               </div>
 
               {totalPages > 1 && (
@@ -1074,13 +1073,13 @@ export default function SearchClientPage({ initialState, initialGamesData }: Sea
                         <Link href={`/game/${slugify(game.title)}`} className="block">
                           <div className="relative aspect-[3/4] overflow-hidden">
                             {game.cover ? (
-                              <Image
+                              <HeroImage
                                 src={game.cover}
                                 alt={game.title}
-                                fill
                                 sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
-                                className="object-cover transition-transform duration-700 group-hover:scale-110"
+                                className="transition-transform duration-700 group-hover:scale-110"
                                 priority={index < 5}
+                                fallbackClassName="bg-surface-2"
                               />
                             ) : (
                               <div className="w-full h-full bg-surface-2 flex items-center justify-center">
@@ -1167,13 +1166,13 @@ export default function SearchClientPage({ initialState, initialGamesData }: Sea
                         <Link href={`/game/${slugify(game.title)}`} className="block">
                           <div className="relative aspect-[3/4] overflow-hidden">
                             {game.cover ? (
-                              <Image
+                              <HeroImage
                                 src={game.cover}
                                 alt={game.title}
-                                fill
                                 sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
-                                className="object-cover transition-transform duration-700 group-hover:scale-110"
+                                className="transition-transform duration-700 group-hover:scale-110"
                                 priority={index < 5}
+                                fallbackClassName="bg-surface-2"
                               />
                             ) : (
                               <div className="w-full h-full bg-surface-2 flex items-center justify-center">

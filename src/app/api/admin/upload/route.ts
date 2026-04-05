@@ -35,7 +35,8 @@ function getDeliveryTransformation(assetType: string | null) {
 
 export async function POST(request: NextRequest) {
   try {
-    await requireAdmin();
+    const { error } = await requireAdmin();
+    if (error) return error;
 
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
