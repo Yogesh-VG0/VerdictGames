@@ -57,12 +57,12 @@ export default function SectionHeader({
             <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 3l5 5-5 5" /></svg>
           </Link>
         )}
-        {subtitle && (
-          <p className={cn("col-span-full text-secondary mt-0.5 sm:mt-1.5", isPageHeading ? "text-sm sm:text-base max-w-2xl" : "text-sm")}>
-            {subtitle}
-          </p>
-        )}
       </div>
+      {subtitle && (
+        <p className={cn("text-secondary mt-1.5", isPageHeading ? "text-sm sm:text-base max-w-2xl" : "text-sm")}>
+          {subtitle}
+        </p>
+      )}
     </div>
   );
 }
