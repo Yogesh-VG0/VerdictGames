@@ -3,9 +3,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState, useRef } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { ImageOff, AlertTriangle, Clock, Database, Star, FileText, Tag, Video, ShoppingBag, CheckCircle, XCircle, ExternalLink, TrendingUp, Sparkles, Layout } from "lucide-react";
 import type { Game } from "@/lib/types";
+import SafeImage from "@/components/ui/SafeImage";
 
 // Homepage section filters to see which games appear where
 const SECTION_FILTERS = [
@@ -236,7 +236,7 @@ export default function AdminGamesPage() {
               >
                 <div className="w-12 h-16 rounded-lg overflow-hidden bg-surface-2 shrink-0 relative">
                   {game.coverImage && (
-                    <Image src={game.coverImage} alt="" fill className="object-cover" sizes="48px" />
+                    <SafeImage src={game.coverImage} alt="" fill className="object-cover" sizes="48px" />
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -302,7 +302,7 @@ export default function AdminGamesPage() {
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-14 rounded-lg overflow-hidden bg-surface-2 shrink-0 relative">
                         {game.coverImage ? (
-                          <Image src={game.coverImage} alt="" fill className="object-cover" sizes="40px" />
+                          <SafeImage src={game.coverImage} alt="" fill className="object-cover" sizes="40px" />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">
                             <ImageOff className="w-4 h-4 text-red-400" />

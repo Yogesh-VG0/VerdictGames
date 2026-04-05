@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
-import Image from "next/image";
+import { useState, useCallback, useRef, useEffect, useLayoutEffect } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
@@ -25,6 +24,7 @@ import type { Game, PaginatedResponse, Review } from "@/lib/types";
 import { formatDate, scoreColor, cn, formatPrice, scoreGlowClass, formatTimeAgo } from "@/lib/utils";
 import PlatformIcon from "@/components/ui/PlatformIcon";
 import HeroImage from "@/components/ui/HeroImage";
+import SafeImage from "@/components/ui/SafeImage";
 import ScoreRing from "@/components/ui/ScoreRing";
 import VerdictBadge from "@/components/ui/VerdictBadge";
 import PixelBadge from "@/components/ui/PixelBadge";
@@ -53,13 +53,13 @@ interface GameDetailClientPageProps {
   slug: string;
   rawgId?: number | null;
   initialGame: Game;
-  initialReviewsData: PaginatedResponse<Review>;
-  initialRelated: Game[];
-  initialNewsData: SteamNewsData;
-  initialAchievementsData: SteamAchievementsData;
-  initialSystemRequirements: SystemRequirementsData;
-  initialEditorialReviews: EditorialReview[];
-  initialSteamReviewsData: SteamReviewsData;
+  initialReviewsData?: PaginatedResponse<Review>;
+  initialRelated?: Game[];
+  initialNewsData?: SteamNewsData;
+  initialAchievementsData?: SteamAchievementsData;
+  initialSystemRequirements?: SystemRequirementsData;
+  initialEditorialReviews?: EditorialReview[];
+  initialSteamReviewsData?: SteamReviewsData;
 }
 
 /** Visual stat bar component */
@@ -108,6 +108,16 @@ export default function GameDetailClientPage({
   const [copied, setCopied] = useState(false);
   const shareRef = useRef<HTMLDivElement>(null);
 
+  useLayoutEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+
+    const frameId = window.requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    });
+
+    return () => window.cancelAnimationFrame(frameId);
+  }, [slug]);
+
   // Close share dropdown on outside click or Escape
   useEffect(() => {
     if (!shareOpen) return;
@@ -135,7 +145,7 @@ export default function GameDetailClientPage({
     staleTime: 60 * 1000,
   });
 
-  const { data: reviewsData } = useQuery({
+  const { data: reviewsData, isLoading: isReviewsLoading } = useQuery({
     queryKey: ["gameReviews", slug],
     queryFn: () => getGameReviews(slug, { sort: "helpful" }),
     enabled: !!game && !initialGame.isPreview,
@@ -167,7 +177,7 @@ export default function GameDetailClientPage({
     staleTime: 10 * 60 * 1000,
   });
 
-  const { data: sysReqData } = useQuery({
+  const { data: sysReqData, isLoading: isSystemRequirementsLoading } = useQuery({
     queryKey: ["systemRequirements", slug],
     queryFn: () => getSystemRequirements(slug),
     enabled: !!game && !initialGame.isPreview && !!game.platforms?.includes("PC"),
@@ -719,7 +729,7 @@ export default function GameDetailClientPage({
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center overflow-hidden">
                           {review.profiles.avatar_url ? (
-                            <Image src={review.profiles.avatar_url} alt="" width={40} height={40} className="object-cover" />
+                            <SafeImage src={review.profiles.avatar_url} alt="" width={40} height={40} className="object-cover" />
                           ) : (
                             <span className="text-accent font-bold text-sm">
                               {(review.profiles.display_name || review.profiles.username).charAt(0).toUpperCase()}
@@ -900,7 +910,7 @@ export default function GameDetailClientPage({
                   </div>
                 )}
                 {/* Fallback link to Steam */}
-                {!sysReqData?.requirements?.pc && game.platforms.includes("PC") && game.steamUrl && (
+                {!isSystemRequirementsLoading && !sysReqData?.requirements?.pc && game.platforms.includes("PC") && game.steamUrl && (
                   <a
                     href={`${game.steamUrl}#sysreq_content`}
                     target="_blank"
@@ -1340,7 +1350,29 @@ export default function GameDetailClientPage({
                     </div>
                   )}
 
-                  {reviewsData?.items && reviewsData.items.length > 0 ? (
+                  {isReviewsLoading ? (
+                    <div className="space-y-3">
+                      <h4 className="text-xs font-semibold text-secondary uppercase tracking-wider">
+                        Verdict.games Community
+                      </h4>
+                      <div className="space-y-3">
+                        {Array.from({ length: 2 }).map((_, index) => (
+                          <div key={index} className="rounded-xl border border-border bg-surface-2 p-4 space-y-3">
+                            <div className="flex items-center gap-3">
+                              <Skeleton className="h-10 w-10 rounded-full" />
+                              <div className="space-y-2 flex-1">
+                                <Skeleton className="h-4 w-40 rounded-lg" />
+                                <Skeleton className="h-3 w-28 rounded-lg" />
+                              </div>
+                            </div>
+                            <Skeleton className="h-4 w-full rounded-lg" />
+                            <Skeleton className="h-4 w-5/6 rounded-lg" />
+                            <Skeleton className="h-20 w-full rounded-xl" />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : reviewsData?.items && reviewsData.items.length > 0 ? (
                     <div className="space-y-3">
                       <h4 className="text-xs font-semibold text-secondary uppercase tracking-wider">
                         Verdict.games Community

@@ -25,10 +25,22 @@ export default function MediaCarousel({
   const activeIndex = active < slides.length ? active : 0;
 
   useEffect(() => {
-    thumbnailRefs.current[activeIndex]?.scrollIntoView({
-      behavior: "smooth",
-      inline: "center",
-      block: "nearest",
+    const container = scrollRef.current;
+    const activeThumbnail = thumbnailRefs.current[activeIndex];
+
+    if (!container || !activeThumbnail) {
+      return;
+    }
+
+    const containerRect = container.getBoundingClientRect();
+    const thumbnailRect = activeThumbnail.getBoundingClientRect();
+    const nextLeft = container.scrollLeft
+      + (thumbnailRect.left - containerRect.left)
+      - (containerRect.width / 2 - thumbnailRect.width / 2);
+
+    container.scrollTo({
+      left: Math.max(0, nextLeft),
+      behavior: activeIndex === 0 ? "auto" : "smooth",
     });
   }, [activeIndex]);
 

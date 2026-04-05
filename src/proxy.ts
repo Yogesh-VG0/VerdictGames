@@ -118,18 +118,8 @@ function checkRateLimit(
 // ── Proxy ──
 
 export function proxy(request: NextRequest) {
-  const { pathname, searchParams } = request.nextUrl;
+  const { pathname } = request.nextUrl;
   const requestHeaders = new Headers(request.headers);
-
-  if (pathname.startsWith("/game/")) {
-    const rawgId = searchParams.get("rawgId");
-
-    if (rawgId) {
-      requestHeaders.set("x-verdict-game-rawg-id", rawgId);
-    }
-
-    return NextResponse.next({ request: { headers: requestHeaders } });
-  }
 
   // Only rate-limit API routes
   if (!pathname.startsWith("/api/")) {
@@ -172,5 +162,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/api/:path*", "/game/:path*"],
+  matcher: ["/api/:path*"],
 };

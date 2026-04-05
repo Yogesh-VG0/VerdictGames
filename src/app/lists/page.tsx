@@ -1,13 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { getCuratedLists } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
 import PixelBadge from "@/components/ui/PixelBadge";
+import SafeImage from "@/components/ui/SafeImage";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { ListPlus, Loader2, BookOpen } from "lucide-react";
 import GradientText from "@/components/ui/GradientText";
@@ -117,7 +117,7 @@ export default function ListsPage() {
                         <div className="grid grid-cols-2 grid-rows-2 w-full h-full">
                           {coverGames.map((g) => (
                             <div key={g.id} className="relative overflow-hidden">
-                              <Image
+                              <SafeImage
                                 src={g.coverImage}
                                 alt={g.title}
                                 fill
@@ -130,7 +130,7 @@ export default function ListsPage() {
                       );
                     } else if (list.coverImage) {
                       return (
-                        <Image
+                        <SafeImage
                           src={list.coverImage}
                           alt={list.title}
                           fill

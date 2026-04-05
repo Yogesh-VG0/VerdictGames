@@ -1,8 +1,8 @@
 "use client";
 
-import Image from "next/image";
 import { motion } from "framer-motion";
 import HeroImage from "@/components/ui/HeroImage";
+import SafeImage from "@/components/ui/SafeImage";
 import type { GXNewsItem } from "@/lib/types";
 
 interface GXNewsCardProps {
@@ -44,7 +44,7 @@ export default function GXNewsCard({ article }: GXNewsCardProps) {
 
         <div className="flex items-center gap-2">
           {article.publisherFavicon && (
-            <Image
+            <SafeImage
               src={article.publisherFavicon}
               alt={article.publisherName}
               width={14}

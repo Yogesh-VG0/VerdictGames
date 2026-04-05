@@ -2,9 +2,9 @@
 
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import { slugify } from "@/lib/utils/slugify";
 import { Search, Link2, FileEdit, ArrowLeft, Check, Star, Calendar, Gamepad2, Loader2, AlertCircle, CheckCircle2, ExternalLink, Smartphone, Download, Store } from "lucide-react";
+import SafeImage from "@/components/ui/SafeImage";
 
 type Mode = "lookup" | "url" | "provisional";
 type Step = "search" | "candidates" | "confirm" | "ingesting";
@@ -384,7 +384,7 @@ export default function AdminAddGamePage() {
                     {/* Thumbnail / Icon */}
                     <div className="w-20 h-28 sm:w-24 sm:h-32 rounded-lg overflow-hidden bg-surface-2 shrink-0 relative">
                       {(c.backgroundImage || c.icon) ? (
-                        <Image
+                        <SafeImage
                           src={(c.backgroundImage || c.icon)!}
                           alt={c.name}
                           fill
@@ -509,7 +509,7 @@ export default function AdminAddGamePage() {
               <div className="flex gap-4 p-4 rounded-xl border border-accent/30 bg-accent/[0.03]">
                 <div className={`rounded-lg overflow-hidden bg-surface-2 shrink-0 relative ${selectedCandidate.source !== "rawg" ? "w-20 h-20 sm:w-24 sm:h-24" : "w-24 h-32 sm:w-28 sm:h-36"}`}>
                   {(selectedCandidate.backgroundImage || selectedCandidate.icon) ? (
-                    <Image
+                    <SafeImage
                       src={(selectedCandidate.backgroundImage || selectedCandidate.icon)!}
                       alt={selectedCandidate.name}
                       fill

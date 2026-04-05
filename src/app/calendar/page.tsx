@@ -4,8 +4,6 @@ import { loadCalendarMonth, CALENDAR_REVALIDATE_SECONDS } from "@/lib/services/c
 import { buildCalendarPagePath, getCalendarMonthKey, getCalendarSeoCopy, parseCalendarPageState } from "@/lib/utils/gx-calendar";
 import { buildSocialMetadata, SITE_URL } from "@/lib/seo";
 
-export const dynamic = "force-dynamic";
-
 if (!CALENDAR_REVALIDATE_SECONDS) {
   throw new Error("Calendar page requires the shared calendar loader revalidate contract.");
 }

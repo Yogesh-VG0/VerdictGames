@@ -4,8 +4,6 @@ import { buildSearchPagePath, getSearchRobotsRule, getSearchSeoCopy, parseSearch
 import { loadSearchResults, SEARCH_REVALIDATE_SECONDS } from "@/lib/services/search";
 import { buildSocialMetadata, SITE_URL } from "@/lib/seo";
 
-export const dynamic = "force-dynamic";
-
 if (!SEARCH_REVALIDATE_SECONDS) {
   throw new Error("Search page requires the shared search loader revalidate contract.");
 }

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import Image from "next/image";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { Newspaper, Filter, ArrowLeft } from "lucide-react";
@@ -10,6 +9,8 @@ import { getGXPopularNews, getGXNewsFeed } from "@/lib/api";
 import type { GXNewsItem } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import GradientText from "@/components/ui/GradientText";
+import HeroImage from "@/components/ui/HeroImage";
+import SafeImage from "@/components/ui/SafeImage";
 
 export default function NewsPage() {
   const [selectedPublisher, setSelectedPublisher] = useState("All");
@@ -178,12 +179,12 @@ export default function NewsPage() {
             >
               <div className="relative aspect-video overflow-hidden">
                 {article.image ? (
-                  <Image
+                  <HeroImage
                     src={article.image}
                     alt={article.title}
-                    fill
-                    className="object-cover group-hover:scale-105 transition-transform duration-500"
                     sizes="(max-width: 768px) 100vw, 33vw"
+                    className="group-hover:scale-105 transition-transform duration-500"
+                    fallbackClassName="bg-surface-2"
                   />
                 ) : (
                   <div className="w-full h-full bg-gradient-to-br from-accent/20 to-pixel-cyan/20 flex items-center justify-center">
@@ -197,7 +198,7 @@ export default function NewsPage() {
                 </h3>
                 <div className="flex items-center gap-2">
                   {article.publisherFavicon && (
-                    <Image
+                    <SafeImage
                       src={article.publisherFavicon}
                       alt=""
                       width={14}
@@ -244,12 +245,12 @@ export default function NewsPage() {
             >
               <div className="relative w-24 h-16 sm:w-28 sm:h-[72px] shrink-0 rounded-lg overflow-hidden">
                 {article.image ? (
-                  <Image
+                  <HeroImage
                     src={article.image}
                     alt=""
-                    fill
-                    className="object-cover group-hover:scale-105 transition-transform duration-300"
                     sizes="112px"
+                    className="group-hover:scale-105 transition-transform duration-300"
+                    fallbackClassName="bg-surface-2"
                   />
                 ) : (
                   <div className="w-full h-full bg-gradient-to-br from-accent/10 to-pixel-cyan/10 flex items-center justify-center">
@@ -263,7 +264,7 @@ export default function NewsPage() {
                 </p>
                 <div className="flex items-center gap-1.5">
                   {article.publisherFavicon && (
-                    <Image
+                    <SafeImage
                       src={article.publisherFavicon}
                       alt=""
                       width={12}

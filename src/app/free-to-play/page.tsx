@@ -3,13 +3,13 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { Gift, Gamepad2, SlidersHorizontal, Crown, ExternalLink } from "lucide-react";
 import { getGXFreeToPlay, getGXTopGames } from "@/lib/api";
 import type { GXFreeGame, GXTopGame } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import GXPageNav from "@/components/GXPageNav";
+import HeroImage from "@/components/ui/HeroImage";
 
 type ActiveTab = "free" | "subscriptions";
 
@@ -18,13 +18,13 @@ function FreeGameCard({ game, priority = false }: { game: GXFreeGame; priority?:
   const artwork = (
     <div className="relative aspect-[3/4] overflow-hidden">
       {game.cover ? (
-        <Image
+        <HeroImage
           src={game.cover}
           alt={game.title}
-          fill
           sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
-          className="object-cover transition-transform duration-700 group-hover:scale-110"
+          className="transition-transform duration-700 group-hover:scale-110"
           priority={priority}
+          fallbackClassName="bg-surface-2"
         />
       ) : (
         <div className="w-full h-full bg-surface-2 flex items-center justify-center">
@@ -87,13 +87,13 @@ function SubscriptionGameCard({ game, priority = false }: { game: GXTopGame; pri
   const artwork = (
     <div className="relative aspect-[3/4] overflow-hidden">
       {game.cover ? (
-        <Image
+        <HeroImage
           src={game.cover}
           alt={game.title}
-          fill
           sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
-          className="object-cover transition-transform duration-700 group-hover:scale-110"
+          className="transition-transform duration-700 group-hover:scale-110"
           priority={priority}
+          fallbackClassName="bg-surface-2"
         />
       ) : (
         <div className="w-full h-full bg-surface-2 flex items-center justify-center">

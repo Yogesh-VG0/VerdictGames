@@ -120,7 +120,7 @@ export default function HomepageClientSections({
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: index * 0.03, duration: 0.4 }}
                         >
-                          <GameCard game={game} prefetch={false} />
+                          <GameCard game={game} prefetch={false} priority={index < 2} />
                         </motion.div>
                       </div>
                     ))}
@@ -169,6 +169,7 @@ export default function HomepageClientSections({
                               alt={game.title}
                               sizes="(max-width: 640px) 50vw, 20vw"
                               className="transition-transform duration-700 group-hover:scale-110"
+                              priority={index < 2}
                               fallbackClassName="bg-surface-2"
                             />
                           )}
@@ -265,7 +266,7 @@ export default function HomepageClientSections({
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: index * 0.03, duration: 0.4 }}
                       >
-                        <GameCard game={game} prefetch={false} />
+                        <GameCard game={game} prefetch={false} priority={index < 2} />
                       </motion.div>
                     </div>
                   ))}

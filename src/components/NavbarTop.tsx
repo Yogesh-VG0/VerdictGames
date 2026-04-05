@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { useRef, useState, useEffect, useCallback, useSyncExternalStore, type KeyboardEvent as ReactKbEvent } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -12,6 +11,7 @@ import {
 } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
 import AuthModal from "./AuthModal";
+import SafeImage from "@/components/ui/SafeImage";
 import UserAvatar from "./UserAvatar";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
@@ -256,7 +256,7 @@ export default function NavbarTop() {
       <header className="sticky top-0 z-50 md:hidden bg-background/80 backdrop-blur-xl border-b border-border">
         <div className="flex items-center justify-between px-4 h-14">
           <Link href="/" prefetch={false} className="flex items-center gap-2.5 group">
-            <Image
+            <SafeImage
               src="/VERDICT_LOGO_main.png"
               alt="Verdict Games"
               width={44}
@@ -471,7 +471,7 @@ export default function NavbarTop() {
         <nav aria-label="Primary navigation" className="flex items-center gap-2 px-4 h-14 max-w-[1400px] mx-auto">
           {/* Logo */}
           <Link href="/" prefetch={false} className="shrink-0 flex items-center gap-3 pl-3 group">
-            <Image
+            <SafeImage
               src="/VERDICT_LOGO_main.png"
               alt="Verdict Games"
               width={48}

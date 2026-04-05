@@ -6,7 +6,7 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { getRawgList, type RawgListGameItem, type RawgListType } from "@/lib/api";
 import PlatformIcon from "@/components/ui/PlatformIcon";
-import Image from "next/image";
+import HeroImage from "@/components/ui/HeroImage";
 import { Flame, Trophy, Clock, Star, Gamepad2, Users, TrendingUp } from "lucide-react";
 import Pagination from "@/components/ui/Pagination";
 import { cn } from "@/lib/utils";
@@ -71,13 +71,13 @@ function GameCard({ game, rank, priority = false }: { game: RawgListGameItem; ra
       {/* Image */}
       <div className="relative aspect-[16/9] overflow-hidden bg-surface-2">
         {game.image ? (
-          <Image
+          <HeroImage
             src={game.image}
             alt={game.name}
-            fill
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
-            className="object-cover group-hover:scale-105 transition-transform duration-500"
+            className="group-hover:scale-105 transition-transform duration-500"
             priority={priority}
+            fallbackClassName="bg-surface-2"
           />
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-accent/10 to-pixel-cyan/10 flex items-center justify-center">

@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
-import Image from "next/image";
+import type { ReactNode } from "react";
 import { Gamepad2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import SafeImage from "@/components/ui/SafeImage";
 
 /**
  * Resilient hero image component.
@@ -30,10 +30,7 @@ function HeroImageContent({
   fallback,
   fallbackClassName,
 }: HeroImageProps) {
-  const [useFallback, setUseFallback] = useState(false);
-  const [hasFailed, setHasFailed] = useState(false);
-
-  if (!src || hasFailed) {
+  if (!src) {
     return (
       <div
         className={cn(
@@ -46,22 +43,8 @@ function HeroImageContent({
     );
   }
 
-  if (useFallback) {
-    return (
-      /* eslint-disable-next-line @next/next/no-img-element */
-      <img
-        src={src}
-        alt={alt}
-        className={cn("absolute inset-0 w-full h-full object-cover", className)}
-        loading={priority ? "eager" : "lazy"}
-        fetchPriority={priority ? "high" : "auto"}
-        onError={() => setHasFailed(true)}
-      />
-    );
-  }
-
   return (
-    <Image
+    <SafeImage
       src={src}
       alt={alt}
       fill
@@ -69,7 +52,11 @@ function HeroImageContent({
       sizes={sizes}
       priority={priority}
       quality={85}
-      onError={() => setUseFallback(true)}
+      fallback={fallback ?? <Gamepad2 className="w-8 h-8 text-accent/35" />}
+      fallbackClassName={cn(
+        "absolute inset-0 flex items-center justify-center bg-gradient-to-br from-accent/10 via-surface-2 to-pixel-cyan/10",
+        fallbackClassName
+      )}
     />
   );
 }

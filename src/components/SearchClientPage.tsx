@@ -367,7 +367,6 @@ function SearchClientPageContent({ initialState, initialGamesData }: SearchClien
       : "Failed to load search results."
     : null;
   const pageHeader = useMemo(() => getSearchPageHeader(browseTab, freeSubTab, sort), [browseTab, freeSubTab, sort]);
-  const isTopRatedSort = browseTab === "games" && sort === "top-rated";
 
   const resetDealsFilters = useCallback(() => {
     setGxGenre("All");
@@ -587,24 +586,6 @@ function SearchClientPageContent({ initialState, initialGamesData }: SearchClien
               transition={{ duration: 0.2 }}
               className="space-y-4"
             >
-              <div className="flex flex-col gap-3 rounded-2xl border border-accent/20 bg-accent/10 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-foreground">
-                    {debouncedQuery
-                      ? `Loading results for “${debouncedQuery}”`
-                      : isTopRatedSort
-                        ? "Loading top-rated browse results"
-                        : "Loading browse results"}
-                  </p>
-                  <p className="text-xs text-secondary">
-                    Preparing responsive game cards for your current filters.
-                  </p>
-                </div>
-                <div className="flex items-center gap-2 text-xs text-secondary">
-                  <div className="w-4 h-4 border-2 border-accent border-t-transparent rounded-full animate-spin" />
-                  <span>Updating…</span>
-                </div>
-              </div>
               <GameGridSkeleton columns={5} rows={2} />
             </motion.div>
           ) : games.length > 0 ? (

@@ -4,8 +4,8 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
 import { ArrowLeft, Save, Search } from "lucide-react";
+import SafeImage from "@/components/ui/SafeImage";
 
 const VERDICT_OPTIONS = ["MUST PLAY", "WORTH IT", "MIXED", "SKIP", "COMING SOON"];
 
@@ -154,7 +154,7 @@ export default function NewEditorialReviewPage() {
                 >
                   <div className="w-12 h-16 rounded-lg overflow-hidden bg-surface shrink-0 relative">
                     {game.cover_image ? (
-                      <Image src={game.cover_image} alt="" fill className="object-cover" sizes="48px" />
+                      <SafeImage src={game.cover_image} alt="" fill className="object-cover" sizes="48px" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-tertiary text-xs">
                         ?
@@ -185,7 +185,7 @@ export default function NewEditorialReviewPage() {
         <div className="flex items-center gap-4">
           {selectedGame?.cover_image && (
             <div className="w-16 h-20 rounded-xl overflow-hidden bg-surface-2 shrink-0 relative">
-              <Image src={selectedGame.cover_image} alt="" fill className="object-cover" sizes="64px" />
+              <SafeImage src={selectedGame.cover_image} alt="" fill className="object-cover" sizes="64px" />
             </div>
           )}
           <div>

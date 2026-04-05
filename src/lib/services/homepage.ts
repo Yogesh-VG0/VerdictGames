@@ -119,9 +119,7 @@ function getHomepageQueryFetchLimit(limit: number, multiplier = 4): number {
 export function isHomepageTrendingEligible(row: GameRow): boolean {
   const currentPlayers = row.current_players ?? 0;
   const momentum = row.momentum ?? 0;
-  const ageDays = row.release_date
-    ? (Date.now() - new Date(`${row.release_date}T00:00:00`).getTime()) / 86400000
-    : Number.POSITIVE_INFINITY;
+  const ageDays = getHomepageReleaseAgeDays(row.release_date);
   const hasSharedTrendingSignal = hasBrowseTrendingSignal(row);
 
   if (row.is_trending_manual ?? false) {
@@ -132,10 +130,6 @@ export function isHomepageTrendingEligible(row: GameRow): boolean {
     return false;
   }
 
-  if (isRecentEnoughForHome(row, HOMEPAGE_TRENDING_MONTHS)) {
-    return true;
-  }
-
   if (ageDays > 365 * 4) {
     return ((row.trending ?? false) && currentPlayers >= 22000 && momentum >= 0.07)
       || (currentPlayers >= 26000 && momentum >= 0.08);
@@ -144,6 +138,10 @@ export function isHomepageTrendingEligible(row: GameRow): boolean {
   if (ageDays > 365 * 3) {
     return ((row.trending ?? false) && currentPlayers >= 17000 && momentum >= 0.06)
       || (currentPlayers >= 22000 && momentum >= 0.06);
+  }
+
+  if (isRecentEnoughForHome(row, HOMEPAGE_TRENDING_MONTHS)) {
+    return true;
   }
 
   return ((row.trending ?? false) && currentPlayers >= 12000 && momentum >= 0.04)

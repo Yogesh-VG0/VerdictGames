@@ -124,12 +124,12 @@ export function HeroSkeleton() {
 /** Section header skeleton. */
 export function SectionHeaderSkeleton() {
   return (
-    <div className="flex items-center justify-between mb-6">
+    <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-2 mb-6">
       <div className="space-y-2">
         <Skeleton className="h-7 w-56 rounded-lg" />
         <Skeleton className="h-3 w-72 rounded-lg" />
       </div>
-      <Skeleton className="h-4 w-20 rounded-lg" />
+      <Skeleton className="h-4 w-20 rounded-lg justify-self-end" />
     </div>
   );
 }

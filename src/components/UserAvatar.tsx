@@ -1,8 +1,7 @@
 "use client";
 
-import Image from "next/image";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import SafeImage from "@/components/ui/SafeImage";
 
 interface UserAvatarProps {
   src?: string | null;
@@ -22,9 +21,8 @@ const SIZE_MAP = {
 const PX_MAP = { xs: 24, sm: 28, md: 40, lg: 56, xl: 80 };
 
 export default function UserAvatar({ src, displayName, size = "md", className }: UserAvatarProps) {
-  const [imgError, setImgError] = useState(false);
   const initial = (displayName ?? "U").charAt(0).toUpperCase();
-  const showImage = !!src && !imgError;
+  const showImage = !!src;
 
   return (
     <div
@@ -35,14 +33,15 @@ export default function UserAvatar({ src, displayName, size = "md", className }:
       )}
     >
       {showImage ? (
-        <Image
+        <SafeImage
           src={src}
           alt={displayName ?? "User avatar"}
           width={PX_MAP[size]}
           height={PX_MAP[size]}
           className="object-cover w-full h-full"
-          onError={() => setImgError(true)}
           unoptimized
+          fallback={<span>{initial}</span>}
+          fallbackClassName="w-full h-full flex items-center justify-center"
         />
       ) : (
         <span>{initial}</span>

@@ -3,9 +3,9 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, use } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { ArrowLeft, Save, Eye, EyeOff, Star, ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
+import SafeImage from "@/components/ui/SafeImage";
 
 const VERDICT_OPTIONS = ["MUST PLAY", "WORTH IT", "MIXED", "SKIP", "COMING SOON"];
 
@@ -94,7 +94,7 @@ function EditorialReviewForm({
         <div className="flex items-center gap-4">
           {game.cover_image && (
             <div className="w-16 h-20 rounded-xl overflow-hidden bg-surface-2 shrink-0 relative">
-              <Image src={game.cover_image} alt="" fill className="object-cover" sizes="64px" />
+              <SafeImage src={game.cover_image} alt="" fill className="object-cover" sizes="64px" />
             </div>
           )}
           <div>

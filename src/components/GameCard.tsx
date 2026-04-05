@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Gamepad2 } from "lucide-react";
@@ -41,10 +42,11 @@ function scoreGlowBorder(score: number): string {
   return "hover:shadow-[0_0_20px_-8px_rgba(248,113,113,0.15)]";
 }
 
-function BlurImage({ src, alt, priority, className }: {
+function BlurImage({ src, alt, sizes, priority, className }: {
   src: string; alt: string; sizes?: string; priority?: boolean; className?: string;
 }) {
   const [status, setStatus] = useState<"loading" | "loaded" | "error">("loading");
+  const [useFallback, setUseFallback] = useState(false);
   const imageRef = useRef<HTMLImageElement | null>(null);
 
   const handleImageRef = useCallback((node: HTMLImageElement | null) => {
@@ -75,22 +77,40 @@ function BlurImage({ src, alt, priority, className }: {
       >
         <Gamepad2 className="w-7 h-7 text-accent/30" />
       </div>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        ref={handleImageRef}
-        src={src}
-        alt={alt}
-        className={cn(
-          "absolute inset-0 w-full h-full object-cover transition-all duration-700",
-          status === "loaded" ? "opacity-100 scale-100" : "opacity-0 scale-105 blur-sm",
-          className
-        )}
-        loading={priority ? "eager" : "lazy"}
-        decoding="async"
-        fetchPriority={priority ? "high" : undefined}
-        onLoad={(event) => setStatus(event.currentTarget.naturalWidth > 0 ? "loaded" : "error")}
-        onError={() => setStatus("error")}
-      />
+      {useFallback ? (
+        /* eslint-disable-next-line @next/next/no-img-element */
+        <img
+          ref={handleImageRef}
+          src={src}
+          alt={alt}
+          className={cn(
+            "absolute inset-0 w-full h-full object-cover transition-all duration-700",
+            status === "loaded" ? "opacity-100 scale-100" : "opacity-0 scale-105 blur-sm",
+            className
+          )}
+          loading={priority ? "eager" : "lazy"}
+          decoding="async"
+          fetchPriority={priority ? "high" : undefined}
+          onLoad={(event) => setStatus(event.currentTarget.naturalWidth > 0 ? "loaded" : "error")}
+          onError={() => setStatus("error")}
+        />
+      ) : (
+        <Image
+          src={src}
+          alt={alt}
+          fill
+          sizes={sizes ?? "(max-width: 640px) 44vw, (max-width: 768px) 208px, (max-width: 1024px) 224px, 240px"}
+          priority={priority}
+          quality={75}
+          className={cn(
+            "object-cover transition-all duration-700",
+            status === "loaded" ? "opacity-100 scale-100" : "opacity-0 scale-105 blur-sm",
+            className
+          )}
+          onLoad={(event) => setStatus(event.currentTarget.naturalWidth > 0 ? "loaded" : "error")}
+          onError={() => setUseFallback(true)}
+        />
+      )}
     </>
   );
 }
@@ -120,7 +140,7 @@ export default function GameCard({
                 key={game.coverImage}
                 src={game.coverImage}
                 alt={game.title}
-                sizes="(max-width: 640px) 100vw, 33vw"
+                sizes="(max-width: 640px) 88vw, (max-width: 1024px) 320px, 360px"
                 className="object-cover group-hover:scale-110"
                 priority={priority}
               />
@@ -216,7 +236,7 @@ export default function GameCard({
               key={game.coverImage}
               src={game.coverImage}
               alt={game.title}
-              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+              sizes="(max-width: 640px) 44vw, (max-width: 768px) 208px, (max-width: 1024px) 224px, 240px"
               className="object-cover group-hover:scale-110"
               priority={priority}
             />

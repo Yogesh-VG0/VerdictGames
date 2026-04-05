@@ -4,7 +4,6 @@ import { useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import Image from "next/image";
 import Link from "next/link";
 import { compareGames, searchGames } from "@/lib/api";
 import { cn, formatDate } from "@/lib/utils";
@@ -13,6 +12,7 @@ import ScoreRing from "@/components/ui/ScoreRing";
 import VerdictBadge from "@/components/ui/VerdictBadge";
 import PixelBadge from "@/components/ui/PixelBadge";
 import FadeInSection from "@/components/FadeInSection";
+import SafeImage from "@/components/ui/SafeImage";
 import { Skeleton } from "@/components/ui/Skeleton";
 import type { Game } from "@/lib/types";
 import { Swords, Gamepad2 } from "lucide-react";
@@ -92,7 +92,7 @@ function GameSearchInput({ value, onSelect, placeholder, inputId, inputName }: {
             >
               <div className="relative w-8 h-11 rounded-lg overflow-hidden shrink-0 bg-surface-2">
                 {g.coverImage ? (
-                  <Image src={g.coverImage} alt={g.title} fill sizes="32px" className="object-cover" />
+                  <SafeImage src={g.coverImage} alt={g.title} fill sizes="32px" className="object-cover" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-tertiary"><Gamepad2 className="w-3.5 h-3.5" /></div>
                 )}
@@ -121,7 +121,7 @@ function GameHeader({ game }: { game: Game }) {
     <Link href={`/game/${game.slug}`} className="flex flex-col items-center gap-3 group">
       <div className="relative w-24 h-32 sm:w-28 sm:h-36 rounded-xl overflow-hidden border border-border group-hover:border-accent/40 transition-colors bg-surface-2">
         {game.coverImage ? (
-          <Image src={game.coverImage} alt={game.title} fill sizes="112px" className="object-cover" />
+          <SafeImage src={game.coverImage} alt={game.title} fill sizes="112px" className="object-cover" />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-tertiary"><Gamepad2 className="w-6 h-6" /></div>
         )}

@@ -2,7 +2,6 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import Image from "next/image";
 import { motion } from "framer-motion";
 import { getGXPopularNews, getGXNewsFeed } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -10,6 +9,7 @@ import FadeInSection from "@/components/FadeInSection";
 import SectionHeader from "@/components/SectionHeader";
 import LazySection from "@/components/LazySection";
 import HeroImage from "@/components/ui/HeroImage";
+import SafeImage from "@/components/ui/SafeImage";
 import { Newspaper } from "lucide-react";
 
 export default function HomepageNewsSection() {
@@ -91,7 +91,7 @@ export default function HomepageNewsSection() {
                         </h3>
                         <div className="flex items-center gap-2">
                           {article.publisherFavicon && (
-                            <Image
+                            <SafeImage
                               src={article.publisherFavicon}
                               alt=""
                               width={14}
@@ -141,7 +141,7 @@ export default function HomepageNewsSection() {
                         </p>
                         <div className="flex items-center gap-1.5 mt-1">
                           {article.publisherFavicon && (
-                            <Image
+                            <SafeImage
                               src={article.publisherFavicon}
                               alt=""
                               width={12}

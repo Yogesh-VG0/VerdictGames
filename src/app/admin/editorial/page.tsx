@@ -1,11 +1,11 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState, useRef } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { Plus, Edit2, Trash2, ExternalLink, Eye, EyeOff, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
+import SafeImage from "@/components/ui/SafeImage";
 
 interface EditorialReview {
   id: string;
@@ -156,7 +156,7 @@ export default function AdminEditorialPage() {
                   <Link href={`/game/${review.games.slug}`} className="shrink-0">
                     <div className="w-16 h-20 rounded-lg overflow-hidden bg-surface-2 relative">
                       {review.games.cover_image ? (
-                        <Image
+                        <SafeImage
                           src={review.games.cover_image}
                           alt={review.games.title}
                           fill

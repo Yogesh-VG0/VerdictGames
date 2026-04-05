@@ -29,10 +29,10 @@ export default function SectionHeader({
 
   return (
     <div className={cn("mb-6 sm:mb-8", className)}>
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-1 sm:flex sm:items-start sm:justify-between">
         <HeadingTag
           className={cn(
-            "font-bold text-foreground flex items-center gap-2.5 tracking-tight",
+            "min-w-0 font-bold text-foreground flex items-center gap-2.5 tracking-tight",
             isPageHeading
               ? "text-3xl sm:text-4xl"
               : headingTag === "h3"
@@ -51,18 +51,18 @@ export default function SectionHeader({
           <Link
             href={href}
             prefetch={false}
-            className="text-xs text-accent hover:text-accent-hover font-semibold transition-colors flex items-center gap-1.5 shrink-0 whitespace-nowrap sm:pt-1"
+            className="justify-self-end self-start text-xs text-accent hover:text-accent-hover font-semibold transition-colors flex items-center gap-1.5 shrink-0 whitespace-nowrap sm:pt-1"
           >
             {linkLabel}
             <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 3l5 5-5 5" /></svg>
           </Link>
         )}
+        {subtitle && (
+          <p className={cn("col-span-full text-secondary mt-0.5 sm:mt-1.5", isPageHeading ? "text-sm sm:text-base max-w-2xl" : "text-sm")}>
+            {subtitle}
+          </p>
+        )}
       </div>
-      {subtitle && (
-        <p className={cn("text-secondary mt-1.5", isPageHeading ? "text-sm sm:text-base max-w-2xl" : "text-sm")}>
-          {subtitle}
-        </p>
-      )}
     </div>
   );
 }

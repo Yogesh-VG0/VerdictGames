@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useMemo, useRef, useEffect, useCallback, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import FadeInSection from "@/components/FadeInSection";
@@ -11,6 +10,7 @@ import PlatformIcon, {
   PLATFORM_FILTER_OPTIONS,
   getFilterPlatforms,
 } from "@/components/ui/PlatformIcon";
+import { getCalendarGames } from "@/lib/api";
 import { collapsePlatforms } from "@/lib/utils/platform";
 import { buildCalendarMonthOptions, buildCalendarPagePath } from "@/lib/utils/gx-calendar";
 import type { CalendarGame, CalendarMonthResponse, Platform } from "@/lib/types";
@@ -170,8 +170,9 @@ function getCalendarStatus(game: CalendarGame, today: string): { label: string; 
 }
 
 export default function CalendarClientPage({ initialMonth, initialMonthData, today, currentMonth }: CalendarClientPageProps) {
-  const router = useRouter();
-  const [isPending, startTransition] = useTransition();
+  const [selectedMonth, setSelectedMonth] = useState(initialMonth);
+  const [monthData, setMonthData] = useState(initialMonthData);
+  const [isMonthLoading, setIsMonthLoading] = useState(false);
   const [selectedPlatform, setSelectedPlatform] = useState<Platform | "All">("All");
   const [collapsedDays, setCollapsedDays] = useState<Set<string>>(new Set());
   const monthNavRef = useRef<HTMLDivElement>(null);
@@ -179,7 +180,15 @@ export default function CalendarClientPage({ initialMonth, initialMonthData, tod
   const dragStartX = useRef(0);
   const scrollStartX = useRef(0);
   const hasDragged = useRef(false);
+  const monthRequestId = useRef(0);
   const currentMonthDate = useMemo(() => new Date(`${currentMonth}-01T00:00:00Z`), [currentMonth]);
+
+  useEffect(() => {
+    monthRequestId.current += 1;
+    setSelectedMonth(initialMonth);
+    setMonthData(initialMonthData);
+    setIsMonthLoading(false);
+  }, [initialMonth, initialMonthData]);
 
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
     const element = monthNavRef.current;
@@ -214,7 +223,7 @@ export default function CalendarClientPage({ initialMonth, initialMonthData, tod
     }, 100);
   }, []);
 
-  const monthOptions = useMemo(() => buildCalendarMonthOptions(initialMonth, currentMonthDate), [currentMonthDate, initialMonth]);
+  const monthOptions = useMemo(() => buildCalendarMonthOptions(selectedMonth, currentMonthDate), [currentMonthDate, selectedMonth]);
 
   useEffect(() => {
     if (!monthNavRef.current) {
@@ -225,23 +234,23 @@ export default function CalendarClientPage({ initialMonth, initialMonthData, tod
     if (active) {
       active.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
     }
-  }, [initialMonth]);
+  }, [selectedMonth]);
 
   useEffect(() => {
     setCollapsedDays(new Set());
-  }, [initialMonth]);
+  }, [selectedMonth]);
 
   const games = useMemo(() => {
     if (selectedPlatform === "All") {
-      return initialMonthData.items;
+      return monthData.items;
     }
 
     const familyPlatforms = getFilterPlatforms(selectedPlatform);
-    return initialMonthData.items.filter((game) => {
+    return monthData.items.filter((game) => {
       const platforms = game.calendarEntryPlatforms ?? game.platforms;
       return familyPlatforms.some((platform) => platforms.includes(platform));
     });
-  }, [initialMonthData.items, selectedPlatform]);
+  }, [monthData.items, selectedPlatform]);
 
   const grouped = useMemo(() => {
     if (!games.length) return {} as Record<string, CalendarGame[]>;
@@ -265,15 +274,31 @@ export default function CalendarClientPage({ initialMonth, initialMonthData, tod
     });
   }, []);
 
-  const handleMonthChange = useCallback((month: string) => {
-    if (month === initialMonth) {
+  const loadMonth = useCallback(async (month: string) => {
+    const requestId = ++monthRequestId.current;
+    setIsMonthLoading(true);
+    const data = await getCalendarGames(month);
+
+    if (monthRequestId.current !== requestId) {
       return;
     }
 
-    startTransition(() => {
-      router.replace(buildCalendarPagePath(month), { scroll: false });
-    });
-  }, [initialMonth, router]);
+    setMonthData(data);
+    setIsMonthLoading(false);
+  }, []);
+
+  const handleMonthChange = useCallback((month: string) => {
+    if (month === selectedMonth) {
+      return;
+    }
+
+    hasDragged.current = false;
+    setSelectedMonth(month);
+    setCollapsedDays(new Set());
+    setIsMonthLoading(true);
+    window.history.replaceState(window.history.state, "", buildCalendarPagePath(month));
+    void loadMonth(month);
+  }, [loadMonth, selectedMonth]);
 
   return (
     <div className="max-w-[1400px] mx-auto px-4 py-8 sm:py-10 space-y-8 page-enter overflow-x-hidden">
@@ -295,6 +320,7 @@ export default function CalendarClientPage({ initialMonth, initialMonthData, tod
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerUp}
           onPointerLeave={handlePointerUp}
         >
           {monthOptions.map((monthOption) => {
@@ -302,7 +328,10 @@ export default function CalendarClientPage({ initialMonth, initialMonthData, tod
             return (
               <button
                 key={monthOption.key}
-                data-active={monthOption.key === initialMonth}
+                data-active={monthOption.key === selectedMonth}
+                onPointerDown={() => {
+                  hasDragged.current = false;
+                }}
                 onClick={(e) => {
                   if (hasDragged.current) {
                     e.preventDefault();
@@ -311,17 +340,16 @@ export default function CalendarClientPage({ initialMonth, initialMonthData, tod
                   handleMonthChange(monthOption.key);
                 }}
                 className={`shrink-0 px-3 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all relative ${
-                  monthOption.key === initialMonth
+                  monthOption.key === selectedMonth
                     ? "bg-accent text-white shadow-lg shadow-accent/20"
                     : isCurrent
                       ? "bg-accent/10 border border-accent/30 text-accent"
                       : "bg-surface border border-border text-secondary hover:text-foreground hover:border-border-hover"
                 }`}
-                disabled={isPending}
               >
                 <span className="hidden sm:inline">{monthOption.label}</span>
                 <span className="sm:hidden">{monthOption.shortLabel}</span>
-                {isCurrent && monthOption.key !== initialMonth && (
+                {isCurrent && monthOption.key !== selectedMonth && (
                   <span className="absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-accent ring-2 ring-background" />
                 )}
               </button>
@@ -349,7 +377,7 @@ export default function CalendarClientPage({ initialMonth, initialMonthData, tod
             </button>
           ))}
           <span className="shrink-0 self-center text-[10px] text-tertiary ml-auto pl-2">
-            {isPending ? "Loading…" : `${games.length} game${games.length !== 1 ? "s" : ""}`}
+            {isMonthLoading ? "Loading…" : `${games.length} game${games.length !== 1 ? "s" : ""}`}
           </span>
         </div>
       </div>
@@ -357,12 +385,12 @@ export default function CalendarClientPage({ initialMonth, initialMonthData, tod
       <AnimatePresence mode="wait">
         {games.length > 0 ? (
           <motion.div
-            key={initialMonth}
+            key={selectedMonth}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.3 }}
-            className={`space-y-4 transition-opacity ${isPending ? "opacity-60 pointer-events-none" : ""}`}
+            className={`space-y-4 transition-opacity ${isMonthLoading ? "opacity-60" : ""}`}
           >
             {Object.entries(grouped).map(([date, dayGames]) => {
               const formatted = date === "TBA"
@@ -550,7 +578,7 @@ export default function CalendarClientPage({ initialMonth, initialMonthData, tod
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className={`text-center py-16 space-y-4 transition-opacity ${isPending ? "opacity-60" : ""}`}
+            className={`text-center py-16 space-y-4 transition-opacity ${isMonthLoading ? "opacity-60" : ""}`}
           >
             <CalendarX className="w-10 h-10 text-accent mx-auto" />
             <p className="text-foreground font-semibold text-lg">No releases found for this month</p>

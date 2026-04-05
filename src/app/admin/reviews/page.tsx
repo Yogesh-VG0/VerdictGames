@@ -2,7 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useRef, useEffect } from "react";
-import Image from "next/image";
+import SafeImage from "@/components/ui/SafeImage";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function fetchAdminReviews(page: number): Promise<any> {
@@ -116,7 +116,7 @@ function GameSearchPicker({
       <div className="flex items-center gap-3 rounded-xl border border-accent/30 bg-accent/5 px-4 py-3">
         {selectedCover && (
           <div className="w-8 h-11 rounded-lg overflow-hidden bg-surface-2 shrink-0 relative">
-            <Image src={selectedCover} alt="" fill className="object-cover" sizes="32px" />
+            <SafeImage src={selectedCover} alt="" fill className="object-cover" sizes="32px" />
           </div>
         )}
         <div className="flex-1 min-w-0">
@@ -172,7 +172,7 @@ function GameSearchPicker({
             >
               {game.coverImage && (
                 <div className="w-8 h-11 rounded-lg overflow-hidden bg-surface-2 shrink-0 relative">
-                  <Image src={game.coverImage} alt="" fill className="object-cover" sizes="32px" />
+                  <SafeImage src={game.coverImage} alt="" fill className="object-cover" sizes="32px" />
                 </div>
               )}
               <div className="flex-1 min-w-0">
@@ -375,7 +375,7 @@ export default function AdminReviewsPage() {
                 <div className="flex items-center gap-3 min-w-0">
                   {review.games?.cover_image && (
                     <div className="w-10 h-14 rounded-lg overflow-hidden bg-surface-2 shrink-0 relative">
-                      <Image src={review.games.cover_image} alt="" fill className="object-cover" sizes="40px" />
+                      <SafeImage src={review.games.cover_image} alt="" fill className="object-cover" sizes="40px" />
                     </div>
                   )}
                   <div className="min-w-0">

@@ -3,9 +3,9 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect, use } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import type { Game, VerdictLabel } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import SafeImage from "@/components/ui/SafeImage";
 
 /* ── API helpers ── */
 
@@ -144,7 +144,6 @@ export default function AdminGameEditor({ params }: { params: Promise<{ id: stri
   useEffect(() => {
     if (game.data) {
       const g = game.data;
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setForm({
         title: g.title ?? "",
         subtitle: g.subtitle ?? "",
@@ -413,7 +412,7 @@ export default function AdminGameEditor({ params }: { params: Promise<{ id: stri
         <div className="flex items-center gap-4">
           {game.data.coverImage && (
             <div className="w-16 h-22 rounded-xl overflow-hidden bg-surface-2 shrink-0 relative">
-              <Image src={game.data.coverImage} alt="" fill className="object-cover" sizes="64px" />
+              <SafeImage src={game.data.coverImage} alt="" fill className="object-cover" sizes="64px" />
             </div>
           )}
           <div>
@@ -760,7 +759,7 @@ export default function AdminGameEditor({ params }: { params: Promise<{ id: stri
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                   {form.screenshots.map((url, i) => (
                     <div key={i} className="group relative aspect-video rounded-xl overflow-hidden bg-surface-2 border border-border">
-                      <Image src={url} alt={`Screenshot ${i + 1}`} fill className="object-cover" sizes="200px" />
+                      <SafeImage src={url} alt={`Screenshot ${i + 1}`} fill className="object-cover" sizes="200px" />
                       <button
                         onClick={() => removeScreenshot(i)}
                         className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-danger/80 backdrop-blur text-white text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"

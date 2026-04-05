@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { getGlobalReviews, getTopRated, getSteamReviews, searchGames, getAllEditorialReviews } from "@/lib/api";
-import type { EditorialReviewWithGame } from "@/lib/api";
 import type { SteamPlayerReview } from "@/lib/api";
 import ReviewCard from "@/components/ReviewCard";
 import FilterChips from "@/components/ui/FilterChips";
@@ -15,7 +14,7 @@ import type { Platform } from "@/lib/types";
 import { PLATFORM_FILTER_OPTIONS, platformFilterIcon } from "@/components/ui/PlatformIcon";
 import { PenLine, Star, ThumbsUp, ThumbsDown, Search, MessageSquare, ChevronLeft, ChevronRight, PenSquare } from "lucide-react";
 import GradientText from "@/components/ui/GradientText";
-import Image from "next/image";
+import SafeImage from "@/components/ui/SafeImage";
 import { slugify } from "@/lib/utils/slugify";
 import { cn, formatDate } from "@/lib/utils";
 
@@ -206,7 +205,7 @@ export default function ReviewsPage() {
                       {/* Game Cover */}
                       <div className="w-16 h-20 rounded-lg overflow-hidden bg-surface-2 shrink-0 relative">
                         {review.games.cover_image ? (
-                          <Image
+                          <SafeImage
                             src={review.games.cover_image}
                             alt={review.games.title}
                             fill
@@ -322,7 +321,7 @@ export default function ReviewsPage() {
                       className="w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-surface-2 transition-colors text-sm"
                     >
                       {game.coverImage && (
-                        <Image src={game.coverImage} alt="" width={24} height={32} className="rounded object-cover shrink-0" />
+                        <SafeImage src={game.coverImage} alt="" width={24} height={32} className="rounded object-cover shrink-0" />
                       )}
                       <span className="text-foreground truncate">{game.title}</span>
                       {game.score > 0 && (
@@ -355,7 +354,7 @@ export default function ReviewsPage() {
                     <div className="flex items-center gap-4">
                       {steamReviewsQuery.data.coverImage && (
                         <Link href={`/game/${steamGameSlug}`} className="relative w-16 h-20 rounded-lg overflow-hidden shrink-0 group">
-                          <Image
+                          <SafeImage
                             src={steamReviewsQuery.data.coverImage}
                             alt={steamReviewsQuery.data.gameTitle ?? "Game"}
                             fill

@@ -10,6 +10,7 @@ import HomepageClientSections from "@/components/HomepageClientSections";
 import HomepageNewsSection from "@/components/HomepageNewsSection";
 import GradientText from "@/components/ui/GradientText";
 import {
+  HOMEPAGE_REVALIDATE_SECONDS,
   loadHomepageData,
   loadHomepageMostAnticipated,
 } from "@/lib/services/homepage";
@@ -17,7 +18,11 @@ import {
 const CARD_WIDTH = "shrink-0 w-44 sm:w-52 md:w-56 lg:w-60 h-full";
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://www.verdict.games";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
+
+if (HOMEPAGE_REVALIDATE_SECONDS !== revalidate) {
+  throw new Error("Homepage page revalidate must stay aligned with the shared homepage loader contract.");
+}
 
 export const metadata: Metadata = {
   title: "The Verdict on Every Game",
@@ -86,9 +91,9 @@ export default async function HomePage() {
                   gradient="linear-gradient(90deg, #f97316 0%, #ef4444 25%, #f97316 50%, #eab308 75%, #f97316 100%)"
                 />
                 <HorizontalScroll>
-                  {trendingGames.map((game) => (
+                  {trendingGames.map((game, index) => (
                     <div key={game.id} className={CARD_WIDTH}>
-                      <GameCard game={game} />
+                      <GameCard game={game} priority={index < 2} />
                     </div>
                   ))}
                 </HorizontalScroll>
@@ -128,9 +133,9 @@ export default async function HomePage() {
                   gradient="linear-gradient(90deg, #facc15 0%, #f97316 25%, #eab308 50%, #22c55e 75%, #facc15 100%)"
                 />
                 <HorizontalScroll>
-                  {topRatedGames.map((game) => (
+                  {topRatedGames.map((game, index) => (
                     <div key={game.id} className={CARD_WIDTH}>
-                      <GameCard game={game} />
+                      <GameCard game={game} priority={index < 2} />
                     </div>
                   ))}
                 </HorizontalScroll>
