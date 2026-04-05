@@ -279,6 +279,29 @@ describe("top-rated quality gates", () => {
     expect(isHomepageTopRatedEvergreenBackfillCandidate(row)).toBe(true);
   });
 
+  it("keeps older high-review niche hits out of homepage top-rated when live presence has cooled too far", () => {
+    const row = makeGameRow({
+      title: "MiSide",
+      slug: "miside",
+      release_date: isoDaysAgo(480),
+      review_count: 136983,
+      steam_total_count: 136983,
+      steam_positive_count: 134243,
+      current_players: 315,
+      critic_score: null,
+      critic_source_count: 0,
+      igdb_rating: null,
+      rawg_metacritic: null,
+      verdict_score: 97,
+      score: 97,
+      confidence: 0.8,
+    });
+
+    expect(isQualityGame(row, "topRated")).toBe(true);
+    expect(isHomepageTopRatedEligible(row)).toBe(false);
+    expect(isHomepageTopRatedEvergreenBackfillCandidate(row)).toBe(false);
+  });
+
   it("keeps older mid-scale hits out of evergreen homepage top-rated backfill when their live presence is no longer elite", () => {
     const row = makeGameRow({
       title: "Two Point Museum",

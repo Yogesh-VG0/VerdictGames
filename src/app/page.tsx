@@ -50,9 +50,8 @@ export default async function HomePage() {
     loadHomepageMostAnticipated(),
   ]);
   const featured = homepage.hero.filter((game) => game.headerImage || game.coverImage).slice(0, 6);
-  const heroIds = new Set(featured.map((game) => game.id));
   const trendingGames = homepage.trending
-    .filter((game) => !heroIds.has(game.id) && game.coverImage)
+    .filter((game) => game.coverImage)
     .slice(0, 20);
   const hasTrendingGames = trendingGames.length > 0;
   const hasMostAnticipatedGames = mostAnticipatedGames.length > 0;
@@ -60,12 +59,6 @@ export default async function HomePage() {
     .filter((game) => game.coverImage)
     .slice(0, 20);
   const hasTopRatedGames = topRatedGames.length > 0;
-  const excludedRecommendationIds = [
-    ...featured,
-    ...trendingGames,
-    ...topRatedGames,
-    ...homepage.newReleases,
-  ].map((game) => game.id);
 
   return (
     <div className="space-y-0 page-enter">
@@ -155,7 +148,6 @@ export default async function HomePage() {
         initialRecommendations={homepage.recommendations}
         initialNewReleases={homepage.newReleases}
         initialDeals={homepage.deals}
-        excludedRecommendationIds={excludedRecommendationIds}
       />
 
       {/* ── 6. Gaming News ── */}

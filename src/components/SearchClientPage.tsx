@@ -76,8 +76,8 @@ function getSearchPageHeader(browseTab: SearchBrowseTab, freeSubTab: FreeSubTab,
       };
     case "top-rated":
       return {
-        title: "Top Rated & Active Games",
-        subtitle: "High verdict scores backed by strong evidence, live activity, and current relevance.",
+        title: "Top Rated Games",
+        subtitle: "Browse the highest-rated games across all platforms.",
         gradient: "linear-gradient(90deg, #facc15, #f97316, #22c55e)",
         icon: <Trophy className="w-6 h-6 text-yellow-500" />,
       };
@@ -560,7 +560,7 @@ export default function SearchClientPage({ initialState, initialGamesData }: Sea
                 { label: "Newest Released", value: "newest" as SortOption },
                 { label: "Upcoming", value: "upcoming" as SortOption },
                 { label: "Recently Added", value: "recently-added" as SortOption },
-                { label: "Top Rated & Active", value: "top-rated" as SortOption },
+                { label: "Top Rated", value: "top-rated" as SortOption },
                 { label: "Trending", value: "trending" as SortOption },
               ]}
               selected={sort}
@@ -572,19 +572,6 @@ export default function SearchClientPage({ initialState, initialGamesData }: Sea
           </div>
         </div>
       </div>
-      )}
-
-      {isTopRatedSort && (
-      <motion.div
-        initial={{ opacity: 0, y: 6 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.25 }}
-        className="rounded-2xl border border-yellow-500/20 bg-yellow-500/5 px-4 py-3"
-      >
-        <p className="text-sm text-secondary">
-          Ranked by verdict score, review evidence, player activity, and current relevance — not by the visible card score alone.
-        </p>
-      </motion.div>
       )}
 
       {browseTab === "games" && (

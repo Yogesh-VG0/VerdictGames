@@ -329,8 +329,8 @@ export function getSearchSeoCopy(state: SearchPageState): { title: string; descr
       };
     case "top-rated":
       return {
-        title: `Top Rated & Active Games${pageSuffix}`,
-        description: "Browse games ranked by verdict score, evidence strength, player activity, and current relevance on verdict.games.",
+        title: `Top Rated Games${pageSuffix}`,
+        description: "Browse the highest-rated games on verdict.games.",
       };
     case "newest":
       return {
