@@ -1,11 +1,12 @@
 import type { MetadataRoute } from "next";
 import { unstable_cache } from "next/cache";
+import { resolveStaticPageLastModified } from "@/lib/seo";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://www.verdict.games";
 const SITEMAP_REVALIDATE_SECONDS = 3600;
 
 /** Fixed build date for static pages — avoids crawler churn from new Date() every run */
-const BUILD_DATE = "2026-03-24T00:00:00Z";
+const BUILD_DATE = resolveStaticPageLastModified();
 
 export const dynamic = "force-dynamic";
 

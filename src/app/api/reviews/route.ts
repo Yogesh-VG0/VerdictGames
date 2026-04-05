@@ -8,6 +8,7 @@
 import { NextRequest } from "next/server";
 import { jsonOk, jsonError, jsonBadRequest } from "@/lib/api/response";
 import { mapReviewRow } from "@/lib/db/mappers";
+import { attachReviewVoteFields, getReviewVoteAggregates, getUserReviewVotes } from "@/lib/reviewVotes";
 import type { PaginatedResponse, Review } from "@/lib/types";
 
 const PAGE_SIZE = 12;
@@ -20,23 +21,16 @@ export async function GET(request: NextRequest) {
   const page = Number.isFinite(rawPage) && rawPage > 0 ? Math.min(rawPage, 100) : 1;
 
   try {
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
       const empty: PaginatedResponse<Review> = { items: [], total: 0, page, pageSize: PAGE_SIZE, hasMore: false };
       return jsonOk(empty);
     }
 
-    const { getServerSupabase } = await import("@/lib/supabase/server");
-    const supabase = getServerSupabase();
+    const { getAuthSupabase, getCurrentUser } = await import("@/lib/supabase/auth");
+    const supabase = await getAuthSupabase();
 
-    // Get current user for vote state (optional)
-    let currentProfileId: string | null = null;
-    try {
-      const { getCurrentUser } = await import("@/lib/supabase/auth");
-      const user = await getCurrentUser();
-      currentProfileId = user?.profileId ?? null;
-    } catch {
-      // Not authenticated
-    }
+    const user = await getCurrentUser();
+    const currentProfileId = user?.profileId ?? null;
 
     let query = supabase
       .from("reviews")
@@ -69,48 +63,17 @@ export async function GET(request: NextRequest) {
 
     if (error) throw error;
 
-    // Fetch vote aggregates
     const reviewIds = (data ?? []).map((r: Record<string, unknown>) => r.id as string);
-    const voteCounts: Record<string, { up: number; down: number }> = {};
-    const userVotes: Record<string, number> = {};
-
-    if (reviewIds.length > 0) {
-      const { data: voteData } = await supabase
-        .from("review_votes")
-        .select("review_id, value")
-        .in("review_id", reviewIds);
-
-      if (voteData) {
-        for (const v of voteData) {
-          if (!voteCounts[v.review_id]) voteCounts[v.review_id] = { up: 0, down: 0 };
-          if (v.value === 1) voteCounts[v.review_id].up++;
-          else if (v.value === -1) voteCounts[v.review_id].down++;
-        }
-      }
-
-      if (currentProfileId) {
-        const { data: myVotes } = await supabase
-          .from("review_votes")
-          .select("review_id, value")
-          .in("review_id", reviewIds)
-          .eq("profile_id", currentProfileId);
-
-        if (myVotes) {
-          for (const v of myVotes) {
-            userVotes[v.review_id] = v.value;
-          }
-        }
-      }
-    }
+    const voteCounts = await getReviewVoteAggregates(supabase, reviewIds);
+    const userVotes = await getUserReviewVotes(supabase, reviewIds, currentProfileId);
 
     const reviews = (data ?? []).map((row: Record<string, unknown>) => {
-      const reviewId = row.id as string;
-      const enriched = {
-        ...row,
-        vote_up_count: voteCounts[reviewId]?.up ?? 0,
-        vote_down_count: voteCounts[reviewId]?.down ?? 0,
-        user_vote_value: userVotes[reviewId] ?? null,
-      };
+      const enriched = attachReviewVoteFields(
+        row as unknown as Parameters<typeof attachReviewVoteFields>[0],
+        userVotes,
+        voteCounts
+      );
+
       return mapReviewRow(enriched as Parameters<typeof mapReviewRow>[0]);
     });
 
@@ -138,17 +101,19 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const { gameId, rating, title, bodyText, pros, cons, platform } = body;
+    const titleText = typeof title === "string" ? title.trim() : "";
+    const reviewBody = typeof bodyText === "string" ? bodyText.trim() : "";
 
     if (!gameId) return jsonBadRequest("gameId is required");
-    if (rating === undefined || rating < 0 || rating > 100) return jsonBadRequest("rating must be 0–100");
-    if (!title || title.length < 3) return jsonBadRequest("title must be at least 3 characters");
-    if (title.length > 200) return jsonBadRequest("title must be 200 characters or less");
-    if (bodyText && bodyText.length > 10000) return jsonBadRequest("review body must be 10,000 characters or less");
+    if (typeof rating !== "number" || !Number.isInteger(rating) || rating < 0 || rating > 100) return jsonBadRequest("rating must be an integer 0–100");
+    if (!titleText || titleText.length < 3) return jsonBadRequest("title must be at least 3 characters");
+    if (titleText.length > 200) return jsonBadRequest("title must be 200 characters or less");
+    if (reviewBody.length > 10000) return jsonBadRequest("review body must be 10,000 characters or less");
     if (Array.isArray(pros) && pros.length > 10) return jsonBadRequest("max 10 pros");
     if (Array.isArray(cons) && cons.length > 10) return jsonBadRequest("max 10 cons");
 
-    const { getServerSupabase } = await import("@/lib/supabase/server");
-    const supabase = getServerSupabase();
+    const { getAuthSupabase } = await import("@/lib/supabase/auth");
+    const supabase = await getAuthSupabase();
 
     // Check for existing review by this user on this game
     const { data: existing } = await supabase
@@ -166,8 +131,8 @@ export async function POST(request: NextRequest) {
         game_id: gameId,
         profile_id: user.profileId,
         rating,
-        title,
-        body: bodyText ?? "",
+        title: titleText,
+        body: reviewBody,
         pros: pros ?? [],
         cons: cons ?? [],
         platform: platform ?? "PC",

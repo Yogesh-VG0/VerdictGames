@@ -12,6 +12,7 @@ import { NextRequest } from "next/server";
 import { jsonOk, jsonNotFound } from "@/lib/api/response";
 import { mapReviewRow } from "@/lib/db/mappers";
 import { getAuthSupabase, getCurrentUser } from "@/lib/supabase/auth";
+import { attachReviewVoteFields, getReviewVoteAggregates, getUserReviewVotes } from "@/lib/reviewVotes";
 import type { PaginatedResponse, Review } from "@/lib/types";
 
 const PAGE_SIZE = 12;
@@ -83,51 +84,17 @@ export async function GET(
 
     if (error) throw error;
 
-    // Fetch vote aggregates for these reviews
     const reviewIds = (data ?? []).map((r: Record<string, unknown>) => r.id as string);
-    
-    const voteCounts: Record<string, { up: number; down: number }> = {};
-    const userVotes: Record<string, number> = {};
-
-    if (reviewIds.length > 0) {
-      // Get aggregate vote counts per review
-      const { data: voteData } = await supabase
-        .from("review_votes")
-        .select("review_id, value")
-        .in("review_id", reviewIds);
-
-      if (voteData) {
-        for (const v of voteData) {
-          if (!voteCounts[v.review_id]) voteCounts[v.review_id] = { up: 0, down: 0 };
-          if (v.value === 1) voteCounts[v.review_id].up++;
-          else if (v.value === -1) voteCounts[v.review_id].down++;
-        }
-      }
-
-      // Get current user's votes
-      if (currentProfileId) {
-        const { data: myVotes } = await supabase
-          .from("review_votes")
-          .select("review_id, value")
-          .in("review_id", reviewIds)
-          .eq("profile_id", currentProfileId);
-
-        if (myVotes) {
-          for (const v of myVotes) {
-            userVotes[v.review_id] = v.value;
-          }
-        }
-      }
-    }
+    const voteCounts = await getReviewVoteAggregates(supabase, reviewIds);
+    const userVotes = await getUserReviewVotes(supabase, reviewIds, currentProfileId);
 
     const reviews = (data ?? []).map((row: Record<string, unknown>) => {
-      const reviewId = row.id as string;
-      const enriched = {
-        ...row,
-        vote_up_count: voteCounts[reviewId]?.up ?? 0,
-        vote_down_count: voteCounts[reviewId]?.down ?? 0,
-        user_vote_value: userVotes[reviewId] ?? null,
-      };
+      const enriched = attachReviewVoteFields(
+        row as unknown as Parameters<typeof attachReviewVoteFields>[0],
+        userVotes,
+        voteCounts
+      );
+
       return mapReviewRow(enriched as Parameters<typeof mapReviewRow>[0]);
     });
 

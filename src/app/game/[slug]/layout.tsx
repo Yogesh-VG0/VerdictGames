@@ -1,6 +1,7 @@
 ﻿import { headers } from "next/headers";
 import type { Metadata } from "next";
 import { getGameDetailRawgIdFromHeaders, loadGameDetail } from "@/lib/services/game-detail";
+import { serializeJsonLd } from "@/lib/seo";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://www.verdict.games";
 const DEFAULT_OG_IMAGE = `${SITE_URL}/og-default.png`;
@@ -17,7 +18,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const detail = await loadGameDetail({ slug, rawgId });
 
   if (detail.status !== "ok") {
-    return { title: "Game Not Found | verdict.games" };
+    return { title: "Game Not Found" };
   }
 
   const game = detail.game;
@@ -100,7 +101,7 @@ export default async function GameLayout({ params, children }: Props) {
       {jsonLd && (
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+          dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
         />
       )}
       {children}

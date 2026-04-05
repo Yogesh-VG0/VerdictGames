@@ -9,7 +9,6 @@ import {
   getGXFreeToPlay,
 } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
-import { slugify } from "@/lib/utils/slugify";
 import { cn } from "@/lib/utils";
 import type { Game, GXDeal } from "@/lib/types";
 import FadeInSection from "@/components/FadeInSection";
@@ -160,58 +159,73 @@ export default function HomepageClientSections({
                   <HorizontalScrollSkeleton count={6} />
                 ) : gxFreeToPlay.data && gxFreeToPlay.data.length > 0 ? (
                   <HorizontalScroll>
-                    {gxFreeToPlay.data.slice(0, 20).map((game, index) => (
-                      <motion.div
-                        key={game.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.05, duration: 0.4 }}
-                        className={CARD_WIDTH}
-                      >
-                        <div className="flex flex-col h-full group rounded-2xl border border-border bg-surface overflow-hidden card-shimmer hover:border-pixel-green/30 transition-all duration-300">
-                          <Link href={`/game/${slugify(game.title)}`} prefetch={false} className="block">
-                            <div className="relative aspect-[3/4] overflow-hidden">
-                              {game.cover && (
-                                <HeroImage
-                                  src={game.cover}
-                                  alt={game.title}
-                                  sizes="(max-width: 640px) 50vw, 20vw"
-                                  className="transition-transform duration-700 group-hover:scale-110"
-                                  fallbackClassName="bg-surface-2"
-                                />
-                              )}
-                              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-                              <div className="absolute top-2.5 left-2.5">
-                                <span className="text-[10px] font-bold text-white bg-pixel-green/80 backdrop-blur-md px-2 py-0.5 rounded-lg border border-white/10">
-                                  FREE
-                                </span>
-                              </div>
-                            </div>
-                          </Link>
-                          <div className="p-3 flex-1 flex flex-col gap-1.5">
-                            <Link href={`/game/${slugify(game.title)}`} prefetch={false}>
-                              <h3 className="text-sm font-semibold text-foreground leading-tight line-clamp-1 group-hover:text-pixel-green transition-colors">
-                                {game.title}
-                              </h3>
-                            </Link>
-                            <span className="text-[10px] text-tertiary font-medium truncate min-h-[16px]">
-                              {game.genres.slice(0, 2).join(" · ") || "\u00A0"}
+                    {gxFreeToPlay.data.slice(0, 20).map((game, index) => {
+                      const gameHref = game.gameSlug ? `/game/${game.gameSlug}` : null;
+                      const artwork = (
+                        <div className="relative aspect-[3/4] overflow-hidden">
+                          {game.cover && (
+                            <HeroImage
+                              src={game.cover}
+                              alt={game.title}
+                              sizes="(max-width: 640px) 50vw, 20vw"
+                              className="transition-transform duration-700 group-hover:scale-110"
+                              fallbackClassName="bg-surface-2"
+                            />
+                          )}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                          <div className="absolute top-2.5 left-2.5">
+                            <span className="text-[10px] font-bold text-white bg-pixel-green/80 backdrop-blur-md px-2 py-0.5 rounded-lg border border-white/10">
+                              FREE
                             </span>
-                            {game.url && (
-                              <a
-                                href={game.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="mt-auto flex items-center justify-center gap-1.5 w-full px-3 py-2 rounded-xl text-xs font-bold transition-all duration-200 bg-pixel-green/15 text-pixel-green border border-pixel-green/20 hover:bg-pixel-green hover:text-black hover:border-pixel-green"
-                              >
-                                <ExternalLink className="w-3 h-3" />
-                                Play Free
-                              </a>
-                            )}
                           </div>
                         </div>
-                      </motion.div>
-                    ))}
+                      );
+
+                      return (
+                        <motion.div
+                          key={game.id}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: index * 0.05, duration: 0.4 }}
+                          className={CARD_WIDTH}
+                        >
+                          <div className="flex flex-col h-full group rounded-2xl border border-border bg-surface overflow-hidden card-shimmer hover:border-pixel-green/30 transition-all duration-300">
+                            {gameHref ? (
+                              <Link href={gameHref} prefetch={false} className="block">
+                                {artwork}
+                              </Link>
+                            ) : artwork}
+                            <div className="p-3 flex-1 flex flex-col gap-1.5">
+                              {gameHref ? (
+                                <Link href={gameHref} prefetch={false}>
+                                  <h3 className="text-sm font-semibold text-foreground leading-tight line-clamp-1 group-hover:text-pixel-green transition-colors">
+                                    {game.title}
+                                  </h3>
+                                </Link>
+                              ) : (
+                                <h3 className="text-sm font-semibold text-foreground leading-tight line-clamp-1 group-hover:text-pixel-green transition-colors">
+                                  {game.title}
+                                </h3>
+                              )}
+                              <span className="text-[10px] text-tertiary font-medium truncate min-h-[16px]">
+                                {game.genres.slice(0, 2).join(" · ") || "\u00A0"}
+                              </span>
+                              {game.url && (
+                                <a
+                                  href={game.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="mt-auto flex items-center justify-center gap-1.5 w-full px-3 py-2 rounded-xl text-xs font-bold transition-all duration-200 bg-pixel-green/15 text-pixel-green border border-pixel-green/20 hover:bg-pixel-green hover:text-black hover:border-pixel-green"
+                                >
+                                  <ExternalLink className="w-3 h-3" />
+                                  Play Free
+                                </a>
+                              )}
+                            </div>
+                          </div>
+                        </motion.div>
+                      );
+                    })}
                   </HorizontalScroll>
                 ) : (
                   <p className="text-secondary text-sm py-8 text-center">No free games available.</p>

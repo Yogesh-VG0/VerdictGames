@@ -974,6 +974,10 @@ export interface Database {
         Args: Record<string, never>;
         Returns: string;
       };
+      refresh_recent_game_momentum: {
+        Args: Record<string, never>;
+        Returns: number;
+      };
     };
     Enums: Record<string, never>;
   };

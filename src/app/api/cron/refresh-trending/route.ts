@@ -14,6 +14,7 @@
 
 import { NextRequest } from "next/server";
 import { jsonOk, jsonError } from "@/lib/api/response";
+import { slugify } from "@/lib/utils/slugify";
 
 const RAWG_BASE = "https://api.rawg.io/api";
 
@@ -71,15 +72,6 @@ function rawgIngestPriority(g: RawgTrendingItem, genrePenalty = 1): number {
   return base * genrePenalty;
 }
 
-function slugify(str: string): string {
-  return str
-    .toLowerCase()
-    .replace(/['']/g, "")
-    .replace(/&/g, "and")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
-
 export async function GET(request: NextRequest) {
   // Require CRON_SECRET for production security
   const cronSecret = process.env.CRON_SECRET;
@@ -133,7 +125,20 @@ export async function GET(request: NextRequest) {
   const runId = runRecord?.id;
 
   const trendingIds: string[] = [];
+  const trendingIdSet = new Set<string>();
   const log: string[] = [];
+  const today = new Date().toISOString().slice(0, 10);
+
+  const addTrendingGame = (id: string, entry: string) => {
+    if (trendingIdSet.has(id)) {
+      return false;
+    }
+
+    trendingIdSet.add(id);
+    trendingIds.push(id);
+    log.push(entry);
+    return true;
+  };
 
   // ── 1. Try IGDB PopScore ──
   try {
@@ -157,8 +162,7 @@ export async function GET(request: NextRequest) {
 
         const match = (matchRows as { id: string; title: string }[] | null)?.[0];
         if (match) {
-          trendingIds.push(match.id);
-          log.push(`  ✓ [IGDB] ${match.title} (pop: ${igdbGame.popScore.toFixed(3)})`);
+          addTrendingGame(match.id, `  ✓ [IGDB] ${match.title} (pop: ${igdbGame.popScore.toFixed(3)})`);
           continue;
         }
 
@@ -171,8 +175,7 @@ export async function GET(request: NextRequest) {
 
         const nameMatch = (nameRows as { id: string; title: string }[] | null)?.[0];
         if (nameMatch) {
-          trendingIds.push(nameMatch.id);
-          log.push(`  ✓ [IGDB name] ${nameMatch.title}`);
+          addTrendingGame(nameMatch.id, `  ✓ [IGDB name] ${nameMatch.title}`);
         }
       }
     }
@@ -199,9 +202,7 @@ export async function GET(request: NextRequest) {
           .limit(1);
 
         const gxMatch = (gxRows as { id: string; title: string }[] | null)?.[0];
-        if (gxMatch && !trendingIds.includes(gxMatch.id)) {
-          trendingIds.push(gxMatch.id);
-          log.push(`  ✓ [GX] ${gxMatch.title} (likes: ${gxGame.likesCount})`);
+        if (gxMatch && addTrendingGame(gxMatch.id, `  ✓ [GX] ${gxMatch.title} (likes: ${gxGame.likesCount})`)) {
           continue;
         }
 
@@ -213,9 +214,8 @@ export async function GET(request: NextRequest) {
             .limit(1);
 
           const nameMatch = (nameRows as { id: string; title: string }[] | null)?.[0];
-          if (nameMatch && !trendingIds.includes(nameMatch.id)) {
-            trendingIds.push(nameMatch.id);
-            log.push(`  ✓ [GX name] ${nameMatch.title}`);
+          if (nameMatch) {
+            addTrendingGame(nameMatch.id, `  ✓ [GX name] ${nameMatch.title}`);
           }
         }
       }
@@ -242,9 +242,7 @@ export async function GET(request: NextRequest) {
         .limit(1);
 
       const rmatch = (rawgRows as { id: string; title: string }[] | null)?.[0];
-      if (rmatch && !trendingIds.includes(rmatch.id)) {
-        trendingIds.push(rmatch.id);
-        log.push(`  ✓ [RAWG] ${rmatch.title}`);
+      if (rmatch && addTrendingGame(rmatch.id, `  ✓ [RAWG] ${rmatch.title}`)) {
       } else if (!rmatch) {
         missingGames.push(rg);
       }
@@ -281,9 +279,8 @@ export async function GET(request: NextRequest) {
       for (const mg of toIngest) {
         try {
           const result = await ingestGame({ query: mg.name, expectedSlug: mg.slug });
-          if (result.success && result.gameId && !trendingIds.includes(result.gameId)) {
-            trendingIds.push(result.gameId);
-            log.push(`  + [RAWG ingest] ${mg.name} → ${result.slug} (new: ${!result.alreadyExisted})`);
+          if (result.success && result.gameId) {
+            addTrendingGame(result.gameId, `  + [RAWG ingest] ${mg.name} → ${result.slug} (new: ${!result.alreadyExisted})`);
           }
         } catch (err) {
           log.push(`  ✗ [RAWG ingest] ${mg.name} failed: ${(err as Error).message}`);
@@ -307,6 +304,7 @@ export async function GET(request: NextRequest) {
       .not("id", "in", excludeClause)
       .not("release_date", "is", null)
       .gte("release_date", new Date(Date.now() - 4 * 365 * 86400000).toISOString().slice(0, 10))
+      .lte("release_date", today)
       .order("verdict_score", { ascending: false, nullsFirst: false })
       .order("score", { ascending: false })
       .limit(needed * 3) as unknown as { data: { id: string; title: string; score: number; verdict_score: number | null; release_date: string; current_players: number | null; is_featured_manual?: boolean; is_trending_manual?: boolean }[] | null };
@@ -327,8 +325,7 @@ export async function GET(request: NextRequest) {
       scored.sort((a, b) => b.freshness - a.freshness);
 
       for (const g of scored.slice(0, needed)) {
-        trendingIds.push(g.id);
-        log.push(`  + [freshness] ${g.title} (score: ${g.score}, freshness: ${g.freshness.toFixed(1)})`);
+        addTrendingGame(g.id, `  + [freshness] ${g.title} (score: ${g.score}, freshness: ${g.freshness.toFixed(1)})`);
       }
     }
   }
@@ -388,7 +385,7 @@ export async function GET(request: NextRequest) {
       }
 
       // Compute momentum for each game: log(current+1) - log(previous+1)
-      const { data: momentumUpdated, error: momentumError } = await ((supabase as any).rpc("refresh_recent_game_momentum") as Promise<{ data: number | null; error: { message: string } | null }>);
+      const { data: momentumUpdated, error: momentumError } = await supabase.rpc("refresh_recent_game_momentum");
       if (momentumError) throw momentumError;
       log.push(`📈 Updated momentum for ${momentumUpdated} games`);
     }

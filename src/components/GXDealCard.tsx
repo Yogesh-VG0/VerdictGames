@@ -6,7 +6,6 @@ import { ExternalLink } from "lucide-react";
 import HeroImage from "@/components/ui/HeroImage";
 import type { GXDeal } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { slugify } from "@/lib/utils/slugify";
 
 interface GXDealCardProps {
   deal: GXDeal;
@@ -15,15 +14,15 @@ interface GXDealCardProps {
 
 export default function GXDealCard({ deal, priority = false }: GXDealCardProps) {
   const hasDiscount = deal.discount && deal.discount > 0;
-  const gameHref = `/game/${slugify(deal.title)}`;
+  const gameHref = deal.gameSlug ? `/game/${deal.gameSlug}` : null;
   // Bundle deals go directly to the store — they have no meaningful internal page
   const isBundle = deal.badge?.toLowerCase().includes("bundle") ||
     deal.badge?.toLowerCase().includes("collection") ||
     deal.title.toLowerCase().includes("bundle") ||
     deal.title.toLowerCase().includes("collection") ||
     (deal.badge?.toLowerCase().includes("items"));
-  const cardHref = isBundle && deal.buyUrl ? deal.buyUrl : gameHref;
-  const isExternal = isBundle && !!deal.buyUrl;
+  const cardHref = isBundle ? (deal.buyUrl ?? gameHref) : (gameHref ?? deal.buyUrl);
+  const isExternal = Boolean(cardHref && (!gameHref || isBundle));
 
   // Price label for the CTA button
   const priceLabel = deal.price !== null
@@ -71,14 +70,16 @@ export default function GXDealCard({ deal, priority = false }: GXDealCardProps) 
       transition={{ duration: 0.3, ease: "easeOut" }}
       className="flex flex-col group rounded-2xl border border-border bg-surface overflow-hidden card-shimmer hover:border-accent/30 hover:shadow-[0_0_30px_-8px_rgba(168,85,247,0.15)] transition-all duration-500"
     >
-      {isExternal ? (
+      {cardHref && isExternal ? (
         <a href={cardHref} target="_blank" rel="noopener noreferrer" className="block">{imageContent}</a>
-      ) : (
+      ) : cardHref ? (
         <Link href={cardHref} prefetch={false} className="block">{imageContent}</Link>
+      ) : (
+        imageContent
       )}
 
       <div className="p-3.5 flex-1 flex flex-col gap-1.5">
-        {isExternal ? (
+        {cardHref && isExternal ? (
           <a
             href={cardHref}
             target="_blank"
@@ -87,7 +88,7 @@ export default function GXDealCard({ deal, priority = false }: GXDealCardProps) 
           >
             {deal.title}
           </a>
-        ) : (
+        ) : cardHref ? (
           <Link
             href={cardHref}
             prefetch={false}
@@ -95,6 +96,10 @@ export default function GXDealCard({ deal, priority = false }: GXDealCardProps) 
           >
             {deal.title}
           </Link>
+        ) : (
+          <div className="text-sm font-semibold text-foreground leading-tight line-clamp-1 group-hover:text-accent transition-colors">
+            {deal.title}
+          </div>
         )}
 
         {/* Store + genres — single row, never wraps, consistent height */}

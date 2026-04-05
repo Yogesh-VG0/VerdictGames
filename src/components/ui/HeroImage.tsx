@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import Image from "next/image";
 import { Gamepad2 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -11,15 +11,7 @@ import { cn } from "@/lib/utils";
  * Falls back to a raw <img> tag if next/image fails (e.g. unknown domain).
  * This lets admins set arbitrary header image URLs without breaking the hero.
  */
-export default function HeroImage({
-  src,
-  alt,
-  priority = false,
-  className,
-  sizes = "100vw",
-  fallback,
-  fallbackClassName,
-}: {
+type HeroImageProps = {
   src: string;
   alt: string;
   priority?: boolean;
@@ -27,14 +19,19 @@ export default function HeroImage({
   sizes?: string;
   fallback?: ReactNode;
   fallbackClassName?: string;
-}) {
+};
+
+function HeroImageContent({
+  src,
+  alt,
+  priority = false,
+  className,
+  sizes = "100vw",
+  fallback,
+  fallbackClassName,
+}: HeroImageProps) {
   const [useFallback, setUseFallback] = useState(false);
   const [hasFailed, setHasFailed] = useState(false);
-
-  useEffect(() => {
-    setUseFallback(false);
-    setHasFailed(false);
-  }, [src]);
 
   if (!src || hasFailed) {
     return (
@@ -75,4 +72,8 @@ export default function HeroImage({
       onError={() => setUseFallback(true)}
     />
   );
+}
+
+export default function HeroImage(props: HeroImageProps) {
+  return <HeroImageContent key={props.src} {...props} />;
 }

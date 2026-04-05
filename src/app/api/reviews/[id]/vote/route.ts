@@ -10,8 +10,8 @@
 
 import { NextRequest } from "next/server";
 import { jsonOk, jsonError, jsonBadRequest } from "@/lib/api/response";
-import { getCurrentUser } from "@/lib/supabase/auth";
-import { getServerSupabase } from "@/lib/supabase/server";
+import { getReviewVoteAggregates, getReviewVoteCounts } from "@/lib/reviewVotes";
+import { getAuthSupabase, getCurrentUser } from "@/lib/supabase/auth";
 
 export async function POST(
   request: NextRequest,
@@ -27,7 +27,7 @@ export async function POST(
 
     if (value !== 1 && value !== -1) return jsonBadRequest("value must be 1 or -1");
 
-    const supabase = getServerSupabase();
+    const supabase = await getAuthSupabase();
 
     // Check if user already has a vote on this review
     const { data: existingVote } = await supabase
@@ -62,26 +62,24 @@ export async function POST(
       if (error) throw error;
     }
 
-    // Recalculate and sync the helpful counter on the reviews table
-    const { data: allVotes } = await supabase
-      .from("review_votes")
-      .select("value")
-      .eq("review_id", reviewId);
-
-    const upCount = (allVotes ?? []).filter(v => v.value === 1).length;
-    const downCount = (allVotes ?? []).filter(v => v.value === -1).length;
-
-    // Sync reviews.helpful with actual up-vote count
-    await supabase
+    const { data: reviewRow, error: reviewError } = await supabase
       .from("reviews")
-      .update({ helpful: upCount })
-      .eq("id", reviewId);
+      .select("id, helpful")
+      .eq("id", reviewId)
+      .maybeSingle();
+
+    if (reviewError) throw reviewError;
+
+    if (!reviewRow) return jsonError("Review not found", 404);
+
+    const voteCounts = await getReviewVoteAggregates(supabase, [reviewId]);
+    const { helpful, notHelpful } = getReviewVoteCounts(reviewRow, voteCounts);
 
     return jsonOk({
-      voted: true,
+      voted: newVoteValue !== null,
       userVote: newVoteValue,
-      helpful: upCount,
-      notHelpful: downCount,
+      helpful,
+      notHelpful,
     });
   } catch (err) {
     console.error("[API] /reviews/[id]/vote error:", err);

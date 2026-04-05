@@ -39,3 +39,36 @@ export function buildSocialMetadata({
     },
   };
 }
+
+function resolveDateValue(value: string | undefined): Date | null {
+  if (!value) return null;
+
+  const parsed = Date.parse(value);
+  if (!Number.isFinite(parsed)) return null;
+
+  return new Date(parsed);
+}
+
+export function serializeJsonLd(value: unknown): string {
+  return JSON.stringify(value)
+    .replace(/</g, "\\u003c")
+    .replace(/>/g, "\\u003e")
+    .replace(/&/g, "\\u0026")
+    .replace(/\u2028/g, "\\u2028")
+    .replace(/\u2029/g, "\\u2029");
+}
+
+export function resolveStaticPageLastModified(): Date {
+  const sourceDateEpoch = process.env.SOURCE_DATE_EPOCH;
+  if (sourceDateEpoch && /^\d+$/.test(sourceDateEpoch)) {
+    return new Date(Number(sourceDateEpoch) * 1000);
+  }
+
+  return (
+    resolveDateValue(process.env.VERDICT_SITEMAP_LASTMOD)
+    ?? resolveDateValue(process.env.SITEMAP_LASTMOD)
+    ?? resolveDateValue(process.env.NEXT_PUBLIC_BUILD_TIME)
+    ?? resolveDateValue(process.env.BUILD_TIME)
+    ?? new Date()
+  );
+}

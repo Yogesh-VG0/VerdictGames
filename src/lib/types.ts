@@ -285,6 +285,7 @@ export interface GXDeal {
   id: string;
   title: string;
   cover: string | null;
+  gameSlug?: string | null;
   discount: number | null;
   price: number | null;
   currency: string | null;
@@ -311,6 +312,7 @@ export interface GXTopGame {
   id: string;
   title: string;
   cover: string | null;
+  gameSlug?: string | null;
   url: string | null;
   serviceName: string | null;
   serviceColor: string | null;
@@ -323,6 +325,7 @@ export interface GXFreeGame {
   id: string;
   title: string;
   cover: string | null;
+  gameSlug?: string | null;
   url: string | null;
   ctaLabel: string | null;
   genres: string[];

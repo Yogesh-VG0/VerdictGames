@@ -419,8 +419,7 @@ export async function getUserProfile(username: string): Promise<User | null> {
 
 /** Get reviews by a specific user. */
 export async function getUserReviews(username: string): Promise<Review[]> {
-  const allReviews = await getGlobalReviews({ sort: "newest", page: 1 });
-  return allReviews.items.filter((r) => r.username === username);
+  return (await apiFetch<Review[]>(`/api/profile/${encodeURIComponent(username)}/reviews`)) ?? [];
 }
 
 /* ═══════════════════════════════════════════════════
@@ -638,7 +637,7 @@ export async function getGXNewsFeed(): Promise<GXNewsItem[]> {
 }
 
 export async function getGXTopGames(): Promise<GXTopGame[]> {
-  return (await apiFetch<GXTopGame[]>("/api/gx/top-games")) ?? [];
+  return (await apiFetch<GXTopGame[]>("/api/gx/top-games?v=2", { cache: "no-store" })) ?? [];
 }
 
 export async function getGXFreeToPlay(): Promise<GXFreeGame[]> {
