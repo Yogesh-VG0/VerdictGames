@@ -5,7 +5,11 @@ import {
   loadGXFreeToPlay,
 } from "@/lib/services/gx-feeds";
 
-export const revalidate = GX_FEEDS_REVALIDATE_SECONDS;
+export const revalidate = 300;
+
+if (GX_FEEDS_REVALIDATE_SECONDS !== revalidate) {
+  throw new Error("GX free-to-play API route revalidate must match the shared GX feeds contract.");
+}
 
 export async function GET() {
   const games = await loadGXFreeToPlay();

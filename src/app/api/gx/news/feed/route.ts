@@ -7,7 +7,11 @@ import {
 } from "@/lib/services/gx-feeds";
 import type { GXNewsItem } from "@/lib/types";
 
-export const revalidate = GX_FEEDS_REVALIDATE_SECONDS;
+export const revalidate = 300;
+
+if (GX_FEEDS_REVALIDATE_SECONDS !== revalidate) {
+  throw new Error("GX news feed API route revalidate must match the shared GX feeds contract.");
+}
 
 export async function GET() {
   // News uses fresher 1-hour stale policy (vs 6h default for calendar/deals)

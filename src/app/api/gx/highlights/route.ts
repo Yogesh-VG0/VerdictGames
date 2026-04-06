@@ -6,7 +6,11 @@ import {
   GX_FEEDS_REVALIDATE_SECONDS,
 } from "@/lib/services/gx-feeds";
 
-export const revalidate = GX_FEEDS_REVALIDATE_SECONDS;
+export const revalidate = 300;
+
+if (GX_FEEDS_REVALIDATE_SECONDS !== revalidate) {
+  throw new Error("GX highlights API route revalidate must match the shared GX feeds contract.");
+}
 
 export async function GET() {
   const { data: highlights } = await gxFetchWithCache(
