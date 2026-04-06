@@ -411,13 +411,8 @@ verdict-games/
   - `scheduler:discover` — Heroku scheduler: discover new games
 
 ### `next.config.ts`
-- **Image remote patterns** — Whitelists image domains:
-  - `media.rawg.io` — RAWG game artwork
-  - `cdn.akamai.steamstatic.com`, `steamcdn-a.akamaihd.net`, `store.steampowered.com` — Steam assets
-  - `img.youtube.com` — YouTube trailer thumbnails
-  - `images.igdb.com` — IGDB cover art
-  - `upload.wikimedia.org` — Wikipedia images
-  - `picsum.photos`, `fastly.picsum.photos` — Placeholder images
+- **Security headers**: X-Frame-Options (DENY), X-Content-Type-Options (nosniff), Referrer-Policy (strict-origin-when-cross-origin), Permissions-Policy, HSTS, CSP (with conditional local Supabase dev support)
+- **Image remote patterns**: Wildcard `https://**` — allows all HTTPS image domains. This broad pattern supports the wide variety of image sources from RAWG, Steam, IGDB, Wikipedia, YouTube, alphacoders, admin-set URLs, etc.
 
 ### `tsconfig.json`
 - **Target**: ES2017
@@ -438,7 +433,7 @@ verdict-games/
 - Cron schedules intentionally disabled; Heroku is the recurring scheduler authority
 
 ### `Procfile`
-- Heroku process: `web: npm run start`
+- **No web dyno** — Heroku is scheduler-only (one-off dynos via Heroku Scheduler). Frontend + API hosted on Vercel.
 
 ---
 
@@ -454,8 +449,11 @@ verdict-games/
 | `TWITCH_CLIENT_ID` | Optional | Server only | Twitch/IGDB OAuth client ID |
 | `TWITCH_CLIENT_SECRET` | Optional | Server only | Twitch/IGDB OAuth client secret |
 | `NEXT_PUBLIC_SITE_URL` | Recommended | Client + Server | Base URL (e.g., `https://www.verdict.games`) |
+| `ADMIN_EMAILS` | Recommended | Server only | Comma-separated admin email list (controls admin access via `src/lib/adminEmails.ts`) |
 | `CRON_SECRET` | Optional | Server only | Secret for authenticating cron/ingest endpoints |
 | `DATABASE_URL` | Scripts only | CLI scripts | Direct PostgreSQL connection string |
+| `SOURCE_DATE_EPOCH` | Optional | Build time | Unix timestamp for reproducible sitemap lastModified dates |
+| `VERDICT_SITEMAP_LASTMOD` | Optional | Build time | ISO date string fallback for sitemap lastModified |
 
 ### `.env` vs `.env.local`
 - **Next.js runtime**: Use `.env.local` (recommended) or platform environment variables (Vercel/Heroku).
@@ -774,6 +772,85 @@ Tracks Heroku/Vercel scheduler job executions with advisory lock support.
 | `metadata` | JSONB | Job-specific output data |
 | `error` | TEXT | Error message if failed |
 
+#### `editorial_reviews` (Migration 020)
+Admin/editor curated reviews shown prominently on game pages.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | UUID | PRIMARY KEY |
+| `game_id` | UUID | FK → `games(id)` ON DELETE CASCADE |
+| `author_id` | UUID | FK → `profiles(id)` ON DELETE CASCADE |
+| `title` | TEXT | Optional headline |
+| `content` | TEXT | NOT NULL — supports markdown |
+| `score` | INTEGER | Optional score override (0–100) |
+| `verdict_label` | TEXT | Optional verdict override |
+| `pros` | TEXT[] | Default `'{}'` |
+| `cons` | TEXT[] | Default `'{}'` |
+| `playtime_hours` | DECIMAL(6,1) | Hours played by reviewer |
+| `platform_played` | TEXT | Platform reviewed on |
+| `version_reviewed` | TEXT | Game version at review time |
+| `is_published` | BOOLEAN | Default `false` |
+| `is_featured` | BOOLEAN | Default `false` — featured reviews shown first |
+| `published_at` | TIMESTAMPTZ | Auto-set when first published |
+
+**Unique constraint**: `(game_id, author_id)` — one editorial review per game per author.
+
+#### `api_provider_usage` (Migration 017)
+Hourly aggregated API usage metrics per external provider.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | UUID | PRIMARY KEY |
+| `provider` | TEXT | NOT NULL — `rawg`, `igdb`, `steam`, `gxcorner`, `cheapshark`, `hltb`, `wikipedia`, `googleplay`, `appstore` |
+| `endpoint` | TEXT | NOT NULL — specific endpoint or operation |
+| `request_count` | INTEGER | Default 1 |
+| `success_count` | INTEGER | Default 0 |
+| `error_count` | INTEGER | Default 0 |
+| `total_latency_ms` | INTEGER | Default 0 |
+| `hour_bucket` | TIMESTAMPTZ | Truncated to hour for aggregation |
+
+**Unique constraint**: `(provider, endpoint, hour_bucket)` — upsert-based aggregation.
+
+#### `api_provider_budgets` (Migration 017)
+Configurable budget limits and kill switches per external API provider.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | UUID | PRIMARY KEY |
+| `provider` | TEXT | UNIQUE, NOT NULL |
+| `daily_limit` | INTEGER | Max requests per day (null = unlimited) |
+| `hourly_limit` | INTEGER | Max requests per hour (null = unlimited) |
+| `monthly_limit` | INTEGER | Max requests per month (null = unlimited) |
+| `cost_per_request` | NUMERIC(10,6) | Cost in USD per request |
+| `is_enabled` | BOOLEAN | Default true — kill switch |
+| `notes` | TEXT | Description |
+
+**View**: `api_provider_daily_usage` — aggregates usage by day per provider (security_invoker, service_role only).
+
+#### `gx_cache` (Migration 019)
+Durable cache for GX Corner API responses with stale fallback.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `feed_key` | TEXT | PRIMARY KEY — `highlights`, `calendar`, `free_to_play`, `top_games`, `deals`, `top_liked`, `news_popular`, `news_feed` |
+| `payload` | JSONB | NOT NULL — cached JSON response |
+| `fetched_at` | TIMESTAMPTZ | When data was last successfully fetched |
+| `updated_at` | TIMESTAMPTZ | Auto-updated |
+
+**RLS**: Service role only (no public/authenticated access).
+
+#### `gx_calendar_month_snapshots` (Migration 022)
+Durable GX calendar snapshots keyed by month for stable release-calendar reads.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `month_key` | TEXT | PRIMARY KEY — `YYYY-MM` format |
+| `payload` | JSONB | NOT NULL — serialized GX calendar data |
+| `game_count` | INTEGER | NOT NULL, default 0 |
+| `source` | TEXT | NOT NULL, default `'gx'` |
+| `snapshot_version` | INTEGER | NOT NULL, default 1 |
+| `fetched_at` | TIMESTAMPTZ | When data was last fetched |
+
 **Additional `games` columns from later migrations:**
 
 | Column | Migration | Type | Notes |
@@ -798,6 +875,26 @@ Tracks Heroku/Vercel scheduler job executions with advisory lock support.
 | `critic_source_count` | 015 | INTEGER | Number of critic sources |
 | `confidence` | 015 | REAL | 0.0–1.0 trust level |
 | `verdict_score` | 015 | REAL | Final blended score 0–100 |
+| `media_source` | 016 | TEXT | Source of cover/header images: `steam`, `igdb`, `rawg`, `manual`, etc. |
+| `completeness_score` | 016 | INTEGER | Data completeness score 0–100 for admin filtering |
+| `is_adult` | 018 | BOOLEAN | True if game contains adult/NSFW content — excluded from public surfaces |
+| `steam_rating_label` | 024 | TEXT | e.g., "Very Positive", "Overwhelmingly Positive" |
+| `rawg_metacritic` | 024 | INTEGER | Metacritic score from RAWG |
+| `rawg_rating` | 024 | REAL | RAWG user rating (0–5) |
+| `score_source` | 024 | TEXT | Which source the score came from: `blended`, `steam`, `igdb` |
+
+**Additional `lists` columns (Migration 021 — System List Governance):**
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `preview_text` | TEXT | Short preview for list cards (default `''`) |
+| `body_text` | TEXT | Full list description body (default `''`) |
+| `is_system_managed` | BOOLEAN | True for system-curated/editorial lists (default `false`) |
+| `system_key` | TEXT | Unique key for system-managed lists |
+| `managed_by` | TEXT | Which pipeline manages this list (e.g. `'system-curated-lists'`) |
+| `seed_version` | INTEGER | Version number for seeding changes |
+| `seed_hash` | TEXT | Hash for detecting content changes |
+| `last_seeded_at` | TIMESTAMPTZ | When the list was last seeded |
 
 **Additional `profiles` columns:**
 
@@ -844,31 +941,61 @@ idx_review_comments_review      — review_comments(review_id)
 idx_review_comments_parent      — review_comments(parent_id) WHERE parent_id IS NOT NULL
 idx_review_votes_unique         — review_votes(review_id, profile_id) UNIQUE
 idx_review_votes_review         — review_votes(review_id)
+idx_lists_owner_id              — lists(owner_id) WHERE owner_id IS NOT NULL
+idx_review_comments_profile_id  — review_comments(profile_id)
+idx_review_votes_profile_id     — review_votes(profile_id)
+idx_games_completeness_score    — games(completeness_score)
+idx_games_is_adult              — games(is_adult) WHERE is_adult = true
+idx_games_media_source          — games(media_source)
+idx_games_verdict_score         — games(verdict_score DESC NULLS LAST)
+idx_games_confidence            — games(confidence DESC NULLS LAST)
+idx_games_community_score       — games(community_score DESC NULLS LAST)
+idx_games_verdict_confidence    — games(verdict_score DESC, confidence DESC) WHERE verdict_score IS NOT NULL
+idx_editorial_reviews_game      — editorial_reviews(game_id)
+idx_editorial_reviews_author    — editorial_reviews(author_id)
+idx_editorial_reviews_published — editorial_reviews(is_published, published_at DESC)
+idx_lists_system_key            — lists(system_key) WHERE system_key IS NOT NULL (UNIQUE)
+idx_player_snapshots_recorded_at — player_snapshots(recorded_at DESC)
+idx_scheduler_runs_job_started  — scheduler_runs(job_name, started_at DESC)
+idx_games_homepage_reco_pool    — composite partial index for homepage recommendation queries
+idx_games_homepage_toprated_pool — composite partial index for homepage top-rated queries
 ```
 
 ### 6.3 Triggers
 
-A single trigger function `update_updated_at_column()` automatically sets `updated_at = now()` on UPDATE for:
-- `games`
-- `profiles`
-- `reviews`
-- `lists`
- - `user_games` (migration 003)
- - `review_comments` (migration 003)
+**`update_updated_at_column()`** — automatically sets `updated_at = now()` on UPDATE for:
+- `games`, `profiles`, `reviews`, `lists`, `user_games` (migration 003), `review_comments` (migration 003), `editorial_reviews` (migration 020), `mobile_store_listings`
+- Uses `SET search_path = ''` to prevent search_path injection attacks.
 
-The function uses `SET search_path = ''` to prevent search_path injection attacks.
+**`handle_new_user()`** — trigger on `auth.users` INSERT (migration 004, hardened in 023/20260406):
+- Auto-creates a `profiles` row when a new user signs up.
+- Sanitizes username: lowercase, alphanumeric + underscore only, 3–24 chars.
+- Reserved word blocklist: admin, moderator, system, verdict, support, help, etc.
+- Collision handling: appends random 4-digit suffix, retries up to 20 times.
+
+**`sync_review_helpful_count()`** — trigger on `review_votes` INSERT/UPDATE/DELETE (migration 025):
+- Keeps `reviews.helpful` in sync with the count of upvotes (`value = 1`) from `review_votes`.
+
+**`set_editorial_published_at()`** — trigger on `editorial_reviews` INSERT/UPDATE (migration 020):
+- Auto-sets `published_at` when `is_published` transitions from false to true.
+
+**`refresh_recent_game_momentum()`** — SQL function (not trigger), callable by service_role (migration 20260403063000):
+- Batch updates `games.momentum` from recent `player_snapshots` data.
 
 ### 6.4 Row Level Security (RLS)
 
-RLS is enabled on **all 13 tables**:
-`games`, `profiles`, `game_sources`, `reviews`, `lists`, `list_items`, `user_games`, `follows`, `review_comments`, `review_votes`, `player_snapshots`, `steam_reviews`, `ingest_runs`, `admin_audit_log`, `mobile_store_listings`, `scheduler_runs`
+RLS is enabled on **all 21 tables**:
+`games`, `profiles`, `game_sources`, `reviews`, `lists`, `list_items`, `user_games`, `follows`, `review_comments`, `review_votes`, `player_snapshots`, `steam_reviews`, `ingest_runs`, `admin_audit_log`, `mobile_store_listings`, `scheduler_runs`, `editorial_reviews`, `api_provider_usage`, `api_provider_budgets`, `gx_cache`, `gx_calendar_month_snapshots`
 
 **Read policies** (public — `FOR SELECT USING (true)`):
-- All tables permit public reads
+- Most tables permit public reads
+- **Exceptions** (service_role only, no public read): `player_snapshots`, `scheduler_runs`, `gx_cache`, `gx_calendar_month_snapshots`, `api_provider_usage`, `api_provider_budgets`
+- `editorial_reviews` — public can read published only (`is_published = true`)
 
 **Service-role write policies** (`TO service_role`):
 - Full INSERT/UPDATE/DELETE access for server-side API routes
-- Tables: `games`, `game_sources`, `reviews`, `lists`, `list_items`, `player_snapshots`, `steam_reviews`, `ingest_runs`, `admin_audit_log`, `mobile_store_listings`, `scheduler_runs`
+- Tables: `games`, `game_sources`, `reviews`, `lists`, `list_items`, `player_snapshots`, `steam_reviews`, `ingest_runs`, `admin_audit_log`, `mobile_store_listings`, `scheduler_runs`, `gx_cache`, `gx_calendar_month_snapshots`, `api_provider_usage`, `api_provider_budgets`
+- `editorial_reviews` — admins (profiles with `role = 'admin'`) can manage all
 
 **Authenticated user self-management policies** (migration 004, optimized in 010/014):
 - `user_games` — users can insert/update/delete their own entries (scoped by `auth_profile_id()`)
@@ -986,6 +1113,70 @@ RLS is enabled on **all 13 tables**:
   - `verdict_score` (REAL) — final blended community + critic score, 0-100
 - Indexes: `idx_games_verdict_score`, `idx_games_confidence`, `idx_games_community_score`
 - Composite index: `idx_games_verdict_confidence` on `(verdict_score DESC, confidence DESC) WHERE verdict_score IS NOT NULL`
+
+**Migration 016: `016_media_provenance.sql`**
+- Adds `media_source` (TEXT) to `games` — tracks where cover/header images came from (steam, igdb, rawg, manual)
+- Adds `completeness_score` (INTEGER, default 0) to `games` — data completeness 0–100 for admin filtering
+- Backfills both columns based on URL patterns and existing data
+- Index: `idx_games_completeness_score`
+
+**Migration 017: `017_api_provider_usage.sql`**
+- Creates `api_provider_usage` table — hourly aggregated API call metrics per provider
+- Creates `api_provider_budgets` table — configurable rate limits, budget caps, and kill switches per provider
+- Creates `api_provider_daily_usage` view for daily aggregation
+- Seeds default budgets for all 9 known providers (rawg, igdb, steam, gxcorner, cheapshark, hltb, wikipedia, googleplay, appstore)
+- RLS: service_role full access, authenticated read access
+
+**Migration 018: `018_public_safety_columns.sql`**
+- Adds `is_adult` (BOOLEAN, default false) to `games` — NSFW content flag for public surface filtering
+- Partial index: `idx_games_is_adult` WHERE `is_adult = true`
+
+**Migration 019: `019_gx_cache_table.sql`**
+- Creates `gx_cache` table — durable cache for GX Corner API responses with stale fallback
+- RLS: service_role only (no public/authenticated access)
+
+**Migration 020: `020_editorial_reviews.sql`**
+- Creates `editorial_reviews` table for admin/editor curated reviews
+- Trigger: auto-sets `published_at` when first published, auto-updates `updated_at`
+- RLS: public can read published, admins can manage all
+- Indexes: game_id, author_id, published, featured
+
+**Migration 021: `021_system_list_governance.sql`**
+- Adds system list management columns to `lists`: `preview_text`, `body_text`, `is_system_managed`, `system_key`, `managed_by`, `seed_version`, `seed_hash`, `last_seeded_at`
+- Backfills editorial lists as system-managed
+- Unique index on `system_key`
+
+**Migration 022: `022_gx_calendar_month_snapshots.sql`**
+- Creates `gx_calendar_month_snapshots` table for durable monthly calendar data
+- RLS enabled, service_role access
+
+**Migration 023: `023_sanitize_username_trigger.sql`**
+- Replaces `handle_new_user()` trigger to sanitize auto-created usernames:
+  - Lowercase, alphanumeric + underscore only, 3–24 chars
+  - Falls back to `'user'` base if too short
+  - Appends random 4-digit suffix on collision (up to 5 attempts)
+
+**Migration 024: `024_score_source_columns.sql`**
+- Adds `steam_rating_label`, `rawg_metacritic`, `rawg_rating`, `score_source` to `games`
+- Backfills `score_source` from existing data (steam/igdb/blended)
+
+**Migration 025: `025_review_helpful_upvote_count.sql`**
+- Creates/replaces `sync_review_helpful_count()` trigger function — keeps `reviews.helpful` in sync with upvotes from `review_votes`
+- Backfills all existing `reviews.helpful` counts
+
+**Migration 026: `026_profile_auth_insert_policy.sql`**
+- Backfills `profiles.auth_id` from `auth.users` where missing
+- Creates "Users insert own profile" policy — authenticated users can insert their own profile row
+
+**Timestamped migrations (post-026):**
+
+| Migration | Purpose |
+|-----------|---------|
+| `20260403061500_fix_provider_usage_view_security.sql` | Locks down `api_provider_daily_usage` view to service_role only; removes authenticated read policies from usage/budgets tables |
+| `20260403062000_add_player_snapshots_recorded_at_index.sql` | Adds `idx_player_snapshots_recorded_at` for momentum queries |
+| `20260403063000_lock_internal_tables_and_batch_momentum.sql` | Removes public read from `player_snapshots`/`scheduler_runs`; creates `refresh_recent_game_momentum()` SQL function (batch momentum update); adds scheduler_runs indexes |
+| `20260403064000_add_homepage_surface_indexes.sql` | Adds composite partial indexes for homepage recommendation and top-rated pools (filters by score, review_count, confidence, cover_image presence) |
+| `20260406112000_harden_profile_username_trigger.sql` | Hardens `handle_new_user()` with reserved username blocklist (admin, moderator, system, verdict, etc.); increases collision retry to 20 attempts |
 
 ---
 
@@ -1166,6 +1357,12 @@ All API routes follow a consistent pattern:
 - Handles both `auth_id` (new schema) and `id` (legacy schema) profile lookups.
 - Returns: `{ created: true }` (new profile) or `{ created: false }` (already exists).
 
+#### `GET /api/auth/check-username`
+- Validates a username for availability and format compliance.
+- Uses centralized validation from `src/lib/auth/username.ts` (3–24 chars, alphanumeric + underscore, not reserved).
+- **Query params**: `username`
+- Returns: `{ available: boolean, reason?: string }`
+
 ### 8.2 Homepage Aggregator
 
 #### `GET /api/homepage`
@@ -1228,6 +1425,18 @@ All API routes follow a consistent pattern:
 - Upserts fetched reviews into `steam_reviews` table (conflict key: `game_id,recommendation_id`).
 - Returns: `{ reviews[], total, steamAppId, gameTitle, coverImage, source }` where source is `"cache"`, `"stale-cache"`, or `"fresh"`.
 - Each review includes: recommendationId, votedUp, reviewText, playtimeAtReview, playtimeForever, authorSteamId, authoredAt, votesUp, votesFunny, weightedVoteScore, steamPurchase.
+
+#### `GET /api/games/[slug]/editorial`
+- Returns published editorial reviews for a game.
+- Joins with `profiles` for author metadata.
+
+#### `GET /api/games/[slug]/related`
+- Returns related games based on shared genres, tags, franchise, and developer.
+- Uses `src/lib/services/relatedGames.ts` for weighted scoring.
+
+#### `GET /api/games/[slug]/system-requirements`
+- Returns PC system requirements (minimum/recommended) from Steam app details.
+- Requires game to have a `steam_app_id`.
 
 #### `GET /api/games/stats`
 - Returns site-wide counts: `{ totalGames, totalReviews, totalUsers, enrichmentSources }`
@@ -1305,6 +1514,10 @@ All API routes follow a consistent pattern:
 - Builds real recentActivity from reviews + user_games (merged, sorted, limited to 15).
 - List count uses `owner_id`.
 - Returns 404 if not found.
+
+#### `GET /api/profile/[username]/reviews`
+- Returns reviews authored by a specific user.
+- Joins with `games` for game metadata.
 
 #### `PATCH /api/profile/settings`
 - Updates the current user's profile fields.
@@ -1417,6 +1630,13 @@ All API routes follow a consistent pattern:
 - **Recurring scheduler authority**: Heroku Scheduler
 - Returns: `{ trendingCount, featuredCount, log[], timestamp }`
 
+#### `GET /api/cron/re-enrich`
+- Re-enriches stale games that haven't been updated recently.
+- Fetches games ordered by `last_enriched_at` (oldest first) and runs the enrichment pipeline on each.
+- **Auth**: Optional `CRON_SECRET` check
+- **Recurring scheduler authority**: Heroku Scheduler
+- Returns: `{ enriched, skipped, failed, timestamp }`
+
 ### 8.15 GX Corner Proxy Routes
 
 Server-side proxy routes for the 8 GX Corner feeds. Each route fetches from the GX Corner API via the client in `src/lib/external/gxcorner.ts` and returns the data directly. All routes use `export const revalidate = 3600` for 1-hour ISR caching.
@@ -1448,7 +1668,7 @@ Server-side proxy routes for the 8 GX Corner feeds. Each route fetches from the 
 
 ### 8.17 Admin Routes
 
-Protected admin API routes for managing games, reviews, and featured flags. All routes are guarded by `requireAdmin()` from `src/lib/admin.ts`, which checks the authenticated user's email against a hardcoded admin email list.
+Protected admin API routes for managing games, reviews, and featured flags. All routes are guarded by `requireAdmin()` from `src/lib/admin.ts`, which checks the authenticated user's email against the `ADMIN_EMAILS` environment variable (comma-separated list parsed by `src/lib/adminEmails.ts`).
 
 | Route | Method | Description |
 |-------|--------|-------------|
@@ -1457,18 +1677,33 @@ Protected admin API routes for managing games, reviews, and featured flags. All 
 | `/api/admin/games/[id]` | GET | Single game details for editing |
 | `/api/admin/games/[id]` | PATCH | Update game fields |
 | `/api/admin/games/[id]/ingest` | POST | Force re-ingest a game from external sources |
+| `/api/admin/games/[id]/delete` | DELETE | Permanently deletes a game and all related records |
+| `/api/admin/games/search-preview` | GET | Preview search results before ingestion |
 | `/api/admin/reviews` | GET | List all reviews (paginated) |
 | `/api/admin/reviews` | POST | Create a new editorial review |
 | `/api/admin/reviews` | DELETE | Delete a review by ID |
+| `/api/admin/editorial-reviews` | GET | List editorial reviews |
+| `/api/admin/editorial-reviews` | POST | Create/update an editorial review |
+| `/api/admin/editorial-reviews/[id]` | PATCH/DELETE | Update or delete a specific editorial review |
 | `/api/admin/featured` | POST | Toggle `is_featured_manual` or `is_trending_manual` on a game |
-| `/api/admin/games/[id]/delete` | DELETE | Permanently deletes a game and all related records. |
-| `/api/admin/audit` | GET | Returns the latest 50 entries from `admin_audit_log`, ordered by `edited_at` DESC. |
-| `/api/admin/users` | GET | Paginated list of user profiles with aggregated counts. |
-| `/api/admin/backfill-scores` | POST | Recomputes v2 scores (community_score, critic_score, confidence, verdict_score) for all games. |
-| `/api/admin/seed-lists` | POST | Seeds 12 editorial curated lists. |
-| `/api/admin/seed-lists` | GET | Returns metadata about available seed list definitions. |
+| `/api/admin/audit` | GET | Returns the latest 50 entries from `admin_audit_log`, ordered by `edited_at` DESC |
+| `/api/admin/users` | GET | Paginated list of user profiles with aggregated counts |
+| `/api/admin/backfill-scores` | POST | Recomputes v2 scores (community_score, critic_score, confidence, verdict_score) for all games |
+| `/api/admin/backfill-header-images` | POST | Batch backfill missing header images from Steam/IGDB |
+| `/api/admin/backfill-prices` | POST | Batch backfill missing prices from CheapShark/Steam |
+| `/api/admin/optimize-image` | POST | Server-side image optimization/proxy |
+| `/api/admin/provider-usage` | GET | API provider usage statistics and budget status |
+| `/api/admin/scheduler-runs` | GET | View recent scheduler job executions |
+| `/api/admin/scheduler-runs/trigger` | POST | Manually trigger a scheduler job |
+| `/api/admin/seed-lists` | POST | Seeds 22 editorial curated lists (via `src/lib/admin/seedEditorialLists.ts`) |
+| `/api/admin/seed-lists` | GET | Returns metadata about available seed list definitions |
+| `/api/admin/upload` | POST | Upload files (e.g. game images) to Supabase Storage |
 
-**Files**: `src/app/api/admin/stats/route.ts`, `src/app/api/admin/games/route.ts`, `src/app/api/admin/games/[id]/route.ts`, `src/app/api/admin/games/[id]/ingest/route.ts`, `src/app/api/admin/games/[id]/delete/route.ts`, `src/app/api/admin/reviews/route.ts`, `src/app/api/admin/featured/route.ts`, `src/app/api/admin/audit/route.ts`, `src/app/api/admin/users/route.ts`, `src/app/api/admin/backfill-scores/route.ts`, `src/app/api/admin/seed-lists/route.ts`
+#### `GET /api/editorial-reviews`
+- Public route returning published editorial reviews (not admin-only).
+- Used by game detail pages to display editorial content.
+
+**Files**: `src/app/api/admin/stats/route.ts`, `src/app/api/admin/games/route.ts`, `src/app/api/admin/games/[id]/route.ts`, `src/app/api/admin/games/[id]/ingest/route.ts`, `src/app/api/admin/games/[id]/delete/route.ts`, `src/app/api/admin/games/search-preview/route.ts`, `src/app/api/admin/reviews/route.ts`, `src/app/api/admin/editorial-reviews/route.ts`, `src/app/api/admin/editorial-reviews/[id]/route.ts`, `src/app/api/admin/featured/route.ts`, `src/app/api/admin/audit/route.ts`, `src/app/api/admin/users/route.ts`, `src/app/api/admin/backfill-scores/route.ts`, `src/app/api/admin/backfill-header-images/route.ts`, `src/app/api/admin/backfill-prices/route.ts`, `src/app/api/admin/optimize-image/route.ts`, `src/app/api/admin/provider-usage/route.ts`, `src/app/api/admin/scheduler-runs/route.ts`, `src/app/api/admin/scheduler-runs/trigger/route.ts`, `src/app/api/admin/seed-lists/route.ts`, `src/app/api/admin/upload/route.ts`
 
 ---
 
@@ -1477,13 +1712,52 @@ Protected admin API routes for managing games, reviews, and featured flags. All 
 ### `src/lib/services/ingest.ts` (~575 lines)
 Multi-source ingestion pipeline — see Section 10 (Ingestion Pipeline) for full details.
 
-### `src/lib/services/homepage.ts`
-- `fetchHomepageData()` — Aggregates all homepage sections in a single function.
-- Queries: hero (featured games), trending, topRated, newReleases, deals, recommendations, free-to-play.
-- Recency filters: trending 18mo, top rated 24mo (fallback 36mo), recommendations 36mo.
-- All queries sort by `verdict_score` first, fall back to legacy `score`.
-- Quality gates: `isQualityGame("topRated")` for top-rated (50+ reviews), `isQualityGame("recommended")` for recommendations (20+ reviews).
-- Excludes provisional/future/no-cover games from curated sections.
+### `src/lib/services/homepage.ts` (~1900 lines)
+- `fetchHomepageData()` — Aggregates all homepage sections in a single function with global cross-section dedup.
+- **Section contracts**: Hero (editorial + flagship), Trending (momentum-based), Top Rated (confidence-weighted), New Releases (newest first), Upcoming, Recently Added, Recommendations (anonymous high-quality discovery).
+- **Invariants**: Quality scoring ≠ surface readiness (never conflated). Every public rail passes `isSurfaceReady('homepageRail')`. Global dedup ensures each game appears in exactly one rail. Hero is NEVER derived from trending.
+- Uses `unstable_cache` for caching; bump the cache key when assembly logic changes.
+- Quality gates via `src/lib/utils/quality.ts`: `isQualityGame()`, `isSurfaceReady()`, `filterQualityGames()`, `confidenceWeightedScore()`.
+- Public safety filtering via `src/lib/utils/publicSafety.ts`: `isPublicSafeGame()` (excludes `is_adult` games).
+- Media readiness via `src/lib/utils/mediaReadiness.ts`: `hasUsableCardImage()`.
+
+### `src/lib/services/search.ts`
+- Server-side search service used by `/api/search`.
+- Implements multi-filter queries, browse tab logic (games/deals/free), sort modes, and JavaScript-side reranking for composite top-rated scoring.
+- `isBrowseTopRatedEligible()` / `getBrowseTopRatedScore()` — composite ranking using confidence-weighted score, review scale, activity, recency, critic bonus, momentum, and low-presence penalties.
+
+### `src/lib/services/calendar.ts`
+- Calendar service for `/api/calendar` and `/calendar` page.
+- Merges GX Corner calendar data with local DB upcoming games.
+- Uses `src/lib/external/gx-cache.ts` for durable GX calendar snapshots.
+
+### `src/lib/services/game-detail.ts`
+- Game detail enrichment for the `/game/[slug]` page.
+- Loads full game data with joined sources, reviews, editorial reviews.
+
+### `src/lib/services/gx-feeds.ts`
+- Centralized GX feed handlers for deals, free-to-play, and top-games.
+- Uses `gxFetchWithCache` for durable Supabase-backed caching.
+- Prefers canonical local `cover_image`/`header_image` for verified local matches.
+- Exports `GX_FEEDS_API_CACHE_CONTROL` (`s-maxage=300, stale-while-revalidate=3600`).
+
+### `src/lib/services/steam-reviews.ts`
+- Steam review fetching and caching service.
+- 24-hour TTL with stale-cache fallback on API failure.
+- Upserts into `steam_reviews` table.
+
+### `src/lib/services/relatedGames.ts`
+- Related games algorithm based on weighted scoring of shared genres, tags, franchise, and developer.
+- Used by `/api/games/[slug]/related`.
+
+### `src/lib/services/igdbBootstrap.ts`
+- IGDB bootstrap and token management for the ingestion pipeline.
+
+### `src/lib/external/gx-cache.ts` (~280 lines)
+- Supabase-backed durable cache for GX Corner API responses.
+- On fresh fetch success: updates cache + returns fresh data. On failure: returns last-known-good from cache.
+- Handles both `gx_cache` (general feeds) and `gx_calendar_month_snapshots` (monthly calendar data).
+- Filters promo/non-canonical entries via `shouldHideGXCalendarEntry()`.
 
 ### `src/lib/auditLog.ts` (35 lines)
 - Shared helper for writing admin audit log entries from any mutation route.
@@ -1491,6 +1765,70 @@ Multi-source ingestion pipeline — see Section 10 (Ingestion Pipeline) for full
 - `AuditLogEntry` interface: entity_type, entity_id, action (`create`|`update`|`delete`), field_changes (Record of old→new diffs), edited_by, reason.
 - Failures are caught and logged to console, never block the response.
 - Used by: admin game edit, admin review create/delete, admin featured toggle, seed-lists.
+
+### `src/lib/adminEmails.ts`
+- Parses `ADMIN_EMAILS` env var into a normalized lowercase array.
+- Exports: `ADMIN_EMAILS`, `isAdminEmail(email)`.
+
+### `src/lib/admin/seedEditorialLists.ts`
+- Shared 22-list editorial seeding helper used by `/api/admin/seed-lists`.
+
+### `src/lib/auth/username.ts`
+- Centralized username validation (3–24 chars, alphanumeric + underscore, reserved word blocklist).
+- Used by `AuthModal`, `/api/auth/check-username`, `/api/auth/bootstrap`.
+
+### `src/lib/seo.ts`
+- SEO utilities: `buildSocialMetadata()` (OpenGraph + Twitter card metadata), `serializeJsonLd()` (XSS-safe JSON-LD serialization), `resolveStaticPageLastModified()` (deterministic sitemap dates from env vars).
+
+### `src/lib/search.ts` (~357 lines)
+- Search state management: browse tabs (`games`/`deals`/`free`), filter normalization, query string building, SEO copy generation, robots indexability rules.
+- Exports: `parseSearchPageState()`, `buildSearchPagePath()`, `buildSearchApiPath()`, `getSearchRobotsRule()`, `getSearchSeoCopy()`, `SEARCH_GENRE_OPTIONS`.
+
+### `src/lib/reviewVotes.ts`
+- Review vote aggregation and attachment utilities.
+- Exports: `getReviewVoteAggregates()`, `getUserReviewVotes()`, `attachReviewVoteFields()`, `getReviewVoteCounts()`.
+
+### `src/lib/nav-active.ts`
+- Navigation active-state matching with path + query param support.
+- Exports: `isNavHrefActive()`, `hasActiveNavHref()`.
+
+### `src/lib/shared-nav.ts`
+- Shared navigation labels and destination paths for Browse, Deals, Free to Play.
+
+### `src/lib/supabase/public.ts`
+- Singleton public Supabase client (anon key, no session persistence).
+- Used by `sitemap.ts` and other server contexts where auth isn't needed.
+- Exports: `getPublicSupabase()`, `hasPublicSupabaseEnv()`.
+
+### `src/lib/db/columns.ts`
+- Shared column selection constants for Supabase queries (e.g. `GAME_CARD_COLUMNS_WITH_DESC`).
+- Prevents column drift across routes.
+
+### `src/lib/db/mappers.ts`
+- Row-to-model mapping functions: `mapGameRow()`, `mapReviewRow()`, etc.
+- Displays `Math.round(verdict_score)` when present.
+
+### `src/lib/proxy.ts`
+- In-memory rate limiting middleware for API routes.
+- Returns `X-RateLimit-*` headers. Note: in-memory only — not shared across serverless instances.
+
+### Utility Modules (`src/lib/utils/`)
+
+| File | Purpose |
+|------|---------|
+| `quality.ts` | Surface readiness (`isSurfaceReady`), quality gates (`isQualityGame`), confidence-weighted scoring, critic evidence checks |
+| `scoring.ts` | Wilson Lower Bound community score, critic blending, confidence weighting, verdict_score calculation |
+| `trending.ts` | Shared trending gates requiring stronger positive momentum for old/high-activity games |
+| `publicSafety.ts` | `isPublicSafeGame()` — filters `is_adult` games from public surfaces |
+| `mediaReadiness.ts` | `hasUsableCardImage()` — checks for valid cover/header images |
+| `homepageHero.ts` | Hero auto-selection criteria (strong critic backing, large evidence scale, or breakout demand) |
+| `curatedLists.ts` | Curated list readiness helpers — allows future releases via calendar-style readiness |
+| `gx-calendar.ts` | GX calendar utilities: month key generation, entry filtering, deduplication, promo/demo hiding |
+| `discovery.ts` | Discovery scoring and category logic for auto-ingestion |
+| `gameNotices.ts` | Game notice/warning generation |
+| `image-optimize.ts` | Image optimization helpers |
+| `publicCanonical.ts` | Public canonical URL generation |
+| `providerUsage.ts` | API provider usage tracking and budget checking |
 
 ---
 
@@ -1896,15 +2234,28 @@ Typed wrapper functions for all API endpoints. All functions use `fetch()` with 
 ### Utility Scripts
 - **`scripts/update-igdb-images.mjs`**: Updates IGDB cover/screenshot images for existing games.
 - **`scripts/backfill-mobile-listings.mjs`**: Batch verifies mobile store listings (Google Play + App Store). Flags: `--android-only`, `--ios-only`, `--limit=N`, `--dry-run`.
+- **`scripts/backfill-igdb-covers.mjs`**: Backfills IGDB cover images for games missing covers.
 - **`scripts/generate-icons.mjs`**: Generates PWA icon variants from source image.
 - **`scripts/verify-db.mjs`**: Verifies database connectivity and table existence.
+- **`scripts/verify-live-production.mjs`**: End-to-end sanity checks against the live production site.
+- **`scripts/analyze-live-responses.mjs`**: Analyzes live API responses for debugging.
+- **`scripts/seed-curated-lists.mjs`**: Seeds/refreshes 22 editorial curated lists (also used as Heroku Scheduler job).
+- **`scripts/seed-flags.mjs`**: Seeds featured/trending flags for games.
+- **`scripts/cleanup-public-safety.mjs`**: Cleans up adult/unsafe game flags.
+- **`scripts/fix-wrong-igdb-matches.mjs`**: Fixes incorrectly matched IGDB entries.
+- **`scripts/upgrade-rawg-to-igdb.mjs`**: Upgrades RAWG-only games to IGDB-enriched entries.
+- **`scripts/check-igdb.mjs`**: Diagnostic tool for IGDB API connectivity and matching.
+- **`scripts/import-games-from-file.mjs`**: Bulk imports games from a JSON/CSV file.
+- **`scripts/ingest-full-library.mjs`**: Full library ingestion (batch).
+- **`scripts/reingest-critical.mjs`**: Re-ingests critical/high-priority games.
+- **`scripts/refresh-all-games.mjs`**: Full catalog refresh.
+- **`scripts/refresh-games.mjs`**: Selective game refresh.
+- **`scripts/repair-missing-media.mjs`**: Repairs games with missing cover/header images.
 
 ### Script Library
-- **`scripts/lib/db-connect.mjs`**: Shared Supabase client for scripts (reads env vars).
-- **`scripts/lib/scheduler-logger.mjs`**: Logging utility for Heroku scheduler scripts.
-
-### Admin Override Scripts
-- `scripts/migrate-admin-overrides.mjs`: Adds `is_featured_manual`, `is_trending_manual`, `manual_score` columns to `games`.
+- **`scripts/lib/db-connect.mjs`**: Shared database connection helper (reads `DATABASE_URL` or `SUPABASE_DB_URL` env vars, creates `postgres` tagged-template client).
+- **`scripts/lib/scheduler-logger.mjs`**: Logging utility for Heroku scheduler scripts with structured output.
+- **`scripts/lib/ingest-pipeline.mjs`**: Self-contained ingestion pipeline with direct DB writes. Includes RAWG search, Steam reviews/details/players, IGDB search+details, CheapShark deals, Wikipedia summaries, HLTB playtimes, scoring engine (Wilson LB, critic blending, confidence, verdict), and source mappings. Exports: `ingestGameDirect()`, `reEnrichBatch()`, `slugify()`.
 
 ---
 
@@ -1929,7 +2280,8 @@ twitter: summary_large_image card
 
 ### Robots.txt (`src/app/robots.ts`)
 - Allow: `/` (all paths)
-- Disallow: `/api/`, `/profile/` (prevent API routes and profile pages from indexing)
+- Disallow: `/api/`, `/admin/` (prevent API routes and admin pages from indexing)
+- Separate Googlebot rule with same allow/disallow
 - Sitemap: `{SITE_URL}/sitemap.xml`
 
 ### Dynamic Sitemap (`src/app/sitemap.ts`)
@@ -1957,21 +2309,23 @@ twitter: summary_large_image card
 4. Set `NEXT_PUBLIC_SITE_URL` to production URL (e.g., `https://www.verdict.games`)
 5. Deploy — `vercel.json` hints `nextjs` framework
 
-### Heroku (Cron Scheduler + Backup Hosting)
-- `Procfile`: `web: npm run start`
-- `heroku-postbuild` script: `next build`
-- **Heroku Scheduler** — Add-on for automated jobs:
-  - `npm run scheduler:trending` — Daily trending refresh
-  - `npm run scheduler:discover` — Daily/weekly game discovery (~320 games per standard run)
-  - `npm run scheduler:discover -- --deep` — Weekly deep discovery (~700+ games)
-- Scheduler scripts run directly against Postgres and external APIs; `/api/cron/*` routes remain manual fallback endpoints only
+### Heroku (Scheduler Only — No Web Dyno)
+- `Procfile`: **No web dyno** — Heroku is scheduler-only (one-off dynos via Heroku Scheduler). Frontend + API hosted on Vercel.
+- **Heroku Scheduler** — Add-on for automated jobs (one-off dynos):
+  - `node scripts/heroku-refresh-trending.mjs` — Daily trending refresh + player count snapshots
+  - `node scripts/heroku-discover-games.mjs` — Daily/weekly game discovery (~320 games per standard run)
+  - `node scripts/heroku-discover-games.mjs --deep` — Weekly deep discovery (~700+ games)
+  - `node scripts/heroku-re-enrich.mjs` — Re-enriches stale games (oldest first)
+  - `node scripts/seed-curated-lists.mjs` — Seeds/refreshes 22 editorial curated lists
+- All scripts use `scripts/lib/ingest-pipeline.mjs` for direct DB writes via `postgres` (tagged template library) — **no CRON_SECRET or Vercel API calls needed**
+- Required Heroku env vars: `DATABASE_URL` (or `SUPABASE_DB_URL`), `RAWG_API_KEY`, optionally `TWITCH_CLIENT_ID`/`TWITCH_CLIENT_SECRET` for IGDB enrichment
 
-### Cron Job Setup
-- **Discover (Standard)**: Run `GET /api/cron/discover?secret=YOUR_SECRET` daily — fetches ~320 new games
-- **Discover (Deep)**: Run `GET /api/cron/discover?secret=YOUR_SECRET&deep=true` weekly — fetches ~700+ games
-- **Refresh Trending**: Run `GET /api/cron/refresh-trending?secret=YOUR_SECRET` daily
-- **Re-Enrich**: Run `GET /api/cron/re-enrich?secret=YOUR_SECRET` — refreshes stale games
-- Use these routes for manual fallback runs only; recurring production schedules run on Heroku
+### Cron Job Setup (Manual Fallback via Vercel API Routes)
+- **Discover (Standard)**: `GET /api/cron/discover?secret=YOUR_SECRET` — fetches ~320 new games
+- **Discover (Deep)**: `GET /api/cron/discover?secret=YOUR_SECRET&deep=true` — fetches ~700+ games
+- **Refresh Trending**: `GET /api/cron/refresh-trending?secret=YOUR_SECRET`
+- **Re-Enrich**: `GET /api/cron/re-enrich?secret=YOUR_SECRET` — refreshes stale games
+- These routes are **manual fallback only**; recurring production schedules run on Heroku Scheduler
 
 ---
 
@@ -2281,8 +2635,39 @@ Where `PRIOR_COUNT = 50` and `PRIOR_MEAN = 65`. This pulls low-review-count game
 | `src/lib/external/appstore.ts` | — | External | Apple App Store (iTunes) API client |
 | **Services** | | | |
 | `src/lib/services/ingest.ts` | ~575 | Service | Multi-source ingestion pipeline |
-| `src/lib/services/homepage.ts` | — | Service | Homepage data aggregator |
+| `src/lib/services/homepage.ts` | ~1900 | Service | Homepage data aggregator with cross-section dedup |
+| `src/lib/services/search.ts` | — | Service | Server-side search with composite top-rated ranking |
+| `src/lib/services/calendar.ts` | — | Service | Calendar service (GX + DB merging) |
+| `src/lib/services/game-detail.ts` | — | Service | Game detail enrichment |
+| `src/lib/services/gx-feeds.ts` | — | Service | GX feed handlers with durable cache |
+| `src/lib/services/steam-reviews.ts` | — | Service | Steam review fetching/caching |
+| `src/lib/services/relatedGames.ts` | — | Service | Related games algorithm |
 | `src/lib/services/igdbBootstrap.ts` | — | Service | IGDB token bootstrap (Twitch OAuth) |
+| **External (Cache)** | | | |
+| `src/lib/external/gx-cache.ts` | ~280 | External | Durable GX Corner cache (Supabase-backed) |
+| **Utility Modules** | | | |
+| `src/lib/utils/quality.ts` | — | Util | Surface readiness, quality gates, confidence scoring |
+| `src/lib/utils/scoring.ts` | — | Util | Wilson LB, critic blending, verdict scoring |
+| `src/lib/utils/trending.ts` | — | Util | Shared trending gates |
+| `src/lib/utils/publicSafety.ts` | — | Util | NSFW/adult content filtering |
+| `src/lib/utils/mediaReadiness.ts` | — | Util | Card image readiness checks |
+| `src/lib/utils/homepageHero.ts` | — | Util | Hero auto-selection criteria |
+| `src/lib/utils/curatedLists.ts` | — | Util | Curated list readiness helpers |
+| `src/lib/utils/gx-calendar.ts` | — | Util | GX calendar filtering/dedup |
+| `src/lib/utils/providerUsage.ts` | — | Util | API provider usage tracking |
+| **Lib Modules** | | | |
+| `src/lib/adminEmails.ts` | ~9 | Lib | Admin email list from env var |
+| `src/lib/admin/seedEditorialLists.ts` | — | Lib | 22-list editorial seeding helper |
+| `src/lib/auth/username.ts` | — | Lib | Centralized username validation |
+| `src/lib/auditLog.ts` | ~35 | Lib | Admin audit log writer |
+| `src/lib/seo.ts` | ~75 | Lib | SEO/OpenGraph/JSON-LD utilities |
+| `src/lib/search.ts` | ~357 | Lib | Search state management + SEO copy |
+| `src/lib/reviewVotes.ts` | ~104 | Lib | Review vote aggregation |
+| `src/lib/nav-active.ts` | ~60 | Lib | Navigation active-state matching |
+| `src/lib/shared-nav.ts` | ~23 | Lib | Shared navigation labels/paths |
+| `src/lib/proxy.ts` | — | Lib | In-memory rate limiting middleware |
+| `src/lib/db/columns.ts` | — | Lib | Shared column selection constants |
+| `src/lib/db/mappers.ts` | — | Lib | Row-to-model mapping functions |
 | **Supabase** | | | |
 | `src/lib/supabase/auth.ts` | — | Auth | Server-side auth helpers (getCurrentUser) |
 | `src/lib/supabase/client.ts` | ~30 | DB | Browser Supabase client |
@@ -2313,8 +2698,18 @@ Where `PRIOR_COUNT = 50` and `PRIOR_MEAN = 65`. This pulls low-review-count game
 | `scripts/migrate-refresh-lock.mjs` | — | Script | Add refresh_lock_until column |
 | `scripts/generate-icons.mjs` | — | Script | Generate PWA icon variants |
 | `scripts/verify-db.mjs` | — | Script | Verify DB connectivity |
-| `scripts/lib/db-connect.mjs` | — | Lib | Shared Supabase client for scripts |
+| `scripts/verify-live-production.mjs` | — | Script | Live production sanity checks |
+| `scripts/analyze-live-responses.mjs` | — | Script | Live API response analysis |
+| `scripts/backfill-igdb-covers.mjs` | — | Script | Backfill IGDB cover images |
+| `scripts/cleanup-public-safety.mjs` | — | Script | Clean adult/unsafe game flags |
+| `scripts/fix-wrong-igdb-matches.mjs` | — | Script | Fix incorrect IGDB matches |
+| `scripts/upgrade-rawg-to-igdb.mjs` | — | Script | Upgrade RAWG-only to IGDB-enriched |
+| `scripts/check-igdb.mjs` | — | Script | IGDB API diagnostic tool |
+| `scripts/import-games-from-file.mjs` | — | Script | Bulk import from JSON/CSV |
+| `scripts/repair-missing-media.mjs` | — | Script | Repair missing cover/header images |
+| `scripts/lib/db-connect.mjs` | — | Lib | Shared DB connection helper |
 | `scripts/lib/scheduler-logger.mjs` | — | Lib | Heroku scheduler logger |
+| `scripts/lib/ingest-pipeline.mjs` | — | Lib | Self-contained ingestion pipeline (direct DB) |
 
 ---
 

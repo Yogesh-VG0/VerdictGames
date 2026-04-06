@@ -32,14 +32,14 @@ Letterboxd for games — enriched with data from **9 external APIs** across all 
 | Browse & Filter |
 |-----------------|
 | ![Browse](docs/screenshots/browse-page.jpg) |
-| 11 platforms, genre, year, 6 sort modes — 1,700+ games |
+| 11 platforms, genre, year, 6 sort modes — 8,200+ games |
 
 ---
 
 ## Features
 
 ### Data & Discovery
-- **1,000+ games** with multi-source data from RAWG, Steam, IGDB, CheapShark, Wikipedia, HowLongToBeat & GX Corner
+- **8,200+ games** with multi-source data from RAWG, Steam, IGDB, CheapShark, Wikipedia, HowLongToBeat & GX Corner
 - **Auto-discovery** — Heroku scheduler discovers trending, new, and top-rated games daily
 - **Multi-source scoring** — Verdict Score combines community reviews, critic ratings, and confidence metrics
 - **Mobile store verification** — confidence-tiered matching against Google Play & App Store
@@ -51,7 +51,7 @@ Letterboxd for games — enriched with data from **9 external APIs** across all 
 - **Game deals** — filterable deals page with store/genre filters, 4 sort modes, powered by GX Corner
 - **Free-to-play** — free games + PS Plus / Game Pass subscription catalogs with tabbed browsing
 - **Release calendar** — merged GX + database data with platform filters and month navigation
-- **Curated lists** — 12 editorial lists with overlap enforcement and unique thumbnails
+- **Curated lists** — 22 system-curated editorial lists with overlap enforcement and unique thumbnails
 - **Game comparison** — side-by-side comparison with scores, stats, and HLTB data
 - **Cross-navigation** — quick nav bar on deals/free-to-play pages for seamless page switching
 
@@ -79,7 +79,7 @@ Letterboxd for games — enriched with data from **9 external APIs** across all 
 | **Language** | TypeScript 5 (strict mode) |
 | **Styling** | Tailwind CSS v4 — 50+ custom design tokens |
 | **Animation** | Framer Motion 12 |
-| **Database** | Supabase (PostgreSQL 17) — RLS, 15 migrations |
+| **Database** | Supabase (PostgreSQL 17) — RLS on all 21 tables, 32 migrations |
 | **State** | TanStack React Query 5 |
 | **Icons** | Lucide React |
 | **Data Sources** | RAWG, Steam, IGDB/Twitch, CheapShark, Wikipedia, HLTB, GX Corner |
@@ -95,7 +95,7 @@ Letterboxd for games — enriched with data from **9 external APIs** across all 
 │     Vercel       │─────▶│    Supabase      │◀─────│     Heroku      │
 │   (Next.js 16)   │      │  (PostgreSQL 17)  │      │   (Scheduler)   │
 │  Frontend + API  │      │   RLS + Auth     │      │   5 cron jobs   │
-│  60+ routes      │      │   15 migrations  │      │                 │
+│  70+ routes      │      │   32 migrations  │      │                 │
 └────────┬─────────┘      └──────────────────┘      └─────────────────┘
          │                         ▲
          ▼                         │
@@ -167,8 +167,8 @@ src/
 ├── app/                        # Next.js App Router
 │   ├── page.tsx                # Homepage (hero carousel, 11 sections)
 │   ├── admin/                  # Admin dashboard (games, reviews, users, audit)
-│   ├── api/                    # 60+ REST API routes
-│   │   ├── admin/              # Protected admin endpoints (11 routes)
+│   ├── api/                    # 70+ REST API routes
+│   │   ├── admin/              # Protected admin endpoints (21 routes)
 │   │   ├── cron/               # Manual fallback cron endpoints (3 routes)
 │   │   ├── games/              # Game data + deals/news/achievements
 │   │   ├── gx/                 # GX Corner proxy (8 feeds)
@@ -182,7 +182,7 @@ src/
 │   ├── compare/                # Side-by-side game comparison
 │   └── ...                     # reviews, lists, library, profile, settings
 │
-├── components/                 # 37 React components
+├── components/                 # 48 React components
 │   ├── ui/                     # Primitives (ScoreRing, FilterChips, Skeleton, etc.)
 │   ├── HeroCarousel.tsx        # Cinematic auto-advancing hero
 │   ├── GameCard.tsx            # Default + spotlight variants
@@ -191,15 +191,15 @@ src/
 │
 ├── lib/
 │   ├── external/               # 9 API clients (RAWG, Steam, IGDB, etc.)
-│   ├── services/               # Ingestion pipeline (13 enrichment steps)
+│   ├── services/               # Ingestion, homepage, search, calendar, GX feeds
 │   ├── supabase/               # Database client + typed schema
-│   ├── db/                     # Row mappers + scoring logic
-│   └── utils/                  # Score, slug, platform, quality helpers
+│   ├── db/                     # Row mappers, column selections
+│   └── utils/                  # Scoring, quality, trending, media readiness, public safety
 │
 ├── hooks/                      # useAuth, useTheme
 │
-scripts/                        # 25 Node.js CLI scripts
-supabase/                       # Derived schema snapshot + ordered migrations
+scripts/                        # 35 Node.js CLI scripts
+supabase/                       # Derived schema snapshot + 32 ordered migrations
 ```
 
 ---
