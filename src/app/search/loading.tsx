@@ -23,7 +23,7 @@ export default function SearchLoading() {
           ))}
         </div>
       </div>
-      <GameGridSkeleton count={8} />
+      <GameGridSkeleton columns={5} rows={2} />
     </div>
   );
 }

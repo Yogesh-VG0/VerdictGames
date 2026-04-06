@@ -1,9 +1,12 @@
 import { jsonOk } from "@/lib/api/response";
 import { getGXHighlights } from "@/lib/external/gxcorner";
 import { gxFetchWithCache } from "@/lib/external/gx-cache";
-import { GX_FEEDS_API_CACHE_CONTROL } from "@/lib/services/gx-feeds";
+import {
+  GX_FEEDS_API_CACHE_CONTROL,
+  GX_FEEDS_REVALIDATE_SECONDS,
+} from "@/lib/services/gx-feeds";
 
-export const dynamic = "force-dynamic";
+export const revalidate = GX_FEEDS_REVALIDATE_SECONDS;
 
 export async function GET() {
   const { data: highlights } = await gxFetchWithCache(

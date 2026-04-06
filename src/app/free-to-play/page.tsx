@@ -10,6 +10,7 @@ import type { GXFreeGame, GXTopGame } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import GXPageNav from "@/components/GXPageNav";
 import HeroImage from "@/components/ui/HeroImage";
+import { GameGridSkeleton } from "@/components/ui/Skeleton";
 
 type ActiveTab = "free" | "subscriptions";
 
@@ -158,18 +159,6 @@ function SubscriptionGameCard({ game, priority = false }: { game: GXTopGame; pri
             {game.serviceName ? `View on ${game.serviceName}` : "View"}
           </a>
         )}
-      </div>
-    </div>
-  );
-}
-
-function CardSkeleton() {
-  return (
-    <div className="rounded-2xl border border-border bg-surface overflow-hidden">
-      <div className="aspect-[3/4] bg-surface-2 animate-pulse" />
-      <div className="p-3 space-y-2">
-        <div className="h-4 w-3/4 bg-surface-2 rounded animate-pulse" />
-        <div className="h-3 w-1/2 bg-surface-2 rounded animate-pulse" />
       </div>
     </div>
   );
@@ -378,11 +367,7 @@ export default function FreeToPlayPage() {
 
       {/* Grid */}
       {isLoading ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-4">
-          {Array.from({ length: 12 }).map((_, i) => (
-            <CardSkeleton key={i} />
-          ))}
-        </div>
+        <GameGridSkeleton count={10} columns={5} />
       ) : filteredCount === 0 ? (
         <div className="py-16 text-center">
           <Gamepad2 className="w-12 h-12 text-tertiary mx-auto mb-3" />

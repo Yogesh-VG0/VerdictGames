@@ -7,6 +7,7 @@ import { Tag, SlidersHorizontal, Store } from "lucide-react";
 import { getGXDeals } from "@/lib/api";
 import GXDealCard from "@/components/GXDealCard";
 import GXPageNav from "@/components/GXPageNav";
+import { GameGridSkeleton } from "@/components/ui/Skeleton";
 import { cn } from "@/lib/utils";
 
 type SortMode = "discount" | "price-low" | "price-high" | "name";
@@ -188,17 +189,7 @@ export default function DealsPage() {
 
       {/* Grid */}
       {isLoading ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-4">
-          {Array.from({ length: 12 }).map((_, i) => (
-            <div key={i} className="rounded-2xl border border-border bg-surface overflow-hidden">
-              <div className="aspect-[3/4] bg-surface-2 animate-pulse" />
-              <div className="p-3.5 space-y-2">
-                <div className="h-4 w-3/4 bg-surface-2 rounded animate-pulse" />
-                <div className="h-3 w-1/2 bg-surface-2 rounded animate-pulse" />
-              </div>
-            </div>
-          ))}
-        </div>
+        <GameGridSkeleton count={10} columns={5} />
       ) : filtered.length === 0 ? (
         <div className="py-16 text-center">
           <Tag className="w-12 h-12 text-tertiary mx-auto mb-3" />

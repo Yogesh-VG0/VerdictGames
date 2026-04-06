@@ -1,10 +1,13 @@
 import { jsonOk } from "@/lib/api/response";
 import { getGXPopularNews } from "@/lib/external/gxcorner";
 import { gxFetchWithCache } from "@/lib/external/gx-cache";
-import { GX_FEEDS_API_CACHE_CONTROL } from "@/lib/services/gx-feeds";
+import {
+  GX_FEEDS_API_CACHE_CONTROL,
+  GX_FEEDS_REVALIDATE_SECONDS,
+} from "@/lib/services/gx-feeds";
 import type { GXNewsItem } from "@/lib/types";
 
-export const dynamic = "force-dynamic";
+export const revalidate = GX_FEEDS_REVALIDATE_SECONDS;
 
 export async function GET() {
   // News uses fresher 1-hour stale policy (vs 6h default for calendar/deals)
