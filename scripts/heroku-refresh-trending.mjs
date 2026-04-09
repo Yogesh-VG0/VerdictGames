@@ -146,39 +146,21 @@ async function getSteamAppName(appId) {
 
 async function applyPlayerCountUpdates(updates, timestamp) {
   let applied = 0;
-  for (let i = 0; i < updates.length; i += 250) {
-    const batch = updates
-      .slice(i, i + 250)
-      .map((update) => {
-        const players = Number(update?.players);
-        if (!update?.id || !Number.isFinite(players)) {
-          return null;
-        }
-
-        return {
-          id: update.id,
-          players: Math.max(0, Math.trunc(players)),
-        };
-      })
-      .filter(Boolean);
-
-    if (batch.length === 0) {
-      continue;
+  for (const update of updates) {
+    const players = Number(update?.players);
+    if (!update?.id || !Number.isFinite(players)) continue;
+    const safeCount = Math.max(0, Math.trunc(players));
+    try {
+      const result = await sql`
+        UPDATE games
+        SET current_players = ${safeCount},
+            players_updated_at = ${timestamp}
+        WHERE id = ${update.id}
+      `;
+      applied += Number(result.count ?? 0);
+    } catch (err) {
+      // Non-fatal: skip individual update failures
     }
-
-    const payload = JSON.stringify(batch);
-    const result = await sql`
-      WITH updates AS (
-        SELECT id::uuid AS id, players::integer AS players
-        FROM jsonb_to_recordset(${payload}::jsonb) AS updates(id text, players integer)
-      )
-      UPDATE games AS g
-      SET current_players = updates.players,
-          players_updated_at = ${timestamp}
-      FROM updates
-      WHERE g.id = updates.id
-    `;
-    applied += Number(result.count ?? 0);
   }
   return applied;
 }
