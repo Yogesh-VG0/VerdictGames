@@ -202,6 +202,7 @@ async function getCachedSteamReviews(
     .from("steam_reviews")
     .select("id, recommendation_id, voted_up, review_text, playtime_at_review, playtime_forever, author_steam_id, authored_at, votes_up, votes_funny, weighted_vote_score, steam_purchase, fetched_at")
     .eq("game_id", gameId)
+    .eq("language", "english")
     .order("weighted_vote_score", { ascending: false })
     .order("votes_up", { ascending: false })
     .limit(limit) as { data: CachedSteamReviewRow[] | null };
@@ -212,7 +213,7 @@ async function getCachedSteamReviews(
 async function fetchFreshSteamReviews(steamAppId: number, limit: number): Promise<FreshSteamReviewsResult | null> {
   const fetchLimit = Math.max(limit, STEAM_REVIEWS_FETCH_LIMIT);
   const response = await fetch(
-    `https://store.steampowered.com/appreviews/${steamAppId}?json=1&language=all&purchase_type=all&review_type=all&num_per_page=${fetchLimit}&cursor=*`,
+    `https://store.steampowered.com/appreviews/${steamAppId}?json=1&language=english&purchase_type=all&review_type=all&num_per_page=${fetchLimit}&cursor=*`,
     {
       headers: { Accept: "application/json" },
       next: { revalidate: 300 },
@@ -318,14 +319,8 @@ async function persistFreshSteamReviews(
     }
   }
 
-  const { error: gameError } = await supabase
-    .from("games")
-    .update({ steam_total_count: fresh.total })
-    .eq("id", game.id);
-
-  if (gameError) {
-    throw gameError;
-  }
+  // Do not update games.steam_total_count here: this fetch is English-only, while
+  // steam_total_count must stay the global all-languages total from ingest.
 }
 
 export async function loadSteamReviews(slug: string, limit = 3): Promise<SteamReviewsData> {
