@@ -114,7 +114,7 @@ Letterboxd for games — enriched with data from **9 external APIs** across all 
 
 ### Prerequisites
 
-- **Node.js** 18+
+- **Node.js** 20.9+
 - **npm** 9+
 - A [Supabase](https://supabase.com) project (free tier works)
 - [RAWG API key](https://rawg.io/apidocs) (free — 20K requests/month)

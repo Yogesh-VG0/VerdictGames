@@ -6,7 +6,7 @@ Complete guide for setting up the Supabase database, configuring API keys, runni
 
 ## Prerequisites
 
-- **Node.js 18+** and **npm 9+**
+- **Node.js 20.9+** and **npm 9+**
 - A [Supabase](https://supabase.com) project (free tier works)
 - A [RAWG](https://rawg.io/apidocs) API key (free, 20K requests/month)
 - (Optional) [Twitch/IGDB credentials](https://dev.twitch.tv/console) (free, 4 req/sec) — enriches games with IGDB ratings, trailers, screenshots

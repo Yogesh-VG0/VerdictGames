@@ -400,7 +400,7 @@ verdict-games/
 ## 4. Configuration Files
 
 ### `package.json`
-- **Engine requirements**: Node.js ≥ 18, npm ≥ 9
+- **Engine requirements**: Node.js ≥ 20.9, npm ≥ 9
 - **Scripts**:
   - `dev` — Start dev server with Turbopack (`next dev`)
   - `build` — Production build (`next build`)
