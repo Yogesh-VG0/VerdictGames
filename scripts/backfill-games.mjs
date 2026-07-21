@@ -40,7 +40,7 @@ try {
     const key = t.slice(0, i).trim();
     if (!process.env[key]) process.env[key] = t.slice(i + 1).trim();
   }
-} catch { /* Heroku Config Vars */ }
+} catch { /* Use process environment variables. */ }
 
 // ── Args ──
 const args = Object.fromEntries(
@@ -191,6 +191,8 @@ try {
   let skipped = 0;
   let errors = 0;
   const errorDetails = [];
+  let rawgRequests = 0;
+  let rawgFailures = 0;
 
   // ── Year loop ──
   for (let year = resumeYear; year >= YEAR_FROM; year--) {
@@ -208,8 +210,10 @@ try {
     while (fetched < LIMIT) {
       let data;
       try {
+        rawgRequests++;
         data = await rawgFetch(`/games?dates=${dateFrom},${dateTo}&ordering=-rating&page=${page}&page_size=${PAGE_SIZE}&metacritic=60,100&exclude_additions=true`);
       } catch (e) {
+        rawgFailures++;
         console.log(`  ✗ RAWG error p${page}: ${e.message}`);
         break;
       }
@@ -278,6 +282,13 @@ try {
     }
 
     console.log(`  Year ${year} complete: ${yearNew} games queued`);
+  }
+
+  if (rawgRequests > 0 && rawgFailures === rawgRequests) {
+    throw new Error(`All ${rawgRequests} RAWG backfill requests failed`);
+  }
+  if (fetched > 0 && ingested === 0 && errors === fetched) {
+    throw new Error(`All ${fetched} backfill candidate ingestions failed`);
   }
 
   // All done — clear checkpoint so next full run starts fresh

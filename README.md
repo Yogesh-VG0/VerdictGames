@@ -40,7 +40,7 @@ Letterboxd for games — enriched with data from **9 external APIs** across all 
 
 ### Data & Discovery
 - **8,200+ games** with multi-source data from RAWG, Steam, IGDB, CheapShark, Wikipedia, HowLongToBeat & GX Corner
-- **Auto-discovery** — Heroku scheduler discovers trending, new, and top-rated games daily
+- **Auto-discovery** — GitHub Actions discovers trending, new, and top-rated games daily
 - **Multi-source scoring** — Verdict Score combines community reviews, critic ratings, and confidence metrics
 - **Mobile store verification** — confidence-tiered matching against Google Play & App Store
 
@@ -62,7 +62,7 @@ Letterboxd for games — enriched with data from **9 external APIs** across all 
 
 ### Admin & Operations
 - **Admin dashboard** — full game editor, source-specific reingest (RAWG/IGDB), audit log with field-level diffs
-- **Cron pipeline** — Heroku is the canonical recurring scheduler; dashboard/API triggers are manual fallbacks only
+- **Cron pipeline** — GitHub Actions is the canonical recurring scheduler; dashboard/API triggers are manual fallbacks only
 
 ### Design
 - **Responsive** — mobile-first with smooth horizontal scroll and native touch support
@@ -79,11 +79,11 @@ Letterboxd for games — enriched with data from **9 external APIs** across all 
 | **Language** | TypeScript 5 (strict mode) |
 | **Styling** | Tailwind CSS v4 — 50+ custom design tokens |
 | **Animation** | Framer Motion 12 |
-| **Database** | Supabase (PostgreSQL 17) — RLS on all 21 tables, 32 migrations |
+| **Database** | Supabase (PostgreSQL 17) — RLS on all 21 tables, 33 migrations |
 | **State** | TanStack React Query 5 |
 | **Icons** | Lucide React |
 | **Data Sources** | RAWG, Steam, IGDB/Twitch, CheapShark, Wikipedia, HLTB, GX Corner |
-| **Hosting** | Vercel (frontend + API) · Heroku (scheduler) |
+| **Hosting** | Vercel (frontend + API) · GitHub Actions (scheduler) |
 | **Analytics** | Vercel Analytics + Speed Insights |
 
 ---
@@ -92,10 +92,10 @@ Letterboxd for games — enriched with data from **9 external APIs** across all 
 
 ```
 ┌─────────────────┐      ┌──────────────────┐      ┌─────────────────┐
-│     Vercel       │─────▶│    Supabase      │◀─────│     Heroku      │
+│     Vercel       │─────▶│    Supabase      │◀─────│ GitHub Actions  │
 │   (Next.js 16)   │      │  (PostgreSQL 17)  │      │   (Scheduler)   │
-│  Frontend + API  │      │   RLS + Auth     │      │   5 cron jobs   │
-│  70+ routes      │      │   32 migrations  │      │                 │
+│  Frontend + API  │      │   RLS + Auth     │      │   8 cron jobs   │
+│  70+ routes      │      │   33 migrations  │      │                 │
 └────────┬─────────┘      └──────────────────┘      └─────────────────┘
          │                         ▲
          ▼                         │
@@ -131,7 +131,7 @@ npm install
 # 2. Configure environment
 cp .env.example .env.local
 # Fill in: NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY,
-#          SUPABASE_SERVICE_ROLE_KEY, RAWG_API_KEY
+#          SUPABASE_SERVICE_ROLE_KEY, SUPABASE_DB_URL, RAWG_API_KEY
 # Optional: TWITCH_CLIENT_ID, TWITCH_CLIENT_SECRET, STEAM_API_KEY, CRON_SECRET
 
 # 3. Bootstrap the database from ordered migrations
@@ -146,17 +146,22 @@ node scripts/seed-flags.mjs              # Set trending/featured flags
 node scripts/seed-curated-lists.mjs      # Create the full 22 system-curated lists
 ```
 
-### Scheduler Jobs (Heroku)
+### Scheduler Jobs (GitHub Actions)
 
-Heroku is the recurring scheduler authority. `vercel.json` intentionally leaves cron schedules disabled, and the admin dashboard only exposes manual fallback runs for lightweight jobs.
+`.github/workflows/scheduled-maintenance.yml` is the recurring scheduler authority. `vercel.json` intentionally leaves cron schedules disabled, and the admin dashboard only exposes manual fallback runs for lightweight jobs. Standard GitHub-hosted runners are free for this public repository.
 
-| Script | Frequency | Purpose |
-|--------|-----------|---------|
-| `heroku-refresh-trending.mjs` | Hourly | Update trending/featured flags via IGDB PopScore |
-| `heroku-discover-games.mjs` | Daily | Discover new games from RAWG |
-| `heroku-re-enrich.mjs` | Hourly | Re-enrich stale game data |
-| `seed-curated-lists.mjs` | Daily | Refresh editorial list content |
-| `backfill-games.mjs` | Hourly | Backfill historical game data |
+| Job | Frequency | Purpose |
+|-----|-----------|---------|
+| `refresh-trending` | Every 6 hours | Refresh Steam player counts, snapshots, momentum, and trending flags |
+| `re-enrich` | Every 12 hours | Re-enrich stale game data |
+| `seed-curated-lists` | Daily | Refresh editorial list content |
+| `discover-standard` | Daily | Discover new games from RAWG |
+| `backfill-games` | Daily | Backfill historical game data with a persisted checkpoint |
+| `backfill-mobile-android` | Weekly | Verify Google Play listings |
+| `backfill-mobile-ios` | Weekly | Verify App Store listings |
+| `discover-deep` | Weekly | Run extended RAWG discovery with an independent interval guard |
+
+Add the repository Actions secrets described in [BACKEND_SETUP.md](./BACKEND_SETUP.md), then use **Actions → Scheduled maintenance → Run workflow** for the first immediate player-count refresh.
 
 ---
 
@@ -199,7 +204,7 @@ src/
 ├── hooks/                      # useAuth, useTheme
 │
 scripts/                        # 35 Node.js CLI scripts
-supabase/                       # Derived schema snapshot + 32 ordered migrations
+supabase/                       # Derived schema snapshot + 33 ordered migrations
 ```
 
 ---
@@ -233,7 +238,7 @@ verdictScore = communityScore × 0.5 + criticScore × 0.3 + confidence × 20
 | Document | Description |
 |----------|-------------|
 | [**DOCUMENTATION.md**](./DOCUMENTATION.md) | Full technical docs — every file, API route, database table, component, and algorithm |
-| [**BACKEND_SETUP.md**](./BACKEND_SETUP.md) | Supabase + Heroku deployment guide with all env vars, migrations, and admin setup |
+| [**BACKEND_SETUP.md**](./BACKEND_SETUP.md) | Supabase + GitHub Actions deployment guide with all env vars, migrations, and admin setup |
 
 ---
 

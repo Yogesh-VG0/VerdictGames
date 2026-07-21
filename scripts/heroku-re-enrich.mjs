@@ -1,20 +1,20 @@
 #!/usr/bin/env node
 
 /**
- * VERDICT.GAMES — Heroku Scheduler: Re-enrich Stale Games
+ * VERDICT.GAMES — Scheduler: Re-enrich Stale Games
  *
  * Finds games whose enrichment data is older than 24 hours and
  * re-ingests them using the local pipeline (no Vercel API calls).
  *
- * Heroku Scheduler command: node scripts/heroku-re-enrich.mjs
+ * Command: node scripts/heroku-re-enrich.mjs
  *
- * Required Heroku Config Vars:
+ * Required environment variables:
  *   DATABASE_URL or SUPABASE_DB_URL
  *   RAWG_API_KEY
  *   (optional) TWITCH_CLIENT_ID, TWITCH_CLIENT_SECRET for IGDB enrichment
  */
 
-// On Heroku, env vars are already set via Config Vars.
+// Hosted schedulers inject environment variables.
 // For local testing, load .env file.
 try {
   const { readFileSync } = await import("fs");
@@ -28,7 +28,7 @@ try {
     if (!process.env[key]) process.env[key] = t.slice(i + 1).trim();
   }
 } catch {
-  // .env not found — running on Heroku, env vars already set
+  // .env not found; use process environment variables.
 }
 
 import { startRun, finishRun, acquireLock, releaseLock, checkMinInterval } from './lib/scheduler-logger.mjs';
@@ -59,6 +59,10 @@ const run = await startRun(sql, 're-enrich', { limit: LIMIT });
 
 try {
   const data = await reEnrichBatch(sql, { limit: LIMIT });
+
+  if (data.total > 0 && data.failed === data.total) {
+    throw new Error(`All ${data.total} re-enrichments failed`);
+  }
 
   console.log(`\n✅ Re-enrichment complete:`);
   console.log(`   Refreshed: ${data.refreshed}`);

@@ -2,9 +2,8 @@
  * Shared database connection helper for scheduler scripts.
  *
  * Resolves DATABASE_URL from multiple sources:
- *   1. DATABASE_URL env var (standard Heroku Postgres or explicit Supabase URI)
+ *   1. DATABASE_URL env var (standard PostgreSQL or explicit Supabase URI)
  *   2. SUPABASE_DB_URL env var (explicit Supabase pooler URI)
- *   3. Falls back to constructing from NEXT_PUBLIC_SUPABASE_URL + SUPABASE_DB_PASSWORD
  *
  * NEVER silently falls back to localhost. Fails fast with a clear error.
  */
@@ -27,14 +26,6 @@ export function getDbUrl() {
     return process.env.SUPABASE_DB_URL;
   }
 
-  // Priority 3: Construct from Supabase project URL + password
-  if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_DB_PASSWORD) {
-    const projectRef = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).hostname.split(".")[0];
-    const password = process.env.SUPABASE_DB_PASSWORD;
-    // Use the transaction pooler (port 6543) for short-lived connections like schedulers
-    return `postgresql://postgres.${projectRef}:${password}@aws-0-eu-central-1.pooler.supabase.com:6543/postgres`;
-  }
-
   return null;
 }
 
@@ -50,7 +41,7 @@ export function connectDb(scriptName = "scheduler") {
     console.error(`  ❌ FATAL: No database connection URL found`);
     console.error(`  Script: ${scriptName}`);
     console.error("");
-    console.error("  Expected one of these Heroku Config Vars:");
+    console.error("  Expected one of these environment variables:");
     console.error("    DATABASE_URL           — Full Postgres connection string");
     console.error("    SUPABASE_DB_URL        — Supabase pooler connection string");
     console.error("");
@@ -60,8 +51,6 @@ export function connectDb(scriptName = "scheduler") {
     console.error("  Current env vars available:");
     console.error(`    DATABASE_URL:           ${process.env.DATABASE_URL ? "SET" : "NOT SET"}`);
     console.error(`    SUPABASE_DB_URL:        ${process.env.SUPABASE_DB_URL ? "SET" : "NOT SET"}`);
-    console.error(`    NEXT_PUBLIC_SUPABASE_URL: ${process.env.NEXT_PUBLIC_SUPABASE_URL ? "SET" : "NOT SET"}`);
-    console.error(`    SUPABASE_DB_PASSWORD:   ${process.env.SUPABASE_DB_PASSWORD ? "SET" : "NOT SET"}`);
     console.error("═══════════════════════════════════════════");
     process.exit(1);
   }

@@ -104,7 +104,7 @@
 2. All data is stored in **Supabase (PostgreSQL)** with Row Level Security
 3. The **Next.js App Router** serves both the frontend and API routes
 4. The frontend fetches data via **React Query + internal API routes**
-5. **Cron jobs** keep the database fresh by discovering new games and updating trending/featured flags
+5. **Cron jobs** keep the database fresh by discovering games, refreshing player counts, and updating algorithmic trending flags
 
 ---
 
@@ -160,7 +160,7 @@ typescript               — Language compiler
 verdict-games/
 ├── BACKEND_SETUP.md            # Backend setup guide
 ├── DOCUMENTATION.md            # This file
-├── Procfile                    # Heroku web process: npm run start
+├── .github/workflows/          # GitHub Actions maintenance scheduler
 ├── README.md                   # Project overview + quick start
 ├── eslint.config.mjs           # ESLint 9 flat config
 ├── next-env.d.ts               # Next.js TypeScript declarations
@@ -179,7 +179,7 @@ verdict-games/
 │   ├── heroku-discover-games.mjs
 │   ├── heroku-refresh-trending.mjs
 │   ├── ingest-full-library.mjs
-│   ├── migrate-players-updated-at.mjs
+│   ├── lib/                    # Shared scheduler/database helpers
 │   ├── migrate-score-columns.mjs
 │   ├── refresh-all-games.mjs
 │   ├── refresh-games.mjs
@@ -406,9 +406,9 @@ verdict-games/
   - `build` — Production build (`next build`)
   - `start` — Production server on `$PORT` (`next start -p $PORT`)
   - `lint` — Run ESLint
-  - `heroku-postbuild` — Build on Heroku deploy
-  - `scheduler:trending` — Heroku scheduler: refresh trending flags
-  - `scheduler:discover` — Heroku scheduler: discover new games
+  - `scheduler:trending` — Scheduler process: refresh Steam players and trending flags
+  - `scheduler:discover` — Scheduler process: discover new games
+  - `scheduler:re-enrich` — Scheduler process: refresh stale enrichment data
 
 ### `next.config.ts`
 - **Security headers**: X-Frame-Options (DENY), X-Content-Type-Options (nosniff), Referrer-Policy (strict-origin-when-cross-origin), Permissions-Policy, HSTS, CSP (with conditional local Supabase dev support)
@@ -430,10 +430,16 @@ verdict-games/
 
 ### `vercel.json`
 - Framework hint: `nextjs`
-- Cron schedules intentionally disabled; Heroku is the recurring scheduler authority
+- Vercel cron schedules are intentionally disabled; GitHub Actions is the recurring scheduler authority
 
-### `Procfile`
-- **No web dyno** — Heroku is scheduler-only (one-off dynos via Heroku Scheduler). Frontend + API hosted on Vercel.
+### `.github/workflows/scheduled-maintenance.yml`
+- Runs all eight recurring maintenance jobs on standard `ubuntu-latest` runners.
+- Supports manual dispatch, validates required secrets, persists the historical backfill checkpoint, and limits jobs to 350 minutes.
+
+### `.github/workflows/keep-scheduled-workflows-active.yml`
+- Runs monthly to prevent GitHub's 60-day public-repository inactivity suspension.
+- Uses `PhrozenByte/gh-workflow-immortality` pinned to an immutable commit and restricted to this repository.
+- Requires `WORKFLOW_IMMORTALITY_TOKEN` with Actions read/write permission.
 
 ---
 
@@ -450,14 +456,14 @@ verdict-games/
 | `TWITCH_CLIENT_SECRET` | Optional | Server only | Twitch/IGDB OAuth client secret |
 | `NEXT_PUBLIC_SITE_URL` | Recommended | Client + Server | Base URL (e.g., `https://www.verdict.games`) |
 | `ADMIN_EMAILS` | Recommended | Server only | Comma-separated admin email list (controls admin access via `src/lib/adminEmails.ts`) |
-| `CRON_SECRET` | Optional | Server only | Secret for authenticating cron/ingest endpoints |
-| `DATABASE_URL` | Scripts only | CLI scripts | Direct PostgreSQL connection string |
+| `CRON_SECRET` | Required for cron routes | Server only | Secret for authenticating cron/ingest endpoints |
+| `SUPABASE_DB_URL` | Scheduler only | CLI/Actions scripts | Supabase PostgreSQL pooler connection string |
 | `SOURCE_DATE_EPOCH` | Optional | Build time | Unix timestamp for reproducible sitemap lastModified dates |
 | `VERDICT_SITEMAP_LASTMOD` | Optional | Build time | ISO date string fallback for sitemap lastModified |
 
 ### `.env` vs `.env.local`
-- **Next.js runtime**: Use `.env.local` (recommended) or platform environment variables (Vercel/Heroku).
-- **Scripts**: Some scripts load `../.env` directly (not `.env.local`). If you use the provided scripts to apply schema/migrations, keep a root `.env` with at least `DATABASE_URL` set.
+- **Next.js runtime**: Use `.env.local` (recommended) or Vercel environment variables.
+- **Scripts**: `apply-schema.mjs` loads `.env.local` and then `.env`; scheduler scripts use injected environment variables in Actions and support a root `.env` for local runs.
 
 **Graceful degradation**: If Supabase env vars are missing, most public GET routes return empty arrays instead of errors, and the frontend renders empty states. Authenticated routes return `401`.
 
@@ -760,7 +766,7 @@ Verified mobile store listings for Android (Google Play) and iOS (App Store) gam
 **Unique constraint**: `(store, external_id)` — prevents duplicate listings.
 
 #### `scheduler_runs`
-Tracks Heroku/Vercel scheduler job executions with advisory lock support.
+Tracks GitHub Actions/Vercel fallback scheduler job executions with advisory lock support.
 
 | Column | Type | Notes |
 |--------|------|-------|
@@ -1586,7 +1592,7 @@ All API routes follow a consistent pattern:
 
 #### `POST /api/ingest/game`
 - On-demand single game ingestion
-- **Auth**: Optional `CRON_SECRET` check (query param or Bearer token)
+- **Auth**: Required `CRON_SECRET` check (query param or Bearer token)
 - **Body**: `{ "query": "Hades", "forceRefresh": false }`
 - Validates: Supabase + RAWG configured, query length 2–200 chars
 - Calls `ingestGame()` service
@@ -1594,7 +1600,7 @@ All API routes follow a consistent pattern:
 
 #### `POST /api/ingest/batch`
 - Batch game ingestion (sequential with rate limiting)
-- **Auth**: Optional `CRON_SECRET` check
+- **Auth**: Required `CRON_SECRET` check
 - **Body**: `{ "queries": ["Hades", "Elden Ring", "Stardew Valley"] }`
 - Maximum 50 games per batch
 - Returns: `{ total, succeeded, failed, alreadyExisted, results[] }`
@@ -1611,11 +1617,11 @@ All API routes follow a consistent pattern:
 - Deduplicates by RAWG slug
 - Ingests each game (existing ones auto-skipped)
 - 200ms delay between ingestion calls
-- **Auth**: Optional `CRON_SECRET` check
+- **Auth**: Required `CRON_SECRET` check
 - Returns: `{ discovered, newGamesIngested, alreadyExisted, failed, newGames[], errors[], timestamp }`
 
 #### `GET /api/cron/refresh-trending`
-- Updates `trending` and `featured` flags using multi-source signals + **freshnessScore** ranking
+- Updates algorithmic `trending` flags using multi-source signals. Featured games remain editorial-only.
 - **Flow**:
   1. Fetch IGDB PopScore (weighted: visits 25%, want-to-play 30%, playing 30%, Steam peak 15%)
   1b. Fetch GX Top Liked signal — cross-references most-liked games from GX Corner by slug/title matching; falls back to RAWG trending if GX fails
@@ -1624,22 +1630,22 @@ All API routes follow a consistent pattern:
   4. **FreshnessScore fill** — remaining slots filled using composite score: `recency (30%) + rating (30%) + popularity (20%) + manualBoost (20%)`
   5. Reset algorithmic flags (preserving `is_trending_manual`/`is_featured_manual` overrides)
   6. Set `trending = true` for up to 20 games
-  7. Set `featured = true` for top 5 trending by score
+  7. Preserve editorial featured selections
 - **Manual override preservation**: games with `is_trending_manual = true` or `is_featured_manual = true` are never reset by the cron
-- **Auth**: Optional `CRON_SECRET` check
-- **Recurring scheduler authority**: Heroku Scheduler
+- **Auth**: Required `CRON_SECRET` check
+- **Recurring scheduler authority**: GitHub Actions
 - Returns: `{ trendingCount, featuredCount, log[], timestamp }`
 
 #### `GET /api/cron/re-enrich`
 - Re-enriches stale games that haven't been updated recently.
 - Fetches games ordered by `last_enriched_at` (oldest first) and runs the enrichment pipeline on each.
-- **Auth**: Optional `CRON_SECRET` check
-- **Recurring scheduler authority**: Heroku Scheduler
+- **Auth**: Required `CRON_SECRET` check
+- **Recurring scheduler authority**: GitHub Actions
 - Returns: `{ enriched, skipped, failed, timestamp }`
 
 ### 8.15 GX Corner Proxy Routes
 
-Server-side proxy routes for the 8 GX Corner feeds. Each route fetches from the GX Corner API via the client in `src/lib/external/gxcorner.ts` and returns the data directly. All routes use `export const revalidate = 3600` for 1-hour ISR caching.
+Server-side proxy routes for the 8 GX Corner feeds. Each route fetches from the GX Corner API via the client in `src/lib/external/gxcorner.ts`. Game feeds use shared Next caching; news routes are dynamic with a five-minute CDN cache and one-minute stale-while-revalidate window so an old ISR response is not served indefinitely on the first visit.
 
 | Route | Method | Description |
 |-------|--------|-------------|
@@ -2083,7 +2089,7 @@ The `ingestGame()` function orchestrates a 13-step multi-source enrichment pipel
 
 ### React Query (TanStack Query v5)
 - **Provider**: `src/app/providers.tsx` — wraps app in `QueryClientProvider`
-- **Default config**: `staleTime: 5 * 60 * 1000` (5 min), `gcTime: 10 * 60 * 1000` (10 min)
+- **Default config**: `staleTime: 60_000` (1 min), with window-focus refetching
 - **Key patterns**: `["game", slug]`, `["steam-reviews", slug]`, `["search", params]`, `["homepage"]`, `["admin-games"]`, etc.
 
 ### Caching Strategy
@@ -2094,7 +2100,8 @@ The `ingestGame()` function orchestrates a 13-step multi-source enrichment pipel
 | Steam reviews | 30 min | Client-side |
 | Search results | 0 (always fresh) | On query change |
 | Admin data | 5s | `refetchOnMount: "always"` |
-| GX Corner feeds | 60 min | ISR (3600s server) + 60 min client staleTime |
+| GX Corner game feeds | 5 min | Shared server/CDN cache |
+| GX Corner news | 5 min | Dynamic route + 5 min CDN cache + refetch on mount |
 
 ### Cache Invalidation
 - Admin game save/reingest/flag mutations invalidate: `admin-activity`, `admin-games`, `homepage`, `["game", slug]`
@@ -2223,10 +2230,10 @@ Typed wrapper functions for all API endpoints. All functions use `fetch()` with 
 - **`scripts/apply-migration-011.mjs`**: Applies migration 011.
 - **`scripts/apply-migration-012.mjs`**: Applies migration 012.
 - **`scripts/migrate-score-columns.mjs`** (~40 lines): Adds per-source score columns and re-enriches.
-- **`scripts/migrate-players-updated-at.mjs`** (~20 lines): Adds `players_updated_at` column.
+- **`supabase/migrations/20260721000000_add_players_updated_at.sql`**: Adds and backfills `players_updated_at`.
 - **`scripts/migrate-refresh-lock.mjs`**: Adds `refresh_lock_until` column for concurrent refresh prevention.
 
-### Heroku Scheduler Scripts
+### Scheduler Scripts
 - **`scripts/heroku-discover-games.mjs`** (~20 lines): Discovers and ingests new RAWG candidates directly from the local pipeline.
 - **`scripts/heroku-refresh-trending.mjs`** (~20 lines): Refreshes trending flags and player counts directly against Postgres + external APIs.
 - **`scripts/heroku-re-enrich.mjs`**: Re-enriches stale games directly via the local pipeline.
@@ -2239,7 +2246,7 @@ Typed wrapper functions for all API endpoints. All functions use `fetch()` with 
 - **`scripts/verify-db.mjs`**: Verifies database connectivity and table existence.
 - **`scripts/verify-live-production.mjs`**: End-to-end sanity checks against the live production site.
 - **`scripts/analyze-live-responses.mjs`**: Analyzes live API responses for debugging.
-- **`scripts/seed-curated-lists.mjs`**: Seeds/refreshes 22 editorial curated lists (also used as Heroku Scheduler job).
+- **`scripts/seed-curated-lists.mjs`**: Seeds/refreshes 22 editorial curated lists (also used as a GitHub Actions job).
 - **`scripts/seed-flags.mjs`**: Seeds featured/trending flags for games.
 - **`scripts/cleanup-public-safety.mjs`**: Cleans up adult/unsafe game flags.
 - **`scripts/fix-wrong-igdb-matches.mjs`**: Fixes incorrectly matched IGDB entries.
@@ -2254,7 +2261,7 @@ Typed wrapper functions for all API endpoints. All functions use `fetch()` with 
 
 ### Script Library
 - **`scripts/lib/db-connect.mjs`**: Shared database connection helper (reads `DATABASE_URL` or `SUPABASE_DB_URL` env vars, creates `postgres` tagged-template client).
-- **`scripts/lib/scheduler-logger.mjs`**: Logging utility for Heroku scheduler scripts with structured output.
+- **`scripts/lib/scheduler-logger.mjs`**: Logging utility for scheduler scripts with structured output.
 - **`scripts/lib/ingest-pipeline.mjs`**: Self-contained ingestion pipeline with direct DB writes. Includes RAWG search, Steam reviews/details/players, IGDB search+details, CheapShark deals, Wikipedia summaries, HLTB playtimes, scoring engine (Wilson LB, critic blending, confidence, verdict), and source mappings. Exports: `ingestGameDirect()`, `reEnrichBatch()`, `slugify()`.
 
 ---
@@ -2299,7 +2306,7 @@ twitter: summary_large_image card
 
 ### Architecture
 - **Frontend + API Routes**: Deployed on **Vercel** (primary hosting)
-- **Cron Scheduler**: Runs on **Heroku** for periodic game discovery and trending refresh
+- **Cron Scheduler**: Runs on **GitHub Actions** for periodic game discovery, player refreshes, and maintenance
 - Both share the same codebase and Supabase database
 
 ### Vercel (Frontend + API)
@@ -2309,23 +2316,19 @@ twitter: summary_large_image card
 4. Set `NEXT_PUBLIC_SITE_URL` to production URL (e.g., `https://www.verdict.games`)
 5. Deploy — `vercel.json` hints `nextjs` framework
 
-### Heroku (Scheduler Only — No Web Dyno)
-- `Procfile`: **No web dyno** — Heroku is scheduler-only (one-off dynos via Heroku Scheduler). Frontend + API hosted on Vercel.
-- **Heroku Scheduler** — Add-on for automated jobs (one-off dynos):
-  - `node scripts/heroku-refresh-trending.mjs` — Daily trending refresh + player count snapshots
-  - `node scripts/heroku-discover-games.mjs` — Daily/weekly game discovery (~320 games per standard run)
-  - `node scripts/heroku-discover-games.mjs --deep` — Weekly deep discovery (~700+ games)
-  - `node scripts/heroku-re-enrich.mjs` — Re-enriches stale games (oldest first)
-  - `node scripts/seed-curated-lists.mjs` — Seeds/refreshes 22 editorial curated lists
+### GitHub Actions Scheduler
+- `.github/workflows/scheduled-maintenance.yml` is the schedule-as-code authority and supports manual dispatch.
+- It runs player/trending refresh every six hours, re-enrichment twice daily, curated lists and standard discovery daily, historical backfill daily, mobile verification weekly, and deep discovery weekly.
+- The historical backfill checkpoint is persisted with `actions/cache`; all database jobs retain PostgreSQL advisory locking.
 - All scripts use `scripts/lib/ingest-pipeline.mjs` for direct DB writes via `postgres` (tagged template library) — **no CRON_SECRET or Vercel API calls needed**
-- Required Heroku env vars: `DATABASE_URL` (or `SUPABASE_DB_URL`), `RAWG_API_KEY`, optionally `TWITCH_CLIENT_ID`/`TWITCH_CLIENT_SECRET` for IGDB enrichment
+- Required Actions secrets: `SUPABASE_DB_URL`, `RAWG_API_KEY`; recommended: `TWITCH_CLIENT_ID`, `TWITCH_CLIENT_SECRET`, `STEAM_API_KEY`
 
 ### Cron Job Setup (Manual Fallback via Vercel API Routes)
 - **Discover (Standard)**: `GET /api/cron/discover?secret=YOUR_SECRET` — fetches ~320 new games
 - **Discover (Deep)**: `GET /api/cron/discover?secret=YOUR_SECRET&deep=true` — fetches ~700+ games
 - **Refresh Trending**: `GET /api/cron/refresh-trending?secret=YOUR_SECRET`
 - **Re-Enrich**: `GET /api/cron/re-enrich?secret=YOUR_SECRET` — refreshes stale games
-- These routes are **manual fallback only**; recurring production schedules run on Heroku Scheduler
+- These routes are **manual fallback only**; recurring production schedules run on GitHub Actions
 
 ---
 
@@ -2447,7 +2450,7 @@ Where `PRIOR_COUNT = 50` and `PRIOR_MEAN = 65`. This pulls low-review-count game
 | `eslint.config.mjs` | 19 | Config | ESLint 9 flat config |
 | `postcss.config.mjs` | 8 | Config | Tailwind CSS v4 plugin |
 | `vercel.json` | 17 | Config | Framework hint; Vercel cron schedules intentionally disabled |
-| `Procfile` | 1 | Config | Heroku web process |
+| `.github/workflows/scheduled-maintenance.yml` | — | Config | Recurring maintenance schedules and manual dispatch |
 | **Database** | | | |
 | `supabase/schema.sql` | ~210 | SQL | Derived schema snapshot / reference |
 | `supabase/migrations/000_initial_schema.sql` | ~200 | SQL | Base schema bootstrap migration |
@@ -2684,9 +2687,9 @@ Where `PRIOR_COUNT = 50` and `PRIOR_MEAN = 65`. This pulls low-review-count game
 | `scripts/backfill-games.mjs` | — | Script | Backfill missing game fields |
 | `scripts/backfill-mobile-listings.mjs` | — | Script | Verify mobile store listings |
 | `scripts/update-igdb-images.mjs` | — | Script | Update IGDB images for existing games |
-| `scripts/heroku-discover-games.mjs` | ~20 | Script | Heroku cron: discover |
-| `scripts/heroku-refresh-trending.mjs` | ~20 | Script | Heroku cron: trending |
-| `scripts/heroku-re-enrich.mjs` | — | Script | Heroku cron: re-enrich |
+| `scripts/heroku-discover-games.mjs` | ~20 | Script | Actions scheduler: discover (legacy filename) |
+| `scripts/heroku-refresh-trending.mjs` | ~20 | Script | Actions scheduler: Steam players and trending (legacy filename) |
+| `scripts/heroku-re-enrich.mjs` | — | Script | Actions scheduler: re-enrich (legacy filename) |
 | `scripts/apply-schema.mjs` | ~20 | Script | Apply ordered SQL migrations |
 | `scripts/apply-migration-001.mjs` | ~20 | Script | Apply migration 001 |
 | `scripts/apply-migration-003.mjs` | ~80 | Script | Apply migration 003 (user features) |
@@ -2694,7 +2697,7 @@ Where `PRIOR_COUNT = 50` and `PRIOR_MEAN = 65`. This pulls low-review-count game
 | `scripts/apply-migration-011.mjs` | — | Script | Apply migration 011 |
 | `scripts/apply-migration-012.mjs` | — | Script | Apply migration 012 |
 | `scripts/migrate-score-columns.mjs` | ~40 | Script | Add score columns |
-| `scripts/migrate-players-updated-at.mjs` | ~20 | Script | Add players_updated_at |
+| `supabase/migrations/20260721000000_add_players_updated_at.sql` | — | SQL | Add and backfill players_updated_at |
 | `scripts/migrate-refresh-lock.mjs` | — | Script | Add refresh_lock_until column |
 | `scripts/generate-icons.mjs` | — | Script | Generate PWA icon variants |
 | `scripts/verify-db.mjs` | — | Script | Verify DB connectivity |
@@ -2708,7 +2711,7 @@ Where `PRIOR_COUNT = 50` and `PRIOR_MEAN = 65`. This pulls low-review-count game
 | `scripts/import-games-from-file.mjs` | — | Script | Bulk import from JSON/CSV |
 | `scripts/repair-missing-media.mjs` | — | Script | Repair missing cover/header images |
 | `scripts/lib/db-connect.mjs` | — | Lib | Shared DB connection helper |
-| `scripts/lib/scheduler-logger.mjs` | — | Lib | Heroku scheduler logger |
+| `scripts/lib/scheduler-logger.mjs` | — | Lib | Scheduler run logger and advisory locks |
 | `scripts/lib/ingest-pipeline.mjs` | — | Lib | Self-contained ingestion pipeline (direct DB) |
 
 ---

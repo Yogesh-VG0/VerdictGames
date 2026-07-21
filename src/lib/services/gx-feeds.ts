@@ -13,6 +13,7 @@ import { slugify, titlesMatch } from "@/lib/utils/slugify";
 
 export const GX_FEEDS_REVALIDATE_SECONDS = 300;
 export const GX_FEEDS_API_CACHE_CONTROL = "s-maxage=300, stale-while-revalidate=3600";
+export const GX_NEWS_API_CACHE_CONTROL = "public, s-maxage=300, stale-while-revalidate=60";
 
 type GXMatchedGame = {
   slug: string;

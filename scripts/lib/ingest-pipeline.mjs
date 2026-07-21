@@ -1,7 +1,7 @@
 /**
- * VERDICT.GAMES — Portable Ingest Pipeline (Heroku)
+ * VERDICT.GAMES — Portable Ingest Pipeline
  *
- * Self-contained game ingestion that runs entirely on Heroku with direct
+ * Self-contained game ingestion that runs as a standalone process with direct
  * DB access. No Vercel API calls needed.
  *
  * Exports:
@@ -645,7 +645,8 @@ export async function ingestGameDirect(sql, query, options = {}) {
     featured: false, trending: false,
     rawg_id: fullGame.id, steam_app_id: steamAppId,
     price_current: pCur, price_currency: pCurr, price_lowest: pLow, price_deal_url: pDealUrl,
-    is_free: isFree, current_players: curPlayers, peak_players_24h: null,
+    is_free: isFree, current_players: curPlayers,
+    players_updated_at: curPlayers !== null ? now : null, peak_players_24h: null,
     trailer_url: ie?.trailerUrl ?? null, trailer_thumbnail: ie?.trailerThumbnail ?? null,
     igdb_id: ie?.igdbId ?? null, igdb_url: ie?.igdbUrl ?? null,
     igdb_rating: ie?.igdbRating ?? null, igdb_summary: ie?.igdbSummary ?? null,

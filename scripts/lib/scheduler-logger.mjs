@@ -113,7 +113,7 @@ export async function releaseLock(sql, jobName) {
 
 /**
  * Check if enough time has passed since the last successful run.
- * Use this to implement "every N hours" with Heroku Scheduler's hourly trigger.
+ * Use this to enforce a minimum interval independently of the external trigger.
  * Returns true if the job should run, false if it should skip.
  *
  * @param {object} sql - Postgres connection

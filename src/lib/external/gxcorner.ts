@@ -156,9 +156,11 @@ export interface GXNewsArticle {
 
 /* ───────── Internal fetcher ───────── */
 
-async function gxFetch<T>(url: string): Promise<T> {
+async function gxFetch<T>(url: string, revalidateSeconds = 3600): Promise<T> {
   const res = await fetch(url, {
-    next: { revalidate: 3600 },
+    ...(revalidateSeconds > 0
+      ? { next: { revalidate: revalidateSeconds } }
+      : { cache: "no-store" as const }),
     signal: AbortSignal.timeout(15000),
   });
   if (!res.ok) throw new Error(`GX API ${res.status}: ${url}`);
@@ -271,42 +273,32 @@ async function getTopLikedFallback(): Promise<GXTopLikedGame[]> {
 
 /** API 8a — Popular / trending news */
 export async function getGXPopularNews(): Promise<GXNewsArticle[]> {
-  try {
-    const params = new URLSearchParams({
-      country: "us",
-      language: "en-US",
-      category: "ga",
-      timezone: "+00:00",
-      LANG: "en",
-      COUNTRY: "US",
-      LOCALE: "en-US",
-    });
-    const raw = await gxFetch<GXNewsArticle[]>(`${NEWS_BASE}/news/popular?${params}`);
-    // Validate: discard entries missing title, image, or URL
-    return (raw ?? []).filter((a) => a.title && a.image && (a.display_url || a.real_url));
-  } catch (err) {
-    console.warn("[GX] popular news fetch failed:", err);
-    return [];
-  }
+  const params = new URLSearchParams({
+    country: "us",
+    language: "en-US",
+    category: "ga",
+    timezone: "+00:00",
+    LANG: "en",
+    COUNTRY: "US",
+    LOCALE: "en-US",
+  });
+  const raw = await gxFetch<GXNewsArticle[]>(`${NEWS_BASE}/news/popular?${params}`, 0);
+  // Let network failures reach the durable-cache wrapper used by the route.
+  return (raw ?? []).filter((a) => a.title && a.image && (a.display_url || a.real_url));
 }
 
 /** API 8b — Full news feed */
 export async function getGXNewsFeed(): Promise<GXNewsArticle[]> {
-  try {
-    const params = new URLSearchParams({
-      country: "us",
-      language: "en-US",
-      category: "ga",
-      timezone: "+00:00",
-      LANG: "en",
-      COUNTRY: "US",
-      LOCALE: "en-US",
-    });
-    const data = await gxFetch<{ news: GXNewsArticle[] }>(`${NEWS_BASE}/news?${params}`);
-    // Validate: discard entries missing title, image, or URL
-    return (data.news ?? []).filter((a) => a.title && a.image && (a.display_url || a.real_url));
-  } catch (err) {
-    console.warn("[GX] news feed fetch failed:", err);
-    return [];
-  }
+  const params = new URLSearchParams({
+    country: "us",
+    language: "en-US",
+    category: "ga",
+    timezone: "+00:00",
+    LANG: "en",
+    COUNTRY: "US",
+    LOCALE: "en-US",
+  });
+  const data = await gxFetch<{ news: GXNewsArticle[] }>(`${NEWS_BASE}/news?${params}`, 0);
+  // Let network failures reach the durable-cache wrapper used by the route.
+  return (data.news ?? []).filter((a) => a.title && a.image && (a.display_url || a.real_url));
 }

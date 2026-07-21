@@ -1,6 +1,6 @@
 # verdict.games — Backend Setup Guide
 
-Complete guide for setting up the Supabase database, configuring API keys, running the ingestion pipeline, and deploying to Vercel + Heroku.
+Complete guide for setting up the Supabase database, configuring API keys, running the ingestion pipeline, and deploying to Vercel + GitHub Actions.
 
 ---
 
@@ -62,11 +62,11 @@ cp .env.example .env.local
 | `TWITCH_CLIENT_ID` | https://dev.twitch.tv/console | IGDB ratings, trailers, screenshots |
 | `TWITCH_CLIENT_SECRET` | https://dev.twitch.tv/console | IGDB authentication |
 | `STEAM_API_KEY` | https://steamcommunity.com/dev/apikey | Steam reviews, player counts, pricing |
-| `CRON_SECRET` | Any random string | Protects cron endpoints from unauthorized calls |
+| `CRON_SECRET` | Any random string | Protects cron endpoints from unauthorized calls (required when using them) |
 | `NEXT_PUBLIC_SITE_URL` | Your deployment URL | SEO, sitemap, OG images |
 | `SUPABASE_AVATAR_BUCKET` | Default: `avatars` | Storage bucket for user avatar uploads |
 | `ADMIN_EMAILS` | Comma-separated emails | Admin access control (parsed by `src/lib/adminEmails.ts`) |
-| `DATABASE_URL` | Supabase → Settings → Database | Direct Postgres connection for Heroku scripts |
+| `SUPABASE_DB_URL` | Supabase → Settings → Database | Direct or pooler Postgres URI for scheduler scripts |
 | `SOURCE_DATE_EPOCH` | Unix timestamp of last deploy | Reproducible sitemap `lastmod` dates |
 | `VERDICT_SITEMAP_LASTMOD` | ISO date string | Explicit sitemap last-modified override |
 
@@ -214,7 +214,7 @@ node scripts/backfill-mobile-listings.mjs --ios-only             # iOS only
 |--------|-------|-------------|
 | GET | `/api/cron/discover?secret=` | Auto-discover ~320 games |
 | GET | `/api/cron/discover?secret=&deep=true` | Deep discovery ~700+ games |
-| GET | `/api/cron/refresh-trending?secret=` | Update trending/featured flags |
+| GET | `/api/cron/refresh-trending?secret=` | Manual algorithmic trending fallback (does not refresh Steam counts) |
 | GET | `/api/cron/re-enrich?secret=` | Re-enrich stale game data |
 
 ### GX Corner Proxy Routes (ISR 300s)
@@ -320,7 +320,7 @@ src/
 ├── components/                    # 48 React components
 ├── hooks/                         # useAuth, useTheme
 scripts/                           # 35 Node.js CLI scripts
-supabase/                          # Schema + 32 ordered migrations
+supabase/                          # Schema + 33 ordered migrations
 ```
 
 ---
@@ -347,25 +347,34 @@ supabase/                          # Schema + 32 ordered migrations
 4. Set `NEXT_PUBLIC_SITE_URL` to your production URL (e.g., `https://www.verdict.games`)
 5. Deploy — `vercel.json` auto-detects `nextjs` framework and intentionally leaves cron schedules disabled
 
-### Backend Cron — Heroku (Scheduler Only — No Web Dyno)
+### Backend Cron — GitHub Actions
 
-Heroku runs **no web dyno** — it is scheduler-only. The `Procfile` has no `web:` entry. All scripts run as one-off dynos via Heroku Scheduler and write directly to Postgres (no Vercel API calls needed).
+The versioned workflow at `.github/workflows/scheduled-maintenance.yml` runs the existing standalone Node.js processes on `ubuntu-latest` and writes directly to Supabase. It does not call Vercel routes and does not need `CRON_SECRET`.
 
-1. Create a Heroku app and push the same codebase
-2. Add environment variables via `heroku config:set`:
-   - `DATABASE_URL` (or `SUPABASE_DB_URL`) — direct Postgres connection string
-   - `RAWG_API_KEY` — required for discovery/enrichment
-   - `TWITCH_CLIENT_ID`, `TWITCH_CLIENT_SECRET` — optional, for IGDB enrichment
-3. Install **Heroku Scheduler** add-on: `heroku addons:create scheduler:standard`
-4. Configure scheduled jobs:
+1. Open **GitHub → Repository → Settings → Secrets and variables → Actions**.
+2. Add required repository secrets:
+   - `SUPABASE_DB_URL` — use the IPv4-compatible Supabase **session pooler** URI from **Connect → Session pooler**. Session mode is required because scheduler overlap protection uses PostgreSQL session advisory locks.
+   - `RAWG_API_KEY` — required by discovery and enrichment jobs.
+3. Add recommended repository secrets:
+   - `TWITCH_CLIENT_ID`, `TWITCH_CLIENT_SECRET` — IGDB enrichment.
+   - `STEAM_API_KEY` — reliable Steam charts/player data.
+4. Push the workflow to the default branch.
+5. Open **Actions → Scheduled maintenance → Run workflow**, choose `refresh-trending`, and run it once to replace stale player counts immediately.
 
-| Job | Frequency | Command |
-|-----|-----------|---------|
-| Refresh trending | Hourly | `node scripts/heroku-refresh-trending.mjs` |
-| Discover games | Daily | `node scripts/heroku-discover-games.mjs` |
-| Deep discovery | Weekly | `node scripts/heroku-discover-games.mjs --deep` |
-| Re-enrich stale | Hourly | `node scripts/heroku-re-enrich.mjs` |
-| Refresh curated lists | Daily | `node scripts/seed-curated-lists.mjs` |
+| Job | UTC schedule | Command |
+|-----|--------------|---------|
+| Refresh players/trending | Every 6 hours at `:17` | `node scripts/heroku-refresh-trending.mjs` |
+| Re-enrich stale | 01:47 and 13:47 daily | `node scripts/heroku-re-enrich.mjs` |
+| Refresh curated lists | 02:23 daily | `node scripts/seed-curated-lists.mjs` |
+| Standard discovery | 03:37 daily | `node scripts/heroku-discover-games.mjs` |
+| Historical backfill | 04:53 daily | `node scripts/backfill-games.mjs` |
+| Android verification | Tuesday 05:29 | `node scripts/backfill-mobile-listings.mjs --android-only` |
+| iOS verification | Friday 05:29 | `node scripts/backfill-mobile-listings.mjs --ios-only` |
+| Deep discovery | Sunday 15:11 | `node scripts/heroku-discover-games.mjs --deep` |
+
+The unusual minutes reduce GitHub scheduler congestion. Standard and deep discovery use independent interval histories while sharing one advisory lock, so one cannot suppress or overlap the other. PostgreSQL session advisory locks prevent duplicate execution, and Actions cache persistence preserves the historical backfill checkpoint between ephemeral runners. Scheduled workflows run only from the default branch; GitHub may delay start times during load, so monitor failures in Actions and in `/admin/scheduler`.
+
+`keep-scheduled-workflows-active.yml` runs monthly and prevents GitHub from suspending public-repository schedules after 60 days without repository activity. Its third-party action is pinned to an immutable commit and restricted to this repository. It requires the encrypted `WORKFLOW_IMMORTALITY_TOKEN` secret with Actions read/write permission.
 
 All scripts use `scripts/lib/ingest-pipeline.mjs` for direct DB writes via the `postgres` tagged-template library.
 
@@ -385,7 +394,7 @@ The database supports games across all 11 platforms:
 Admin access is controlled by the `ADMIN_EMAILS` environment variable (comma-separated list, parsed by `src/lib/adminEmails.ts`). To add an admin:
 
 1. Add their Supabase Auth email to the `ADMIN_EMAILS` env var (comma-separated)
-2. Redeploy (or update the env var in Vercel/Heroku settings)
+2. Redeploy (or update the env var in Vercel settings)
 
 Admins can access `/admin` for:
 - **Game management** — search, edit, reingest (RAWG/IGDB/Full Pipeline), delete

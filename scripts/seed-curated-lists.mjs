@@ -4,7 +4,7 @@
  * VERDICT.GAMES — Seed Curated Lists
  *
  * Generates 22 orthogonal editorial lists from existing game metadata.
- * Run manually or scheduled via Heroku Scheduler (daily at 2:00 AM UTC):
+ * Run manually or scheduled via GitHub Actions (daily at 02:23 UTC):
  *   node scripts/seed-curated-lists.mjs
  *
  * Overlap rules enforced:
@@ -44,7 +44,7 @@ try {
     const key = t.slice(0, i).trim();
     if (!process.env[key]) process.env[key] = t.slice(i + 1).trim();
   }
-} catch { /* Heroku uses Config Vars */ }
+} catch { /* Use process environment variables. */ }
 
 const sql = connectDb("seed-curated-lists");
 const SYSTEM_LIST_MANAGER = "system-curated-lists";

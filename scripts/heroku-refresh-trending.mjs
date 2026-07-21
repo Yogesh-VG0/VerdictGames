@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
 /**
- * VERDICT.GAMES — Heroku Scheduler: Refresh Trending
+ * VERDICT.GAMES — Scheduler: Refresh Trending
  *
- * Runs via Heroku Scheduler every 6 hours:
+ * Runs via GitHub Actions every 6 hours:
  *   Step 0 — Fetch Steam's GLOBAL Top 100 most-played games
  *   Step 1 — Auto-ingest any top-100 games missing from our DB
  *   Step 2 — Refresh current_players for ALL our Steam games
@@ -12,7 +12,7 @@
  *   Step 5 — Recency fill (if still < 20)
  *   Step 6 — Apply trending + featured flags
  *
- * Heroku Scheduler: node scripts/heroku-refresh-trending.mjs
+ * Command: node scripts/heroku-refresh-trending.mjs
  *
  * Required Config Vars:
  *   DATABASE_URL, RAWG_API_KEY, TWITCH_CLIENT_ID, TWITCH_CLIENT_SECRET
@@ -22,7 +22,7 @@ import { startRun, finishRun, acquireLock, releaseLock, checkMinInterval } from 
 import { connectDb, closeDb } from './lib/db-connect.mjs';
 import { ingestGameDirect } from './lib/ingest-pipeline.mjs';
 
-// Load .env for local dev; Heroku has Config Vars
+// Load .env for local development; hosted schedulers inject environment variables.
 try {
   const { readFileSync } = await import("fs");
   const env = readFileSync(".env", "utf8");
@@ -35,7 +35,7 @@ try {
     if (!process.env[key]) process.env[key] = t.slice(i + 1).trim();
   }
 } catch {
-  // .env not found — running on Heroku
+  // .env not found; use process environment variables.
 }
 
 const sql = connectDb("refresh-trending");
@@ -231,7 +231,7 @@ try {
   if (res.ok) {
     const data = await res.json();
     globalTop = (data?.response?.ranks ?? [])
-      .filter((r) => r.appid && r.concurrent_in_game > 0)
+      .filter((r) => r.appid && r.peak_in_game > 0)
       .slice(0, 100);
     console.log(`  ✓ Got ${globalTop.length} games from Steam Charts`);
     if (globalTop.length === 0) {
@@ -283,16 +283,10 @@ if (globalTop.length > 0) {
   }
 }
 
-// ── Step 2: Update player counts from global data + per-game API ──
+// ── Step 2: Update current player counts from the per-game API ──
 console.log("\n🔄 Step 2: Refreshing Steam current player counts...");
 const steamGames = await sql`SELECT id, title, steam_app_id FROM games WHERE steam_app_id IS NOT NULL ORDER BY score DESC`;
 console.log(`  ${steamGames.length} games with Steam App IDs`);
-
-// Build a map of global data for fast lookup
-const globalPlayerMap = new Map();
-for (const g of globalTop) {
-  globalPlayerMap.set(g.appid, g.concurrent_in_game);
-}
 
 let playerUpdates = 0;
 const now = new Date().toISOString();
@@ -302,13 +296,8 @@ for (let i = 0; i < steamGames.length; i += 10) {
   const batch = steamGames.slice(i, i + 10);
   const results = await Promise.allSettled(
     batch.map(async (g) => {
-      // Use global data if available (saves API calls)
-      const globalPlayers = globalPlayerMap.get(g.steam_app_id);
-      if (globalPlayers !== undefined) {
-        return { id: g.id, players: globalPlayers };
-      }
-
-      // Otherwise fetch individually
+      // Steam Charts exposes a rollup peak, not a current count, so always use
+      // the live per-game endpoint for this field.
       try {
         const res = await fetch(`${STEAM_API}?appid=${g.steam_app_id}`, { signal: AbortSignal.timeout(8000) });
         if (!res.ok) return null;
@@ -334,6 +323,9 @@ if (pendingPlayerUpdates.length > 0) {
   playerUpdates = await applyPlayerCountUpdates(pendingPlayerUpdates, now);
 }
 console.log(`  Updated ${playerUpdates} player counts`);
+if (steamGames.length > 0 && playerUpdates === 0) {
+  throw new Error(`Steam current-player refresh failed for all ${steamGames.length} games`);
+}
 
 // ── Step 2b: Compute momentum + snapshot player counts ──
 console.log("\n📸 Step 2b: Computing momentum + snapshotting player counts...");

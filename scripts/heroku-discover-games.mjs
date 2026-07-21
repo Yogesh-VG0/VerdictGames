@@ -1,20 +1,20 @@
 #!/usr/bin/env node
 
 /**
- * VERDICT.GAMES — Heroku Scheduler: Discover New Games
+ * VERDICT.GAMES — Scheduler: Discover New Games
  *
  * Fetches trending/new/popular games from RAWG and ingests each
  * directly via the local ingest pipeline (no Vercel API calls).
  *
- * Heroku Scheduler command: node scripts/heroku-discover-games.mjs
+ * Command: node scripts/heroku-discover-games.mjs
  *
- * Required Heroku Config Vars:
+ * Required environment variables:
  *   RAWG_API_KEY,
  *   DATABASE_URL or SUPABASE_DB_URL
  *   (optional) TWITCH_CLIENT_ID, TWITCH_CLIENT_SECRET for IGDB enrichment
  */
 
-// On Heroku, env vars are already set via Config Vars.
+// Hosted schedulers inject environment variables.
 // For local testing, load .env file.
 try {
   const { readFileSync } = await import("fs");
@@ -28,7 +28,7 @@ try {
     if (!process.env[key]) process.env[key] = t.slice(i + 1).trim();
   }
 } catch {
-  // .env not found — running on Heroku, env vars already set
+  // .env not found; use process environment variables.
 }
 
 import { startRun, finishRun, acquireLock, releaseLock, checkMinInterval } from './lib/scheduler-logger.mjs';
@@ -38,6 +38,7 @@ import { ingestGameDirect } from './lib/ingest-pipeline.mjs';
 const RAWG_BASE    = "https://api.rawg.io/api";
 const RAWG_KEY     = process.env.RAWG_API_KEY;
 const DEEP         = process.argv.includes("--deep");
+const JOB_NAME     = DEEP ? "discover-games-deep" : "discover-games";
 const CONCURRENCY  = 2;
 const DELAY_MS     = 300;
 
@@ -50,12 +51,12 @@ async function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
 
 async function rawgFetch(endpoint, params = {}, limit = 40) {
   const qs = new URLSearchParams({ key: RAWG_KEY, page_size: String(limit), ...params });
-  try {
-    const res = await fetch(`${RAWG_BASE}/${endpoint}?${qs}`, { signal: AbortSignal.timeout(15000) });
-    if (!res.ok) return [];
-    const json = await res.json();
-    return json.results ?? [];
-  } catch { return []; }
+  const res = await fetch(`${RAWG_BASE}/${endpoint}?${qs}`, { signal: AbortSignal.timeout(15000) });
+  if (!res.ok) {
+    throw new Error(`RAWG ${res.status}: ${endpoint}`);
+  }
+  const json = await res.json();
+  return json.results ?? [];
 }
 
 function formatDateRange(daysBack, daysForward) {
@@ -87,12 +88,12 @@ console.log("══════════════════════�
 // ── Locking & interval ──
 let run = null;
 const MIN_INTERVAL = parseFloat(process.env.DISCOVER_INTERVAL_HOURS || "5");
-const shouldRun = await checkMinInterval(sql, 'discover-games', MIN_INTERVAL);
-if (!shouldRun) { console.log("⏭ Skipping — last run too recent"); await closeDb(sql, 'discover-games'); process.exit(0); }
+const shouldRun = await checkMinInterval(sql, JOB_NAME, MIN_INTERVAL);
+if (!shouldRun) { console.log("⏭ Skipping — last run too recent"); await closeDb(sql, JOB_NAME); process.exit(0); }
 
 const locked = await acquireLock(sql, 'discover-games');
 if (!locked) { console.log("🔒 Another discover run is active"); await closeDb(sql, 'discover-games'); process.exit(0); }
-run = await startRun(sql, 'discover-games', { mode: DEEP ? 'deep' : 'standard' });
+run = await startRun(sql, JOB_NAME, { mode: DEEP ? 'deep' : 'standard' });
 
 try {
   const now = new Date();
@@ -103,7 +104,7 @@ try {
   const thisYear     = `${currentYear}-01-01,${currentYear}-12-31`;
   const lastYear     = `${currentYear - 1}-01-01,${currentYear - 1}-12-31`;
 
-  // ── Step 1: Fetch game lists from RAWG (runs on Heroku, no Vercel timeout) ──
+  // ── Step 1: Fetch game lists from RAWG (standalone process, no Vercel timeout) ──
   console.log("📡 Step 1: Fetching game lists from RAWG...\n");
 
   const fetches = [
@@ -164,7 +165,18 @@ try {
     }
   }
 
-  const allLists = await Promise.all(fetches);
+  const fetchResults = await Promise.allSettled(fetches);
+  const allLists = fetchResults
+    .filter((result) => result.status === "fulfilled")
+    .map((result) => result.value);
+  const failedFetches = fetchResults.length - allLists.length;
+  const minimumSuccessfulFetches = Math.ceil(fetches.length * 0.75);
+  if (allLists.length < minimumSuccessfulFetches) {
+    throw new Error(`RAWG discovery failed ${failedFetches}/${fetches.length} list requests`);
+  }
+  if (failedFetches > 0) {
+    console.warn(`  ⚠ Continuing after ${failedFetches}/${fetches.length} RAWG list requests failed`);
+  }
 
   // Deduplicate by slug
   const seen = new Set();
@@ -248,6 +260,10 @@ try {
   });
 
   const elapsed = ((Date.now() - start) / 1000).toFixed(1);
+
+  if (allGames.length > 0 && newCount + existedCount === 0 && failedCount > 0) {
+    throw new Error(`All ${failedCount} discovered game ingestions failed`);
+  }
 
   console.log(`\n✅ Discovery complete:`);
   console.log(`   Discovered: ${allGames.length}`);

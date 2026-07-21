@@ -471,6 +471,7 @@ export async function ingestGame(options: IngestOptions): Promise<IngestResult> 
     price_deal_url: priceDealUrl,
     is_free: isFree,
     current_players: currentPlayers,
+    players_updated_at: currentPlayers !== null ? new Date().toISOString() : null,
     peak_players_24h: null as number | null,    // would need historical tracking
     trailer_url: igdbEnrichment?.trailerUrl ?? null,
     trailer_thumbnail: igdbEnrichment?.trailerThumbnail ?? null,

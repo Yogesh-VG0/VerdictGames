@@ -47,8 +47,9 @@ interface JobSummary {
 }
 
 const JOB_LABELS: Record<string, { label: string; description: string; icon: string }> = {
-  "refresh-trending": { label: "Refresh Trending", description: "Steam player counts + trending/featured flags", icon: "trending" },
+  "refresh-trending": { label: "Refresh Trending", description: "Steam player counts + trending flags", icon: "trending" },
   "discover-games": { label: "Discover Games", description: "Find and ingest new games from RAWG", icon: "discover" },
+  "discover-games-deep": { label: "Deep Discovery", description: "Run extended RAWG game discovery", icon: "discover" },
   "re-enrich": { label: "Re-enrich", description: "Refresh stale game enrichment data", icon: "enrich" },
   "backfill-games": { label: "Backfill Games", description: "Ingest missing games by year range", icon: "backfill" },
   "backfill-mobile-android": { label: "Backfill Android", description: "Verify Google Play store listings", icon: "android" },
@@ -56,10 +57,10 @@ const JOB_LABELS: Record<string, { label: string; description: string; icon: str
   "seed-curated-lists": { label: "Seed Lists", description: "Refresh editorial curated lists", icon: "lists" },
 };
 
-const HEROKU_SCHEDULED_JOBS = new Set(["backfill-games", "backfill-mobile-android", "backfill-mobile-ios", "refresh-trending", "discover-games", "re-enrich", "seed-curated-lists"]);
+const GITHUB_SCHEDULED_JOBS = new Set(["backfill-games", "backfill-mobile-android", "backfill-mobile-ios", "refresh-trending", "discover-games", "discover-games-deep", "re-enrich", "seed-curated-lists"]);
 
-// Heroku-only jobs can't be triggered from the web UI
-const HEROKU_ONLY_JOBS = new Set(["backfill-games", "backfill-mobile-android", "backfill-mobile-ios", "refresh-trending", "discover-games"]);
+// Long-running Actions jobs cannot be triggered from a serverless web request.
+const GITHUB_ACTIONS_ONLY_JOBS = new Set(["backfill-games", "backfill-mobile-android", "backfill-mobile-ios", "refresh-trending", "discover-games", "discover-games-deep"]);
 
 // ── Human-readable metadata labels per job type ──
 const METADATA_LABELS: Record<string, Record<string, string>> = {
@@ -404,7 +405,7 @@ export default function SchedulerPage() {
     },
     onSuccess: (data) => {
       const msg = data.message || data.error || "Unknown response";
-      if (data.herokuOnly) {
+      if (data.githubActionsOnly) {
         setTriggerMsg(msg);
       } else if (data.success === false) {
         setTriggerMsg(`Failed: ${msg}`);
@@ -444,7 +445,7 @@ export default function SchedulerPage() {
             Scheduler Logs
           </h1>
           <p className="text-sm text-secondary mt-1">
-            Monitor recurring job runs. Heroku is the canonical scheduler; dashboard actions are manual fallback runs only.
+            Monitor recurring job runs. GitHub Actions is the canonical scheduler; dashboard actions are manual fallback runs only.
           </p>
         </div>
         <button
@@ -462,7 +463,7 @@ export default function SchedulerPage() {
           "rounded-xl px-4 py-3 text-sm whitespace-pre-line border",
           triggerMsg.startsWith("Failed") || triggerMsg.startsWith("Trigger failed")
             ? "bg-red-500/10 border-red-500/20 text-red-400"
-            : triggerMsg.includes("Heroku") || triggerMsg.includes("heroku")
+            : triggerMsg.includes("GitHub Actions")
               ? "bg-amber-500/10 border-amber-500/20 text-amber-400"
               : "bg-green-500/10 border-green-500/20 text-green-500"
         )}>
@@ -473,7 +474,7 @@ export default function SchedulerPage() {
       <div className="rounded-xl border border-purple-500/20 bg-purple-500/5 px-4 py-3 text-sm text-secondary flex gap-3">
         <Server className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
         <p>
-          Recurring discovery, re-enrichment, trending, backfill, and full curated-list reseeds run on Heroku.
+          Recurring discovery, re-enrichment, trending, backfill, and full curated-list reseeds run on GitHub Actions.
           The admin dashboard only exposes lightweight manual fallbacks like on-demand re-enrich and controlled list reseeds.
         </p>
       </div>
@@ -520,8 +521,8 @@ export default function SchedulerPage() {
               const info = JOB_LABELS[name] || { label: name, description: "" };
               const completedRuns = s.total - s.stale - s.running;
               const successRate = completedRuns > 0 ? Math.round((s.success / completedRuns) * 100) : 0;
-              const isHerokuScheduled = HEROKU_SCHEDULED_JOBS.has(name);
-              const isHerokuOnly = HEROKU_ONLY_JOBS.has(name);
+              const isGitHubScheduled = GITHUB_SCHEDULED_JOBS.has(name);
+              const isGitHubActionsOnly = GITHUB_ACTIONS_ONLY_JOBS.has(name);
               const isTriggering = triggerMutation.isPending && triggerMutation.variables === name;
               return (
                 <div key={name} className="px-4 py-3 flex items-center gap-3 hover:bg-surface-2 transition-colors">
@@ -533,9 +534,9 @@ export default function SchedulerPage() {
                           <Loader2 className="w-3 h-3 animate-spin" /> running
                         </span>
                       )}
-                      {isHerokuScheduled && (
-                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-purple-500/10 text-purple-400" title={isHerokuOnly ? "This job is scheduled on Heroku and cannot be triggered from the dashboard" : "This job is scheduled on Heroku; dashboard runs are manual fallbacks only"}>
-                          <Server className="w-3 h-3" /> Heroku schedule
+                      {isGitHubScheduled && (
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-purple-500/10 text-purple-400" title={isGitHubActionsOnly ? "This job is scheduled on GitHub Actions and cannot be triggered from the dashboard" : "This job is scheduled on GitHub Actions; dashboard runs are manual fallbacks only"}>
+                          <Server className="w-3 h-3" /> GitHub schedule
                         </span>
                       )}
                     </div>
@@ -557,17 +558,17 @@ export default function SchedulerPage() {
                     <button
                       onClick={() => triggerMutation.mutate(name)}
                       disabled={triggerMutation.isPending}
-                      title={isHerokuOnly ? "Show Heroku CLI command" : isHerokuScheduled ? `Run a manual fallback for ${info.label}` : `Manually trigger ${info.label}`}
+                      title={isGitHubActionsOnly ? "Show GitHub CLI command" : isGitHubScheduled ? `Run a manual fallback for ${info.label}` : `Manually trigger ${info.label}`}
                       className={cn(
                         "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all disabled:opacity-50",
-                        isHerokuOnly
+                        isGitHubActionsOnly
                           ? "bg-purple-500/10 text-purple-400 border border-purple-500/20 hover:bg-purple-500/20"
                           : "bg-pixel-cyan/10 text-pixel-cyan border border-pixel-cyan/20 hover:bg-pixel-cyan/20"
                       )}
                     >
                       {isTriggering ? (
                         <><Loader2 className="w-3 h-3 animate-spin" /> Running...</>
-                      ) : isHerokuOnly ? (
+                      ) : isGitHubActionsOnly ? (
                         <><Terminal className="w-3 h-3" /> CLI</>
                       ) : (
                         <><Play className="w-3 h-3" /> Run</>

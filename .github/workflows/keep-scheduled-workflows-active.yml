@@ -1,0 +1,25 @@
+name: Keep scheduled workflows active
+
+on:
+  schedule:
+    # Public-repository schedules are disabled after 60 days without activity.
+    - cron: "20 0 1 * *"
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: keep-scheduled-workflows-active
+  cancel-in-progress: true
+
+jobs:
+  keepalive:
+    name: Keep scheduled workflows active
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Re-enable inactivity-disabled workflows
+        uses: PhrozenByte/gh-workflow-immortality@39378c27dcacbc17e6fbf83057d1fc40c574000d # v1.2.0
+        with:
+          secret: ${{ secrets.WORKFLOW_IMMORTALITY_TOKEN }}
+          repos: ${{ github.repository }}

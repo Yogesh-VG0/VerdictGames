@@ -629,11 +629,11 @@ export async function getGXDeals(): Promise<GXDeal[]> {
 }
 
 export async function getGXPopularNews(): Promise<GXNewsItem[]> {
-  return (await apiFetch<GXNewsItem[]>("/api/gx/news/popular")) ?? [];
+  return apiFetchOrThrow<GXNewsItem[]>("/api/gx/news/popular");
 }
 
 export async function getGXNewsFeed(): Promise<GXNewsItem[]> {
-  return (await apiFetch<GXNewsItem[]>("/api/gx/news/feed")) ?? [];
+  return apiFetchOrThrow<GXNewsItem[]>("/api/gx/news/feed");
 }
 
 export async function getGXTopGames(): Promise<GXTopGame[]> {

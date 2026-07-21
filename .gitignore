@@ -56,10 +56,11 @@ next-env.d.ts
 .windsurf/
 
 # Development/one-time scripts (not needed in production)
-# Keep: heroku-*.mjs (schedulers), lib/ (shared utils), seed-curated-lists.mjs, generate-icons.mjs
+# Keep: heroku-*.mjs (legacy scheduler filenames), lib/ (shared utils), seed-curated-lists.mjs, generate-icons.mjs
 scripts/analyze-live-responses.mjs
 scripts/apply-migration-*.mjs
 scripts/apply-schema.mjs
+!scripts/apply-schema.mjs
 scripts/backfill-*.mjs
 !scripts/backfill-games.mjs
 !scripts/backfill-mobile-listings.mjs

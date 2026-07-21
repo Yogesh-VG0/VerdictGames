@@ -5,7 +5,7 @@
  * re-enriches them in batch. Replaces the unreliable on-demand background
  * refresh that previously ran inside GET /api/games/[slug].
  *
- * Designed to run every 6 hours via Vercel Cron / Heroku Scheduler.
+ * Manual serverless fallback for the recurring GitHub Actions job.
  *
  * Query params:
  *   secret  — must match CRON_SECRET

@@ -14,19 +14,19 @@ export const maxDuration = 300; // 5 min max
  * Body: { job: string, params?: Record<string, string> }
  */
 
-// Maps job names to their CLI commands for Heroku one-off dynos
-const HEROKU_CLI_COMMANDS: Record<string, string> = {
-  "refresh-trending": "heroku run node scripts/heroku-refresh-trending.mjs -a verdict-games",
-  "discover-games": "heroku run node scripts/heroku-discover-games.mjs -a verdict-games",
-  "re-enrich": "heroku run node scripts/heroku-re-enrich.mjs -a verdict-games",
-  "seed-curated-lists": "heroku run node scripts/seed-curated-lists.mjs -a verdict-games",
-  "backfill-games": "heroku run node scripts/backfill-games.mjs --year-from=2020 --year-to=2026 --limit=25 -a verdict-games",
-  "backfill-mobile-android": "heroku run node scripts/backfill-mobile-listings.mjs --android-only --limit=15 -a verdict-games",
-  "backfill-mobile-ios": "heroku run node scripts/backfill-mobile-listings.mjs --ios-only --limit=15 -a verdict-games",
+const GITHUB_ACTIONS_COMMANDS: Record<string, string> = {
+  "refresh-trending": "gh workflow run scheduled-maintenance.yml -f job=refresh-trending",
+  "discover-games": "gh workflow run scheduled-maintenance.yml -f job=discover-standard",
+  "discover-games-deep": "gh workflow run scheduled-maintenance.yml -f job=discover-deep",
+  "re-enrich": "gh workflow run scheduled-maintenance.yml -f job=re-enrich",
+  "seed-curated-lists": "gh workflow run scheduled-maintenance.yml -f job=seed-curated-lists",
+  "backfill-games": "gh workflow run scheduled-maintenance.yml -f job=backfill-games",
+  "backfill-mobile-android": "gh workflow run scheduled-maintenance.yml -f job=backfill-mobile-android",
+  "backfill-mobile-ios": "gh workflow run scheduled-maintenance.yml -f job=backfill-mobile-ios",
 };
 
 const TRIGGERABLE_JOBS: Record<string, {
-  type: "cron" | "admin" | "heroku-only";
+  type: "cron" | "admin" | "github-actions-only";
   path?: string;
   method?: "GET" | "POST";
   description: string;
@@ -35,33 +35,37 @@ const TRIGGERABLE_JOBS: Record<string, {
     type: "cron",
     path: "/api/cron/re-enrich",
     method: "GET",
-    description: "Manual serverless fallback only; recurring schedule runs on Heroku.",
+    description: "Manual serverless fallback only; recurring schedule runs on GitHub Actions.",
   },
   "refresh-trending": {
-    type: "heroku-only",
-    description: "Refresh trending & featured flags (~23 min, too slow for serverless)",
+    type: "github-actions-only",
+    description: "Refresh Steam player counts and trending flags (too slow for serverless)",
   },
   "discover-games": {
-    type: "heroku-only",
+    type: "github-actions-only",
     description: "Discover and ingest new games from RAWG (~5+ min, too slow for serverless)",
+  },
+  "discover-games-deep": {
+    type: "github-actions-only",
+    description: "Run extended RAWG discovery (too slow for serverless)",
   },
   "seed-curated-lists": {
     type: "admin",
     path: "/api/admin/seed-lists",
     method: "POST",
-    description: "Controlled 12-list reseed only; recurring 22-list schedule runs on Heroku.",
+    description: "Controlled 12-list reseed only; recurring 22-list schedule runs on GitHub Actions.",
   },
   "backfill-games": {
-    type: "heroku-only",
-    description: "Bulk ingest games by year range (runs on Heroku)",
+    type: "github-actions-only",
+    description: "Bulk ingest games by year range (runs on GitHub Actions)",
   },
   "backfill-mobile-android": {
-    type: "heroku-only",
-    description: "Verify Google Play store listings (runs on Heroku)",
+    type: "github-actions-only",
+    description: "Verify Google Play store listings (runs on GitHub Actions)",
   },
   "backfill-mobile-ios": {
-    type: "heroku-only",
-    description: "Verify App Store listings (runs on Heroku)",
+    type: "github-actions-only",
+    description: "Verify App Store listings (runs on GitHub Actions)",
   },
 };
 
@@ -79,14 +83,14 @@ export async function POST(req: NextRequest) {
 
   const job = TRIGGERABLE_JOBS[jobName];
 
-  // Heroku-only jobs can't be triggered from the web app
-  if (job.type === "heroku-only") {
-    const cliCmd = HEROKU_CLI_COMMANDS[jobName] ?? `heroku run node scripts/${jobName}.mjs -a verdict-games`;
+  // Long-running jobs are dispatched from GitHub rather than a serverless request.
+  if (job.type === "github-actions-only") {
+    const cliCmd = GITHUB_ACTIONS_COMMANDS[jobName];
     return jsonOk({
       success: false,
       job: jobName,
-      message: `"${jobName}" is scheduled by Heroku and cannot be triggered from the admin dashboard.\n\nRun manually via Heroku CLI:\n${cliCmd}`,
-      herokuOnly: true,
+      message: `"${jobName}" is scheduled by GitHub Actions and cannot be triggered from the admin dashboard.\n\nRun manually via GitHub CLI:\n${cliCmd}`,
+      githubActionsOnly: true,
     });
   }
 
@@ -151,7 +155,7 @@ export async function GET() {
   const jobs = Object.entries(TRIGGERABLE_JOBS).map(([name, info]) => ({
     name,
     ...info,
-    canTrigger: info.type !== "heroku-only",
+    canTrigger: info.type !== "github-actions-only",
   }));
 
   return jsonOk({ jobs });

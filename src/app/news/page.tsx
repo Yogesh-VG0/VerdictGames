@@ -15,15 +15,21 @@ import SafeImage from "@/components/ui/SafeImage";
 export default function NewsPage() {
   const [selectedPublisher, setSelectedPublisher] = useState("All");
 
-  // Fetch from our own API routes which server-cache for 1 hour (revalidate: 3600)
-  // Only 1 request/hr hits GX Corner regardless of user count
+  // The API routes provide a shared five-minute CDN cache.
   const { data: articles, isLoading } = useQuery({
     queryKey: ["gx-news-full"],
     queryFn: async () => {
-      const [popular, feed] = await Promise.all([
+      const results = await Promise.allSettled([
         getGXPopularNews(),
         getGXNewsFeed(),
       ]);
+      const available = results
+        .filter((result): result is PromiseFulfilledResult<Awaited<ReturnType<typeof getGXPopularNews>>> => result.status === "fulfilled")
+        .map((result) => result.value);
+      if (available.length === 0) {
+        throw new Error("Gaming news is temporarily unavailable.");
+      }
+      const [popular = [], feed = []] = available;
       // Dedupe by normalized title, popular items first
       // ALSO filter out articles without images (user requirement: don't show imageless news)
       const seen = new Set<string>();
@@ -40,7 +46,8 @@ export default function NewsPage() {
       }
       return merged;
     },
-    staleTime: 60 * 60 * 1000, // 1 hour — matches server cache
+    staleTime: 5 * 60 * 1000,
+    refetchOnMount: "always",
   });
 
   // Extract unique publishers
@@ -79,7 +86,7 @@ export default function NewsPage() {
           />
         </h1>
         <p className="text-sm text-secondary">
-          Trending stories from top gaming outlets — updated automatically every hour
+          Trending stories from top gaming outlets — refreshed every five minutes
         </p>
       </div>
 

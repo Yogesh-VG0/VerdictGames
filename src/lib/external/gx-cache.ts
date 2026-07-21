@@ -132,21 +132,23 @@ export async function gxFetchWithCache<T>(
   try {
     const liveData = await liveFetcher();
 
-    // Only cache non-empty results
+    // An empty upstream response is treated as a failure so a good cached feed
+    // is not replaced by a temporary provider outage.
     const isNonEmpty = Array.isArray(liveData) ? liveData.length > 0 : !!liveData;
-    if (isNonEmpty && cacheTable) {
-      // Fire and forget — don't block the response on cache write
-      void (async () => {
-        const { error } = await cacheTable.upsert({
-          feed_key: feedKey,
-          payload: liveData,
-          fetched_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        });
-        if (error) {
-          console.warn(`[GX Cache] Failed to update cache for ${feedKey}:`, error.message);
-        }
-      })();
+    if (!isNonEmpty) {
+      throw new Error(`GX returned an empty payload for ${feedKey}`);
+    }
+
+    if (cacheTable) {
+      const { error } = await cacheTable.upsert({
+        feed_key: feedKey,
+        payload: liveData,
+        fetched_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      });
+      if (error) {
+        console.warn(`[GX Cache] Failed to update cache for ${feedKey}:`, error.message);
+      }
     }
 
     return { data: liveData, source: "live" };

@@ -18,7 +18,14 @@ export default function HomepageNewsSection() {
   const gxNews = useQuery({
     queryKey: ["gx-news-merged"],
     queryFn: async () => {
-      const [popular, feed] = await Promise.all([getGXPopularNews(), getGXNewsFeed()]);
+      const results = await Promise.allSettled([getGXPopularNews(), getGXNewsFeed()]);
+      const available = results
+        .filter((result): result is PromiseFulfilledResult<Awaited<ReturnType<typeof getGXPopularNews>>> => result.status === "fulfilled")
+        .map((result) => result.value);
+      if (available.length === 0) {
+        throw new Error("Gaming news is temporarily unavailable.");
+      }
+      const [popular = [], feed = []] = available;
       const seen = new Set<string>();
       const normalize = (value: string) => value.toLowerCase().replace(/[^a-z0-9]/g, "");
       const merged = [] as typeof popular;
@@ -32,7 +39,8 @@ export default function HomepageNewsSection() {
       }
       return merged;
     },
-    staleTime: 60 * 60 * 1000,
+    staleTime: 5 * 60 * 1000,
+    refetchOnMount: "always",
   });
 
   if (!gxNews.data || gxNews.data.length === 0) {

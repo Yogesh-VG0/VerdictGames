@@ -434,6 +434,9 @@ try {
     const totalVerified = (stats.android?.verified ?? 0) + (stats.ios?.verified ?? 0);
     const totalFailed = (stats.android?.failed ?? 0) + (stats.ios?.failed ?? 0);
     const totalChecked = (stats.android?.checked ?? 0) + (stats.ios?.checked ?? 0);
+    if (totalChecked > 0 && totalFailed === totalChecked) {
+      throw new Error(`All ${totalChecked} mobile listing checks failed`);
+    }
     const elapsed = ((Date.now() - startedAt) / 1000).toFixed(1);
     await finishRun(sql, schedulerRun?.id, {
       rows_scanned: totalChecked,

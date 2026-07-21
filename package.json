@@ -11,7 +11,6 @@
     "build": "next build",
     "start": "next start -p $PORT",
     "lint": "eslint",
-    "heroku-postbuild": "echo 'Scheduler-only deploy — skipping Next.js build'",
     "scheduler:trending": "node scripts/heroku-refresh-trending.mjs",
     "scheduler:discover": "node scripts/heroku-discover-games.mjs",
     "scheduler:re-enrich": "node scripts/heroku-re-enrich.mjs",
