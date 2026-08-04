@@ -34,8 +34,8 @@ try {
 import { startRun, finishRun, acquireLock, releaseLock, checkMinInterval } from './lib/scheduler-logger.mjs';
 import { connectDb, closeDb } from './lib/db-connect.mjs';
 import { ingestGameDirect } from './lib/ingest-pipeline.mjs';
+import { rawgFetchJson } from './lib/rawg-client.mjs';
 
-const RAWG_BASE    = "https://api.rawg.io/api";
 const RAWG_KEY     = process.env.RAWG_API_KEY;
 const DEEP         = process.argv.includes("--deep");
 const JOB_NAME     = DEEP ? "discover-games-deep" : "discover-games";
@@ -50,12 +50,9 @@ const sql = connectDb("discover-games");
 async function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
 
 async function rawgFetch(endpoint, params = {}, limit = 40) {
-  const qs = new URLSearchParams({ key: RAWG_KEY, page_size: String(limit), ...params });
-  const res = await fetch(`${RAWG_BASE}/${endpoint}?${qs}`, { signal: AbortSignal.timeout(15000) });
-  if (!res.ok) {
-    throw new Error(`RAWG ${res.status}: ${endpoint}`);
-  }
-  const json = await res.json();
+  const json = await rawgFetchJson(`/${endpoint}`, {
+    params: { page_size: limit, ...params },
+  });
   return json.results ?? [];
 }
 
@@ -170,12 +167,19 @@ try {
     .filter((result) => result.status === "fulfilled")
     .map((result) => result.value);
   const failedFetches = fetchResults.length - allLists.length;
+  const failureMessages = fetchResults
+    .filter((result) => result.status === "rejected")
+    .map((result) => result.reason?.message ?? String(result.reason));
   const minimumSuccessfulFetches = Math.ceil(fetches.length * 0.75);
   if (allLists.length < minimumSuccessfulFetches) {
-    throw new Error(`RAWG discovery failed ${failedFetches}/${fetches.length} list requests`);
+    const firstFailure = failureMessages[0] ? ` First error: ${failureMessages[0]}` : "";
+    throw new Error(`RAWG discovery failed ${failedFetches}/${fetches.length} list requests.${firstFailure}`);
   }
   if (failedFetches > 0) {
     console.warn(`  ⚠ Continuing after ${failedFetches}/${fetches.length} RAWG list requests failed`);
+    for (const message of [...new Set(failureMessages)].slice(0, 3)) {
+      console.warn(`    - ${message}`);
+    }
   }
 
   // Deduplicate by slug

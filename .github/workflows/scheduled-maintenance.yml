@@ -93,8 +93,14 @@ jobs:
             exit 1
           fi
 
+      - name: Check RAWG availability
+        id: rawg_health
+        env:
+          RAWG_API_KEY: ${{ secrets.RAWG_API_KEY }}
+        run: node scripts/check-rawg-availability.mjs "${{ steps.resolve.outputs.job }}"
+
       - name: Restore backfill checkpoint
-        if: steps.resolve.outputs.job == 'backfill-games'
+        if: steps.resolve.outputs.job == 'backfill-games' && steps.rawg_health.outputs.run_job == 'true'
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .backfill-checkpoint.json
@@ -103,9 +109,11 @@ jobs:
             game-backfill-
 
       - name: Install production dependencies
+        if: steps.rawg_health.outputs.run_job == 'true'
         run: npm ci --omit=dev --ignore-scripts
 
       - name: Run maintenance job
+        if: steps.rawg_health.outputs.run_job == 'true'
         shell: bash
         env:
           JOB: ${{ steps.resolve.outputs.job }}

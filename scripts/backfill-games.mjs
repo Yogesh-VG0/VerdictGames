@@ -28,6 +28,7 @@ import { readFileSync, writeFileSync, existsSync } from "fs";
 import { startRun, finishRun, acquireLock, releaseLock, checkMinInterval } from './lib/scheduler-logger.mjs';
 import { connectDb } from './lib/db-connect.mjs';
 import { ingestGameDirect } from './lib/ingest-pipeline.mjs';
+import { rawgFetchJson } from './lib/rawg-client.mjs';
 
 // ── Load .env for local dev ──
 try {
@@ -62,7 +63,6 @@ const NO_RESUME    = args["no-resume"] === true;
 const PAGE_SIZE    = 40;
 const CHECKPOINT   = ".backfill-checkpoint.json";
 
-const RAWG_BASE    = "https://api.rawg.io/api";
 const RAWG_KEY     = process.env.RAWG_API_KEY;
 
 const MIN_RAWG_RATING    = 3.0;
@@ -91,10 +91,10 @@ async function sleep(ms) {
 }
 
 async function rawgFetch(path) {
-  const url = `${RAWG_BASE}${path}&key=${RAWG_KEY}`;
-  const res = await fetch(url, { signal: AbortSignal.timeout(15000) });
-  if (!res.ok) throw new Error(`RAWG ${res.status}: ${path}`);
-  return res.json();
+  const url = new URL(path, "https://rawg.invalid");
+  return rawgFetchJson(url.pathname, {
+    params: Object.fromEntries(url.searchParams),
+  });
 }
 
 // ── Concurrency pool ──

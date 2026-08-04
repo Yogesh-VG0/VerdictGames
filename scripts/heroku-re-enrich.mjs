@@ -60,6 +60,13 @@ const run = await startRun(sql, 're-enrich', { limit: LIMIT });
 try {
   const data = await reEnrichBatch(sql, { limit: LIMIT });
 
+  if (data.log?.length > 0) {
+    console.log(`\n📋 Details:`);
+    for (const entry of data.log) {
+      console.log(`   ${entry}`);
+    }
+  }
+
   if (data.total > 0 && data.failed === data.total) {
     throw new Error(`All ${data.total} re-enrichments failed`);
   }
@@ -69,13 +76,6 @@ try {
   console.log(`   Failed: ${data.failed}`);
   console.log(`   Total processed: ${data.total}`);
   if (data.fastPathCount) console.log(`   Fast-path (recent): ${data.fastPathCount}`);
-
-  if (data.log?.length > 0) {
-    console.log(`\n📋 Details:`);
-    for (const entry of data.log) {
-      console.log(`   ${entry}`);
-    }
-  }
 
   const elapsed = ((Date.now() - start) / 1000).toFixed(1);
   console.log(`\n⏱ Time: ${elapsed}s`);

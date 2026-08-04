@@ -435,6 +435,8 @@ verdict-games/
 ### `.github/workflows/scheduled-maintenance.yml`
 - Runs all eight recurring maintenance jobs on standard `ubuntu-latest` runners.
 - Supports manual dispatch, validates required secrets, persists the historical backfill checkpoint, and limits jobs to 350 minutes.
+- Health-checks RAWG before provider-dependent jobs and defers them during retryable upstream outages.
+- Scheduler RAWG traffic uses shared bounded concurrency, retries/backoff, 30-second timeouts, and a circuit breaker from `scripts/lib/rawg-client.mjs`.
 
 ### `.github/workflows/keep-scheduled-workflows-active.yml`
 - Runs monthly to prevent GitHub's 60-day public-repository inactivity suspension.

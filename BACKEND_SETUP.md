@@ -374,6 +374,8 @@ The versioned workflow at `.github/workflows/scheduled-maintenance.yml` runs the
 
 The unusual minutes reduce GitHub scheduler congestion. Standard and deep discovery use independent interval histories while sharing one advisory lock, so one cannot suppress or overlap the other. PostgreSQL session advisory locks prevent duplicate execution, and Actions cache persistence preserves the historical backfill checkpoint between ephemeral runners. Scheduled workflows run only from the default branch; GitHub may delay start times during load, so monitor failures in Actions and in `/admin/scheduler`.
 
+RAWG requests use bounded concurrency, retries with backoff, 30-second attempt timeouts, and a per-process circuit breaker. Before RAWG-only jobs start, the workflow confirms provider availability with two attempts. Retryable provider outages (`429`, `5xx`, or network timeouts) defer that run with a warning and retry on the next schedule; missing or invalid credentials still fail the workflow. Optional tuning variables are `RAWG_TIMEOUT_MS`, `RAWG_MAX_ATTEMPTS`, `RAWG_MAX_CONCURRENCY`, and `RAWG_CIRCUIT_FAILURES`.
+
 `keep-scheduled-workflows-active.yml` runs monthly and prevents GitHub from suspending public-repository schedules after 60 days without repository activity. Its third-party action is pinned to an immutable commit and restricted to this repository. It requires the encrypted `WORKFLOW_IMMORTALITY_TOKEN` secret with Actions read/write permission.
 
 All scripts use `scripts/lib/ingest-pipeline.mjs` for direct DB writes via the `postgres` tagged-template library.

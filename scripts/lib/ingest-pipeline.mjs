@@ -10,10 +10,11 @@
  *   slugify(text)                         — URL-safe slug
  */
 
+import { rawgFetchJson } from "./rawg-client.mjs";
+
 // ══════════════════════════════════════════════════
 // Configuration
 // ══════════════════════════════════════════════════
-const RAWG_BASE = "https://api.rawg.io/api";
 const STEAM_STORE_BASE = "https://store.steampowered.com/api";
 const STEAM_API_BASE = "https://api.steampowered.com";
 const IGDB_BASE = "https://api.igdb.com/v4";
@@ -133,12 +134,6 @@ async function validateAndGetSteamCover(steamAppId) {
   return null;
 }
 
-function getRawgKey() {
-  const k = process.env.RAWG_API_KEY;
-  if (!k) throw new Error("Missing RAWG_API_KEY");
-  return k;
-}
-
 // ══════════════════════════════════════════════════
 // Slug & Scoring Utilities
 // ══════════════════════════════════════════════════
@@ -200,20 +195,26 @@ function rawgRatio(rating, count) {
 // RAWG API
 // ══════════════════════════════════════════════════
 async function searchRawg(query) {
-  const p = new URLSearchParams({ key: getRawgKey(), search: query, page: "1", page_size: "10", search_precise: "true" });
-  const r = await fetch(`${RAWG_BASE}/games?${p}`, { signal: AbortSignal.timeout(15000) });
-  if (!r.ok) throw new Error(`RAWG search ${r.status}`); return r.json();
+  return rawgFetchJson("/games", {
+    params: { search: query, page: 1, page_size: 10, search_precise: true },
+  });
 }
 async function getRawgGame(id) {
-  const r = await fetch(`${RAWG_BASE}/games/${id}?key=${getRawgKey()}`, { signal: AbortSignal.timeout(15000) });
-  if (!r.ok) throw new Error(`RAWG game ${r.status}`); return r.json();
+  return rawgFetchJson(`/games/${id}`);
 }
 async function getRawgScreenshots(id) {
-  const r = await fetch(`${RAWG_BASE}/games/${id}/screenshots?key=${getRawgKey()}&page_size=10`, { signal: AbortSignal.timeout(15000) });
-  if (!r.ok) throw new Error(`RAWG screenshots ${r.status}`); return (await r.json()).results;
+  const data = await rawgFetchJson(`/games/${id}/screenshots`, {
+    params: { page_size: 10 },
+  });
+  return data.results ?? [];
 }
 async function getRawgStoreLinks(id) {
-  try { const r = await fetch(`${RAWG_BASE}/games/${id}/stores?key=${getRawgKey()}`, { signal: AbortSignal.timeout(15000) }); if (!r.ok) return []; return (await r.json()).results ?? []; } catch { return []; }
+  try {
+    const data = await rawgFetchJson(`/games/${id}/stores`);
+    return data.results ?? [];
+  } catch {
+    return [];
+  }
 }
 function extractSteamAppId(stores, links) {
   if (links?.length) { const sl = links.find(s => s.store_id === 1); if (sl?.url) { const m = sl.url.match(/store\.steampowered\.com\/app\/(\d+)/); if (m) return +m[1]; } }
