@@ -29,7 +29,7 @@
  * 11. Sci-Fi Epics                         22. Best Action RPGs of All Time
  */
 
-import { startRun, finishRun, acquireLock, releaseLock } from './lib/scheduler-logger.mjs';
+import { startRun, finishRun, acquireLock, releaseLock, isInfrastructureDbError } from './lib/scheduler-logger.mjs';
 import { connectDb, closeDb } from './lib/db-connect.mjs';
 import { createHash } from 'node:crypto';
 
@@ -687,6 +687,7 @@ for (const blueprint of LIST_BLUEPRINTS) {
 
   // Run query to get game IDs
   const gameRows = await blueprint.query().catch((e) => {
+    if (isInfrastructureDbError(e)) throw e;
     console.log(`  ✗ Query failed: ${e.message}`);
     return [];
   });
@@ -889,7 +890,11 @@ await finishRun(sql, run.id, {
 });
 } catch (err) {
   console.error(`❌ Seed curated lists failed:`, err.message);
-  await finishRun(sql, run.id, { error_message: err.message });
+  try {
+    await finishRun(sql, run.id, { error_message: err.message });
+  } catch (logError) {
+    console.error(`❌ Could not record curated-list failure: ${logError.message}`);
+  }
   await releaseLock(sql, 'seed-curated-lists');
   await closeDb(sql, 'seed-curated-lists');
   process.exit(1);

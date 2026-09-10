@@ -2,7 +2,7 @@ import { existsSync, readFileSync, writeFileSync } from "fs";
 import path from "path";
 import { connectDb } from "./lib/db-connect.mjs";
 import { ingestGameDirect, slugify } from "./lib/ingest-pipeline.mjs";
-import { acquireLock, finishRun, releaseLock, startRun } from "./lib/scheduler-logger.mjs";
+import { acquireLock, finishRun, isInfrastructureDbError, releaseLock, startRun } from "./lib/scheduler-logger.mjs";
 
 try {
   const env = readFileSync(".env", "utf8");
@@ -536,6 +536,7 @@ try {
             await sleep(Math.max(750, DELAY_MS) * (attemptNumber + 1));
             continue;
           }
+          if (isInfrastructureDbError(error)) throw error;
         }
         break;
       }
@@ -629,13 +630,18 @@ try {
   const message = error instanceof Error ? error.message : String(error);
   console.error(`❌ Import failed: ${message}`);
   if (!DRY_RUN) {
-    await finishRun(sql, schedulerRun.id, {
-      error_message: message,
-      metadata: {
-        filePath: FILE_PATH,
-        checkpoint: CHECKPOINT_PATH,
-      },
-    });
+    try {
+      await finishRun(sql, schedulerRun.id, {
+        error_message: message,
+        metadata: {
+          filePath: FILE_PATH,
+          checkpoint: CHECKPOINT_PATH,
+        },
+      });
+    } catch (logError) {
+      const logMessage = logError instanceof Error ? logError.message : String(logError);
+      console.error(`❌ Could not record import failure: ${logMessage}`);
+    }
   }
 } finally {
   if (!DRY_RUN && locked) {

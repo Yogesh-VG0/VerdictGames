@@ -65,31 +65,61 @@ export function isInfrastructureDbError(error) {
 }
 
 /**
+ * Retry transient database infrastructure failures with exponential backoff.
+ * SQL and application errors are never retried.
+ */
+export async function retryInfrastructureDbOperation(operationName, operation, {
+  attempts = 3,
+  initialDelayMs = 2000,
+} = {}) {
+  const maxAttempts = Math.max(1, Math.trunc(attempts));
+  const baseDelayMs = Math.max(0, initialDelayMs);
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      return await operation();
+    } catch (err) {
+      if (!isInfrastructureDbError(err) || attempt === maxAttempts) throw err;
+
+      const delayMs = baseDelayMs * (2 ** (attempt - 1));
+      console.warn(`⚠ ${operationName} failed: ${getErrorMessage(err)}. Retrying in ${delayMs}ms (${attempt + 1}/${maxAttempts}).`);
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+  }
+}
+
+/**
  * Try to acquire a Postgres advisory lock (non-blocking).
  * Returns true if lock acquired, false if another instance holds it.
  * Use this to prevent overlapping scheduler runs.
  */
 export async function acquireLock(sql, jobName) {
   const lockId = jobNameToLockId(jobName);
-  let reserved = null;
   try {
-    reserved = await sql.reserve();
-    const [{ acquired }] = await reserved`SELECT pg_try_advisory_lock(${lockId}) AS acquired`;
-    if (!acquired) {
-      reserved.release();
-      console.log(`🔒 Advisory lock ${lockId} (${jobName}) already held — another instance is running. Skipping.`);
-      return false;
-    }
-    getLockStore(sql).set(jobName, reserved);
-    return true;
+    return await retryInfrastructureDbOperation(`Advisory lock check for ${jobName}`, async () => {
+      let reserved = null;
+      try {
+        reserved = await sql.reserve();
+        const [{ acquired }] = await reserved`SELECT pg_try_advisory_lock(${lockId}) AS acquired`;
+        if (!acquired) {
+          reserved.release();
+          console.log(`🔒 Advisory lock ${lockId} (${jobName}) already held — another instance is running. Skipping.`);
+          return false;
+        }
+        getLockStore(sql).set(jobName, reserved);
+        return true;
+      } catch (err) {
+        if (reserved) {
+          try { reserved.release(); } catch {}
+        }
+        throw err;
+      }
+    });
   } catch (err) {
-    if (reserved) {
-      try { reserved.release(); } catch {}
-    }
     const message = getErrorMessage(err);
     if (isInfrastructureDbError(err)) {
-      console.warn(`⚠ Advisory lock check failed: ${message}. Skipping this run to avoid overlap while DB capacity is degraded.`);
-      return false;
+      console.error(`❌ Advisory lock check failed after retries: ${message}. Aborting this run.`);
+      throw err;
     }
     console.warn(`⚠ Advisory lock check failed: ${message}. Proceeding without advisory lock.`);
     return true;
@@ -131,11 +161,11 @@ export async function releaseLock(sql, jobName) {
  */
 export async function checkMinInterval(sql, jobName, minIntervalHours) {
   try {
-    const [row] = await sql`
-      SELECT COALESCE(finished_at, started_at) AS completed_at FROM scheduler_runs
-      WHERE job_name = ${jobName} AND status = 'success'
-      ORDER BY COALESCE(finished_at, started_at) DESC LIMIT 1
-    `;
+    const [row] = await retryInfrastructureDbOperation(`Interval check for ${jobName}`, () => sql`
+        SELECT COALESCE(finished_at, started_at) AS completed_at FROM scheduler_runs
+        WHERE job_name = ${jobName} AND status = 'success'
+        ORDER BY COALESCE(finished_at, started_at) DESC LIMIT 1
+      `);
     if (!row) return true; // no previous run found, should run
 
     const lastRun = new Date(row.completed_at);
@@ -153,8 +183,8 @@ export async function checkMinInterval(sql, jobName, minIntervalHours) {
       return true;
     }
     if (isInfrastructureDbError(err)) {
-      console.warn(`⚠ Interval check failed: ${message}. Skipping this run because DB capacity is degraded.`);
-      return false;
+      console.error(`❌ Interval check failed after retries: ${message}. Aborting this run.`);
+      throw err;
     }
     console.warn(`⚠ Interval check failed: ${message}. Proceeding anyway.`);
     return true;
@@ -176,6 +206,9 @@ export async function startRun(sql, jobName, metadata = {}) {
     const message = getErrorMessage(err);
     if (isSchedulerRunsTableMissing(err)) {
       console.warn(`⚠ scheduler_runs logging failed (table may not exist): ${message}`);
+    } else if (isInfrastructureDbError(err)) {
+      console.error(`❌ scheduler_runs logging failed: ${message}. Aborting this run.`);
+      throw err;
     } else {
       console.warn(`⚠ scheduler_runs logging failed: ${message}`);
     }
@@ -199,20 +232,21 @@ export async function finishRun(sql, runId, {
   const status = error_message ? 'error' : 'success';
   try {
     const metadataClause = metadata ? JSON.stringify(metadata) : null;
-    await sql`
-      UPDATE scheduler_runs SET
-        finished_at = now(),
-        status = ${status},
-        duration_ms = EXTRACT(EPOCH FROM (now() - started_at)) * 1000,
-        rows_scanned = ${rows_scanned},
-        rows_created = ${rows_created},
-        rows_updated = ${rows_updated},
-        rows_skipped = ${rows_skipped},
-        error_message = ${error_message},
-        metadata = COALESCE(${metadataClause}::jsonb, metadata)
-      WHERE id = ${runId}
-    `;
+    await retryInfrastructureDbOperation(`Finish scheduler run ${runId}`, () => sql`
+        UPDATE scheduler_runs SET
+          finished_at = now(),
+          status = ${status},
+          duration_ms = EXTRACT(EPOCH FROM (now() - started_at)) * 1000,
+          rows_scanned = ${rows_scanned},
+          rows_created = ${rows_created},
+          rows_updated = ${rows_updated},
+          rows_skipped = ${rows_skipped},
+          error_message = ${error_message},
+          metadata = COALESCE(${metadataClause}::jsonb, metadata)
+        WHERE id = ${runId}
+      `);
   } catch (err) {
+    if (isInfrastructureDbError(err)) throw err;
     console.warn(`⚠ scheduler_runs finish logging failed: ${getErrorMessage(err)}`);
   }
 }

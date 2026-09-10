@@ -18,7 +18,7 @@
  *   DATABASE_URL, RAWG_API_KEY, TWITCH_CLIENT_ID, TWITCH_CLIENT_SECRET
  */
 
-import { startRun, finishRun, acquireLock, releaseLock, checkMinInterval } from './lib/scheduler-logger.mjs';
+import { startRun, finishRun, acquireLock, releaseLock, checkMinInterval, isInfrastructureDbError } from './lib/scheduler-logger.mjs';
 import { connectDb, closeDb } from './lib/db-connect.mjs';
 import { ingestGameDirect } from './lib/ingest-pipeline.mjs';
 
@@ -159,6 +159,7 @@ async function applyPlayerCountUpdates(updates, timestamp) {
       `;
       applied += Number(result.count ?? 0);
     } catch (err) {
+      if (isInfrastructureDbError(err)) throw err;
       // Non-fatal: skip individual update failures
     }
   }
@@ -273,6 +274,7 @@ if (globalTop.length > 0) {
           console.log(`  ✗ Failed to ingest ${name}: ${result.message}`);
         }
       } catch (e) {
+        if (isInfrastructureDbError(e)) throw e;
         console.log(`  ✗ Ingest error for ${name}: ${e.message}`);
       }
 
@@ -365,6 +367,7 @@ try {
   `;
   if (deleted.count > 0) console.log(`  🗑️ Cleaned ${deleted.count} old snapshots`);
 } catch (e) {
+  if (isInfrastructureDbError(e)) throw e;
   console.log(`  ⚠ Momentum tracking error: ${e.message}`);
 }
 
@@ -500,7 +503,11 @@ console.log("✅ Done!");
   caughtError = err;
   const errorMessage = err?.message ?? String(err);
   console.error(`❌ Refresh trending failed: ${errorMessage}`);
-  await finishRun(sql, run.id, { error_message: errorMessage });
+  try {
+    await finishRun(sql, run.id, { error_message: errorMessage });
+  } catch (logError) {
+    console.error(`❌ Could not record refresh failure: ${logError.message}`);
+  }
 } finally {
   await releaseLock(sql, 'refresh-trending');
   await closeDb(sql, 'refresh-trending');

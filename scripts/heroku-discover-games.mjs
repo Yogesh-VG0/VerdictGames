@@ -31,7 +31,7 @@ try {
   // .env not found; use process environment variables.
 }
 
-import { startRun, finishRun, acquireLock, releaseLock, checkMinInterval } from './lib/scheduler-logger.mjs';
+import { startRun, finishRun, acquireLock, releaseLock, checkMinInterval, isInfrastructureDbError } from './lib/scheduler-logger.mjs';
 import { connectDb, closeDb } from './lib/db-connect.mjs';
 import { ingestGameDirect } from './lib/ingest-pipeline.mjs';
 import { rawgFetchJson } from './lib/rawg-client.mjs';
@@ -66,13 +66,19 @@ function formatDateRange(daysBack, daysForward) {
 
 async function withConcurrency(items, concurrency, fn) {
   let idx = 0;
+  let fatalError = null;
   async function worker() {
-    while (idx < items.length) {
+    while (idx < items.length && !fatalError) {
       const i = idx++;
-      await fn(items[i], i);
+      try {
+        await fn(items[i], i);
+      } catch (err) {
+        fatalError ??= err;
+      }
     }
   }
   await Promise.all(Array.from({ length: Math.min(concurrency, items.length) }, worker));
+  if (fatalError) throw fatalError;
 }
 
 // ── Main ──
@@ -258,6 +264,7 @@ try {
         errors.push(`${game.name}: ${result.message}`);
       }
     } catch (e) {
+      if (isInfrastructureDbError(e)) throw e;
       failedCount++;
       errors.push(`${game.name}: ${e.message}`);
     }
@@ -296,7 +303,13 @@ try {
   });
 } catch (err) {
   console.error(`❌ Discovery failed:`, err.message);
-  if (run) await finishRun(sql, run.id, { error_message: err.message });
+  if (run) {
+    try {
+      await finishRun(sql, run.id, { error_message: err.message });
+    } catch (logError) {
+      console.error(`❌ Could not record discovery failure: ${logError.message}`);
+    }
+  }
   await releaseLock(sql, INGEST_LOCK);
   await closeDb(sql, 'discover-games');
   process.exit(1);

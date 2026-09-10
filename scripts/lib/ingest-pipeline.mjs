@@ -11,6 +11,7 @@
  */
 
 import { rawgFetchJson } from "./rawg-client.mjs";
+import { isInfrastructureDbError } from "./scheduler-logger.mjs";
 
 // ══════════════════════════════════════════════════
 // Configuration
@@ -736,16 +737,24 @@ export async function ingestGameDirect(sql, query, options = {}) {
   // ── 7. Source mappings ──
   await sql`INSERT INTO game_sources (game_id, source_name, source_game_id, source_url)
     VALUES (${gameId}, 'rawg', ${String(fullGame.id)}, ${"https://rawg.io/games/" + fullGame.slug})
-    ON CONFLICT (source_name, source_game_id) DO UPDATE SET game_id = ${gameId}`.catch(() => {});
+    ON CONFLICT (source_name, source_game_id) DO UPDATE SET game_id = ${gameId}`.catch((error) => {
+      if (isInfrastructureDbError(error)) throw error;
+    });
   if (steamAppId) await sql`INSERT INTO game_sources (game_id, source_name, source_game_id, source_url)
     VALUES (${gameId}, 'steam', ${String(steamAppId)}, ${"https://store.steampowered.com/app/" + steamAppId})
-    ON CONFLICT (source_name, source_game_id) DO UPDATE SET game_id = ${gameId}`.catch(() => {});
+    ON CONFLICT (source_name, source_game_id) DO UPDATE SET game_id = ${gameId}`.catch((error) => {
+      if (isInfrastructureDbError(error)) throw error;
+    });
   if (ie?.igdbId) await sql`INSERT INTO game_sources (game_id, source_name, source_game_id, source_url)
     VALUES (${gameId}, 'igdb', ${String(ie.igdbId)}, ${ie.igdbUrl})
-    ON CONFLICT (source_name, source_game_id) DO UPDATE SET game_id = ${gameId}`.catch(() => {});
+    ON CONFLICT (source_name, source_game_id) DO UPDATE SET game_id = ${gameId}`.catch((error) => {
+      if (isInfrastructureDbError(error)) throw error;
+    });
   if (csId) await sql`INSERT INTO game_sources (game_id, source_name, source_game_id, source_url)
     VALUES (${gameId}, 'cheapshark', ${csId}, ${pDealUrl})
-    ON CONFLICT (source_name, source_game_id) DO UPDATE SET game_id = ${gameId}`.catch(() => {});
+    ON CONFLICT (source_name, source_game_id) DO UPDATE SET game_id = ${gameId}`.catch((error) => {
+      if (isInfrastructureDbError(error)) throw error;
+    });
 
   return { success: true, gameId, slug, title: fullGame.name, rawgId: fullGame.id, message: existing ? `"${fullGame.name}" refreshed.` : `"${fullGame.name}" ingested.`, alreadyExisted: !!existing };
 }
@@ -799,13 +808,26 @@ export async function reEnrichBatch(sql, { limit = 10 } = {}) {
     try { const [lk] = await sql`UPDATE games SET is_refreshing = true, refresh_started_at = ${now}
       WHERE id = ${game.id} AND (is_refreshing = false OR is_refreshing IS NULL OR refresh_started_at < ${lockCutoff} OR refresh_started_at IS NULL) RETURNING id`;
       if (!lk) { log.push(`SKIP ${game.title} — locked`); continue; }
-    } catch { /* lock cols may not exist */ }
+    } catch (error) {
+      if (isInfrastructureDbError(error)) throw error;
+      // Lock columns may not exist on older schemas.
+    }
 
     try {
       const r = await ingestGameDirect(sql, game.title, { forceRefresh: true });
       if (r.success) { ok++; log.push(`OK ${game.title}`); } else { fail++; log.push(`FAIL ${game.title} — ${r.message}`); }
-    } catch (e) { fail++; log.push(`ERR ${game.title} — ${e.message}`); }
-    finally { try { await sql`UPDATE games SET is_refreshing = false, refresh_started_at = NULL WHERE id = ${game.id}`; } catch {} }
+    } catch (e) {
+      if (isInfrastructureDbError(e)) throw e;
+      fail++;
+      log.push(`ERR ${game.title} — ${e.message}`);
+    }
+    finally {
+      try {
+        await sql`UPDATE games SET is_refreshing = false, refresh_started_at = NULL WHERE id = ${game.id}`;
+      } catch (error) {
+        if (isInfrastructureDbError(error)) throw error;
+      }
+    }
 
     await new Promise(r => setTimeout(r, 500)); // rate limit
   }

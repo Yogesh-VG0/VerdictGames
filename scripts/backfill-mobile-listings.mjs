@@ -32,7 +32,7 @@ try {
 } catch { /* .env not found */ }
 
 import { connectDb } from "./lib/db-connect.mjs";
-import { checkMinInterval, startRun, finishRun, acquireLock, releaseLock } from "./lib/scheduler-logger.mjs";
+import { checkMinInterval, startRun, finishRun, acquireLock, releaseLock, isInfrastructureDbError } from "./lib/scheduler-logger.mjs";
 
 const sql = connectDb("backfill-mobile");
 
@@ -169,6 +169,7 @@ try {
     for (const game of games) {
       stats.android.checked++;
       const label = `[${stats.android.checked}/${games.length}] ${game.title}`;
+      let performingDatabaseWrite = false;
 
       try {
         const scraper = await getGplay();
@@ -241,6 +242,7 @@ try {
           continue;
         }
 
+        performingDatabaseWrite = true;
         await sql`
           INSERT INTO mobile_store_listings (
             game_id, store, external_id, store_url, title, developer,
@@ -287,12 +289,14 @@ try {
             UPDATE games SET play_store_url = ${appData.url} WHERE id = ${game.id}
           `;
         }
+        performingDatabaseWrite = false;
 
         console.log(
           `  ✓ ${label} → ${packageName} (★${appData.score ?? "?"}, ${appData.installs})`
         );
         stats.android.verified++;
       } catch (err) {
+        if (performingDatabaseWrite && isInfrastructureDbError(err)) throw err;
         console.log(`  ✗ ${label} — error: ${err.message}`);
         stats.android.failed++;
       }
@@ -310,6 +314,7 @@ try {
     for (const game of games) {
       stats.ios.checked++;
       const label = `[${stats.ios.checked}/${games.length}] ${game.title}`;
+      let performingDatabaseWrite = false;
 
       try {
         const params = new URLSearchParams({
@@ -370,6 +375,7 @@ try {
           continue;
         }
 
+        performingDatabaseWrite = true;
         await sql`
           INSERT INTO mobile_store_listings (
             game_id, store, external_id, store_url, title, developer,
@@ -405,12 +411,14 @@ try {
             is_verified = true,
             last_verified_at = NOW()
         `;
+        performingDatabaseWrite = false;
 
         console.log(
           `  ✓ ${label} → ${bestMatch.bundleId} (★${bestMatch.averageUserRating ?? "?"})`
         );
         stats.ios.verified++;
       } catch (err) {
+        if (performingDatabaseWrite && isInfrastructureDbError(err)) throw err;
         console.log(`  ✗ ${label} — error: ${err.message}`);
         stats.ios.failed++;
       }
@@ -448,7 +456,11 @@ try {
 } catch (err) {
   console.error(`❌ Backfill mobile listings failed:`, err.message);
   if (!DRY_RUN) {
-    await finishRun(sql, schedulerRun?.id, { error_message: err.message });
+    try {
+      await finishRun(sql, schedulerRun?.id, { error_message: err.message });
+    } catch (logError) {
+      console.error(`❌ Could not record mobile backfill failure: ${logError.message}`);
+    }
   }
   if (!DRY_RUN) {
     await releaseLock(sql, JOB_NAME);

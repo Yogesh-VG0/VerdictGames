@@ -87,7 +87,11 @@ try {
   });
 } catch (err) {
   console.error(`❌ Re-enrichment failed:`, err.message);
-  await finishRun(sql, run.id, { error_message: err.message });
+  try {
+    await finishRun(sql, run.id, { error_message: err.message });
+  } catch (logError) {
+    console.error(`❌ Could not record re-enrichment failure: ${logError.message}`);
+  }
   await releaseLock(sql, 're-enrich');
   await closeDb(sql, 're-enrich');
   process.exit(1);

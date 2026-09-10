@@ -25,7 +25,7 @@
  */
 
 import { readFileSync, writeFileSync, existsSync } from "fs";
-import { startRun, finishRun, acquireLock, releaseLock, checkMinInterval } from './lib/scheduler-logger.mjs';
+import { startRun, finishRun, acquireLock, releaseLock, checkMinInterval, isInfrastructureDbError } from './lib/scheduler-logger.mjs';
 import { connectDb, closeDb } from './lib/db-connect.mjs';
 import { ingestGameDirect } from './lib/ingest-pipeline.mjs';
 import { rawgFetchJson } from './lib/rawg-client.mjs';
@@ -103,13 +103,19 @@ async function rawgFetch(path) {
 async function withConcurrency(items, concurrency, fn) {
   const results = [];
   let idx = 0;
+  let fatalError = null;
   async function worker() {
-    while (idx < items.length) {
+    while (idx < items.length && !fatalError) {
       const i = idx++;
-      results[i] = await fn(items[i], i);
+      try {
+        results[i] = await fn(items[i], i);
+      } catch (err) {
+        fatalError ??= err;
+      }
     }
   }
   await Promise.all(Array.from({ length: Math.min(concurrency, items.length) }, worker));
+  if (fatalError) throw fatalError;
   return results;
 }
 
@@ -176,6 +182,7 @@ try {
       runId = run?.id;
       console.log(`📝 Ingest run: ${runId}\n`);
     } catch (e) {
+      if (isInfrastructureDbError(e)) throw e;
       console.log(`⚠ Could not create ingest_run record: ${e.message}`);
     }
   }
@@ -263,6 +270,7 @@ try {
               errorDetails.push({ title: rawgGame.name, error: result.message });
             }
           } catch (e) {
+            if (isInfrastructureDbError(e)) throw e;
             console.log(`  ✗ ${rawgGame.name} — ${e.message}`);
             errors++;
             errorDetails.push({ title: rawgGame.name, error: e.message });
@@ -306,7 +314,7 @@ try {
         errors = ${errors},
         error_details = ${JSON.stringify(errorDetails)}
       WHERE id = ${runId}
-    `.catch(() => {});
+    `;
   }
 
   console.log("\n═══════════════════════════════════════════");
@@ -328,7 +336,11 @@ try {
   const errorMessage = err?.message ?? String(err);
   console.error(`❌ Backfill games failed: ${errorMessage}`);
   if (!DRY_RUN) {
-    await finishRun(sql, schedulerRun.id, { error_message: errorMessage });
+    try {
+      await finishRun(sql, schedulerRun.id, { error_message: errorMessage });
+    } catch (logError) {
+      console.error(`❌ Could not record backfill failure: ${logError.message}`);
+    }
   }
 } finally {
   if (!DRY_RUN) {
