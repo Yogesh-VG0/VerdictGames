@@ -14,7 +14,7 @@
  *   --year-from=2020     Start year (default: 2022)
  *   --year-to=2026       End year   (default: current year)
  *   --limit=60           Max games to ingest per run (default: 60)
- *   --concurrency=3      Parallel ingest workers (default: 3, max: 10)
+ *   --concurrency=2      Parallel ingest workers (default: 2, max: 5)
  *   --delay-ms=100       Delay between ingest batches in ms (default: 100)
  *   --no-resume          Ignore saved checkpoint and start fresh
  *   --dry-run            Print candidates without ingesting
@@ -26,7 +26,7 @@
 
 import { readFileSync, writeFileSync, existsSync } from "fs";
 import { startRun, finishRun, acquireLock, releaseLock, checkMinInterval } from './lib/scheduler-logger.mjs';
-import { connectDb } from './lib/db-connect.mjs';
+import { connectDb, closeDb } from './lib/db-connect.mjs';
 import { ingestGameDirect } from './lib/ingest-pipeline.mjs';
 import { rawgFetchJson } from './lib/rawg-client.mjs';
 
@@ -56,12 +56,13 @@ const args = Object.fromEntries(
 const YEAR_FROM    = parseInt(args["year-from"]   ?? "2022");
 const YEAR_TO      = parseInt(args["year-to"]     ?? String(new Date().getFullYear()));
 const LIMIT        = parseInt(args["limit"]        ?? "60");
-const CONCURRENCY  = Math.min(5, parseInt(args["concurrency"] ?? "2"));
+const CONCURRENCY  = Math.max(1, Math.min(5, parseInt(args["concurrency"] ?? process.env.SCHEDULER_INGEST_CONCURRENCY ?? "2") || 2));
 const DELAY_MS     = parseInt(args["delay-ms"]     ?? "500");
 const DRY_RUN      = args["dry-run"] === true;
 const NO_RESUME    = args["no-resume"] === true;
 const PAGE_SIZE    = 40;
 const CHECKPOINT   = ".backfill-checkpoint.json";
+const INGEST_LOCK  = "games-ingest";
 
 const RAWG_KEY     = process.env.RAWG_API_KEY;
 
@@ -144,13 +145,13 @@ console.log("══════════════════════�
 if (!DRY_RUN) {
   const MIN_INTERVAL_HOURS = parseFloat(process.env.BACKFILL_INTERVAL_HOURS || "11");
   const shouldRun = await checkMinInterval(sql, 'backfill-games', MIN_INTERVAL_HOURS);
-  if (!shouldRun) { await sql.end(); process.exit(0); }
+  if (!shouldRun) { await closeDb(sql, 'backfill-games'); process.exit(0); }
 }
 
-// Anti-overlap: advisory lock prevents concurrent backfill runs
+// Discovery and backfill share a lock because both run the same DB-heavy pipeline.
 if (!DRY_RUN) {
-  const locked = await acquireLock(sql, 'backfill-games');
-  if (!locked) { await sql.end(); process.exit(0); }
+  const locked = await acquireLock(sql, INGEST_LOCK);
+  if (!locked) { await closeDb(sql, 'backfill-games'); process.exit(0); }
 }
 const schedulerRun = !DRY_RUN ? await startRun(sql, 'backfill-games', { yearFrom: YEAR_FROM, yearTo: YEAR_TO, limit: LIMIT }) : { id: null };
 
@@ -331,9 +332,9 @@ try {
   }
 } finally {
   if (!DRY_RUN) {
-    await releaseLock(sql, 'backfill-games');
+    await releaseLock(sql, INGEST_LOCK);
   }
-  await sql.end();
+  await closeDb(sql, 'backfill-games');
 }
 
 if (caughtError) {

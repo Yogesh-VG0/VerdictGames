@@ -39,8 +39,9 @@ import { rawgFetchJson } from './lib/rawg-client.mjs';
 const RAWG_KEY     = process.env.RAWG_API_KEY;
 const DEEP         = process.argv.includes("--deep");
 const JOB_NAME     = DEEP ? "discover-games-deep" : "discover-games";
-const CONCURRENCY  = 2;
+const CONCURRENCY  = Math.max(1, Math.min(5, parseInt(process.env.SCHEDULER_INGEST_CONCURRENCY ?? "2") || 2));
 const DELAY_MS     = 300;
+const INGEST_LOCK  = "games-ingest";
 
 if (!RAWG_KEY) { console.error("✗ RAWG_API_KEY not set"); process.exit(1); }
 
@@ -88,8 +89,8 @@ const MIN_INTERVAL = parseFloat(process.env.DISCOVER_INTERVAL_HOURS || "5");
 const shouldRun = await checkMinInterval(sql, JOB_NAME, MIN_INTERVAL);
 if (!shouldRun) { console.log("⏭ Skipping — last run too recent"); await closeDb(sql, JOB_NAME); process.exit(0); }
 
-const locked = await acquireLock(sql, 'discover-games');
-if (!locked) { console.log("🔒 Another discover run is active"); await closeDb(sql, 'discover-games'); process.exit(0); }
+const locked = await acquireLock(sql, INGEST_LOCK);
+if (!locked) { console.log("🔒 Another game ingest run is active"); await closeDb(sql, 'discover-games'); process.exit(0); }
 run = await startRun(sql, JOB_NAME, { mode: DEEP ? 'deep' : 'standard' });
 
 try {
@@ -296,10 +297,10 @@ try {
 } catch (err) {
   console.error(`❌ Discovery failed:`, err.message);
   if (run) await finishRun(sql, run.id, { error_message: err.message });
-  await releaseLock(sql, 'discover-games');
+  await releaseLock(sql, INGEST_LOCK);
   await closeDb(sql, 'discover-games');
   process.exit(1);
 }
 
-await releaseLock(sql, 'discover-games');
+await releaseLock(sql, INGEST_LOCK);
 await closeDb(sql, 'discover-games');

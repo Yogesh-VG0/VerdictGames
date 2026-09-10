@@ -245,7 +245,10 @@ async function fetchCandidateRows(game: Game): Promise<RelatedCandidateBucket[]>
     }));
   }
 
-  const groups = await Promise.all(queries);
+  const groups: Array<{ source: RelatedCandidateSource; rows: GameRow[] }> = [];
+  for (let index = 0; index < queries.length; index += 2) {
+    groups.push(...await Promise.all(queries.slice(index, index + 2)));
+  }
   const byId = new Map<string, RelatedCandidateBucket>();
 
   for (const group of groups) {

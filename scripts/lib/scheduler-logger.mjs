@@ -44,15 +44,24 @@ function isSchedulerRunsTableMissing(error) {
   return code === "42P01" || /relation\s+['\"]?scheduler_runs['\"]?\s+does not exist/i.test(message);
 }
 
-function isInfrastructureDbError(error) {
+export function isInfrastructureDbError(error) {
   const code = String(error?.code ?? "").toUpperCase();
   const message = getErrorMessage(error);
 
-  if (["CONNECTION_CLOSED", "CONNECT_TIMEOUT", "CONNECTION_DESTROYED", "CONNECTION_ENDED"].includes(code)) {
+  if ([
+    "CONNECTION_CLOSED",
+    "CONNECT_TIMEOUT",
+    "CONNECTION_DESTROYED",
+    "CONNECTION_ENDED",
+    "ECONNREFUSED",
+    "ECONNRESET",
+    "ETIMEDOUT",
+    "EAI_AGAIN",
+  ].includes(code)) {
     return true;
   }
 
-  return /maxclientsinsessionmode|max clients reached|too many clients|connection closed|connection destroyed|connection ended|connect timeout/i.test(message);
+  return /maxclientsinsessionmode|max clients reached|too many clients|connection (?:closed|destroyed|ended|refused|reset)|connect(?:ion)? timeout|auth_query secret check timed out|failed to connect to database|\{\s*:error\s*,\s*:timeout\s*\}/i.test(message);
 }
 
 /**

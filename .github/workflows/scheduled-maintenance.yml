@@ -125,6 +125,8 @@ jobs:
           SCHEDULER_DB_MAX_CONNECTIONS: "2"
           SCHEDULER_DB_CONNECT_TIMEOUT_SECONDS: "30"
           SCHEDULER_DB_IDLE_TIMEOUT_SECONDS: "30"
+          # One connection remains available while the session advisory lock is held.
+          SCHEDULER_INGEST_CONCURRENCY: "1"
         run: |
           case "$JOB" in
             refresh-trending) node scripts/heroku-refresh-trending.mjs ;;
