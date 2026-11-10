@@ -61,6 +61,7 @@ function BottomNavMarkup({
             <Link
               key={link.href}
               href={link.href}
+              prefetch={false}
               aria-current={isActive ? "page" : undefined}
               className={cn(
                 "relative flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl transition-all duration-200",

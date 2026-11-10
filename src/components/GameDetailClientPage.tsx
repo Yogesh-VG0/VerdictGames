@@ -510,7 +510,7 @@ export default function GameDetailClientPage({
             <ChevronRight className="w-3 h-3 shrink-0" />
             {game.genres[0] && (
               <>
-                <Link href={`/search?genre=${encodeURIComponent(game.genres[0])}`} className="hover:text-foreground transition-colors shrink-0">
+                <Link href={`/search?genre=${encodeURIComponent(game.genres[0])}`} prefetch={false} className="hover:text-foreground transition-colors shrink-0">
                   {game.genres[0]}
                 </Link>
                 <ChevronRight className="w-3 h-3 shrink-0" />
