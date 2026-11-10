@@ -1,91 +1,23 @@
-"use client";
+import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
+import ListDetailClientPage from '@/components/ListDetailClientPage';
+import { loadPublicList } from '@/lib/services/public-list';
+import { SITE_URL, buildSocialMetadata } from '@/lib/seo';
 
-import { use } from "react";
-import Link from "next/link";
-import { useQuery } from "@tanstack/react-query";
-import { getListBySlug } from "@/lib/api";
-import GameGrid from "@/components/GameGrid";
-import PixelBadge from "@/components/ui/PixelBadge";
-import PixelButton from "@/components/ui/PixelButton";
-import { Skeleton, GameGridSkeleton } from "@/components/ui/Skeleton";
-
-interface Props {
-  params: Promise<{ slug: string }>;
+export const revalidate = 300;
+export function generateStaticParams() { return []; }
+type Props = { params: Promise<{ slug: string }> };
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { slug } = await params;
+  const list = await loadPublicList(slug);
+  if (!list) return { title: 'List Not Found', robots: { index: false, follow: true } };
+  const description = list.description.slice(0, 160) || `${list.title} - a curated game list on Verdict Games.`;
+  const url = `${SITE_URL}/lists/${slug}`;
+  return { title: list.title, description, alternates: { canonical: url }, ...buildSocialMetadata({ title: list.title, description, url, image: list.coverImage || undefined, type: 'article' }) };
 }
-
-export default function ListDetailPage({ params }: Props) {
-  const { slug } = use(params);
-
-  const { data: list, isLoading } = useQuery({
-    queryKey: ["list", slug],
-    queryFn: () => getListBySlug(slug),
-  });
-
-  if (isLoading) {
-    return (
-      <div className="max-w-[1400px] mx-auto px-4 py-6 space-y-6">
-        <Skeleton className="h-8 w-64" />
-        <Skeleton className="h-4 w-full max-w-lg" />
-        <GameGridSkeleton count={6} />
-      </div>
-    );
-  }
-
-  if (!list) {
-    return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center text-center space-y-4">
-        <div className="text-5xl">📋</div>
-        <h2 className="text-xl font-bold text-foreground">List not found</h2>
-        <p className="text-sm text-secondary">
-          This list doesn&apos;t exist or has been removed.
-        </p>
-        <Link href="/lists" prefetch={false}>
-          <PixelButton as="span" variant="secondary">Browse Lists</PixelButton>
-        </Link>
-      </div>
-    );
-  }
-
-  return (
-    <div className="max-w-[1400px] mx-auto px-4 py-6 space-y-6 animate-fade-in-up overflow-x-hidden">
-      {/* Header */}
-      <div className="space-y-3">
-        <Link
-          href="/lists"
-          className="text-xs text-accent hover:text-accent-hover transition-colors"
-        >
-          ← Back to Lists
-        </Link>
-        <h1 className="text-2xl md:text-3xl font-bold text-foreground break-words">
-          {list.title}
-        </h1>
-        <p className="text-sm text-secondary max-w-2xl leading-relaxed break-words">
-          {list.description}
-        </p>
-        <div className="flex items-center gap-2 text-xs text-tertiary flex-wrap">
-          <span className="shrink-0">
-            Curated by{" "}
-            <Link
-              href={`/profile/${list.curatedBy}`}
-              className="text-accent hover:text-accent-hover font-medium"
-            >
-              {list.curatedBy}
-            </Link>
-          </span>
-          <span className="hidden sm:inline">·</span>
-          <span className="shrink-0">{list.gameCount} games</span>
-          <div className="flex gap-1 flex-wrap basis-full sm:basis-auto">
-            {list.tags.slice(0, 3).map((tag) => (
-              <PixelBadge key={tag} variant="muted" size="sm">
-                {tag}
-              </PixelBadge>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Games grid */}
-      <GameGrid games={list.games} columns={4} />
-    </div>
-  );
+export default async function ListDetailPage({ params }: Props) {
+  const { slug } = await params;
+  const list = await loadPublicList(slug);
+  if (!list) notFound();
+  return <ListDetailClientPage slug={slug} initialList={list} />;
 }
