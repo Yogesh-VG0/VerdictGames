@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { jsonOk, jsonError } from "@/lib/api/response";
 import { requireAdmin } from "@/lib/admin";
 import { getServerSupabase } from "@/lib/supabase/server";
+import type { Database } from "@/lib/supabase/types";
 
 export async function GET(
   request: NextRequest,
@@ -74,7 +75,7 @@ export async function PATCH(
 
     const { data, error } = await supabase
       .from("editorial_reviews")
-      .update(updateData)
+      .update(updateData as Database['public']['Tables']['editorial_reviews']['Update'])
       .eq("id", id)
       .select()
       .single();

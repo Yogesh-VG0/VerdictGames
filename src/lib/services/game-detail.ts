@@ -17,7 +17,7 @@ import { getPublicSupabase, hasPublicSupabaseEnv } from "@/lib/supabase/public";
 import type { GameRow } from "@/lib/supabase/types";
 import type { Game } from "@/lib/types";
 
-export const GAME_DETAIL_REVALIDATE_SECONDS = 60;
+export const GAME_DETAIL_REVALIDATE_SECONDS = 900;
 export const GAME_DETAIL_API_CACHE_CONTROL = `s-maxage=${GAME_DETAIL_REVALIDATE_SECONDS}, stale-while-revalidate=300`;
 export const GAME_DETAIL_RAWG_ID_HEADER = "x-verdict-game-rawg-id";
 export const GAME_DETAIL_SLUG_REDIRECTS: Record<string, string> = {
@@ -238,21 +238,25 @@ async function fetchGameRecord(args: {
   let row: GameRow | null = null;
 
   if (args.rawgId != null) {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("games")
       .select("*")
       .eq("rawg_id", args.rawgId)
-      .maybeSingle() as { data: GameRow | null };
+      .maybeSingle() as { data: GameRow | null; error: unknown };
+
+    if (error) throw error;
 
     row = data;
   }
 
   if (!row && args.slug) {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("games")
       .select("*")
       .eq("slug", args.slug)
-      .maybeSingle() as { data: GameRow | null };
+      .maybeSingle() as { data: GameRow | null; error: unknown };
+
+    if (error) throw error;
 
     row = data;
   }

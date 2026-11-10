@@ -48,6 +48,7 @@ interface JobSummary {
 
 const JOB_LABELS: Record<string, { label: string; description: string; icon: string }> = {
   "refresh-trending": { label: "Refresh Trending", description: "Steam player counts + trending flags", icon: "trending" },
+  "refresh-steam-reviews": { label: "Steam Reviews", description: "Refresh cached English Steam review excerpts", icon: "enrich" },
   "discover-games": { label: "Discover Games", description: "Find and ingest new games from RAWG", icon: "discover" },
   "discover-games-deep": { label: "Deep Discovery", description: "Run extended RAWG game discovery", icon: "discover" },
   "re-enrich": { label: "Re-enrich", description: "Refresh stale game enrichment data", icon: "enrich" },
@@ -57,10 +58,10 @@ const JOB_LABELS: Record<string, { label: string; description: string; icon: str
   "seed-curated-lists": { label: "Seed Lists", description: "Refresh editorial curated lists", icon: "lists" },
 };
 
-const GITHUB_SCHEDULED_JOBS = new Set(["backfill-games", "backfill-mobile-android", "backfill-mobile-ios", "refresh-trending", "discover-games", "discover-games-deep", "re-enrich", "seed-curated-lists"]);
+const GITHUB_SCHEDULED_JOBS = new Set(["backfill-games", "backfill-mobile-android", "backfill-mobile-ios", "refresh-trending", "refresh-steam-reviews", "discover-games", "discover-games-deep", "re-enrich", "seed-curated-lists"]);
 
 // Long-running Actions jobs cannot be triggered from a serverless web request.
-const GITHUB_ACTIONS_ONLY_JOBS = new Set(["backfill-games", "backfill-mobile-android", "backfill-mobile-ios", "refresh-trending", "discover-games", "discover-games-deep"]);
+const GITHUB_ACTIONS_ONLY_JOBS = new Set(["backfill-games", "backfill-mobile-android", "backfill-mobile-ios", "refresh-trending", "refresh-steam-reviews", "discover-games", "discover-games-deep"]);
 
 // ── Human-readable metadata labels per job type ──
 const METADATA_LABELS: Record<string, Record<string, string>> = {

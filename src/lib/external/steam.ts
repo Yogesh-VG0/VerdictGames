@@ -9,6 +9,7 @@
  */
 
 import { recordProviderUsage } from "@/lib/utils/providerUsage";
+import { fetchSteamReviews } from "./steam-reviews-api.mjs";
 
 const STEAM_STORE_BASE = "https://store.steampowered.com/api";
 const STEAM_API_BASE = "https://api.steampowered.com";
@@ -131,17 +132,9 @@ export async function getSteamReviewSummary(
   appId: number
 ): Promise<SteamReviewSummary["query_summary"] | null> {
   try {
-    const reviewRes = await trackedFetch(
-      "reviews",
-      `https://store.steampowered.com/appreviews/${appId}?json=1&language=all&purchase_type=all&num_per_page=0`,
-      { next: { revalidate: 1800 } }
-    );
-
-    if (!reviewRes.ok) return null;
-
-    const data: SteamReviewSummary = await reviewRes.json();
-    if (data.success !== 1) return null;
-
+    const data = await fetchSteamReviews(appId, {
+      languages: ["all"], limit: 1, fetchOptions: { next: { revalidate: 1800 } },
+    }, (url, init) => trackedFetch("reviews", String(url), init));
     return data.query_summary;
   } catch {
     console.error(`[Steam] Failed to fetch review summary for ${appId}`);

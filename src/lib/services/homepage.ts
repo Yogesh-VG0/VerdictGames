@@ -1489,7 +1489,7 @@ export interface HomepageAnticipatedGame {
   genres: string[];
 }
 
-export const HOMEPAGE_REVALIDATE_SECONDS = 60;
+export const HOMEPAGE_REVALIDATE_SECONDS = 300;
 export const HOMEPAGE_API_CACHE_CONTROL = `s-maxage=${HOMEPAGE_REVALIDATE_SECONDS}, stale-while-revalidate=300`;
 
 export const EMPTY_HOMEPAGE_DATA: HomepageData = {
@@ -1517,7 +1517,21 @@ function mapHomepageAnticipatedItem(item: RawgListItem): HomepageAnticipatedGame
 
 async function fetchHomepageMostAnticipated(limit = 20): Promise<HomepageAnticipatedGame[]> {
   const { getRawgBestOfYear } = await import("@/lib/external/rawg");
-  const response = await getRawgBestOfYear(1, Math.max(limit * 2, HOMEPAGE_MOST_ANTICIPATED_TARGET * 2));
+  let response: Awaited<ReturnType<typeof getRawgBestOfYear>>;
+  try {
+    response = await getRawgBestOfYear(1, Math.max(limit * 2, HOMEPAGE_MOST_ANTICIPATED_TARGET * 2));
+  } catch {
+    // Keep the rail useful during provider outages without retrying from every
+    // visitor. These are already tracked, canonical catalog entries.
+    const { data, error } = await getPublicSupabase().from('games')
+      .select('rawg_id, slug, title, release_date, cover_image, header_image, genres')
+      .gt('rawg_id', 0).gte('release_date', new Date().toISOString().slice(0, 10))
+      .not('cover_image', 'is', null).order('release_date', { ascending: true }).limit(limit);
+    if (error) throw error;
+    return (data ?? []).map(game => ({ rawgId: game.rawg_id!, slug: game.slug, name: game.title,
+      released: game.release_date, tba: false, image: game.header_image || game.cover_image,
+      added: 0, toplay: 0, genres: game.genres ?? [] }));
+  }
   const today = new Date().toISOString().slice(0, 10);
   const mapped = response.results
     .map(mapHomepageAnticipatedItem)

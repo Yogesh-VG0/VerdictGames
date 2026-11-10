@@ -8,7 +8,7 @@
  * Manual serverless fallback for the recurring GitHub Actions job.
  *
  * Query params:
- *   secret  — must match CRON_SECRET
+ * Authentication: Authorization: Bearer <CRON_SECRET>.
  *   limit   — max games to re-enrich per run (default 10, max 50)
  */
 
@@ -27,7 +27,6 @@ export async function GET(request: NextRequest) {
     return jsonError("CRON_SECRET not configured", 503);
   }
   const provided =
-    request.nextUrl.searchParams.get("secret") ??
     request.headers.get("authorization")?.replace("Bearer ", "");
   if (provided !== cronSecret) {
     return jsonError("Unauthorized", 401);

@@ -1,6 +1,8 @@
 import type { MetadataRoute } from "next";
 import { unstable_cache } from "next/cache";
 import { resolveStaticPageLastModified } from "@/lib/seo";
+import { collectSitemapRows } from "@/lib/seo/sitemap";
+import { isPublicSafeGame } from "@/lib/utils/publicSafety";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://www.verdict.games";
 const SITEMAP_REVALIDATE_SECONDS = 3600;
@@ -8,7 +10,7 @@ const SITEMAP_REVALIDATE_SECONDS = 3600;
 /** Fixed build date for static pages — avoids crawler churn from new Date() every run */
 const BUILD_DATE = resolveStaticPageLastModified();
 
-export const dynamic = "force-dynamic";
+export const revalidate = 3600;
 
 const getCachedDynamicSitemapPages = unstable_cache(
   async (): Promise<MetadataRoute.Sitemap> => {
@@ -19,26 +21,32 @@ const getCachedDynamicSitemapPages = unstable_cache(
     const { getPublicSupabase } = await import("@/lib/supabase/public");
     const supabase = getPublicSupabase();
 
-    const [{ data: games }, { data: lists }] = await Promise.all([
-      supabase
-        .from("games")
-        .select("slug, updated_at, score")
-        .order("score", { ascending: false })
-        .limit(5000),
-      supabase
-        .from("lists")
-        .select("slug, updated_at")
-        .eq("is_public", true),
+    const [games, lists] = await Promise.all([
+      collectSitemapRows(async (offset, size) => {
+        const { data, error } = await supabase.from('games')
+          .select('id, slug, title, cover_image, updated_at, score, tags, genres')
+          .order('id', { ascending: true }).range(offset, offset + size - 1);
+        if (error) throw error;
+        return data ?? [];
+      }),
+      collectSitemapRows(async (offset, size) => {
+        const { data, error } = await supabase.from('lists').select('id, slug, updated_at')
+          .eq('is_public', true).order('id', { ascending: true }).range(offset, offset + size - 1);
+        if (error) throw error;
+        return data ?? [];
+      }),
     ]);
 
-    const gamePages: MetadataRoute.Sitemap = ((games as { slug: string; updated_at: string; score: number }[] | null) ?? []).map((game) => ({
+    const gamePages: MetadataRoute.Sitemap = games.filter(game =>
+      /^[a-z0-9-]{1,100}$/i.test(game.slug) && game.title && game.cover_image && isPublicSafeGame(game)
+    ).map((game) => ({
       url: `${SITE_URL}/game/${game.slug}`,
       lastModified: new Date(game.updated_at),
       changeFrequency: "weekly" as const,
       priority: game.score >= 80 ? 0.9 : game.score >= 50 ? 0.8 : 0.7,
     }));
 
-    const listPages: MetadataRoute.Sitemap = ((lists as { slug: string; updated_at: string }[] | null) ?? []).map((list) => ({
+    const listPages: MetadataRoute.Sitemap = lists.map((list) => ({
       url: `${SITE_URL}/lists/${list.slug}`,
       lastModified: new Date(list.updated_at),
       changeFrequency: "weekly" as const,
@@ -47,7 +55,7 @@ const getCachedDynamicSitemapPages = unstable_cache(
 
     return [...gamePages, ...listPages];
   },
-  ["sitemap-pages-v1"],
+  ["sitemap-pages-v2"],
   { revalidate: SITEMAP_REVALIDATE_SECONDS }
 );
 
@@ -69,10 +77,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ];
 
   // Dynamic game pages
-  try {
-    const dynamicPages = await getCachedDynamicSitemapPages();
-    return [...staticPages, ...dynamicPages];
-  } catch {
-    return staticPages;
-  }
+  // Throw on failure so ISR retains the last complete successful sitemap.
+  const dynamicPages = await getCachedDynamicSitemapPages();
+  return [...staticPages, ...dynamicPages];
 }

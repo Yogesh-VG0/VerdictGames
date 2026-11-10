@@ -70,6 +70,7 @@ scripts/fix-wrong-igdb-matches.mjs
 scripts/ingest-full-library.mjs
 scripts/migrate-*.mjs
 scripts/refresh-*.mjs
+!scripts/refresh-steam-reviews.mjs
 scripts/reingest-critical.mjs
 scripts/repair-missing-media.mjs
 scripts/update-igdb-images.mjs

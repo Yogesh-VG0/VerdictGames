@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
+import { useQuery } from '@tanstack/react-query';
 import Link from "next/link";
 import UserAvatar from "@/components/UserAvatar";
 
@@ -19,29 +20,21 @@ interface AdminUser {
 }
 
 export default function AdminUsersPage() {
-  const [users, setUsers] = useState<AdminUser[]>([]);
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
-  const [total, setTotal] = useState(0);
-
-  const fetchUsers = useCallback(async () => {
-    setLoading(true);
-    try {
+  const { data, isFetching: loading } = useQuery({
+    queryKey: ['admin-users', page, search],
+    queryFn: async ({ signal }): Promise<{ users: AdminUser[]; total: number }> => {
       const params = new URLSearchParams({ page: String(page) });
       if (search) params.set("q", search);
-      const res = await fetch(`/api/admin/users?${params}`);
+      const res = await fetch(`/api/admin/users?${params}`, { signal });
       const json = await res.json();
-      if (json.success) {
-        setUsers(json.data.users);
-        setTotal(json.data.total);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [page, search]);
-
-  useEffect(() => { fetchUsers(); }, [fetchUsers]);
+      if (!res.ok || !json.success) throw new Error('Failed to fetch users');
+      return json.data;
+    },
+  });
+  const users = data?.users ?? [];
+  const total = data?.total ?? 0;
 
   const formatDate = (d: string) =>
     new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });

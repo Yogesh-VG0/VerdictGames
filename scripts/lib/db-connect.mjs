@@ -63,7 +63,7 @@ export function connectDb(scriptName = "scheduler") {
     console.log(`🔗 DB target: [could not parse URL] (${scriptName})`);
   }
 
-  let ssl = { rejectUnauthorized: false };
+  let ssl = 'require';
   const maxConnections = parsePositiveInteger(
     process.env.SCHEDULER_DB_MAX_CONNECTIONS,
     2,

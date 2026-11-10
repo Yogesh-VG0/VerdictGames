@@ -5,7 +5,7 @@
  * from RAWG and ingests any that aren't already in the database.
  *
  * Designed to be called by a cron job (e.g., Vercel Cron, GitHub Actions).
- * Optional secret: ?secret=YOUR_CRON_SECRET
+ * Requires Authorization: Bearer <CRON_SECRET>.
  *
  * Returns how many new games were discovered and ingested.
  */
@@ -66,7 +66,6 @@ export async function GET(request: NextRequest) {
     return jsonError("CRON_SECRET not configured", 503);
   }
   const provided =
-    request.nextUrl.searchParams.get("secret") ??
     request.headers.get("authorization")?.replace("Bearer ", "");
   if (provided !== cronSecret) {
     return jsonError("Unauthorized", 401);

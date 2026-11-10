@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { parseSearchPageState } from "@/lib/search";
 import { loadSearchResults, SEARCH_API_CACHE_CONTROL, SEARCH_REVALIDATE_SECONDS } from "@/lib/services/search";
 
-export const revalidate = 30;
+export const revalidate = 300;
 
 if (SEARCH_REVALIDATE_SECONDS !== revalidate) {
   throw new Error("Search API route revalidate must match the shared search loader contract.");

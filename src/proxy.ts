@@ -1,15 +1,18 @@
 /**
  * VERDICT.GAMES — Rate Limiting Proxy
  *
- * In-memory sliding-window rate limiter for all API routes.
+ * Per-instance burst limits plus shared atomic limits for writes and search.
  * Different limits for public reads, authenticated writes, and sensitive endpoints.
  *
- * For production at scale, swap the in-memory Map for Redis (e.g. @upstash/ratelimit).
+ * Managed WAF protections run before application execution.
  *
  * Next.js 16.x: middleware.ts renamed to proxy.ts (see migration docs).
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { isMutation, isTrustedMutationOrigin, rateLimitBucket } from "@/lib/security/request";
+import { createHmac } from 'node:crypto';
+import { getServerSupabase } from '@/lib/supabase/server';
 
 // ── Rate limit configuration ──
 
@@ -55,7 +58,7 @@ function getConfigForPath(pathname: string, method: string): RateLimitConfig {
   return DEFAULT_LIMIT;
 }
 
-// ── In-memory sliding window store ──
+// ── Bounded fixed-window burst store ──
 
 interface WindowEntry {
   count: number;
@@ -63,6 +66,7 @@ interface WindowEntry {
 }
 
 const store = new Map<string, WindowEntry>();
+const MAX_ENTRIES = 10000;
 
 // Periodic cleanup to prevent memory leaks (every 5 minutes)
 const CLEANUP_INTERVAL_MS = 5 * 60 * 1000;
@@ -96,6 +100,10 @@ function checkRateLimit(
   const entry = store.get(key);
 
   if (!entry || now > entry.resetAt) {
+    if (store.size >= MAX_ENTRIES) {
+      for (const [storedKey, stored] of store) if (stored.resetAt <= now) store.delete(storedKey);
+      if (store.size >= MAX_ENTRIES) return { allowed: false, remaining: 0, resetAt: now + 1000 };
+    }
     // New window
     const resetAt = now + config.windowSeconds * 1000;
     store.set(key, { count: 1, resetAt });
@@ -117,12 +125,22 @@ function checkRateLimit(
 
 // ── Proxy ──
 
-export function proxy(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const requestHeaders = new Headers(request.headers);
 
+  if (isMutation(request.method)) {
+    if (!isTrustedMutationOrigin(request.headers, request.nextUrl.origin, process.env.NEXT_PUBLIC_SITE_URL)) {
+      return NextResponse.json({ error: 'Untrusted request origin' }, { status: 403 });
+    }
+    const contentType = request.headers.get('content-type')?.split(';')[0].trim();
+    if (contentType && !['application/json', 'multipart/form-data'].includes(contentType)) {
+      return NextResponse.json({ error: 'Unsupported content type' }, { status: 415 });
+    }
+  }
+
   // Only rate-limit API routes
-  if (!pathname.startsWith("/api/")) {
+  if (!pathname.startsWith("/api/") && pathname !== '/search') {
     return NextResponse.next();
   }
 
@@ -131,10 +149,28 @@ export function proxy(request: NextRequest) {
   const clientId = getClientIdentifier(request);
 
   // Key combines client IP + path prefix bucket (not full path, to avoid per-resource limits)
-  const pathBucket = pathname.split("/").slice(0, 4).join("/"); // e.g. /api/reviews/[id]
+  const pathBucket = rateLimitBucket(pathname);
   const key = `${clientId}:${pathBucket}:${method}`;
 
-  const { allowed, remaining, resetAt } = checkRateLimit(key, config);
+  let { allowed, remaining, resetAt } = checkRateLimit(key, config);
+
+  // Shared atomic limits protect writes and expensive search across instances.
+  // Cached game pages avoid this DB call entirely; managed WAF runs first.
+  const sharedLimit = isMutation(method) || pathname === '/search' || pathname === '/api/search';
+  if (allowed && sharedLimit && process.env.SUPABASE_SERVICE_ROLE_KEY && process.env.NEXT_PUBLIC_SUPABASE_URL) {
+    const bucket = createHmac('sha256', process.env.CRON_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY).update(key).digest('hex');
+    try {
+      const { data, error } = await getServerSupabase().rpc('consume_api_rate_limit', {
+        p_bucket: bucket, p_limit: config.limit, p_window: config.windowSeconds,
+      }).abortSignal(AbortSignal.timeout(3000));
+      if (error || !data?.[0]) throw new Error('Rate-limit storage unavailable');
+      allowed = data[0].allowed;
+      remaining = data[0].remaining;
+      resetAt = Date.parse(data[0].reset_at);
+    } catch {
+      return NextResponse.json({ error: 'Temporarily unavailable. Please retry.' }, { status: 503, headers: { 'Retry-After': '5' } });
+    }
+  }
 
   if (!allowed) {
     const retryAfter = Math.ceil((resetAt - Date.now()) / 1000);
@@ -162,5 +198,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/api/:path*"],
+  matcher: ["/api/:path*", "/search"],
 };

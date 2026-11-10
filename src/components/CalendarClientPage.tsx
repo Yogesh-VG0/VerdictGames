@@ -182,12 +182,17 @@ export default function CalendarClientPage({ initialMonth, initialMonthData, tod
   const hasDragged = useRef(false);
   const monthRequestId = useRef(0);
   const currentMonthDate = useMemo(() => new Date(`${currentMonth}-01T00:00:00Z`), [currentMonth]);
-
-  useEffect(() => {
-    monthRequestId.current += 1;
+  const [serverSnapshot, setServerSnapshot] = useState(initialMonthData);
+  if (serverSnapshot !== initialMonthData) {
+    setServerSnapshot(initialMonthData);
     setSelectedMonth(initialMonth);
     setMonthData(initialMonthData);
     setIsMonthLoading(false);
+    setCollapsedDays(new Set());
+  }
+
+  useEffect(() => {
+    monthRequestId.current += 1;
   }, [initialMonth, initialMonthData]);
 
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
@@ -234,10 +239,6 @@ export default function CalendarClientPage({ initialMonth, initialMonthData, tod
     if (active) {
       active.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
     }
-  }, [selectedMonth]);
-
-  useEffect(() => {
-    setCollapsedDays(new Set());
   }, [selectedMonth]);
 
   const games = useMemo(() => {

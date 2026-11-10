@@ -970,6 +970,10 @@ export interface Database {
     };
     Views: Record<string, never>;
     Functions: {
+      consume_api_rate_limit: {
+        Args: { p_bucket: string; p_limit: number; p_window: number };
+        Returns: { allowed: boolean; remaining: number; reset_at: string }[];
+      };
       auth_profile_id: {
         Args: Record<string, never>;
         Returns: string;

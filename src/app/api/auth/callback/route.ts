@@ -8,13 +8,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import type { Database } from "@/lib/supabase/types";
+import { safeRedirectPath } from "@/lib/security/request";
 
 function normalizeNextPath(next: string | null, flow: string | null) {
-  if (next && next.startsWith("/") && !next.startsWith("//")) {
-    return next;
-  }
-
-  return flow === "recovery" ? "/reset-password" : "/";
+  return safeRedirectPath(next, flow === "recovery" ? "/reset-password" : "/");
 }
 
 function buildRedirectUrl(origin: string, pathname: string, params?: Record<string, string | undefined>) {

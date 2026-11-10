@@ -29,18 +29,10 @@ export async function GET(
     return jsonSteamReviews(data);
   } catch (err) {
     console.error("[API] /games/[slug]/steam-reviews error:", err);
-    return jsonSteamReviews({
-      reviews: [],
-      total: 0,
-      steamAppId: null,
-      source: "empty",
-      cache: {
-        fetchedAt: null,
-        ageMs: null,
-        ttlMs: 24 * 60 * 60 * 1000,
-        isStale: true,
-      },
-    });
+    return NextResponse.json(
+      { success: false, error: "Steam review cache is temporarily unavailable." },
+      { status: 503, headers: { "Cache-Control": "no-store", "Retry-After": "30" } }
+    );
   }
 }
 

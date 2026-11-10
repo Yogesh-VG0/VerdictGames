@@ -1,3 +1,7 @@
+## Cron authentication
+
+Manual cron requests require `Authorization: Bearer <CRON_SECRET>`. Secrets are no longer accepted in query strings. GitHub scheduled jobs run directly against the database.
+
 # verdict.games — Backend Setup Guide
 
 Complete guide for setting up the Supabase database, configuring API keys, running the ingestion pipeline, and deploying to Vercel + GitHub Actions.
@@ -212,10 +216,10 @@ node scripts/backfill-mobile-listings.mjs --ios-only             # iOS only
 
 | Method | Route | Description |
 |--------|-------|-------------|
-| GET | `/api/cron/discover?secret=` | Auto-discover ~320 games |
-| GET | `/api/cron/discover?secret=&deep=true` | Deep discovery ~700+ games |
-| GET | `/api/cron/refresh-trending?secret=` | Manual algorithmic trending fallback (does not refresh Steam counts) |
-| GET | `/api/cron/re-enrich?secret=` | Re-enrich stale game data |
+| GET | `/api/cron/discover` | Auto-discover ~320 games |
+| GET | `/api/cron/discover?deep=true` | Deep discovery ~700+ games |
+| GET | `/api/cron/refresh-trending` | Manual algorithmic trending fallback (does not refresh Steam counts) |
+| GET | `/api/cron/re-enrich` | Re-enrich stale game data |
 
 ### GX Corner Proxy Routes (ISR 300s)
 

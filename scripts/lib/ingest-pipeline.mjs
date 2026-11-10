@@ -12,6 +12,7 @@
 
 import { rawgFetchJson } from "./rawg-client.mjs";
 import { isInfrastructureDbError } from "./scheduler-logger.mjs";
+import { fetchSteamReviews } from "../../src/lib/external/steam-reviews-api.mjs";
 
 // ══════════════════════════════════════════════════
 // Configuration
@@ -244,8 +245,8 @@ function mapPlatforms(plats) {
 // Steam API
 // ══════════════════════════════════════════════════
 async function getSteamReviews(appId) {
-  try { const r = await fetch(`https://store.steampowered.com/appreviews/${appId}?json=1&language=all&purchase_type=all&num_per_page=0`, { signal: AbortSignal.timeout(10000) });
-    if (!r.ok) return null; const d = await r.json(); return d.success === 1 ? d.query_summary : null; } catch { return null; }
+  try { return (await fetchSteamReviews(appId, { languages: ['all'], limit: 1 })).query_summary; }
+  catch { return null; }
 }
 async function getSteamDetails(appId) {
   try { const r = await fetch(`${STEAM_STORE_BASE}/appdetails?appids=${appId}&cc=us&l=english`, { signal: AbortSignal.timeout(10000) });

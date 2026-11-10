@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState, useEffect, use } from "react";
+import { useState, use } from "react";
 import Link from "next/link";
 import type { Game, VerdictLabel } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -141,8 +141,9 @@ export default function AdminGameEditor({ params }: { params: Promise<{ id: stri
   const [uploading, setUploading] = useState<string | null>(null); // tracks which field is uploading
 
   // ── Sync form state from server data ──
-  useEffect(() => {
-    if (game.data) {
+  const [syncedGame, setSyncedGame] = useState<Game | undefined>(undefined);
+  if (game.data && game.data !== syncedGame) {
+      setSyncedGame(game.data);
       const g = game.data;
       setForm({
         title: g.title ?? "",
@@ -181,8 +182,7 @@ export default function AdminGameEditor({ params }: { params: Promise<{ id: stri
       setGenresText((g.genres ?? []).join(", "));
       setTagsText((g.tags ?? []).join(", "));
       setPlatformsText((g.platforms ?? []).join(", "));
-    }
-  }, [game.data]);
+  }
 
   // ── Mutations ──
   const saveMutation = useMutation({

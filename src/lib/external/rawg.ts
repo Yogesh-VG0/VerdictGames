@@ -10,6 +10,7 @@
 import { recordProviderUsage } from "@/lib/utils/providerUsage";
 
 const RAWG_BASE = "https://api.rawg.io/api";
+let rawgRetryAt = 0;
 
 function getApiKey(): string {
   const key = process.env.RAWG_API_KEY;
@@ -22,12 +23,15 @@ function getApiKey(): string {
  */
 async function trackedFetch(endpoint: string, url: string, init?: RequestInit): Promise<Response> {
   const start = Date.now();
+  if (Date.now() < rawgRetryAt) throw new Error('RAWG temporarily unavailable; using stored data');
   try {
-    const res = await fetch(url, init);
+    const res = await fetch(url, { ...init, signal: init?.signal ?? AbortSignal.timeout(8000) });
+    if (res.status === 429 || res.status >= 500) rawgRetryAt = Date.now() + 60_000;
     // Fire-and-forget tracking (non-blocking)
     recordProviderUsage("rawg", endpoint, res.ok, Date.now() - start);
     return res;
   } catch (err) {
+    rawgRetryAt = Date.now() + 60_000;
     recordProviderUsage("rawg", endpoint, false, Date.now() - start);
     throw err;
   }

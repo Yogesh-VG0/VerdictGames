@@ -5,7 +5,7 @@ import { loadGXDeals, loadGXFreeToPlay, loadGXTopGames } from "@/lib/services/gx
 import { loadSearchResults, SEARCH_REVALIDATE_SECONDS } from "@/lib/services/search";
 import { buildSocialMetadata, SITE_URL } from "@/lib/seo";
 
-export const revalidate = 30;
+export const revalidate = 300;
 
 if (!SEARCH_REVALIDATE_SECONDS) {
   throw new Error("Search page requires the shared search loader revalidate contract.");

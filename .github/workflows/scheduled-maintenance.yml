@@ -4,6 +4,7 @@ on:
   schedule:
     # GitHub cron is UTC. Off-hour minutes reduce scheduler delays.
     - cron: "17 0,6,12,18 * * *" # Steam players and trending, every 6 hours
+    - cron: "43 0,6,12,18 * * *" # Cached Steam review excerpts; no Vercel CPU
     - cron: "47 1,13 * * *" # Re-enrich stale games, twice daily
     - cron: "23 2 * * *" # Curated lists, daily
     - cron: "37 3 * * *" # Standard discovery, daily
@@ -19,6 +20,7 @@ on:
         type: choice
         options:
           - refresh-trending
+          - refresh-steam-reviews
           - re-enrich
           - seed-curated-lists
           - discover-standard
@@ -26,6 +28,11 @@ on:
           - backfill-games
           - backfill-mobile-android
           - backfill-mobile-ios
+      review_limit:
+        description: Maximum Steam review caches to refresh (1–1000)
+        required: false
+        default: "500"
+        type: string
 
 permissions:
   contents: read
@@ -52,6 +59,7 @@ jobs:
           else
             case "$SCHEDULE" in
               "17 0,6,12,18 * * *") job="refresh-trending" ;;
+              "43 0,6,12,18 * * *") job="refresh-steam-reviews" ;;
               "47 1,13 * * *") job="re-enrich" ;;
               "23 2 * * *") job="seed-curated-lists" ;;
               "37 3 * * *") job="discover-standard" ;;
@@ -71,7 +79,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
 
       - name: Validate required secrets
@@ -93,10 +101,14 @@ jobs:
             exit 1
           fi
 
+      - name: Install production dependencies
+        run: npm ci --omit=dev --ignore-scripts
+
       - name: Check RAWG availability
         id: rawg_health
         env:
           RAWG_API_KEY: ${{ secrets.RAWG_API_KEY }}
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
         run: node scripts/check-rawg-availability.mjs "${{ steps.resolve.outputs.job }}"
 
       - name: Restore backfill checkpoint
@@ -108,10 +120,6 @@ jobs:
           restore-keys: |
             game-backfill-
 
-      - name: Install production dependencies
-        if: steps.rawg_health.outputs.run_job == 'true'
-        run: npm ci --omit=dev --ignore-scripts
-
       - name: Run maintenance job
         if: steps.rawg_health.outputs.run_job == 'true'
         shell: bash
@@ -122,6 +130,7 @@ jobs:
           TWITCH_CLIENT_ID: ${{ secrets.TWITCH_CLIENT_ID }}
           TWITCH_CLIENT_SECRET: ${{ secrets.TWITCH_CLIENT_SECRET }}
           STEAM_API_KEY: ${{ secrets.STEAM_API_KEY }}
+          STEAM_REVIEW_LIMIT: ${{ inputs.review_limit || '500' }}
           SCHEDULER_DB_MAX_CONNECTIONS: "2"
           SCHEDULER_DB_CONNECT_TIMEOUT_SECONDS: "30"
           SCHEDULER_DB_IDLE_TIMEOUT_SECONDS: "30"
@@ -130,6 +139,7 @@ jobs:
         run: |
           case "$JOB" in
             refresh-trending) node scripts/heroku-refresh-trending.mjs ;;
+            refresh-steam-reviews) node scripts/refresh-steam-reviews.mjs ;;
             re-enrich) node scripts/heroku-re-enrich.mjs ;;
             seed-curated-lists) node scripts/seed-curated-lists.mjs ;;
             discover-standard) node scripts/heroku-discover-games.mjs ;;

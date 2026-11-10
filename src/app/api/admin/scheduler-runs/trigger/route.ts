@@ -105,14 +105,15 @@ export async function POST(req: NextRequest) {
     const fetchOpts: RequestInit = { signal: AbortSignal.timeout(290_000) };
 
     if (job.type === "cron") {
-      // Cron routes use GET + secret query param
-      const qp = new URLSearchParams({ secret: cronSecret || "" });
+      // Keep machine credentials out of URLs and request logs.
+      const qp = new URLSearchParams();
       // Pass through any custom params (e.g., limit, deep)
       for (const [k, v] of Object.entries(params)) {
         qp.set(k, v);
       }
       url = `${baseUrl}${job.path}?${qp}`;
       fetchOpts.method = "GET";
+      fetchOpts.headers = { authorization: `Bearer ${cronSecret || ''}` };
     } else {
       // Admin routes use POST + cookie auth forwarded
       url = `${baseUrl}${job.path}`;
@@ -120,6 +121,7 @@ export async function POST(req: NextRequest) {
       fetchOpts.headers = {
         "Content-Type": "application/json",
         cookie: req.headers.get("cookie") || "",
+        origin: new URL(baseUrl).origin,
       };
     }
 

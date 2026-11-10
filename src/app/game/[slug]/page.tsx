@@ -4,12 +4,15 @@ import GameDetailClientPage from "@/components/GameDetailClientPage";
 import {
   GAME_DETAIL_REVALIDATE_SECONDS,
   loadGameDetail,
-  parseGameDetailRawgId,
 } from "@/lib/services/game-detail";
 import { loadSteamReviews } from "@/lib/services/steam-reviews";
 import { buildSocialMetadata, DEFAULT_OG_IMAGE, serializeJsonLd, SITE_URL } from "@/lib/seo";
 
-export const revalidate = 60;
+export const revalidate = 900;
+
+// Generate on first visit, then serve cached HTML. Query strings do not change
+// the canonical game; RAWG ID resolution remains available through the API.
+export function generateStaticParams() { return []; }
 
 if (GAME_DETAIL_REVALIDATE_SECONDS !== revalidate) {
   throw new Error("Game detail page revalidate must stay aligned with the shared game detail loader contract.");
@@ -17,14 +20,11 @@ if (GAME_DETAIL_REVALIDATE_SECONDS !== revalidate) {
 
 interface GameDetailPageProps {
   params: Promise<{ slug: string }>;
-  searchParams?: Promise<{ rawgId?: string | string[] | undefined }>;
 }
 
-export async function generateMetadata({ params, searchParams }: GameDetailPageProps): Promise<Metadata> {
+export async function generateMetadata({ params }: GameDetailPageProps): Promise<Metadata> {
   const { slug } = await params;
-  const resolvedSearchParams = searchParams ? await searchParams : undefined;
-  const rawgId = parseGameDetailRawgId(resolvedSearchParams);
-  const detail = await loadGameDetail({ slug, rawgId });
+  const detail = await loadGameDetail({ slug });
 
   if (detail.status !== "ok") {
     return { title: "Game Not Found" };
@@ -38,8 +38,8 @@ export async function generateMetadata({ params, searchParams }: GameDetailPageP
   const canonicalPath = `/game/${detail.canonicalSlug}`;
   const pageUrl = `${SITE_URL}${canonicalPath}`;
   const ogImage = game.coverImage || game.headerImage || DEFAULT_OG_IMAGE;
-  const metaTitle = isPreview ? `${game.title} — Preview` : `${game.title} — ${game.score}/100 Verdict`;
-  const ogAlt = isPreview ? `${game.title} — Preview` : `${game.title} — ${game.score}/100 Verdict`;
+  const metaTitle = isPreview ? `${game.title} — Preview` : game.score > 0 ? `${game.title} — ${game.score}/100 Verdict` : `${game.title} — Release Date & Details`;
+  const ogAlt = metaTitle;
   const keywords = [
     game.title,
     ...game.genres.slice(0, 4),
@@ -54,6 +54,7 @@ export async function generateMetadata({ params, searchParams }: GameDetailPageP
     description,
     keywords,
     alternates: { canonical: canonicalPath },
+    robots: isPreview ? { index: false, follow: true } : undefined,
     ...buildSocialMetadata({
       title: metaTitle,
       description,
@@ -65,18 +66,15 @@ export async function generateMetadata({ params, searchParams }: GameDetailPageP
   };
 }
 
-export default async function GameDetailPage({ params, searchParams }: GameDetailPageProps) {
+export default async function GameDetailPage({ params }: GameDetailPageProps) {
   const { slug } = await params;
-  const resolvedSearchParams = searchParams ? await searchParams : undefined;
-  const rawgId = parseGameDetailRawgId(resolvedSearchParams);
-
-  const detail = await loadGameDetail({ slug, rawgId });
+  const detail = await loadGameDetail({ slug });
 
   if (detail.status !== "ok") {
     notFound();
   }
 
-  if (detail.shouldRedirect && rawgId == null) {
+  if (detail.shouldRedirect) {
     redirect(`/game/${detail.canonicalSlug}`);
   }
 
@@ -97,16 +95,6 @@ export default async function GameDetailPage({ params, searchParams }: GameDetai
     author: game.developer ? { "@type": "Organization", name: game.developer } : undefined,
     publisher: game.publisher ? { "@type": "Organization", name: game.publisher } : undefined,
     datePublished: game.releaseDate || undefined,
-    aggregateRating:
-      game.score > 0 && game.reviewCount > 0
-        ? {
-            "@type": "AggregateRating",
-            ratingValue: game.score,
-            bestRating: 100,
-            worstRating: 0,
-            ratingCount: game.reviewCount,
-          }
-        : undefined,
   };
 
   return (

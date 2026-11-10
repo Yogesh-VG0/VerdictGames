@@ -22,10 +22,10 @@ import { isPublicSafeGame } from "@/lib/utils/publicSafety";
 import { normalizeTitle } from "@/lib/utils/slugify";
 import { isFutureDate } from "@/lib/utils";
 
-export const SEARCH_REVALIDATE_SECONDS = 30;
+export const SEARCH_REVALIDATE_SECONDS = 300;
 export const SEARCH_API_CACHE_CONTROL = `s-maxage=${SEARCH_REVALIDATE_SECONDS}, stale-while-revalidate=300`;
 export const SEARCH_PAGE_SIZE = 25;
-const SEARCH_RESULTS_CACHE_NAMESPACE = "search-results-v3";
+const SEARCH_RESULTS_CACHE_NAMESPACE = "search-results-v4";
 
 export function createEmptySearchResult(page: number): PaginatedResponse<Game> {
   return {
@@ -463,19 +463,19 @@ async function fetchSearchResults(state: SearchGamesState): Promise<PaginatedRes
     requestedLimit = 150;
     query = query.range(0, requestedLimit - 1);
   } else if (isTopRated) {
-    requestedLimit = Math.max(start + (SEARCH_PAGE_SIZE * overfetchMultiplier * 4), 400);
+    requestedLimit = Math.min(1000, Math.max(start + (SEARCH_PAGE_SIZE * overfetchMultiplier * 4), 400));
     query = query.range(0, requestedLimit - 1);
   } else if (isTrendingSort) {
-    requestedLimit = Math.max(start + (SEARCH_PAGE_SIZE * overfetchMultiplier * 6), 750);
+    requestedLimit = Math.min(1000, Math.max(start + (SEARCH_PAGE_SIZE * overfetchMultiplier * 6), 750));
     query = query.range(0, requestedLimit - 1);
   } else if (isRecentlyAdded) {
-    requestedLimit = Math.max(start + (SEARCH_PAGE_SIZE * overfetchMultiplier * 12), 1200);
+    requestedLimit = Math.min(1000, Math.max(start + (SEARCH_PAGE_SIZE * overfetchMultiplier * 12), 1000));
     query = query.range(0, requestedLimit - 1);
   } else if (isNewest || isUpcoming || isRecentlyAdded) {
-    requestedLimit = Math.max(start + (SEARCH_PAGE_SIZE * overfetchMultiplier * 4), 300);
+    requestedLimit = Math.min(1000, Math.max(start + (SEARCH_PAGE_SIZE * overfetchMultiplier * 4), 300));
     query = query.range(0, requestedLimit - 1);
   } else {
-    requestedLimit = Math.max(start + (SEARCH_PAGE_SIZE * overfetchMultiplier), 150);
+    requestedLimit = Math.min(1000, Math.max(start + (SEARCH_PAGE_SIZE * overfetchMultiplier), 150));
     query = query.range(0, requestedLimit - 1);
   }
 
@@ -646,7 +646,7 @@ async function fetchSearchResults(state: SearchGamesState): Promise<PaginatedRes
 
   const noFilters = platform === "All" && !genre && !year && monetization === "All";
   const allowPreviewFallback = sort === "relevance" && q.length >= 2 && page === 1 && noFilters;
-  if (total < 3 && allowPreviewFallback) {
+  if (total === 0 && allowPreviewFallback) {
     try {
       const { searchRawg, mapRawgPlatforms } = await import("@/lib/external/rawg");
       const rawgResults = await searchRawg(q, 1, 5);

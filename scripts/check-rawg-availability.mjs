@@ -47,4 +47,15 @@ try {
   addSummary(`### Deferred \`${job}\``);
   addSummary(message);
   setOutput("run_job", "false");
+  // A deferred run is not successful maintenance. Persist the reason so the
+  // dashboard can distinguish provider outages from a dead scheduler.
+  const { connectDb, closeDb } = await import('./lib/db-connect.mjs');
+  const { startRun, finishRun } = await import('./lib/scheduler-logger.mjs');
+  const jobName = job === 'discover-standard' ? 'discover-games' : job === 'discover-deep' ? 'discover-games-deep' : job;
+  const sql = connectDb(jobName);
+  try {
+    const run = await startRun(sql, jobName, { outcome: 'deferred', provider: 'rawg' });
+    await finishRun(sql, run.id, { error_message: `Deferred: ${message}`, metadata: { outcome: 'deferred', provider: 'rawg' } });
+  } finally { await closeDb(sql, jobName); }
+  process.exitCode = 1;
 }

@@ -166,6 +166,16 @@ try {
     const games = await getGamesToVerify("Android", "google_play");
     console.log(`Found ${games.length} Android-tagged games without verified listings.\n`);
 
+    if (games.length) {
+      const scraper = await getGplay();
+      // A known listing distinguishes broken search parsing/provider blocking
+      // from delisted games and inaccurate upstream platform tags.
+      const control = await scraper.search({ term: 'Stardew Valley', num: 5, lang: 'en', country: 'us' });
+      if (!control.some(app => app.appId === 'com.chucklefish.stardewvalley')) {
+        throw new Error('Google Play search health check failed; mobile verification deferred');
+      }
+    }
+
     for (const game of games) {
       stats.android.checked++;
       const label = `[${stats.android.checked}/${games.length}] ${game.title}`;
@@ -190,6 +200,8 @@ try {
           const results = await scraper.search({
             term: game.title,
             num: 5,
+            lang: 'en',
+            country: 'us',
           });
 
           let bestMatch = null;
@@ -222,8 +234,8 @@ try {
             stats.android.skipped++;
             continue;
           } else {
-            console.log(`  ✗ ${label} — no results on Google Play`);
-            stats.android.failed++;
+            console.log(`  ⚠ ${label} — no current Google Play match; leaving unverified`);
+            stats.android.skipped++;
             continue;
           }
         }
@@ -442,16 +454,16 @@ try {
     const totalVerified = (stats.android?.verified ?? 0) + (stats.ios?.verified ?? 0);
     const totalFailed = (stats.android?.failed ?? 0) + (stats.ios?.failed ?? 0);
     const totalChecked = (stats.android?.checked ?? 0) + (stats.ios?.checked ?? 0);
-    if (totalChecked > 0 && totalFailed === totalChecked) {
-      throw new Error(`All ${totalChecked} mobile listing checks failed`);
-    }
+    const excessiveFailures = totalFailed > 0 && (totalFailed === totalChecked || (totalChecked >= 10 && totalFailed / totalChecked >= 0.5));
     const elapsed = ((Date.now() - startedAt) / 1000).toFixed(1);
     await finishRun(sql, schedulerRun?.id, {
       rows_scanned: totalChecked,
       rows_updated: totalVerified,
       rows_skipped: (stats.android?.skipped ?? 0) + (stats.ios?.skipped ?? 0),
+      error_message: excessiveFailures ? `${totalFailed}/${totalChecked} mobile listing checks failed; successful verifications were retained` : null,
       metadata: { failed: totalFailed, elapsed },
     });
+    if (excessiveFailures) process.exitCode = 1;
   }
 } catch (err) {
   console.error(`❌ Backfill mobile listings failed:`, err.message);

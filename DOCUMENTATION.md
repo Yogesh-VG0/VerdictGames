@@ -1,3 +1,7 @@
+## Cron authentication
+
+Manual cron requests require `Authorization: Bearer <CRON_SECRET>`. Secrets are no longer accepted in query strings. GitHub scheduled jobs run directly against the database.
+
 # verdict.games — Complete Project Documentation
 
 > **The Verdict on Every Game** — A premium game reviews and discovery platform built for players who want honest, data-driven opinions on games across all major platforms (PC, PlayStation, Xbox, Nintendo Switch, Android, iOS, and more). Think of it as a Letterboxd for games, enriched with data from 7 external APIs (RAWG, Steam, IGDB, CheapShark, Wikipedia, HowLongToBeat, GX Corner).
@@ -2326,10 +2330,10 @@ twitter: summary_large_image card
 - Required Actions secrets: `SUPABASE_DB_URL`, `RAWG_API_KEY`; recommended: `TWITCH_CLIENT_ID`, `TWITCH_CLIENT_SECRET`, `STEAM_API_KEY`
 
 ### Cron Job Setup (Manual Fallback via Vercel API Routes)
-- **Discover (Standard)**: `GET /api/cron/discover?secret=YOUR_SECRET` — fetches ~320 new games
-- **Discover (Deep)**: `GET /api/cron/discover?secret=YOUR_SECRET&deep=true` — fetches ~700+ games
-- **Refresh Trending**: `GET /api/cron/refresh-trending?secret=YOUR_SECRET`
-- **Re-Enrich**: `GET /api/cron/re-enrich?secret=YOUR_SECRET` — refreshes stale games
+- **Discover (Standard)**: `GET /api/cron/discover` — fetches ~320 new games
+- **Discover (Deep)**: `GET /api/cron/discover?deep=true` — fetches ~700+ games
+- **Refresh Trending**: `GET /api/cron/refresh-trending`
+- **Re-Enrich**: `GET /api/cron/re-enrich` — refreshes stale games
 - These routes are **manual fallback only**; recurring production schedules run on GitHub Actions
 
 ---

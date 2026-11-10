@@ -79,6 +79,7 @@ export default function AdminAddGamePage() {
   const autoSlug = form.title ? slugify(form.title) : "";
 
   // Search all sources for candidates
+  const [sourceFilter, setSourceFilter] = useState<CandidateSource | null>(null);
   const handleSearch = useCallback(async () => {
     if (!lookupTitle.trim()) { setError("Enter a game title"); return; }
     setLoading(true);
@@ -102,7 +103,6 @@ export default function AdminAddGamePage() {
   }, [lookupTitle, searchSource]);
 
   // Source filter for candidates list
-  const [sourceFilter, setSourceFilter] = useState<CandidateSource | null>(null);
   const filteredCandidates = sourceFilter ? candidates.filter(c => c.source === sourceFilter) : candidates;
   const sourceCounts = {
     rawg: candidates.filter(c => c.source === "rawg").length,
