@@ -8,7 +8,7 @@ The code had concrete compute amplifiers: dynamic game HTML, Steam refresh attem
 
 ## Applied to production services
 
-- Enabled Vercel Bot Protection challenges and AI bot denial; both previously logged traffic. Verified the active firewall configuration.
+- Enabled Vercel Bot Protection challenges. Initially enabled AI bot denial, then changed AI Bots to logging with the owner's explicit approval to preserve AI search and assistant discovery. Verified active firewall version 5: AI Bots `log`, Bot Protection `challenge`. See [AI discovery verification](AI_DISCOVERY.md).
 - Applied five versioned Supabase migrations. Authenticated users cannot change profile roles, authentication identifiers, or profile identifiers; permitted profile fields remain editable. Private lists and list items are visible only to their owners. Internal trigger functions are inaccessible through public roles, and the administrator helper uses caller privileges.
 - Added private Steam refresh-state and atomic API rate-limit tables. Only service-role callers can consume the rate-limit RPC. The first two requests in a two-request test were allowed and the third denied.
 - Separated public published-editorial reads from authenticated administrator draft access. Verified anonymous readers can read the two published reviews and zero unpublished reviews.
