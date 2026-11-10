@@ -25,6 +25,7 @@ import { unstable_cache } from "next/cache";
 import { getPublicSupabase } from "@/lib/supabase/public";
 import { mapGameRow } from "@/lib/db/mappers";
 import { GAME_CARD_COLUMNS_WITH_DESC } from "@/lib/db/columns";
+import { retryCatalogRead } from '@/lib/db/catalog-read';
 import { isFutureDate } from "@/lib/utils";
 import {
   filterQualityGames,
@@ -1797,16 +1798,16 @@ function isReservedHomepageTopRatedGame(game: Game): boolean {
 export async function fetchHomepageData(): Promise<HomepageData> {
   // Fetch the heaviest DB-backed rails with less concurrency to avoid build-time statement timeouts.
   const [heroResult, trendingPrimaryResult, newReleasesResult, dealsResult] = await Promise.allSettled([
-    fetchHeroCandidates(HOMEPAGE_HERO_FETCH_TARGET),
-    fetchTrendingGames(HOMEPAGE_SECTION_FETCH_TARGET, true),
-    fetchNewReleases(HOMEPAGE_SECTION_FETCH_TARGET),
+    retryCatalogRead(() => fetchHeroCandidates(HOMEPAGE_HERO_FETCH_TARGET)),
+    retryCatalogRead(() => fetchTrendingGames(HOMEPAGE_SECTION_FETCH_TARGET, true)),
+    retryCatalogRead(() => fetchNewReleases(HOMEPAGE_SECTION_FETCH_TARGET)),
     fetchDeals(),
   ]);
   const [topRatedResult] = await Promise.allSettled([
-    fetchHomepageTopRated(HOMEPAGE_SECTION_FETCH_TARGET),
+    retryCatalogRead(() => fetchHomepageTopRated(HOMEPAGE_SECTION_FETCH_TARGET)),
   ]);
   const [recsResult] = await Promise.allSettled([
-    fetchHomepageRecommendations(HOMEPAGE_SECTION_FETCH_TARGET),
+    retryCatalogRead(() => fetchHomepageRecommendations(HOMEPAGE_SECTION_FETCH_TARGET)),
   ]);
 
   const heroRaw = resolveHomepageSection(heroResult, "hero rail", [] as Game[]);
