@@ -10,35 +10,38 @@ const SITEMAP_REVALIDATE_SECONDS = 3600;
 /** Fixed build date for static pages — avoids crawler churn from new Date() every run */
 const BUILD_DATE = resolveStaticPageLastModified();
 
-export const revalidate = 3600;
-
 const getCachedDynamicSitemapPages = unstable_cache(
   async (): Promise<MetadataRoute.Sitemap> => {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    if (!url || !key) return [];
+    if (!url || !key) throw new Error('Sitemap database configuration is missing');
 
     const { getPublicSupabase } = await import("@/lib/supabase/public");
     const supabase = getPublicSupabase();
 
     const [games, lists] = await Promise.all([
-      collectSitemapRows(async (offset, size) => {
-        const { data, error } = await supabase.from('games')
-          .select('id, slug, title, cover_image, updated_at, score, tags, genres')
-          .order('id', { ascending: true }).range(offset, offset + size - 1);
+      collectSitemapRows(async (after, size) => {
+        let query = supabase.from('games')
+          .select('id, slug, title, updated_at, score, tags, genres')
+          .not('cover_image', 'is', null).neq('cover_image', '')
+          .order('id', { ascending: true }).limit(size);
+        if (after) query = query.gt('id', after);
+        const { data, error } = await query.abortSignal(AbortSignal.timeout(10000));
         if (error) throw error;
         return data ?? [];
       }),
-      collectSitemapRows(async (offset, size) => {
-        const { data, error } = await supabase.from('lists').select('id, slug, updated_at')
-          .eq('is_public', true).order('id', { ascending: true }).range(offset, offset + size - 1);
+      collectSitemapRows(async (after, size) => {
+        let query = supabase.from('lists').select('id, slug, updated_at')
+          .eq('is_public', true).order('id', { ascending: true }).limit(size);
+        if (after) query = query.gt('id', after);
+        const { data, error } = await query.abortSignal(AbortSignal.timeout(10000));
         if (error) throw error;
         return data ?? [];
       }),
     ]);
 
     const gamePages: MetadataRoute.Sitemap = games.filter(game =>
-      /^[a-z0-9-]{1,100}$/i.test(game.slug) && game.title && game.cover_image && isPublicSafeGame(game)
+      /^[a-z0-9-]{1,100}$/i.test(game.slug) && game.title && isPublicSafeGame(game)
     ).map((game) => ({
       url: `${SITE_URL}/game/${game.slug}`,
       lastModified: new Date(game.updated_at),
@@ -55,11 +58,11 @@ const getCachedDynamicSitemapPages = unstable_cache(
 
     return [...gamePages, ...listPages];
   },
-  ["sitemap-pages-v2"],
+  ["sitemap-pages-v3"],
   { revalidate: SITEMAP_REVALIDATE_SECONDS }
 );
 
-export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+export async function loadSitemap(): Promise<MetadataRoute.Sitemap> {
   // Static pages
   const staticPages: MetadataRoute.Sitemap = [
     { url: `${SITE_URL}`, lastModified: BUILD_DATE, changeFrequency: "daily", priority: 1.0 },
@@ -77,7 +80,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ];
 
   // Dynamic game pages
-  // Throw on failure so ISR retains the last complete successful sitemap.
+  // Never return a partial catalog when a batch fails.
   const dynamicPages = await getCachedDynamicSitemapPages();
   return [...staticPages, ...dynamicPages];
 }
