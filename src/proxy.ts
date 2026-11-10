@@ -162,12 +162,15 @@ export async function proxy(request: NextRequest) {
     try {
       const { data, error } = await getServerSupabase().rpc('consume_api_rate_limit', {
         p_bucket: bucket, p_limit: config.limit, p_window: config.windowSeconds,
-      }).abortSignal(AbortSignal.timeout(3000));
+      }).abortSignal(AbortSignal.timeout(5000));
       if (error || !data?.[0]) throw new Error('Rate-limit storage unavailable');
       allowed = data[0].allowed;
       remaining = data[0].remaining;
       resetAt = Date.parse(data[0].reset_at);
-    } catch {
+    } catch (error) {
+      console.warn('[Rate limit] Shared storage unavailable', {
+        type: error instanceof Error ? error.name : 'RPC_ERROR',
+      });
       return NextResponse.json({ error: 'Temporarily unavailable. Please retry.' }, { status: 503, headers: { 'Retry-After': '5' } });
     }
   }
