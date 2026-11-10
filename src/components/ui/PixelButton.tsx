@@ -17,7 +17,7 @@ type PixelButtonProps = {
 
 const variantStyles = {
   primary:
-    "bg-accent text-white border-accent hover:bg-accent-hover",
+    "bg-accent text-accent-foreground border-accent hover:bg-accent-hover",
   secondary:
     "bg-transparent text-foreground border-border hover:border-accent hover:text-accent",
   ghost:
@@ -51,14 +51,12 @@ export default function PixelButton({
 
   if (as === "span") {
     return (
-      <motion.span
-        whileHover={{ scale: 1.03 }}
-        whileTap={{ scale: 0.97 }}
+      <span
         className={sharedClassName}
-        {...(props as React.ComponentProps<typeof motion.span>)}
+        {...(props as React.HTMLAttributes<HTMLSpanElement>)}
       >
         {children}
-      </motion.span>
+      </span>
     );
   }
 

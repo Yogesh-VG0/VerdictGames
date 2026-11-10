@@ -3,6 +3,8 @@ import { unstable_cache } from "next/cache";
 import { resolveStaticPageLastModified } from "@/lib/seo";
 import { collectSitemapRows } from "@/lib/seo/sitemap";
 import { isPublicSafeGame } from "@/lib/utils/publicSafety";
+import { slugify } from '@/lib/utils/slugify';
+import { GAME_DETAIL_SLUG_REDIRECTS } from '@/lib/services/game-detail';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://www.verdict.games";
 const SITEMAP_REVALIDATE_SECONDS = 3600;
@@ -19,11 +21,10 @@ const getCachedDynamicSitemapPages = unstable_cache(
     const { getPublicSupabase } = await import("@/lib/supabase/public");
     const supabase = getPublicSupabase();
 
-    const [games, lists] = await Promise.all([
+    const [games, lists, profiles] = await Promise.all([
       collectSitemapRows(async (after, size) => {
         let query = supabase.from('games')
-          .select('id, slug, title, updated_at, score, tags, genres')
-          .not('cover_image', 'is', null).neq('cover_image', '')
+          .select('id, slug, title, developer, cover_image, updated_at, score, tags, genres, description')
           .order('id', { ascending: true }).limit(size);
         if (after) query = query.gt('id', after);
         const { data, error } = await query.abortSignal(AbortSignal.timeout(10000));
@@ -38,11 +39,21 @@ const getCachedDynamicSitemapPages = unstable_cache(
         if (error) throw error;
         return data ?? [];
       }),
+      collectSitemapRows(async (after, size) => {
+        let query = supabase.from('profiles').select('id, username, updated_at')
+          .order('id', { ascending: true }).limit(size);
+        if (after) query = query.gt('id', after);
+        const { data, error } = await query.abortSignal(AbortSignal.timeout(10000));
+        if (error) throw error;
+        return data ?? [];
+      }),
     ]);
 
-    const gamePages: MetadataRoute.Sitemap = games.filter(game =>
+    const publicGames = games.filter(game =>
       /^[a-z0-9-]{1,100}$/i.test(game.slug) && game.title && isPublicSafeGame(game)
-    ).map((game) => ({
+      && !Object.hasOwn(GAME_DETAIL_SLUG_REDIRECTS, game.slug)
+    );
+    const gamePages: MetadataRoute.Sitemap = publicGames.map((game) => ({
       url: `${SITE_URL}/game/${game.slug}`,
       lastModified: new Date(game.updated_at),
       changeFrequency: "weekly" as const,
@@ -56,9 +67,21 @@ const getCachedDynamicSitemapPages = unstable_cache(
       priority: 0.7,
     }));
 
-    return [...gamePages, ...listPages];
+    const developers = new Map<string, string>();
+    for (const game of publicGames) {
+      if (!game.cover_image) continue;
+      const slug = slugify(game.developer ?? '');
+      if (!/^[a-z0-9_-]{1,150}$/.test(slug)) continue;
+      if (!developers.has(slug) || game.updated_at > developers.get(slug)!) developers.set(slug, game.updated_at);
+    }
+    const developerPages: MetadataRoute.Sitemap = [...developers].map(([slug, updated]) => ({
+      url: `${SITE_URL}/developers/${slug}`, lastModified: new Date(updated), changeFrequency: 'weekly', priority: 0.6,
+    }));
+    const profilePages: MetadataRoute.Sitemap = profiles.filter(profile => /^[a-zA-Z0-9_-]{1,50}$/.test(profile.username))
+      .map(profile => ({ url: `${SITE_URL}/profile/${encodeURIComponent(profile.username)}`, lastModified: new Date(profile.updated_at), changeFrequency: 'weekly', priority: 0.4 }));
+    return [...gamePages, ...listPages, ...developerPages, ...profilePages];
   },
-  ["sitemap-pages-v3"],
+  ["sitemap-pages-v4"],
   { revalidate: SITEMAP_REVALIDATE_SECONDS }
 );
 
@@ -68,9 +91,13 @@ export async function loadSitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE_URL}`, lastModified: BUILD_DATE, changeFrequency: "daily", priority: 1.0 },
     { url: `${SITE_URL}/explore`, lastModified: BUILD_DATE, changeFrequency: "daily", priority: 0.9 },
     { url: `${SITE_URL}/search`, lastModified: BUILD_DATE, changeFrequency: "daily", priority: 0.8 },
+    ...['trending', 'top-rated', 'newest', 'upcoming', 'recently-added'].map(sort => ({
+      url: `${SITE_URL}/search?sort=${sort}`, lastModified: BUILD_DATE, changeFrequency: 'daily' as const, priority: 0.7,
+    })),
     { url: `${SITE_URL}/calendar`, lastModified: BUILD_DATE, changeFrequency: "daily", priority: 0.8 },
     { url: `${SITE_URL}/lists`, lastModified: BUILD_DATE, changeFrequency: "weekly", priority: 0.7 },
     { url: `${SITE_URL}/reviews`, lastModified: BUILD_DATE, changeFrequency: "weekly", priority: 0.7 },
+    { url: `${SITE_URL}/news`, lastModified: BUILD_DATE, changeFrequency: "daily", priority: 0.7 },
     { url: `${SITE_URL}/deals`, lastModified: BUILD_DATE, changeFrequency: "daily", priority: 0.8 },
     { url: `${SITE_URL}/free-to-play`, lastModified: BUILD_DATE, changeFrequency: "daily", priority: 0.8 },
     { url: `${SITE_URL}/compare`, lastModified: BUILD_DATE, changeFrequency: "weekly", priority: 0.6 },

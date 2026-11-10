@@ -401,7 +401,7 @@ export default function NavbarTop() {
                 <div className="px-4 py-4 border-b border-border">
                   <button
                     onClick={() => { setSidebarOpen(false); setAuthModalOpen(true); }}
-                    className="w-full px-4 py-2.5 rounded-xl text-sm font-medium bg-accent text-white hover:bg-accent-hover transition-colors"
+                    className="w-full px-4 py-2.5 rounded-xl text-sm font-medium bg-accent text-accent-foreground hover:bg-accent-hover transition-colors"
                   >
                     Sign In
                   </button>
@@ -633,7 +633,7 @@ export default function NavbarTop() {
               <button
                 type="button"
                 onClick={() => setAuthModalOpen(true)}
-                className="px-3.5 py-1.5 rounded-xl text-sm font-medium bg-accent text-white hover:bg-accent-hover transition-colors shadow-sm shadow-accent/20"
+                className="px-3.5 py-1.5 rounded-xl text-sm font-medium bg-accent text-accent-foreground hover:bg-accent-hover transition-colors shadow-sm shadow-accent/20"
               >
                 Sign In
               </button>

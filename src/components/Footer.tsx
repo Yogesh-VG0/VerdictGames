@@ -18,7 +18,7 @@ export default function Footer() {
               </p>
             </div>
             <div>
-              <h4 className="text-xs font-semibold text-secondary uppercase tracking-wider mb-3">Browse</h4>
+              <h2 className="text-xs font-semibold text-secondary uppercase tracking-wider mb-3">Browse</h2>
               <ul className="space-y-2 text-sm text-tertiary">
                 <li><Link href="/search?sort=trending" prefetch={false} className="hover:text-accent transition-colors">Trending</Link></li>
                 <li><Link href="/search?sort=newest" prefetch={false} className="hover:text-accent transition-colors">New Releases</Link></li>
@@ -29,7 +29,7 @@ export default function Footer() {
               </ul>
             </div>
             <div>
-              <h4 className="text-xs font-semibold text-secondary uppercase tracking-wider mb-3">Platforms</h4>
+              <h2 className="text-xs font-semibold text-secondary uppercase tracking-wider mb-3">Platforms</h2>
               <ul className="space-y-2 text-sm text-tertiary">
                 <li><Link href="/search?platform=PC" prefetch={false} className="hover:text-accent transition-colors">PC</Link></li>
                 <li><Link href="/search?platform=PlayStation+5" prefetch={false} className="hover:text-accent transition-colors">PlayStation 5</Link></li>
@@ -39,7 +39,7 @@ export default function Footer() {
               </ul>
             </div>
             <div>
-              <h4 className="text-xs font-semibold text-secondary uppercase tracking-wider mb-3">About</h4>
+              <h2 className="text-xs font-semibold text-secondary uppercase tracking-wider mb-3">About</h2>
               <ul className="space-y-2 text-sm text-tertiary">
                 <li><Link href="/about" prefetch={false} className="hover:text-accent transition-colors">About Us</Link></li>
                 <li><Link href="/reviews" prefetch={false} className="hover:text-accent transition-colors">Community Reviews</Link></li>

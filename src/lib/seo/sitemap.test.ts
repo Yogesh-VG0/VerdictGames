@@ -10,7 +10,7 @@ describe('sitemap database pagination', () => {
       return catalog.filter(row => after === undefined || row.id > after).slice(0, size);
     });
     expect(rows).toEqual(catalog);
-    expect(cursors.slice(0, 3)).toEqual([undefined, '000249', '000499']);
+    expect(cursors.slice(0, 3)).toEqual([undefined, '000499', '000999']);
   });
   it('propagates failures rather than publishing a truncated sitemap', async () => {
     await expect(collectSitemapRows(async after => { if (after) throw new Error('database unavailable'); return [{ id: 'a' }, { id: 'b' }]; }, 2)).rejects.toThrow('database unavailable');

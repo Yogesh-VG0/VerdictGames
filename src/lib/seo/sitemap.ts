@@ -2,7 +2,7 @@ import type { MetadataRoute } from 'next';
 
 export async function collectSitemapRows<T extends { id: string }>(
   fetchPage: (after: string | undefined, size: number) => Promise<T[]>,
-  pageSize = 250,
+  pageSize = 500,
 ): Promise<T[]> {
   if (!Number.isInteger(pageSize) || pageSize < 1 || pageSize > 1000) throw new Error('Invalid sitemap batch size');
   const result: T[] = [];

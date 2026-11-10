@@ -14,6 +14,7 @@
   --vg-border: rgba(255, 255, 255, 0.06);
   --vg-border-hover: rgba(255, 255, 255, 0.14);
   --vg-accent: #a855f7;
+  --vg-on-accent: #08080f;
   --vg-accent-hover: #c084fc;
   --vg-accent-soft: rgba(168, 85, 247, 0.1);
   --vg-accent-glow: rgba(168, 85, 247, 0.35);
@@ -25,7 +26,7 @@
   --vg-danger: #ef4444;
   --vg-text: #f0f2f5;
   --vg-text-secondary: #8b95a5;
-  --vg-text-muted: #5a6373;
+  --vg-text-muted: #8a94a4;
   --vg-score-great: #4ade80;
   --vg-score-good: #a3e635;
   --vg-score-mixed: #facc15;
@@ -42,6 +43,7 @@
   --vg-border: rgba(0, 0, 0, 0.08);
   --vg-border-hover: rgba(0, 0, 0, 0.16);
   --vg-accent: #7c3aed;
+  --vg-on-accent: #ffffff;
   --vg-accent-hover: #6d28d9;
   --vg-accent-soft: rgba(124, 58, 237, 0.08);
   --vg-accent-glow: rgba(124, 58, 237, 0.2);
@@ -53,7 +55,7 @@
   --vg-danger: #dc2626;
   --vg-text: #0f172a;
   --vg-text-secondary: #475569;
-  --vg-text-muted: #94a3b8;
+  --vg-text-muted: #64748b;
   --vg-score-great: #16a34a;
   --vg-score-good: #65a30d;
   --vg-score-mixed: #ca8a04;
@@ -70,6 +72,7 @@
   --color-border: var(--vg-border);
   --color-border-hover: var(--vg-border-hover);
   --color-accent: var(--vg-accent);
+  --color-accent-foreground: var(--vg-on-accent);
   --color-accent-hover: var(--vg-accent-hover);
   --color-accent-soft: var(--vg-accent-soft);
   --color-accent-glow: var(--vg-accent-glow);

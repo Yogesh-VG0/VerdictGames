@@ -3,6 +3,7 @@
 import { useState, type CSSProperties, type ReactNode, type SyntheticEvent } from "react";
 import Image, { type ImageProps } from "next/image";
 import { cn } from "@/lib/utils";
+import { providerImageLoader, supportsProviderImageLoader } from '@/lib/utils/image-loader';
 
 type SafeImageProps = ImageProps & {
   fallback?: ReactNode;
@@ -37,11 +38,13 @@ function SafeImageContent({
   onLoad,
   onError,
   unoptimized,
+  loader,
   ...rest
 }: SafeImageProps & { nativeSrc: string }) {
   const [useNativeFallback, setUseNativeFallback] = useState(false);
   const [nativeFailed, setNativeFailed] = useState(false);
-  const resolvedUnoptimized = unoptimized ?? /^https?:\/\//i.test(nativeSrc);
+  const providerSupported = supportsProviderImageLoader(nativeSrc);
+  const resolvedUnoptimized = unoptimized ?? (/^https?:\/\//i.test(nativeSrc) && !providerSupported);
 
   if (!nativeSrc || nativeFailed) {
     if (!fallback) {
@@ -87,6 +90,7 @@ function SafeImageContent({
       height={height}
       loading={loading}
       priority={priority}
+      loader={loader ?? (providerSupported ? providerImageLoader : undefined)}
       unoptimized={resolvedUnoptimized}
       style={style}
       onLoad={onLoad}

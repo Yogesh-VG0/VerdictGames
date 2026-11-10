@@ -29,7 +29,7 @@ function getLinks(user: BottomNavUser): BottomNavLink[] {
       : [{ href: SHARED_NAV_DESTINATIONS.deals, label: SHARED_NAV_LABELS.deals, icon: Gamepad2 }]),
     {
       href: user ? `/profile/${user.username}` : "/about",
-      label: user ? "Profile" : "More",
+      label: user ? "Profile" : "About",
       icon: User,
     },
   ];

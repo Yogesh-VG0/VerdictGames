@@ -350,13 +350,14 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
               key={i}
               onClick={() => goToSlide(i)}
               className={cn(
-                "transition-all duration-300 rounded-full",
-                i === currentIndex
-                  ? "w-6 h-1.5 bg-accent"
-                  : "w-1.5 h-1.5 bg-white/40 hover:bg-white/60"
+                "flex w-8 h-8 items-center justify-center rounded-full"
               )}
               aria-label={`Go to slide ${i + 1}`}
-            />
+              aria-current={i === currentIndex ? 'true' : undefined}
+              type="button"
+            >
+              <span className={cn('h-1.5 rounded-full transition-[width,background-color] duration-200', i === currentIndex ? 'w-6 bg-accent' : 'w-1.5 bg-white/60')} />
+            </button>
           ))}
         </div>
       )}
@@ -366,9 +367,9 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
         <div className="absolute bottom-0 left-0 right-0 h-[2px] z-[3]">
           <motion.div
             key={`progress-${page}`}
-            className="h-full bg-accent/70"
-            initial={{ width: "0%" }}
-            animate={{ width: "100%" }}
+            className="h-full bg-accent/70 origin-left"
+            initial={{ scaleX: 0 }}
+            animate={{ scaleX: 1 }}
             transition={{ duration: interval / 1000, ease: "linear" }}
           />
         </div>

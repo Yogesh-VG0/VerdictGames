@@ -1,0 +1,302 @@
+"use client";
+
+import { useState } from "react";
+import type { User } from "@/lib/types";
+import Link from "next/link";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { getUserProfile, getUserReviews, toggleFollow, getCuratedLists } from "@/lib/api";
+import { useAuth } from "@/hooks/useAuth";
+import { formatDate } from "@/lib/utils";
+import ReviewCard from "@/components/ReviewCard";
+import PixelBadge from "@/components/ui/PixelBadge";
+import PixelButton from "@/components/ui/PixelButton";
+import Tabs from "@/components/ui/Tabs";
+import AuthModal from "@/components/AuthModal";
+import { Skeleton } from "@/components/ui/Skeleton";
+import UserAvatar from "@/components/UserAvatar";
+import { UserX, PenLine, List, BookOpen, Star, Pencil } from "lucide-react";
+
+interface Props {
+  username: string;
+  initialUser: User;
+}
+
+export default function ProfileClientPage({ username, initialUser }: Props) {
+  const { user: currentUser } = useAuth();
+  const queryClient = useQueryClient();
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+
+  const { data: user, isLoading } = useQuery({
+    queryKey: ["user", username],
+    queryFn: () => getUserProfile(username),
+    initialData: initialUser,
+    initialDataUpdatedAt: 0,
+  });
+
+  const { data: reviews } = useQuery({
+    queryKey: ["userReviews", username],
+    queryFn: () => getUserReviews(username),
+    enabled: !!user,
+  });
+
+  const { data: allLists } = useQuery({
+    queryKey: ["lists"],
+    queryFn: getCuratedLists,
+    enabled: !!user,
+  });
+  const userLists = (allLists ?? []).filter(
+    (l) => l.ownerId === user?.id || l.curatedBy === user?.username
+  );
+
+  const followMutation = useMutation({
+    mutationFn: (action: "follow" | "unfollow") => toggleFollow(user?.id ?? "", action),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["user", username] });
+    },
+  });
+
+  const isOwnProfile = currentUser?.username === username;
+
+  if (isLoading) {
+    return (
+      <div className="max-w-5xl mx-auto px-4 py-6 space-y-6">
+        <div className="flex items-center gap-4">
+          <Skeleton className="w-20 h-20 rounded-full" />
+          <div className="space-y-2">
+            <Skeleton className="h-6 w-40" />
+            <Skeleton className="h-4 w-60" />
+          </div>
+        </div>
+        <div className="grid grid-cols-3 gap-4">
+          <Skeleton className="h-20 rounded-2xl" />
+          <Skeleton className="h-20 rounded-2xl" />
+          <Skeleton className="h-20 rounded-2xl" />
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center text-center space-y-4">
+        <UserX className="w-10 h-10 text-accent" />
+        <h2 className="text-xl font-bold text-foreground">User not found</h2>
+        <p className="text-sm text-secondary">
+          This profile doesn&apos;t exist.
+        </p>
+        <Link href="/" prefetch={false}>
+          <PixelButton as="span" variant="secondary">Back to Home</PixelButton>
+        </Link>
+      </div>
+    );
+  }
+
+  const tabs = [
+    {
+      id: "activity",
+      label: "Activity",
+      content: (
+        <div className="space-y-3">
+          {user.recentActivity.length > 0 ? (
+            user.recentActivity.map((item) => (
+              <div
+                key={item.id}
+                className="flex items-center gap-3 text-sm py-2 border-b border-border last:border-0"
+              >
+                <span className="text-accent opacity-70">
+                  {item.type === "review" ? <PenLine className="w-4 h-4" /> : item.type === "list" ? <List className="w-4 h-4" /> : item.type === "library" ? <BookOpen className="w-4 h-4" /> : <Star className="w-4 h-4" />}
+                </span>
+                <div className="flex-1 min-w-0">
+                  {item.type === "review" && (
+                    <p className="text-foreground">
+                      Reviewed{" "}
+                      <Link
+                        href={`/game/${item.gameSlug}`}
+                        prefetch={false}
+                        className="text-accent hover:text-accent-hover font-medium"
+                      >
+                        {item.gameTitle}
+                      </Link>
+                      {item.rating && (
+                        <span className="text-secondary"> — {item.rating}/100</span>
+                      )}
+                    </p>
+                  )}
+                  {item.type === "list" && (
+                    <p className="text-foreground">
+                      Created list{" "}
+                      <Link
+                        href={`/lists/${item.listSlug}`}
+                        prefetch={false}
+                        className="text-accent hover:text-accent-hover font-medium"
+                      >
+                        {item.listTitle}
+                      </Link>
+                    </p>
+                  )}
+                  {item.type === "rating" && (
+                    <p className="text-foreground">
+                      Rated{" "}
+                      <Link
+                        href={`/game/${item.gameSlug}`}
+                        prefetch={false}
+                        className="text-accent hover:text-accent-hover font-medium"
+                      >
+                        {item.gameTitle}
+                      </Link>
+                      <span className="text-secondary"> — {item.rating}/100</span>
+                    </p>
+                  )}
+                  <time className="text-xs text-tertiary">
+                    {formatDate(item.createdAt)}
+                  </time>
+                </div>
+              </div>
+            ))
+          ) : (
+            <p className="text-secondary text-sm text-center py-8">
+              No recent activity.
+            </p>
+          )}
+        </div>
+      ),
+    },
+    {
+      id: "reviews",
+      label: "Reviews",
+      content: (
+        <div className="space-y-4">
+          {reviews && reviews.length > 0 ? (
+            reviews.map((review) => (
+              <ReviewCard key={review.id} review={review} />
+            ))
+          ) : (
+            <p className="text-secondary text-sm text-center py-8">
+              No reviews yet.
+            </p>
+          )}
+        </div>
+      ),
+    },
+    {
+      id: "lists",
+      label: "Lists",
+      content: (
+        <div className="space-y-3">
+          {userLists.length > 0 ? (
+            userLists.map((list) => (
+              <Link
+                key={list.id}
+                href={`/lists/${list.slug}`}
+                prefetch={false}
+                className="flex items-center gap-3 rounded-xl border border-border bg-surface p-3 hover:border-accent/30 hover:bg-surface-2 transition-all group"
+              >
+                <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center shrink-0">
+                  <List className="w-5 h-5 text-accent" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground group-hover:text-accent transition-colors truncate">
+                    {list.title}
+                  </p>
+                  <p className="text-[10px] text-tertiary">
+                    {list.gameCount} games · {list.tags.slice(0, 2).join(", ")}
+                  </p>
+                </div>
+              </Link>
+            ))
+          ) : (
+            <p className="text-secondary text-sm text-center py-8">
+              No lists created yet.
+            </p>
+          )}
+        </div>
+      ),
+    },
+  ];
+
+  return (
+    <div className="max-w-5xl mx-auto px-4 py-6 space-y-6">
+      {/* Profile header */}
+      <div className="flex items-start gap-4 md:gap-6">
+        <UserAvatar src={user.avatar} displayName={user.displayName} size="xl" className="md:w-24 md:h-24 md:text-3xl" />
+        <div className="space-y-1.5 flex-1">
+          <div className="flex items-center gap-3 flex-wrap">
+            <h1 className="text-xl md:text-2xl font-bold text-foreground">
+              {user.displayName}
+            </h1>
+            {isOwnProfile ? (
+              <Link
+                href="/settings"
+                className="px-3 py-1 rounded-lg text-xs font-medium bg-surface-2 border border-border text-secondary hover:text-foreground hover:border-border-hover transition-all"
+              >
+                <Pencil className="w-3 h-3 inline mr-1" /> Edit Profile
+              </Link>
+            ) : (
+              <button
+                onClick={() => {
+                  if (!currentUser) {
+                    setAuthModalOpen(true);
+                    return;
+                  }
+                  followMutation.mutate("follow");
+                }}
+                disabled={followMutation.isPending}
+                className="px-3 py-1 rounded-lg text-xs font-medium bg-accent/10 border border-accent/30 text-accent hover:bg-accent/20 transition-all disabled:opacity-50"
+              >
+                {followMutation.isPending ? "..." : "Follow"}
+              </button>
+            )}
+          </div>
+          <p className="text-xs text-tertiary">@{user.username}</p>
+          <p className="text-sm text-secondary">{user.bio}</p>
+          {/* Follower/Following counts */}
+          <div className="flex items-center gap-4 text-xs pt-1">
+            <span className="text-secondary">
+              <span className="font-bold text-foreground">{user.followerCount ?? 0}</span> followers
+            </span>
+            <span className="text-secondary">
+              <span className="font-bold text-foreground">{user.followingCount ?? 0}</span> following
+            </span>
+            {user.libraryCount != null && user.libraryCount > 0 && (
+              <span className="text-secondary">
+                <span className="font-bold text-foreground">{user.libraryCount}</span> in library
+              </span>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-1 pt-1">
+            {user.favoriteGenres.map((g) => (
+              <PixelBadge key={g} variant="muted" size="sm">
+                {g}
+              </PixelBadge>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-3 gap-3">
+        {[
+          { label: "Reviews", value: user.gamesReviewed },
+          { label: "Lists", value: user.listsCreated },
+          { label: "Member since", value: formatDate(user.joinedAt) },
+        ].map((stat) => (
+          <div
+            key={stat.label}
+            className="rounded-2xl border border-border bg-surface p-3 text-center"
+          >
+            <p className="text-lg font-bold text-foreground">{stat.value}</p>
+            <p className="text-[10px] text-tertiary uppercase tracking-wider">
+              {stat.label}
+            </p>
+          </div>
+        ))}
+      </div>
+
+      {/* Tabs */}
+      <Tabs tabs={tabs} defaultTab="activity" />
+
+      {/* Auth Modal */}
+      <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} />
+    </div>
+  );
+}

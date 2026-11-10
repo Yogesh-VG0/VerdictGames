@@ -91,9 +91,9 @@ export default async function HomePage() {
                   gradient="linear-gradient(90deg, #f97316 0%, #ef4444 25%, #f97316 50%, #eab308 75%, #f97316 100%)"
                 />
                 <HorizontalScroll>
-                  {trendingGames.map((game, index) => (
+                  {trendingGames.map((game) => (
                     <div key={game.id} className={CARD_WIDTH}>
-                      <GameCard game={game} priority={index < 2} />
+                      <GameCard game={game} priority={false} />
                     </div>
                   ))}
                 </HorizontalScroll>
@@ -133,9 +133,9 @@ export default async function HomePage() {
                   gradient="linear-gradient(90deg, #facc15 0%, #f97316 25%, #eab308 50%, #22c55e 75%, #facc15 100%)"
                 />
                 <HorizontalScroll>
-                  {topRatedGames.map((game, index) => (
+                  {topRatedGames.map((game) => (
                     <div key={game.id} className={CARD_WIDTH}>
-                      <GameCard game={game} priority={index < 2} />
+                      <GameCard game={game} priority={false} />
                     </div>
                   ))}
                 </HorizontalScroll>

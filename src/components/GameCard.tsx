@@ -75,8 +75,8 @@ function BlurImage({ src, alt, sizes, priority, className }: {
         priority={priority}
         quality={75}
         className={cn(
-          "object-cover transition-all duration-700",
-          status === "loaded" ? "opacity-100 scale-100" : "opacity-0 scale-105 blur-sm",
+          "object-cover transition-transform duration-300",
+          status === "error" ? "opacity-0" : "opacity-100",
           className
         )}
         onLoad={(event) => setStatus(event.currentTarget.naturalWidth > 0 ? "loaded" : "error")}
