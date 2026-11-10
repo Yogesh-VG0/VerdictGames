@@ -33,7 +33,7 @@ export default function HomepageMostAnticipatedSection({
             gradient="linear-gradient(90deg, #06b6d4 0%, #3b82f6 25%, #8b5cf6 50%, #06b6d4 75%, #3b82f6 100%)"
           />
           <HorizontalScroll>
-            {games.map((game, index) => (
+            {games.map((game) => (
               <div key={game.rawgId} className="shrink-0 w-64 sm:w-72 md:w-80 h-full">
                 <Link href={`/game/${game.slug}?rawgId=${game.rawgId}`} prefetch={false} className="block group">
                   <div className="relative aspect-[16/9] rounded-2xl overflow-hidden border border-border bg-surface-2 group-hover:border-accent/40 transition-all">
@@ -43,7 +43,7 @@ export default function HomepageMostAnticipatedSection({
                         alt={game.name}
                         sizes="(max-width: 640px) 80vw, (max-width: 1024px) 40vw, 320px"
                         className="group-hover:scale-105 transition-transform duration-500"
-                        priority={index < 2}
+                        priority={false}
                         fallbackClassName="bg-surface-2"
                       />
                     ) : (

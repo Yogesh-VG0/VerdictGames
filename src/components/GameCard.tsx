@@ -1,8 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
-import { motion } from "framer-motion";
 import { Gamepad2 } from "lucide-react";
 import { Game } from "@/lib/types";
 import { scoreColor, cn, sourceLabel, scoreGlowClass, getStableYear } from "@/lib/utils";
@@ -45,25 +43,10 @@ function scoreGlowBorder(score: number): string {
 function BlurImage({ src, alt, sizes, priority, className }: {
   src: string; alt: string; sizes?: string; priority?: boolean; className?: string;
 }) {
-  const [status, setStatus] = useState<"loading" | "loaded" | "error">("loading");
-
-  useEffect(() => {
-    if (status !== "loading") return;
-
-    const timeoutId = window.setTimeout(() => {
-      setStatus((current) => (current === "loading" ? "error" : current));
-    }, 10000);
-
-    return () => window.clearTimeout(timeoutId);
-  }, [status, src]);
-
   return (
     <>
       <div
-        className={cn(
-          "absolute inset-0 bg-gradient-to-br from-accent/20 via-surface-2 to-pixel-cyan/10 flex items-center justify-center transition-opacity duration-500",
-          status === "loaded" ? "opacity-0" : "opacity-100"
-        )}
+        className="absolute inset-0 bg-gradient-to-br from-accent/20 via-surface-2 to-pixel-cyan/10 flex items-center justify-center"
       >
         <Gamepad2 className="w-7 h-7 text-accent/30" />
       </div>
@@ -76,11 +59,10 @@ function BlurImage({ src, alt, sizes, priority, className }: {
         quality={75}
         className={cn(
           "object-cover transition-transform duration-300",
-          status === "error" ? "opacity-0" : "opacity-100",
           className
         )}
-        onLoad={(event) => setStatus(event.currentTarget.naturalWidth > 0 ? "loaded" : "error")}
-        onError={() => setStatus("error")}
+        fallback={<Gamepad2 className="w-7 h-7 text-accent/30" />}
+        fallbackClassName="flex items-center justify-center bg-surface-2"
       />
     </>
   );
@@ -96,12 +78,9 @@ export default function GameCard({
   if (variant === "spotlight") {
     return (
       <Link href={`/game/${game.slug}`} prefetch={prefetch} className={cn("block group", className)}>
-        <motion.article
-          whileHover={{ y: -2 }}
-          whileTap={{ scale: 0.98 }}
-          transition={{ duration: 0.3, ease: "easeOut" }}
+        <article
           className={cn(
-            "relative rounded-2xl border border-border bg-surface overflow-hidden card-shimmer h-full hover:border-accent/30 transition-all duration-500",
+            "relative rounded-2xl border border-border bg-surface overflow-hidden card-shimmer h-full hover:border-accent/30 hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-300",
             hasRealScore(game) ? scoreGlowBorder(game.score) : "hover:shadow-[0_0_20px_-8px_rgba(168,85,247,0.12)]"
           )}
         >
@@ -185,19 +164,16 @@ export default function GameCard({
               </p>
             )}
           </div>
-        </motion.article>
+        </article>
       </Link>
     );
   }
 
   return (
     <Link href={`/game/${game.slug}`} prefetch={prefetch} className={cn("block group", className)}>
-      <motion.article
-        whileHover={{ y: -3 }}
-        whileTap={{ scale: 0.98 }}
-        transition={{ duration: 0.3, ease: "easeOut" }}
+      <article
         className={cn(
-          "relative rounded-2xl border border-border bg-surface overflow-hidden card-shimmer h-full hover:border-accent/30 transition-all duration-500",
+          "relative rounded-2xl border border-border bg-surface overflow-hidden card-shimmer h-full hover:border-accent/30 hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-300",
           hasRealScore(game) ? scoreGlowBorder(game.score) : "hover:shadow-[0_0_20px_-8px_rgba(168,85,247,0.1)]"
         )}
       >
@@ -295,7 +271,7 @@ export default function GameCard({
             )) : <span className="opacity-0">—</span>}
           </div>
         </div>
-      </motion.article>
+      </article>
     </Link>
   );
 }

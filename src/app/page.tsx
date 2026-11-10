@@ -66,7 +66,7 @@ export default async function HomePage() {
   const hasTopRatedGames = topRatedGames.length > 0;
 
   return (
-    <div className="space-y-0 page-enter">
+    <div className="space-y-0">
       {/* ── 1. Hero Carousel ── */}
       <section className="relative">
         <div className="absolute inset-0 hero-spotlight pointer-events-none" />

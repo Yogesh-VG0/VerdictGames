@@ -3,7 +3,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
-import { motion } from "framer-motion";
 import {
   getRecommendations,
   getGXFreeToPlay,
@@ -99,7 +98,7 @@ export default function HomepageClientSections({
                   className={cn(
                     "px-4 py-2 rounded-xl text-sm font-medium transition-all whitespace-nowrap flex items-center gap-2",
                     discoverTab === tab.value
-                      ? "bg-accent text-white shadow-sm shadow-accent/20"
+                      ? "bg-accent text-accent-foreground shadow-sm shadow-accent/20"
                       : "bg-surface-2 text-secondary hover:text-foreground hover:bg-elevated border border-border"
                   )}
                 >
@@ -113,15 +112,12 @@ export default function HomepageClientSections({
               <>
                 {initialNewReleases.length > 0 ? (
                   <HorizontalScroll>
-                    {initialNewReleases.filter((game) => game.coverImage).map((game, index) => (
+                    {initialNewReleases.filter((game) => game.coverImage).map((game) => (
                       <div key={game.id} className={CARD_WIDTH}>
-                        <motion.div
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: index * 0.03, duration: 0.4 }}
+                        <div
                         >
-                          <GameCard game={game} prefetch={false} priority={index < 2} />
-                        </motion.div>
+                          <GameCard game={game} prefetch={false} />
+                        </div>
                       </div>
                     ))}
                   </HorizontalScroll>
@@ -135,16 +131,13 @@ export default function HomepageClientSections({
               <>
                 {initialDeals.length > 0 ? (
                   <HorizontalScroll>
-                    {initialDeals.slice(0, 20).map((deal, index) => (
-                      <motion.div
+                    {initialDeals.slice(0, 20).map((deal) => (
+                      <div
                         key={deal.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.04, duration: 0.4 }}
                         className={CARD_WIDTH}
                       >
                         <GXDealCard deal={deal} />
-                      </motion.div>
+                      </div>
                     ))}
                   </HorizontalScroll>
                 ) : (
@@ -159,7 +152,7 @@ export default function HomepageClientSections({
                   <HorizontalScrollSkeleton count={6} />
                 ) : gxFreeToPlay.data && gxFreeToPlay.data.length > 0 ? (
                   <HorizontalScroll>
-                    {gxFreeToPlay.data.slice(0, 20).map((game, index) => {
+                    {gxFreeToPlay.data.slice(0, 20).map((game) => {
                       const gameHref = game.gameSlug ? `/game/${game.gameSlug}` : null;
                       const artwork = (
                         <div className="relative aspect-[3/4] overflow-hidden">
@@ -169,7 +162,7 @@ export default function HomepageClientSections({
                               alt={game.title}
                               sizes="(max-width: 640px) 50vw, 20vw"
                               className="transition-transform duration-700 group-hover:scale-110"
-                              priority={index < 2}
+                              priority={false}
                               fallbackClassName="bg-surface-2"
                             />
                           )}
@@ -183,11 +176,8 @@ export default function HomepageClientSections({
                       );
 
                       return (
-                        <motion.div
+                        <div
                           key={game.id}
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: index * 0.05, duration: 0.4 }}
                           className={CARD_WIDTH}
                         >
                           <div className="flex flex-col h-full group rounded-2xl border border-border bg-surface overflow-hidden card-shimmer hover:border-pixel-green/30 transition-all duration-300">
@@ -224,7 +214,7 @@ export default function HomepageClientSections({
                               )}
                             </div>
                           </div>
-                        </motion.div>
+                        </div>
                       );
                     })}
                   </HorizontalScroll>
@@ -259,15 +249,12 @@ export default function HomepageClientSections({
                   gradient="linear-gradient(90deg, #a855f7 0%, #6366f1 25%, #ec4899 50%, #a855f7 75%, #6366f1 100%)"
                 />
                 <HorizontalScroll>
-                  {recommendedGames.filter((game) => game.coverImage).map((game, index) => (
+                  {recommendedGames.filter((game) => game.coverImage).map((game) => (
                     <div key={game.id} className={CARD_WIDTH}>
-                      <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.03, duration: 0.4 }}
+                      <div
                       >
-                        <GameCard game={game} prefetch={false} priority={index < 2} />
-                      </motion.div>
+                        <GameCard game={game} prefetch={false} />
+                      </div>
                     </div>
                   ))}
                 </HorizontalScroll>

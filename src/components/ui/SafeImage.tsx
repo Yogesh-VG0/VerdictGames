@@ -90,6 +90,7 @@ function SafeImageContent({
       height={height}
       loading={loading}
       priority={priority}
+      fetchPriority={priority ? 'high' : undefined}
       loader={loader ?? (providerSupported ? providerImageLoader : undefined)}
       unoptimized={resolvedUnoptimized}
       style={style}
