@@ -34,14 +34,14 @@ export default function HomepageMostAnticipatedSection({
           />
           <HorizontalScroll>
             {games.map((game) => (
-              <div key={game.rawgId} className="shrink-0 w-64 sm:w-72 md:w-80 h-full">
+              <div key={game.rawgId} className="shrink-0 w-44 sm:w-52 md:w-56 h-full">
                 <Link href={`/game/${game.slug}?rawgId=${game.rawgId}`} prefetch={false} className="block group">
-                  <div className="relative aspect-[16/9] rounded-2xl overflow-hidden border border-border bg-surface-2 group-hover:border-accent/40 transition-all">
+                  <div className="relative aspect-[3/4] rounded-2xl overflow-hidden border border-border bg-surface-2 group-hover:border-accent/40 transition-all">
                     {game.image ? (
                       <HeroImage
                         src={game.image}
                         alt={game.name}
-                        sizes="(max-width: 640px) 80vw, (max-width: 1024px) 40vw, 320px"
+                        sizes="(max-width: 640px) 176px, 224px"
                         className="group-hover:scale-105 transition-transform duration-500"
                         priority={false}
                         fallbackClassName="bg-surface-2"

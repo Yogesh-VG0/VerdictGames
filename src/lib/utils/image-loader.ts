@@ -17,7 +17,8 @@ export function providerImageLoader({ src, width }: ImageLoaderProps): string {
   if (!supportsProviderImageLoader(src)) return src;
   const url = new URL(src);
   if (url.hostname === 'media.rawg.io') {
-    const size = Math.min(1280, Math.max(320, Math.ceil(width / 320) * 320));
+    // RAWG does not serve every arbitrary resize width (320 returns 404).
+    const size = width <= 640 ? 640 : 1280;
     url.pathname = url.pathname.replace(/^\/media\/(?:resize\/\d+\/(?:-|\d+)\/)?/, `/media/resize/${size}/-/`);
     return url.toString();
   }

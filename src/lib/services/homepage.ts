@@ -50,7 +50,6 @@ import {
 } from "@/lib/utils/trending";
 import type { GameRow } from "@/lib/supabase/types";
 import type { Game, GXDeal } from "@/lib/types";
-import type { RawgListItem } from "@/lib/external/rawg";
 import { loadGXDeals } from "@/lib/services/gx-feeds";
 
 /* ═══════════════════════════════════════════════════
@@ -549,6 +548,15 @@ function isHomepageHeroBackfillCandidate(row: GameRow): boolean {
 export async function fetchHeroCandidates(limit = 12): Promise<Game[]> {
   const supabase = getPublicSupabase();
 
+  // Recent, well-supported releases must not require a multiplayer-scale
+  // concurrent player count to earn a spotlight.
+  const { data: freshReleases } = await supabase.from('games')
+    .select(GAME_CARD_COLUMNS_WITH_DESC).gte('release_date', monthsAgoISO(6))
+    .lte('release_date', new Date().toISOString().slice(0,10))
+    .gte('score', 80).gte('confidence', 0.5).gte('review_count', 1000)
+    .not('header_image', 'is', null).neq('header_image', '')
+    .order('release_date', { ascending: false }).limit(60);
+
   // Step 1: Manually featured games (editorial priority) — with 36mo recency cap
   // FIX: Old evergreen manual picks were dominating hero. Now capped at 3 years.
   // RULE: Hero sourced from is_featured_manual flag, NEVER from trending flag
@@ -630,7 +638,7 @@ export async function fetchHeroCandidates(limit = 12): Promise<Game[]> {
 
   const manualIds = new Set((manualFeatured ?? []).map((g) => g.id));
   const autoDeduped = (autoPool ?? []).filter((g) => !manualIds.has(g.id));
-  const combined = deduplicateBySteamAppId([...(manualFeatured ?? []), ...autoDeduped]);
+  const combined = deduplicateBySteamAppId([...(freshReleases ?? []) as unknown as GameRow[], ...(manualFeatured ?? []), ...autoDeduped]);
 
   // Surface readiness gate + public safety + media readiness + quality filter
   const ready = combined.filter((r) =>
@@ -644,6 +652,12 @@ export async function fetchHeroCandidates(limit = 12): Promise<Game[]> {
 
   let ranked = [...heroFiltered].sort((a, b) => getHomepageHeroScore(b) - getHomepageHeroScore(a));
 
+  const freshIds = new Set(((freshReleases ?? []) as unknown as GameRow[]).map(row => row.id));
+  const freshSpotlights = ready.filter(row => freshIds.has(row.id) && !row.is_provisional && row.verdict_label !== 'COMING SOON')
+    .sort((a,b) => b.release_date!.localeCompare(a.release_date!) || getHomepageHeroScore(b)-getHomepageHeroScore(a))
+    .slice(0, 4);
+  ranked = prioritizeById(freshSpotlights, ranked, limit);
+
   if (ranked.length < Math.min(limit, HOMEPAGE_HERO_FETCH_TARGET)) {
     const rankedIds = new Set(ranked.map((row) => row.id));
     const backfill = qualityFiltered
@@ -655,7 +669,9 @@ export async function fetchHeroCandidates(limit = 12): Promise<Game[]> {
   }
 
   // Genre diversity: max 2 per primary genre
-  const diversified = applyGenreDiversity(ranked, limit, 2);
+  // Genre diversity is a preference, not a reason to leave a six-slide hero
+  // half empty when the catalogue has enough otherwise-qualified games.
+  const diversified = prioritizeById(applyGenreDiversity(ranked, limit, 2), ranked, limit);
 
   return diversified.map(mapGameRow);
 }
@@ -1502,82 +1518,6 @@ export const EMPTY_HOMEPAGE_DATA: HomepageData = {
   recommendations: [],
 };
 
-function mapHomepageAnticipatedItem(item: RawgListItem): HomepageAnticipatedGame {
-  return {
-    rawgId: item.id,
-    slug: item.slug,
-    name: item.name,
-    released: item.released,
-    tba: item.tba,
-    image: item.background_image,
-    added: item.added,
-    toplay: item.added_by_status?.toplay ?? 0,
-    genres: (item.genres ?? []).map((genre) => genre.name),
-  };
-}
-
-async function fetchHomepageMostAnticipated(limit = 20): Promise<HomepageAnticipatedGame[]> {
-  const { getRawgBestOfYear } = await import("@/lib/external/rawg");
-  let response: Awaited<ReturnType<typeof getRawgBestOfYear>>;
-  try {
-    response = await getRawgBestOfYear(1, Math.max(limit * 2, HOMEPAGE_MOST_ANTICIPATED_TARGET * 2));
-  } catch {
-    // Keep the rail useful during provider outages without retrying from every
-    // visitor. These are already tracked, canonical catalog entries.
-    const { data, error } = await getPublicSupabase().from('games')
-      .select('rawg_id, slug, title, release_date, cover_image, header_image, genres')
-      .gt('rawg_id', 0).gte('release_date', new Date().toISOString().slice(0, 10))
-      .not('cover_image', 'is', null).order('release_date', { ascending: true }).limit(limit);
-    if (error) throw error;
-    return (data ?? []).map(game => ({ rawgId: game.rawg_id!, slug: game.slug, name: game.title,
-      released: game.release_date, tba: false, image: game.header_image || game.cover_image,
-      added: 0, toplay: 0, genres: game.genres ?? [] }));
-  }
-  const today = new Date().toISOString().slice(0, 10);
-  const mapped = response.results
-    .map(mapHomepageAnticipatedItem)
-    .filter((item) => item.image);
-
-  let items = mapped.filter((item) => item.tba || !item.released || item.released >= today);
-  if (items.length < limit) {
-    items = mapped;
-  }
-
-  items = items.slice(0, limit);
-  if (items.length === 0) {
-    return [];
-  }
-
-  try {
-    const supabase = getPublicSupabase();
-    const rawgIds = items.map((item) => item.rawgId).filter(Boolean);
-    if (rawgIds.length > 0) {
-      const { data: dbGames } = await supabase
-        .from("games")
-        .select("rawg_id, slug")
-        .in("rawg_id", rawgIds);
-
-      if (dbGames && dbGames.length > 0) {
-        const slugMap = new Map<number, string>();
-        for (const game of dbGames) {
-          if (game.rawg_id) {
-            slugMap.set(game.rawg_id, game.slug);
-          }
-        }
-
-        items = items.map((item) => ({
-          ...item,
-          slug: slugMap.get(item.rawgId) ?? item.slug,
-        }));
-      }
-    }
-  } catch {
-    return items;
-  }
-
-  return items;
-}
-
 const getCachedHomepageData = unstable_cache(
   async () => {
     const data = await fetchHomepageData();
@@ -1586,13 +1526,17 @@ const getCachedHomepageData = unstable_cache(
     }
     return data;
   },
-  ["homepage-data-v22"],
+  ["homepage-data-v23"],
   { revalidate: HOMEPAGE_REVALIDATE_SECONDS }
 );
 
 const getCachedHomepageMostAnticipated = unstable_cache(
-  async () => fetchHomepageMostAnticipated(),
-  ["homepage-most-anticipated-v2"],
+  async () => {
+    const { loadExplore } = await import('@/lib/services/explore');
+    const data = await loadExplore('best-of-year', 1, 20);
+    return data.items.map(item => ({ rawgId: item.rawgId, slug: item.slug, name: item.name, released: item.released, tba: item.tba, image: item.image, added: item.added, toplay: item.toplay, genres: item.genres }));
+  },
+  ["homepage-most-anticipated-v3"],
   { revalidate: 3600 }
 );
 
@@ -1609,7 +1553,7 @@ export async function loadHomepageData(): Promise<HomepageData> {
 }
 
 export async function loadHomepageMostAnticipated(): Promise<HomepageAnticipatedGame[]> {
-  if (!process.env.RAWG_API_KEY) {
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
     return [];
   }
 

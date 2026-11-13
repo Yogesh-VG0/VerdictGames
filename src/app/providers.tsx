@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { ToastProvider } from "@/components/ui/Toast";
 import { useEffect, useLayoutEffect, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import NavigationProgress from '@/components/NavigationProgress';
 
 function ScrollToTop() {
   const pathname = usePathname();
@@ -102,6 +103,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
           <ToastProvider>
             <Suspense fallback={null}>
               <AuthFlowRedirector />
+              <NavigationProgress />
             </Suspense>
             <ScrollToTop />
             {children}

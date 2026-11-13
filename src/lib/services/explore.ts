@@ -1,6 +1,7 @@
 import { unstable_cache } from 'next/cache';
 import { getPublicSupabase } from '@/lib/supabase/public';
-import { isPublicSafeGame } from '@/lib/utils/publicSafety';
+import { isPublicSafeGame, isPublicSafeRawgGame } from '@/lib/utils/publicSafety';
+import { getRawgUpcoming } from '@/lib/external/rawg';
 import type { RawgListResponse, RawgListType } from '@/lib/api';
 
 const GENRES: Record<string, string> = { 'role-playing-games-rpg': 'RPG', action: 'Action', adventure: 'Adventure', shooter: 'Shooter', strategy: 'Strategy', simulation: 'Simulation', puzzle: 'Puzzle', racing: 'Racing', sports: 'Sports', fighting: 'Fighting', platformer: 'Platformer', indie: 'Indie' };
@@ -9,6 +10,23 @@ export const EXPLORE_TYPES = new Set(['best-of-year', 'popular-in-year', 'all-ti
 // Bounded shared pools avoid provider calls and per-page database queries.
 const readExplorePool = unstable_cache(async (type: RawgListType, year: number, genre: string) => {
   const today = new Date().toISOString().slice(0, 10);
+  if (type === 'best-of-year') {
+    try {
+      const response = await getRawgUpcoming();
+      const upcoming = response.results.filter(item => isPublicSafeRawgGame(item) && (item.tba || !item.released || item.released >= today));
+      const { data: matches } = await getPublicSupabase().from('games')
+        .select('rawg_id,slug,cover_image').in('rawg_id', upcoming.map(item => item.id));
+      const byId = new Map((matches ?? []).map(item => [item.rawg_id, item]));
+      if (upcoming.length) return upcoming.map(item => ({
+        rawgId: item.id, slug: byId.get(item.id)?.slug ?? (item.slug === 'grand-theft-aito-vi' ? 'grand-theft-auto-vi' : item.slug), name: item.name,
+        released: item.released, tba: item.tba, image: byId.get(item.id)?.cover_image || item.background_image,
+        imageKind: byId.get(item.id)?.cover_image ? 'cover' as const : 'artwork' as const,
+        rating: item.rating, ratingsCount: item.ratings_count, metacritic: item.metacritic,
+        added: item.added, toplay: item.added_by_status?.toplay ?? 0, playing: item.added_by_status?.playing ?? 0, owned: item.added_by_status?.owned ?? 0,
+        platforms: (item.platforms ?? []).map(p => p.platform.name), genres: (item.genres ?? []).map(g => g.name), screenshots: [], clip: null,
+      }));
+    } catch (error) { console.warn('[Explore] Using stored upcoming catalogue', { type: error instanceof Error ? error.name : 'provider' }); }
+  }
   let query = getPublicSupabase().from('games')
     .select('rawg_id,slug,title,release_date,cover_image,header_image,score,review_count,current_players,platforms,genres,tags,description')
     .not('cover_image', 'is', null).neq('cover_image', '');
@@ -20,13 +38,13 @@ const readExplorePool = unstable_cache(async (type: RawgListType, year: number, 
   const { data, error } = await query.order('id').limit(250).abortSignal(AbortSignal.timeout(5000));
   if (error) throw error;
   return (data ?? []).filter(isPublicSafeGame).map(row => ({
-    rawgId: row.rawg_id ?? 0, slug: row.slug, name: row.title,
-    released: row.release_date, tba: !row.release_date, image: row.header_image || row.cover_image,
+    rawgId: row.rawg_id ?? 0, slug: row.slug, name: row.title, imageKind: 'cover' as const,
+    released: row.release_date, tba: !row.release_date, image: row.cover_image || row.header_image,
     rating: row.score / 20, ratingsCount: row.review_count ?? 0, metacritic: null,
     added: row.review_count ?? 0, toplay: 0, playing: row.current_players ?? 0, owned: 0,
     platforms: row.platforms ?? [], genres: row.genres ?? [], screenshots: [], clip: null,
   }));
-}, ['explore-catalog-v1'], { revalidate: 3600 });
+}, ['explore-catalog-v2'], { revalidate: 21600 });
 
 export async function loadExplore(type: RawgListType, page = 1, pageSize = 20, year = new Date().getFullYear() - 1, genre = 'action'): Promise<RawgListResponse> {
   const items = await readExplorePool(type, type === 'popular-in-year' ? year : 0, type === 'genre' ? genre : '');

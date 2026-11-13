@@ -220,6 +220,16 @@ export interface RawgListResponse {
   results: RawgListItem[];
 }
 
+/** Forward-looking catalogue, rather than the current-year greatest list. */
+export async function getRawgUpcoming(): Promise<RawgListResponse> {
+  const today = new Date();
+  const end = new Date(today); end.setFullYear(end.getFullYear() + 3);
+  const params = new URLSearchParams({ key: getApiKey(), dates: `${today.toISOString().slice(0,10)},${end.toISOString().slice(0,10)}`, ordering: '-added', page_size: '100', exclude_additions: 'true' });
+  const res = await trackedFetch('games/upcoming', `${RAWG_BASE}/games?${params}`, { next: { revalidate: 21600 } });
+  if (!res.ok) throw new Error(`Upcoming catalogue unavailable: ${res.status}`);
+  return res.json();
+}
+
 /**
  * Fetch RAWG "Best of the Year" (most anticipated/popular games of current year).
  * Ordered by community adds — a proxy for real-world hype/interest.

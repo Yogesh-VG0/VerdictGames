@@ -15,7 +15,7 @@ const CURRENT_YEAR = new Date().getFullYear();
 const LAST_YEAR = CURRENT_YEAR - 1;
 
 const TABS = [
-  { id: "best-of-year" as RawgListType, label: "Most Anticipated", icon: Flame, desc: `Most hyped games of ${CURRENT_YEAR}` },
+  { id: "best-of-year" as RawgListType, label: "Most Anticipated", icon: Flame, desc: "Upcoming releases ranked by community interest" },
   { id: "popular-in-year" as RawgListType, label: `Best of ${LAST_YEAR}`, icon: Trophy, desc: `Top games from ${LAST_YEAR}` },
   { id: "all-time" as RawgListType, label: "All-Time Top 250", icon: Star, desc: "Greatest games ever made" },
   { id: "recent" as RawgListType, label: "New Releases", icon: Clock, desc: "Released in the last 30 days" },
@@ -70,13 +70,13 @@ function GameCard({ game, rank, priority = false }: { game: RawgListGameItem; ra
       className="group relative rounded-2xl border border-border bg-surface overflow-hidden hover:border-accent/40 hover:shadow-lg transition-all duration-300"
     >
       {/* Image */}
-      <div className="relative aspect-[16/9] overflow-hidden bg-surface-2">
+      <div className="relative aspect-[3/4] overflow-hidden bg-surface-2">
         {game.image ? (
           <HeroImage
             src={game.image}
             alt={game.name}
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
-            className="group-hover:scale-105 transition-transform duration-500"
+            className={cn(game.imageKind === 'artwork' ? 'object-contain bg-surface-2' : 'object-cover', 'group-hover:scale-105 transition-transform duration-500')}
             priority={priority}
             fallbackClassName="bg-surface-2"
           />
@@ -153,7 +153,7 @@ function GameCard({ game, rank, priority = false }: { game: RawgListGameItem; ra
 function GameCardSkeleton() {
   return (
     <div className="rounded-2xl border border-border bg-surface overflow-hidden">
-      <div className="aspect-[16/9] bg-surface-2 animate-pulse" />
+      <div className="aspect-[3/4] bg-surface-2 animate-pulse" />
       <div className="px-3 py-2 flex gap-3">
         <div className="h-3 w-16 bg-surface-2 rounded animate-pulse" />
         <div className="h-3 w-12 bg-surface-2 rounded animate-pulse" />
@@ -263,7 +263,7 @@ export default function ExplorePage({ initialData }: { initialData?: RawgListRes
         </div>
         {query.data && (
           <span className="text-xs text-tertiary">
-            {query.data.count.toLocaleString()} games
+            {query.data.count.toLocaleString()} {query.data.count === 1 ? 'game' : 'games'}
           </span>
         )}
       </div>

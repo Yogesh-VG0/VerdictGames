@@ -662,6 +662,7 @@ export async function getGXCalendar(month?: string): Promise<GXCalendarMonthResp
    ═══════════════════════════════════════════════════ */
 
 export interface RawgListGameItem {
+  imageKind?: 'cover' | 'artwork';
   rawgId: number;
   slug: string;
   name: string;

@@ -6,6 +6,7 @@ describe('provider-side responsive images', () => {
     const image = 'https://media.rawg.io/media/games/734/art.jpg';
     expect(supportsProviderImageLoader(image)).toBe(true);
     const resized = providerImageLoader({ src: image, width: 500 });
+    expect(providerImageLoader({ src: image, width: 256 })).toContain('/resize/640/-/');
     expect(resized).toBe('https://media.rawg.io/media/resize/640/-/games/734/art.jpg');
     expect(providerImageLoader({ src: resized, width: 1920 })).toBe('https://media.rawg.io/media/resize/1280/-/games/734/art.jpg');
     expect(supportsProviderImageLoader(image.replace('media.rawg.io', 'media.rawg.io.example.com'))).toBe(false);
