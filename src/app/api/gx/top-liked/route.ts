@@ -8,6 +8,9 @@ import {
 import type { GXMostLiked } from "@/lib/types";
 
 export const revalidate = 300;
+// This route depends on an external provider. Keep its CDN/data cache, but do
+// not make a provider outage block a production build.
+export const dynamic = "force-dynamic";
 
 if (GX_FEEDS_REVALIDATE_SECONDS !== revalidate) {
   throw new Error("GX top-liked API route revalidate must match the shared GX feeds contract.");
