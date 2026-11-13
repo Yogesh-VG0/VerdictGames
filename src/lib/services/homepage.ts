@@ -1579,8 +1579,14 @@ async function fetchHomepageMostAnticipated(limit = 20): Promise<HomepageAnticip
 }
 
 const getCachedHomepageData = unstable_cache(
-  async () => fetchHomepageData(),
-  ["homepage-data-v21"],
+  async () => {
+    const data = await fetchHomepageData();
+    if (!data.hero.length && !data.trending.length && !data.topRated.length) {
+      throw new Error('Catalogue unavailable; preserve the last successful homepage cache');
+    }
+    return data;
+  },
+  ["homepage-data-v22"],
   { revalidate: HOMEPAGE_REVALIDATE_SECONDS }
 );
 
