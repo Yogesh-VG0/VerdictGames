@@ -98,7 +98,7 @@ function GameCard({ game, rank, priority = false }: { game: RawgListGameItem; ra
 
         {/* Bottom info on image */}
         <div className="absolute bottom-0 left-0 right-0 p-3">
-          <h3 className="text-sm font-bold text-white line-clamp-1 drop-shadow-lg">{game.name}</h3>
+          <h3 className="text-sm font-bold text-white line-clamp-2 leading-snug drop-shadow-lg">{game.name}</h3>
           <div className="flex items-center gap-1.5 mt-1">
             {game.genres.slice(0, 2).map((g, i) => (
               <span key={g} className="text-[10px] text-white/60">
@@ -211,6 +211,7 @@ export default function ExplorePage({ initialData }: { initialData?: RawgListRes
           return (
             <button
               key={tab.id}
+              aria-pressed={isActive}
               onClick={() => handleTabChange(tab.id)}
               className={cn(
                 "flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-all",
@@ -239,6 +240,7 @@ export default function ExplorePage({ initialData }: { initialData?: RawgListRes
               {GENRES.map((g) => (
                 <button
                   key={g.slug}
+                  aria-pressed={selectedGenre === g.slug}
                   onClick={() => { setSelectedGenre(g.slug); setPage(1); }}
                   className={cn(
                     "px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all",

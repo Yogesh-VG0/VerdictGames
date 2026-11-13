@@ -1533,7 +1533,7 @@ const getCachedHomepageData = unstable_cache(
 const getCachedHomepageMostAnticipated = unstable_cache(
   async () => {
     const { loadExplore } = await import('@/lib/services/explore');
-    const data = await loadExplore('best-of-year', 1, 20);
+    const data = await loadExplore('best-of-year', 1, HOMEPAGE_MOST_ANTICIPATED_TARGET);
     return data.items.map(item => ({ rawgId: item.rawgId, slug: item.slug, name: item.name, released: item.released, tba: item.tba, image: item.image, added: item.added, toplay: item.toplay, genres: item.genres }));
   },
   ["homepage-most-anticipated-v3"],
