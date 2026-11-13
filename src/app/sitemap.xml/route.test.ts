@@ -18,7 +18,7 @@ describe('runtime sitemap response', () => {
     const response = await GET();
     expect(response.status).toBe(200);
     expect(response.headers.get('content-type')).toContain('application/xml');
-    expect(response.headers.get('cache-control')).toContain('s-maxage=3600');
+    expect(response.headers.get('cache-control')).toContain('s-maxage=21600');
     expect(response.headers.get('cache-control')).toContain('stale-if-error=86400');
     expect(await response.text()).toContain('<loc>https://www.verdict.games/game/hades</loc>');
   });
