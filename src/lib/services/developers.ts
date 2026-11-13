@@ -9,6 +9,8 @@ import { collectSitemapRows } from '@/lib/seo/sitemap';
 import { slugify } from '@/lib/utils/slugify';
 import { isPublicSafeGame } from '@/lib/utils/publicSafety';
 
+const PUBLIC_DATABASE_READ_TIMEOUT_MS = 10_000;
+
 const loadDeveloperNames = unstable_cache(async () => {
   const db = getPublicSupabase();
   const names = new Set<string>();
@@ -17,7 +19,7 @@ const loadDeveloperNames = unstable_cache(async () => {
     let query = db.from('games').select('developer').not('developer', 'is', null)
       .neq('developer', '').order('developer', { ascending: true }).limit(1000);
     if (after) query = query.gt('developer', after);
-    const { data, error } = await query;
+    const { data, error } = await query.abortSignal(AbortSignal.timeout(PUBLIC_DATABASE_READ_TIMEOUT_MS));
     if (error) throw error;
     for (const row of data ?? []) if (row.developer) names.add(row.developer);
     if (!data?.length || data.length < 1000) return [...names];
@@ -35,7 +37,7 @@ const cachedDeveloperHub = unstable_cache(async (slug: string): Promise<Develope
     let query = getPublicSupabase().from('games').select(GAME_CARD_COLUMNS_WITH_DESC)
       .in('developer', names).order('id', { ascending: true }).limit(size);
     if (after) query = query.gt('id', after);
-    const { data, error } = await query;
+    const { data, error } = await query.abortSignal(AbortSignal.timeout(PUBLIC_DATABASE_READ_TIMEOUT_MS));
     if (error) throw error;
     return (data ?? []) as unknown as GameRow[];
   });

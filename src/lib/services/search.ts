@@ -479,7 +479,7 @@ async function fetchSearchResults(state: SearchGamesState): Promise<PaginatedRes
     query = query.range(0, requestedLimit - 1);
   }
 
-  const { data, error } = await query as unknown as { data: GameRow[] | null; error: unknown };
+  const { data, error } = await query.abortSignal(AbortSignal.timeout(10_000)) as unknown as { data: GameRow[] | null; error: unknown };
   if (error) {
     throw error;
   }

@@ -26,6 +26,7 @@ export const GAME_DETAIL_SLUG_REDIRECTS: Record<string, string> = {
 export const GAME_DETAIL_BLOCKED_SLUGS = new Set(["grand-theft-aito-vi"]);
 
 const VALID_SLUG_PATTERN = /^[a-z0-9-]{1,100}$/i;
+const PUBLIC_DATABASE_READ_TIMEOUT_MS = 10_000;
 
 type MobileStoreListing = {
   store: string;
@@ -242,6 +243,7 @@ async function fetchGameRecord(args: {
       .from("games")
       .select("*")
       .eq("rawg_id", args.rawgId)
+      .abortSignal(AbortSignal.timeout(PUBLIC_DATABASE_READ_TIMEOUT_MS))
       .maybeSingle() as { data: GameRow | null; error: unknown };
 
     if (error) throw error;
@@ -254,6 +256,7 @@ async function fetchGameRecord(args: {
       .from("games")
       .select("*")
       .eq("slug", args.slug)
+      .abortSignal(AbortSignal.timeout(PUBLIC_DATABASE_READ_TIMEOUT_MS))
       .maybeSingle() as { data: GameRow | null; error: unknown };
 
     if (error) throw error;
@@ -272,7 +275,8 @@ async function fetchGameRecord(args: {
       .from("mobile_store_listings")
       .select("store, store_url")
       .eq("game_id", row.id)
-      .eq("is_verified", true) as { data: MobileStoreListing[] | null };
+      .eq("is_verified", true)
+      .abortSignal(AbortSignal.timeout(PUBLIC_DATABASE_READ_TIMEOUT_MS)) as { data: MobileStoreListing[] | null };
 
     mobileListings = data ?? [];
   } catch {
