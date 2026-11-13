@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const state = vi.hoisted(() => ({ rows: [] as Record<string, unknown>[], upcoming: vi.fn() }));
 vi.mock('next/cache', () => ({ unstable_cache: (fn: unknown) => fn }));
 vi.mock('@/lib/external/rawg', () => ({ getRawgUpcoming: state.upcoming }));
@@ -11,6 +11,7 @@ vi.mock('@/lib/supabase/public', () => ({ getPublicSupabase: () => {
 import { loadExplore } from './explore';
 
 describe('Explore catalogue regressions', () => {
+  afterEach(() => vi.unstubAllGlobals());
   beforeEach(() => { state.rows = []; state.upcoming.mockReset(); });
   it('keeps the provider upcoming pool even when only one entry is tracked locally, and resolves its cover and canonical slug', async () => {
     state.rows = [{ rawg_id: 1, slug: 'canonical-one', cover_image: 'cover-one.jpg' }];
@@ -24,5 +25,14 @@ describe('Explore catalogue regressions', () => {
   it('uses title cover art instead of a gameplay header for year and genre grids', async () => {
     state.rows = [{ slug:'game', title:'Game', cover_image:'poster.jpg', header_image:'gameplay.jpg', score:90, tags:[], genres:[] }];
     expect((await loadExplore('popular-in-year')).items[0].image).toBe('poster.jpg');
+  });
+  it('replaces an imported screenshot cover only when the official Steam poster is available', async () => {
+    const fetchPoster = vi.fn().mockResolvedValue(new Response(null, { status:200, headers:{'content-type':'image/jpeg'} }));
+    vi.stubGlobal('fetch', fetchPoster);
+    state.rows = [{ slug:'game', title:'Game', steam_app_id:2912430, cover_image:'https://media.rawg.io/media/screenshots/game.jpg', header_image:'scene.jpg', score:90, tags:[], genres:[] }];
+    expect((await loadExplore('popular-in-year')).items[0].image).toContain('/2912430/library_600x900_2x.jpg');
+    expect(fetchPoster.mock.calls[0][1].method).toBe('HEAD');
+    fetchPoster.mockResolvedValue(new Response(null, {status:404}));
+    expect((await loadExplore('popular-in-year')).items[0].image).toContain('/screenshots/game.jpg');
   });
 });
