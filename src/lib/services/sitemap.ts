@@ -7,7 +7,7 @@ import { slugify } from '@/lib/utils/slugify';
 import { GAME_DETAIL_SLUG_REDIRECTS } from '@/lib/services/game-detail';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://www.verdict.games";
-const SITEMAP_REVALIDATE_SECONDS = 3600;
+const SITEMAP_REVALIDATE_SECONDS = 21600;
 
 /** Fixed build date for static pages — avoids crawler churn from new Date() every run */
 const BUILD_DATE = resolveStaticPageLastModified();
@@ -30,7 +30,7 @@ const getCachedDynamicSitemapPages = unstable_cache(
         const { data, error } = await query.abortSignal(AbortSignal.timeout(10000));
         if (error) throw error;
         return data ?? [];
-      }),
+      }, 1000),
       collectSitemapRows(async (after, size) => {
         let query = supabase.from('lists').select('id, slug, updated_at')
           .eq('is_public', true).order('id', { ascending: true }).limit(size);
