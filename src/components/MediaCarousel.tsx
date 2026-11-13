@@ -115,7 +115,7 @@ export default function MediaCarousel({
               src={slides[activeIndex]}
               alt={`${alt} screenshot ${activeIndex + 1}`}
               sizes="(min-width: 1024px) 720px, 100vw"
-              priority={activeIndex === 0}
+              priority={false}
               className="w-full h-full object-cover"
               fallbackClassName="bg-black/30"
             />

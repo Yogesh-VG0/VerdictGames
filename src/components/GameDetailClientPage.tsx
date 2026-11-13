@@ -103,6 +103,7 @@ export default function GameDetailClientPage({
   initialSteamReviewsData,
 }: GameDetailClientPageProps) {
   const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [playingTrailer, setPlayingTrailer] = useState<string | null>(null);
   const [achievementsPage, setAchievementsPage] = useState(1);
   const [shareOpen, setShareOpen] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -268,6 +269,7 @@ export default function GameDetailClientPage({
         {totalAchPages > 1 && (
           <div className="flex items-center justify-center gap-1.5 pt-1">
             <button
+              aria-label="Previous achievements page"
               onClick={() => setAchievementsPage((p) => Math.max(1, p - 1))}
               disabled={achievementsPage === 1}
               className="p-1.5 rounded-lg border border-border text-secondary hover:text-foreground hover:bg-surface-2 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
@@ -293,6 +295,7 @@ export default function GameDetailClientPage({
               )
             )}
             <button
+              aria-label="Next achievements page"
               onClick={() => setAchievementsPage((p) => Math.min(totalAchPages, p + 1))}
               disabled={achievementsPage === totalAchPages}
               className="p-1.5 rounded-lg border border-border text-secondary hover:text-foreground hover:bg-surface-2 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
@@ -836,14 +839,19 @@ export default function GameDetailClientPage({
                     if (!videoId) return null;
                     return (
                       <div className="relative aspect-video rounded-xl overflow-hidden border border-border">
-                        <iframe
-                          src={`https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1&autoplay=0`}
+                        {playingTrailer === videoId ? <iframe
+                          src={`https://www.youtube-nocookie.com/embed/${videoId}?rel=0&autoplay=1`}
                           title={`${game.title} trailer`}
-                          allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allow="autoplay; encrypted-media; picture-in-picture"
                           allowFullScreen
                           loading="lazy"
                           className="absolute inset-0 w-full h-full"
-                        />
+                        /> : <button
+                          type="button"
+                          onClick={() => setPlayingTrailer(videoId)}
+                          className="absolute inset-0 w-full h-full flex items-center justify-center bg-surface-2 text-foreground font-semibold hover:bg-surface transition-colors"
+                          aria-label={`Play ${game.title} trailer`}
+                        >▶ Play trailer</button>}
                       </div>
                     );
                   })()}
