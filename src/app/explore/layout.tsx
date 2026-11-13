@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { buildSocialMetadata, SITE_URL } from "@/lib/seo";
 
 const title = "Explore Games";
-const description = "Discover the most anticipated, popular, and highest-rated games. Browse by year, genre, or all-time rankings powered by RAWG community data.";
+const description = "Discover the most anticipated, popular, and highest-rated games in the Verdict Games catalogue. Browse by year, genre, or all-time rankings.";
 const socialTitle = "Explore Games | verdict.games";
 
 export const metadata: Metadata = {

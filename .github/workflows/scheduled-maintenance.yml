@@ -38,14 +38,15 @@ permissions:
   contents: read
 
 concurrency:
-  group: scheduled-maintenance-${{ github.event.schedule || inputs.job }}
+  # A single worker prevents different jobs competing for the free database.
+  group: scheduled-maintenance
   cancel-in-progress: false
 
 jobs:
   run:
     name: ${{ inputs.job || 'Scheduled job' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 350
+    timeout-minutes: 60
     steps:
       - name: Resolve job
         id: resolve

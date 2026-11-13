@@ -128,6 +128,19 @@ export async function gxFetchWithCache<T>(
     ? getServerSupabase().from("gx_cache")
     : null;
 
+  // Fresh durable snapshots are the first choice. A visitor should not pay
+  // upstream latency (or trigger writes) on every cache miss at the CDN.
+  let stored: { data: T; source: "cache" } | null = null;
+  if (cacheTable) {
+    const { data } = await cacheTable.select('payload, fetched_at').eq('feed_key', feedKey)
+      .abortSignal(AbortSignal.timeout(3000)).maybeSingle();
+    const parsed = parsePayload<T>(data?.payload);
+    if (parsed && (!Array.isArray(parsed) || parsed.length > 0)) {
+      stored = { data: parsed, source: 'cache' };
+      if (Date.now() - Date.parse(data!.fetched_at) < staleTtlMs) return stored;
+    }
+  }
+
   // 1. Try live fetch
   try {
     const liveData = await liveFetcher();
@@ -145,7 +158,7 @@ export async function gxFetchWithCache<T>(
         payload: liveData,
         fetched_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-      });
+      }).abortSignal(AbortSignal.timeout(3000));
       if (error) {
         console.warn(`[GX Cache] Failed to update cache for ${feedKey}:`, error.message);
       }
@@ -157,12 +170,13 @@ export async function gxFetchWithCache<T>(
   }
 
   // 2. Fallback to cache
+  if (stored) return stored;
   if (cacheTable) {
     try {
       const { data: cached } = await cacheTable
         .select("payload, fetched_at")
         .eq("feed_key", feedKey)
-        .single() as { data: { payload: unknown; fetched_at: string } | null };
+        .abortSignal(AbortSignal.timeout(3000)).single() as { data: { payload: unknown; fetched_at: string } | null };
 
       if (cached?.payload) {
         const age = Date.now() - new Date(cached.fetched_at).getTime();

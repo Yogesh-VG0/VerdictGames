@@ -1,4 +1,5 @@
 import { unstable_cache } from "next/cache";
+import { cache } from "react";
 import { mapGameRow } from "@/lib/db/mappers";
 import {
   extractPlayStoreUrl,
@@ -345,7 +346,7 @@ export function getGameDetailRawgIdFromHeaders(
   return parseGameDetailRawgId(requestHeaders?.get(GAME_DETAIL_RAWG_ID_HEADER) ?? null);
 }
 
-export async function loadGameDetail(args: {
+async function loadGameDetailUncached(args: {
   slug: string;
   rawgId?: number | null;
 }): Promise<GameDetailLookupResult> {
@@ -423,4 +424,10 @@ export async function loadGameDetail(args: {
     blockedRequestedSlug,
     redirectSlug,
   };
+}
+
+// Metadata and the page share one lookup per render, including cache misses.
+const memoizedGameDetail = cache((slug: string, rawgId?: number | null) => loadGameDetailUncached({ slug, rawgId }));
+export function loadGameDetail(args: { slug: string; rawgId?: number | null }) {
+  return memoizedGameDetail(args.slug, args.rawgId);
 }

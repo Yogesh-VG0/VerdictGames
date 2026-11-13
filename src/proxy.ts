@@ -156,7 +156,9 @@ export async function proxy(request: NextRequest) {
 
   // Shared atomic limits protect writes and expensive search across instances.
   // Cached game pages avoid this DB call entirely; managed WAF runs first.
-  const sharedLimit = isMutation(method) || pathname === '/search' || pathname === '/api/search';
+  // Public reads retain the local burst limit and managed WAF protection.
+  // Do not write to Postgres before serving a cacheable search response.
+  const sharedLimit = isMutation(method);
   if (allowed && sharedLimit && process.env.SUPABASE_SERVICE_ROLE_KEY && process.env.NEXT_PUBLIC_SUPABASE_URL) {
     const bucket = createHmac('sha256', process.env.CRON_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY).update(key).digest('hex');
     try {

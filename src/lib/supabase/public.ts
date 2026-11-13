@@ -21,6 +21,14 @@ export function getPublicSupabase(): SupabaseClient<Database> {
 
   _publicClient = createClient<Database>(url, key, {
     auth: { persistSession: false, autoRefreshToken: false },
+    global: {
+      fetch: (input, init) => fetch(input, {
+        ...init,
+        signal: init?.signal
+          ? AbortSignal.any([init.signal, AbortSignal.timeout(5000)])
+          : AbortSignal.timeout(5000),
+      }),
+    },
   });
 
   return _publicClient;

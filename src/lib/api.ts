@@ -701,7 +701,5 @@ export async function getRawgList(
   if (opts.year) params.set("year", String(opts.year));
   if (opts.genre) params.set("genre", opts.genre);
 
-  return (await apiFetch<RawgListResponse>(`/api/rawg/lists?${params}`)) ?? {
-    count: 0, page: 1, pageSize: 20, hasNext: false, items: [],
-  };
+  return apiFetchOrThrow<RawgListResponse>(`/api/rawg/lists?${params}`);
 }

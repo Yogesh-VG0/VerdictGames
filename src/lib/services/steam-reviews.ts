@@ -15,13 +15,14 @@ const readCachedSteamReviews = unstable_cache(async (slug: string): Promise<Stea
   const supabase = getPublicSupabase();
   const { data: game, error: gameError } = await supabase.from('games')
     .select('id, steam_app_id, title, cover_image, header_image, steam_total_count')
-    .eq('slug', slug).maybeSingle();
+    .eq('slug', slug).abortSignal(AbortSignal.timeout(4000)).maybeSingle();
   if (gameError) throw gameError;
   if (!game?.steam_app_id) return empty;
   const { data, error } = await supabase.from('steam_reviews')
     .select('id, recommendation_id, voted_up, review_text, playtime_at_review, playtime_forever, author_steam_id, authored_at, votes_up, votes_funny, weighted_vote_score, steam_purchase, fetched_at')
     .eq('game_id', game.id).eq('language', 'english')
-    .order('weighted_vote_score', { ascending: false }).order('votes_up', { ascending: false }).limit(21);
+    .order('weighted_vote_score', { ascending: false }).order('votes_up', { ascending: false }).limit(21)
+    .abortSignal(AbortSignal.timeout(4000));
   if (error) throw error;
   const rows = data ?? [];
   const fetchedAt = rows[0]?.fetched_at ?? null;

@@ -5,7 +5,6 @@ import {
   GAME_DETAIL_REVALIDATE_SECONDS,
   loadGameDetail,
 } from "@/lib/services/game-detail";
-import { loadSteamReviews } from "@/lib/services/steam-reviews";
 import { buildSocialMetadata, DEFAULT_OG_IMAGE, serializeJsonLd, SITE_URL } from "@/lib/seo";
 
 export const revalidate = 900;
@@ -80,9 +79,6 @@ export default async function GameDetailPage({ params }: GameDetailPageProps) {
 
   const canonicalSlug = detail.game.slug;
   const game = detail.game;
-  const initialSteamReviewsData = game.isPreview
-    ? undefined
-    : await loadSteamReviews(canonicalSlug, 21).catch(() => undefined);
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "VideoGame",
@@ -107,7 +103,6 @@ export default async function GameDetailPage({ params }: GameDetailPageProps) {
         slug={canonicalSlug}
         rawgId={game.rawgId ?? null}
         initialGame={game}
-        initialSteamReviewsData={initialSteamReviewsData}
       />
     </>
   );
