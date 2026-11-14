@@ -206,9 +206,9 @@ Rollback: revert only the Signal change set and retain the compatible privacy/re
 
 ## Change set 8 — VG-015: bounded cleanup
 
-Removed unused internal media helper definitions/patterns and unused imports/locals from the scheduler, media repair, admin routes/page, search normalization, IGDB bootstrap and ingestion import. Active media validation, source upgrade logic, authorization and request handling are retained. `buildOptimizedUrl` remains exported and used elsewhere; only an unused duplicate calculation was removed from the admin route.
+Removed unused internal media helper definitions/patterns and unused imports/locals from the scheduler, admin routes/page, search normalization, IGDB bootstrap and ingestion import. Active media validation, source upgrade logic, authorization and request handling are retained. `buildOptimizedUrl` remains exported and used elsewhere; only an unused duplicate calculation was removed from the admin route. The pre-existing ignored local `repair-missing-media.mjs` utility is not part of this branch and was preserved.
 
-Verification: **205 tests / 28 files passed**, lint **0 errors / 0 warnings**, credential-free production build and TypeScript passed. No new tests were written to mirror dead-code removal. The preceding browser/security suite covers unchanged runtime paths; the cleanup adds no new behavior or schema dependency. Rollback is a plain revert of this cleanup commit.
+Verification: **205 tests / 28 files passed**, credential-free production build and TypeScript passed. Tracked-source lint is clean; the full local-directory lint retains one unused-constant warning in the ignored one-off repair utility, with zero errors. No new tests were written to mirror dead-code removal. The preceding browser/security suite covers unchanged runtime paths; the cleanup adds no new behavior or schema dependency. Rollback is a plain revert of this cleanup commit.
 
 ## Pending approvals / manual actions
 
