@@ -38,7 +38,7 @@ import {
 } from "../external/steam";
 import { findCheapSharkDeal } from "../external/cheapshark";
 import { findIgdbMatch, extractIgdbEnrichment, isIgdbConfigured } from "../external/igdb";
-import { validateAndGetSteamCover, isMediaUpgrade, MEDIA_SOURCE_PRIORITY } from "../utils/mediaReadiness";
+import { validateAndGetSteamCover } from "../utils/mediaReadiness";
 import { findGameWikiSummary } from "../external/wikipedia";
 import { fetchHLTBData } from "../external/howlongtobeat";
 import { slugify } from "../utils/slugify";

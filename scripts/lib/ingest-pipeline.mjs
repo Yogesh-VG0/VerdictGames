@@ -34,37 +34,8 @@ const WIKI_BASE = "https://en.wikipedia.org/api/rest_v1";
 //   4. Keep existing trusted media or leave empty for repair
 // ══════════════════════════════════════════════════
 
-/**
- * Known-good image URL patterns (trusted sources that rarely 404).
- * IGDB and RAWG are preferred over Steam.
- */
-const TRUSTED_IMAGE_PATTERNS = [
-  /images\.igdb\.com/,      // IGDB - highest priority
-  /media\.rawg\.io/,        // RAWG - second priority
-  /upload\.wikimedia\.org/, // Wikipedia - trusted
-];
-
 /** Media source priority ranking (lower = better) */
 const MEDIA_SOURCE_PRIORITY = { igdb: 1, rawg: 2, steam: 3, unknown: 99 };
-
-/**
- * Check if an image URL is from a trusted source.
- */
-function isTrustedImageUrl(url) {
-  if (!url) return false;
-  return TRUSTED_IMAGE_PATTERNS.some(p => p.test(url));
-}
-
-/**
- * Get media source from URL.
- */
-function getMediaSourceFromUrl(url) {
-  if (!url) return null;
-  if (/images\.igdb\.com/.test(url)) return "igdb";
-  if (/media\.rawg\.io/.test(url)) return "rawg";
-  if (/steamstatic\.com|steamcdn/.test(url)) return "steam";
-  return "unknown";
-}
 
 /**
  * Check if new media source is better than existing.

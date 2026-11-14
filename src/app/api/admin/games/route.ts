@@ -114,7 +114,6 @@ export async function GET(request: NextRequest) {
 
   // Homepage section filters
   if (sectionFilter) {
-    const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
     switch (sectionFilter) {
       case "featured":
         {

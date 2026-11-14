@@ -2,7 +2,6 @@ import { NextRequest } from "next/server";
 import { jsonOk, jsonError } from "@/lib/api/response";
 import { requireAdmin } from "@/lib/admin";
 import { 
-  buildOptimizedUrl, 
   needsOptimization, 
   getOptimizedImageInfo,
   IMAGE_PRESETS 
@@ -82,7 +81,6 @@ export async function GET(request: NextRequest) {
     return jsonError(`Invalid preset. Must be one of: ${Object.keys(IMAGE_PRESETS).join(', ')}`, 400);
   }
 
-  const optimizedUrl = buildOptimizedUrl(url, preset);
   const info = getOptimizedImageInfo(url, preset);
 
   return jsonOk(info);

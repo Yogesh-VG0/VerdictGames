@@ -38,7 +38,8 @@ Status applies to the production outcome. Local verification is recorded separat
 | FE-014 scrollers | Fixed but Awaiting Verification | Focused final Explore/month controls reachable; filters have arrow-key radio behavior. |
 | FE-015 themes / visual testing | Partially Fixed | Scripted responsive/theme/contrast checks and screenshots pass; production field data and external-human testing remain unverified. |
 | VG-014 paid leaked-password checking | Deferred | Pro-only feature; no paid plan authorized. |
-| VG-012 CSP nonce redesign / VG-013 optional hardening / VG-015 cleanup | Deferred | Lower priority; preserve existing protections. |
+| VG-012 CSP nonce redesign / VG-013 optional hardening | Deferred | No demonstrated bypass. A nonce/cache design and optional constant-time comparison remain separate hardening; trusted IP handling and active protections are preserved. |
+| VG-015 unused-code cleanup | Fixed and Verified | Unused internal helpers/imports/values removed; unit/type/build checks pass and lint is clean. No production behavior change is required. |
 | VG-016 sitemap / rendering inventory | Partially Fixed | Build inventory retained; eligible local fixture URLs included and private/safety exclusions preserved. Full live catalogue XML needs release-time verification. |
 | VG-017 scoring rewrite | Not Applicable | No justified scoring rewrite; existing scoring tests/semantics preserved. |
 | VG-018 existing controls | Not Applicable | Positive/informational observations preserved; package pins Node 24 while dashboard default 26 remains a manual alignment proposal. |
@@ -202,6 +203,12 @@ Measured field boundary contrast is **4.82:1 dark / 3.60:1 light**, placeholder 
 Some preliminary browser waits/screenshots caught pending provider images or mid-animation/theme frames. Final captures wait for rendered/settled states; those preliminary runs are not marked as passing. The final fixture cleanup check returned the original **1 auth user / 0 games / 0 avatars / 0 scheduler runs**.
 
 Rollback: revert only the Signal change set and retain the compatible privacy/reliability commits. No hosted data, migration history, domain, plan, firewall, or production infrastructure changes were made. Production remains on the original main commit; Vercel plugin inspection and remote-main read confirmed this before review preparation.
+
+## Change set 8 — VG-015: bounded cleanup
+
+Removed unused internal media helper definitions/patterns and unused imports/locals from the scheduler, media repair, admin routes/page, search normalization, IGDB bootstrap and ingestion import. Active media validation, source upgrade logic, authorization and request handling are retained. `buildOptimizedUrl` remains exported and used elsewhere; only an unused duplicate calculation was removed from the admin route.
+
+Verification: **205 tests / 28 files passed**, lint **0 errors / 0 warnings**, credential-free production build and TypeScript passed. No new tests were written to mirror dead-code removal. The preceding browser/security suite covers unchanged runtime paths; the cleanup adds no new behavior or schema dependency. Rollback is a plain revert of this cleanup commit.
 
 ## Pending approvals / manual actions
 

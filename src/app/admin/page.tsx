@@ -3,7 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { Gamepad2, FileText, Users, Plus, PenLine, Pencil, ListPlus, Loader2, Database, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
-import { useState, useCallback, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 
 interface AdminStats {
   totalGames: number;
