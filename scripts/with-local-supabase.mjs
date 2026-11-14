@@ -1,9 +1,8 @@
 // Runs verification against loopback services only. Never print credentials or
 // inherit application secrets from .env files into a verification process.
 import { execFileSync, spawn } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
-import { parseEnv } from 'node:util';
 import path from 'node:path';
+import { verificationEnv } from './lib/verification-env.mjs';
 
 const command = process.argv[2];
 if (!['build', 'start', 'dev', 'security', 'migrate-security', 'browser-security', 'maintenance'].includes(command)) {
@@ -17,13 +16,7 @@ for (const address of [status.API_URL, status.DB_URL]) {
     throw new Error('Verification requires loopback Supabase services');
   }
 }
-const env = { ...process.env };
-for (const file of ['.env', '.env.local', '.env.production', '.env.production.local', '.env.development', '.env.development.local']) {
-  if (existsSync(file)) {
-    for (const key of Object.keys(parseEnv(readFileSync(file, 'utf8')))) env[key] = '';
-  }
-}
-Object.assign(env, {
+const env = verificationEnv({
   NEXT_PUBLIC_SUPABASE_URL: status.API_URL,
   NEXT_PUBLIC_SUPABASE_ANON_KEY: status.ANON_KEY,
   SUPABASE_SERVICE_ROLE_KEY: status.SERVICE_ROLE_KEY,

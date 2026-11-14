@@ -1,6 +1,12 @@
 -- Trigger entrypoints do not need to be callable through the public Data API.
 REVOKE ALL ON FUNCTION public.handle_new_user() FROM PUBLIC, anon, authenticated;
-REVOKE ALL ON FUNCTION public.rls_auto_enable() FROM PUBLIC, anon, authenticated;
+-- Supabase's optional managed helper is absent on some local/older projects.
+-- Revoke it when present without making a fresh migration replay depend on it.
+DO $$ BEGIN
+  IF to_regprocedure('public.rls_auto_enable()') IS NOT NULL THEN
+    REVOKE ALL ON FUNCTION public.rls_auto_enable() FROM PUBLIC, anon, authenticated;
+  END IF;
+END $$;
 
 -- Profiles are publicly selectable, so this policy helper does not need to
 -- borrow its owner's privileges. Preserve authenticated policy evaluation.

@@ -1,3 +1,4 @@
+// Explicit ESM is compatible with Vite's native configuration loader.
 import { defineConfig } from "vitest/config";
 import path from "path";
 
@@ -9,7 +10,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "./src"),
+      "@": path.resolve(import.meta.dirname, "./src"),
     },
   },
 });

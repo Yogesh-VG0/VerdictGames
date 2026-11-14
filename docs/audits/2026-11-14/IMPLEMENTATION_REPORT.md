@@ -126,6 +126,20 @@ Live CDN cache behavior, stale retention across an actual production failure, an
 
 No schema/history changes are required by this change set. Keep the prior privacy commits. Revert only the reliability commit if needed; that restores the old cache/logging behavior, so inspect cache admission before using that rollback. Existing/new metadata formats are backward-readable by the prior scheduler parser. A dashboard rollback may display `deferred` without its newer styling; no job or game data is deleted. Do not restore fail-open locking or permanently disable the RAWG circuit to make a job run.
 
+## Change set 4 — VG-003 / VG-004: release safety and recovery
+
+**Status: Partially Fixed.** Repository checks and local replay are verified; hosted CI, settings, actual production backup recovery, and history repair remain pending.
+
+- Quality CI now builds with application credentials explicitly blanked, preserving the unit/type/lint/dependency checks. Verification prebuilt output must never be promoted to production.
+- Added a separate least-privilege local-Supabase workflow: real identity/Storage/API tests, maintenance outages, browser account switching, full migration replay, and synthetic restore. Its pinned CLI/browser tools install outside the application; no application dependencies or production secrets were added. Hosted execution awaits a pushed branch/PR.
+- Added weekly Dependabot proposals without automerge. `proposals/main-protection.json` specifies required `check` and `security-regression` checks, strict freshness, PRs, resolved conversations, linear history, and no force-push/deletion. Zero mandatory peer approvals preserves solo-owner operability. Branch settings and dependency alerts were **not** changed; explicit dashboard approval is required after the new check exists.
+- Recovered missing remote migration SQL, reconciled the identical username migration version, and fixed two fresh-replay guards without changing hosted history. See `MIGRATION_RECONCILIATION.md` and archived SQL. The unrecorded player-freshness migration's resulting type/backfill were checked, rather than inferred from column existence alone.
+- Added `RECOVERY_RUNBOOK.md`. Hosted backup listing has no listed backups and no PITR. No real production backup was exported. The local drill proves synthetic export/restore and preservation of privacy privileges, not recoverability of the hosted data or Storage binaries.
+
+Verification: **187 unit tests passed**, TypeScript passed, isolated production build passed (69 prerendered routes), all three YAML files parsed, and `npm audit` reported **0 vulnerabilities**. All **42 migrations** replayed and the synthetic restore passed. Lint retains the existing warnings; no unrelated source cleanup was staged. Local identity/browser suites passed in change sets 2–3; the new GitHub-hosted workflow is not claimed as executed.
+
+Rollback: revert this repository-only change set. Existing production remains unchanged. Retain a record of the recovered migration identity corrections before reverting them. Never restore a database over production as a rollback experiment. Required manual actions are explicitly listed above and in the recovery runbook.
+
 ## Pending approvals / manual actions
 
 - Production deployment and cache invalidation: explicit approval required.

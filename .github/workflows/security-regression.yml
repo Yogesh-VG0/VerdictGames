@@ -1,0 +1,55 @@
+name: Local security and browser regression
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: security-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  security:
+    name: security-regression
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Install isolated pinned verification tools
+        run: |
+          npm install --no-save --package-lock=false --prefix "$RUNNER_TEMP/security-tools" supabase@2.84.2 playwright@1.65.1
+          echo "$RUNNER_TEMP/security-tools/node_modules/.bin" >> "$GITHUB_PATH"
+          google-chrome --version
+      - name: Start local test services without printing credentials
+        run: |
+          supabase start --exclude studio,postgres-meta,realtime,imgproxy,edge-runtime,logflare,vector,supavisor,mailpit > /dev/null
+      - name: Replay migrations and drill a synthetic backup restore
+        run: node scripts/test-migration-replay.mjs
+      - name: Build and serve local verification application
+        run: |
+          node scripts/with-local-supabase.mjs build
+          node scripts/with-local-supabase.mjs start > .verification/application.log 2>&1 &
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:3100/icon.png > /dev/null; then break; fi
+            sleep 1
+          done
+          curl --fail --silent http://127.0.0.1:3100/icon.png > /dev/null
+      - name: Test real identity, Data API, Storage, and mutation boundaries
+        run: node scripts/with-local-supabase.mjs security
+      - name: Test provider outages and repeated maintenance deferrals
+        run: node scripts/with-local-supabase.mjs maintenance
+      - name: Test actual browser login and account switching
+        run: node scripts/with-local-supabase.mjs browser-security
+        env:
+          PLAYWRIGHT_MODULE_PATH: ${{ runner.temp }}/security-tools/node_modules/playwright/index.mjs
+      - name: Stop disposable local test services
+        if: always()
+        run: supabase stop --no-backup
