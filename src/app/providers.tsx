@@ -8,6 +8,7 @@ import { ToastProvider } from "@/components/ui/Toast";
 import { useEffect, useLayoutEffect, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import NavigationProgress from '@/components/NavigationProgress';
+import { MotionConfig } from 'framer-motion';
 
 function ScrollToTop() {
   const pathname = usePathname();
@@ -98,6 +99,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <MotionConfig reducedMotion="user" transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}>
       <ThemeProvider>
         <AuthProvider>
           <ToastProvider>
@@ -110,6 +112,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
           </ToastProvider>
         </AuthProvider>
       </ThemeProvider>
+      </MotionConfig>
     </QueryClientProvider>
   );
 }

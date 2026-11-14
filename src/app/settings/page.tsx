@@ -303,7 +303,7 @@ export default function SettingsPage() {
         <button
           onClick={() => saveMutation.mutate()}
           disabled={saveMutation.isPending}
-          className="px-6 py-2.5 rounded-xl bg-accent text-white font-medium text-sm hover:bg-accent-hover transition-colors disabled:opacity-50 shadow-lg shadow-accent/20"
+          className="px-6 py-2.5 rounded-xl bg-action text-action-foreground font-medium text-sm hover:bg-action-hover transition-colors disabled:opacity-50"
         >
           {saveMutation.isPending ? "Saving..." : "Save Changes"}
         </button>

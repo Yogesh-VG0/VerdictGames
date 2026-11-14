@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { updateLibraryGame, removeFromLibrary, getLibrary } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
@@ -26,6 +26,7 @@ const STATUS_OPTIONS: { value: LibraryStatus; label: string; icon: ReactNode }[]
 ];
 
 export default function LibraryStatusSelector({ gameId, onAuthRequired }: LibraryStatusSelectorProps) {
+  const reducedMotion = useReducedMotion();
   const { user } = useAuth();
   const libraryKey = ["library", user?.id ?? null];
   const queryClient = useQueryClient();
@@ -148,10 +149,10 @@ export default function LibraryStatusSelector({ gameId, onAuthRequired }: Librar
       <AnimatePresence>
         {open && (
           <motion.div
-            initial={{ opacity: 0, y: -4, scale: 0.95 }}
+            initial={reducedMotion ? false : { opacity: 0, y: -4, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -4, scale: 0.95 }}
-            transition={{ duration: 0.15 }}
+            exit={reducedMotion ? undefined : { opacity: 0, y: -4, scale: 0.95 }}
+            transition={{ duration: reducedMotion ? 0 : 0.15 }}
             className="absolute top-full mt-1 left-0 right-0 z-50 rounded-xl bg-surface border border-border shadow-2xl overflow-hidden"
           >
             {STATUS_OPTIONS.map((opt) => (
@@ -196,10 +197,10 @@ export default function LibraryStatusSelector({ gameId, onAuthRequired }: Librar
       <AnimatePresence>
         {toast && (
           <motion.div
-            initial={{ opacity: 0, y: 8 }}
+            initial={reducedMotion ? false : { opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 8 }}
-            transition={{ duration: 0.2 }}
+            exit={reducedMotion ? undefined : { opacity: 0, y: 8 }}
+            transition={{ duration: reducedMotion ? 0 : 0.18 }}
             className="absolute top-full mt-2 left-0 right-0 z-50 rounded-xl bg-surface border border-accent/30 shadow-lg px-3 py-2.5 flex items-center justify-between gap-2"
           >
             <span className="text-xs font-medium text-foreground">{toast.message}</span>

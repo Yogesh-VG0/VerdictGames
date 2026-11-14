@@ -1,7 +1,8 @@
 "use client";
 
+import { preferredScrollBehavior } from '@/lib/utils/motion';
 import { useEffect, useId, useRef, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import HeroImage from "@/components/ui/HeroImage";
 
@@ -17,6 +18,7 @@ export default function MediaCarousel({
   className,
 }: MediaCarouselProps) {
   const slides = images.filter(Boolean);
+  const reducedMotion = useReducedMotion();
   const [active, setActive] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
   const thumbnailRefs = useRef<Array<HTMLButtonElement | null>>([]);
@@ -40,7 +42,7 @@ export default function MediaCarousel({
 
     container.scrollTo({
       left: Math.max(0, nextLeft),
-      behavior: activeIndex === 0 ? "auto" : "smooth",
+      behavior: activeIndex === 0 ? "auto" : preferredScrollBehavior(),
     });
   }, [activeIndex]);
 
@@ -105,10 +107,10 @@ export default function MediaCarousel({
         <AnimatePresence mode="wait">
           <motion.div
             key={activeIndex}
-            initial={{ opacity: 0 }}
+            initial={reducedMotion ? false : { opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
+            exit={reducedMotion ? undefined : { opacity: 0 }}
+            transition={{ duration: reducedMotion ? 0 : 0.18 }}
             className="relative w-full h-full"
           >
             <HeroImage

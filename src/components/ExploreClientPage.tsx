@@ -1,5 +1,6 @@
 "use client";
 
+import { preferredScrollBehavior } from '@/lib/utils/motion';
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
@@ -67,7 +68,7 @@ function GameCard({ game, rank, priority = false }: { game: RawgListGameItem; ra
     <Link
       href={`/game/${game.slug}`}
       prefetch={false}
-      className="group relative rounded-2xl border border-border bg-surface overflow-hidden hover:border-accent/40 hover:shadow-lg transition-all duration-300"
+      className="group signal-card relative rounded-2xl border border-border bg-surface overflow-hidden hover:border-border-hover"
     >
       {/* Image */}
       <div className="relative aspect-[3/4] overflow-hidden bg-surface-2">
@@ -76,7 +77,7 @@ function GameCard({ game, rank, priority = false }: { game: RawgListGameItem; ra
             src={game.image}
             alt={game.name}
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
-            className={cn(game.imageKind === 'artwork' ? 'object-contain bg-surface-2' : 'object-cover', 'group-hover:scale-105 transition-transform duration-500')}
+            className={cn(game.imageKind === 'artwork' ? 'object-contain bg-surface-2' : 'object-cover', 'motion-safe:group-hover:scale-[1.03] transition-transform duration-200')}
             priority={priority}
             fallbackClassName="bg-surface-2"
           />
@@ -232,9 +233,9 @@ export default function ExplorePage({ initialData }: { initialData?: RawgListRes
       <AnimatePresence mode="wait">
         {activeTab === "genre" && (
           <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
+            initial={false}
+            animate={undefined}
+            exit={undefined}
             className="overflow-hidden"
           >
             <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1 -mx-4 px-4 sm:mx-0 sm:px-0">
@@ -279,7 +280,7 @@ export default function ExplorePage({ initialData }: { initialData?: RawgListRes
             <button onClick={() => query.refetch()} className="text-accent underline">Try again</button>
           </div>
         ) : query.isLoading ? (
-          Array.from({ length: 20 }).map((_, i) => <GameCardSkeleton key={i} />)
+          <><p role="status" className="sr-only">Loading games…</p>{Array.from({ length: 20 }).map((_, i) => <GameCardSkeleton key={i} />)}</>
         ) : query.data?.items.length === 0 ? (
           <div className="col-span-full py-16 text-center">
             <Gamepad2 className="w-12 h-12 text-tertiary mx-auto mb-3" />
@@ -302,7 +303,7 @@ export default function ExplorePage({ initialData }: { initialData?: RawgListRes
         <Pagination
           currentPage={page}
           totalPages={Math.min(Math.ceil(query.data.count / PAGE_SIZE), 400)}
-          onPageChange={(p) => { setPage(p); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+          onPageChange={(p) => { setPage(p); window.scrollTo({ top: 0, behavior: preferredScrollBehavior() }); }}
         />
       )}
 

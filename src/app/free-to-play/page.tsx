@@ -280,9 +280,9 @@ export default function FreeToPlayPage() {
         <AnimatePresence mode="wait">
           {activeTab === "subscriptions" && services.length > 1 && (
             <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
+              initial={false}
+              animate={undefined}
+              exit={undefined}
               className="overflow-hidden space-y-1.5"
             >
               <label className="text-xs font-medium text-tertiary uppercase tracking-wider flex items-center gap-1.5">
@@ -387,7 +387,7 @@ export default function FreeToPlayPage() {
             ? filteredFree.map((game, i) => (
                 <motion.div
                   key={game.id}
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={false}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: Math.min(i * 0.03, 0.5), duration: 0.4 }}
                 >
@@ -397,7 +397,7 @@ export default function FreeToPlayPage() {
             : filteredSubs.map((game, i) => (
                 <motion.div
                   key={game.id}
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={false}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: Math.min(i * 0.03, 0.5), duration: 0.4 }}
                 >

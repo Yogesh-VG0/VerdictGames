@@ -440,7 +440,7 @@ export default function GameDetailClientPage({
         <div className="absolute bottom-0 left-0 right-0">
           <div className="max-w-6xl mx-auto px-4 pb-8 md:pb-12">
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={false}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
               className="space-y-3"
@@ -578,7 +578,7 @@ export default function GameDetailClientPage({
             <FadeInSection>
               {isProvisional || isPreviewGame ? (
                 <motion.section
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={false}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2, duration: 0.5 }}
                   className="rounded-2xl border border-accent/20 bg-surface overflow-hidden"
@@ -612,7 +612,7 @@ export default function GameDetailClientPage({
                 </motion.section>
               ) : (
               <motion.section
-                initial={{ opacity: 0, y: 20 }}
+                initial={false}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2, duration: 0.5 }}
                 className="rounded-2xl border border-border bg-surface overflow-hidden"
@@ -858,7 +858,8 @@ export default function GameDetailClientPage({
                           className="absolute inset-0 w-full h-full flex items-center justify-center bg-surface-2 text-foreground font-semibold hover:bg-surface transition-colors"
                           aria-label={`Play ${game.title} trailer`}
                         >
-                          <HeroImage src={game.trailerThumbnail || `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`} alt={`${game.title} trailer preview`} sizes="(min-width: 1024px) 720px, 100vw" />
+                          <HeroImage src={game.trailerThumbnail || `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`} alt={`${game.title} trailer preview`} sizes="(min-width: 1024px) 720px, 100vw"
+                            fallback={<HeroImage src={game.headerImage || game.coverImage} alt={`${game.title} artwork`} sizes="(min-width: 1024px) 720px, 100vw" />} />
                           <span className="absolute inset-0 bg-black/30" />
                           <span className="relative flex items-center gap-3 rounded-full bg-black/75 border border-white/25 px-5 py-3 text-white shadow-lg">
                             <svg aria-hidden="true" className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>

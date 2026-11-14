@@ -17,18 +17,31 @@ Status applies to the production outcome. Local verification is recorded separat
 | VG-001 reliability, section caches, region | Partially Fixed | Branch cache admission/budgets verified locally. Tokyo is evaluated/proposed, not applied; live latency/CDN verification remains. |
 | VG-011 advisory locks | Fixed but Awaiting Verification | Unexpected lock errors now abort; unit coverage passes. Needs approved scheduler release. |
 | VG-008 RAWG recovery / maintenance visibility | Fixed but Awaiting Verification | Recovery/concurrency tests and real local outage simulation pass; needs approved scheduler release and production observation. |
-| VG-003 build checks / branch protection / dependency alerts | Unresolved | Production settings require explicit approval. |
-| VG-004 migration consistency | Unresolved | Reconcile exact SQL/state before history changes. |
-| Backup and restore verification | Unresolved | Recovery documentation and a safe local restore drill remain. |
-| VG-009 duplicate Steam mappings | Unresolved | Review relationships and slugs; no automatic merge/deletion. |
-| VG-010 deletion behavior | Unresolved | Clarify request flow or implement and test deletion separately. |
-| FE-002 stored Early Access claims | Unresolved | Derivation and existing-data repair remain. |
-| FE-009 calendar advertising | Unresolved | Filtering and stored-snapshot repair remain. |
-| FE-001, FE-004–008, FE-010–015 and Signal polish | Unresolved | Targeted UX implementation and rendered verification remain. |
-| FE-003 remove discovery rails / Explore | Not Applicable | Rejected by validation; preserve working discovery. |
+| VG-003 build checks / branch protection / dependency alerts | Partially Fixed | Repository checks/local equivalents pass; hosted CI and dashboard settings await review/release. |
+| VG-004 migration consistency | Partially Fixed | Exact recorded SQL, type/backfill, fresh replay reconciled; proposed hosted history repair not applied. |
+| Backup and restore verification | Partially Fixed | Synthetic local export/restore passes and runbook exists; actual production backup/restore is unverified. |
+| VG-009 duplicate Steam mappings | Partially Fixed | 54 groups reviewed and provider calls grouped; merging editions/relationships is Deferred. |
+| VG-010 deletion behavior | Fixed but Awaiting Verification | Accurate email-request flow implemented; no destructive automation claimed. |
+| FE-001 hero contrast | Fixed but Awaiting Verification | Existing scrims retained after sampled Hades/Schedule I/Clair Obscur checks in both themes. Not every possible artwork is certified. |
+| FE-002 stored Early Access claims | Partially Fixed | Both generators and legacy presentation corrected; 319-row stored repair preview awaits approval. |
+| FE-003 discovery / wishlist counts | Fixed but Awaiting Verification | Unknown zero counts hidden; deleting Explore/rails is Not Applicable under approved direction. |
+| FE-004 search | Fixed but Awaiting Verification | One search context, compact phone filters, measured control contrast, loading/error/recovery tests pass locally. |
+| FE-005 verdict correctness | Partially Fixed | Unsupported generated con suppressed and empty state clarified; stored repair remains. Existing useful tags retained. |
+| FE-006 reviews | Fixed but Awaiting Verification | Named loading, source selection semantics, corrected icon/text, cohesive controls tested locally. |
+| FE-007 lists | Fixed but Awaiting Verification | Copy includes editors and players; mosaics preserved and rendered. |
+| FE-008 Compare | Fixed but Awaiting Verification | Contextual entry, one-game preview, keyboard selection and two-game URL flow tested. |
+| FE-009 calendar advertising | Fixed but Awaiting Verification | Live/stored/final output filtering and namespace change implemented; approved CDN rollout still needed. |
+| FE-010 navigation | Fixed but Awaiting Verification | Tablet fits and phone destinations stay stable, signed in and out. |
+| FE-011 auth flow | Fixed but Awaiting Verification | Task copy, stronger scrim, focus capture/wrap/Escape/return tested; OAuth/email delivery not exercised by local identities. |
+| FE-012 Signal consistency | Fixed but Awaiting Verification | Static headings, neutral primary actions, readable theme-specific scores; artwork/brand/discovery preserved. |
+| FE-013 motion | Fixed but Awaiting Verification | Primary content visible, height/gradient loops removed, explicit timer/stroke/opacity/scroll preferences tested. |
+| FE-014 scrollers | Fixed but Awaiting Verification | Focused final Explore/month controls reachable; filters have arrow-key radio behavior. |
+| FE-015 themes / visual testing | Partially Fixed | Scripted responsive/theme/contrast checks and screenshots pass; production field data and external-human testing remain unverified. |
 | VG-014 paid leaked-password checking | Deferred | Pro-only feature; no paid plan authorized. |
 | VG-012 CSP nonce redesign / VG-013 optional hardening / VG-015 cleanup | Deferred | Lower priority; preserve existing protections. |
-| VG-016–018 | Not Applicable | Informational observations; no blanket verification claim. |
+| VG-016 sitemap / rendering inventory | Partially Fixed | Build inventory retained; eligible local fixture URLs included and private/safety exclusions preserved. Full live catalogue XML needs release-time verification. |
+| VG-017 scoring rewrite | Not Applicable | No justified scoring rewrite; existing scoring tests/semantics preserved. |
+| VG-018 existing controls | Not Applicable | Positive/informational observations preserved; package pins Node 24 while dashboard default 26 remains a manual alignment proposal. |
 
 ## Change set 1 — VG-002: isolate personalized JSON responses
 
@@ -169,6 +182,26 @@ Verification: **205 unit tests passed**; TypeScript, production build, lint (0 e
 Actual Chrome login A → confirmed logout → login B → confirmed logout passed again, including mobile stable navigation and signed-in tablet Settings. Anonymous/local identities only; fixture IDs cleaned. Screenshots are in `screenshots/before`, `screenshots/after`, and signed-in library captures. Upstream news/achievement/provider content is stubbed only in the visual suite; this does not certify those services or disable security controls. No external-human usability study or assistive-technology certification has been performed.
 
 Rollback: revert this UI change set; all existing routes/data remain compatible. Keep privacy and reliability commits. No infrastructure, database migration, or billing changes are involved.
+
+## Change set 7 — FE-001 / FE-004 / FE-011–015: Signal and motion
+
+**Status: Fixed but Awaiting Verification** in production; see the more limited FE-015 testing status above.
+
+Implemented the approved Signal direction without new dependencies or fonts. Static foreground headings replace looping gradients. Primary actions use neutral theme-aware fills, retaining violet for brand/focus/navigation and score hues for scores. Form boundaries and placeholders were measured. Artwork score badges keep a bright palette on opaque dark grounds in both themes, while scores on light panels use darker readable hues. Source labels/counts and numeric badges are clearer. Existing heroes, rails, Explore, list mosaics, metadata, authentication methods, and data remain.
+
+`MotionConfig reducedMotion="user"` now supplies the shared policy. Primary page/section content no longer enters hidden. Height disclosure animations were removed from reviews, comments, Explore, free filters and calendar. Hero crossfade is shorter, pauses on hover/focus, exposes a pause control and disables autoplay/progress under reduced motion. Score stroke, modal/media/feedback opacity, and programmatic scrolling have explicit preference handling. Keyboard events on hero controls retain their native button behavior. Card feedback is short and constrained, with reduced-motion/touch guards. `FadeInSection` was already static and was left alone.
+
+Affected files and motion decisions are recorded in `SIGNAL_IMPLEMENTATION.md`; screenshots are indexed in `screenshots/README.md`. UI actions/loading/empty states were checked through actual Chrome rather than just source inspection. Trailer posters render, with a game-art fallback if the poster fails. Auth captures focus independently of animation duration and includes links in its trap.
+
+Verification: **205 unit tests passed**, both credential-free and local production builds passed (69 prerendered routes), TypeScript passed through the build, lint **0 errors / 11 existing warnings**, dependency scan **0 vulnerabilities**. Updated workflow YAML parsed. Final **54 route renders** passed both themes/three widths, plus 320/820/1024/1100px bounds, keyboard comparison/filter selection/scrollers, modal focus wrap/Escape/return, two reduced-motion intervals, missing artwork/long titles, slow/failed search with recovery, and visible loading on delayed game navigation. Actual account-switch browser tests and **120 real privacy/API/Storage assertions** passed again; maintenance outage and **42-migration synthetic restore** also passed again.
+
+Eligible local sitemap game fixtures are present with restricted profile grants; private account routes and the existing safety-excluded fixture stay excluded. An initial test incorrectly assumed the fixture with a Nudity tag was eligible; the assertion was corrected without weakening the safety control. This is not a claim of a full live catalogue count.
+
+Measured field boundary contrast is **4.82:1 dark / 3.60:1 light**, placeholder **6.54:1 / 6.92:1**; sampled primary-action text passes 4.5:1. No new production PageSpeed or latency improvement is claimed from branch-only work. Existing baseline reports remain in `PERFORMANCE.md`. No external-human usability study or complete assistive-technology certification was performed. Upstream provider playback/content and production cache invalidation await release checks.
+
+Some preliminary browser waits/screenshots caught pending provider images or mid-animation/theme frames. Final captures wait for rendered/settled states; those preliminary runs are not marked as passing. The final fixture cleanup check returned the original **1 auth user / 0 games / 0 avatars / 0 scheduler runs**.
+
+Rollback: revert only the Signal change set and retain the compatible privacy/reliability commits. No hosted data, migration history, domain, plan, firewall, or production infrastructure changes were made. Production remains on the original main commit; Vercel plugin inspection and remote-main read confirmed this before review preparation.
 
 ## Pending approvals / manual actions
 

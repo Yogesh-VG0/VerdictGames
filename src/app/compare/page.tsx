@@ -62,7 +62,7 @@ function GameSearchInput({ value, selectedTitle, onSelect, placeholder, inputId,
     return () => clearTimeout(timer);
   }, [query]);
 
-  const { data: results } = useQuery({
+  const { data: results, isFetching, isError, refetch } = useQuery({
     queryKey: ["compareSearch", debouncedQuery],
     queryFn: () => searchGames({ query: debouncedQuery, page: 1 }),
     enabled: open && debouncedQuery.length >= 2,
@@ -86,7 +86,8 @@ function GameSearchInput({ value, selectedTitle, onSelect, placeholder, inputId,
         onFocus={() => { setQuery(selectedTitle ?? value); setOpen(true); }}
         role="combobox"
         aria-autocomplete="list"
-        aria-controls={`${inputId}-options`}
+        aria-controls={open && suggestions.length ? `${inputId}-options` : undefined}
+        aria-busy={isFetching}
         aria-expanded={open && suggestions.length > 0}
         aria-activedescendant={open && active >= 0 ? `${inputId}-option-${active}` : undefined}
         autoComplete="off"
@@ -102,6 +103,9 @@ function GameSearchInput({ value, selectedTitle, onSelect, placeholder, inputId,
         aria-label={placeholder}
         className="w-full h-11 px-4 text-sm rounded-xl bg-surface border border-border text-foreground placeholder:text-tertiary focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/20 transition-all"
       />
+      {open && isFetching && <p role="status" className="mt-2 text-xs text-secondary">Searching games…</p>}
+      {open && isError && <p role="alert" className="mt-2 text-sm text-secondary">Search could not be loaded. <button onClick={() => refetch()} className="underline">Try again</button></p>}
+      {open && !isFetching && !isError && debouncedQuery.length >= 2 && results && !suggestions.length && <p role="status" className="mt-2 text-sm text-secondary">No matching games. Try another title.</p>}
       {open && results && results.items.length > 0 && (
         <div id={`${inputId}-options`} role="listbox" aria-label={placeholder} className="absolute top-full mt-1 left-0 right-0 z-50 max-h-60 overflow-auto rounded-xl bg-surface border border-border shadow-2xl">
           {suggestions.map((g, index) => (
@@ -231,7 +235,7 @@ function CompareContent() {
 
       {game1 && game2 && (
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={false}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
           className="space-y-6"

@@ -10,7 +10,7 @@
 
 import { Suspense, useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import { getUsernameValidationError, normalizeUsername, sanitizeUsername } from "@/lib/auth/username";
 import { cn } from "@/lib/utils";
@@ -33,6 +33,7 @@ const inputIconCls = "absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-tert
 const secondaryButtonCls = "inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-border bg-surface-2 px-4 text-sm font-medium text-foreground hover:bg-elevated transition-colors disabled:opacity-50";
 
 function AuthModalContent({ isOpen, onClose, defaultTab = "login", message }: AuthModalProps) {
+  const reducedMotion = useReducedMotion();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const currentPath = useMemo(() => {
@@ -113,7 +114,7 @@ function AuthModalContent({ isOpen, onClose, defaultTab = "login", message }: Au
   const pwNumber = PASSWORD_RE_NUMBER.test(password);
   const pwValid = pwLen && pwLetter && pwNumber;
   const passwordsMatch = confirmPassword.length === 0 || password === confirmPassword;
-  const heading = view === "login" ? "Welcome Back" : view === "signup" ? "Join Verdict.games" : "Reset your password";
+  const heading = view === "login" ? (message?.toLowerCase().includes('track') || message?.toLowerCase().includes('library') ? 'Sign in to save your library' : 'Sign in to Verdict Games') : view === "signup" ? "Join Verdict.games" : "Reset your password";
   const subtitle = view === "login"
     ? "Sign in to your account"
     : view === "signup"
@@ -159,17 +160,17 @@ function AuthModalContent({ isOpen, onClose, defaultTab = "login", message }: Au
     previousFocusRef.current = document.activeElement as HTMLElement;
     document.body.style.overflow = "hidden";
 
-    // Focus first input after animation
-    const timer = setTimeout(() => {
+    // Focus on the next frame, independent of the motion preference/duration.
+    const timer = requestAnimationFrame(() => {
       const el = modalRef.current;
       if (el) {
-        const firstInput = el.querySelector<HTMLElement>("input, button:not([tabindex='-1'])");
+        const firstInput = el.querySelector<HTMLElement>('input:not([disabled])') ?? el.querySelector<HTMLElement>('button:not([disabled])');
         firstInput?.focus();
       }
-    }, 100);
+    });
 
     return () => {
-      clearTimeout(timer);
+      cancelAnimationFrame(timer);
       document.body.style.overflow = "";
       previousFocusRef.current?.focus();
     };
@@ -183,7 +184,7 @@ function AuthModalContent({ isOpen, onClose, defaultTab = "login", message }: Au
     }
     if (e.key !== "Tab" || !modalRef.current) return;
     const focusable = modalRef.current.querySelectorAll<HTMLElement>(
-      'button:not([disabled]), input:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
     );
     if (focusable.length === 0) return;
     const first = focusable[0];
@@ -297,10 +298,11 @@ function AuthModalContent({ isOpen, onClose, defaultTab = "login", message }: Au
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          initial={{ opacity: 0 }}
+          initial={reducedMotion ? false : { opacity: 0 }}
           animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+          exit={reducedMotion ? undefined : { opacity: 0 }}
+          transition={{ duration: reducedMotion ? 0 : 0.18 }}
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/75 backdrop-blur-sm p-4"
           onClick={onClose}
         >
           <motion.div
@@ -309,9 +311,10 @@ function AuthModalContent({ isOpen, onClose, defaultTab = "login", message }: Au
             aria-modal="true"
             aria-labelledby="auth-modal-title"
             onKeyDown={handleKeyDown}
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            initial={reducedMotion ? false : { opacity: 0, scale: 0.97, y: 8 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            exit={reducedMotion ? undefined : { opacity: 0, scale: 0.97, y: 8 }}
+            transition={{ duration: reducedMotion ? 0 : 0.18, ease: [0.23, 1, 0.32, 1] }}
             className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-[28px] border border-border bg-surface p-5 shadow-2xl sm:p-6"
             onClick={(e) => e.stopPropagation()}
           >
@@ -391,7 +394,7 @@ function AuthModalContent({ isOpen, onClose, defaultTab = "login", message }: Au
                       onClick={() => setView(t)}
                       className={cn(
                         "flex-1 py-2.5 text-sm font-medium rounded-xl transition-all",
-                        view === t ? "bg-accent text-white" : "text-secondary hover:text-foreground"
+                        view === t ? "bg-action text-action-foreground" : "text-secondary hover:text-foreground"
                       )}
                     >
                       {t === "login" ? "Log In" : "Sign Up"}
@@ -607,7 +610,7 @@ function AuthModalContent({ isOpen, onClose, defaultTab = "login", message }: Au
               <button
                 type="submit"
                 disabled={loading || !!oauthLoading || resendLoading || (view === "signup" && usernameStatus === "checking")}
-                className="w-full h-11 rounded-2xl bg-accent text-white text-sm font-semibold hover:bg-accent-hover transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                className="w-full h-11 rounded-xl bg-action text-action-foreground text-sm font-semibold hover:bg-action-hover transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {loading ? (
                   <>

@@ -71,19 +71,19 @@ function LibraryContent() {
     },
   });
 
-  if (authLoading) return null;
+  if (authLoading) return <p role="status" className="py-16 text-center text-secondary">Loading your library…</p>;
 
   if (!user) {
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center text-center space-y-4 px-4">
         <BookOpen className="w-12 h-12 text-accent mx-auto" />
-        <h2 className="text-xl font-bold text-foreground">Your Game Library</h2>
+        <h1 className="text-2xl font-bold text-foreground">Your Game Library</h1>
         <p className="text-sm text-secondary max-w-md">
           Track what you&apos;re playing, build your backlog, and never forget a great game.
         </p>
         <button
           onClick={() => setAuthOpen(true)}
-          className="px-6 py-2.5 rounded-xl bg-accent text-white text-sm font-semibold hover:bg-accent-hover transition-colors"
+          className="px-6 py-2.5 rounded-xl bg-action text-action-foreground text-sm font-semibold hover:bg-action-hover transition-colors"
         >
           Sign In to Get Started
         </button>
@@ -131,7 +131,7 @@ function LibraryContent() {
             className={cn(
               "flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all",
               activeTab === tab.key
-                ? "bg-accent text-white"
+                ? "bg-action text-action-foreground"
                 : "bg-surface-2 text-secondary hover:text-foreground hover:bg-elevated border border-border"
             )}
           >
@@ -145,9 +145,9 @@ function LibraryContent() {
       <AnimatePresence mode="wait">
         <motion.div
           key={activeTab}
-          initial={{ opacity: 0, y: 10 }}
+          initial={false}
           animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -10 }}
+          exit={undefined}
           transition={{ duration: 0.2 }}
         >
           {library.isLoading ? (

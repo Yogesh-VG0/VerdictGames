@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
-import { motion, AnimatePresence, type Variants } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion, type Variants } from "framer-motion";
 import { Game } from "@/lib/types";
 import VerdictBadge from "@/components/ui/VerdictBadge";
 import ScoreRing from "@/components/ui/ScoreRing";
@@ -21,22 +21,17 @@ interface HeroCarouselProps {
 const slideVariants: Variants = {
   enter: {
     opacity: 0,
-    scale: 1.04,
   },
   center: {
     opacity: 1,
-    scale: 1,
     transition: {
-      opacity: { duration: 0.8, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
-      scale: { duration: 1.2, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
+      opacity: { duration: 0.24, ease: [0.23, 1, 0.32, 1] as [number, number, number, number] },
     },
   },
   exit: {
     opacity: 0,
-    scale: 0.97,
     transition: {
-      opacity: { duration: 0.35, ease: "easeIn" as const },
-      scale: { duration: 0.35, ease: "easeIn" as const },
+      opacity: { duration: 0.18, ease: [0.23, 1, 0.32, 1] as [number, number, number, number] },
     },
   },
 };
@@ -47,6 +42,10 @@ const SWIPE_VELOCITY = 300;
 export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselProps) {
   const [[page, direction], setPage] = useState([0, 0]);
   const [isPaused, setIsPaused] = useState(false);
+  const [hovered, setHovered] = useState(false);
+  const [focused, setFocused] = useState(false);
+  const reducedMotion = useReducedMotion();
+  const paused = isPaused || hovered || focused || Boolean(reducedMotion);
   const isSwiping = useRef(false);
   const isAnimating = useRef(false);
   const touchStart = useRef<{ x: number; y: number; time: number } | null>(null);
@@ -62,7 +61,7 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
       if (isAnimating.current) return;
       isAnimating.current = true;
       setPage(([p]) => [p + newDirection, newDirection]);
-      setTimeout(() => { isAnimating.current = false; }, 600);
+      setTimeout(() => { isAnimating.current = false; }, 240);
     },
     []
   );
@@ -72,7 +71,7 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
       if (isAnimating.current) return;
       isAnimating.current = true;
       setPage(([, ]) => [targetIndex, targetIndex > currentIndex ? 1 : -1]);
-      setTimeout(() => { isAnimating.current = false; }, 600);
+      setTimeout(() => { isAnimating.current = false; }, 240);
     },
     [currentIndex]
   );
@@ -124,6 +123,7 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
 
   // Keyboard navigation (left/right arrows)
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.target !== e.currentTarget && (e.target as Element).closest('a,button,input')) return;
     if (e.key === "ArrowLeft") {
       paginate(-1);
     } else if (e.key === "ArrowRight") {
@@ -136,10 +136,10 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
 
   // Auto-advance
   useEffect(() => {
-    if (isPaused || slideCount <= 1) return;
+    if (paused || slideCount <= 1) return;
     const timer = setInterval(() => paginate(1), interval);
     return () => clearInterval(timer);
-  }, [isPaused, slideCount, interval, paginate]);
+  }, [paused, slideCount, interval, paginate]);
 
   if (!game) return null;
 
@@ -158,7 +158,7 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
   return (
     <section
       ref={containerRef}
-      className="relative overflow-hidden group outline-none"
+      className="relative overflow-hidden group outline-none hero-score-palette"
       style={{ perspective: "1200px" }}
       tabIndex={0}
       role="region"
@@ -169,6 +169,10 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
       onClick={handleHeroClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      onFocusCapture={() => setFocused(true)}
+      onBlurCapture={event => { if (!event.currentTarget.contains(event.relatedTarget)) setFocused(false); }}
     >
 
       {/* Background images */}
@@ -179,8 +183,8 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
           <motion.div
             key={page}
             custom={direction}
-            variants={slideVariants}
-            initial="enter"
+            variants={reducedMotion ? { enter: { opacity: 1 }, center: { opacity: 1 }, exit: { opacity: 1 } } : slideVariants}
+            initial={reducedMotion ? false : 'enter'}
             animate="center"
             exit="exit"
             className="absolute inset-0"
@@ -318,7 +322,7 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
             className="hidden sm:flex absolute left-2 md:left-3 top-1/3 md:top-1/2 -translate-y-1/2 z-[3] w-9 h-9 md:w-10 md:h-10 rounded-full
                        bg-black/50 backdrop-blur-sm border border-white/20
                        items-center justify-center text-white
-                       opacity-0 group-hover:opacity-100 transition-opacity duration-300
+                       opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity duration-150
                        hover:bg-accent/30 hover:border-accent/50"
             aria-label="Previous game"
           >
@@ -331,7 +335,7 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
             className="hidden sm:flex absolute right-2 md:right-3 top-1/3 md:top-1/2 -translate-y-1/2 z-[3] w-9 h-9 md:w-10 md:h-10 rounded-full
                        bg-black/50 backdrop-blur-sm border border-white/20
                        items-center justify-center text-white
-                       opacity-0 group-hover:opacity-100 transition-opacity duration-300
+                       opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity duration-150
                        hover:bg-accent/30 hover:border-accent/50"
             aria-label="Next game"
           >
@@ -345,6 +349,7 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
       {/* Dot indicators */}
       {slideCount > 1 && (
         <div className="absolute bottom-4 sm:bottom-5 left-1/2 -translate-x-1/2 sm:left-auto sm:translate-x-0 sm:right-6 md:right-10 z-[3] flex items-center gap-1.5 sm:gap-2 bg-black/30 backdrop-blur-sm rounded-full px-2 py-1.5" data-interactive>
+          {!reducedMotion && <button type="button" onClick={() => setIsPaused(!isPaused)} aria-label={isPaused ? 'Resume slideshow' : 'Pause slideshow'} aria-pressed={isPaused} className="flex h-8 w-8 items-center justify-center rounded-full text-white text-xs">{isPaused ? '▶' : 'Ⅱ'}</button>}
           {games.map((_, i) => (
             <button
               key={i}
@@ -363,7 +368,7 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
       )}
 
       {/* Progress bar */}
-      {slideCount > 1 && !isPaused && (
+      {slideCount > 1 && !paused && (
         <div className="absolute bottom-0 left-0 right-0 h-[2px] z-[3]">
           <motion.div
             key={`progress-${page}`}
@@ -376,12 +381,12 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
       )}
 
       {/* Accent line on pause + pause/play indicator */}
-      {slideCount > 1 && isPaused ? (
+      {slideCount > 1 && paused ? (
         <>
           <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-accent to-transparent opacity-50 z-[3]" />
           <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-[4] flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/40 backdrop-blur-sm border border-white/15 text-white/60 text-[10px] font-medium pointer-events-none">
             <svg width="8" height="8" viewBox="0 0 12 12" fill="currentColor"><rect x="1" y="1" width="3.5" height="10" rx="0.5" /><rect x="7.5" y="1" width="3.5" height="10" rx="0.5" /></svg>
-            Paused — click to resume
+            {reducedMotion ? 'Autoplay off · reduced motion' : hovered || focused ? 'Paused while browsing' : 'Paused — click to resume'}
           </div>
         </>
       ) : slideCount > 1 ? (

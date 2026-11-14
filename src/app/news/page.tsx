@@ -179,7 +179,7 @@ export default function NewsPage() {
               href={article.url}
               target="_blank"
               rel="noopener noreferrer"
-              initial={{ opacity: 0, y: 20 }}
+              initial={false}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: idx * 0.1 }}
               className="group block rounded-2xl border border-border bg-surface overflow-hidden hover:border-accent/30 hover:shadow-lg transition-all"
@@ -245,7 +245,7 @@ export default function NewsPage() {
               href={article.url}
               target="_blank"
               rel="noopener noreferrer"
-              initial={{ opacity: 0, x: 16 }}
+              initial={false}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: Math.min(i * 0.03, 0.5), duration: 0.3 }}
               className="group flex items-center gap-3 rounded-xl border border-border bg-surface p-3 hover:border-accent/30 hover:bg-surface-2 transition-all"

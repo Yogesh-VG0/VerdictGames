@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRef, useState, useEffect, useCallback, useSyncExternalStore, type KeyboardEvent as ReactKbEvent } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import {
   Home, Search, Flame, Sparkles, CalendarDays,
   Star, List, User, BookOpen, Settings,
@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils";
 const subscribeClientReady = () => () => {};
 
 export default function NavbarTop() {
+  const reducedMotion = useReducedMotion();
   const router = useRouter();
   const pathname = usePathname();
   const [query, setQuery] = useState("");
@@ -343,10 +344,10 @@ export default function NavbarTop() {
           <>
             {/* Backdrop */}
             <motion.div
-              initial={{ opacity: 0 }}
+              initial={reducedMotion ? false : { opacity: 0 }}
               animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
+              exit={reducedMotion ? undefined : { opacity: 0 }}
+              transition={{ duration: reducedMotion ? 0 : 0.18 }}
               className="fixed inset-0 z-[60] bg-black/70 backdrop-blur-sm min-[1100px]:hidden"
               onClick={() => setSidebarOpen(false)}
             />
@@ -361,10 +362,10 @@ export default function NavbarTop() {
                 if (e.key === "Escape") setSidebarOpen(false);
                 trapFocus(e, sidebarRef);
               }}
-              initial={{ x: "100%" }}
+              initial={reducedMotion ? false : { x: "100%" }}
               animate={{ x: 0 }}
-              exit={{ x: "100%" }}
-              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              exit={reducedMotion ? undefined : { x: "100%" }}
+              transition={{ duration: reducedMotion ? 0 : 0.2, ease: [0.32, 0.72, 0, 1] }}
               className="fixed top-0 right-0 bottom-0 z-[61] w-72 bg-background border-l border-border overflow-y-auto min-[1100px]:hidden"
             >
               {/* Header */}
@@ -402,7 +403,7 @@ export default function NavbarTop() {
                 <div className="px-4 py-4 border-b border-border">
                   <button
                     onClick={() => { setSidebarOpen(false); setAuthModalOpen(true); }}
-                    className="w-full px-4 py-2.5 rounded-xl text-sm font-medium bg-accent text-accent-foreground hover:bg-accent-hover transition-colors"
+                    className="w-full px-4 py-2.5 rounded-xl text-sm font-medium bg-action text-action-foreground hover:bg-action-hover transition-colors"
                   >
                     Sign In
                   </button>
@@ -561,10 +562,10 @@ export default function NavbarTop() {
                     <motion.div
                       id="desktop-profile-menu"
                       ref={profileMenuRef}
-                      initial={{ opacity: 0, y: -4, scale: 0.95 }}
+                      initial={reducedMotion ? false : { opacity: 0, y: -4, scale: 0.95 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: -4, scale: 0.95 }}
-                      transition={{ duration: 0.15 }}
+                      exit={reducedMotion ? undefined : { opacity: 0, y: -4, scale: 0.95 }}
+                      transition={{ duration: reducedMotion ? 0 : 0.15 }}
                       onKeyDown={handleProfileMenuKeyDown}
                       aria-labelledby="desktop-profile-button"
                       className="absolute right-0 top-full mt-2 w-56 rounded-xl bg-surface border border-border shadow-2xl overflow-hidden z-50"
@@ -634,7 +635,7 @@ export default function NavbarTop() {
               <button
                 type="button"
                 onClick={() => setAuthModalOpen(true)}
-                className="px-3.5 py-1.5 rounded-xl text-sm font-medium bg-accent text-accent-foreground hover:bg-accent-hover transition-colors shadow-sm shadow-accent/20"
+                className="px-3.5 py-1.5 rounded-xl text-sm font-medium bg-action text-action-foreground hover:bg-action-hover transition-colors"
               >
                 Sign In
               </button>
@@ -652,9 +653,9 @@ export default function NavbarTop() {
         {signOutConfirmOpen && (
           <>
             <motion.div
-              initial={{ opacity: 0 }}
+              initial={reducedMotion ? false : { opacity: 0 }}
               animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+              exit={reducedMotion ? undefined : { opacity: 0 }}
               className="fixed inset-0 z-[70] bg-black/50 backdrop-blur-sm"
               onClick={() => setSignOutConfirmOpen(false)}
             />
@@ -668,10 +669,10 @@ export default function NavbarTop() {
                 if (e.key === "Escape") setSignOutConfirmOpen(false);
                 trapFocus(e, signOutDialogRef);
               }}
-              initial={{ opacity: 0, scale: 0.95 }}
+              initial={reducedMotion ? false : { opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.15 }}
+              exit={reducedMotion ? undefined : { opacity: 0, scale: 0.95 }}
+              transition={{ duration: reducedMotion ? 0 : 0.15 }}
               className="fixed z-[71] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-sm rounded-2xl bg-surface border border-border shadow-2xl p-6 space-y-4"
             >
               <div className="text-center space-y-2">

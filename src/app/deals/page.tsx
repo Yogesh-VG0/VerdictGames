@@ -206,7 +206,7 @@ export default function DealsPage() {
           {filtered.map((deal, i) => (
             <motion.div
               key={deal.id}
-              initial={{ opacity: 0, y: 20 }}
+              initial={false}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: Math.min(i * 0.03, 0.5), duration: 0.4 }}
             >

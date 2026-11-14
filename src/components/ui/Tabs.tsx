@@ -57,7 +57,7 @@ export default function Tabs({ tabs, defaultTab, className }: TabsProps) {
       {/* Tab content */}
       <motion.div
         key={active}
-        initial={{ opacity: 0, y: 8 }}
+        initial={false}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.2 }}
         role="tabpanel"

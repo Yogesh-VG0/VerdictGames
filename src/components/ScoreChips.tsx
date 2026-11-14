@@ -12,9 +12,9 @@ interface ScoreChipsProps {
 
 /** Source-specific chip styling */
 const chipStyles: Record<string, { bg: string; icon: string; label: string }> = {
-  steam: { bg: "bg-[#1b2838]/80 text-[#66c0f4]", icon: "🎮", label: "Steam" },
-  igdb: { bg: "bg-purple-950/60 text-purple-300", icon: "📊", label: "IGDB" },
-  metacritic: { bg: "bg-yellow-950/60 text-yellow-300", icon: "🏅", label: "MC" },
+  steam: { bg: "bg-[#1b2838] text-[#66c0f4]", icon: "🎮", label: "Steam" },
+  igdb: { bg: "bg-purple-950 text-purple-300", icon: "📊", label: "IGDB" },
+  metacritic: { bg: "bg-yellow-950 text-yellow-300", icon: "🏅", label: "MC" },
 };
 
 function formatReviewCount(count: number): string {
@@ -88,10 +88,10 @@ export default function ScoreChips({
             }
           >
             {!isCompact && <span className="opacity-70">{style.icon}</span>}
-            <span className="opacity-70">{style.label}</span>
+            <span>{style.label}</span>
             <span>{value}</span>
             {!isCompact && detail && (
-              <span className="opacity-60 font-normal ml-0.5">{detail}</span>
+              <span className="font-normal ml-0.5">{detail}</span>
             )}
           </span>
         );

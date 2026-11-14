@@ -50,6 +50,10 @@ jobs:
         run: node scripts/with-local-supabase.mjs browser-security
         env:
           PLAYWRIGHT_MODULE_PATH: ${{ runner.temp }}/security-tools/node_modules/playwright/index.mjs
+      - name: Test responsive pages keyboard flows themes and reduced motion
+        run: node scripts/with-local-supabase.mjs browser-ux after
+        env:
+          PLAYWRIGHT_MODULE_PATH: ${{ runner.temp }}/security-tools/node_modules/playwright/index.mjs
       - name: Stop disposable local test services
         if: always()
         run: supabase stop --no-backup

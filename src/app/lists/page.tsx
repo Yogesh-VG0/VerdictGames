@@ -45,7 +45,7 @@ export default function ListsPage() {
   return (
     <div className="max-w-[1400px] mx-auto px-4 py-6 space-y-6 overflow-x-hidden">
       <motion.div
-        initial={{ opacity: 0, y: 16 }}
+        initial={false}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
         className="space-y-1"
@@ -96,7 +96,7 @@ export default function ListsPage() {
         </div>
       ) : displayLists && displayLists.length > 0 ? (
         <motion.div
-          initial="hidden"
+          initial={false}
           animate="show"
           variants={{ show: { transition: { staggerChildren: 0.07 } } }}
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"

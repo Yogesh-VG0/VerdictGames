@@ -68,7 +68,7 @@ export default function HomepageNewsSection() {
                 {featured.map((article, index) => (
                   <motion.div
                     key={article.id}
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={false}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5, delay: index * 0.1 }}
                   >
@@ -123,7 +123,7 @@ export default function HomepageNewsSection() {
                       href={article.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      initial={{ opacity: 0, x: 20 }}
+                      initial={false}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: index * 0.04, duration: 0.3 }}
                       className="group flex items-center gap-3 rounded-xl border border-border bg-surface p-2.5 hover:border-accent/30 hover:bg-surface-2 transition-all"

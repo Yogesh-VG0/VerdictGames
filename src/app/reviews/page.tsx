@@ -122,7 +122,7 @@ export default function ReviewsPage() {
   return (
     <div className="max-w-[1400px] mx-auto px-4 py-6 space-y-6 overflow-x-hidden">
       <motion.div
-        initial={{ opacity: 0, y: 16 }}
+        initial={false}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
         className="space-y-1"
@@ -144,7 +144,7 @@ export default function ReviewsPage() {
           className={cn(
             "px-4 py-2 rounded-xl text-sm font-medium transition-all flex items-center gap-2 shrink-0",
             source === "editorial"
-              ? "bg-gradient-to-r from-amber-500/20 to-rose-500/20 text-amber-400 border border-amber-500/30"
+              ? "bg-action text-action-foreground border border-action"
               : "bg-surface-2 text-secondary hover:text-foreground border border-border"
           )}
         >
@@ -157,7 +157,7 @@ export default function ReviewsPage() {
           className={cn(
             "px-4 py-2 rounded-xl text-sm font-medium transition-all shrink-0",
             source === "community"
-              ? "bg-accent text-white shadow-sm shadow-accent/20"
+              ? "bg-action text-action-foreground border border-action"
               : "bg-surface-2 text-secondary hover:text-foreground border border-border"
           )}
         >
@@ -169,7 +169,7 @@ export default function ReviewsPage() {
           className={cn(
             "px-4 py-2 rounded-xl text-sm font-medium transition-all flex items-center gap-2",
             source === "steam"
-              ? "bg-pixel-cyan/20 text-pixel-cyan border border-pixel-cyan/30"
+              ? "bg-action text-action-foreground border border-action"
               : "bg-surface-2 text-secondary hover:text-foreground border border-border"
           )}
         >
@@ -193,7 +193,7 @@ export default function ReviewsPage() {
           {!editorialQuery.isLoading && editorialQuery.data && editorialQuery.data.reviews.length > 0 && (
             <motion.div
               className="grid grid-cols-1 gap-4"
-              initial="hidden"
+              initial={false}
               animate="show"
               variants={{ show: { transition: { staggerChildren: 0.05 } } }}
             >
@@ -336,7 +336,7 @@ export default function ReviewsPage() {
             </div>
             <button
               type="submit"
-              className="px-4 py-2.5 text-sm font-medium rounded-xl bg-accent text-white hover:bg-accent-hover transition-colors"
+              className="px-4 py-2.5 text-sm font-medium rounded-xl bg-action text-action-foreground hover:bg-action-hover transition-colors"
             >
               Search
             </button>
@@ -439,7 +439,7 @@ export default function ReviewsPage() {
                               className={cn(
                                 "min-w-[28px] h-7 rounded-lg text-[11px] font-medium transition-colors",
                                 pg === steamReviewPage
-                                  ? "bg-accent text-white"
+                                  ? "bg-action text-action-foreground"
                                   : "text-secondary hover:text-foreground hover:bg-surface-2 border border-border"
                               )}
                             >
@@ -521,7 +521,7 @@ export default function ReviewsPage() {
 
       {/* Reviews list */}
       <motion.div
-        initial="hidden"
+        initial={false}
         animate="show"
         variants={{ show: { transition: { staggerChildren: 0.05 } } }}
         className="space-y-4 max-w-4xl"
@@ -549,7 +549,7 @@ export default function ReviewsPage() {
               <div className="flex flex-col sm:flex-row justify-center gap-3 pt-2">
                 <Link
                   href="/search?sort=trending"
-                  className="inline-flex items-center justify-center gap-2 px-6 py-3 text-sm font-semibold text-white bg-accent rounded-xl hover:bg-accent-hover transition-colors shadow-lg shadow-accent/20"
+                  className="inline-flex items-center justify-center gap-2 px-6 py-3 text-sm font-semibold text-white bg-accent rounded-xl hover:bg-action-hover transition-colors"
                 >
                   Review a Trending Game
                 </Link>

@@ -17,7 +17,7 @@ type PixelButtonProps = {
 
 const variantStyles = {
   primary:
-    "bg-accent text-accent-foreground border-accent hover:bg-accent-hover",
+    "bg-action text-action-foreground border-action hover:bg-action-hover",
   secondary:
     "bg-transparent text-foreground border-border hover:border-accent hover:text-accent",
   ghost:
@@ -42,7 +42,7 @@ export default function PixelButton({
 }: PixelButtonProps) {
   const sharedClassName = cn(
     "relative inline-flex items-center justify-center gap-2 font-medium",
-    "rounded-full border transition-all duration-200",
+    "rounded-xl border transition-colors duration-150",
     "focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2",
     variantStyles[variant],
     sizeStyles[size],
@@ -62,8 +62,8 @@ export default function PixelButton({
 
   return (
     <motion.button
-      whileHover={{ scale: 1.03 }}
-      whileTap={{ scale: 0.97 }}
+      whileTap={{ scale: 0.98 }}
+      transition={{ duration: 0.16, ease: [0.23, 1, 0.32, 1] }}
       className={sharedClassName}
       {...(props as React.ComponentProps<typeof motion.button>)}
     >
