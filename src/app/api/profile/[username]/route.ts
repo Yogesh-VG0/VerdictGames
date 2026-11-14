@@ -9,6 +9,8 @@ import { jsonOk, jsonNotFound } from "@/lib/api/response";
 import { mapProfileRow } from "@/lib/db/mappers";
 import type { ProfileRow } from "@/lib/supabase/types";
 import { getPublicSupabase } from "@/lib/supabase/public";
+import { getServerSupabase } from "@/lib/supabase/server";
+import { PUBLIC_PROFILE_COLUMNS } from "@/lib/db/columns";
 
 export async function GET(
   _request: NextRequest,
@@ -25,7 +27,7 @@ export async function GET(
 
     const { data: profile, error } = await supabase
       .from("profiles")
-      .select("*")
+      .select(PUBLIC_PROFILE_COLUMNS)
       .eq("username", username)
       .maybeSingle() as { data: ProfileRow | null; error: unknown };
 
@@ -36,14 +38,17 @@ export async function GET(
     }
 
     // Run ALL queries in parallel — counts + recent activity in one batch
+    // Public activity intentionally includes status/rating but never notes,
+    // play time, private dates, auth IDs, or roles. Raw library RLS is owner-only.
+    const activity = getServerSupabase();
     const [reviewRes, listsRes, libraryRes, followerRes, followingRes, recentReviewsRes, recentLibraryRes] = await Promise.all([
       supabase.from("reviews").select("id", { count: "exact", head: true }).eq("profile_id", profile.id),
       supabase.from("lists").select("id", { count: "exact", head: true }).eq("owner_id", profile.id),
-      supabase.from("user_games").select("id", { count: "exact", head: true }).eq("user_id", profile.id),
+      activity.from("user_games").select("id", { count: "exact", head: true }).eq("user_id", profile.id),
       supabase.from("follows").select("id", { count: "exact", head: true }).eq("following_id", profile.id),
       supabase.from("follows").select("id", { count: "exact", head: true }).eq("follower_id", profile.id),
       supabase.from("reviews").select("id, rating, created_at, game:games!inner(slug, title)").eq("profile_id", profile.id).order("created_at", { ascending: false }).limit(10),
-      supabase.from("user_games").select("id, status, personal_rating, created_at, game:games!inner(slug, title)").eq("user_id", profile.id).order("created_at", { ascending: false }).limit(10),
+      activity.from("user_games").select("id, status, personal_rating, created_at, game:games!inner(slug, title)").eq("user_id", profile.id).order("created_at", { ascending: false }).limit(10),
     ]);
 
     const reviewCount = reviewRes.count ?? 0;

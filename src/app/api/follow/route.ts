@@ -3,7 +3,7 @@
  */
 
 import { NextRequest } from "next/server";
-import { jsonOk, jsonError, jsonBadRequest } from "@/lib/api/response";
+import { jsonPrivateOk as jsonOk, jsonError, jsonBadRequest } from "@/lib/api/response";
 import { getCurrentUser } from "@/lib/supabase/auth";
 import { getServerSupabase } from "@/lib/supabase/server";
 

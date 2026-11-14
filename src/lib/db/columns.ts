@@ -37,3 +37,6 @@ export const GAME_CARD_COLUMNS = [
  * Used by endpoints that run isQualityGame() / filterQualityGames() on the result.
  */
 export const GAME_CARD_COLUMNS_WITH_DESC = GAME_CARD_COLUMNS + ",description";
+
+/** Never select auth_id or role for a public profile response or shared cache. */
+export const PUBLIC_PROFILE_COLUMNS = "id,username,display_name,avatar_url,bio,favorite_genres,joined_at,updated_at";

@@ -11,9 +11,9 @@ Status applies to the production outcome. Local verification is recorded separat
 | Finding / work | Status | Reason / next requirement |
 | --- | --- | --- |
 | VG-002 personalized response caching | Fixed but Awaiting Verification | Branch code and local identity tests pass. Needs approved deployment, affected CDN invalidation, and live header/two-session checks. |
-| VG-005 private library/profile information | Unresolved | Next privacy change set. |
-| VG-007 avatar ownership | Unresolved | Next privacy change set. |
-| VG-006 database privileges | Unresolved | Next privacy change set. |
+| VG-005 private library/profile information | Fixed but Awaiting Verification | Migration and matching app changes pass local identity tests; hosted application and permissions unchanged. |
+| VG-007 avatar ownership | Fixed but Awaiting Verification | Local legacy/folder upload and overwrite/upsert tests pass; hosted policy migration awaits approval. |
+| VG-006 database privileges | Fixed but Awaiting Verification | Effective local privileges tested; hosted grants unchanged. |
 | VG-001 reliability, section caches, region | Partially Fixed | Existing bounded reads are present; failed-section cache handling and region evaluation remain. |
 | VG-011 advisory locks | Unresolved | Pending verified privacy boundary. |
 | VG-008 RAWG recovery / maintenance visibility | Unresolved | Pending verified privacy boundary. |
@@ -63,6 +63,36 @@ No deployment or production purge has occurred. Response headers cannot retroact
 ### Rollback
 
 The change is isolated to response construction and two rendering declarations; no database migration is involved. Reverting it restores the vulnerable cache behavior and is therefore not a safe production rollback. If a release has an unrelated regression, keep these privacy headers and revert only the unrelated regression. The original branch remains undeployed.
+
+## Change set 2 — VG-005 / VG-006 / VG-007: private data and ownership
+
+### Implementation and reasons
+
+- Migration `20261114121612_isolate_private_profile_library_and_avatars.sql` removes table-level and residual column privileges from profiles, then grants only named public fields. Auth IDs and roles remain available to the trusted server, not raw anonymous/authenticated profile SELECTs.
+- `public.user_games` now permits owner-scoped authenticated reads. Anonymous access is revoked. Owner mutation policies and the service role remain available. Public profile statistics/activity use explicit server-side projections that never select private notes, play time, or private dates.
+- Own-profile resolution verifies the Auth session first, then reads private identity/role columns with the service role. The browser uses `/api/auth/me` and retains server bootstrap for missing OAuth profiles. Profile responses are matched against the expected auth identity; stale in-flight profile responses cannot replace a newer session. Private React Query scopes are cancelled/removed when identity changes.
+- Restricted no-argument helpers in the unexposed `app_private` schema support existing owner/admin RLS without exposing private columns. They use a fixed empty search path and caller `auth.uid()` predicates; public wrappers are invokers with explicit execution grants. Anonymous callers cannot execute the administrator helper.
+- Editorial policies are updated to use those helpers, preserving published public reads, unpublished admin reads, and owner-scoped administrator writes. Historical inline-role policies are removed for replay compatibility. The editorial timestamp function has a fixed search path.
+- Avatar INSERT/UPDATE/DELETE policies match a complete caller UUID filename or UUID folder. Both UPDATE visibility and its new path are checked. Existing UUID.ext public URLs remain valid.
+- Unused anonymous mutation privileges and dangerous table commands are removed from the specified catalogue/community tables. Authenticated owner operations retain their existing RLS-protected commands. Profile updates, votes, and follows now explicitly return private/no-store JSON.
+- Matching files: `src/hooks/useAuth.tsx`, `src/lib/supabase/auth.ts`, `src/lib/db/columns.ts`, `src/lib/db/mappers.ts`, `src/lib/services/public-profile.ts`, profile/settings/follow/vote route handlers, and the local verification scripts.
+
+### Tests and results
+
+- Full unit suite: **167 tests / 22 files passed**. TypeScript and the local production build passed. Lint: zero errors, the same 12 pre-existing warnings.
+- Real two-user/anonymous local HTTP + PostgREST + Storage suite: **117 assertions passed**. Includes effective `has_column_privilege`/`has_table_privilege` checks, owner notes/hours, denied foreign notes, hidden auth IDs/roles, denied role escalation, private-list isolation, avatar overwrite/upsert denial, owner replacement, legacy public URLs, caller admin helpers, published/unpublished editorial visibility, and all change-set-1 cache assertions.
+- Review creation, voting, comments, follow ownership, presentation updates, and role-smuggling rejection passed through guarded application mutations. Public profile library counts and owner statistics remain available.
+- Real Chrome browser: login A → confirmed logout → login B → confirmed logout on the same `/library` page passed. Each account saw only its own game; cookie identity matched `/api/auth/me`; private content disappeared at logout; no browser JavaScript errors occurred.
+- Settled screenshots: `screenshots/privacy-library-a.png`, `screenshots/privacy-library-b.png`. These contain only fictional local fixtures. No visual redesign is claimed by this change set.
+- Supabase local advisor: no security/error findings; one existing multiple-permissive-policy performance warning on the deliberately separate public/admin editorial SELECT policies. Helpers are owned by postgres with fixed empty search paths.
+- Test fixtures were cleaned by tracked IDs, including avatars and lists, even on test failure. Count check returned the original one local auth user, zero games, and zero avatars.
+- The first browser attempt lacked a bundled headless executable; verification used installed Chrome instead. A first logout test omitted the existing confirmation dialog; after including confirmation, the actual flow passed. Neither failure was recorded as a passing run.
+
+### Production rollout, remaining verification, and rollback
+
+No hosted permissions or data have changed. The new app works with the existing schema and must be deployed **before** restricting profile columns, so the browser no longer depends on those columns. For an approved release: (1) deploy the compatible app and invalidate affected personalized CDN responses; (2) save the current policies/grants and apply the reviewed permission migration atomically; (3) rerun effective privilege and two-session checks, public profiles, editorial reviews, normal mutations, avatars, and admin access. Do not mark these findings Fixed and Verified before that release check.
+
+This migration does not delete records or change migration history. Do not roll back by re-exposing notes/roles or granting anonymous writes. If an application regression occurs, retain the compatible private-profile lookup and cache policy while reverting the unrelated change. A pre-privacy application build is not compatible with the restricted raw profile columns. Fix ownership helpers/projections forward inside a transaction if a database regression is found, preserving private access boundaries.
 
 ## Pending approvals / manual actions
 

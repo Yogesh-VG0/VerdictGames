@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { jsonOk, jsonError } from "@/lib/api/response";
+import { jsonPrivateOk as jsonOk, jsonError } from "@/lib/api/response";
 import { getServerSupabase } from "@/lib/supabase/server";
 import { getAuthSupabase } from "@/lib/supabase/auth";
 

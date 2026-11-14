@@ -355,7 +355,7 @@ export function mapCommentRow(
 
 /** Map a profiles row to the frontend User interface. */
 export function mapProfileRow(
-  row: ProfileRow,
+  row: Omit<ProfileRow, "auth_id" | "role">,
   stats: { gamesReviewed: number; listsCreated: number; followerCount?: number; followingCount?: number; libraryCount?: number }
 ): User {
   return {
