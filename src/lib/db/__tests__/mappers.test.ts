@@ -86,6 +86,10 @@ function makeGameRow(overrides: Partial<GameRow> = {}): GameRow {
 }
 
 describe("mapGameRow", () => {
+  it('suppresses only the unsupported generated Early Access claim', () => {
+    expect(mapGameRow(makeGameRow({ cons: ['Still in Early Access — content may be incomplete', 'A specific editorial concern'] })).cons)
+      .toEqual(['A specific editorial concern']);
+  });
   it("maps basic fields correctly", () => {
     const row = makeGameRow();
     const game = mapGameRow(row);

@@ -447,7 +447,7 @@ function genCons(game, sr, igdb) {
   const cons = [], tags = (game.tags ?? []).map(t => t.name.toLowerCase());
   if (sr) { const pct = Math.round((sr.total_positive / sr.total_reviews) * 100); if (pct < 70) cons.push(`Mixed Steam reception (${pct}% positive)`); }
   if (tags.includes("difficult") || tags.includes("souls-like")) cons.push("Steep difficulty curve may not appeal to casual players");
-  if (tags.includes("early access")) cons.push("Still in Early Access — content may be incomplete");
+  // Historical RAWG tags cannot establish a game's current release state.
   if (tags.includes("microtransactions") || tags.includes("in-app purchases")) cons.push("Contains microtransactions");
   if (tags.includes("grinding") || tags.includes("grindy")) cons.push("Can require significant grinding");
   if (game.rating < 3.5 && (game.ratings_count ?? 0) > 100) cons.push("Below-average player reception");

@@ -687,6 +687,7 @@ export default function GameDetailClientPage({
                         {con}
                       </p>
                     ))}
+                    {game.cons.length === 0 && <p className="text-sm text-secondary">No specific drawbacks have been verified yet.</p>}
                   </div>
                 </div>
               </motion.section>

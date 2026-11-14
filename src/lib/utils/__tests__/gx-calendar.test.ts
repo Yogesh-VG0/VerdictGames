@@ -1,6 +1,19 @@
 import { describe, expect, it } from "vitest";
 import type { Game, GXCalendarGame } from "@/lib/types";
-import { dedupeGXCalendarGames, mergeCalendarGames } from "../gx-calendar";
+import { dedupeGXCalendarGames, mergeCalendarGames, shouldHideGXCalendarEntry } from "../gx-calendar";
+
+describe('non-game advertising', () => {
+  it.each(['ROG: Black Friday ASUS OLED campaign', 'ROG: ProArt Masters Talks'])('hides the observed campaign %s', title => {
+    expect(shouldHideGXCalendarEntry(createGXCalendarGame({ title }))).toBe(true);
+  });
+  it('recognizes vendor event destinations and explicit advertising tags', () => {
+    expect(shouldHideGXCalendarEntry(createGXCalendarGame({ url: 'https://rog.asus.com/event/offer' }))).toBe(true);
+    expect(shouldHideGXCalendarEntry(createGXCalendarGame({ tagLabel: 'Sponsored' }))).toBe(true);
+  });
+  it.each(['Rogue Legacy 2', 'ProArt Adventures', 'Black Friday: The Game'])('preserves genuine-looking GX-only games %s', title => {
+    expect(shouldHideGXCalendarEntry(createGXCalendarGame({ title, slug: null, url: null }))).toBe(false);
+  });
+});
 
 function createGame(overrides: Partial<Game> = {}): Game {
   return {

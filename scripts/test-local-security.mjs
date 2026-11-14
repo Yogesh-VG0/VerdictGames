@@ -207,6 +207,11 @@ try {
     privateHeaders(library.response);
   }
   const anonymous = await api('/api/auth/me');
+  const statusChange = await mutate('/api/library', a, { gameId: catalogue[0].id, status: 'completed' });
+  check(statusChange.response.ok && statusChange.body.data.notes === `Private A ${run}` && statusChange.body.data.hoursPlayed === 10,
+    'status-only library edit preserves private notes and hours');
+  const foreignLibrary = await api('/api/library', b);
+  check(!foreignLibrary.body.data.some(row => row.gameId === catalogue[0].id), 'library edit stays within owner identity');
   check(anonymous.response.status === 401, 'anonymous own-profile request denied');
   privateHeaders(anonymous.response);
   const newReview = await mutate('/api/reviews', b, { gameId: game.id, rating: 80,

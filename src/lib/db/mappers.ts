@@ -239,7 +239,9 @@ export function mapGameRow(row: GameRow): Game {
     verdictLabel,
     verdictSummary: verdictSummary,
     pros: sanitizePros(row.pros ?? [], reviewCount),
-    cons: row.cons ?? [],
+    // Suppress the exact legacy auto-generated assertion until stored repair.
+    // Editorial/user prose and actual release metadata are preserved.
+    cons: (row.cons ?? []).filter(con => con !== "Still in Early Access — content may be incomplete"),
     monetization: row.monetization as MonetizationType,
     performanceNotes: row.performance_notes ?? "",
     monetizationNotes: row.monetization_notes ?? "",

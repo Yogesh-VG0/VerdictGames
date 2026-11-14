@@ -11,6 +11,7 @@ import { getServerSupabase } from "@/lib/supabase/server";
 import { mapUserGameRow } from "@/lib/db/mappers";
 import { GAME_CARD_COLUMNS } from "@/lib/db/columns";
 import type { GameRow, UserGameRow } from "@/lib/supabase/types";
+import { buildLibraryPatch } from "@/lib/utils/libraryPatch";
 export const maxDuration = 30;
 
 export async function GET(request: NextRequest) {
@@ -52,39 +53,30 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { gameId, status, personalRating, hoursPlayed, notes, startedAt, completedAt } = body;
-
-    if (!gameId) return jsonBadRequest("gameId is required");
-    if (notes && typeof notes === "string" && notes.length > 5000) return jsonBadRequest("notes must be 5,000 characters or less");
-
-    const validStatuses = ["wishlist", "playing", "completed", "dropped", "paused"];
-    if (status && !validStatuses.includes(status)) {
-      return jsonBadRequest("Invalid status");
-    }
+    const { gameId } = body;
+    if (typeof gameId !== 'string' || !/^[a-f0-9-]{36}$/i.test(gameId)) return jsonBadRequest("Valid gameId is required");
+    let patch;
+    try { patch = buildLibraryPatch(body); }
+    catch (error) { return jsonBadRequest((error as Error).message); }
+    if (Object.keys(patch).length === 0) return jsonBadRequest('No library changes provided');
 
     const supabase = getServerSupabase();
 
-    const { data, error } = await supabase
-      .from("user_games")
-      .upsert(
-        {
-          user_id: user.profileId,
-          game_id: gameId,
-          status: status ?? "wishlist",
-          personal_rating: personalRating ?? null,
-          hours_played: hoursPlayed ?? 0,
-          notes: notes ?? "",
-          started_at: startedAt ?? null,
-          completed_at: completedAt ?? null,
-        },
-        { onConflict: "user_id,game_id" }
-      )
-      .select("*, game:games!inner(*)")
-      .single();
-
-    if (error) throw error;
-
-    return jsonOk(mapUserGameRow(data as unknown as UserGameRow & { game: GameRow }));
+    // Update only supplied fields atomically; do not read-and-rewrite private
+    // values, which also loses concurrent edits. New rows use database defaults.
+    const updateExisting = () => supabase.from('user_games').update(patch)
+      .eq('user_id', user.profileId).eq('game_id', gameId)
+      .select('*, game:games!inner(*)').maybeSingle();
+    let result = await updateExisting();
+    if (result.error) throw result.error;
+    if (!result.data) {
+      result = await supabase.from('user_games').insert({ user_id: user.profileId, game_id: gameId, status: 'wishlist', ...patch })
+        .select('*, game:games!inner(*)').single();
+      // A concurrent first insert won. Apply only this request's fields.
+      if (result.error?.code === '23505') result = await updateExisting();
+    }
+    if (result.error || !result.data) throw result.error ?? new Error('Library update returned no row');
+    return jsonOk(mapUserGameRow(result.data as unknown as UserGameRow & { game: GameRow }));
   } catch (err) {
     console.error("[API] /library POST error:", err);
     return jsonError("Failed to update library");

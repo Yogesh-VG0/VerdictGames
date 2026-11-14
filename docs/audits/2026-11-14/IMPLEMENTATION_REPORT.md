@@ -140,6 +140,20 @@ Verification: **187 unit tests passed**, TypeScript passed, isolated production 
 
 Rollback: revert this repository-only change set. Existing production remains unchanged. Retain a record of the recovered migration identity corrections before reverting them. Never restore a database over production as a rollback experiment. Required manual actions are explicitly listed above and in the recovery runbook.
 
+## Change set 5 — VG-009 / VG-010 / FE-002 / FE-005 / FE-009: product truth
+
+**Status: Fixed but Awaiting Verification** for application behavior; **Partially Fixed** for stored cons; **Deferred** for game merges. No hosted game/user/snapshot data was modified.
+
+- Both ingestion paths no longer derive current Early Access from a historical RAWG tag. The mapper suppresses only the exact legacy generated sentence, preserving editorial/user prose. Empty drawbacks now say no specific drawbacks have been verified. The read-only affected-row preview and rollback-by-default SQL are in `proposals/`; stored repair awaits approval.
+- Calendar filtering recognizes explicit advertising tags, the observed ASUS/ROG/ProArt campaign patterns, and vendor event URLs. It preserves genuine GX-only games, including similarly named titles. Existing durable snapshots are filtered on read; a new framework namespace prevents stale merged values. CDN invalidation remains a release action.
+- Settings now accurately offers **Request account deletion by email**, explaining ownership verification and that opening an email does not delete data. No false deletion confirmation or automated destructive workflow is introduced.
+- Steam player refresh groups provider calls by app ID and updates all original row identities. Reviewed all 54 duplicate groups with provider IDs, slugs and aggregate references; edition differences and existing relationships preclude automatic merges. See `proposals/GAME_DATA_REVIEW.md`.
+- Fixed an additional preservation defect: a status-only library edit previously reset omitted private notes/hours/rating/dates. Existing rows now update only supplied fields, new rows use defaults, and a concurrent first insert retries a partial update. Added input validation and actual owner-boundary regression.
+
+Verification: **205 unit tests / 28 files passed**; TypeScript, local production build, lint (zero errors / 12 existing warnings), maintenance-outage regression passed. Real two-identity/anonymous HTTP/Data API/Storage suite: **120 assertions passed**, including preservation of notes/hours after a status change. Browser redesign tests belong to the next change set. No production data cleanup, full scheduler pass, or live cache invalidation is claimed.
+
+Rollback: revert this application/scheduler change set while retaining privacy commits. It performs no schema changes or automatic destructive repair. Keep the mapping preview for later review. Reverting ingestion restores the unsupported claim, so prefer a forward fix if only one UI behavior regresses.
+
 ## Pending approvals / manual actions
 
 - Production deployment and cache invalidation: explicit approval required.

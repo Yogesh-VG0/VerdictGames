@@ -1021,7 +1021,7 @@ function generateSmartCons(
   }
 
   if (tags.includes("difficult") || tags.includes("souls-like")) cons.push("Steep difficulty curve may not appeal to casual players");
-  if (tags.includes("early access")) cons.push("Still in Early Access — content may be incomplete");
+  // RAWG tags are historical/community labels, not current release-state evidence.
   if (tags.includes("microtransactions") || tags.includes("in-app purchases")) cons.push("Contains microtransactions");
   if (tags.includes("grinding") || tags.includes("grindy")) cons.push("Can require significant grinding");
 
