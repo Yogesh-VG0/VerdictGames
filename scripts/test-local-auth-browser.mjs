@@ -51,6 +51,23 @@ try {
     extraHTTPHeaders: { 'x-forwarded-for': `127.2.${parseInt(run.slice(0, 2), 16)}.${parseInt(run.slice(2, 4), 16)}` } });
   const page = await context.newPage();
   const pageErrors = [];
+  const authEvents = [];
+  const consoleClasses = [];
+  page.on('response', response => {
+    const url = new URL(response.url());
+    if (url.pathname.startsWith('/auth/v1/') || ['/api/auth/me', '/api/auth/bootstrap'].includes(url.pathname))
+      authEvents.push({ path: url.pathname, status: response.status() });
+  });
+  page.on('requestfailed', request => {
+    const url = new URL(request.url());
+    if (url.pathname.startsWith('/auth/v1/') || url.pathname.startsWith('/api/auth/'))
+      authEvents.push({ path: url.pathname, failure: request.failure()?.errorText });
+  });
+  page.on('console', message => {
+    if (message.type() !== 'error') return;
+    const text = message.text();
+    consoleClasses.push(/content security policy|connect-src/i.test(text) ? 'CSP' : /cors|cross-origin/i.test(text) ? 'CORS' : 'other');
+  });
   let authProfileRequests = 0;
   page.on('request', request => { if (new URL(request.url()).pathname === '/api/auth/me') authProfileRequests++; });
   page.on('pageerror', error => pageErrors.push(error.message));
@@ -61,7 +78,16 @@ try {
     await dialog.getByLabel('Email', { exact: true }).fill(identity.email);
     await dialog.getByLabel('Password', { exact: true }).fill(identity.password);
     await dialog.locator('button[type="submit"]').click();
-    await page.locator('#desktop-profile-button').waitFor();
+    try { await page.locator('#desktop-profile-button').waitFor(); }
+    catch (error) {
+      const alerts = (await page.getByRole('alert').allTextContents()).map(text => text
+        .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, '[fixture email]')
+        .replace(/eyJ[A-Za-z0-9_.-]+/g, '[redacted token]').slice(0, 300));
+      console.error('Browser sign-in diagnostics:', JSON.stringify({ alerts, authEvents: authEvents.slice(-12), consoleClasses,
+        cookieNames: (await context.cookies()).map(cookie => cookie.name) }));
+      await page.screenshot({ path: `${output}/local-auth-failure.png` });
+      throw error;
+    }
     await page.getByText(identity.title, { exact: true }).waitFor();
     assert.equal(await page.getByText(users[1 - index].title, { exact: true }).count(), 0, 'Previous/other identity library must not render');
     const own = await page.evaluate(async () => (await (await fetch('/api/auth/me')).json()).data.id);
