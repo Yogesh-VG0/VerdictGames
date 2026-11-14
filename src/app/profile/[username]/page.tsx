@@ -4,6 +4,7 @@ import ProfileClientPage from '@/components/ProfileClientPage';
 import { loadPublicProfile } from '@/lib/services/public-profile';
 import { SITE_URL, buildSocialMetadata } from '@/lib/seo';
 export const revalidate = 900;
+export const maxDuration = 30;
 export function generateStaticParams() { return []; }
 type Props = { params: Promise<{ username: string }> };
 export async function generateMetadata({ params }: Props): Promise<Metadata> {

@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { jsonOk, jsonNotFound, jsonError } from '@/lib/api/response';
 import { loadPublicList } from '@/lib/services/public-list';
+export const maxDuration = 30;
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   try {

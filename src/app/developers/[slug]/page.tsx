@@ -4,6 +4,7 @@ import DeveloperClientPage from '@/components/DeveloperClientPage';
 import { loadDeveloperHub } from '@/lib/services/developers';
 import { SITE_URL, buildSocialMetadata } from '@/lib/seo';
 export const revalidate = 900;
+export const maxDuration = 30;
 export function generateStaticParams() { return []; }
 type Props = { params: Promise<{ slug: string }> };
 export async function generateMetadata({ params }: Props): Promise<Metadata> {

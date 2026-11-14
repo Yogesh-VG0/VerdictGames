@@ -11,6 +11,7 @@ import { getServerSupabase } from "@/lib/supabase/server";
 import { mapUserGameRow } from "@/lib/db/mappers";
 import { GAME_CARD_COLUMNS } from "@/lib/db/columns";
 import type { GameRow, UserGameRow } from "@/lib/supabase/types";
+export const maxDuration = 30;
 
 export async function GET(request: NextRequest) {
   const user = await getCurrentUser();

@@ -9,11 +9,13 @@ const DEFAULT_TIMEOUT_MS = positiveInteger(process.env.RAWG_TIMEOUT_MS, 30_000);
 const DEFAULT_ATTEMPTS = positiveInteger(process.env.RAWG_MAX_ATTEMPTS, 3);
 const MAX_CONCURRENCY = positiveInteger(process.env.RAWG_MAX_CONCURRENCY, 4);
 const CIRCUIT_FAILURE_LIMIT = positiveInteger(process.env.RAWG_CIRCUIT_FAILURES, 4);
+const CIRCUIT_COOLDOWN_MS = positiveInteger(process.env.RAWG_CIRCUIT_COOLDOWN_MS, 60_000);
 
 let activeRequests = 0;
 const requestQueue = [];
 let consecutiveFailures = 0;
-let circuitOpenedAt = 0;
+let circuitOpenedAt = null;
+let probeInFlight = false;
 
 export class RawgRequestError extends Error {
   constructor(message, { status = null, retryable = false, endpoint = null, cause } = {}) {
@@ -54,8 +56,13 @@ function retryDelayMs(response, attempt) {
   return base + Math.floor(Math.random() * 500);
 }
 
-function circuitIsOpen() {
-  return circuitOpenedAt !== 0;
+function beginCircuitRequest(endpoint) {
+  if (circuitOpenedAt === null) return false;
+  if (probeInFlight || Date.now() - circuitOpenedAt < CIRCUIT_COOLDOWN_MS) {
+    throw new RawgRequestError(`RAWG circuit is open for ${endpoint}`, { retryable: true, endpoint });
+  }
+  probeInFlight = true;
+  return true;
 }
 
 function recordFailure() {
@@ -65,8 +72,10 @@ function recordFailure() {
   }
 }
 
-function recordSuccess() {
-  if (circuitOpenedAt) return;
+function recordSuccess(isProbe) {
+  // A late response from before the outage must not close an open circuit.
+  if (circuitOpenedAt !== null && !isProbe) return;
+  circuitOpenedAt = null;
   consecutiveFailures = 0;
 }
 
@@ -96,72 +105,74 @@ export async function rawgFetchJson(
   { params = {}, timeoutMs = DEFAULT_TIMEOUT_MS, attempts = DEFAULT_ATTEMPTS } = {},
 ) {
   return withConcurrencyLimit(async () => {
-    if (circuitIsOpen()) {
-      throw new RawgRequestError(`RAWG circuit is open for ${endpoint}`, {
+    const isProbe = beginCircuitRequest(endpoint);
+    try {
+      const url = new URL(`${RAWG_BASE_URL}${endpoint.startsWith("/") ? endpoint : `/${endpoint}`}`);
+      url.searchParams.set("key", getApiKey());
+      for (const [key, value] of Object.entries(params)) {
+        if (value !== undefined && value !== null && value !== "") {
+          url.searchParams.set(key, String(value));
+        }
+      }
+
+      let lastError = null;
+      const attemptLimit = isProbe ? 1 : attempts;
+      for (let attempt = 1; attempt <= attemptLimit; attempt++) {
+        let response = null;
+        const startedAt = Date.now();
+        try {
+          response = await fetch(url, {
+            headers: {
+              Accept: "application/json",
+              "User-Agent": "VerdictGames-Scheduler/1.0",
+            },
+            signal: AbortSignal.timeout(timeoutMs),
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            recordSuccess(isProbe);
+            return data;
+          }
+
+          const retryable = isRetryableStatus(response.status);
+          lastError = new RawgRequestError(`RAWG ${endpoint} returned HTTP ${response.status}`, {
+            status: response.status,
+            retryable,
+            endpoint,
+          });
+          if (!retryable) throw lastError;
+        } catch (error) {
+          if (error instanceof RawgRequestError && !error.retryable) throw error;
+          lastError = error instanceof RawgRequestError
+            ? error
+            : new RawgRequestError(`RAWG ${endpoint} request failed: ${error.message}`, {
+                retryable: true,
+                endpoint,
+                cause: error,
+              });
+        }
+
+        const elapsedMs = Date.now() - startedAt;
+        console.warn(
+          `[RAWG] ${endpoint} attempt ${attempt}/${attemptLimit} failed after ${elapsedMs}ms: ${lastError.message}`,
+        );
+        if (attempt < attemptLimit) {
+          await sleep(retryDelayMs(response, attempt));
+        }
+      }
+
+      recordFailure();
+      throw lastError ?? new RawgRequestError(`RAWG ${endpoint} failed`, {
         retryable: true,
         endpoint,
       });
-    }
-
-    const url = new URL(`${RAWG_BASE_URL}${endpoint.startsWith("/") ? endpoint : `/${endpoint}`}`);
-    url.searchParams.set("key", getApiKey());
-    for (const [key, value] of Object.entries(params)) {
-      if (value !== undefined && value !== null && value !== "") {
-        url.searchParams.set(key, String(value));
+    } finally {
+      if (isProbe) {
+        if (circuitOpenedAt !== null) circuitOpenedAt = Date.now();
+        probeInFlight = false;
       }
     }
-
-    let lastError = null;
-    for (let attempt = 1; attempt <= attempts; attempt++) {
-      let response = null;
-      const startedAt = Date.now();
-      try {
-        response = await fetch(url, {
-          headers: {
-            Accept: "application/json",
-            "User-Agent": "VerdictGames-Scheduler/1.0",
-          },
-          signal: AbortSignal.timeout(timeoutMs),
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          recordSuccess();
-          return data;
-        }
-
-        const retryable = isRetryableStatus(response.status);
-        lastError = new RawgRequestError(`RAWG ${endpoint} returned HTTP ${response.status}`, {
-          status: response.status,
-          retryable,
-          endpoint,
-        });
-        if (!retryable) throw lastError;
-      } catch (error) {
-        if (error instanceof RawgRequestError && !error.retryable) throw error;
-        lastError = error instanceof RawgRequestError
-          ? error
-          : new RawgRequestError(`RAWG ${endpoint} request failed: ${error.message}`, {
-              retryable: true,
-              endpoint,
-              cause: error,
-            });
-      }
-
-      const elapsedMs = Date.now() - startedAt;
-      console.warn(
-        `[RAWG] ${endpoint} attempt ${attempt}/${attempts} failed after ${elapsedMs}ms: ${lastError.message}`,
-      );
-      if (attempt < attempts) {
-        await sleep(retryDelayMs(response, attempt));
-      }
-    }
-
-    recordFailure();
-    throw lastError ?? new RawgRequestError(`RAWG ${endpoint} failed`, {
-      retryable: true,
-      endpoint,
-    });
   });
 }
 

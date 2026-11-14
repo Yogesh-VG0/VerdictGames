@@ -6,6 +6,7 @@
  */
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 30;
 
 import { NextRequest } from "next/server";
 import { jsonPrivateOk as jsonOk } from "@/lib/api/response";

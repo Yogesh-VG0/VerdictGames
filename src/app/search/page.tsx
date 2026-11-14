@@ -6,6 +6,7 @@ import { loadSearchResults, SEARCH_REVALIDATE_SECONDS } from "@/lib/services/sea
 import { buildSocialMetadata, SITE_URL } from "@/lib/seo";
 
 export const revalidate = 300;
+export const maxDuration = 30;
 
 if (!SEARCH_REVALIDATE_SECONDS) {
   throw new Error("Search page requires the shared search loader revalidate contract.");

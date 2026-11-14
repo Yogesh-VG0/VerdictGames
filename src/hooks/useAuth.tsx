@@ -129,11 +129,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [supabase] = useState(() => getSupabaseBrowser());
   const queryClient = useQueryClient();
   const profileRequest = useRef(0);
+  const pendingProfile = useRef<{ id: string; requestId: number; promise: Promise<void> } | null>(null);
   const activeAuthId = useRef<string | null>(null);
   const activateIdentity = useCallback((id: string | null) => {
     if (activeAuthId.current === id) return;
     activeAuthId.current = id;
     profileRequest.current++;
+    pendingProfile.current = null;
     const privateScopes = new Set(['library', 'libraryStats', 'gameReviews', 'globalReviews', 'userReviews', 'personalized']);
     const filters = { predicate: (query: { queryKey: readonly unknown[] }) => privateScopes.has(String(query.queryKey[0])) };
     void queryClient.cancelQueries(filters);
@@ -144,8 +146,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsPasswordRecovery(false);
   }, []);
 
-  const fetchProfile = useCallback(async (authId: string) => {
+  const fetchProfile = useCallback((authId: string) => {
+    if (pendingProfile.current?.id === authId) return pendingProfile.current.promise;
     const requestId = ++profileRequest.current;
+    const promise = (async () => {
     try {
       let response = await fetch('/api/auth/me', { cache: 'no-store' });
       if (response.status === 401) {
@@ -161,7 +165,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch {
       // Leave the session available for retry without retaining another user's
       // profile or inferring an administrator role from editable metadata.
+    } finally {
+      if (pendingProfile.current?.requestId === requestId) pendingProfile.current = null;
     }
+    })();
+    pendingProfile.current = { id: authId, requestId, promise };
+    return promise;
   }, []);
 
   useEffect(() => {

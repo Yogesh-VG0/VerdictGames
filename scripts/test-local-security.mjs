@@ -10,6 +10,7 @@ assert.equal(new URL(url).hostname, '127.0.0.1', 'Never run fixtures against hos
 const app = 'http://127.0.0.1:3100';
 const admin = createClient(url, process.env.SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false, autoRefreshToken: false } });
 const run = randomUUID().replaceAll('-', '').slice(0, 12);
+const localClientIp = `127.3.${parseInt(run.slice(0, 2), 16)}.${parseInt(run.slice(2, 4), 16)}`;
 const users = [];
 const gameIds = [];
 const avatarPaths = [];
@@ -27,13 +28,13 @@ function privateHeaders(response) {
   }
 }
 async function api(path, user) {
-  const response = await fetch(`${app}${path}`, { headers: user ? { cookie: user.cookie } : {} });
+  const response = await fetch(`${app}${path}`, { headers: { 'x-forwarded-for': localClientIp, ...(user ? { cookie: user.cookie } : {}) } });
   assert.ok(response.headers.get('content-type')?.includes('application/json'), 'Expected application JSON');
   return { response, body: await response.json() };
 }
 async function mutate(path, user, body, method = 'POST') {
   const response = await fetch(`${app}${path}`, { method, headers: {
-    cookie: user.cookie, origin: app, 'content-type': 'application/json',
+    cookie: user.cookie, origin: app, 'content-type': 'application/json', 'x-forwarded-for': localClientIp,
   }, body: JSON.stringify(body) });
   return { response, body: await response.json() };
 }
@@ -222,6 +223,12 @@ try {
   const update = await mutate('/api/profile/settings', b, { display_name: 'Updated local player', role: 'admin' }, 'PATCH');
   check(update.response.ok, 'presentation profile update still works');
   check((await api('/api/auth/me', b)).body.data.role === 'user', 'presentation update cannot smuggle administrator role');
+  const limiterClient = `127.4.${parseInt(run.slice(0, 2), 16)}.${parseInt(run.slice(2, 4), 16)}`;
+  const statuses = [];
+  for (let index = 0; index < 11; index++) {
+    statuses.push((await fetch(`${app}/api/auth/me`, { headers: { 'x-forwarded-for': limiterClient } })).status);
+  }
+  check(statuses.slice(0, 10).every(status => status === 401) && statuses[10] === 429, 'authentication limiter still rejects the eleventh request');
   console.log(`Local privacy integration: ${checks} checks passed`);
 } finally {
   // Only fixtures created in this process are removed. Never enumerate/delete

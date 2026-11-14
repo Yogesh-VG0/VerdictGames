@@ -14,6 +14,7 @@ import {
 } from "@/lib/services/game-detail";
 
 export const revalidate = 900;
+export const maxDuration = 30;
 
 if (GAME_DETAIL_REVALIDATE_SECONDS !== revalidate) {
   throw new Error("Game detail API revalidate must stay aligned with the shared game detail loader.");

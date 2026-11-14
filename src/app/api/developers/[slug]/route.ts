@@ -5,6 +5,7 @@
  */
 
 export const revalidate = 300; // ISR: revalidate every 5 minutes
+export const maxDuration = 30;
 
 import { NextRequest } from "next/server";
 import { jsonOk, jsonNotFound } from "@/lib/api/response";

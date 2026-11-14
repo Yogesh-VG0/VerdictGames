@@ -12,6 +12,7 @@ const { chromium } = await import(pathToFileURL(process.env.PLAYWRIGHT_MODULE_PA
 const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false, autoRefreshToken: false } });
 const users = [];
 const games = [];
+const maintenanceIds = [];
 let browser;
 const run = randomUUID().replaceAll('-', '').slice(0, 10);
 const output = 'docs/audits/2026-11-14/screenshots';
@@ -29,6 +30,7 @@ try {
     const profile = await admin.from('profiles').select('id').eq('auth_id', identity.id).single();
     assert.ifError(profile.error);
     identity.profileId = profile.data.id;
+    if (label === 'A') assert.ifError((await admin.from('profiles').update({ role: 'admin' }).eq('id', identity.profileId)).error);
     const game = await admin.from('games').insert({ slug: `browser-fixture-${run}-${label.toLowerCase()}`, title: identity.title,
       cover_image: '/icon.png', platforms: ['PC'], genres: ['Adventure'], release_date: '2025-01-01' }).select('id').single();
     assert.ifError(game.error);
@@ -36,10 +38,21 @@ try {
     assert.ifError((await admin.from('user_games').insert({ user_id: identity.profileId, game_id: game.data.id,
       status: 'playing', notes: `Local private ${label}` })).error);
   }
+  const history = await admin.from('scheduler_runs').insert([
+    { job_name: 're-enrich', status: 'success', started_at: new Date(Date.now() - 3600000).toISOString(), finished_at: new Date(Date.now() - 3500000).toISOString(), metadata: { local_browser_run: run } },
+    { job_name: 're-enrich', status: 'deferred', started_at: new Date().toISOString(), finished_at: new Date().toISOString(), metadata: { outcome: 'deferred', local_browser_run: run } },
+  ]).select('id');
+  assert.ifError(history.error);
+  maintenanceIds.push(...history.data.map(row => row.id));
   browser = await chromium.launch({ headless: true, channel: 'chrome' });
-  const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
+  // Simulate a distinct local client so separate verification suites do not
+  // share the proxy's per-IP bucket. The limiter remains fully enabled.
+  const context = await browser.newContext({ viewport: { width: 1440, height: 1000 },
+    extraHTTPHeaders: { 'x-forwarded-for': `127.2.${parseInt(run.slice(0, 2), 16)}.${parseInt(run.slice(2, 4), 16)}` } });
   const page = await context.newPage();
   const pageErrors = [];
+  let authProfileRequests = 0;
+  page.on('request', request => { if (new URL(request.url()).pathname === '/api/auth/me') authProfileRequests++; });
   page.on('pageerror', error => pageErrors.push(error.message));
   await page.goto('http://127.0.0.1:3100/library');
   for (const [index, identity] of users.entries()) {
@@ -58,6 +71,14 @@ try {
       await Promise.all(document.getAnimations().filter(animation => animation.effect?.getComputedTiming().iterations !== Infinity).map(animation => animation.finished.catch(() => {})));
     });
     await page.screenshot({ path: `${output}/privacy-library-${index === 0 ? 'a' : 'b'}.png`, fullPage: true });
+    if (index === 0) {
+      await page.goto('http://127.0.0.1:3100/admin/scheduler');
+      await page.getByText('Last success:', { exact: false }).first().waitFor();
+      assert.ok(await page.getByText('deferred', { exact: true }).count() > 0, 'Deferred runs are visible in the actual dashboard');
+      await page.screenshot({ path: `${output}/maintenance-deferred-local.png`, fullPage: true });
+      await page.goto('http://127.0.0.1:3100/library');
+      await page.getByText(identity.title, { exact: true }).waitFor();
+    }
     await page.locator('#desktop-profile-button').click();
     await page.getByRole('button', { name: 'Sign Out', exact: true }).click();
     await page.getByRole('dialog', { name: 'Sign Out?' }).getByRole('button', { name: 'Sign Out', exact: true }).click();
@@ -67,9 +88,11 @@ try {
   assert.deepEqual(pageErrors, [], 'No browser JavaScript errors');
   console.log('PASS browser login A → logout → login B → logout, same page, isolated libraries and verified cookies');
   console.log('PASS signed-out state restored and no browser JavaScript errors');
+  console.log(`Measured own-profile requests during browser journey: ${authProfileRequests}`);
 } finally {
   await browser?.close();
   const failures = [];
+  if (maintenanceIds.length && (await admin.from('scheduler_runs').delete().in('id', maintenanceIds)).error) failures.push('maintenance');
   for (const id of games) if ((await admin.from('games').delete().eq('id', id)).error) failures.push('game');
   for (const user of users) if ((await admin.auth.admin.deleteUser(user.id)).error) failures.push('user');
   assert.deepEqual(failures, [], 'Disposable browser fixtures cleaned up');

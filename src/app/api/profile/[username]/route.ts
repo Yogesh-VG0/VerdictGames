@@ -11,6 +11,7 @@ import type { ProfileRow } from "@/lib/supabase/types";
 import { getPublicSupabase } from "@/lib/supabase/public";
 import { getServerSupabase } from "@/lib/supabase/server";
 import { PUBLIC_PROFILE_COLUMNS } from "@/lib/db/columns";
+export const maxDuration = 30;
 
 export async function GET(
   _request: NextRequest,

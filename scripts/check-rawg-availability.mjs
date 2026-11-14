@@ -47,6 +47,7 @@ try {
   addSummary(`### Deferred \`${job}\``);
   addSummary(message);
   setOutput("run_job", "false");
+  setOutput("outcome", "deferred");
   // A deferred run is not successful maintenance. Persist the reason so the
   // dashboard can distinguish provider outages from a dead scheduler.
   const { connectDb, closeDb } = await import('./lib/db-connect.mjs');
@@ -54,8 +55,17 @@ try {
   const jobName = job === 'discover-standard' ? 'discover-games' : job === 'discover-deep' ? 'discover-games-deep' : job;
   const sql = connectDb(jobName);
   try {
-    const run = await startRun(sql, jobName, { outcome: 'deferred', provider: 'rawg' });
-    await finishRun(sql, run.id, { error_message: `Deferred: ${message}`, metadata: { outcome: 'deferred', provider: 'rawg' } });
+    const metadata = { outcome: 'deferred', provider: 'rawg', github_run_id: process.env.GITHUB_RUN_ID ?? null };
+    const run = await startRun(sql, jobName, metadata, { strict: true });
+    await finishRun(sql, run.id, { outcome: 'deferred', strict: true,
+      error_message: `Deferred: ${message}`, metadata });
+    const recent = await sql`SELECT status FROM scheduler_runs WHERE job_name = ${jobName}
+      ORDER BY started_at DESC LIMIT 3`;
+    const repeated = recent.length === 3 && recent.every(row => row.status === 'deferred');
+    addSummary('No ingestion ran. This is a deferred attempt, not completed maintenance.');
+    if (repeated) {
+      console.error('::error title=Repeated maintenance deferral::Three consecutive attempts were deferred. Check provider availability and last successful maintenance.');
+      process.exitCode = 1;
+    }
   } finally { await closeDb(sql, jobName); }
-  process.exitCode = 1;
 }

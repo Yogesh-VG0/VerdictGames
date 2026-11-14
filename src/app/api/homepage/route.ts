@@ -13,23 +13,26 @@
 import { NextResponse } from "next/server";
 import {
   HOMEPAGE_API_CACHE_CONTROL,
-  loadHomepageData,
+  loadHomepageDataWithStatus,
 } from "@/lib/services/homepage";
+import { jsonPrivateOk, jsonError } from '@/lib/api/response';
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 30;
 
 export async function GET() {
   try {
-    const data = await loadHomepageData();
+    const { data, degraded } = await loadHomepageDataWithStatus();
+    if (degraded) {
+      if (!Object.values(data).some(section => section.length > 0)) return jsonError('Game collections are temporarily unavailable. Please retry.', 503);
+      return jsonPrivateOk(data);
+    }
     return NextResponse.json(
       { success: true, data },
       { status: 200, headers: { "Cache-Control": HOMEPAGE_API_CACHE_CONTROL } }
     );
   } catch (err) {
     console.error("[API] /homepage error:", err);
-    return NextResponse.json(
-      { success: false, error: "Failed to load homepage data." },
-      { status: 500 }
-    );
+    return jsonError('Failed to load homepage data.', 503);
   }
 }

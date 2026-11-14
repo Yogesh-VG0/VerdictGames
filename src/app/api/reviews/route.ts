@@ -13,6 +13,7 @@ import type { PaginatedResponse, Review } from "@/lib/types";
 
 const PAGE_SIZE = 12;
 export const dynamic = "force-dynamic";
+export const maxDuration = 30;
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;

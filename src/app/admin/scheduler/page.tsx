@@ -24,7 +24,7 @@ import {
 interface SchedulerRun {
   id: string;
   job_name: string;
-  status: "running" | "success" | "error" | "stale";
+  status: "running" | "success" | "error" | "stale" | "deferred";
   started_at: string;
   finished_at: string | null;
   duration_ms: number | null;
@@ -42,6 +42,8 @@ interface JobSummary {
   error: number;
   running: number;
   stale: number;
+  deferred: number;
+  lastSuccess: string | null;
   lastRun: string | null;
   lastStatus: string | null;
 }
@@ -196,6 +198,7 @@ function StatusIcon({ status }: { status: string }) {
   if (status === "error") return <XCircle className="w-4 h-4 text-red-500" />;
   if (status === "running") return <Loader2 className="w-4 h-4 text-amber-500 animate-spin" />;
   if (status === "stale") return <Clock className="w-4 h-4 text-orange-400" />;
+  if (status === "deferred") return <Clock className="w-4 h-4 text-amber-400" />;
   return <Clock className="w-4 h-4 text-secondary" />;
 }
 
@@ -207,7 +210,8 @@ function StatusBadge({ status }: { status: string }) {
         status === "success" && "bg-green-500/10 text-green-500",
         status === "error" && "bg-red-500/10 text-red-500",
         status === "running" && "bg-amber-500/10 text-amber-500",
-        status === "stale" && "bg-orange-400/10 text-orange-400"
+        status === "stale" && "bg-orange-400/10 text-orange-400",
+        status === "deferred" && "bg-amber-400/10 text-amber-400"
       )}
     >
       <StatusIcon status={status} />
@@ -518,7 +522,7 @@ export default function SchedulerPage() {
             <div className="px-4 py-8 text-center text-secondary text-sm">No scheduler runs found</div>
           ) : (
             allJobNames.map((name) => {
-              const s = summary[name] ?? { total: 0, success: 0, error: 0, running: 0, stale: 0, lastRun: null, lastStatus: null };
+              const s = summary[name] ?? { total: 0, success: 0, error: 0, running: 0, stale: 0, deferred: 0, lastRun: null, lastSuccess: null, lastStatus: null };
               const info = JOB_LABELS[name] || { label: name, description: "" };
               const completedRuns = s.total - s.stale - s.running;
               const successRate = completedRuns > 0 ? Math.round((s.success / completedRuns) * 100) : 0;
@@ -549,9 +553,11 @@ export default function SchedulerPage() {
                         <div className="text-right">
                           <div className="font-medium text-foreground">{s.total} runs</div>
                           <div>{successRate}% success</div>
+                          {s.deferred > 0 && <div className="text-amber-400">{s.deferred} deferred</div>}
                         </div>
                         <div className="text-right">
                           {s.lastRun && <div>{formatRelative(s.lastRun)}</div>}
+                          <div>Last success: {s.lastSuccess ? formatRelative(s.lastSuccess) : 'none in 7 days'}</div>
                           {s.lastStatus && <StatusBadge status={s.lastStatus} />}
                         </div>
                       </div>

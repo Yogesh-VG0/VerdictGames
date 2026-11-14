@@ -5,6 +5,7 @@
 import { jsonPrivateOk as jsonOk, jsonError } from "@/lib/api/response";
 import { getAuthSupabase, getCurrentUser } from "@/lib/supabase/auth";
 import type { LibraryStats } from "@/lib/types";
+export const maxDuration = 30;
 
 export async function GET() {
   const user = await getCurrentUser();

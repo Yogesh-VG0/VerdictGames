@@ -6,8 +6,8 @@ import { parseEnv } from 'node:util';
 import path from 'node:path';
 
 const command = process.argv[2];
-if (!['build', 'start', 'dev', 'security', 'migrate-security', 'browser-security'].includes(command)) {
-  throw new Error('Choose build, start, dev, security, migrate-security, or browser-security');
+if (!['build', 'start', 'dev', 'security', 'migrate-security', 'browser-security', 'maintenance'].includes(command)) {
+  throw new Error('Choose build, start, dev, security, migrate-security, browser-security, or maintenance');
 }
 const status = JSON.parse(execFileSync(process.platform === 'win32' ? 'supabase.exe' : 'supabase', ['status', '-o', 'json'], {
   encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'],
@@ -33,7 +33,7 @@ Object.assign(env, {
   NODE_ENV: command === 'dev' ? 'development' : 'production',
 });
 if (!status.ANON_KEY || !status.SERVICE_ROLE_KEY) throw new Error('Local API keys unavailable');
-const scripts = { security: 'test-local-security.mjs', 'migrate-security': 'apply-local-security.mjs', 'browser-security': 'test-local-auth-browser.mjs' };
+const scripts = { security: 'test-local-security.mjs', 'migrate-security': 'apply-local-security.mjs', 'browser-security': 'test-local-auth-browser.mjs', maintenance: 'test-local-maintenance.mjs' };
 const args = command in scripts
   ? [path.resolve('scripts', scripts[command])]
   : [path.resolve('node_modules/next/dist/bin/next'), command, ...(command === 'build' ? [] : ['--hostname', '127.0.0.1', '--port', '3100'])];

@@ -14,9 +14,9 @@ Status applies to the production outcome. Local verification is recorded separat
 | VG-005 private library/profile information | Fixed but Awaiting Verification | Migration and matching app changes pass local identity tests; hosted application and permissions unchanged. |
 | VG-007 avatar ownership | Fixed but Awaiting Verification | Local legacy/folder upload and overwrite/upsert tests pass; hosted policy migration awaits approval. |
 | VG-006 database privileges | Fixed but Awaiting Verification | Effective local privileges tested; hosted grants unchanged. |
-| VG-001 reliability, section caches, region | Partially Fixed | Existing bounded reads are present; failed-section cache handling and region evaluation remain. |
-| VG-011 advisory locks | Unresolved | Pending verified privacy boundary. |
-| VG-008 RAWG recovery / maintenance visibility | Unresolved | Pending verified privacy boundary. |
+| VG-001 reliability, section caches, region | Partially Fixed | Branch cache admission/budgets verified locally. Tokyo is evaluated/proposed, not applied; live latency/CDN verification remains. |
+| VG-011 advisory locks | Fixed but Awaiting Verification | Unexpected lock errors now abort; unit coverage passes. Needs approved scheduler release. |
+| VG-008 RAWG recovery / maintenance visibility | Fixed but Awaiting Verification | Recovery/concurrency tests and real local outage simulation pass; needs approved scheduler release and production observation. |
 | VG-003 build checks / branch protection / dependency alerts | Unresolved | Production settings require explicit approval. |
 | VG-004 migration consistency | Unresolved | Reconcile exact SQL/state before history changes. |
 | Backup and restore verification | Unresolved | Recovery documentation and a safe local restore drill remain. |
@@ -93,6 +93,38 @@ The change is isolated to response construction and two rendering declarations; 
 No hosted permissions or data have changed. The new app works with the existing schema and must be deployed **before** restricting profile columns, so the browser no longer depends on those columns. For an approved release: (1) deploy the compatible app and invalidate affected personalized CDN responses; (2) save the current policies/grants and apply the reviewed permission migration atomically; (3) rerun effective privilege and two-session checks, public profiles, editorial reviews, normal mutations, avatars, and admin access. Do not mark these findings Fixed and Verified before that release check.
 
 This migration does not delete records or change migration history. Do not roll back by re-exposing notes/roles or granting anonymous writes. If an application regression occurs, retain the compatible private-profile lookup and cache policy while reverting the unrelated change. A pre-privacy application build is not compatible with the restricted raw profile columns. Fix ownership helpers/projections forward inside a transaction if a database regression is found, preserving private access boundaries.
+
+## Change set 3 — VG-001 / VG-008 / VG-011: cache and maintenance reliability
+
+### Actual changes
+
+- Unexpected advisory-lock errors now throw instead of returning true. Genuine lock contention still skips safely, and suitable infrastructure retries remain bounded.
+- RAWG's circuit now has a 60-second default cooldown, permits one half-open request at a time, closes on a successful probe, and reopens after a failed probe. A recovery probe has one attempt; concurrent/late pre-outage responses cannot incorrectly close the open circuit.
+- Health checks record `deferred` separately from success/error and require durable logging. A transient provider deferral skips ingestion and exits successfully with an explicit warning/summary. Three consecutive deferrals cause an actionable workflow failure. Permanent provider/config errors and failed required logging remain failures. Steam-only maintenance stays outside RAWG gating.
+- Corrected double-encoded run metadata: the Postgres JSON serializer receives objects instead of already-stringified JSON. The admin API reads both old string and current object formats. The scheduler UI shows deferred counts/status and the last successful run in its seven-day window. Historical records are not rewritten.
+- Successful homepage rails now have individual five-minute caches. The aggregate rejects any failed requested section instead of storing its empty fallback. Existing successful section/aggregate snapshots remain eligible for stale serving. A cold partial read can still display its available data, with no-store at all CDN header levels; a fully unavailable cold API returns an uncached 503. Successful empty queries are distinguished from failures. The homepage displays a recoverable availability notice for degraded cold reads.
+- Added 30-second execution budgets to the homepage and the principal public/authenticated data routes/pages that previously inherited the long platform default. Sitemap remains at 60 seconds; existing secret/admin maintenance handlers retain their separate limits. No Vercel cron was added.
+- Deduplicated concurrent own-profile requests while retaining identity checks, stale-response protection, and sign-out cache clearing.
+
+### Verification and measurements
+
+- Unit suite: **187 tests / 26 files passed**. Includes circuit cooldown, exclusive probe, re-open behavior, lock contention/error paths, strict logging, historical metadata, failed cache admission, genuine empty reads, and partial/complete-outage API policies.
+- TypeScript and production build using local-only configuration passed. Lint: zero errors and the same 12 existing warnings.
+- Real local outage simulation passed: two deferred records/zero ingestion, third deferral alerts, permanent 401 fails, Steam job bypasses RAWG gating. Its generated scheduler records and temp files were removed.
+- Local privacy/owner-flow regression: **118 assertions passed**, including the existing authentication limiter rejecting the eleventh request. Security controls were not disabled. Distinct loopback client addresses prevent separate suites from sharing the same per-IP bucket.
+- Browser account-switch and scheduler-dashboard regression passed with no JavaScript errors. Screenshot: `screenshots/maintenance-deferred-local.png`.
+- Same browser journey, before/after concurrent profile-read deduplication: **8 → 6 own-profile HTTP requests (25% fewer)**. This is a measured request-count reduction; no production latency improvement is claimed from it.
+- Read-only production `EXPLAIN (ANALYZE, BUFFERS)` on a representative top-rated selection (narrower projection, limit 320 rather than the service's 180) used `idx_games_homepage_top_rated_pool`; execution was **448.65 ms**, planning 39.508 ms, 363 shared-hit blocks and zero read blocks. This single sample is a diagnostic baseline, not a before/after benchmark or p95. It does not justify a new index or establish a root cause for past 300-second failures.
+
+### Region proposal and limits
+
+Current production deployment metadata remains `iad1`, while Supabase is Tokyo. A single `hnd1` function region is the proposed colocation change and is compatible with the one-region Hobby architecture. No region change or production deployment has been made. Measure actual function-region headers, cache-hit/miss latency, query duration, error rate, CPU and memory usage after an approved preview/production change before claiming improvement. Network colocation does not repair expensive SQL, schema-cache failures, or provider outages.
+
+Live CDN cache behavior, stale retention across an actual production failure, and hosted 30-second enforcement await an approved release. The cold/partial failure policy is covered by branch unit tests, not misrepresented as a live CDN fault-injection result. Five additional public rail snapshots add bounded framework-cache entries; no new service or continuous polling is introduced.
+
+### Rollback
+
+No schema/history changes are required by this change set. Keep the prior privacy commits. Revert only the reliability commit if needed; that restores the old cache/logging behavior, so inspect cache admission before using that rollback. Existing/new metadata formats are backward-readable by the prior scheduler parser. A dashboard rollback may display `deferred` without its newer styling; no job or game data is deleted. Do not restore fail-open locking or permanently disable the RAWG circuit to make a job run.
 
 ## Pending approvals / manual actions
 
