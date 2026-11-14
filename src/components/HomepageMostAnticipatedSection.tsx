@@ -69,7 +69,7 @@ export default function HomepageMostAnticipatedSection({
                     </div>
                   </div>
                   <div className="flex items-center gap-3 mt-2 px-1 text-[10px] text-secondary">
-                    <span className="text-accent font-medium">{formatNumber(game.added)} wishlisted</span>
+                    {Number(game.added) > 0 && <span className="text-secondary font-medium">{formatNumber(game.added)} wishlisted</span>}
                     {game.toplay > 0 && <span>{formatNumber(game.toplay)} want</span>}
                   </div>
                 </Link>

@@ -212,6 +212,7 @@ export default function ExplorePage({ initialData }: { initialData?: RawgListRes
             <button
               key={tab.id}
               aria-pressed={isActive}
+              onFocus={event => event.currentTarget.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'instant' })}
               onClick={() => handleTabChange(tab.id)}
               className={cn(
                 "flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-all",

@@ -523,7 +523,9 @@ export default function GameDetailClientPage({
             )}
             <span className="text-foreground font-medium truncate">{game.title}</span>
           </nav>
-          <div className="relative shrink-0" ref={shareRef}>
+          <div className="flex items-center gap-2 shrink-0">
+          <Link href={`/compare?g1=${encodeURIComponent(game.slug)}`} prefetch={false} className="rounded-xl border border-border bg-surface px-3 py-1.5 text-xs font-medium text-foreground hover:bg-elevated transition-colors">Compare</Link>
+          <div className="relative" ref={shareRef}>
             <button
               onClick={() => setShareOpen(!shareOpen)}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium text-secondary hover:text-foreground border border-border hover:border-accent/30 bg-surface transition-all"
@@ -564,6 +566,7 @@ export default function GameDetailClientPage({
                 </a>
               </div>
             )}
+          </div>
           </div>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">

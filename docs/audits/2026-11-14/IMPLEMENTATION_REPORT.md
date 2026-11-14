@@ -154,6 +154,22 @@ Verification: **205 unit tests / 28 files passed**; TypeScript, local production
 
 Rollback: revert this application/scheduler change set while retaining privacy commits. It performs no schema changes or automatic destructive repair. Keep the mapping preview for later review. Reverting ingestion restores the unsupported claim, so prefer a forward fix if only one UI behavior regresses.
 
+## Change set 6 — FE-003 / FE-004 / FE-006 / FE-007 / FE-008 / FE-010 / FE-011 / FE-014: user journeys
+
+**Status: Fixed but Awaiting Verification** in production; branch browser checks passed.
+
+- Tablet uses a compact header/menu below 1100px, with a visible Sign In action; the full desktop row remains above that width. Phone destinations stay Home, Explore, Search, Library, You before and after authentication. Library retains its signed-out task prompt; You opens sign-in or the caller's profile. Bottom navigation remains available while scrolling and using a keyboard.
+- Search has one visible search context. Phone filters/sorting disclose on demand with an active-filter count; desktop filters remain visible. Existing URL filters, query behavior, Browse/Deals/Free routes and reset controls are preserved.
+- Compare is linked beside Share. A one-game deep link now shows the selected game using the existing game API; the second field has debounced queries, combobox/listbox semantics, Arrow/Enter/Escape interaction, URL persistence, loading and retry states. No new backend endpoint was added.
+- Review placeholders have named busy/status regions, source controls expose selection, and the misleading Steam checkmark was removed. Lists copy includes both editorial and supported player collections. Unknown zero wishlist counts are hidden.
+- Actual keyboard testing found that a focused final Explore tab could remain partly outside its scroller. Explore and reusable filter chips now reveal focused controls immediately. Existing auth focus capture/trap, Escape, and focus restoration were tested rather than reimplemented blindly.
+
+Verification: **205 unit tests passed**; TypeScript, production build, lint (0 errors / 12 existing warnings) passed. **54 before and 54 after actual route renders**, nine routes at 390/768/1440 in both themes, with no uncaught JS errors. After checks cover header bounds, overflow, one search field, keyboard comparison, final Explore chip, tablet drawer, and auth focus/trap/return. A first focus assertion raced the existing 100ms focus lifecycle; corrected the test to wait for focus, then reran. The focused-chip failure was an actual issue and was fixed before the passing run.
+
+Actual Chrome login A → confirmed logout → login B → confirmed logout passed again, including mobile stable navigation and signed-in tablet Settings. Anonymous/local identities only; fixture IDs cleaned. Screenshots are in `screenshots/before`, `screenshots/after`, and signed-in library captures. Upstream news/achievement/provider content is stubbed only in the visual suite; this does not certify those services or disable security controls. No external-human usability study or assistive-technology certification has been performed.
+
+Rollback: revert this UI change set; all existing routes/data remain compatible. Keep privacy and reliability commits. No infrastructure, database migration, or billing changes are involved.
+
 ## Pending approvals / manual actions
 
 - Production deployment and cache invalidation: explicit approval required.

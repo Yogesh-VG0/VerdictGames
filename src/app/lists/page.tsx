@@ -55,7 +55,7 @@ export default function ListsPage() {
           <GradientText text="Curated Lists" gradient="linear-gradient(90deg, #10b981 0%, #34d399 25%, #6ee7b7 50%, #34d399 75%, #10b981 100%)" />
         </h1>
         <p className="text-sm text-secondary">
-          Hand-picked collections by the community. Discover your next game through thoughtfully organized lists.
+          Discover collections from Verdict Games editors and players. Find your next game or build a list of your own.
         </p>
       </motion.div>
 

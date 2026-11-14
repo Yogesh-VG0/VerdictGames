@@ -79,6 +79,19 @@ try {
       await page.goto('http://127.0.0.1:3100/library');
       await page.getByText(identity.title, { exact: true }).waitFor();
     }
+    await page.setViewportSize({ width: 390, height: 844 });
+    assert.deepEqual(await page.getByRole('navigation', { name: 'Bottom navigation' }).locator('span').allTextContents(), ['Home', 'Explore', 'Search', 'Library', 'You'], 'Signed-in destinations stay stable');
+    const you = page.getByRole('navigation', { name: 'Bottom navigation' }).getByRole('link', { name: 'You' });
+    assert.ok((await you.getAttribute('href')).startsWith('/profile/'), 'You opens the authenticated profile');
+    await page.screenshot({ path: `${output}/privacy-library-mobile-${index === 0 ? 'a' : 'b'}.png` });
+    await page.setViewportSize({ width: 768, height: 1024 });
+    await page.getByRole('button', { name: 'Open menu', exact: true }).click();
+    const drawer = page.getByRole('dialog', { name: 'Menu' });
+    await drawer.waitFor();
+    assert.ok(await drawer.getByRole('link', { name: 'Settings', exact: true }).isVisible(), 'Signed-in tablet retains settings');
+    await page.keyboard.press('Escape');
+    await drawer.waitFor({ state: 'hidden' });
+    await page.setViewportSize({ width: 1440, height: 1000 });
     await page.locator('#desktop-profile-button').click();
     await page.getByRole('button', { name: 'Sign Out', exact: true }).click();
     await page.getByRole('dialog', { name: 'Sign Out?' }).getByRole('button', { name: 'Sign Out', exact: true }).click();

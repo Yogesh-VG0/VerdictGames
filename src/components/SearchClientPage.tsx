@@ -160,6 +160,7 @@ function SearchClientPageContent({
   initialTopGamesData,
 }: SearchClientPageProps) {
   const [browseTab, setBrowseTab] = useState<SearchBrowseTab>(initialState.browseTab);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [query, setQuery] = useState(initialState.games.query);
   const [debouncedQuery, setDebouncedQuery] = useState(initialState.games.query);
   const [platform, setPlatform] = useState<Platform | "All">(initialState.games.platform);
@@ -413,7 +414,7 @@ function SearchClientPageContent({
   return (
     <div className="max-w-[1400px] mx-auto px-4 py-8 sm:py-10 space-y-8 overflow-x-hidden page-enter">
       <motion.div
-        initial={{ opacity: 0, y: 16 }}
+        initial={false}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
         className="mb-0"
@@ -491,7 +492,12 @@ function SearchClientPageContent({
       )}
 
       {browseTab === "games" && (
-      <div className="space-y-4">
+      <div>
+        <button type="button" aria-controls="search-filter-controls" aria-expanded={filtersOpen} onClick={() => setFiltersOpen(!filtersOpen)}
+          className="md:hidden w-full text-left rounded-xl border border-border px-4 py-3 text-sm font-medium text-foreground">
+          Filters and sorting{[platform !== 'All', monetization !== 'All', Boolean(genre), Boolean(year)].filter(Boolean).length > 0 ? ` (${[platform !== 'All', monetization !== 'All', Boolean(genre), Boolean(year)].filter(Boolean).length} active)` : ''}
+        </button>
+        <div id="search-filter-controls" className={cn('space-y-4', filtersOpen ? 'block pt-4 md:pt-0' : 'hidden md:block')}>
         <div className="space-y-2">
           <label className="text-[10px] uppercase tracking-wider text-tertiary font-medium block">
             Platform
@@ -596,6 +602,7 @@ function SearchClientPageContent({
             />
           </div>
         </div>
+        </div>
       </div>
       )}
 
@@ -605,6 +612,9 @@ function SearchClientPageContent({
           {isInitialLoad ? (
             <motion.div
               key="loading"
+              role="status"
+              aria-label="Loading games"
+              aria-busy="true"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}

@@ -38,6 +38,7 @@ export default function FilterChips<T extends string>({
             whileTap={{ scale: 0.95 }}
             onClick={() => onChange(option)}
             role="radio"
+            onFocus={event => event.currentTarget.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'instant' })}
             aria-checked={isActive}
             className={cn(
               "relative shrink-0 px-3 py-1.5 text-xs font-medium rounded-full border transition-all duration-200 flex items-center gap-1.5 whitespace-nowrap",

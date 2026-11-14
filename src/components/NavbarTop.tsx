@@ -253,7 +253,7 @@ export default function NavbarTop() {
   return (
     <>
       {/* ── Mobile header ── */}
-      <header className="sticky top-0 z-50 md:hidden bg-background/80 backdrop-blur-xl border-b border-border">
+      <header className="sticky top-0 z-50 min-[1100px]:hidden bg-background/95 backdrop-blur-xl border-b border-border">
         <div className="flex items-center justify-between px-4 h-14">
           <Link href="/" prefetch={false} className="flex items-center gap-2.5 group">
             <SafeImage
@@ -269,11 +269,15 @@ export default function NavbarTop() {
             </span>
           </Link>
           <div className="flex items-center gap-2">
+            {!user && <button type="button" onClick={() => setAuthModalOpen(true)} className="hidden sm:block px-3 py-2 rounded-xl text-sm font-medium text-foreground border border-border">Sign In</button>}
             <motion.button
               ref={mobileSearchButtonRef}
               type="button"
               whileTap={{ scale: 0.9 }}
-              onClick={() => setMobileSearchOpen((open) => !open)}
+              onClick={() => {
+                if (pathname === '/search') document.getElementById('search-games-query')?.focus();
+                else setMobileSearchOpen((open) => !open);
+              }}
               className="w-9 h-9 rounded-xl bg-surface-2 border border-border flex items-center justify-center text-secondary hover:text-foreground transition-colors"
               aria-controls="mobile-search-panel"
               aria-expanded={mobileSearchOpen}
@@ -305,10 +309,7 @@ export default function NavbarTop() {
               <div className="fixed inset-0 z-[39]" onClick={() => setMobileSearchOpen(false)} />
               <motion.div
                 id="mobile-search-panel"
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.2 }}
+                initial={false}
                 className="overflow-hidden border-t border-border relative z-[40]"
               >
                 <form onSubmit={handleSearch} role="search" aria-label="Site search" className="px-4 py-3">
@@ -346,7 +347,7 @@ export default function NavbarTop() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm md:hidden"
+              className="fixed inset-0 z-[60] bg-black/70 backdrop-blur-sm min-[1100px]:hidden"
               onClick={() => setSidebarOpen(false)}
             />
             {/* Drawer */}
@@ -364,7 +365,7 @@ export default function NavbarTop() {
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="fixed top-0 right-0 bottom-0 z-[61] w-72 bg-background border-l border-border overflow-y-auto md:hidden"
+              className="fixed top-0 right-0 bottom-0 z-[61] w-72 bg-background border-l border-border overflow-y-auto min-[1100px]:hidden"
             >
               {/* Header */}
               <div className="flex items-center justify-between px-4 h-14 border-b border-border">
@@ -467,7 +468,7 @@ export default function NavbarTop() {
       </AnimatePresence>
 
       {/* ── Desktop navbar ── */}
-      <header className="sticky top-0 z-50 hidden md:block bg-background/80 backdrop-blur-xl border-b border-border">
+      <header className="sticky top-0 z-50 hidden min-[1100px]:block bg-background/95 backdrop-blur-xl border-b border-border">
         <nav aria-label="Primary navigation" className="flex items-center gap-2 px-4 h-14 max-w-[1400px] mx-auto">
           {/* Logo */}
           <Link href="/" prefetch={false} className="shrink-0 flex items-center gap-3 pl-3 group">
@@ -521,7 +522,7 @@ export default function NavbarTop() {
           <div className="w-px h-6 bg-border mx-1" />
 
           {/* Search */}
-          <form onSubmit={handleSearch} role="search" aria-label="Site search" className="relative w-52">
+          {pathname !== '/search' && <form onSubmit={handleSearch} role="search" aria-label="Site search" className="relative w-44 xl:w-52">
             <input
               id="desktop-site-search"
               name="query"
@@ -534,7 +535,7 @@ export default function NavbarTop() {
               className="w-full h-9 pl-9 pr-3 text-sm rounded-xl bg-surface-2 border border-border text-foreground placeholder:text-tertiary focus:outline-none focus:border-accent/40 focus:bg-elevated transition-all"
             />
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-tertiary" />
-          </form>
+          </form>}
 
           {/* Profile / Auth + Theme toggle */}
           <div className="pr-2 flex items-center gap-2">

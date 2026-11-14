@@ -140,6 +140,7 @@ export default function ReviewsPage() {
       <div className="flex items-center gap-2 overflow-x-auto -mx-4 px-4 scrollbar-hide">
         <button
           onClick={() => setSource("editorial")}
+          aria-pressed={source === 'editorial'}
           className={cn(
             "px-4 py-2 rounded-xl text-sm font-medium transition-all flex items-center gap-2 shrink-0",
             source === "editorial"
@@ -152,6 +153,7 @@ export default function ReviewsPage() {
         </button>
         <button
           onClick={() => setSource("community")}
+          aria-pressed={source === 'community'}
           className={cn(
             "px-4 py-2 rounded-xl text-sm font-medium transition-all shrink-0",
             source === "community"
@@ -163,6 +165,7 @@ export default function ReviewsPage() {
         </button>
         <button
           onClick={() => setSource("steam")}
+          aria-pressed={source === 'steam'}
           className={cn(
             "px-4 py-2 rounded-xl text-sm font-medium transition-all flex items-center gap-2",
             source === "steam"
@@ -170,9 +173,6 @@ export default function ReviewsPage() {
               : "bg-surface-2 text-secondary hover:text-foreground border border-border"
           )}
         >
-          <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-          </svg>
           Steam Player Reviews
         </button>
       </div>
@@ -184,7 +184,7 @@ export default function ReviewsPage() {
             In-depth reviews from Verdict.games editors. Our team plays and evaluates games to give you honest, detailed verdicts.
           </p>
           {editorialQuery.isLoading && (
-            <div className="grid grid-cols-1 gap-4">
+            <div role="status" aria-label="Loading editorial reviews" aria-busy="true" className="grid grid-cols-1 gap-4">
               {Array.from({ length: 3 }).map((_, i) => (
                 <div key={i} className="rounded-xl border border-border bg-surface p-4 h-40 animate-pulse" />
               ))}
@@ -345,9 +345,9 @@ export default function ReviewsPage() {
           {steamGameSlug && (
             <div className="space-y-3">
               {steamReviewsQuery.isLoading && (
-                Array.from({ length: 3 }).map((_, i) => (
+                <div role="status" aria-label="Loading Steam reviews" aria-busy="true">{Array.from({ length: 3 }).map((_, i) => (
                   <div key={i} className="rounded-xl border border-border bg-surface-2 p-4 h-28 animate-pulse" />
-                ))
+                ))}</div>
               )}
               {!steamReviewsQuery.isLoading && steamReviewsQuery.data && steamReviewsQuery.data.reviews.length > 0 && (
                 <>
@@ -525,11 +525,12 @@ export default function ReviewsPage() {
         animate="show"
         variants={{ show: { transition: { staggerChildren: 0.05 } } }}
         className="space-y-4 max-w-4xl"
+        aria-busy={isLoading}
       >
         {isLoading ? (
-          Array.from({ length: 5 }).map((_, i) => (
+          <div role="status" aria-label="Loading player thoughts">{Array.from({ length: 5 }).map((_, i) => (
             <ReviewCardSkeleton key={i} />
-          ))
+          ))}</div>
         ) : data && data.items.length > 0 ? (
           data.items.map((review) => (
             <motion.div key={review.id} variants={listItem}>

@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { compareGames, searchGames } from "@/lib/api";
+import { compareGames, searchGames, getGameBySlug } from "@/lib/api";
 import { cn, formatDate } from "@/lib/utils";
 import PlatformIcon from "@/components/ui/PlatformIcon";
 import ScoreRing from "@/components/ui/ScoreRing";
@@ -45,8 +45,9 @@ function CompareCell({ label, v1, v2, higher = "none" }: {
   );
 }
 
-function GameSearchInput({ value, onSelect, placeholder, inputId, inputName }: {
+function GameSearchInput({ value, selectedTitle, onSelect, placeholder, inputId, inputName }: {
   value: string;
+  selectedTitle?: string;
   onSelect: (slug: string) => void;
   placeholder: string;
   inputId: string;
@@ -54,41 +55,66 @@ function GameSearchInput({ value, onSelect, placeholder, inputId, inputName }: {
 }) {
   const [query, setQuery] = useState(value);
   const [open, setOpen] = useState(false);
+  const [debouncedQuery, setDebouncedQuery] = useState(value);
+  const [active, setActive] = useState(-1);
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedQuery(query), 250);
+    return () => clearTimeout(timer);
+  }, [query]);
 
   const { data: results } = useQuery({
-    queryKey: ["compareSearch", query],
-    queryFn: () => searchGames({ query, page: 1 }),
-    enabled: query.length >= 2,
+    queryKey: ["compareSearch", debouncedQuery],
+    queryFn: () => searchGames({ query: debouncedQuery, page: 1 }),
+    enabled: open && debouncedQuery.length >= 2,
     staleTime: 30_000,
   });
+  const suggestions = results?.items.slice(0, 6) ?? [];
+  const choose = (game: Game) => { onSelect(game.slug); setQuery(game.title); setOpen(false); setActive(-1); };
 
   return (
-    <div className="relative">
+    <div className="relative" onBlur={e => { if (!e.currentTarget.contains(e.relatedTarget)) setOpen(false); }}>
       <input
         id={inputId}
         name={inputName}
         type="text"
-        value={query}
+        value={open ? query : selectedTitle ?? value}
         onChange={(e) => {
           setQuery(e.target.value);
           setOpen(true);
+          setActive(-1);
         }}
-        onFocus={() => setOpen(true)}
+        onFocus={() => { setQuery(selectedTitle ?? value); setOpen(true); }}
+        role="combobox"
+        aria-autocomplete="list"
+        aria-controls={`${inputId}-options`}
+        aria-expanded={open && suggestions.length > 0}
+        aria-activedescendant={open && active >= 0 ? `${inputId}-option-${active}` : undefined}
+        autoComplete="off"
+        onKeyDown={event => {
+          if (event.key === 'Escape') { setOpen(false); setActive(-1); }
+          if ((event.key === 'ArrowDown' || event.key === 'ArrowUp') && suggestions.length) {
+            event.preventDefault(); setOpen(true);
+            setActive(index => (index + (event.key === 'ArrowDown' ? 1 : -1) + suggestions.length) % suggestions.length);
+          }
+          if (event.key === 'Enter' && open && active >= 0 && suggestions[active]) { event.preventDefault(); choose(suggestions[active]); }
+        }}
         placeholder={placeholder}
         aria-label={placeholder}
         className="w-full h-11 px-4 text-sm rounded-xl bg-surface border border-border text-foreground placeholder:text-tertiary focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/20 transition-all"
       />
       {open && results && results.items.length > 0 && (
-        <div className="absolute top-full mt-1 left-0 right-0 z-50 max-h-60 overflow-auto rounded-xl bg-surface border border-border shadow-2xl">
-          {results.items.slice(0, 6).map((g) => (
+        <div id={`${inputId}-options`} role="listbox" aria-label={placeholder} className="absolute top-full mt-1 left-0 right-0 z-50 max-h-60 overflow-auto rounded-xl bg-surface border border-border shadow-2xl">
+          {suggestions.map((g, index) => (
             <button
               key={g.id}
-              onClick={() => {
-                onSelect(g.slug);
-                setQuery(g.title);
-                setOpen(false);
-              }}
-              className="flex items-center gap-3 w-full px-3 py-2.5 text-left hover:bg-surface-2 transition-colors"
+              type="button"
+              role="option"
+              id={`${inputId}-option-${index}`}
+              aria-selected={active === index}
+              tabIndex={-1}
+              onMouseDown={event => event.preventDefault()}
+              onClick={() => choose(g)}
+              className={cn('flex items-center gap-3 w-full px-3 py-2.5 text-left hover:bg-surface-2 transition-colors', active === index && 'bg-elevated')}
             >
               <div className="relative w-8 h-11 rounded-lg overflow-hidden shrink-0 bg-surface-2">
                 {g.coverImage ? (
@@ -139,22 +165,28 @@ function CompareContent() {
   const g1 = searchParams.get("g1") ?? "";
   const g2 = searchParams.get("g2") ?? "";
 
-  const [slug1, setSlug1] = useState(g1);
-  const [slug2, setSlug2] = useState(g2);
+  const slug1 = g1;
+  const slug2 = g2;
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["compare", slug1, slug2],
     queryFn: () => compareGames(slug1, slug2),
     enabled: slug1.length > 0 && slug2.length > 0,
+  });
+  const single = useQuery({
+    queryKey: ['game', slug1 || slug2],
+    queryFn: () => getGameBySlug(slug1 || slug2),
+    enabled: Boolean(slug1 || slug2) && !(slug1 && slug2),
+    staleTime: 300000,
   });
 
   function handleSelect(side: 1 | 2, slug: string) {
     const next1 = side === 1 ? slug : slug1;
     const next2 = side === 2 ? slug : slug2;
-    if (side === 1) setSlug1(slug); else setSlug2(slug);
-    if (next1 && next2) {
-      router.replace(`/compare?g1=${encodeURIComponent(next1)}&g2=${encodeURIComponent(next2)}`);
-    }
+    const params = new URLSearchParams();
+    if (next1) params.set('g1', next1);
+    if (next2) params.set('g2', next2);
+    router.replace(`/compare?${params}`, { scroll: false });
   }
 
   const game1 = data?.game1;
@@ -177,14 +209,18 @@ function CompareContent() {
       {/* Search inputs */}
       <FadeInSection>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <GameSearchInput value={g1} onSelect={(s) => handleSelect(1, s)} placeholder="Search first game..." inputId="compare-first-game" inputName="firstGame" />
-          <GameSearchInput value={g2} onSelect={(s) => handleSelect(2, s)} placeholder="Search second game..." inputId="compare-second-game" inputName="secondGame" />
+          <GameSearchInput key={`first-${g1}`} value={g1} selectedTitle={game1?.title ?? (slug1 ? single.data?.title : undefined)} onSelect={(s) => handleSelect(1, s)} placeholder="Search first game..." inputId="compare-first-game" inputName="firstGame" />
+          <GameSearchInput key={`second-${g2}`} value={g2} selectedTitle={game2?.title ?? (slug2 ? single.data?.title : undefined)} onSelect={(s) => handleSelect(2, s)} placeholder="Search second game..." inputId="compare-second-game" inputName="secondGame" />
         </div>
       </FadeInSection>
 
       {/* Comparison */}
+      {Boolean(slug1 || slug2) && !(slug1 && slug2) && <section aria-label="Selected comparison game" className="rounded-2xl border border-border bg-surface p-6 space-y-4">
+        {single.isLoading ? <p role="status">Loading selected game…</p> : single.data ? <><GameHeader game={single.data} /><p className="text-center text-sm text-secondary">Choose a {slug1 ? 'second' : 'first'} game above to compare.</p></> : <p role="alert">The selected game could not be loaded. <button onClick={() => single.refetch()} className="underline">Try again</button></p>}
+      </section>}
+      {isError && <p role="alert">Comparison could not be loaded. <button onClick={() => refetch()} className="underline">Try again</button></p>}
       {isLoading && slug1 && slug2 && (
-        <div className="space-y-4">
+        <div role="status" aria-label="Loading comparison" aria-busy="true" className="space-y-4">
           <div className="grid grid-cols-2 gap-6">
             <Skeleton className="h-40 rounded-2xl" />
             <Skeleton className="h-40 rounded-2xl" />

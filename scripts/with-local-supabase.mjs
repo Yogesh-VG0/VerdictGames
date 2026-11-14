@@ -5,7 +5,7 @@ import path from 'node:path';
 import { verificationEnv } from './lib/verification-env.mjs';
 
 const command = process.argv[2];
-if (!['build', 'start', 'dev', 'security', 'migrate-security', 'browser-security', 'maintenance'].includes(command)) {
+if (!['build', 'start', 'dev', 'security', 'migrate-security', 'browser-security', 'browser-ux', 'maintenance'].includes(command)) {
   throw new Error('Choose build, start, dev, security, migrate-security, browser-security, or maintenance');
 }
 const status = JSON.parse(execFileSync(process.platform === 'win32' ? 'supabase.exe' : 'supabase', ['status', '-o', 'json'], {
@@ -26,9 +26,9 @@ const env = verificationEnv({
   NODE_ENV: command === 'dev' ? 'development' : 'production',
 });
 if (!status.ANON_KEY || !status.SERVICE_ROLE_KEY) throw new Error('Local API keys unavailable');
-const scripts = { security: 'test-local-security.mjs', 'migrate-security': 'apply-local-security.mjs', 'browser-security': 'test-local-auth-browser.mjs', maintenance: 'test-local-maintenance.mjs' };
+const scripts = { security: 'test-local-security.mjs', 'migrate-security': 'apply-local-security.mjs', 'browser-security': 'test-local-auth-browser.mjs', 'browser-ux': 'test-local-ux-browser.mjs', maintenance: 'test-local-maintenance.mjs' };
 const args = command in scripts
-  ? [path.resolve('scripts', scripts[command])]
+  ? [path.resolve('scripts', scripts[command]), ...process.argv.slice(3)]
   : [path.resolve('node_modules/next/dist/bin/next'), command, ...(command === 'build' ? [] : ['--hostname', '127.0.0.1', '--port', '3100'])];
 const child = spawn(process.execPath, args, { env, stdio: 'inherit' });
 child.on('exit', code => { process.exitCode = code ?? 1; });
