@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Review } from "@/lib/types";
 import { scoreColor, formatDate, cn } from "@/lib/utils";
 import { voteOnReview } from "@/lib/api";
+import { useAuth } from "@/hooks/useAuth";
 import HeroImage from "@/components/ui/HeroImage";
 import PlatformIcon from "@/components/ui/PlatformIcon";
 import { ThumbsUp, ThumbsDown } from "lucide-react";
@@ -16,7 +17,13 @@ interface ReviewCardProps {
   onAuthRequired?: () => void;
 }
 
-export default function ReviewCard({
+export default function ReviewCard(props: ReviewCardProps) {
+  const { user } = useAuth();
+  // Optimistic vote state must not survive switching accounts on the same page.
+  return <ReviewCardContent key={`${props.review.id}:${user?.id ?? 'anonymous'}`} {...props} />;
+}
+
+function ReviewCardContent({
   review,
   showGame = true,
   className,

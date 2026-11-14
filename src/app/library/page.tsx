@@ -43,13 +43,13 @@ function LibraryContent() {
   }, [searchParams]);
 
   const library = useQuery({
-    queryKey: ["library", activeTab],
+    queryKey: ["library", activeTab, user?.id ?? null],
     queryFn: () => getLibrary(activeTab === "all" ? undefined : activeTab),
     enabled: !!user,
   });
 
   const stats = useQuery({
-    queryKey: ["libraryStats"],
+    queryKey: ["libraryStats", user?.id ?? null],
     queryFn: getLibraryStats,
     enabled: !!user,
   });

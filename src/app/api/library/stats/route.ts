@@ -2,7 +2,7 @@
  * GET /api/library/stats — Get library statistics for current user
  */
 
-import { jsonOk, jsonError } from "@/lib/api/response";
+import { jsonPrivateOk as jsonOk, jsonError } from "@/lib/api/response";
 import { getAuthSupabase, getCurrentUser } from "@/lib/supabase/auth";
 import type { LibraryStats } from "@/lib/types";
 

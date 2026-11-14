@@ -16,6 +16,7 @@ import { PenLine, Star, ThumbsUp, ThumbsDown, Search, MessageSquare, ChevronLeft
 import GradientText from "@/components/ui/GradientText";
 import SafeImage from "@/components/ui/SafeImage";
 import { slugify } from "@/lib/utils/slugify";
+import { useAuth } from "@/hooks/useAuth";
 import { cn, formatDate } from "@/lib/utils";
 
 const listItem = {
@@ -63,6 +64,7 @@ function SteamReviewCard({ review }: { review: SteamPlayerReview }) {
 }
 
 export default function ReviewsPage() {
+  const { user } = useAuth();
   const [source, setSource] = useState<"editorial" | "community" | "steam">("editorial");
   const [sort, setSort] = useState<"newest" | "helpful">("newest");
   const [platform, setPlatform] = useState<"All" | Platform>("All");
@@ -88,7 +90,7 @@ export default function ReviewsPage() {
   });
 
   const { data, isLoading } = useQuery({
-    queryKey: ["globalReviews", sort, platform],
+    queryKey: ["globalReviews", sort, platform, user?.id ?? null],
     queryFn: () =>
       getGlobalReviews({
         sort,

@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { jsonOk } from "@/lib/api/response";
+import { jsonPrivateOk as jsonOk } from "@/lib/api/response";
 import { mapReviewRow } from "@/lib/db/mappers";
 import { attachReviewVoteFields, getReviewVoteAggregates, getUserReviewVotes } from "@/lib/reviewVotes";
 import { getAuthSupabase, getCurrentUser } from "@/lib/supabase/auth";

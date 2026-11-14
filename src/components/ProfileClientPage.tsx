@@ -34,7 +34,7 @@ export default function ProfileClientPage({ username, initialUser }: Props) {
   });
 
   const { data: reviews } = useQuery({
-    queryKey: ["userReviews", username],
+    queryKey: ["userReviews", username, currentUser?.id ?? null],
     queryFn: () => getUserReviews(username),
     enabled: !!user,
   });

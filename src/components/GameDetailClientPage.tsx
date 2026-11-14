@@ -41,6 +41,7 @@ import ReviewForm from "@/components/ReviewForm";
 import CommentThread from "@/components/CommentThread";
 import AuthModal from "@/components/AuthModal";
 import { getGameNotices } from "@/lib/utils/gameNotices";
+import { useAuth } from "@/hooks/useAuth";
 import { slugify } from "@/lib/utils/slugify";
 import {
   Zap, Trophy, Newspaper, MessageSquare, Clock,
@@ -102,6 +103,7 @@ export default function GameDetailClientPage({
   initialEditorialReviews,
   initialSteamReviewsData,
 }: GameDetailClientPageProps) {
+  const { user } = useAuth();
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [playingTrailer, setPlayingTrailer] = useState<string | null>(null);
   const [achievementsPage, setAchievementsPage] = useState(1);
@@ -147,10 +149,10 @@ export default function GameDetailClientPage({
   });
 
   const { data: reviewsData, isLoading: isReviewsLoading } = useQuery({
-    queryKey: ["gameReviews", slug],
+    queryKey: ["gameReviews", slug, user?.id ?? null],
     queryFn: () => getGameReviews(slug, { sort: "helpful" }),
     enabled: !!game && !initialGame.isPreview,
-    initialData: initialReviewsData,
+    initialData: user ? undefined : initialReviewsData,
     staleTime: 60 * 1000,
   });
 

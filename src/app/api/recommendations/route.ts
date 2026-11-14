@@ -5,10 +5,10 @@
  * For anonymous: content-based diverse picks
  */
 
-export const revalidate = 120; // ISR: revalidate every 2 minutes
+export const dynamic = "force-dynamic";
 
 import { NextRequest } from "next/server";
-import { jsonOk } from "@/lib/api/response";
+import { jsonPrivateOk as jsonOk } from "@/lib/api/response";
 import { getHomepageRecommendationScore, isHomepageRecommendationEligible } from "@/lib/services/homepage";
 import { mapGameRow } from "@/lib/db/mappers";
 import { GAME_CARD_COLUMNS_WITH_DESC } from "@/lib/db/columns";
@@ -150,7 +150,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    return jsonOk(picks.map(mapGameRow), 200, { cache: true });
+    return jsonOk(picks.map(mapGameRow));
   } catch (err) {
     console.error("[API] /recommendations error:", err);
     return jsonOk([]);

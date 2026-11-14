@@ -27,6 +27,7 @@ const STATUS_OPTIONS: { value: LibraryStatus; label: string; icon: ReactNode }[]
 
 export default function LibraryStatusSelector({ gameId, onAuthRequired }: LibraryStatusSelectorProps) {
   const { user } = useAuth();
+  const libraryKey = ["library", user?.id ?? null];
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [toast, setToast] = useState<{ message: string; status: LibraryStatus } | null>(null);
@@ -34,7 +35,7 @@ export default function LibraryStatusSelector({ gameId, onAuthRequired }: Librar
 
   // Check if game is in library — use cached library data if available
   const { data: library } = useQuery({
-    queryKey: ["library"],
+    queryKey: libraryKey,
     queryFn: () => getLibrary(),
     enabled: !!user,
     staleTime: 30_000,
@@ -54,8 +55,8 @@ export default function LibraryStatusSelector({ gameId, onAuthRequired }: Librar
     // Optimistic update: immediately update cached library
     onMutate: async (newStatus) => {
       await queryClient.cancelQueries({ queryKey: ["library"] });
-      const prev = queryClient.getQueryData<UserGame[]>(["library"]);
-      queryClient.setQueryData<UserGame[]>(["library"], (old) => {
+      const prev = queryClient.getQueryData<UserGame[]>(libraryKey);
+      queryClient.setQueryData<UserGame[]>(libraryKey, (old) => {
         if (!old) return old;
         const idx = old.findIndex(ug => ug.gameId === gameId);
         if (idx >= 0) {
@@ -71,7 +72,7 @@ export default function LibraryStatusSelector({ gameId, onAuthRequired }: Librar
       return { prev };
     },
     onError: (_err, _status, context) => {
-      if (context?.prev) queryClient.setQueryData(["library"], context.prev);
+      if (context?.prev) queryClient.setQueryData(libraryKey, context.prev);
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["library"] });
@@ -83,15 +84,15 @@ export default function LibraryStatusSelector({ gameId, onAuthRequired }: Librar
     mutationFn: () => removeFromLibrary(gameId),
     onMutate: async () => {
       await queryClient.cancelQueries({ queryKey: ["library"] });
-      const prev = queryClient.getQueryData<UserGame[]>(["library"]);
-      queryClient.setQueryData<UserGame[]>(["library"], (old) =>
+      const prev = queryClient.getQueryData<UserGame[]>(libraryKey);
+      queryClient.setQueryData<UserGame[]>(libraryKey, (old) =>
         old ? old.filter(ug => ug.gameId !== gameId) : old
       );
       setOpen(false);
       return { prev };
     },
     onError: (_err, _vars, context) => {
-      if (context?.prev) queryClient.setQueryData(["library"], context.prev);
+      if (context?.prev) queryClient.setQueryData(libraryKey, context.prev);
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["library"] });
