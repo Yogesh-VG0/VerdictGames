@@ -27,7 +27,7 @@ const STATUS_TABS: { key: string; label: string; icon: ReactNode }[] = [
 ];
 
 function LibraryContent() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, hasSession, loading: authLoading } = useAuth();
   const searchParams = useSearchParams();
   const [authOpen, setAuthOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("all");
@@ -72,6 +72,11 @@ function LibraryContent() {
   });
 
   if (authLoading) return <p role="status" className="py-16 text-center text-secondary">Loading your library…</p>;
+  if (!user && hasSession) return <div role="alert" className="px-4 py-16 text-center space-y-4">
+    <h1 className="text-2xl font-bold">Your library is temporarily unavailable</h1>
+    <p className="text-sm text-secondary">Your session is active, but we couldn&apos;t load your profile. Please try again.</p>
+    <button type="button" onClick={() => window.location.reload()} className="rounded-xl bg-action text-action-foreground px-5 py-2.5">Try again</button>
+  </div>;
 
   if (!user) {
     return (

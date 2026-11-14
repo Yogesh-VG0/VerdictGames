@@ -72,6 +72,13 @@ try {
   page.on('request', request => { if (new URL(request.url()).pathname === '/api/auth/me') authProfileRequests++; });
   page.on('pageerror', error => pageErrors.push(error.message));
   await page.goto('http://127.0.0.1:3100/library');
+  let injectedProfileFailure = false;
+  await page.route(url => url.pathname === '/api/auth/me', async route => {
+    if (!injectedProfileFailure) {
+      injectedProfileFailure = true;
+      await route.fulfill({ status: 503, json: { success: false, error: 'Simulated local profile outage' } });
+    } else await route.continue();
+  });
   for (const [index, identity] of users.entries()) {
     await page.getByRole('button', { name: 'Sign In to Get Started' }).click();
     const dialog = page.getByRole('dialog');
@@ -118,6 +125,19 @@ try {
     await page.keyboard.press('Escape');
     await drawer.waitFor({ state: 'hidden' });
     await page.setViewportSize({ width: 1440, height: 1000 });
+    if (index === 1) {
+      const profileEndpoint = url => url.pathname === '/api/auth/me';
+      const outage = route => route.fulfill({ status: 503, json: { success: false, error: 'Simulated local profile outage' } });
+      await page.route(profileEndpoint, outage);
+      await page.reload();
+      await page.getByRole('heading', { name: 'Your library is temporarily unavailable', exact: true }).waitFor();
+      assert.equal(await page.getByRole('button', { name: 'Sign In to Get Started' }).count(), 0, 'Active-session failure does not pretend the caller is signed out');
+      assert.equal(await page.getByText(users[0].title, { exact: true }).count(), 0, 'Failed profile recovery cannot reveal the other library');
+      await page.screenshot({ path: `${output}/privacy-profile-recovery-local.png` });
+      await page.unroute(profileEndpoint, outage);
+      await page.getByRole('button', { name: 'Try again', exact: true }).click();
+      await page.getByText(identity.title, { exact: true }).waitFor();
+    }
     await page.locator('#desktop-profile-button').click();
     await page.getByRole('button', { name: 'Sign Out', exact: true }).click();
     await page.getByRole('dialog', { name: 'Sign Out?' }).getByRole('button', { name: 'Sign Out', exact: true }).click();
@@ -125,6 +145,7 @@ try {
     assert.equal(await page.getByText(identity.title, { exact: true }).count(), 0, 'Private library must disappear on logout');
   }
   assert.deepEqual(pageErrors, [], 'No browser JavaScript errors');
+  assert.equal(injectedProfileFailure, true, 'Browser exercised real transient profile failure recovery');
   console.log('PASS browser login A → logout → login B → logout, same page, isolated libraries and verified cookies');
   console.log('PASS signed-out state restored and no browser JavaScript errors');
   console.log(`Measured own-profile requests during browser journey: ${authProfileRequests}`);

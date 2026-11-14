@@ -12,6 +12,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { createBrowserClient } from "@supabase/ssr";
 import type { AuthUser } from "@/lib/types";
 import type { Database } from "@/lib/supabase/types";
+import { loadOwnProfile } from '@/lib/auth/own-profile';
 
 interface AuthContextType {
   user: AuthUser | null;
@@ -126,6 +127,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
   const [sessionEmail, setSessionEmail] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [profileLoading, setProfileLoading] = useState(false);
   const [supabase] = useState(() => getSupabaseBrowser());
   const queryClient = useQueryClient();
   const profileRequest = useRef(0);
@@ -136,6 +138,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     activeAuthId.current = id;
     profileRequest.current++;
     pendingProfile.current = null;
+    setProfileLoading(false);
     const privateScopes = new Set(['library', 'libraryStats', 'gameReviews', 'globalReviews', 'userReviews', 'personalized']);
     const filters = { predicate: (query: { queryKey: readonly unknown[] }) => privateScopes.has(String(query.queryKey[0])) };
     void queryClient.cancelQueries(filters);
@@ -149,24 +152,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const fetchProfile = useCallback((authId: string) => {
     if (pendingProfile.current?.id === authId) return pendingProfile.current.promise;
     const requestId = ++profileRequest.current;
+    setProfileLoading(true);
     const promise = (async () => {
     try {
-      let response = await fetch('/api/auth/me', { cache: 'no-store' });
-      if (response.status === 401) {
-        // OAuth can finish before a profile exists. Bootstrap remains a
-        // session-verified server operation, never a browser table write.
-        const bootstrap = await fetch('/api/auth/bootstrap', { method: 'POST' });
-        if (bootstrap.ok) response = await fetch('/api/auth/me', { cache: 'no-store' });
-      }
-      if (!response.ok) return;
-      const result = await response.json() as { success: boolean; data: AuthUser };
-      if (requestId !== profileRequest.current || activeAuthId.current !== authId) return;
-      if (result.success && result.data?.id === authId) setUser(result.data);
+      const profile = await loadOwnProfile(authId,
+        () => requestId === profileRequest.current && activeAuthId.current === authId);
+      if (profile) setUser(profile);
     } catch {
       // Leave the session available for retry without retaining another user's
       // profile or inferring an administrator role from editable metadata.
     } finally {
-      if (pendingProfile.current?.requestId === requestId) pendingProfile.current = null;
+      if (pendingProfile.current?.requestId === requestId) {
+        pendingProfile.current = null;
+        setProfileLoading(false);
+      }
     }
     })();
     pendingProfile.current = { id: authId, requestId, promise };
@@ -316,7 +315,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         hasSession,
         isPasswordRecovery,
         sessionEmail,
-        loading,
+        loading: loading || (!user && profileLoading),
         signInWithEmail,
         signUpWithEmail,
         signInWithOAuth,

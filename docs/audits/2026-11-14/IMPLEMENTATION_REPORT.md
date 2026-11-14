@@ -210,7 +210,19 @@ Removed unused internal media helper definitions/patterns and unused imports/loc
 
 Verification: **205 tests / 28 files passed**, credential-free production build and TypeScript passed. Tracked-source lint is clean; the full local-directory lint retains one unused-constant warning in the ignored one-off repair utility, with zero errors. No new tests were written to mirror dead-code removal. The preceding browser/security suite covers unchanged runtime paths; the cleanup adds no new behavior or schema dependency. Rollback is a plain revert of this cleanup commit.
 
+## Change set 9 — auth failure recovery and hosted verification
+
+A first clean GitHub-runner browser login did not reach the signed-in state within 30 seconds. The API/privacy, restore, maintenance and build steps had passed. Added sanitized auth path/status/error-class diagnostics without logging passwords, cookie values, or tokens. The next clean runner passed login/account switching and the full visual suite without an auth source change; the original failure's cause remains unconfirmed. It was not recorded as a passing run.
+
+Independently corrected a real recovery gap found while tracing that flow: a temporary private-profile request failure could leave a valid session displaying sign-in. `src/lib/auth/own-profile.ts` now performs at most two attempts, with an eight-second abort budget per attempt and one 250ms recovery delay. It stops on rate/access denials and identity changes, never accepts another identity's response, and keeps profile bootstrap session-verified on the server. Shared-request deduplication remains. Auth loading now distinguishes a pending own profile from a settled failure; Library offers recovery instead of a misleading sign-in prompt for an active session.
+
+Added unit tests for transient recovery, attempt/timeout bounds, access/rate-limit denial, identity cancellation/mismatch and bootstrap. The actual two-user browser journey injects a 503 and must recover, then exercises a persistent failure and the visible Try again flow without leaking the other library. **213 unit tests / 29 files**, TypeScript/build, **120 real privacy assertions**, full responsive regression and local browser recovery passed. The full injected journey uses **10** own-profile requests (one-failure-only scenario: 7; earlier healthy scenario: 6). Extra requests belong to explicit fault tests, not a claimed production speed comparison. Final hosted checks on this follow-up are tracked in PR #6.
+
+Rollback: revert this recovery follow-up while keeping the preceding privacy fixes. Do not remove failure assertions, authorization checks, rate limits or identity-generation guards to obtain a green run.
+
 ## Pending approvals / manual actions
+
+Concrete release order and exact dashboard/data proposals are in `RELEASE_PROPOSAL.md`. Read the recovery gate before approving a hosted migration.
 
 - Production deployment and cache invalidation: explicit approval required.
 - Hosted permission/policy migration: prepare and test locally first; do not apply without explicit approval for the concrete migration.
