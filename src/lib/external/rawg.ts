@@ -8,9 +8,13 @@
  */
 
 import { recordProviderUsage } from "@/lib/utils/providerUsage";
+import { isUpcomingSnapshot } from './rawg-snapshot.mjs';
 
 const RAWG_BASE = "https://api.rawg.io/api";
 let rawgRetryAt = 0;
+let recoveryProbe = false;
+const pendingReads = new Map<string, Promise<Response>>();
+const missingEndpoints = new Map<string, number>();
 
 function getApiKey(): string {
   const key = process.env.RAWG_API_KEY;
@@ -22,19 +26,37 @@ function getApiKey(): string {
  * Tracked fetch for RAWG API - non-blocking usage recording.
  */
 async function trackedFetch(endpoint: string, url: string, init?: RequestInit): Promise<Response> {
-  const start = Date.now();
+  const pending = pendingReads.get(url);
+  if (pending) return (await pending).clone();
+  if ((missingEndpoints.get(url) || 0) > Date.now()) throw new Error('RAWG endpoint unavailable; using stored data');
   if (Date.now() < rawgRetryAt) throw new Error('RAWG temporarily unavailable; using stored data');
-  try {
-    const res = await fetch(url, { ...init, signal: init?.signal ?? AbortSignal.timeout(8000) });
-    if (res.status === 429 || res.status >= 500) rawgRetryAt = Date.now() + 60_000;
-    // Fire-and-forget tracking (non-blocking)
-    recordProviderUsage("rawg", endpoint, res.ok, Date.now() - start);
-    return res;
-  } catch (err) {
-    rawgRetryAt = Date.now() + 60_000;
-    recordProviderUsage("rawg", endpoint, false, Date.now() - start);
-    throw err;
-  }
+  if (recoveryProbe) throw new Error('RAWG recovery probe in progress; using stored data');
+  const isProbe = rawgRetryAt > 0;
+  if (isProbe) recoveryProbe = true;
+  const request = (async () => {
+    const start = Date.now();
+    try {
+      const res = await fetch(url, { ...init, signal: init?.signal ? AbortSignal.any([init.signal, AbortSignal.timeout(8000)]) : AbortSignal.timeout(8000) });
+      if (res.status === 429 || res.status >= 500) {
+        const retryAfter = Number(res.headers.get('retry-after')) * 1000;
+        rawgRetryAt = Date.now() + Math.min(300_000, Math.max(60_000, retryAfter || 0));
+      }
+      if (res.status === 404 || res.status === 410) {
+        if (missingEndpoints.size >= 100) missingEndpoints.delete(missingEndpoints.keys().next().value!);
+        missingEndpoints.set(url, Date.now() + 86_400_000);
+      }
+      // Validate before a malformed successful response can close the circuit.
+      if (res.ok) { await res.clone().json(); if (isProbe) rawgRetryAt = 0; }
+      recordProviderUsage('rawg', endpoint, res.ok, Date.now() - start);
+      return res;
+    } catch (error) {
+      rawgRetryAt = Date.now() + 60_000;
+      recordProviderUsage('rawg', endpoint, false, Date.now() - start);
+      throw error;
+    } finally { if (isProbe) recoveryProbe = false; }
+  })();
+  pendingReads.set(url, request);
+  try { return (await request).clone(); } finally { pendingReads.delete(url); }
 }
 
 /* ───────── Response Types ───────── */
@@ -225,9 +247,16 @@ export async function getRawgUpcoming(): Promise<RawgListResponse> {
   const today = new Date();
   const end = new Date(today); end.setFullYear(end.getFullYear() + 3);
   const params = new URLSearchParams({ key: getApiKey(), dates: `${today.toISOString().slice(0,10)},${end.toISOString().slice(0,10)}`, ordering: '-added', page_size: '100', exclude_additions: 'true' });
-  const res = await trackedFetch('games/upcoming', `${RAWG_BASE}/games?${params}`, { next: { revalidate: 21600 } });
+  // Successful snapshots are cached by the service, after schema admission.
+  // Do not cache malformed/empty HTTP-200 provider responses for six hours.
+  const res = await trackedFetch('games/upcoming', `${RAWG_BASE}/games?${params}`, { cache: 'no-store' });
   if (!res.ok) throw new Error(`Upcoming catalogue unavailable: ${res.status}`);
-  return res.json();
+  const payload = await res.json();
+  if (!isUpcomingSnapshot(payload)) {
+    rawgRetryAt = Date.now() + 60_000;
+    throw new Error('Invalid upcoming catalogue; using stored data');
+  }
+  return payload as RawgListResponse;
 }
 
 /**

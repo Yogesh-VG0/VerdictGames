@@ -13,6 +13,7 @@
 import { rawgFetchJson } from "./rawg-client.mjs";
 import { isInfrastructureDbError } from "./scheduler-logger.mjs";
 import { fetchSteamReviews } from "../../src/lib/external/steam-reviews-api.mjs";
+import { preferExistingCover } from '../../src/lib/utils/artwork-policy.mjs';
 
 // ══════════════════════════════════════════════════
 // Configuration
@@ -35,7 +36,7 @@ const WIKI_BASE = "https://en.wikipedia.org/api/rest_v1";
 // ══════════════════════════════════════════════════
 
 /** Media source priority ranking (lower = better) */
-const MEDIA_SOURCE_PRIORITY = { igdb: 1, rawg: 2, steam: 3, unknown: 99 };
+const MEDIA_SOURCE_PRIORITY = { igdb: 1, steam: 2, rawg: 3, unknown: 99 };
 
 /**
  * Check if new media source is better than existing.
@@ -571,13 +572,7 @@ export async function ingestGameDirect(sql, query, options = {}) {
     mediaSource = "igdb";
     coverDebug = "[cover] Using IGDB cover (priority 1)";
   }
-  // Priority 2: RAWG background image
-  else if (rawgCover) {
-    cover = rawgCover;
-    mediaSource = "rawg";
-    coverDebug = "[cover] Using RAWG background (priority 2)";
-  }
-  // Priority 3: Steam validated cover (last resort)
+  // Prefer a verified Steam portrait before the landscape fallback.
   else if (steamAppId) {
     const steamResult = await validateAndGetSteamCover(steamAppId);
     if (steamResult?.coverUrl) {
@@ -593,6 +588,7 @@ export async function ingestGameDirect(sql, query, options = {}) {
     coverDebug = "[cover] No cover sources available";
   }
   
+  if (!cover && rawgCover) { cover = rawgCover; mediaSource = 'rawg'; }
   // Log cover source for debugging (can be disabled in production)
   if (process.env.DEBUG_MEDIA) console.log(`  ${fullGame.name}: ${coverDebug}`);
   
@@ -668,9 +664,10 @@ export async function ingestGameDirect(sql, query, options = {}) {
         if (!isEmpty) {
           // ══════════════════════════════════════════════════
           // NO-REGRESSION PROTECTION FOR MEDIA:
-          // - Never overwrite IGDB/RAWG with Steam
-          // - Only allow upgrades (igdb > rawg > steam)
+          // - Preserve a known portrait over a landscape fallback.
+          // - IGDB portraits, then verified Steam portraits, then RAWG art.
           // ══════════════════════════════════════════════════
+          if (key === 'cover_image' && preferExistingCover(cur.cover_image, rec.cover_image)) continue;
           if (key === "cover_image" && cur.media_source) {
             const existingSource = cur.media_source;
             const newSource = mediaSource;
@@ -692,6 +689,7 @@ export async function ingestGameDirect(sql, query, options = {}) {
       }
       upd[key] = val;
     }
+    if (cur?.cover_image && !Object.hasOwn(upd, 'cover_image')) upd.media_source = cur.media_source;
 
     if (Object.keys(upd).length > 0) {
       await sql`UPDATE games SET ${sql(upd)} WHERE id = ${existing.id}`;

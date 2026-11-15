@@ -35,6 +35,7 @@ import { startRun, finishRun, acquireLock, releaseLock, checkMinInterval, isInfr
 import { connectDb, closeDb } from './lib/db-connect.mjs';
 import { ingestGameDirect } from './lib/ingest-pipeline.mjs';
 import { rawgFetchJson } from './lib/rawg-client.mjs';
+import { refreshDiscoverySnapshot } from './lib/discovery-snapshot.mjs';
 
 const RAWG_KEY     = process.env.RAWG_API_KEY;
 const DEEP         = process.argv.includes("--deep");
@@ -111,6 +112,8 @@ try {
   // ── Step 1: Fetch game lists from RAWG (standalone process, no Vercel timeout) ──
   console.log("📡 Step 1: Fetching game lists from RAWG...\n");
 
+  const snapshotCount = await refreshDiscoverySnapshot(sql);
+  console.log(`Preserved upcoming discovery snapshot: ${snapshotCount} provider records`);
   const fetches = [
     rawgFetch("games", { ordering: "-added", dates: recentWindow }, 40),
     rawgFetch("games", { ordering: "-released", dates: lastMonth }, 40),

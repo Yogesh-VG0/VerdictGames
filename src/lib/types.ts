@@ -222,6 +222,10 @@ export interface GameList {
   lastSeededAt?: string;
 }
 
+export type GameListSummary = Pick<GameList, 'id' | 'slug' | 'title' | 'description' | 'coverImage' | 'gameCount' | 'curatedBy' | 'createdAt' | 'tags' | 'ownerId' | 'isPublic' | 'isSystemManaged'> & {
+  games: Pick<Game, 'id' | 'slug' | 'title' | 'coverImage'>[];
+};
+
 export interface UserGame {
   id: string;
   userId: string;

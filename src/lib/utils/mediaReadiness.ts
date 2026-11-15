@@ -10,8 +10,8 @@
  *
  * GLOBAL COVER PRIORITY ORDER:
  *   1. IGDB cover (most reliable, high-quality)
- *   2. RAWG background_image (good fallback)
- *   3. Steam validated cover (last resort, unreliable)
+ *   2. Validated Steam portrait
+ *   3. RAWG landscape art (render as landscape fallback)
  *   4. Keep existing trusted media or leave empty for repair
  */
 
@@ -98,8 +98,8 @@ export async function validateImageUrl(url: string): Promise<boolean> {
 /** Media source priority ranking (lower = better) */
 export const MEDIA_SOURCE_PRIORITY: Record<string, number> = {
   igdb: 1,
-  rawg: 2,
-  steam: 3,
+  steam: 2,
+  rawg: 3,
   unknown: 99,
 };
 

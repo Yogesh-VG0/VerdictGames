@@ -11,6 +11,7 @@ import {
   User,
   UserGame,
   GameList,
+  GameListSummary,
   LibraryStats,
   LibraryStatus,
   Platform,
@@ -399,8 +400,13 @@ export async function getSteamReviews(
    ═══════════════════════════════════════════════════ */
 
 /** Get all curated lists. */
-export async function getCuratedLists(): Promise<GameList[]> {
-  return (await apiFetch<GameList[]>("/api/lists")) ?? [];
+export async function getCuratedListSummaries(page = 1, scope: 'public' | 'mine' = 'public', owner?: string, kind = 'all'): Promise<{ items: GameListSummary[]; hasNext: boolean; page: number }> {
+  const params = new URLSearchParams({ page: String(page), scope, kind, view: 'summary' });
+  if (owner) params.set('owner', owner);
+  return apiFetchOrThrow(`/api/lists?${params}`);
+}
+export async function getCuratedLists(owner?: string): Promise<GameListSummary[]> {
+  return (await getCuratedListSummaries(1, 'public', owner)).items;
 }
 
 /** Get a single list by slug. */
@@ -662,6 +668,12 @@ export async function getGXCalendar(month?: string): Promise<GXCalendarMonthResp
    ═══════════════════════════════════════════════════ */
 
 export interface RawgListGameItem {
+  metricSource?: 'rawg' | 'catalogue';
+  verdictScore?: number;
+  rankingScore?: number;
+  earlyAccess?: boolean;
+  rank?: number;
+  catalogueAdded?: string;
   imageKind?: 'cover' | 'artwork';
   rawgId: number;
   slug: string;
@@ -683,6 +695,10 @@ export interface RawgListGameItem {
 }
 
 export interface RawgListResponse {
+  source?: 'rawg' | 'catalogue';
+  fetchedAt?: string;
+  degraded?: boolean;
+  definition?: string;
   count: number;
   page: number;
   pageSize: number;
@@ -691,16 +707,19 @@ export interface RawgListResponse {
 }
 
 export type RawgListType = "best-of-year" | "popular-in-year" | "all-time" | "recent" | "genre";
+export type ExploreSort = 'default' | 'rating' | 'popular' | 'name-asc' | 'name-desc' | 'newest' | 'oldest' | 'added';
 
 export async function getRawgList(
   type: RawgListType,
-  opts: { page?: number; pageSize?: number; year?: number; genre?: string } = {}
+  opts: { page?: number; pageSize?: number; year?: number; genre?: string; sort?: ExploreSort; platform?: string } = {}
 ): Promise<RawgListResponse> {
   const params = new URLSearchParams({ type });
   if (opts.page) params.set("page", String(opts.page));
   if (opts.pageSize) params.set("pageSize", String(opts.pageSize));
   if (opts.year) params.set("year", String(opts.year));
   if (opts.genre) params.set("genre", opts.genre);
+  if (opts.sort) params.set('sort', opts.sort);
+  if (opts.platform) params.set('platform', opts.platform);
 
   return apiFetchOrThrow<RawgListResponse>(`/api/rawg/lists?${params}`);
 }

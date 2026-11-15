@@ -1492,6 +1492,8 @@ export interface HomepageData {
 }
 
 export interface HomepageAnticipatedGame {
+  earlyAccess?: boolean;
+  imageKind?: 'cover' | 'artwork';
   rawgId: number;
   slug: string;
   name: string;
@@ -1535,9 +1537,9 @@ const getCachedHomepageMostAnticipated = unstable_cache(
   async () => {
     const { loadExplore } = await import('@/lib/services/explore');
     const data = await loadExplore('best-of-year', 1, HOMEPAGE_MOST_ANTICIPATED_TARGET);
-    return data.items.map(item => ({ rawgId: item.rawgId, slug: item.slug, name: item.name, released: item.released, tba: item.tba, image: item.image, added: item.added, toplay: item.toplay, genres: item.genres }));
+    return data.items.map(item => ({ rawgId: item.rawgId, slug: item.slug, name: item.name, released: item.released, tba: item.tba, earlyAccess: item.earlyAccess, image: item.image, imageKind: item.imageKind, added: item.added, toplay: item.toplay, genres: item.genres }));
   },
-  ["homepage-most-anticipated-v3"],
+  ["homepage-most-anticipated-v5"],
   { revalidate: 3600 }
 );
 
