@@ -6,6 +6,8 @@ config({quiet:true});
 const target=process.env.DATABASE_URL || process.env.SUPABASE_DB_URL;
 if(!target) throw new Error('Existing database configuration required');
 const sql=postgres(target,{max:1,prepare:false,connect_timeout:5});
+const migrationPath=process.argv[2]||'supabase/migrations/20261115191625_optimize_public_explore_queries.sql';
+const evidencePath=process.argv[3]||'output/targeted-release/hosted-query-plans.json';
 const evidence={measuredAt:new Date().toISOString(),scope:'Hosted read-only database diagnostics; no schema or data changes',host:new URL(target).hostname};
 try {
  const start=performance.now();
@@ -26,7 +28,7 @@ try {
   await tx`SET LOCAL ROLE anon`;
   evidence.firstChunkPlan=await tx`EXPLAIN (ANALYZE,BUFFERS,FORMAT JSON) SELECT id,title,release_date,score,review_count FROM public.games
    WHERE review_count>=100 AND release_date<=CURRENT_DATE ORDER BY id LIMIT 250`;
-  const migration=readFileSync('supabase/migrations/20261115140534_optimize_public_explore_queries.sql','utf8');
+  const migration=readFileSync(migrationPath,'utf8');
   const body=migration.match(/RETURN \(\r?\n([\s\S]*?)\r?\n  \);/)[1];
   const literals={p_type:"'all-time'",p_year:'0',p_genre:"''",p_platform:"''",p_sort:"'default'",p_page:'1',p_page_size:'40',p_day:'CURRENT_DATE',selected_sort:"'rating'"};
   const query=body.replace(/\b(p_type|p_year|p_genre|p_platform|p_sort|p_page_size|p_page|p_day|selected_sort)\b/g,name=>literals[name]);
@@ -38,7 +40,7 @@ try {
  });
 } catch(error){evidence.error={name:error.name,code:error.code,message:error.code==='57014'?'Statement timeout':undefined};}
 finally{await sql.end({timeout:1});}
-writeFileSync('output/targeted-release/hosted-query-plans.json',JSON.stringify(evidence,null,2));
+writeFileSync(evidencePath,JSON.stringify({...evidence,migrationPath},null,2));
 console.log(JSON.stringify({measuredAt:evidence.measuredAt,connectionAndProbeMs:evidence.connectionAndProbeMs,version:evidence.version,
  connections:evidence.connections,tables:evidence.tables,exploreFunction:evidence.exploreFunction,counts:evidence.counts,
  firstChunkExecutionMs:evidence.firstChunkPlan?.[0]?.['QUERY PLAN']?.[0]?.['Execution Time'],

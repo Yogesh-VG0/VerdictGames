@@ -28,7 +28,7 @@ try {
       const existing=await sql`SELECT * FROM public.gx_cache WHERE feed_key='discovery:rawg:upcoming:v1'`;manifest.snapshot=existing[0]||null;
       await sql`DELETE FROM public.gx_cache WHERE feed_key='discovery:rawg:upcoming:v1'`;
       for(const table of ['games','lists','list_items']) {
-        const columns=(await sql`SELECT attname FROM pg_attribute WHERE attrelid=${'public.'+table}::regclass AND attnum>0 AND NOT attisdropped`).map(row=>row.attname);
+        const columns=(await sql`SELECT attname FROM pg_attribute WHERE attrelid=${'public.'+table}::regclass AND attnum>0 AND NOT attisdropped AND attgenerated=''`).map(row=>row.attname);
         const original=await source.unsafe('SELECT * FROM public.'+table+(table==='lists'?' WHERE is_public=true':''));
         let rows=original.map(row=>Object.fromEntries(Object.entries(row).filter(([key])=>columns.includes(key))));
         if(table==='lists') rows=rows.filter(row=>row.owner_id===null);

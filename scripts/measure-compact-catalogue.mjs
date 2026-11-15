@@ -4,7 +4,9 @@ import { readFileSync,writeFileSync } from 'node:fs';
 import postgres from 'postgres';
 const status=JSON.parse(execFileSync(process.platform==='win32'?'supabase.exe':'supabase',['status','-o','json'],{encoding:'utf8',stdio:['ignore','pipe','pipe']}));
 const address=new URL(status.DB_URL);assert.equal(address.hostname,'127.0.0.1');address.pathname='/verdict_perf_20261115';
-const migration=readFileSync('supabase/migrations/20261115140534_optimize_public_explore_queries.sql','utf8');
+const migrationPath=process.argv[2]||'supabase/migrations/20261115191625_optimize_public_explore_queries.sql';
+const evidencePath=process.argv[3]||'output/targeted-release/compact-query-plans.json';
+const migration=readFileSync(migrationPath,'utf8');
 const body=migration.match(/RETURN \(\n([\s\S]*?)\n  \);/)[1];
 const result={measuredAt:new Date().toISOString(),scope:'historical public catalogue in isolated local database; cold framework/connection, not cold storage or hosted latency',cases:[]};
 for(const [type,genre] of [['all-time',''],['genre','Action'],['popular-in-year',''],['recent','']]) {
@@ -21,5 +23,5 @@ for(const [type,genre] of [['all-time',''],['genre','Action'],['popular-in-year'
     result.cases.push({type,genre,samples,plan:plan['QUERY PLAN']});
   } finally {await sql.end({timeout:1});}
 }
-writeFileSync('output/targeted-release/compact-query-plans.json',JSON.stringify(result,null,2));
+writeFileSync(evidencePath,JSON.stringify({...result,migrationPath},null,2));
 console.log(JSON.stringify(result.cases.map(item=>({type:item.type,genre:item.genre,samples:item.samples,executionMs:item.plan[0]['Execution Time'],tempReadBlocks:item.plan[0].Plan['Temp Read Blocks'],tempWrittenBlocks:item.plan[0].Plan['Temp Written Blocks']})),null,2));

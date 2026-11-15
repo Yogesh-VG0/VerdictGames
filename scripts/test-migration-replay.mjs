@@ -77,6 +77,28 @@ try {
   assert.deepEqual(catalogueChecks[1].rows.map(row=>row.rank),[3],'Platform filtering retains absolute Top 250 rank');
   assert.ok(!JSON.stringify(catalogueChecks).includes('description'),'SQL transfers card fields only after pagination');
   console.log('PASS SQL catalogue eligibility, exact score ties, canonical deduplication, absolute platform ranks and invoker RLS');
+  const storedChecks=query(replay, `BEGIN;
+    INSERT INTO public.games(slug,title,release_date,review_count,verdict_score,confidence,steam_app_id) VALUES
+      ('year-a','Synthetic Solo (2022)','2022-01-01',1000,90,1,5010111),
+      ('year-b','Synthetic Solo (2023)','2023-01-01',1000,95,1,5010222);
+    SET LOCAL ROLE anon;
+    SELECT public.explore_catalogue_page('all-time',0,'','','default',1,40,'2026-11-15');
+    RESET ROLE;
+    UPDATE public.games SET description='nsfw' WHERE slug IN ('year-a','year-b');
+    SET LOCAL ROLE anon;
+    SELECT public.explore_catalogue_page('all-time',0,'','','default',1,40,'2026-11-15');
+    RESET ROLE;
+    UPDATE public.games SET description='',tags=ARRAY['Early Access'] WHERE slug='year-a';
+    SET LOCAL ROLE anon;
+    SELECT public.explore_catalogue_page('all-time',0,'','','default',1,40,'2026-11-15');
+    SELECT public.explore_catalogue_page('best-of-year',0,'','','default',1,40,'2026-11-15');
+    ROLLBACK;`).split('\n').filter(line=>line.startsWith('{')).map(line=>JSON.parse(line));
+  assert.equal(storedChecks[0].count,1,'Unpaired year-suffixed Steam records retain the existing title canonical group');
+  assert.equal(storedChecks[0].rows[0].slug,'year-b');
+  assert.equal(storedChecks[1].count,0,'Description edits immediately recompute stored safety');
+  assert.equal(storedChecks[2].count,0,'Tag edits immediately recompute Early Access exclusion');
+  assert.equal(storedChecks[3].count,1,'Stored classification preserves catalogue upcoming fallback');
+  console.log('PASS stored classification refreshes on edits and preserves year-suffix canonical groups');
   query(replay, "CREATE TABLE public.recovery_fixture(id int primary key,payload text); INSERT INTO public.recovery_fixture VALUES(1,'synthetic restore verification');");
   const dump = spawnSync('docker', ['exec', container, 'pg_dump', '-U', 'postgres', '-d', replay, '--format=custom', '--no-owner'], { maxBuffer: 20 * 1024 * 1024 });
   assert.equal(dump.status, 0, 'Synthetic backup export must succeed');
