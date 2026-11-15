@@ -1,0 +1,30 @@
+// Uses only the existing historical PUBLIC games COPY section. No new backup,
+// Auth/user rows, production writes or changes to the local application tables.
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { execFileSync, spawnSync } from 'node:child_process';
+const endpoint = execFileSync('docker', ['context','inspect','--format','{{.Endpoints.docker.Host}}'], {encoding:'utf8'}).trim();
+assert.ok(endpoint.startsWith('npipe:') || endpoint.startsWith('unix:'));
+const source = readFileSync('.private-backups/production-2026-11-15/data.sql','utf8');
+const header = source.match(/^COPY "public"\."games" \([^\n]+ FROM stdin;\r?$/m);
+assert.ok(header, 'Historical public game COPY section exists');
+const start = header.index + header[0].length;
+const tail = source.indexOf('\n\\.',start);
+assert.ok(tail > start);
+const rows = source.slice(start,tail).replace(/^\r?\n/,'').replace(/\r\n/g,'\n');
+const schema = 'public';
+const database = 'verdict_perf_20261115';
+const historicalSchema = readFileSync('.private-backups/production-2026-11-15/schema.sql','utf8');
+const table = historicalSchema.match(/CREATE TABLE(?: IF NOT EXISTS)? "public"\."games" \([\s\S]*?\n\);/);
+assert.ok(table, 'Historical public games definition exists');
+assert.ok(!/REFERENCES/i.test(table[0]), 'Fixture table has no private-table dependency');
+const indexes = [...historicalSchema.matchAll(/^CREATE (?:UNIQUE )?INDEX [^\n]+ ON "public"\."games"[^\n]+;\r?$/gm)].map(match=>match[0]);
+const constraints = [...historicalSchema.matchAll(/^ALTER TABLE ONLY "public"\."games"\r?\n\s+ADD CONSTRAINT[^;]+;\r?$/gm)].map(match=>match[0]);
+assert.ok(constraints.every(value=>!/FOREIGN KEY/i.test(value)));
+const localize = value => value.replaceAll('"public"."games"',`${schema}.games`);
+const create = spawnSync('docker',['exec','-i','supabase_db_Verdict_Games','psql','-X','-v','ON_ERROR_STOP=1','-U','postgres','-d','postgres','-q'],{input:`CREATE DATABASE ${database} TEMPLATE template0;`,encoding:'utf8'});
+assert.equal(create.status,0,'Use a newly created isolated performance database; never reset an existing database');
+const statement = `BEGIN; REVOKE ALL ON SCHEMA public FROM PUBLIC,anon,authenticated; CREATE SCHEMA extensions; CREATE EXTENSION pgcrypto WITH SCHEMA extensions; CREATE EXTENSION "uuid-ossp" WITH SCHEMA extensions; CREATE EXTENSION pg_trgm WITH SCHEMA extensions;\n${localize(table[0])}\n${localize(header[0])}\n${rows}\n\\.\n${[...constraints,...indexes].map(localize).join('\n')}\nANALYZE ${schema}.games; COMMIT;\n`;
+const result = spawnSync('docker',['exec','-i','supabase_db_Verdict_Games','psql','-X','-v','ON_ERROR_STOP=1','-U','postgres','-d',database,'-q'],{input:statement,encoding:'utf8',maxBuffer:1024*1024});
+if(result.status!==0) throw new Error(`Local public catalogue setup failed: ${result.stderr.slice(-500)}`);
+console.log(JSON.stringify({database,schema,table:'games',rows:rows.split('\n').length,indexes:indexes.length,constraints:constraints.length,source:'existing historical R3 working copy; public games only',copyBytes:Buffer.byteLength(rows)}));

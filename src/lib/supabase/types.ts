@@ -970,6 +970,10 @@ export interface Database {
     };
     Views: Record<string, never>;
     Functions: {
+      explore_catalogue_page: {
+        Args: { p_type:string; p_year?:number; p_genre?:string; p_platform?:string; p_sort?:string; p_page?:number; p_page_size?:number; p_day?:string };
+        Returns: Json;
+      };
       consume_api_rate_limit: {
         Args: { p_bucket: string; p_limit: number; p_window: number };
         Returns: { allowed: boolean; remaining: number; reset_at: string }[];

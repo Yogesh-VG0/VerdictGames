@@ -1,0 +1,25 @@
+{
+  "measuredAt": "2026-11-15T13:57:37.900Z",
+  "database": {
+    "host": "db.vjzsvnaswronkctazarn.supabase.co",
+    "port": "5432",
+    "error": {
+      "name": "Error",
+      "code": "CONNECT_TIMEOUT",
+      "elapsedMs": 5006
+    }
+  },
+  "http": [
+    {
+      "label": "edge-only",
+      "status": 401,
+      "bytes": 101,
+      "elapsedMs": 352
+    },
+    {
+      "label": "one-public-id",
+      "error": "TimeoutError",
+      "elapsedMs": 10002
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "fields": [
+    "password_min_length",
+    "mailer_subjects_confirmation",
+    "mailer_templates_confirmation_content",
+    "mailer_subjects_recovery",
+    "mailer_templates_recovery_content",
+    "mailer_subjects_email_change",
+    "mailer_templates_email_change_content",
+    "mailer_subjects_magic_link",
+    "mailer_templates_magic_link_content"
+  ],
+  "templates": [
+    {
+      "path": "supabase/templates/confirmation.html",
+      "subject": "Confirm your VerdictGames account",
+      "sha256": "aa39244f7ee6b1ad71786ca7a4dc23ba774eb5fede991fd35e964f93a4236acd"
+    },
+    {
+      "path": "supabase/templates/recovery.html",
+      "subject": "Reset your VerdictGames password",
+      "sha256": "140744a465d65552723e1d9b9698e8d83686e26fdba85f807835869286631b68"
+    },
+    {
+      "path": "supabase/templates/email-change.html",
+      "subject": "Confirm your new VerdictGames email",
+      "sha256": "3e7d85c0e24827cf445f5ba0cab53a1e3cce2cb1d7c044a475dce29b8e9e1900"
+    },
+    {
+      "path": "supabase/templates/magic-link.html",
+      "subject": "Your VerdictGames sign-in link",
+      "sha256": "8a6a21def1e8bddca198fa982acced13b32fc88fa1e1e1aca19204320d37abab"
+    }
+  ],
+  "preserved": "All unlisted Auth settings including SMTP, sender, OAuth providers/secrets, confirmations, redirect/site URLs, secure email change and token expiry.",
+  "applied": false
+}

@@ -33,10 +33,13 @@ export async function readListSummaries(client: SupabaseClient<Database>, page: 
   }
   const gameIds = [...new Set((items || []).map(item => item.game_id))];
   const games = new Map<string, GameRow>();
-  for (let index = 0; index < gameIds.length; index += 100) {
-    const result = await client.from('games').select(gameColumns).in('id', gameIds.slice(index, index + 100)).abortSignal(AbortSignal.timeout(5000));
-    if (result.error) throw result.error;
-    for (const row of result.data || []) if (isPublicSafeGame(row)) games.set(row.id, row as unknown as GameRow);
+  for (let index = 0; index < gameIds.length; index += 200) {
+    const results=await Promise.all([index,index+100].filter(start=>start<gameIds.length).map(start=>
+      client.from('games').select(gameColumns).in('id',gameIds.slice(start,start+100)).abortSignal(AbortSignal.timeout(5000))));
+    for(const result of results) {
+      if (result.error) throw result.error;
+      for (const row of result.data || []) if (isPublicSafeGame(row)) games.set(row.id, row as unknown as GameRow);
+    }
   }
   return { page, hasNext: (data?.length || 0) > LIST_PAGE_SIZE, items: lists.map(list => {
     const rows = (items || []).filter(item => item.list_id === list.id).map(item => games.get(item.game_id))

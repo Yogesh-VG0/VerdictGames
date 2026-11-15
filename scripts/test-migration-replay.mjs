@@ -56,6 +56,27 @@ try {
   }
   const permissions = query(replay, "SELECT has_column_privilege('anon','public.profiles','role','SELECT'),has_table_privilege('anon','public.user_games','SELECT');").trim();
   assert.equal(permissions, 'f|f', 'Replayed privacy boundary must match intended state');
+  const catalogueChecks=query(replay, `BEGIN;
+    INSERT INTO public.games(slug,title,release_date,review_count,score,verdict_score,confidence,genres,platforms,tags,steam_app_id) VALUES
+      ('a-tie','Synthetic Tie A','2025-01-01',5000,94,94,1,ARRAY['Action'],ARRAY['PC'],'{}',NULL),
+      ('b-tie','Synthetic Tie B','2025-01-01',5000,95,95,0.92,ARRAY['Action'],ARRAY['PC'],'{}',NULL),
+      ('low-evidence','Synthetic Low Evidence','2025-01-01',99,100,100,1,ARRAY['Action'],ARRAY['PC'],'{}',NULL),
+      ('early','Synthetic Early Access','2025-01-01',9000,100,100,1,ARRAY['Action'],ARRAY['PC'],ARRAY['Early Access'],NULL),
+      ('unsafe','Synthetic Unsafe','2025-01-01',9000,100,100,1,ARRAY['Action'],ARRAY['PC'],ARRAY['NSFW'],NULL),
+      ('addon','Synthetic Season Pass','2025-01-01',9000,100,100,1,ARRAY['Action'],ARRAY['PC'],'{}',NULL),
+      ('a-hidden','Synthetic RLS Hidden','2025-01-01',9000,100,100,1,ARRAY['Action'],ARRAY['PC'],'{}',NULL),
+      ('steam-poor','Synthetic Steam A','2025-01-01',5000,88,88,1,ARRAY['Action'],ARRAY['PC'],'{}',5010101),
+      ('steam-best','Synthetic Steam B','2025-01-01',5000,91,91,1,ARRAY['Action'],ARRAY['PlayStation 5'],'{}',5010101);
+    CREATE POLICY catalogue_fixture_guard ON public.games AS RESTRICTIVE FOR SELECT TO anon USING (slug <> 'a-hidden');
+    SET LOCAL ROLE anon;
+    SELECT public.explore_catalogue_page('all-time',0,'','','default',1,40,'2026-11-15');
+    SELECT public.explore_catalogue_page('all-time',0,'','PlayStation 5','default',1,40,'2026-11-15');
+    ROLLBACK;`).split('\n').filter(line=>line.startsWith('{')).map(line=>JSON.parse(line));
+  assert.equal(catalogueChecks[0].count,3,'SQL catalogue applies safety/eligibility/canonical filters and caller RLS');
+  assert.deepEqual(catalogueChecks[0].rows.map(row=>row.slug),['a-tie','b-tie','steam-best'],'SQL preserves serialized-float ranking ties and canonical representative preference');
+  assert.deepEqual(catalogueChecks[1].rows.map(row=>row.rank),[3],'Platform filtering retains absolute Top 250 rank');
+  assert.ok(!JSON.stringify(catalogueChecks).includes('description'),'SQL transfers card fields only after pagination');
+  console.log('PASS SQL catalogue eligibility, exact score ties, canonical deduplication, absolute platform ranks and invoker RLS');
   query(replay, "CREATE TABLE public.recovery_fixture(id int primary key,payload text); INSERT INTO public.recovery_fixture VALUES(1,'synthetic restore verification');");
   const dump = spawnSync('docker', ['exec', container, 'pg_dump', '-U', 'postgres', '-d', replay, '--format=custom', '--no-owner'], { maxBuffer: 20 * 1024 * 1024 });
   assert.equal(dump.status, 0, 'Synthetic backup export must succeed');

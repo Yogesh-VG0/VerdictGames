@@ -5,7 +5,7 @@ import { pathToFileURL } from 'node:url';
 const { chromium } = await import(pathToFileURL(process.env.PLAYWRIGHT_MODULE_PATH).href);
 const base = process.env.REFINEMENT_BASE || 'http://127.0.0.1:3200';
 assert.equal(new URL(base).hostname,'127.0.0.1');
-const output = 'output/playwright/refinement-after'; mkdirSync(output,{recursive:true});
+const output = process.env.REFINEMENT_OUTPUT || 'output/playwright/refinement-after'; mkdirSync(output,{recursive:true});
 const evidence = { measuredAt:new Date().toISOString(), requests:[], pages:[], interactions:[] };
 const read = path => fetch(`${base}${path}`, { signal: AbortSignal.timeout(30000) });
 try {

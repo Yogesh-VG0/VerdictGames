@@ -8,6 +8,7 @@ import { isPrimaryDiscoveryGame } from '@/lib/utils/discovery';
 import { dedupePublicCanonicalRows } from '@/lib/utils/publicCanonical';
 import { confidenceWeightedScore } from '@/lib/utils/quality';
 import { hasEarlyAccessSignal } from '@/lib/utils/release-status';
+import { readCataloguePage } from '@/lib/services/explore-query';
 import type { GameRow } from '@/lib/supabase/types';
 import type { RawgListResponse, RawgListType, RawgListGameItem, ExploreSort } from '@/lib/api';
 
@@ -134,6 +135,27 @@ export async function loadExplore(type: RawgListType, page = 1, pageSize = 20, y
     } catch (error) { console.warn('[Explore] Stored catalogue fallback', { type: error instanceof Error ? error.name : 'provider' }); }
   }
   if (!items) {
+    const compact = await readCataloguePage(type,year,EXPLORE_GENRES[genre] || '',platform,sort,page,pageSize,today);
+    if (compact) {
+      const visible:RawgListGameItem[]=compact.rows.map(row=>({
+        rawgId:row.rawg_id || 0,slug:row.slug,name:row.title,image:row.cover_image || row.header_image,
+        imageKind:isPortraitArtwork(row.cover_image)?'cover':'artwork',released:row.release_date,
+        tba:!row.release_date || type==='best-of-year' && hasEarlyAccessSignal(row) && Boolean(row.release_date && row.release_date<=today),
+        earlyAccess:hasEarlyAccessSignal(row),metricSource:'catalogue',verdictScore:row.verdict_score || row.score,
+        rankingScore:row.ranking_score,catalogueAdded:row.created_at,
+        ...(row.rank ? {rank:row.rank} : {}),
+        rating:0,ratingsCount:row.review_count || 0,metacritic:null,added:0,toplay:0,playing:0,owned:0,
+        platforms:row.platforms || [],genres:row.genres || [],screenshots:[],clip:null,
+      }));
+      for (let index=0;index<visible.length;index+=4) await Promise.all(visible.slice(index,index+4).map(async (item,offset)=>{
+        if (!isPortraitArtwork(item.image)) {
+          item.image=await titleArtwork(compact.rows[index+offset]);
+          item.imageKind=isPortraitArtwork(item.image)?'cover':'artwork';
+        }
+      }));
+      return {count:compact.count,page,pageSize,hasNext:page*pageSize<compact.count,items:visible,source:'catalogue',
+        fetchedAt:compact.fetchedAt,degraded:type==='best-of-year',definition:definitions[type]};
+    }
     const pool = await readCataloguePool(type, type === 'popular-in-year' ? year : 0, type === 'genre' ? genre : '', today);
     fetchedAt = pool.fetchedAt;
     for (const row of pool.rows) artworkRows.set(row.slug, row);

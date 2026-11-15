@@ -20,10 +20,10 @@ const password = `silver otters ${run} visit the moon`;
 const userIds = [], listIds = [], profileIds = [];
 const evidence = { checks: [], latencyMs: {}, mail: {} };
 function check(value, label) { assert.ok(value, label); evidence.checks.push(label); console.log(`PASS ${label}`); }
-async function messageFor(subject) {
+async function messageFor(subject, recipient = email) {
   for (let attempt = 0; attempt < 30; attempt++) {
     const inbox = await (await fetch('http://127.0.0.1:54324/api/v1/messages')).json();
-    const message = inbox.messages?.find(item => item.Subject === subject && item.To?.some(to => to.Address === email));
+    const message = inbox.messages?.find(item => item.Subject === subject && item.To?.some(to => to.Address === recipient));
     if (message) return (await (await fetch(`http://127.0.0.1:54324/api/v1/message/${message.ID}`)).json()).HTML;
     await new Promise(resolve => setTimeout(resolve, 200));
   }
@@ -114,6 +114,21 @@ try {
   assert.ifError((await otherClient.auth.signInWithPassword({email:other.data.user.email,password})).error);
   const denied = await otherClient.from('lists').select('id').eq('id',fixture.data.id);
   check(!denied.error && denied.data.length===0,'second identity cannot directly read the private collection');
+  const expiredRecipient=other.data.user.email;
+  const expiredRequest=await otherClient.auth.resetPasswordForEmail(expiredRecipient,{redirectTo:base+'/api/auth/callback?flow=recovery'});
+  assert.ifError(expiredRequest.error);
+  const limited=await otherClient.auth.resetPasswordForEmail(expiredRecipient,{redirectTo:base+'/api/auth/callback?flow=recovery'});
+  check(Boolean(limited.error)&&limited.error.status===429,'direct recovery resend respects the local provider rate limit');
+  const expiredMessage=await messageFor('Reset your VerdictGames password',expiredRecipient);
+  await sql`UPDATE auth.users SET recovery_sent_at=now()-interval '2 hours' WHERE id=${other.data.user.id}`;
+  const expiredContext=await browser.newContext();
+  const expiredPage=await expiredContext.newPage();
+  await expiredPage.goto(verificationLink(expiredMessage));
+  await expiredPage.waitForURL(/reset-password/);
+  await expiredPage.getByRole('heading',{name:'Your link may have expired',exact:true}).waitFor({state:'visible',timeout:10000});
+  check(await expiredPage.getByRole('heading',{name:'Your link may have expired',exact:true}).isVisible()
+    && await expiredPage.getByRole('button',{name:'Send New Reset Link',exact:true}).isVisible(),'actually expired recovery link renders a recoverable request-new-link state');
+  await expiredContext.close();
   await page.goto(`${base}/reset-password`);
   // Request recovery through the UI in the same PKCE browser context.
   await page.locator('#desktop-profile-button').count();

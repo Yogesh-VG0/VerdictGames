@@ -46,6 +46,10 @@ jobs:
         run: node scripts/with-local-supabase.mjs security
       - name: Test provider outages and repeated maintenance deferrals
         run: node scripts/with-local-supabase.mjs maintenance
+      - name: Test independent metadata discovery during permanent RAWG outage
+        run: node scripts/with-local-supabase.mjs igdb-fallback
+      - name: Test long and Unicode password provider compatibility
+        run: node scripts/with-local-supabase.mjs auth-policy
       - name: Test actual browser login and account switching
         run: node scripts/with-local-supabase.mjs browser-security
         env:

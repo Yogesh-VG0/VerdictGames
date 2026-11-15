@@ -14,6 +14,7 @@ import { rawgFetchJson } from "./rawg-client.mjs";
 import { isInfrastructureDbError } from "./scheduler-logger.mjs";
 import { fetchSteamReviews } from "../../src/lib/external/steam-reviews-api.mjs";
 import { preferExistingCover } from '../../src/lib/utils/artwork-policy.mjs';
+import { refreshIgdbCatalogue } from './igdb-fallback.mjs';
 
 // ══════════════════════════════════════════════════
 // Configuration
@@ -244,7 +245,7 @@ async function igdbToken() {
   if (!cid || !cs) return null;
   if (_igdbToken && Date.now() < _igdbToken.exp - 300000) return _igdbToken.tok;
   try { const r = await fetch(TWITCH_TOKEN_URL, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({ client_id: cid, client_secret: cs, grant_type: "client_credentials" }) });
+    body: new URLSearchParams({ client_id: cid, client_secret: cs, grant_type: "client_credentials" }),signal:AbortSignal.timeout(5000) });
     if (!r.ok) return null; const d = await r.json(); _igdbToken = { tok: d.access_token, exp: Date.now() + d.expires_in * 1000 }; return _igdbToken.tok;
   } catch { return null; }
 }
@@ -255,6 +256,11 @@ async function igdbQ(endpoint, body) {
     body, signal: AbortSignal.timeout(15000) }); if (!r.ok) return null; return r.json(); } catch { return null; }
 }
 function igdbConfigured() { return !!(process.env.TWITCH_CLIENT_ID && process.env.TWITCH_CLIENT_SECRET); }
+export async function discoverIgdbDirect(sql) {
+  if(!igdbConfigured()) throw new Error('Independent IGDB discovery is not configured');
+  return refreshIgdbCatalogue(sql,igdbQ);
+}
+export { igdbQ as queryIgdbDirect };
 function esc(s) { return s.replace(/"/g, '\\"'); }
 function igdbImg(id, sz = "cover_big") { return `https://images.igdb.com/igdb/image/upload/t_${sz}/${id}.jpg`; }
 

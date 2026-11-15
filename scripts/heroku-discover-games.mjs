@@ -33,7 +33,7 @@ try {
 
 import { startRun, finishRun, acquireLock, releaseLock, checkMinInterval, isInfrastructureDbError } from './lib/scheduler-logger.mjs';
 import { connectDb, closeDb } from './lib/db-connect.mjs';
-import { ingestGameDirect } from './lib/ingest-pipeline.mjs';
+import { ingestGameDirect, discoverIgdbDirect } from './lib/ingest-pipeline.mjs';
 import { rawgFetchJson } from './lib/rawg-client.mjs';
 import { refreshDiscoverySnapshot } from './lib/discovery-snapshot.mjs';
 
@@ -44,7 +44,7 @@ const CONCURRENCY  = Math.max(1, Math.min(5, parseInt(process.env.SCHEDULER_INGE
 const DELAY_MS     = 300;
 const INGEST_LOCK  = "games-ingest";
 
-if (!RAWG_KEY) { console.error("✗ RAWG_API_KEY not set"); process.exit(1); }
+if (!RAWG_KEY && !(process.env.TWITCH_CLIENT_ID && process.env.TWITCH_CLIENT_SECRET)) { console.error("No discovery provider configured"); process.exit(1); }
 
 const sql = connectDb("discover-games");
 
@@ -112,7 +112,17 @@ try {
   // ── Step 1: Fetch game lists from RAWG (standalone process, no Vercel timeout) ──
   console.log("📡 Step 1: Fetching game lists from RAWG...\n");
 
-  const snapshotCount = await refreshDiscoverySnapshot(sql);
+  let snapshotCount;
+  try { snapshotCount=await refreshDiscoverySnapshot(sql); }
+  catch (error) {
+    if(isInfrastructureDbError(error)) throw error;
+    const fallback=await discoverIgdbDirect(sql);
+    console.log('RAWG unavailable; independent IGDB essential-metadata progress:',fallback);
+    await finishRun(sql,run.id,{outcome:'deferred',rows_scanned:fallback.scanned,rows_created:fallback.created,rows_updated:fallback.updated,
+      rows_skipped:fallback.skipped,error_message:'RAWG discovery unavailable; IGDB fallback completed',metadata:fallback});
+    // Preserve repeated-provider-outage alerts despite useful IGDB progress.
+    await releaseLock(sql,INGEST_LOCK);await closeDb(sql,JOB_NAME);process.exit(0);
+  }
   console.log(`Preserved upcoming discovery snapshot: ${snapshotCount} provider records`);
   const fetches = [
     rawgFetch("games", { ordering: "-added", dates: recentWindow }, 40),

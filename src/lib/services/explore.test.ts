@@ -3,6 +3,7 @@ const state = vi.hoisted(() => ({ rows: [] as Record<string, unknown>[], upcomin
 vi.mock('next/cache', () => ({ unstable_cache: (fn: unknown) => fn }));
 vi.mock('@/lib/external/rawg', () => ({ getRawgUpcoming: state.upcoming }));
 vi.mock('@/lib/external/igdb', () => ({ getIgdbPortraits: state.portraits }));
+vi.mock('@/lib/services/explore-query', () => ({ readCataloguePage: async () => null }));
 vi.mock('@/lib/supabase/public', () => ({ getPublicSupabase: () => {
   const query: Record<string, unknown> = {};
   for (const name of ['select','in','not','neq','gt','gte','lte','contains','order','limit','abortSignal','range','or']) query[name] = () => query;

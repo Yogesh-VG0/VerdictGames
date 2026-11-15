@@ -12,6 +12,8 @@ describe('password policy for new credentials', () => {
     expect(getPasswordValidationError('a'.repeat(73))).toContain('72');
     expect(getPasswordValidationError('🌙'.repeat(14))).toContain('15');
     expect(getPasswordValidationError('🌙'.repeat(19))).toContain('72');
+    expect(getPasswordValidationError('明亮星光照耀寂静山谷中的河流')).toContain('15');
+    expect(getPasswordValidationError('明亮星光照耀寂静山谷中的清澈河流')).toBeNull();
   });
   it('rejects common whole passwords, repetition and null bytes', () => {
     expect(getPasswordValidationError('passwordpassword')).toBeTruthy();

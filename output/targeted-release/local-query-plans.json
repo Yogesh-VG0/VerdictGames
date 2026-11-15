@@ -1,0 +1,591 @@
+{
+  "measuredAt": "2026-11-15T14:04:07.965Z",
+  "source": "local historical R3 public games only; same table definition and 31 indexes; not hosted execution plans",
+  "database": "verdict_perf_20261115",
+  "plans": {
+    "all-time": [
+      {
+        "Plan": {
+          "Node Type": "Limit",
+          "Parallel Aware": false,
+          "Async Capable": false,
+          "Startup Cost": 0.29,
+          "Total Cost": 393.22,
+          "Plan Rows": 250,
+          "Plan Width": 643,
+          "Actual Startup Time": 0.617,
+          "Actual Total Time": 1.31,
+          "Actual Rows": 250,
+          "Actual Loops": 1,
+          "Shared Hit Blocks": 381,
+          "Shared Read Blocks": 3,
+          "Shared Dirtied Blocks": 0,
+          "Shared Written Blocks": 0,
+          "Local Hit Blocks": 0,
+          "Local Read Blocks": 0,
+          "Local Dirtied Blocks": 0,
+          "Local Written Blocks": 0,
+          "Temp Read Blocks": 0,
+          "Temp Written Blocks": 0,
+          "Plans": [
+            {
+              "Node Type": "Index Scan",
+              "Parent Relationship": "Outer",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Scan Direction": "Forward",
+              "Index Name": "games_pkey",
+              "Relation Name": "games",
+              "Alias": "games",
+              "Startup Cost": 0.29,
+              "Total Cost": 8687.27,
+              "Plan Rows": 5527,
+              "Plan Width": 643,
+              "Actual Startup Time": 0.615,
+              "Actual Total Time": 1.298,
+              "Actual Rows": 250,
+              "Actual Loops": 1,
+              "Filter": "((release_date <= '2026-11-15'::date) AND (review_count >= 100))",
+              "Rows Removed by Filter": 131,
+              "Shared Hit Blocks": 381,
+              "Shared Read Blocks": 3,
+              "Shared Dirtied Blocks": 0,
+              "Shared Written Blocks": 0,
+              "Local Hit Blocks": 0,
+              "Local Read Blocks": 0,
+              "Local Dirtied Blocks": 0,
+              "Local Written Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            }
+          ]
+        },
+        "Planning": {
+          "Shared Hit Blocks": 90,
+          "Shared Read Blocks": 2,
+          "Shared Dirtied Blocks": 0,
+          "Shared Written Blocks": 0,
+          "Local Hit Blocks": 0,
+          "Local Read Blocks": 0,
+          "Local Dirtied Blocks": 0,
+          "Local Written Blocks": 0,
+          "Temp Read Blocks": 0,
+          "Temp Written Blocks": 0
+        },
+        "Planning Time": 1.024,
+        "Triggers": [],
+        "Execution Time": 1.33
+      }
+    ],
+    "year": [
+      {
+        "Plan": {
+          "Node Type": "Limit",
+          "Parallel Aware": false,
+          "Async Capable": false,
+          "Startup Cost": 888.34,
+          "Total Cost": 888.9,
+          "Plan Rows": 222,
+          "Plan Width": 643,
+          "Actual Startup Time": 2.484,
+          "Actual Total Time": 2.5,
+          "Actual Rows": 250,
+          "Actual Loops": 1,
+          "Shared Hit Blocks": 317,
+          "Shared Read Blocks": 1,
+          "Shared Dirtied Blocks": 0,
+          "Shared Written Blocks": 0,
+          "Local Hit Blocks": 0,
+          "Local Read Blocks": 0,
+          "Local Dirtied Blocks": 0,
+          "Local Written Blocks": 0,
+          "Temp Read Blocks": 0,
+          "Temp Written Blocks": 0,
+          "Plans": [
+            {
+              "Node Type": "Sort",
+              "Parent Relationship": "Outer",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Startup Cost": 888.34,
+              "Total Cost": 888.9,
+              "Plan Rows": 222,
+              "Plan Width": 643,
+              "Actual Startup Time": 2.483,
+              "Actual Total Time": 2.49,
+              "Actual Rows": 250,
+              "Actual Loops": 1,
+              "Sort Key": [
+                "id"
+              ],
+              "Sort Method": "quicksort",
+              "Sort Space Used": 306,
+              "Sort Space Type": "Memory",
+              "Shared Hit Blocks": 317,
+              "Shared Read Blocks": 1,
+              "Shared Dirtied Blocks": 0,
+              "Shared Written Blocks": 0,
+              "Local Hit Blocks": 0,
+              "Local Read Blocks": 0,
+              "Local Dirtied Blocks": 0,
+              "Local Written Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0,
+              "Plans": [
+                {
+                  "Node Type": "Bitmap Heap Scan",
+                  "Parent Relationship": "Outer",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Relation Name": "games",
+                  "Alias": "games",
+                  "Startup Cost": 7.6,
+                  "Total Cost": 879.69,
+                  "Plan Rows": 222,
+                  "Plan Width": 643,
+                  "Actual Startup Time": 1.908,
+                  "Actual Total Time": 2.343,
+                  "Actual Rows": 284,
+                  "Actual Loops": 1,
+                  "Recheck Cond": "((release_date >= '2025-01-01'::date) AND (release_date <= '2025-12-31'::date))",
+                  "Rows Removed by Index Recheck": 0,
+                  "Filter": "(review_count >= 100)",
+                  "Rows Removed by Filter": 48,
+                  "Exact Heap Blocks": 315,
+                  "Lossy Heap Blocks": 0,
+                  "Shared Hit Blocks": 317,
+                  "Shared Read Blocks": 1,
+                  "Shared Dirtied Blocks": 0,
+                  "Shared Written Blocks": 0,
+                  "Local Hit Blocks": 0,
+                  "Local Read Blocks": 0,
+                  "Local Dirtied Blocks": 0,
+                  "Local Written Blocks": 0,
+                  "Temp Read Blocks": 0,
+                  "Temp Written Blocks": 0,
+                  "Plans": [
+                    {
+                      "Node Type": "Bitmap Index Scan",
+                      "Parent Relationship": "Outer",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "Index Name": "idx_games_release_date",
+                      "Startup Cost": 0,
+                      "Total Cost": 7.54,
+                      "Plan Rows": 326,
+                      "Plan Width": 0,
+                      "Actual Startup Time": 1.837,
+                      "Actual Total Time": 1.837,
+                      "Actual Rows": 332,
+                      "Actual Loops": 1,
+                      "Index Cond": "((release_date >= '2025-01-01'::date) AND (release_date <= '2025-12-31'::date))",
+                      "Shared Hit Blocks": 2,
+                      "Shared Read Blocks": 1,
+                      "Shared Dirtied Blocks": 0,
+                      "Shared Written Blocks": 0,
+                      "Local Hit Blocks": 0,
+                      "Local Read Blocks": 0,
+                      "Local Dirtied Blocks": 0,
+                      "Local Written Blocks": 0,
+                      "Temp Read Blocks": 0,
+                      "Temp Written Blocks": 0
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "Planning": {
+          "Shared Hit Blocks": 6,
+          "Shared Read Blocks": 0,
+          "Shared Dirtied Blocks": 0,
+          "Shared Written Blocks": 0,
+          "Local Hit Blocks": 0,
+          "Local Read Blocks": 0,
+          "Local Dirtied Blocks": 0,
+          "Local Written Blocks": 0,
+          "Temp Read Blocks": 0,
+          "Temp Written Blocks": 0
+        },
+        "Planning Time": 0.148,
+        "Triggers": [],
+        "Execution Time": 2.523
+      }
+    ],
+    "recent": [
+      {
+        "Plan": {
+          "Node Type": "Limit",
+          "Parallel Aware": false,
+          "Async Capable": false,
+          "Startup Cost": 42.63,
+          "Total Cost": 42.66,
+          "Plan Rows": 10,
+          "Plan Width": 643,
+          "Actual Startup Time": 0.023,
+          "Actual Total Time": 0.024,
+          "Actual Rows": 8,
+          "Actual Loops": 1,
+          "Shared Hit Blocks": 10,
+          "Shared Read Blocks": 0,
+          "Shared Dirtied Blocks": 0,
+          "Shared Written Blocks": 0,
+          "Local Hit Blocks": 0,
+          "Local Read Blocks": 0,
+          "Local Dirtied Blocks": 0,
+          "Local Written Blocks": 0,
+          "Temp Read Blocks": 0,
+          "Temp Written Blocks": 0,
+          "Plans": [
+            {
+              "Node Type": "Sort",
+              "Parent Relationship": "Outer",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Startup Cost": 42.63,
+              "Total Cost": 42.66,
+              "Plan Rows": 10,
+              "Plan Width": 643,
+              "Actual Startup Time": 0.023,
+              "Actual Total Time": 0.023,
+              "Actual Rows": 8,
+              "Actual Loops": 1,
+              "Sort Key": [
+                "id"
+              ],
+              "Sort Method": "quicksort",
+              "Sort Space Used": 32,
+              "Sort Space Type": "Memory",
+              "Shared Hit Blocks": 10,
+              "Shared Read Blocks": 0,
+              "Shared Dirtied Blocks": 0,
+              "Shared Written Blocks": 0,
+              "Local Hit Blocks": 0,
+              "Local Read Blocks": 0,
+              "Local Dirtied Blocks": 0,
+              "Local Written Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0,
+              "Plans": [
+                {
+                  "Node Type": "Bitmap Heap Scan",
+                  "Parent Relationship": "Outer",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Relation Name": "games",
+                  "Alias": "games",
+                  "Startup Cost": 4.39,
+                  "Total Cost": 42.47,
+                  "Plan Rows": 10,
+                  "Plan Width": 643,
+                  "Actual Startup Time": 0.008,
+                  "Actual Total Time": 0.017,
+                  "Actual Rows": 8,
+                  "Actual Loops": 1,
+                  "Recheck Cond": "((release_date >= '2026-10-16'::date) AND (release_date <= '2026-11-15'::date))",
+                  "Rows Removed by Index Recheck": 0,
+                  "Exact Heap Blocks": 8,
+                  "Lossy Heap Blocks": 0,
+                  "Shared Hit Blocks": 10,
+                  "Shared Read Blocks": 0,
+                  "Shared Dirtied Blocks": 0,
+                  "Shared Written Blocks": 0,
+                  "Local Hit Blocks": 0,
+                  "Local Read Blocks": 0,
+                  "Local Dirtied Blocks": 0,
+                  "Local Written Blocks": 0,
+                  "Temp Read Blocks": 0,
+                  "Temp Written Blocks": 0,
+                  "Plans": [
+                    {
+                      "Node Type": "Bitmap Index Scan",
+                      "Parent Relationship": "Outer",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "Index Name": "idx_games_release_date",
+                      "Startup Cost": 0,
+                      "Total Cost": 4.38,
+                      "Plan Rows": 10,
+                      "Plan Width": 0,
+                      "Actual Startup Time": 0.003,
+                      "Actual Total Time": 0.003,
+                      "Actual Rows": 8,
+                      "Actual Loops": 1,
+                      "Index Cond": "((release_date >= '2026-10-16'::date) AND (release_date <= '2026-11-15'::date))",
+                      "Shared Hit Blocks": 2,
+                      "Shared Read Blocks": 0,
+                      "Shared Dirtied Blocks": 0,
+                      "Shared Written Blocks": 0,
+                      "Local Hit Blocks": 0,
+                      "Local Read Blocks": 0,
+                      "Local Dirtied Blocks": 0,
+                      "Local Written Blocks": 0,
+                      "Temp Read Blocks": 0,
+                      "Temp Written Blocks": 0
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "Planning": {
+          "Shared Hit Blocks": 9,
+          "Shared Read Blocks": 0,
+          "Shared Dirtied Blocks": 0,
+          "Shared Written Blocks": 0,
+          "Local Hit Blocks": 0,
+          "Local Read Blocks": 0,
+          "Local Dirtied Blocks": 0,
+          "Local Written Blocks": 0,
+          "Temp Read Blocks": 0,
+          "Temp Written Blocks": 0
+        },
+        "Planning Time": 0.074,
+        "Triggers": [],
+        "Execution Time": 0.04
+      }
+    ],
+    "genre": [
+      {
+        "Plan": {
+          "Node Type": "Limit",
+          "Parallel Aware": false,
+          "Async Capable": false,
+          "Startup Cost": 0.29,
+          "Total Cost": 538.78,
+          "Plan Rows": 250,
+          "Plan Width": 643,
+          "Actual Startup Time": 0.015,
+          "Actual Total Time": 0.519,
+          "Actual Rows": 250,
+          "Actual Loops": 1,
+          "Shared Hit Blocks": 527,
+          "Shared Read Blocks": 0,
+          "Shared Dirtied Blocks": 0,
+          "Shared Written Blocks": 0,
+          "Local Hit Blocks": 0,
+          "Local Read Blocks": 0,
+          "Local Dirtied Blocks": 0,
+          "Local Written Blocks": 0,
+          "Temp Read Blocks": 0,
+          "Temp Written Blocks": 0,
+          "Plans": [
+            {
+              "Node Type": "Index Scan",
+              "Parent Relationship": "Outer",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Scan Direction": "Forward",
+              "Index Name": "games_pkey",
+              "Relation Name": "games",
+              "Alias": "games",
+              "Startup Cost": 0.29,
+              "Total Cost": 8687.27,
+              "Plan Rows": 4033,
+              "Plan Width": 643,
+              "Actual Startup Time": 0.015,
+              "Actual Total Time": 0.509,
+              "Actual Rows": 250,
+              "Actual Loops": 1,
+              "Filter": "((release_date <= '2026-11-15'::date) AND (genres @> '{Action}'::text[]))",
+              "Rows Removed by Filter": 271,
+              "Shared Hit Blocks": 527,
+              "Shared Read Blocks": 0,
+              "Shared Dirtied Blocks": 0,
+              "Shared Written Blocks": 0,
+              "Local Hit Blocks": 0,
+              "Local Read Blocks": 0,
+              "Local Dirtied Blocks": 0,
+              "Local Written Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            }
+          ]
+        },
+        "Planning": {
+          "Shared Hit Blocks": 29,
+          "Shared Read Blocks": 0,
+          "Shared Dirtied Blocks": 0,
+          "Shared Written Blocks": 0,
+          "Local Hit Blocks": 0,
+          "Local Read Blocks": 0,
+          "Local Dirtied Blocks": 0,
+          "Local Written Blocks": 0,
+          "Temp Read Blocks": 0,
+          "Temp Written Blocks": 0
+        },
+        "Planning Time": 0.164,
+        "Triggers": [],
+        "Execution Time": 0.533
+      }
+    ]
+  },
+  "samples": {
+    "all-time": {
+      "rows": 5540,
+      "fullProjectionBytes": 7151492,
+      "queryAndTransferMs": 125.37,
+      "oldChunkReads": 23
+    },
+    "year": {
+      "rows": 284,
+      "fullProjectionBytes": 349881,
+      "queryAndTransferMs": 5.43,
+      "oldChunkReads": 2
+    },
+    "recent": {
+      "rows": 8,
+      "fullProjectionBytes": 8230,
+      "queryAndTransferMs": 0.78,
+      "oldChunkReads": 1
+    },
+    "genre": {
+      "rows": 4055,
+      "fullProjectionBytes": 5219738,
+      "queryAndTransferMs": 65.36,
+      "oldChunkReads": 17
+    }
+  },
+  "size": {
+    "games": 8350,
+    "row_bytes": "22377046",
+    "description_bytes": "3844881"
+  },
+  "indexes": [
+    {
+      "indexname": "games_pkey",
+      "indexdef": "CREATE UNIQUE INDEX games_pkey ON public.games USING btree (id)"
+    },
+    {
+      "indexname": "games_slug_key",
+      "indexdef": "CREATE UNIQUE INDEX games_slug_key ON public.games USING btree (slug)"
+    },
+    {
+      "indexname": "idx_games_tags_gin",
+      "indexdef": "CREATE INDEX idx_games_tags_gin ON public.games USING gin (tags)"
+    },
+    {
+      "indexname": "idx_games_cheapshark_id",
+      "indexdef": "CREATE INDEX idx_games_cheapshark_id ON public.games USING btree (cheapshark_id) WHERE (cheapshark_id IS NOT NULL)"
+    },
+    {
+      "indexname": "idx_games_community_score",
+      "indexdef": "CREATE INDEX idx_games_community_score ON public.games USING btree (community_score DESC NULLS LAST)"
+    },
+    {
+      "indexname": "idx_games_completeness_score",
+      "indexdef": "CREATE INDEX idx_games_completeness_score ON public.games USING btree (completeness_score)"
+    },
+    {
+      "indexname": "idx_games_confidence",
+      "indexdef": "CREATE INDEX idx_games_confidence ON public.games USING btree (confidence DESC NULLS LAST)"
+    },
+    {
+      "indexname": "idx_games_current_players",
+      "indexdef": "CREATE INDEX idx_games_current_players ON public.games USING btree (current_players DESC NULLS LAST)"
+    },
+    {
+      "indexname": "idx_games_developer",
+      "indexdef": "CREATE INDEX idx_games_developer ON public.games USING btree (developer) WHERE (developer <> ''::text)"
+    },
+    {
+      "indexname": "idx_games_developer_trgm",
+      "indexdef": "CREATE INDEX idx_games_developer_trgm ON public.games USING gin (developer gin_trgm_ops)"
+    },
+    {
+      "indexname": "idx_games_title_trgm",
+      "indexdef": "CREATE INDEX idx_games_title_trgm ON public.games USING gin (title gin_trgm_ops)"
+    },
+    {
+      "indexname": "idx_games_featured",
+      "indexdef": "CREATE INDEX idx_games_featured ON public.games USING btree (featured) WHERE (featured = true)"
+    },
+    {
+      "indexname": "idx_games_franchise",
+      "indexdef": "CREATE INDEX idx_games_franchise ON public.games USING btree (franchise) WHERE ((franchise IS NOT NULL) AND (franchise <> ''::text))"
+    },
+    {
+      "indexname": "idx_games_genres_gin",
+      "indexdef": "CREATE INDEX idx_games_genres_gin ON public.games USING gin (genres)"
+    },
+    {
+      "indexname": "idx_games_homepage_recommendation_pool",
+      "indexdef": "CREATE INDEX idx_games_homepage_recommendation_pool ON public.games USING btree (verdict_score DESC NULLS LAST, score DESC, release_date DESC) WHERE ((release_date IS NOT NULL) AND (cover_image IS NOT NULL) AND (cover_image <> ''::text) AND (score >= 75) AND (review_count >= 75) AND (confidence >= (0.4)::double precision))"
+    },
+    {
+      "indexname": "idx_games_homepage_top_rated_pool",
+      "indexdef": "CREATE INDEX idx_games_homepage_top_rated_pool ON public.games USING btree (verdict_score DESC NULLS LAST, confidence DESC NULLS LAST, score DESC, release_date DESC) WHERE ((release_date IS NOT NULL) AND (cover_image IS NOT NULL) AND (cover_image <> ''::text) AND (score >= 70) AND (review_count >= 75) AND (confidence >= (0.3)::double precision))"
+    },
+    {
+      "indexname": "idx_games_igdb_id",
+      "indexdef": "CREATE INDEX idx_games_igdb_id ON public.games USING btree (igdb_id) WHERE (igdb_id IS NOT NULL)"
+    },
+    {
+      "indexname": "idx_games_is_adult",
+      "indexdef": "CREATE INDEX idx_games_is_adult ON public.games USING btree (is_adult) WHERE (is_adult = true)"
+    },
+    {
+      "indexname": "idx_games_is_free",
+      "indexdef": "CREATE INDEX idx_games_is_free ON public.games USING btree (is_free) WHERE (is_free = true)"
+    },
+    {
+      "indexname": "idx_games_is_provisional",
+      "indexdef": "CREATE INDEX idx_games_is_provisional ON public.games USING btree (is_provisional) WHERE (is_provisional = true)"
+    },
+    {
+      "indexname": "idx_games_last_enriched",
+      "indexdef": "CREATE INDEX idx_games_last_enriched ON public.games USING btree (last_enriched_at NULLS FIRST)"
+    },
+    {
+      "indexname": "idx_games_manual_featured",
+      "indexdef": "CREATE INDEX idx_games_manual_featured ON public.games USING btree (is_featured_manual) WHERE (is_featured_manual = true)"
+    },
+    {
+      "indexname": "idx_games_manual_trending",
+      "indexdef": "CREATE INDEX idx_games_manual_trending ON public.games USING btree (is_trending_manual) WHERE (is_trending_manual = true)"
+    },
+    {
+      "indexname": "idx_games_momentum",
+      "indexdef": "CREATE INDEX idx_games_momentum ON public.games USING btree (momentum DESC)"
+    },
+    {
+      "indexname": "idx_games_publisher_trgm",
+      "indexdef": "CREATE INDEX idx_games_publisher_trgm ON public.games USING gin (publisher gin_trgm_ops)"
+    },
+    {
+      "indexname": "idx_games_rawg_id",
+      "indexdef": "CREATE INDEX idx_games_rawg_id ON public.games USING btree (rawg_id) WHERE (rawg_id IS NOT NULL)"
+    },
+    {
+      "indexname": "idx_games_release_date",
+      "indexdef": "CREATE INDEX idx_games_release_date ON public.games USING btree (release_date DESC)"
+    },
+    {
+      "indexname": "idx_games_score",
+      "indexdef": "CREATE INDEX idx_games_score ON public.games USING btree (score DESC)"
+    },
+    {
+      "indexname": "idx_games_slug",
+      "indexdef": "CREATE INDEX idx_games_slug ON public.games USING btree (slug)"
+    },
+    {
+      "indexname": "idx_games_steam_app_id",
+      "indexdef": "CREATE INDEX idx_games_steam_app_id ON public.games USING btree (steam_app_id) WHERE (steam_app_id IS NOT NULL)"
+    },
+    {
+      "indexname": "idx_games_trending",
+      "indexdef": "CREATE INDEX idx_games_trending ON public.games USING btree (trending) WHERE (trending = true)"
+    },
+    {
+      "indexname": "idx_games_verdict_confidence",
+      "indexdef": "CREATE INDEX idx_games_verdict_confidence ON public.games USING btree (verdict_score DESC NULLS LAST, confidence DESC NULLS LAST) WHERE (verdict_score IS NOT NULL)"
+    },
+    {
+      "indexname": "idx_games_verdict_score",
+      "indexdef": "CREATE INDEX idx_games_verdict_score ON public.games USING btree (verdict_score DESC NULLS LAST)"
+    }
+  ],
+  "fullProjectionBytes": 10492612
+}
