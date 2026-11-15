@@ -1,5 +1,6 @@
--- Proposal: store deterministic row classification, not scores or rankings.
--- No scheduler/cache dependency: edits refresh these values automatically.
+-- Proposal: metadata-only setup, followed by separately approved bounded backfill.
+-- Source edits refresh derived values through a row trigger; no scheduler or
+-- framework-cache dependency. Existing NULL rows use the exact live fallback.
 BEGIN;
 SET LOCAL lock_timeout='2s';
 SET LOCAL statement_timeout='5s';
@@ -20,15 +21,37 @@ $early$;
 REVOKE ALL ON FUNCTION public.explore_primary_safe(text[],text[],text,text),public.explore_early_access(text,text[],text[]) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.explore_primary_safe(text[],text[],text,text),public.explore_early_access(text,text[],text[]) TO authenticated,service_role;
 ALTER TABLE public.games
- ADD COLUMN explore_title_key text GENERATED ALWAYS AS (regexp_replace(lower(regexp_replace(title, '\s*\((19|20)[0-9]{2}\)$', '')), '[^a-z0-9]', '', 'g')) STORED,
- ADD COLUMN explore_year_suffix boolean GENERATED ALWAYS AS (title ~ '\s*\((19|20)[0-9]{2}\)$') STORED,
- ADD COLUMN explore_franchise_key text GENERATED ALWAYS AS (regexp_replace(lower(coalesce(franchise,'')), '[^a-z0-9]', '', 'g')) STORED,
- ADD COLUMN explore_developer_key text GENERATED ALWAYS AS (regexp_replace(lower(coalesce(developer,'')), '[^a-z0-9]', '', 'g')) STORED,
- ADD COLUMN explore_publisher_key text GENERATED ALWAYS AS (regexp_replace(lower(coalesce(publisher,'')), '[^a-z0-9]', '', 'g')) STORED,
- ADD COLUMN explore_primary_safe boolean GENERATED ALWAYS AS (public.explore_primary_safe(tags,genres,description,title)) STORED,
- ADD COLUMN explore_early_access boolean GENERATED ALWAYS AS (public.explore_early_access(release_status,tags,genres)) STORED;
-COMMENT ON COLUMN public.games.explore_primary_safe IS 'Stored public-display safety/primary classification, recomputed with source row edits.';
-COMMENT ON COLUMN public.games.explore_title_key IS 'Stored canonical identity key; full category-specific deduplication and ranking remain query-time operations.';
+ ADD COLUMN explore_title_key text,
+ ADD COLUMN explore_year_suffix boolean,
+ ADD COLUMN explore_franchise_key text,
+ ADD COLUMN explore_developer_key text,
+ ADD COLUMN explore_publisher_key text,
+ ADD COLUMN explore_primary_safe boolean,
+ ADD COLUMN explore_early_access boolean;
+CREATE OR REPLACE FUNCTION public.refresh_explore_classification()
+RETURNS trigger LANGUAGE plpgsql SECURITY INVOKER SET search_path='' AS $refresh$
+BEGIN
+ NEW.explore_title_key:=regexp_replace(lower(regexp_replace(NEW.title,'\s*\((19|20)[0-9]{2}\)$','')),'[^a-z0-9]','','g');
+ NEW.explore_year_suffix:=NEW.title ~ '\s*\((19|20)[0-9]{2}\)$';
+ NEW.explore_franchise_key:=regexp_replace(lower(coalesce(NEW.franchise,'')),'[^a-z0-9]','','g');
+ NEW.explore_developer_key:=regexp_replace(lower(coalesce(NEW.developer,'')),'[^a-z0-9]','','g');
+ NEW.explore_publisher_key:=regexp_replace(lower(coalesce(NEW.publisher,'')),'[^a-z0-9]','','g');
+ NEW.explore_primary_safe:=public.explore_primary_safe(NEW.tags,NEW.genres,NEW.description,NEW.title);
+ NEW.explore_early_access:=public.explore_early_access(NEW.release_status,NEW.tags,NEW.genres);
+ -- Run after the existing timestamp trigger. Derived-only maintenance must
+ -- preserve every source value, including the metadata freshness timestamp.
+ IF TG_OP='UPDATE' AND (to_jsonb(NEW)-ARRAY['explore_title_key','explore_year_suffix','explore_franchise_key','explore_developer_key','explore_publisher_key','explore_primary_safe','explore_early_access','updated_at']) IS NOT DISTINCT FROM (to_jsonb(OLD)-ARRAY['explore_title_key','explore_year_suffix','explore_franchise_key','explore_developer_key','explore_publisher_key','explore_primary_safe','explore_early_access','updated_at']) THEN
+  NEW.updated_at:=OLD.updated_at;
+ END IF;
+ RETURN NEW;
+END;
+$refresh$;
+REVOKE ALL ON FUNCTION public.refresh_explore_classification() FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.refresh_explore_classification() TO authenticated,service_role;
+CREATE TRIGGER zzz_refresh_explore_classification BEFORE INSERT OR UPDATE OF
+ title,franchise,developer,publisher,tags,genres,description,release_status,explore_title_key,explore_year_suffix,explore_franchise_key,explore_developer_key,explore_publisher_key,explore_primary_safe,explore_early_access
+ ON public.games FOR EACH ROW EXECUTE FUNCTION public.refresh_explore_classification();
+COMMENT ON COLUMN public.games.explore_primary_safe IS 'Derived public-display classification; maintained on source edits; NULL reads retain exact live fallback until backfilled.';
 CREATE OR REPLACE FUNCTION public.explore_catalogue_page(
   p_type text, p_year integer DEFAULT 0, p_genre text DEFAULT '',
   p_platform text DEFAULT '', p_sort text DEFAULT 'default',
@@ -57,11 +80,11 @@ BEGIN
       -- Carry only ranking/identity fields through sorts. Fetch card metadata
       -- after pagination, avoiding multi-megabyte sort rows and temp spills.
       SELECT g.id,g.slug,g.title,g.release_date,g.steam_app_id,g.review_count,g.platforms,g.created_at,
-        g.explore_title_key AS canonical_title,
-        g.explore_year_suffix AS year_suffix,
-        g.explore_franchise_key AS franchise_key,
-        g.explore_developer_key AS developer_key,
-        g.explore_publisher_key AS publisher_key,
+        coalesce(g.explore_title_key,regexp_replace(lower(regexp_replace(g.title, '\s*\((19|20)[0-9]{2}\)$', '')), '[^a-z0-9]', '', 'g')) AS canonical_title,
+        coalesce(g.explore_year_suffix,g.title ~ '\s*\((19|20)[0-9]{2}\)$') AS year_suffix,
+        coalesce(g.explore_franchise_key,regexp_replace(lower(coalesce(g.franchise,'')), '[^a-z0-9]', '', 'g')) AS franchise_key,
+        coalesce(g.explore_developer_key,regexp_replace(lower(coalesce(g.developer,'')), '[^a-z0-9]', '', 'g')) AS developer_key,
+        coalesce(g.explore_publisher_key,regexp_replace(lower(coalesce(g.publisher,'')), '[^a-z0-9]', '', 'g')) AS publisher_key,
         -- Match the decimal JSON values consumed by JS, rather than promoting
         -- binary float4 noise into float8 and breaking otherwise equal scores.
         CASE WHEN coalesce(g.verdict_score,0) > 0
@@ -92,9 +115,14 @@ BEGIN
       AND coalesce(g.release_status,'') NOT IN ('cancelled','canceled','delisted')
       AND (p_type NOT IN ('all-time','popular-in-year','recent') OR (
         coalesce(g.release_status,'') NOT IN ('announced','coming_soon','upcoming','tba')
-        AND NOT g.explore_early_access
+        AND NOT coalesce(g.explore_early_access,EXISTS (SELECT 1 FROM unnest(ARRAY[coalesce(g.release_status,'')] || coalesce(g.tags,'{}') || coalesce(g.genres,'{}')) tag WHERE replace(replace(lower(tag),'-',' '),'_',' ') = 'early access'))
       ))
-      AND g.explore_primary_safe
+      AND coalesce(g.explore_primary_safe,(lower(array_to_string(coalesce(g.tags,'{}') || coalesce(g.genres,'{}'), E'\n'))
+        !~ '(sexual content|nsfw|hentai|adult|erotic|nudity|mature-content|sex|porn|mature|adult only|18\+)'
+      AND lower(coalesce(g.description,'')) !~ '(sexual content|nsfw|hentai|erotic|adult-only|explicit sex)'
+      AND lower(g.title) !~ '(game of the year edition|goty edition|complete edition|ultimate edition|definitive edition|enhanced edition|digital deluxe edition|deluxe edition|director''?s cut|anniversary edition)$'
+      AND lower(g.title) !~ '(?<![a-z0-9_])(season pass|expansion pass|soundtrack|artbook|starter pack|bonus content|cosmetic pack)(?![a-z0-9_])'
+      AND lower(coalesce(g.description,'')) !~ '(?<![a-z0-9_])(you must own the main game|this content requires|downloadable content|expansion pack|includes the following dlc|digital deluxe edition allows access|base game\s*\+\s*(digital deluxe|season pass|art book|soundtrack)|digital art book|extra bgm pack|season pass|second and final expansion|missing link in the main story|bonuses will be given to those who purchase|content can be downloaded from the store)(?![a-z0-9_])'))
     ), forced_titles AS (
       SELECT DISTINCT v.canonical_title FROM eligible v JOIN eligible b USING (canonical_title)
       WHERE v.year_suffix AND NOT b.year_suffix AND (

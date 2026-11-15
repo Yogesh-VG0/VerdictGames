@@ -49,6 +49,9 @@ try {
   const files = readdirSync('supabase/migrations').filter(file => file.endsWith('.sql')).sort();
   const migrations = [];
   for (const file of files) {
+    if(file.endsWith('_cache_explore_classification.sql')) query(replay, `INSERT INTO public.games(slug,title,release_date,review_count,score,updated_at) VALUES
+      ('preclass-a','Preclassification A','2020-01-01',1000,90,'2001-01-01'),
+      ('preclass-b','Preclassification B','2020-01-01',1000,91,'2001-01-01');`);
     const source = readFileSync(path.join('supabase/migrations', file), 'utf8');
     try { query(replay, `SET search_path=public,extensions;\n${source}`); }
     catch (error) { throw new Error(`Migration ${file}: ${error.message}`); }
@@ -56,6 +59,16 @@ try {
   }
   const permissions = query(replay, "SELECT has_column_privilege('anon','public.profiles','role','SELECT'),has_table_privilege('anon','public.user_games','SELECT');").trim();
   assert.equal(permissions, 'f|f', 'Replayed privacy boundary must match intended state');
+  assert.equal(query(replay,"SELECT count(*) FROM public.games WHERE explore_primary_safe IS NULL;").trim(),'2');
+  const fallback=query(replay,"SET ROLE anon; SELECT public.explore_catalogue_page('all-time',0,'','','default',1,40,'2026-11-15'); RESET ROLE;")
+    .split('\n').find(line=>line.startsWith('{'));
+  assert.equal(JSON.parse(fallback).count,2,'Unfilled derived fields use the accurate live fallback');
+  execFileSync(process.execPath,['scripts/backfill-explore-classification.mjs','--database='+replay,'--evidence-path=.verification/replay-classification-backfill.json'],{stdio:['ignore','pipe','pipe']});
+  const backfill=JSON.parse(readFileSync('.verification/replay-classification-backfill.json','utf8'));
+  assert.equal(backfill.updated,2);assert.equal(backfill.remaining,0);assert.equal(backfill.allSourceValuesPreserved,true);
+  assert.equal(query(replay,"SELECT count(*) FROM public.games WHERE updated_at='2001-01-01'::timestamptz;").trim(),'2','Derived-only backfill preserves existing freshness timestamps');
+  query(replay,"DELETE FROM public.games WHERE slug IN ('preclass-a','preclass-b');");
+  console.log('PASS staged classification fallback and actual CLI backfill preserve all source fields');
   const catalogueChecks=query(replay, `BEGIN;
     INSERT INTO public.games(slug,title,release_date,review_count,score,verdict_score,confidence,genres,platforms,tags,steam_app_id) VALUES
       ('a-tie','Synthetic Tie A','2025-01-01',5000,94,94,1,ARRAY['Action'],ARRAY['PC'],'{}',NULL),
@@ -99,6 +112,15 @@ try {
   assert.equal(storedChecks[2].count,0,'Tag edits immediately recompute Early Access exclusion');
   assert.equal(storedChecks[3].count,1,'Stored classification preserves catalogue upcoming fallback');
   console.log('PASS stored classification refreshes on edits and preserves year-suffix canonical groups');
+  const cacheIntegrity=query(replay, `BEGIN;
+    INSERT INTO public.games(slug,title,description,updated_at) VALUES('cache-integrity','Synthetic Cache Integrity','nsfw','2001-01-01');
+    UPDATE public.games SET explore_primary_safe=true,explore_title_key='forged' WHERE slug='cache-integrity';
+    SELECT NOT explore_primary_safe AND explore_title_key='syntheticcacheintegrity' AND updated_at='2001-01-01'::timestamptz
+      FROM public.games WHERE slug='cache-integrity';
+    UPDATE public.games SET description='Safe primary-game metadata.' WHERE slug='cache-integrity';
+    SELECT explore_primary_safe AND updated_at>'2001-01-01'::timestamptz FROM public.games WHERE slug='cache-integrity';
+    ROLLBACK;`).split('\n').filter(line=>line==='t'||line==='f');
+  assert.deepEqual(cacheIntegrity,['t','t'],'Derived values resist spoofing; maintenance preserves freshness and metadata edits advance it');
   query(replay, "CREATE TABLE public.recovery_fixture(id int primary key,payload text); INSERT INTO public.recovery_fixture VALUES(1,'synthetic restore verification');");
   const dump = spawnSync('docker', ['exec', container, 'pg_dump', '-U', 'postgres', '-d', replay, '--format=custom', '--no-owner'], { maxBuffer: 20 * 1024 * 1024 });
   assert.equal(dump.status, 0, 'Synthetic backup export must succeed');
