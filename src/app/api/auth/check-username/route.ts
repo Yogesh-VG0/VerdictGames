@@ -6,7 +6,7 @@
  */
 
 import { NextRequest } from "next/server";
-import { jsonOk, jsonError } from "@/lib/api/response";
+import { jsonPrivateOk, jsonError } from "@/lib/api/response";
 import { getPublicSupabase } from "@/lib/supabase/public";
 import { getUsernameValidationError, normalizeUsername } from "@/lib/auth/username";
 
@@ -16,18 +16,26 @@ export async function GET(request: NextRequest) {
 
   if (!username) return jsonError("Username is required", 400);
   const validationError = getUsernameValidationError(username);
-  if (validationError) return jsonOk({ available: false, reason: validationError });
+  if (validationError) return jsonPrivateOk({ available: false, reason: validationError });
 
+  try {
   const supabase = getPublicSupabase();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: existing } = await (supabase.from("profiles") as any)
+  const { data: existing, error } = await supabase.from("profiles")
     .select("id")
-    .eq("username", username)
+    // Escape LIKE wildcards: underscores are valid literal username characters.
+    .ilike("username", username.replaceAll('_', '\\_'))
+    .limit(1)
+    .abortSignal(AbortSignal.timeout(2500))
     .maybeSingle();
 
+  if (error) return jsonError("Temporarily unable to verify username. Please retry.", 503);
+
   if (existing) {
-    return jsonOk({ available: false, reason: "Username is already taken" });
+    return jsonPrivateOk({ available: false, reason: "Username is already taken" });
   }
 
-  return jsonOk({ available: true, reason: null });
+  return jsonPrivateOk({ available: true, reason: null });
+  } catch {
+    return jsonError("Temporarily unable to verify username. Please retry.", 503);
+  }
 }

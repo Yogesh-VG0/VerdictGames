@@ -8,7 +8,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import type { Database } from "@/lib/supabase/types";
-import { safeRedirectPath } from "@/lib/security/request";
+import { safeRedirectPath, safeAuthOrigin } from "@/lib/security/request";
 
 function normalizeNextPath(next: string | null, flow: string | null) {
   return safeRedirectPath(next, flow === "recovery" ? "/reset-password" : "/");
@@ -29,7 +29,12 @@ function buildRedirectUrl(origin: string, pathname: string, params?: Record<stri
 }
 
 export async function GET(request: NextRequest) {
-  const { searchParams, origin } = request.nextUrl;
+  const { searchParams } = request.nextUrl;
+  const origin = safeAuthOrigin(request.url, request.headers.get('x-forwarded-host') || request.headers.get('host'), [
+    process.env.NEXT_PUBLIC_SITE_URL || '',
+    ...(process.env.VERCEL_URL ? [`https://${process.env.VERCEL_URL}`] : []),
+    ...(process.env.VERCEL_BRANCH_URL ? [`https://${process.env.VERCEL_BRANCH_URL}`] : []),
+  ]);
   const code = searchParams.get("code");
   const flow = searchParams.get("flow");
   const next = searchParams.get("next");

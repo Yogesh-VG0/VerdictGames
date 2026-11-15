@@ -13,6 +13,8 @@ import { createBrowserClient } from "@supabase/ssr";
 import type { AuthUser } from "@/lib/types";
 import type { Database } from "@/lib/supabase/types";
 import { loadOwnProfile } from '@/lib/auth/own-profile';
+import { getPasswordValidationError } from '@/lib/auth/password';
+import { getUsernameValidationError, normalizeUsername } from '@/lib/auth/username';
 
 interface AuthContextType {
   user: AuthUser | null;
@@ -80,11 +82,11 @@ function mapAuthError(message: string, action: AuthAction) {
   }
 
   if (normalizedMessage.includes("user already registered")) {
-    return "An account with this email already exists. Try signing in instead.";
+    return "Check your inbox for a verification link. If you already have an account, sign in or reset your password.";
   }
 
   if (normalizedMessage.includes("password should be at least")) {
-    return "Use a stronger password with at least 8 characters, one letter, and one number.";
+    return "Use a unique password with at least 15 characters.";
   }
 
   if (normalizedMessage.includes("same password")) {
@@ -139,7 +141,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     profileRequest.current++;
     pendingProfile.current = null;
     setProfileLoading(false);
-    const privateScopes = new Set(['library', 'libraryStats', 'gameReviews', 'globalReviews', 'userReviews', 'personalized']);
+    const privateScopes = new Set(['library', 'libraryStats', 'gameReviews', 'globalReviews', 'userReviews', 'personalized', 'privateLists']);
     const filters = { predicate: (query: { queryKey: readonly unknown[] }) => privateScopes.has(String(query.queryKey[0])) };
     void queryClient.cancelQueries(filters);
     queryClient.removeQueries(filters);
@@ -226,12 +228,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signUpWithEmail = async (email: string, password: string, username: string, options?: { nextPath?: string }) => {
     if (!supabase) return { error: "Auth not configured" };
+    const validationError = getPasswordValidationError(password) || getUsernameValidationError(username);
+    if (validationError) return { error: validationError };
     const emailRedirectTo = buildAuthCallbackRedirect(options?.nextPath);
     const { error } = await supabase.auth.signUp({
       email: normalizeEmail(email),
       password,
       options: {
-        data: { preferred_username: username },
+        data: { preferred_username: normalizeUsername(username) },
         emailRedirectTo,
       },
     });
@@ -276,6 +280,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const updatePassword = async (password: string) => {
     if (!supabase) return { error: "Auth not configured" };
+    const validationError = getPasswordValidationError(password);
+    if (validationError) return { error: validationError };
     const { error } = await supabase.auth.updateUser({ password });
     if (error) return { error: mapAuthError(error.message, "password_update") };
     setIsPasswordRecovery(false);

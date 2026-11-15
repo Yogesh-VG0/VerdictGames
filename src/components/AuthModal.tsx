@@ -13,6 +13,8 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import { getUsernameValidationError, normalizeUsername, sanitizeUsername } from "@/lib/auth/username";
+import { createUsernameChecker } from '@/lib/auth/username-check';
+import { getPasswordValidationError } from '@/lib/auth/password';
 import { cn } from "@/lib/utils";
 import { Eye, EyeOff, X, CheckCircle2, AlertCircle, Loader2, User, Mail, Lock, ArrowLeft, ShieldCheck } from "lucide-react";
 
@@ -22,9 +24,6 @@ interface AuthModalProps {
   defaultTab?: "login" | "signup";
   message?: string;
 }
-
-const PASSWORD_RE_LETTER = /[a-zA-Z]/;
-const PASSWORD_RE_NUMBER = /[0-9]/;
 
 type AuthView = "login" | "signup" | "forgot-password";
 
@@ -54,66 +53,62 @@ function AuthModalContent({ isOpen, onClose, defaultTab = "login", message }: Au
   const [loading, setLoading] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
   const [verificationEmail, setVerificationEmail] = useState("");
+  const [resendUntil, setResendUntil] = useState(0);
+  const [resendSeconds, setResendSeconds] = useState(0);
+  const submitting = useRef(false);
+  const resendPending = useRef(false);
   const { signInWithEmail, signUpWithEmail, signInWithOAuth, sendPasswordResetEmail, resendConfirmationEmail } = useAuth();
   const [oauthLoading, setOauthLoading] = useState<"google" | "discord" | null>(null);
   const modalRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
 
   // Username availability check
-  const [usernameStatus, setUsernameStatus] = useState<"idle" | "checking" | "available" | "taken">("idle");
+  const [usernameStatus, setUsernameStatus] = useState<"idle" | "checking" | "available" | "taken" | "invalid" | "error">("idle");
   const [usernameHint, setUsernameHint] = useState("");
-  const checkTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const checkUsername = useMemo(() => createUsernameChecker(), []);
 
-  const checkUsername = useCallback(async (val: string) => {
-    const clean = normalizeUsername(val);
-    if (clean.length < 3) {
-      setUsernameStatus("idle");
-      setUsernameHint("");
-      return null;
-    }
-    const validationError = getUsernameValidationError(clean);
-    if (validationError) {
-      setUsernameStatus("taken");
-      setUsernameHint(validationError);
-      return { available: false, reason: validationError };
-    }
-    setUsernameStatus("checking");
-    try {
-      const res = await fetch(`/api/auth/check-username?username=${encodeURIComponent(clean)}`);
-      const json = await res.json();
-      if (json.data?.available) {
-        setUsernameStatus("available");
-        setUsernameHint("Username is available");
-        return { available: true, reason: null };
-      } else {
-        setUsernameStatus("taken");
-        setUsernameHint(json.data?.reason || "Username is not available");
-        return { available: false, reason: json.data?.reason || "Username is not available" };
+  useEffect(() => {
+    if (!isOpen || view !== 'signup' || !username) return;
+    let obsolete = false;
+    const validationError = getUsernameValidationError(username);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setUsernameStatus(validationError ? 'invalid' : 'checking');
+    setUsernameHint(validationError || 'Checking username…');
+    if (validationError) return;
+    const timer = setTimeout(async () => {
+      try {
+        const result = await checkUsername(username);
+        if (obsolete) return;
+        setUsernameStatus(result.available ? 'available' : 'taken');
+        setUsernameHint(result.available ? 'Username is available' : result.reason || 'Username is not available');
+      } catch {
+        if (!obsolete) {
+          setUsernameStatus('error');
+          setUsernameHint('Temporarily unable to verify. You can retry when submitting.');
+        }
       }
-    } catch {
-      setUsernameStatus("idle");
-      setUsernameHint("");
-      return null;
-    }
-  }, []);
+    }, 250);
+    return () => { obsolete = true; clearTimeout(timer); };
+  }, [username, view, isOpen, checkUsername]);
+
+  useEffect(() => {
+    if (!isOpen || !resendUntil) return;
+    const update = () => setResendSeconds(Math.max(0, Math.ceil((resendUntil - Date.now()) / 1000)));
+    update();
+    const timer = setInterval(update, 1000);
+    return () => clearInterval(timer);
+  }, [isOpen, resendUntil]);
 
   function handleUsernameChange(val: string) {
     const sanitized = sanitizeUsername(val);
     setUsername(sanitized);
     setUsernameStatus("idle");
     setUsernameHint("");
-    if (checkTimer.current) clearTimeout(checkTimer.current);
-    if (sanitized.length >= 3) {
-      checkTimer.current = setTimeout(() => checkUsername(sanitized), 400);
-    }
   }
 
   // Password strength
-  const pwLen = password.length >= 8;
-  const pwLetter = PASSWORD_RE_LETTER.test(password);
-  const pwNumber = PASSWORD_RE_NUMBER.test(password);
-  const pwValid = pwLen && pwLetter && pwNumber;
-  const passwordsMatch = confirmPassword.length === 0 || password === confirmPassword;
+  const passwordError = getPasswordValidationError(password);
+  const passwordsMatch = password === confirmPassword;
   const heading = view === "login" ? (message?.toLowerCase().includes('track') || message?.toLowerCase().includes('library') ? 'Sign in to save your library' : 'Sign in to Verdict Games') : view === "signup" ? "Join Verdict.games" : "Reset your password";
   const subtitle = view === "login"
     ? "Sign in to your account"
@@ -208,6 +203,7 @@ function AuthModalContent({ isOpen, onClose, defaultTab = "login", message }: Au
   }
 
   async function handleResendConfirmation() {
+    if (resendPending.current || Date.now() < resendUntil) return;
     const targetEmail = verificationEmail || email;
     if (!targetEmail.trim()) {
       setError("Enter your email first.");
@@ -216,18 +212,26 @@ function AuthModalContent({ isOpen, onClose, defaultTab = "login", message }: Au
     setError("");
     setSuccessMsg("");
     setResendLoading(true);
+    resendPending.current = true;
+    try {
     const result = await resendConfirmationEmail(targetEmail, { nextPath: currentPath });
     if (result.error) {
       setError(result.error);
     } else {
-      setSuccessMsg(`We sent a new confirmation link to ${targetEmail.trim().toLowerCase()}.`);
+      setSuccessMsg('If this address has an account awaiting verification, a new confirmation link is on its way.');
       setVerificationEmail(targetEmail.trim().toLowerCase());
+      setResendUntil(Date.now() + 60_000);
     }
-    setResendLoading(false);
+    } catch {
+      setError('Temporarily unable to send the confirmation link. Please retry.');
+    } finally { resendPending.current = false; setResendLoading(false); }
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (submitting.current || oauthLoading) return;
+    submitting.current = true;
+    try {
     setError("");
     setSuccessMsg("");
     setLoading(true);
@@ -255,8 +259,8 @@ function AuthModalContent({ isOpen, onClose, defaultTab = "login", message }: Au
         setLoading(false);
         return;
       }
-      if (!pwValid) {
-        setError("Password must be at least 8 characters with at least one letter and one number.");
+      if (passwordError) {
+        setError(passwordError);
         setLoading(false);
         return;
       }
@@ -285,6 +289,7 @@ function AuthModalContent({ isOpen, onClose, defaultTab = "login", message }: Au
         const normalizedEmail = email.trim().toLowerCase();
         setSuccessMsg("Account created! Check your email to verify your account before signing in.");
         setVerificationEmail(normalizedEmail);
+        setResendUntil(Date.now() + 60_000);
         setEmail(normalizedEmail);
         setPassword("");
         setConfirmPassword("");
@@ -292,6 +297,12 @@ function AuthModalContent({ isOpen, onClose, defaultTab = "login", message }: Au
       }
     }
     setLoading(false);
+    } catch {
+      setError('Temporarily unable to complete this request. Please retry.');
+    } finally {
+      submitting.current = false;
+      setLoading(false);
+    }
   }
 
   return (
@@ -426,11 +437,11 @@ function AuthModalContent({ isOpen, onClose, defaultTab = "login", message }: Au
                   <button
                     type="button"
                     onClick={handleResendConfirmation}
-                    disabled={resendLoading}
+                    disabled={resendLoading || resendSeconds > 0}
                     className={secondaryButtonCls}
                   >
                     {resendLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                    <span>{resendLoading ? "Sending..." : "Resend verification email"}</span>
+                    <span>{resendLoading ? "Sending..." : resendSeconds > 0 ? `Resend in ${resendSeconds}s` : "Resend verification email"}</span>
                   </button>
                 )}
                 {view === "forgot-password" && (
@@ -445,6 +456,7 @@ function AuthModalContent({ isOpen, onClose, defaultTab = "login", message }: Au
             <form onSubmit={handleSubmit} className="space-y-3.5">
               {view === "signup" && (
                 <div className="space-y-1">
+                  <label htmlFor="auth-username" className="mb-2 block text-xs font-medium text-secondary">Username</label>
                   <div className="relative">
                     <User className={inputIconCls} />
                     <input
@@ -455,8 +467,13 @@ function AuthModalContent({ isOpen, onClose, defaultTab = "login", message }: Au
                       onChange={(e) => handleUsernameChange(e.target.value)}
                       placeholder="Username"
                       aria-label="Username"
+                      aria-describedby="auth-username-hint"
+                      aria-invalid={usernameStatus === 'invalid' || usernameStatus === 'taken'}
+                      maxLength={24}
                       required
                       autoComplete="username"
+                      autoCapitalize="none"
+                      spellCheck={false}
                       className={cn(inputCls, "pr-9", usernameStatus === "available" && "border-success/50", usernameStatus === "taken" && "border-danger/50")}
                     />
                     {/* Status icon */}
@@ -467,7 +484,7 @@ function AuthModalContent({ isOpen, onClose, defaultTab = "login", message }: Au
                     </div>
                   </div>
                   {usernameHint && (
-                    <p className={cn("text-[11px] px-1", usernameStatus === "available" ? "text-success" : "text-danger")}>
+                    <p id="auth-username-hint" role="status" className={cn("text-[11px] px-1", usernameStatus === "available" ? "text-success" : usernameStatus === 'checking' || usernameStatus === 'error' ? 'text-secondary' : "text-danger")}>
                       {usernameHint}
                     </p>
                   )}
@@ -475,7 +492,9 @@ function AuthModalContent({ isOpen, onClose, defaultTab = "login", message }: Au
                 </div>
               )}
 
-              <div className="relative">
+              <div className="space-y-2">
+                <label htmlFor="auth-email" className="block text-xs font-medium text-secondary">Email address</label>
+                <div className="relative">
                 <Mail className={inputIconCls} />
                 <input
                   id="auth-email"
@@ -487,8 +506,10 @@ function AuthModalContent({ isOpen, onClose, defaultTab = "login", message }: Au
                   aria-label="Email"
                   required
                   autoComplete="email"
+                  spellCheck={false}
                   className={inputCls}
                 />
+                </div>
               </div>
 
               {view === "forgot-password" && (
@@ -499,6 +520,7 @@ function AuthModalContent({ isOpen, onClose, defaultTab = "login", message }: Au
 
               {view !== "forgot-password" && (
                 <div className="space-y-1">
+                <label htmlFor="auth-password" className="mb-2 block text-xs font-medium text-secondary">Password</label>
                 <div className="relative">
                   <Lock className={inputIconCls} />
                   <input
@@ -517,7 +539,6 @@ function AuthModalContent({ isOpen, onClose, defaultTab = "login", message }: Au
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-tertiary hover:text-foreground transition-colors"
-                    tabIndex={-1}
                     aria-label={showPassword ? "Hide password" : "Show password"}
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -525,24 +546,17 @@ function AuthModalContent({ isOpen, onClose, defaultTab = "login", message }: Au
                 </div>
 
                 {/* Password strength indicators (signup only) */}
-                {view === "signup" && password.length > 0 && (
-                  <div className="flex items-center gap-3 px-1 pt-0.5">
-                    <span className={cn("text-[11px]", pwLen ? "text-success" : "text-tertiary")}>
-                      {pwLen ? "\u2713" : "\u2022"} 8+ chars
-                    </span>
-                    <span className={cn("text-[11px]", pwLetter ? "text-success" : "text-tertiary")}>
-                      {pwLetter ? "\u2713" : "\u2022"} Letter
-                    </span>
-                    <span className={cn("text-[11px]", pwNumber ? "text-success" : "text-tertiary")}>
-                      {pwNumber ? "\u2713" : "\u2022"} Number
-                    </span>
-                  </div>
+                {view === "signup" && (
+                  <p role="status" className={cn('px-1 pt-1 text-xs', password.length > 0 && !passwordError ? 'text-success' : 'text-secondary')}>
+                    {password.length > 0 ? passwordError || 'Length requirement met. Use a unique password you don’t use elsewhere.' : 'Use at least 15 characters. Try a unique passphrase or a password manager.'}
+                  </p>
                 )}
               </div>
               )}
 
               {view === "signup" && (
                 <div className="space-y-1">
+                  <label htmlFor="auth-confirm-password" className="mb-2 block text-xs font-medium text-secondary">Confirm password</label>
                   <div className="relative">
                     <Lock className={inputIconCls} />
                     <input
@@ -561,7 +575,6 @@ function AuthModalContent({ isOpen, onClose, defaultTab = "login", message }: Au
                       type="button"
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-tertiary hover:text-foreground transition-colors"
-                      tabIndex={-1}
                       aria-label={showConfirmPassword ? "Hide password confirmation" : "Show password confirmation"}
                     >
                       {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -597,11 +610,11 @@ function AuthModalContent({ isOpen, onClose, defaultTab = "login", message }: Au
                     <button
                       type="button"
                       onClick={handleResendConfirmation}
-                      disabled={resendLoading}
+                      disabled={resendLoading || resendSeconds > 0}
                       className={secondaryButtonCls}
                     >
                       {resendLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                      <span>{resendLoading ? "Sending..." : "Resend verification email"}</span>
+                      <span>{resendLoading ? "Sending..." : resendSeconds > 0 ? `Resend in ${resendSeconds}s` : "Resend verification email"}</span>
                     </button>
                   )}
                 </div>
