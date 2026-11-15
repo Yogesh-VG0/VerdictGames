@@ -37,6 +37,19 @@ try {
   console.log("RAWG health check passed.");
   setOutput("run_job", "true");
 } catch (error) {
+  const independentDiscovery = ['discover-standard', 'discover-deep'].includes(job)
+    && process.env.TWITCH_CLIENT_ID && process.env.TWITCH_CLIENT_SECRET;
+  if (independentDiscovery) {
+    // The worker owns the single persisted run and repeated-outage alert.
+    // Do not stop independent progress for missing/invalid RAWG credentials.
+    console.warn('::warning title=RAWG discovery unavailable::Running configured IGDB discovery; RAWG failure remains visible.');
+    addSummary(`### Independent IGDB discovery for \`${job}\``);
+    addSummary('RAWG is unavailable. The worker will record actual IGDB progress and a RAWG-deferred outcome.');
+    setOutput('run_job', 'true');
+    setOutput('discovery_provider', 'igdb');
+    setOutput('outcome', 'degraded');
+    process.exit(0);
+  }
   if (!isRetryableRawgError(error)) {
     console.error(`RAWG health check failed with a non-retryable error: ${error.message}`);
     process.exit(1);

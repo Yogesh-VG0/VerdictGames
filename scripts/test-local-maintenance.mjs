@@ -18,10 +18,11 @@ writeFileSync(preload, "globalThis.fetch = async () => new Response('Provider un
 writeFileSync(output, '');
 writeFileSync(summary, '');
 
-function health(job, status = '522') {
+function health(job, status = '522', independent = false, key = 'local-test-only') {
   return spawnSync(process.execPath, ['--import', pathToFileURL(preload).href, 'scripts/check-rawg-availability.mjs', job], {
     encoding: 'utf8', timeout: 30_000,
-    env: { ...process.env, RAWG_API_KEY: 'local-test-only', LOCAL_PROVIDER_STATUS: status,
+    env: { ...process.env, RAWG_API_KEY: key, LOCAL_PROVIDER_STATUS: status,
+      TWITCH_CLIENT_ID:independent?'local-only':'',TWITCH_CLIENT_SECRET:independent?'local-only':'',
       GITHUB_RUN_ID: run, GITHUB_OUTPUT: output, GITHUB_STEP_SUMMARY: summary },
   });
 }
@@ -44,6 +45,19 @@ try {
   assert.ok(readFileSync(summary, 'utf8').includes('not completed maintenance'));
   assert.equal(health('refresh-trending').status, 0, 'Steam maintenance stays independent from RAWG outage gating');
   assert.equal(health(selected[0], '401').status, 1, 'Non-retryable provider/config errors remain failures');
+  for(const job of ['discover-standard','discover-deep']) {
+    for(const status of ['522','401']) {
+      writeFileSync(output,'');
+      assert.equal(health(job,status,true).status,0,'Configured independent discovery passes the RAWG outage gate');
+      assert.match(readFileSync(output,'utf8'),/run_job=true/);
+      assert.match(readFileSync(output,'utf8'),/discovery_provider=igdb/);
+    }
+  }
+  writeFileSync(output,'');
+  assert.equal(health('discover-standard','401',true,'').status,0,'Missing RAWG credentials still allow configured IGDB discovery');
+  assert.match(readFileSync(output,'utf8'),/discovery_provider=igdb/);
+  const after=await sql`SELECT count(*)::int n FROM scheduler_runs WHERE metadata->>'github_run_id'=${run}`;
+  assert.equal(after[0].n,3,'Fallback gate leaves the single progress/outage record to the worker');
   console.log('PASS local provider-outage health check: two deferred attempts, third attempt alerts, no ingestion, Steam independent, permanent errors fail');
 } finally {
   await sql`DELETE FROM scheduler_runs WHERE metadata::text LIKE ${`%${run}%`}`;

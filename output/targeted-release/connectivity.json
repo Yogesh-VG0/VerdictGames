@@ -1,25 +1,314 @@
 {
-  "measuredAt": "2026-11-15T13:57:37.900Z",
+  "measuredAt": "2026-11-15T18:57:41.980Z",
   "database": {
     "host": "db.vjzsvnaswronkctazarn.supabase.co",
     "port": "5432",
-    "error": {
-      "name": "Error",
-      "code": "CONNECT_TIMEOUT",
-      "elapsedMs": 5006
-    }
+    "connectAndProbeMs": 2239,
+    "counts": [
+      {
+        "games": "8353",
+        "row_bytes": "22459221",
+        "description_bytes": "3845103"
+      }
+    ],
+    "indexes": [
+      {
+        "indexname": "games_pkey",
+        "indexdef": "CREATE UNIQUE INDEX games_pkey ON public.games USING btree (id)"
+      },
+      {
+        "indexname": "games_slug_key",
+        "indexdef": "CREATE UNIQUE INDEX games_slug_key ON public.games USING btree (slug)"
+      },
+      {
+        "indexname": "idx_games_slug",
+        "indexdef": "CREATE INDEX idx_games_slug ON public.games USING btree (slug)"
+      },
+      {
+        "indexname": "idx_games_score",
+        "indexdef": "CREATE INDEX idx_games_score ON public.games USING btree (score DESC)"
+      },
+      {
+        "indexname": "idx_games_trending",
+        "indexdef": "CREATE INDEX idx_games_trending ON public.games USING btree (trending) WHERE (trending = true)"
+      },
+      {
+        "indexname": "idx_games_featured",
+        "indexdef": "CREATE INDEX idx_games_featured ON public.games USING btree (featured) WHERE (featured = true)"
+      },
+      {
+        "indexname": "idx_games_release_date",
+        "indexdef": "CREATE INDEX idx_games_release_date ON public.games USING btree (release_date DESC)"
+      },
+      {
+        "indexname": "idx_games_rawg_id",
+        "indexdef": "CREATE INDEX idx_games_rawg_id ON public.games USING btree (rawg_id) WHERE (rawg_id IS NOT NULL)"
+      },
+      {
+        "indexname": "idx_games_steam_app_id",
+        "indexdef": "CREATE INDEX idx_games_steam_app_id ON public.games USING btree (steam_app_id) WHERE (steam_app_id IS NOT NULL)"
+      },
+      {
+        "indexname": "idx_games_igdb_id",
+        "indexdef": "CREATE INDEX idx_games_igdb_id ON public.games USING btree (igdb_id) WHERE (igdb_id IS NOT NULL)"
+      },
+      {
+        "indexname": "idx_games_cheapshark_id",
+        "indexdef": "CREATE INDEX idx_games_cheapshark_id ON public.games USING btree (cheapshark_id) WHERE (cheapshark_id IS NOT NULL)"
+      },
+      {
+        "indexname": "idx_games_current_players",
+        "indexdef": "CREATE INDEX idx_games_current_players ON public.games USING btree (current_players DESC NULLS LAST)"
+      },
+      {
+        "indexname": "idx_games_is_free",
+        "indexdef": "CREATE INDEX idx_games_is_free ON public.games USING btree (is_free) WHERE (is_free = true)"
+      },
+      {
+        "indexname": "idx_games_last_enriched",
+        "indexdef": "CREATE INDEX idx_games_last_enriched ON public.games USING btree (last_enriched_at NULLS FIRST)"
+      },
+      {
+        "indexname": "idx_games_manual_featured",
+        "indexdef": "CREATE INDEX idx_games_manual_featured ON public.games USING btree (is_featured_manual) WHERE (is_featured_manual = true)"
+      },
+      {
+        "indexname": "idx_games_manual_trending",
+        "indexdef": "CREATE INDEX idx_games_manual_trending ON public.games USING btree (is_trending_manual) WHERE (is_trending_manual = true)"
+      },
+      {
+        "indexname": "idx_games_momentum",
+        "indexdef": "CREATE INDEX idx_games_momentum ON public.games USING btree (momentum DESC)"
+      },
+      {
+        "indexname": "idx_games_verdict_score",
+        "indexdef": "CREATE INDEX idx_games_verdict_score ON public.games USING btree (verdict_score DESC NULLS LAST)"
+      },
+      {
+        "indexname": "idx_games_confidence",
+        "indexdef": "CREATE INDEX idx_games_confidence ON public.games USING btree (confidence DESC NULLS LAST)"
+      },
+      {
+        "indexname": "idx_games_community_score",
+        "indexdef": "CREATE INDEX idx_games_community_score ON public.games USING btree (community_score DESC NULLS LAST)"
+      },
+      {
+        "indexname": "idx_games_verdict_confidence",
+        "indexdef": "CREATE INDEX idx_games_verdict_confidence ON public.games USING btree (verdict_score DESC NULLS LAST, confidence DESC NULLS LAST) WHERE (verdict_score IS NOT NULL)"
+      },
+      {
+        "indexname": "idx_games_is_provisional",
+        "indexdef": "CREATE INDEX idx_games_is_provisional ON public.games USING btree (is_provisional) WHERE (is_provisional = true)"
+      },
+      {
+        "indexname": "idx_games_completeness_score",
+        "indexdef": "CREATE INDEX idx_games_completeness_score ON public.games USING btree (completeness_score)"
+      },
+      {
+        "indexname": "idx_games_is_adult",
+        "indexdef": "CREATE INDEX idx_games_is_adult ON public.games USING btree (is_adult) WHERE (is_adult = true)"
+      },
+      {
+        "indexname": "idx_games_homepage_recommendation_pool",
+        "indexdef": "CREATE INDEX idx_games_homepage_recommendation_pool ON public.games USING btree (verdict_score DESC NULLS LAST, score DESC, release_date DESC) WHERE ((release_date IS NOT NULL) AND (cover_image IS NOT NULL) AND (cover_image <> ''::text) AND (score >= 75) AND (review_count >= 75) AND (confidence >= (0.4)::double precision))"
+      },
+      {
+        "indexname": "idx_games_homepage_top_rated_pool",
+        "indexdef": "CREATE INDEX idx_games_homepage_top_rated_pool ON public.games USING btree (verdict_score DESC NULLS LAST, confidence DESC NULLS LAST, score DESC, release_date DESC) WHERE ((release_date IS NOT NULL) AND (cover_image IS NOT NULL) AND (cover_image <> ''::text) AND (score >= 70) AND (review_count >= 75) AND (confidence >= (0.3)::double precision))"
+      },
+      {
+        "indexname": "idx_games_genres_gin",
+        "indexdef": "CREATE INDEX idx_games_genres_gin ON public.games USING gin (genres)"
+      },
+      {
+        "indexname": "idx_games_tags_gin",
+        "indexdef": "CREATE INDEX idx_games_tags_gin ON public.games USING gin (tags)"
+      },
+      {
+        "indexname": "idx_games_developer",
+        "indexdef": "CREATE INDEX idx_games_developer ON public.games USING btree (developer) WHERE (developer <> ''::text)"
+      },
+      {
+        "indexname": "idx_games_franchise",
+        "indexdef": "CREATE INDEX idx_games_franchise ON public.games USING btree (franchise) WHERE ((franchise IS NOT NULL) AND (franchise <> ''::text))"
+      },
+      {
+        "indexname": "idx_games_title_trgm",
+        "indexdef": "CREATE INDEX idx_games_title_trgm ON public.games USING gin (title gin_trgm_ops)"
+      },
+      {
+        "indexname": "idx_games_developer_trgm",
+        "indexdef": "CREATE INDEX idx_games_developer_trgm ON public.games USING gin (developer gin_trgm_ops)"
+      },
+      {
+        "indexname": "idx_games_publisher_trgm",
+        "indexdef": "CREATE INDEX idx_games_publisher_trgm ON public.games USING gin (publisher gin_trgm_ops)"
+      },
+      {
+        "indexname": "list_items_pkey",
+        "indexdef": "CREATE UNIQUE INDEX list_items_pkey ON public.list_items USING btree (id)"
+      },
+      {
+        "indexname": "idx_list_items_list_id",
+        "indexdef": "CREATE INDEX idx_list_items_list_id ON public.list_items USING btree (list_id)"
+      },
+      {
+        "indexname": "idx_list_items_game_id",
+        "indexdef": "CREATE INDEX idx_list_items_game_id ON public.list_items USING btree (game_id)"
+      },
+      {
+        "indexname": "idx_list_items_unique",
+        "indexdef": "CREATE UNIQUE INDEX idx_list_items_unique ON public.list_items USING btree (list_id, game_id)"
+      },
+      {
+        "indexname": "lists_pkey",
+        "indexdef": "CREATE UNIQUE INDEX lists_pkey ON public.lists USING btree (id)"
+      },
+      {
+        "indexname": "lists_slug_key",
+        "indexdef": "CREATE UNIQUE INDEX lists_slug_key ON public.lists USING btree (slug)"
+      },
+      {
+        "indexname": "idx_lists_slug",
+        "indexdef": "CREATE INDEX idx_lists_slug ON public.lists USING btree (slug)"
+      },
+      {
+        "indexname": "idx_lists_owner_id",
+        "indexdef": "CREATE INDEX idx_lists_owner_id ON public.lists USING btree (owner_id)"
+      },
+      {
+        "indexname": "idx_lists_system_key_unique",
+        "indexdef": "CREATE UNIQUE INDEX idx_lists_system_key_unique ON public.lists USING btree (system_key) WHERE (system_key IS NOT NULL)"
+      },
+      {
+        "indexname": "idx_lists_is_system_managed",
+        "indexdef": "CREATE INDEX idx_lists_is_system_managed ON public.lists USING btree (is_system_managed) WHERE (is_system_managed = true)"
+      },
+      {
+        "indexname": "idx_lists_managed_by",
+        "indexdef": "CREATE INDEX idx_lists_managed_by ON public.lists USING btree (managed_by) WHERE (managed_by IS NOT NULL)"
+      }
+    ],
+    "stats": [
+      {
+        "relname": "games",
+        "n_live_tup": "8353",
+        "n_dead_tup": "23",
+        "last_analyze": "2026-11-10T20:21:24.594Z",
+        "last_autoanalyze": "2026-11-15T07:02:06.214Z",
+        "seq_scan": "2542",
+        "idx_scan": "562473"
+      },
+      {
+        "relname": "lists",
+        "n_live_tup": "22",
+        "n_dead_tup": "30",
+        "last_analyze": null,
+        "last_autoanalyze": "2026-11-15T09:39:56.829Z",
+        "seq_scan": "5625",
+        "idx_scan": "3"
+      },
+      {
+        "relname": "list_items",
+        "n_live_tup": "252",
+        "n_dead_tup": "24",
+        "last_analyze": null,
+        "last_autoanalyze": "2026-11-15T09:39:56.798Z",
+        "seq_scan": "513",
+        "idx_scan": "8674"
+      }
+    ],
+    "plan": [
+      {
+        "QUERY PLAN": [
+          {
+            "Plan": {
+              "Node Type": "Limit",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Startup Cost": 0.29,
+              "Total Cost": 822.42,
+              "Plan Rows": 250,
+              "Plan Width": 48,
+              "Actual Startup Time": 2.091,
+              "Actual Total Time": 4.826,
+              "Actual Rows": 250,
+              "Actual Loops": 1,
+              "Shared Hit Blocks": 385,
+              "Shared Read Blocks": 0,
+              "Shared Dirtied Blocks": 0,
+              "Shared Written Blocks": 0,
+              "Local Hit Blocks": 0,
+              "Local Read Blocks": 0,
+              "Local Dirtied Blocks": 0,
+              "Local Written Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0,
+              "Plans": [
+                {
+                  "Node Type": "Index Scan",
+                  "Parent Relationship": "Outer",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Scan Direction": "Forward",
+                  "Index Name": "games_pkey",
+                  "Relation Name": "games",
+                  "Alias": "games",
+                  "Startup Cost": 0.29,
+                  "Total Cost": 18175.94,
+                  "Plan Rows": 5527,
+                  "Plan Width": 48,
+                  "Actual Startup Time": 2.09,
+                  "Actual Total Time": 4.8,
+                  "Actual Rows": 250,
+                  "Actual Loops": 1,
+                  "Filter": "((review_count >= 100) AND (release_date <= CURRENT_DATE))",
+                  "Rows Removed by Filter": 131,
+                  "Shared Hit Blocks": 385,
+                  "Shared Read Blocks": 0,
+                  "Shared Dirtied Blocks": 0,
+                  "Shared Written Blocks": 0,
+                  "Local Hit Blocks": 0,
+                  "Local Read Blocks": 0,
+                  "Local Dirtied Blocks": 0,
+                  "Local Written Blocks": 0,
+                  "Temp Read Blocks": 0,
+                  "Temp Written Blocks": 0
+                }
+              ]
+            },
+            "Planning": {
+              "Shared Hit Blocks": 92,
+              "Shared Read Blocks": 0,
+              "Shared Dirtied Blocks": 0,
+              "Shared Written Blocks": 0,
+              "Local Hit Blocks": 0,
+              "Local Read Blocks": 0,
+              "Local Dirtied Blocks": 0,
+              "Local Written Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            "Planning Time": 3.854,
+            "Triggers": [],
+            "Execution Time": 4.878
+          }
+        ]
+      }
+    ]
   },
   "http": [
     {
       "label": "edge-only",
       "status": 401,
       "bytes": 101,
-      "elapsedMs": 352
+      "elapsedMs": 343
     },
     {
       "label": "one-public-id",
-      "error": "TimeoutError",
-      "elapsedMs": 10002
+      "status": 200,
+      "bytes": 47,
+      "elapsedMs": 1295
     }
   ]
 }

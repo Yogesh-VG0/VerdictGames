@@ -13,5 +13,5 @@ export function verificationEnv(overrides = {}) {
     if (/^(NEXT_PUBLIC_|SUPABASE_|POSTGRES_|RAWG_|STEAM_|TWITCH_|RESEND_|CLOUDINARY_)/.test(key)
       || ['DATABASE_URL', 'DIRECT_URL', 'CRON_SECRET'].includes(key)) env[key] = '';
   }
-  return { ...env, ...overrides };
+  return { ...env, ...overrides, VERDICT_LOCAL_VERIFY: '1' };
 }

@@ -1,0 +1,16 @@
+{
+  "verifiedAt": "2026-11-15T19:01:49.496Z",
+  "approvedByOwner": true,
+  "deleted": {
+    "games": 3,
+    "providerMappings": 3,
+    "schedulerRuns": 3
+  },
+  "unrelatedReferences": 0,
+  "remaining_games": 0,
+  "remaining_mappings": 0,
+  "remaining_runs": 0,
+  "catalogue_games": 8350,
+  "cause": "CLI loader repopulated DATABASE_URL from .env despite a loopback SUPABASE_DB_URL.",
+  "guard": "Verification pins both database URLs, skips worker .env loading and rejects non-loopback scheduler connections."
+}
