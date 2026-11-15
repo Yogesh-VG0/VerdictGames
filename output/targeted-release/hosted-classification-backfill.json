@@ -1,0 +1,56 @@
+{
+  "startedAt": "2026-11-15T20:39:02.708Z",
+  "hosted": true,
+  "sqlSha256": "1a7e3b5c901f159494e4d1d61b2cfd71c9564533a013843e490942f358295a10",
+  "batchSize": 100,
+  "batches": [
+    {
+      "rows": 100,
+      "ms": 3525
+    },
+    {
+      "rows": 100,
+      "ms": 1913
+    },
+    {
+      "rows": 100,
+      "ms": 1981
+    },
+    {
+      "rows": 100,
+      "ms": 1741
+    },
+    {
+      "rows": 100,
+      "ms": 1727
+    },
+    {
+      "rows": 100,
+      "ms": 1661
+    },
+    {
+      "rows": 100,
+      "ms": 1649
+    },
+    {
+      "rows": 100,
+      "ms": 1715
+    },
+    {
+      "rows": 100,
+      "ms": 1650
+    },
+    {
+      "rows": 100,
+      "ms": 2495
+    }
+  ],
+  "updated": 1000,
+  "allSourceValuesPreserved": true,
+  "before": {
+    "heap": "47865856",
+    "indexes": "29097984"
+  },
+  "failed": true,
+  "code": "57014"
+}

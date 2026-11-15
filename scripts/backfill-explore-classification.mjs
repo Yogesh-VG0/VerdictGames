@@ -37,23 +37,33 @@ try{
  assert.deepEqual(triggers.map(t=>t.tgname),['set_games_updated_at','zzz_refresh_explore_classification'],'Review unexpected triggers before source-preserving backfill');
  assert.ok(triggers.every(t=>['O','A'].includes(t.tgenabled)));
  evidence.before=(await sql`SELECT pg_table_size('public.games') heap,pg_indexes_size('public.games') indexes`)[0];
- for(let index=0;index<200;index++){
+ // Snapshot only unfinished public-game IDs once. Repeated ordered scans of
+ // the already completed prefix exceeded the hosted statement budget. Keep
+ // IDs in memory only; recheck eligibility under row locks in every batch.
+ const pending=await sql.begin(async tx=>{
+  await tx`SET TRANSACTION READ ONLY`;await tx`SET LOCAL statement_timeout='3s'`;
+  return tx.unsafe('SELECT g.id FROM public.games g WHERE '+missing+' LIMIT 20001');
+ });
+ assert.ok(pending.length<=20000,'Finite 20,000-row budget exceeded');
+ pending.sort((a,b)=>a.id.localeCompare(b.id));
+ evidence.pendingAtStart=pending.length;
+ for(let index=0;index<pending.length;index+=100){
+  const ids=pending.slice(index,index+100).map(row=>row.id);
   const t=performance.now();
   const result=await sql.begin(async tx=>{
    await tx`SET LOCAL lock_timeout='500ms'`;await tx`SET LOCAL statement_timeout='3s'`;
    const [result]=await tx.unsafe(`WITH batch AS MATERIALIZED (
     SELECT g.id,md5((to_jsonb(g)-${strip})::text) before_hash FROM public.games g
-    WHERE ${missing} ORDER BY g.id LIMIT 100 FOR UPDATE SKIP LOCKED
+    WHERE g.id=ANY($1::uuid[]) AND (${missing}) ORDER BY g.id LIMIT 100 FOR UPDATE SKIP LOCKED
    ), changed AS (
     UPDATE public.games g SET explore_primary_safe=NULL FROM batch b WHERE g.id=b.id
     RETURNING g.id,md5((to_jsonb(g)-${strip})::text) after_hash
    ) SELECT count(*)::int updated,coalesce(bool_and(b.before_hash=c.after_hash),true) preserved
-     FROM changed c JOIN batch b USING(id)`);
+     FROM changed c JOIN batch b USING(id)`,[ids]);
    if(!result.preserved)evidence.allSourceValuesPreserved=false;
    assert.equal(result.preserved,true,'Source fields or freshness timestamp changed; batch rolled back');return result;
   });
   evidence.batches.push({rows:result.updated,ms:Math.round(performance.now()-t)});evidence.updated+=result.updated;
-  if(!result.updated)break;
  }
  const [remaining]=await sql.unsafe('SELECT count(*)::int missing FROM public.games g WHERE '+missing);
  evidence.remaining=remaining.missing;assert.equal(remaining.missing,0,'Derived fields remain; stop release and resume only after active writers finish');

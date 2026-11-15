@@ -1,0 +1,307 @@
+{
+  "measuredAt": "2026-11-15T20:48:17.551Z",
+  "scope": "read-only classification backfill diagnostics",
+  "stats": [
+    {
+      "n_live_tup": "8355",
+      "n_dead_tup": "0",
+      "last_autoanalyze": "2026-11-15T20:45:20.099Z",
+      "last_autovacuum": "2026-11-15T20:45:17.123Z"
+    }
+  ],
+  "batchPlan": [
+    {
+      "QUERY PLAN": [
+        {
+          "Plan": {
+            "Node Type": "Limit",
+            "Parallel Aware": false,
+            "Async Capable": false,
+            "Startup Cost": 0.29,
+            "Total Cost": 217.1,
+            "Plan Rows": 100,
+            "Plan Width": 48,
+            "Actual Startup Time": 884.755,
+            "Actual Total Time": 1022.517,
+            "Actual Rows": 100,
+            "Actual Loops": 1,
+            "Shared Hit Blocks": 3870,
+            "Shared Read Blocks": 0,
+            "Shared Dirtied Blocks": 0,
+            "Shared Written Blocks": 0,
+            "Local Hit Blocks": 0,
+            "Local Read Blocks": 0,
+            "Local Dirtied Blocks": 0,
+            "Local Written Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0,
+            "Plans": [
+              {
+                "Node Type": "Index Scan",
+                "Parent Relationship": "Outer",
+                "Parallel Aware": false,
+                "Async Capable": false,
+                "Scan Direction": "Forward",
+                "Index Name": "games_pkey",
+                "Relation Name": "games",
+                "Alias": "g",
+                "Startup Cost": 0.29,
+                "Total Cost": 18087.25,
+                "Plan Rows": 8342,
+                "Plan Width": 48,
+                "Actual Startup Time": 884.753,
+                "Actual Total Time": 1022.473,
+                "Actual Rows": 100,
+                "Actual Loops": 1,
+                "Filter": "((explore_title_key IS NULL) OR (explore_year_suffix IS NULL) OR (explore_franchise_key IS NULL) OR (explore_developer_key IS NULL) OR (explore_publisher_key IS NULL) OR (explore_primary_safe IS NULL) OR (explore_early_access IS NULL))",
+                "Rows Removed by Filter": 3300,
+                "Shared Hit Blocks": 3870,
+                "Shared Read Blocks": 0,
+                "Shared Dirtied Blocks": 0,
+                "Shared Written Blocks": 0,
+                "Local Hit Blocks": 0,
+                "Local Read Blocks": 0,
+                "Local Dirtied Blocks": 0,
+                "Local Written Blocks": 0,
+                "Temp Read Blocks": 0,
+                "Temp Written Blocks": 0
+              }
+            ]
+          },
+          "Planning": {
+            "Shared Hit Blocks": 1007,
+            "Shared Read Blocks": 0,
+            "Shared Dirtied Blocks": 0,
+            "Shared Written Blocks": 0,
+            "Local Hit Blocks": 0,
+            "Local Read Blocks": 0,
+            "Local Dirtied Blocks": 0,
+            "Local Written Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          "Planning Time": 66.437,
+          "Triggers": [],
+          "Execution Time": 1023.746
+        }
+      ]
+    }
+  ],
+  "activity": [
+    {
+      "backend_type": "walwriter",
+      "state": null,
+      "wait_event_type": "Activity",
+      "wait_event": "WalWriterMain",
+      "connections": 1
+    },
+    {
+      "backend_type": "client backend",
+      "state": "idle",
+      "wait_event_type": "Client",
+      "wait_event": "ClientRead",
+      "connections": 4
+    },
+    {
+      "backend_type": "background writer",
+      "state": null,
+      "wait_event_type": "Activity",
+      "wait_event": "BgwriterHibernate",
+      "connections": 1
+    },
+    {
+      "backend_type": "archiver",
+      "state": null,
+      "wait_event_type": "Activity",
+      "wait_event": "ArchiverMain",
+      "connections": 1
+    },
+    {
+      "backend_type": "checkpointer",
+      "state": null,
+      "wait_event_type": "Timeout",
+      "wait_event": "CheckpointWriteDelay",
+      "connections": 1
+    },
+    {
+      "backend_type": "pg_cron launcher",
+      "state": null,
+      "wait_event_type": "Extension",
+      "wait_event": "Extension",
+      "connections": 1
+    },
+    {
+      "backend_type": "autovacuum launcher",
+      "state": null,
+      "wait_event_type": "Activity",
+      "wait_event": "AutovacuumMain",
+      "connections": 1
+    },
+    {
+      "backend_type": "pg_net 0.20.0 worker",
+      "state": null,
+      "wait_event_type": "Extension",
+      "wait_event": "Extension",
+      "connections": 1
+    },
+    {
+      "backend_type": "client backend",
+      "state": "active",
+      "wait_event_type": null,
+      "wait_event": null,
+      "connections": 1
+    },
+    {
+      "backend_type": "logical replication launcher",
+      "state": null,
+      "wait_event_type": "Activity",
+      "wait_event": "LogicalLauncherMain",
+      "connections": 1
+    }
+  ],
+  "idSnapshot": {
+    "rows": 5055,
+    "ms": 1722
+  },
+  "boundedBatchPlan": [
+    {
+      "QUERY PLAN": [
+        {
+          "Plan": {
+            "Node Type": "Limit",
+            "Parallel Aware": false,
+            "Async Capable": false,
+            "Startup Cost": 440.42,
+            "Total Cost": 440.58,
+            "Plan Rows": 61,
+            "Plan Width": 48,
+            "Actual Startup Time": 99.549,
+            "Actual Total Time": 99.567,
+            "Actual Rows": 100,
+            "Actual Loops": 1,
+            "Shared Hit Blocks": 660,
+            "Shared Read Blocks": 0,
+            "Shared Dirtied Blocks": 0,
+            "Shared Written Blocks": 0,
+            "Local Hit Blocks": 0,
+            "Local Read Blocks": 0,
+            "Local Dirtied Blocks": 0,
+            "Local Written Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0,
+            "Plans": [
+              {
+                "Node Type": "Sort",
+                "Parent Relationship": "Outer",
+                "Parallel Aware": false,
+                "Async Capable": false,
+                "Startup Cost": 440.42,
+                "Total Cost": 440.58,
+                "Plan Rows": 61,
+                "Plan Width": 48,
+                "Actual Startup Time": 99.548,
+                "Actual Total Time": 99.556,
+                "Actual Rows": 100,
+                "Actual Loops": 1,
+                "Sort Key": [
+                  "id"
+                ],
+                "Sort Method": "quicksort",
+                "Sort Space Used": 38,
+                "Sort Space Type": "Memory",
+                "Shared Hit Blocks": 660,
+                "Shared Read Blocks": 0,
+                "Shared Dirtied Blocks": 0,
+                "Shared Written Blocks": 0,
+                "Local Hit Blocks": 0,
+                "Local Read Blocks": 0,
+                "Local Dirtied Blocks": 0,
+                "Local Written Blocks": 0,
+                "Temp Read Blocks": 0,
+                "Temp Written Blocks": 0,
+                "Plans": [
+                  {
+                    "Node Type": "Bitmap Heap Scan",
+                    "Parent Relationship": "Outer",
+                    "Parallel Aware": false,
+                    "Async Capable": false,
+                    "Relation Name": "games",
+                    "Alias": "g",
+                    "Startup Cost": 83.36,
+                    "Total Cost": 438.61,
+                    "Plan Rows": 61,
+                    "Plan Width": 48,
+                    "Actual Startup Time": 29.789,
+                    "Actual Total Time": 99.45,
+                    "Actual Rows": 100,
+                    "Actual Loops": 1,
+                    "Recheck Cond": "(id = ANY ('{REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID}'::uuid[]))",
+                    "Rows Removed by Index Recheck": 0,
+                    "Filter": "(explore_primary_safe IS NULL)",
+                    "Rows Removed by Filter": 0,
+                    "Exact Heap Blocks": 85,
+                    "Lossy Heap Blocks": 0,
+                    "Shared Hit Blocks": 657,
+                    "Shared Read Blocks": 0,
+                    "Shared Dirtied Blocks": 0,
+                    "Shared Written Blocks": 0,
+                    "Local Hit Blocks": 0,
+                    "Local Read Blocks": 0,
+                    "Local Dirtied Blocks": 0,
+                    "Local Written Blocks": 0,
+                    "Temp Read Blocks": 0,
+                    "Temp Written Blocks": 0,
+                    "Plans": [
+                      {
+                        "Node Type": "Bitmap Index Scan",
+                        "Parent Relationship": "Outer",
+                        "Parallel Aware": false,
+                        "Async Capable": false,
+                        "Index Name": "games_pkey",
+                        "Startup Cost": 0,
+                        "Total Cost": 83.09,
+                        "Plan Rows": 100,
+                        "Plan Width": 0,
+                        "Actual Startup Time": 29.615,
+                        "Actual Total Time": 29.615,
+                        "Actual Rows": 100,
+                        "Actual Loops": 1,
+                        "Index Cond": "(id = ANY ('{REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID,REDACTED_PUBLIC_GAME_ID}'::uuid[]))",
+                        "Shared Hit Blocks": 74,
+                        "Shared Read Blocks": 0,
+                        "Shared Dirtied Blocks": 0,
+                        "Shared Written Blocks": 0,
+                        "Local Hit Blocks": 0,
+                        "Local Read Blocks": 0,
+                        "Local Dirtied Blocks": 0,
+                        "Local Written Blocks": 0,
+                        "Temp Read Blocks": 0,
+                        "Temp Written Blocks": 0
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "Planning": {
+            "Shared Hit Blocks": 6,
+            "Shared Read Blocks": 0,
+            "Shared Dirtied Blocks": 0,
+            "Shared Written Blocks": 0,
+            "Local Hit Blocks": 0,
+            "Local Read Blocks": 0,
+            "Local Dirtied Blocks": 0,
+            "Local Written Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          "Planning Time": 0.463,
+          "Triggers": [],
+          "Execution Time": 99.606
+        }
+      ]
+    }
+  ],
+  "planRedaction": "Public game IDs in index predicates redacted; timings and row counts unchanged"
+}
