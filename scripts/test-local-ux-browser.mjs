@@ -77,6 +77,21 @@ try {
       if (phase === 'after') {
         assert.equal(data.overflow, false, `${name}/${theme}/${width}: horizontal overflow`);
         assert.ok(data.headerRight <= width + 1, `${name}/${theme}/${width}: header controls offscreen`);
+        if (name === 'home' && width === 390) {
+          const heading = page.locator('[data-slot="gradient-text"] > span').first();
+          await heading.scrollIntoViewIfNeeded();
+          await page.waitForTimeout(350);
+          const position = await heading.evaluate(el => getComputedStyle(el).backgroundPositionX);
+          await page.waitForTimeout(250);
+          assert.notEqual(await heading.evaluate(el => getComputedStyle(el).backgroundPositionX), position, 'Visible heading gradient animates');
+          const offscreen = () => [...document.querySelectorAll('[data-slot="gradient-text"] > span:first-child')]
+            .filter(el => { const r = el.getBoundingClientRect(); return r.top > innerHeight + 150 || r.bottom < -150; })
+            .map(el => ({ text: el.textContent, position: getComputedStyle(el).backgroundPositionX }));
+          const before = await page.evaluate(offscreen);
+          assert.ok(before.length > 0, 'Homepage has offscreen headings to verify');
+          await page.waitForTimeout(250);
+          assert.deepEqual(await page.evaluate(offscreen), before, 'Offscreen heading gradients stay static');
+        }
         if (name === 'search') assert.equal(data.searches, 1, 'Search page has one visible search context');
         if (name === 'search') {
           const field = page.getByRole('searchbox', { name: 'Search games', exact: true });
@@ -183,7 +198,11 @@ try {
       await page.goto(base, { waitUntil: 'domcontentloaded' });
       await page.getByText('Autoplay off · reduced motion', { exact: true }).waitFor();
       const title = await page.locator('h1').textContent();
+      const heading = page.locator('[data-slot="gradient-text"] > span').first();
+      await heading.scrollIntoViewIfNeeded();
+      const gradientPosition = await heading.evaluate(el => getComputedStyle(el).backgroundPositionX);
       await page.waitForTimeout(6300);
+      assert.equal(await heading.evaluate(el => getComputedStyle(el).backgroundPositionX), gradientPosition, 'Reduced-motion heading gradient stays static, including JS-driven motion');
       assert.equal(await page.locator('h1').textContent(), title, 'Reduced-motion hero does not auto-advance');
       const activeAnimations = await page.evaluate(() => document.getAnimations().filter(a => a.playState === 'running' && a.effect?.getComputedTiming().duration > 1).length);
       assert.equal(activeAnimations, 0, 'No running CSS/WAAPI animations in reduced-motion homepage');

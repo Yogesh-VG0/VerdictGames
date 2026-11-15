@@ -44,3 +44,10 @@ Auth, navigation overlays, media, library feedback, and toasts explicitly adjust
 No new production PageSpeed improvement is claimed before deployment. Earlier production PageSpeed reports concern the baseline in `PERFORMANCE.md`, not this branch. Recorded browser render timings use different wait conditions across early runs and must not be compared as a speed improvement. Scripted usability tasks passed; external-human testing and production field Core Web Vitals remain unverified.
 
 Rollback: revert the Signal commit while retaining the privacy, reliability and data-preservation fixes. There are no schema, provider credential, billing, or production infrastructure changes in this visual change set.
+## Later approved heading restoration — November 15
+
+The owner's later preference overrides Signal's static-heading recommendation: restore the original animated gradients across headings, preserving each existing palette, the three-second linear cycle and optional neon treatment. Action and Verdict Score colors remain distinct.
+
+`GradientText` animates only when the heading is near the viewport and a normal-motion preference is known. Offscreen headings and reduced-motion users receive the same static gradient. Explicit static targets stop JavaScript-driven background motion; the CSS reduced-motion rule alone would not establish that. The decorative neon duplicate remains hidden from accessibility APIs.
+
+Local verification for this change passed: 213 unit tests, TypeScript, targeted lint, production build, and the existing browser suite's 54 page renders plus supplemental flows. Added browser assertions verify visible gradient movement, offscreen pausing and reduced-motion gradient stability in both themes. These are local results; protected-preview visual acceptance and exact-head GitHub checks are recorded separately in the release report. No measured production speed or frame-rate improvement is claimed.
