@@ -1,5 +1,6 @@
 import Link from "next/link";
 import FadeInSection from "@/components/FadeInSection";
+import HeadingMotionControl from '@/components/HeadingMotionControl';
 import { SHARED_NAV_DESTINATIONS, SHARED_NAV_LABELS } from "@/lib/shared-nav";
 
 export default function Footer() {
@@ -50,8 +51,9 @@ export default function Footer() {
             </div>
           </div>
           <div className="mt-8 pt-6 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-4">
+            <HeadingMotionControl />
             <p className="text-[11px] text-tertiary">
-              &copy; {new Date().getFullYear()} verdict.games &mdash; Data from RAWG, Steam, IGDB, CheapShark, Wikipedia, HLTB &amp; GX Corner.
+              &copy; {new Date().getFullYear()} verdict.games &mdash; Data from <a href="https://rawg.io" className="underline hover:text-foreground">RAWG</a>, <a href="https://store.steampowered.com" className="underline hover:text-foreground">Steam</a>, <a href="https://www.igdb.com" className="underline hover:text-foreground">IGDB</a>, CheapShark, Wikipedia, HLTB &amp; GX Corner.
             </p>
             <p className="text-[10px] text-tertiary">
               All game titles, trademarks, and copyrights belong to their respective owners.

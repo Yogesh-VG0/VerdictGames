@@ -537,7 +537,7 @@ function SearchClientPageContent({
 
         <div className="flex flex-wrap items-end gap-4">
           <div className="space-y-2">
-            <label htmlFor="search-genre-filter" className="text-[10px] uppercase tracking-wider text-tertiary font-medium">
+            <label htmlFor="search-genre-filter" className="block text-xs uppercase tracking-wider text-secondary font-medium">
               Genre
             </label>
             <select
@@ -548,7 +548,7 @@ function SearchClientPageContent({
                 setGenre(e.target.value);
                 setPage(1);
               }}
-              className="h-10 px-3 text-sm rounded-xl border border-border bg-surface-2 text-foreground focus:outline-none focus:border-accent/50 transition-colors"
+              className="vg-select text-sm"
             >
               <option value="">All Genres</option>
               {SEARCH_GENRE_OPTIONS.map((candidate) => (
@@ -560,7 +560,7 @@ function SearchClientPageContent({
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="search-year-filter" className="text-[10px] uppercase tracking-wider text-tertiary font-medium">
+            <label htmlFor="search-year-filter" className="block text-xs uppercase tracking-wider text-secondary font-medium">
               Year
             </label>
             <select
@@ -571,7 +571,7 @@ function SearchClientPageContent({
                 setYear(e.target.value);
                 setPage(1);
               }}
-              className="h-10 px-3 text-sm rounded-xl border border-border bg-surface-2 text-foreground focus:outline-none focus:border-accent/50 transition-colors"
+              className="vg-select text-sm"
             >
               <option value="">All Years</option>
               {allYears.map((candidate) => (
@@ -582,8 +582,8 @@ function SearchClientPageContent({
             </select>
           </div>
 
-          <div className="space-y-1 ml-auto">
-            <label htmlFor="search-sort" className="text-[10px] uppercase tracking-wider text-tertiary font-medium">
+          <div className="space-y-2 sm:ml-auto">
+            <label htmlFor="search-sort" className="block text-xs uppercase tracking-wider text-secondary font-medium">
               Sort
             </label>
             <SortDropdown

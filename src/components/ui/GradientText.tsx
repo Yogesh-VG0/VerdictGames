@@ -3,6 +3,7 @@
 import { useRef, type ComponentProps, type CSSProperties } from 'react';
 import { motion, useInView, useReducedMotion, type Transition } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { useHeadingMotion } from '@/hooks/useHeadingMotion';
 
 type GradientTextProps = ComponentProps<'span'> & {
   text: string;
@@ -24,9 +25,10 @@ function GradientText({
   const ref = useRef<HTMLSpanElement>(null);
   const inView = useInView(ref, { margin: '100px' });
   const reducedMotion = useReducedMotion();
+  const { paused } = useHeadingMotion();
   // Start only after the preference is known. Keep offscreen headings static
   // instead of repainting every gradient rail throughout the catalogue page.
-  const shouldAnimate = inView && reducedMotion === false;
+  const shouldAnimate = inView && reducedMotion === false && !paused;
   const style: CSSProperties = { backgroundImage: gradient, backgroundPositionX: '0%' };
   const animate = { backgroundPositionX: shouldAnimate ? ['0%', '200%'] : '0%' };
   const activeTransition: Transition = shouldAnimate ? transition : { duration: 0, repeat: 0 };

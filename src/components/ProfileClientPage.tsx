@@ -40,8 +40,8 @@ export default function ProfileClientPage({ username, initialUser }: Props) {
   });
 
   const { data: allLists } = useQuery({
-    queryKey: ["lists"],
-    queryFn: getCuratedLists,
+    queryKey: ["lists", 'owner', user?.id],
+    queryFn: () => getCuratedLists(user?.id),
     enabled: !!user,
   });
   const userLists = (allLists ?? []).filter(
