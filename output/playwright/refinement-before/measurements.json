@@ -1,0 +1,251 @@
+{
+  "measuredAt": "2026-11-15T09:52:43.826Z",
+  "requests": [
+    {
+      "route": "/api/lists",
+      "sample": 1,
+      "status": 200,
+      "bytes": 465873,
+      "elapsedMs": 4621
+    },
+    {
+      "route": "/api/lists",
+      "sample": 2,
+      "status": 200,
+      "bytes": 465873,
+      "elapsedMs": 2303
+    },
+    {
+      "route": "/api/lists",
+      "sample": 3,
+      "status": 200,
+      "bytes": 465873,
+      "elapsedMs": 15288
+    },
+    {
+      "route": "/api/rawg/lists?type=best-of-year",
+      "sample": 1,
+      "status": 200,
+      "bytes": 8459,
+      "elapsedMs": 30
+    },
+    {
+      "route": "/api/rawg/lists?type=best-of-year",
+      "sample": 2,
+      "status": 200,
+      "bytes": 8459,
+      "elapsedMs": 12
+    },
+    {
+      "route": "/api/rawg/lists?type=best-of-year",
+      "sample": 3,
+      "status": 200,
+      "bytes": 8459,
+      "elapsedMs": 12
+    },
+    {
+      "route": "/api/auth/check-username?username=refinement_probe_2026",
+      "sample": 1,
+      "status": 200,
+      "bytes": 56,
+      "elapsedMs": 1163
+    },
+    {
+      "route": "/api/auth/check-username?username=refinement_probe_2026",
+      "sample": 2,
+      "status": 200,
+      "bytes": 56,
+      "elapsedMs": 555
+    },
+    {
+      "route": "/api/auth/check-username?username=refinement_probe_2026",
+      "sample": 3,
+      "status": 200,
+      "bytes": 56,
+      "elapsedMs": 761
+    }
+  ],
+  "pages": [
+    {
+      "route": "/explore",
+      "width": 1440,
+      "theme": "dark",
+      "images": [
+        {
+          "alt": "Path of Exile 2",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/co8ae0.webp",
+          "width": 256,
+          "height": 341,
+          "naturalWidth": 39,
+          "naturalHeight": 52
+        },
+        {
+          "alt": "No Rest for the Wicked",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/co7h9r.webp",
+          "width": 256,
+          "height": 341,
+          "naturalWidth": 39,
+          "naturalHeight": 52
+        },
+        {
+          "alt": "Tomb Raider: Legacy of Atlantis",
+          "src": "https://media.rawg.io/media/resize/640/-/games/c2b/c2b8a3ef89b3edd35c1804dc0d68d7bb.jpg",
+          "width": 256,
+          "height": 341,
+          "naturalWidth": 288,
+          "naturalHeight": 175
+        },
+        {
+          "alt": "Titan Quest 2",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/co6x9v.webp",
+          "width": 256,
+          "height": 341,
+          "naturalWidth": 39,
+          "naturalHeight": 52
+        },
+        {
+          "alt": "Tomb Raider: Catalyst",
+          "src": "https://media.rawg.io/media/resize/640/-/screenshots/4c2/4c23a1f571e1569c518da6c1da1be6d2.jpg",
+          "width": 256,
+          "height": 341,
+          "naturalWidth": 288,
+          "naturalHeight": 162
+        },
+        {
+          "alt": "The Expanse: Osiris Reborn",
+          "src": "https://media.rawg.io/media/resize/640/-/screenshots/676/676565b4628547e14d7b4467b4bf5921.jpg",
+          "width": 256,
+          "height": 341,
+          "naturalWidth": 225,
+          "naturalHeight": 126
+        },
+        {
+          "alt": "Clockwork Revolution",
+          "src": "https://media.rawg.io/media/resize/640/-/games/5a7/5a7b78b5d61e48834488159471f48e94.jpg",
+          "width": 256,
+          "height": 341,
+          "naturalWidth": 480,
+          "naturalHeight": 288
+        },
+        {
+          "alt": "Kena: Scars of Kosmora",
+          "src": "https://media.rawg.io/media/resize/640/-/screenshots/3a3/3a3855e1b5218c02ab038dcb873eacde.jpg",
+          "width": 256,
+          "height": 341,
+          "naturalWidth": 480,
+          "naturalHeight": 269
+        },
+        {
+          "alt": "Lords of the Fallen 2",
+          "src": "https://media.rawg.io/media/resize/640/-/screenshots/887/887f377d7e4fc503bb345aac6e62eb2a.jpg",
+          "width": 256,
+          "height": 341,
+          "naturalWidth": 480,
+          "naturalHeight": 270
+        },
+        {
+          "alt": "God of War Laufey",
+          "src": "https://media.rawg.io/media/resize/640/-/games/d9e/d9e30f2182a8535a0ef02949dfb1ffed.jpg",
+          "width": 256,
+          "height": 341,
+          "naturalWidth": 480,
+          "naturalHeight": 270
+        },
+        {
+          "alt": "Metro 2039",
+          "src": "https://media.rawg.io/media/resize/640/-/games/4a5/4a5865eca8376e08a8e31ce278b5248f.jpg",
+          "width": 256,
+          "height": 341,
+          "naturalWidth": 480,
+          "naturalHeight": 270
+        },
+        {
+          "alt": "ananta",
+          "src": "https://media.rawg.io/media/resize/640/-/screenshots/21f/21ffdb58671720697c5e7382b021755b.jpg",
+          "width": 256,
+          "height": 341,
+          "naturalWidth": 480,
+          "naturalHeight": 270
+        },
+        {
+          "alt": "Rayman Legends Retold",
+          "src": "https://media.rawg.io/media/resize/640/-/games/ed9/ed92bdc98d563301e94ae3e9663e8107.jpg",
+          "width": 256,
+          "height": 341,
+          "naturalWidth": 480,
+          "naturalHeight": 269
+        },
+        {
+          "alt": "Until Dawn 2",
+          "src": "https://media.rawg.io/media/resize/640/-/games/145/145c294309a243d11c95f176e29e62e0.jpg",
+          "width": 256,
+          "height": 341,
+          "naturalWidth": 480,
+          "naturalHeight": 270
+        },
+        {
+          "alt": "Exodus (Archetype Entertainment)",
+          "src": "https://media.rawg.io/media/resize/640/-/screenshots/c78/c786d190185de97aa21a0ed1ababd3d3.jpg",
+          "width": 256,
+          "height": 341,
+          "naturalWidth": 480,
+          "naturalHeight": 248
+        },
+        {
+          "alt": "Resident Evil Veronica",
+          "src": "https://media.rawg.io/media/resize/640/-/screenshots/a4d/a4dbcf8ae366d3284ff632227d6e86e2.jpg",
+          "width": 256,
+          "height": 341,
+          "naturalWidth": 480,
+          "naturalHeight": 270
+        },
+        {
+          "alt": "Final Fantasy VII: Revelation",
+          "src": "https://media.rawg.io/media/resize/640/-/games/75c/75c97cd1d18ab97cf21bf0bd8a4ef205.jpg",
+          "width": 256,
+          "height": 341,
+          "naturalWidth": 480,
+          "naturalHeight": 270
+        },
+        {
+          "alt": "Trine 6: Together in Time",
+          "src": "https://media.rawg.io/media/resize/640/-/screenshots/a1f/a1f4f1730429302fa1a4c674737b1644.jpg",
+          "width": 256,
+          "height": 341,
+          "naturalWidth": 345,
+          "naturalHeight": 161
+        },
+        {
+          "alt": "Alien: Isolation 2",
+          "src": "https://media.rawg.io/media/resize/640/-/screenshots/002/002bbf2bd221182361a9440741a827ba.jpg",
+          "width": 256,
+          "height": 341,
+          "naturalWidth": 480,
+          "naturalHeight": 269
+        },
+        {
+          "alt": "Stranger Than Heaven",
+          "src": "https://media.rawg.io/media/resize/640/-/games/d81/d813ab759628d14efa6754e7664ca317.jpg",
+          "width": 256,
+          "height": 341,
+          "naturalWidth": 480,
+          "naturalHeight": 267
+        }
+      ]
+    }
+  ],
+  "provider": [
+    {
+      "endpoint": "/games",
+      "status": 200,
+      "elapsedMs": 525,
+      "shape": "results-array"
+    },
+    {
+      "endpoint": "/games",
+      "status": 200,
+      "elapsedMs": 434,
+      "shape": "results-array"
+    }
+  ]
+}

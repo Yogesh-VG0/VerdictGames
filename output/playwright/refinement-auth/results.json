@@ -1,0 +1,28 @@
+{
+  "checks": [
+    "database permits only one concurrent case-insensitive username",
+    "database rejects reserved usernames directly",
+    "local Auth rejects short passwords through the direct API",
+    "obsolete username responses cannot replace the current result",
+    "failed username checks show an unavailable state",
+    "confirmation resend has an accessible cooldown",
+    "local signup sends the branded tracking-free confirmation template",
+    "signup verification establishes a session and preserves the library destination",
+    "owner private-list summaries are uncached and visible only to the owner",
+    "private collection is absent from the public summary",
+    "second identity cannot directly read the private collection",
+    "password recovery sends the branded template",
+    "recovery link verifies and a long passphrase updates successfully",
+    "updated password signs in through Supabase Auth",
+    "authentication browser flow has no JavaScript errors"
+  ],
+  "latencyMs": {
+    "normal": 810,
+    "slowObsolete": 802
+  },
+  "mail": {
+    "confirmation": "received in local Mailpit",
+    "recovery": "received in local Mailpit"
+  },
+  "usernameRequestsDuringSimulations": 3
+}
