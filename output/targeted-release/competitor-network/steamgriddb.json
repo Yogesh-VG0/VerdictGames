@@ -1,0 +1,181 @@
+{
+  "name": "steamgriddb",
+  "url": "https://www.steamgriddb.com",
+  "measuredAt": "2026-11-16T08:09:52.491Z",
+  "conditions": "New anonymous context per site; Chrome 1440x1000 DPR1; unthrottled CPU/network; origin cache unknown; ordinary page requests including automatic prefetch; no access challenge bypass",
+  "observed": {
+    "url": "https://www.steamgriddb.com/",
+    "title": "Home - SteamGridDB",
+    "readyState": "interactive",
+    "restricted": false,
+    "headings": [
+      "SteamGridDB",
+      "Projects",
+      "Latest Grids",
+      "Latest Heroes",
+      "Latest Logos",
+      "Latest Icons",
+      "SteamGridDB"
+    ],
+    "viewport": {
+      "w": 1440,
+      "h": 1000,
+      "dpr": 1
+    },
+    "navigation": {
+      "status": 200,
+      "ttfbMs": 2224,
+      "responseEndMs": 2224,
+      "domInteractiveMs": 3087,
+      "loadEventEndMs": 0,
+      "durationMs": 0,
+      "transfer": 1396,
+      "encoded": 1096,
+      "decoded": 2550
+    },
+    "paints": [
+      {
+        "name": "first-paint",
+        "ms": 2728
+      },
+      {
+        "name": "first-contentful-paint",
+        "ms": 3096
+      }
+    ],
+    "requestCount": 9,
+    "observableTransferBytes": 365638,
+    "bytesLimitation": "ResourceTiming bytes may be zero for cross-origin resources without Timing-Allow-Origin; this is not total traffic",
+    "byType": {
+      "link": 2,
+      "script": 4,
+      "img": 1,
+      "css": 1,
+      "xmlhttprequest": 1
+    },
+    "byHost": {
+      "fonts.googleapis.com": 1,
+      "www.steamgriddb.com": 6,
+      "www.googletagmanager.com": 1,
+      "cdn.intergient.com": 1
+    },
+    "images": [
+      {
+        "url": "https://www.steamgriddb.com/static/img/boop-color.svg",
+        "w": 150,
+        "h": 150
+      }
+    ],
+    "requests": [
+      {
+        "url": "https://fonts.googleapis.com/css",
+        "type": "link",
+        "start": 2229,
+        "ms": 492,
+        "transfer": 2133,
+        "encoded": 1833,
+        "decoded": 23980
+      },
+      {
+        "url": "https://www.steamgriddb.com/api/public/user",
+        "type": "link",
+        "start": 2229,
+        "ms": 474,
+        "transfer": 336,
+        "encoded": 36,
+        "decoded": 36
+      },
+      {
+        "url": "https://www.steamgriddb.com/static/assets/233e475efea66025d29a.js",
+        "type": "script",
+        "start": 2229,
+        "ms": 739,
+        "transfer": 347678,
+        "encoded": 347378,
+        "decoded": 1264904
+      },
+      {
+        "url": "https://www.googletagmanager.com/gtag/js",
+        "type": "script",
+        "start": 2229,
+        "ms": 2148,
+        "transfer": 0,
+        "encoded": 0,
+        "decoded": 0
+      },
+      {
+        "url": "https://www.steamgriddb.com/static/assets/59d63f2799bb08892e0d.js",
+        "type": "script",
+        "start": 3071,
+        "ms": 276,
+        "transfer": 5737,
+        "encoded": 5437,
+        "decoded": 15591
+      },
+      {
+        "url": "https://www.steamgriddb.com/static/img/boop-color.svg",
+        "type": "img",
+        "start": 3073,
+        "ms": 269,
+        "transfer": 1122,
+        "encoded": 822,
+        "decoded": 1566
+      },
+      {
+        "url": "https://www.steamgriddb.com/static/img/logo.svg",
+        "type": "css",
+        "start": 3074,
+        "ms": 259,
+        "transfer": 463,
+        "encoded": 163,
+        "decoded": 246
+      },
+      {
+        "url": "https://cdn.intergient.com/ramp_core.js",
+        "type": "script",
+        "start": 3092,
+        "ms": 1095,
+        "transfer": 0,
+        "encoded": 0,
+        "decoded": 0
+      },
+      {
+        "url": "https://www.steamgriddb.com/api/public/home",
+        "type": "xmlhttprequest",
+        "start": 3353,
+        "ms": 536,
+        "transfer": 8169,
+        "encoded": 7869,
+        "decoded": 74696
+      }
+    ]
+  },
+  "screenshot": "captured",
+  "responses": [
+    {
+      "url": "https://www.steamgriddb.com/",
+      "type": "document",
+      "status": 200,
+      "method": "GET",
+      "headers": {
+        "cache-control": "no-store, no-cache, must-revalidate",
+        "content-type": "text/html; charset=UTF-8",
+        "vary": "accept-encoding",
+        "server": "cloudflare",
+        "cf-cache-status": "DYNAMIC"
+      }
+    },
+    {
+      "url": "https://www.steamgriddb.com/api/public/home",
+      "type": "xhr",
+      "status": 200,
+      "method": "GET",
+      "headers": {
+        "cache-control": "no-store, no-cache, must-revalidate",
+        "content-type": "application/json",
+        "server": "cloudflare",
+        "cf-cache-status": "DYNAMIC"
+      }
+    }
+  ]
+}

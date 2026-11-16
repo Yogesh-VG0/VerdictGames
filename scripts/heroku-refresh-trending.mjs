@@ -15,7 +15,8 @@
  * Command: node scripts/heroku-refresh-trending.mjs
  *
  * Required Config Vars:
- *   DATABASE_URL, RAWG_API_KEY, TWITCH_CLIENT_ID, TWITCH_CLIENT_SECRET
+ *   DATABASE_URL (or SUPABASE_DB_URL).
+ * Optional: RAWG_API_KEY for new-game ingestion; Twitch credentials for IGDB fallback.
  */
 
 import { startRun, finishRun, acquireLock, releaseLock, checkMinInterval, isInfrastructureDbError } from './lib/scheduler-logger.mjs';
@@ -257,7 +258,9 @@ if (globalTop.length > 0) {
   const missing = globalTop.filter((r) => !ourAppSet.has(r.appid));
   console.log(`\n🆕 Step 1: ${missing.length} top Steam games not in our DB`);
 
-  if (missing.length > 0) {
+  if (missing.length > 0 && !process.env.RAWG_API_KEY) {
+    console.log('  RAWG is not configured; skipping optional new-game ingestion. Existing Steam metadata refresh continues.');
+  } else if (missing.length > 0) {
     // Auto-ingest up to 20 missing games per run via local pipeline
     const toIngest = missing.slice(0, 20);
     let ingested = 0;
@@ -475,6 +478,10 @@ const uniqueIds = [...new Set(trendingIds)].slice(0, 20);
 await sql`
   UPDATE games
   SET trending = CASE
+    WHEN id = ANY(${uniqueIds.length > 0 ? uniqueIds : ["00000000-0000-0000-0000-000000000000"]}) THEN true
+    ELSE false
+  END
+  WHERE trending IS DISTINCT FROM CASE
     WHEN id = ANY(${uniqueIds.length > 0 ? uniqueIds : ["00000000-0000-0000-0000-000000000000"]}) THEN true
     ELSE false
   END

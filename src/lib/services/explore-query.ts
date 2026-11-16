@@ -18,7 +18,9 @@ async function query(type:RawgListType, year:number, genre:string, platform:stri
     p_type:type,p_year:year,p_genre:genre,p_platform:platform,p_sort:sort,p_page:page,p_page_size:pageSize,p_day:day,
   }).abortSignal(signal);
   if (error) {
-    if (error.code === 'PGRST202' || error.code === '42883') throw new MissingCatalogueQuery();
+    // PostgREST's missing-RPC code is specific. SQLSTATE 42883 can instead
+    // mean a helper inside an installed function failed; never fan out then.
+    if (error.code === 'PGRST202') throw new MissingCatalogueQuery();
     // The SDK uses an empty code for fetch failures. Distinguish those from
     // PostgreSQL failures without logging raw URLs, headers, messages or stacks.
     const errorType=/^(TimeoutError|AbortError|TypeError|FetchError|Error):/.exec(error.message || '')?.[1] || 'unknown';

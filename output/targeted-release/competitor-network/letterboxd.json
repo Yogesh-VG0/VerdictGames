@@ -1,0 +1,84 @@
+{
+  "name": "letterboxd",
+  "url": "https://letterboxd.com/lists/",
+  "measuredAt": "2026-11-16T08:09:57.281Z",
+  "conditions": "New anonymous context per site; Chrome 1440x1000 DPR1; unthrottled CPU/network; origin cache unknown; ordinary page requests including automatic prefetch; no access challenge bypass",
+  "observed": {
+    "url": "https://letterboxd.com/lists/",
+    "title": "Just a moment...",
+    "readyState": "interactive",
+    "restricted": true,
+    "headings": [
+      "letterboxd.com",
+      "Performing security verification",
+      "Verification successful. Waiting for letterboxd.com to respond"
+    ],
+    "viewport": {
+      "w": 1440,
+      "h": 1000,
+      "dpr": 1
+    },
+    "navigation": {
+      "status": 403,
+      "ttfbMs": 1380,
+      "responseEndMs": 1393,
+      "domInteractiveMs": 1395,
+      "loadEventEndMs": 0,
+      "durationMs": 0,
+      "transfer": 3903,
+      "encoded": 3603,
+      "decoded": 6180
+    },
+    "paints": [],
+    "requestCount": 2,
+    "observableTransferBytes": 228725,
+    "bytesLimitation": "ResourceTiming bytes may be zero for cross-origin resources without Timing-Allow-Origin; this is not total traffic",
+    "byType": {
+      "script": 2
+    },
+    "byHost": {
+      "letterboxd.com": 1,
+      "challenges.cloudflare.com": 1
+    },
+    "images": [],
+    "requests": [
+      {
+        "url": "https://letterboxd.com/cdn-cgi/challenge-platform/h/b/orchestrate/chl_page/v1",
+        "type": "script",
+        "start": 1395,
+        "ms": 893,
+        "transfer": 200391,
+        "encoded": 200091,
+        "decoded": 612504
+      },
+      {
+        "url": "https://challenges.cloudflare.com/turnstile/v0/b/f8df4d4a0cd6/api.js",
+        "type": "script",
+        "start": 2330,
+        "ms": 157,
+        "transfer": 28334,
+        "encoded": 28034,
+        "decoded": 86968
+      }
+    ]
+  },
+  "responses": [
+    {
+      "url": "https://letterboxd.com/lists/",
+      "type": "document",
+      "status": 307,
+      "method": "GET",
+      "headers": {}
+    },
+    {
+      "url": "https://letterboxd.com/lists/",
+      "type": "document",
+      "status": 403,
+      "method": "GET",
+      "headers": {
+        "content-type": "text/html; charset=UTF-8",
+        "server": "cloudflare"
+      }
+    }
+  ]
+}

@@ -1,0 +1,438 @@
+{
+  "startedAt": "2026-11-16T10:20:59.354Z",
+  "hosted": false,
+  "transport": "local Docker psql",
+  "sqlSha256": "3f99677df2fb023c3b18bf1a18e000261b84c52daceba5d6400c3a2c3ff22f80",
+  "batchSize": 100,
+  "batches": [
+    {
+      "rows": 100,
+      "serverMs": 0.853,
+      "clientMs": 3116
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.097,
+      "clientMs": 3122
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.01,
+      "clientMs": 3134
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.046,
+      "clientMs": 3142
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.071,
+      "clientMs": 3105
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.01,
+      "clientMs": 3108
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.15,
+      "clientMs": 3115
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.007,
+      "clientMs": 3099
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.147,
+      "clientMs": 3130
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.054,
+      "clientMs": 3107
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.17,
+      "clientMs": 3125
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.166,
+      "clientMs": 3105
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.077,
+      "clientMs": 3197
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.289,
+      "clientMs": 3211
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.241,
+      "clientMs": 3125
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.143,
+      "clientMs": 3128
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.108,
+      "clientMs": 3117
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.182,
+      "clientMs": 3122
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.424,
+      "clientMs": 3142
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.181,
+      "clientMs": 3126
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.127,
+      "clientMs": 3105
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.051,
+      "clientMs": 3103
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.187,
+      "clientMs": 3120
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.352,
+      "clientMs": 3092
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.16,
+      "clientMs": 3127
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.237,
+      "clientMs": 3117
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.205,
+      "clientMs": 3118
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.221,
+      "clientMs": 3125
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.103,
+      "clientMs": 3114
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.272,
+      "clientMs": 3103
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.152,
+      "clientMs": 3133
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.189,
+      "clientMs": 3131
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.065,
+      "clientMs": 3104
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.178,
+      "clientMs": 3109
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.169,
+      "clientMs": 3116
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.18,
+      "clientMs": 3119
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.122,
+      "clientMs": 3105
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.213,
+      "clientMs": 3101
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.145,
+      "clientMs": 3108
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.523,
+      "clientMs": 3133
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.189,
+      "clientMs": 3104
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.284,
+      "clientMs": 3132
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.192,
+      "clientMs": 3126
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.266,
+      "clientMs": 3100
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.422,
+      "clientMs": 3106
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.333,
+      "clientMs": 3135
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.36,
+      "clientMs": 3106
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.305,
+      "clientMs": 3116
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.274,
+      "clientMs": 3100
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.349,
+      "clientMs": 3122
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.213,
+      "clientMs": 3127
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.244,
+      "clientMs": 3102
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.161,
+      "clientMs": 3102
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.261,
+      "clientMs": 3121
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.166,
+      "clientMs": 3102
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.216,
+      "clientMs": 3122
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.193,
+      "clientMs": 3118
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.181,
+      "clientMs": 3134
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.182,
+      "clientMs": 3145
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.06,
+      "clientMs": 3134
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.084,
+      "clientMs": 3134
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.142,
+      "clientMs": 3083
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.12,
+      "clientMs": 3115
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.167,
+      "clientMs": 3125
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.167,
+      "clientMs": 3114
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.115,
+      "clientMs": 3100
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.238,
+      "clientMs": 3131
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.171,
+      "clientMs": 3104
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.204,
+      "clientMs": 3111
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.22,
+      "clientMs": 3109
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.114,
+      "clientMs": 3124
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.134,
+      "clientMs": 3120
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.041,
+      "clientMs": 3120
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.195,
+      "clientMs": 3119
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.181,
+      "clientMs": 3116
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.149,
+      "clientMs": 3111
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.136,
+      "clientMs": 3087
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.035,
+      "clientMs": 3087
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.116,
+      "clientMs": 3126
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.243,
+      "clientMs": 3105
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.275,
+      "clientMs": 3113
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.252,
+      "clientMs": 3117
+    },
+    {
+      "rows": 100,
+      "serverMs": 1.253,
+      "clientMs": 3126
+    },
+    {
+      "rows": 50,
+      "serverMs": 0.798,
+      "clientMs": 3123
+    }
+  ],
+  "copied": 8350,
+  "sourceWrites": 0,
+  "pendingAtStart": 8350,
+  "validation": {
+    "ready": true,
+    "differences": 0
+  },
+  "completedAt": "2026-11-16T10:25:30.642Z",
+  "totalMs": 271287
+}

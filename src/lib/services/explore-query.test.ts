@@ -55,6 +55,17 @@ describe('bounded public SQL catalogue reads',()=>{
     expect(await readCataloguePage('all-time',0,'','','default',1,20,'2026-11-15')).toEqual(valid);
     now.mockRestore();
   });
+  it('does not start legacy catalogue fanout for an undefined helper inside an installed RPC',async()=>{
+    const warn=vi.spyOn(console,'warn').mockImplementation(()=>{});
+    try {
+      const error={code:'42883',message:'function public.internal_classifier(text) does not exist',details:''};
+      response(null,error);const {readCataloguePage}=await import('./explore-query');
+      await expect(readCataloguePage('all-time',0,'','','default',1,20,'2026-11-16')).rejects.toBe(error);
+      response(valid);
+      expect(await readCataloguePage('all-time',0,'','','default',1,20,'2026-11-16')).toEqual(valid);
+      expect(state.rpc).toHaveBeenCalledTimes(2);
+    } finally {warn.mockRestore();}
+  });
   it.each([{...valid,count:-1},{...valid,fetchedAt:'unknown'},{...valid,rows:[{...valid.rows[0],rank:251}]},{...valid,rows:[{...valid.rows[0],ranking_score:null}]}])('does not admit malformed successful responses',async data=>{
     response(data);const {readCataloguePage}=await import('./explore-query');
     await expect(readCataloguePage('all-time',0,'','','default',1,20,'2026-11-15')).rejects.toThrow('Invalid catalogue query response');

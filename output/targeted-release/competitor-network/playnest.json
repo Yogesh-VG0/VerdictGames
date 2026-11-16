@@ -1,0 +1,1198 @@
+{
+  "name": "playnest",
+  "url": "https://playnest.dev/games",
+  "measuredAt": "2026-11-16T08:08:26.615Z",
+  "conditions": "New anonymous context per site; Chrome 1440x1000 DPR1; unthrottled CPU/network; origin cache unknown; ordinary page requests including automatic prefetch; no access challenge bypass",
+  "observed": {
+    "url": "https://playnest.dev/games",
+    "title": "Browse & Filter Games by Platform, Genre & More | PlayNest",
+    "readyState": "complete",
+    "restricted": false,
+    "headings": [
+      "Browse Games"
+    ],
+    "viewport": {
+      "w": 1440,
+      "h": 1000,
+      "dpr": 1
+    },
+    "navigation": {
+      "status": 200,
+      "ttfbMs": 978,
+      "responseEndMs": 1651,
+      "domInteractiveMs": 1657,
+      "loadEventEndMs": 1891,
+      "durationMs": 1891,
+      "transfer": 101314,
+      "encoded": 101014,
+      "decoded": 594213
+    },
+    "paints": [
+      {
+        "name": "first-paint",
+        "ms": 1780
+      },
+      {
+        "name": "first-contentful-paint",
+        "ms": 1780
+      }
+    ],
+    "requestCount": 86,
+    "observableTransferBytes": 774264,
+    "bytesLimitation": "ResourceTiming bytes may be zero for cross-origin resources without Timing-Allow-Origin; this is not total traffic",
+    "byType": {
+      "link": 12,
+      "script": 19,
+      "img": 32,
+      "fetch": 22,
+      "other": 1
+    },
+    "byHost": {
+      "playnest.dev": 49,
+      "wsrv.nl": 37
+    },
+    "images": [
+      {
+        "url": "https://wsrv.nl/?w=80&q=80&output=webp",
+        "w": 72,
+        "h": 96
+      },
+      {
+        "url": "https://wsrv.nl/?w=80&q=80&output=webp",
+        "w": 78,
+        "h": 104
+      },
+      {
+        "url": "https://wsrv.nl/?w=80&q=80&output=webp",
+        "w": 72,
+        "h": 96
+      },
+      {
+        "url": "https://wsrv.nl/?w=80&q=80&output=webp",
+        "w": 68,
+        "h": 90
+      },
+      {
+        "url": "https://wsrv.nl/?w=80&q=80&output=webp",
+        "w": 72,
+        "h": 96
+      },
+      {
+        "url": "https://wsrv.nl/?w=80&q=80&output=webp",
+        "w": 68,
+        "h": 90
+      },
+      {
+        "url": "https://wsrv.nl/?w=80&q=80&output=webp",
+        "w": 69,
+        "h": 93
+      },
+      {
+        "url": "https://wsrv.nl/?w=80&q=80&output=webp",
+        "w": 64,
+        "h": 86
+      }
+    ],
+    "requests": [
+      {
+        "url": "https://playnest.dev/_next/static/immutable/media/07c7676b89ed2778-s.p.45535valc9rzk.woff2",
+        "type": "link",
+        "start": 1261,
+        "ms": 78,
+        "transfer": 48732,
+        "encoded": 48432,
+        "decoded": 48432
+      },
+      {
+        "url": "https://playnest.dev/_next/static/immutable/media/ba63f6a0e436df8e-s.p.0szrwpqb9mkwe.woff2",
+        "type": "link",
+        "start": 1262,
+        "ms": 107,
+        "transfer": 85572,
+        "encoded": 85272,
+        "decoded": 85272
+      },
+      {
+        "url": "https://playnest.dev/_next/static/immutable/media/d8aeca813a9ab546-s.p.08ssgmy_tb90r.woff2",
+        "type": "link",
+        "start": 1262,
+        "ms": 107,
+        "transfer": 27572,
+        "encoded": 27272,
+        "decoded": 27272
+      },
+      {
+        "url": "https://playnest.dev/_next/static/immutable/chunks/0w2cvi_3-jemx.css",
+        "type": "link",
+        "start": 1262,
+        "ms": 165,
+        "transfer": 1309,
+        "encoded": 1009,
+        "decoded": 3631
+      },
+      {
+        "url": "https://playnest.dev/_next/static/immutable/chunks/0nahwl87es0i3.css",
+        "type": "link",
+        "start": 1262,
+        "ms": 165,
+        "transfer": 30990,
+        "encoded": 30690,
+        "decoded": 212085
+      },
+      {
+        "url": "https://playnest.dev/_next/static/immutable/media/9f5a2b9f13a4ecbb-s.p.15dvesjzf7814.woff2",
+        "type": "link",
+        "start": 1262,
+        "ms": 166,
+        "transfer": 21988,
+        "encoded": 21688,
+        "decoded": 21688
+      },
+      {
+        "url": "https://playnest.dev/_next/static/immutable/chunks/3hh3d38g8r6pg.js",
+        "type": "script",
+        "start": 1263,
+        "ms": 258,
+        "transfer": 46323,
+        "encoded": 46023,
+        "decoded": 165211
+      },
+      {
+        "url": "https://playnest.dev/_next/static/immutable/chunks/08bqmm_p16ujt.js",
+        "type": "script",
+        "start": 1263,
+        "ms": 258,
+        "transfer": 9772,
+        "encoded": 9472,
+        "decoded": 33830
+      },
+      {
+        "url": "https://playnest.dev/_next/static/immutable/chunks/turbopack-3h_ctkfaeun7f.js",
+        "type": "script",
+        "start": 1263,
+        "ms": 260,
+        "transfer": 4873,
+        "encoded": 4573,
+        "decoded": 11199
+      },
+      {
+        "url": "https://playnest.dev/_next/static/immutable/chunks/1sdcanox5ff5i.js",
+        "type": "script",
+        "start": 1263,
+        "ms": 260,
+        "transfer": 77263,
+        "encoded": 76963,
+        "decoded": 241230
+      },
+      {
+        "url": "https://playnest.dev/_next/static/immutable/chunks/0nv_teiy4z978.js",
+        "type": "link",
+        "start": 1263,
+        "ms": 276,
+        "transfer": 654,
+        "encoded": 354,
+        "decoded": 354
+      },
+      {
+        "url": "https://playnest.dev/_next/static/immutable/chunks/3b4xc8upo929-.js",
+        "type": "script",
+        "start": 1263,
+        "ms": 219,
+        "transfer": 3967,
+        "encoded": 3667,
+        "decoded": 14049
+      },
+      {
+        "url": "https://playnest.dev/_next/static/immutable/chunks/3i33-grvlf3wa.js",
+        "type": "script",
+        "start": 1263,
+        "ms": 222,
+        "transfer": 9429,
+        "encoded": 9129,
+        "decoded": 28790
+      },
+      {
+        "url": "https://playnest.dev/_next/static/immutable/chunks/1wu-o1z-znjm6.js",
+        "type": "script",
+        "start": 1263,
+        "ms": 238,
+        "transfer": 2937,
+        "encoded": 2637,
+        "decoded": 6247
+      },
+      {
+        "url": "https://playnest.dev/_next/static/immutable/chunks/1rrqb3g18-806.js",
+        "type": "script",
+        "start": 1264,
+        "ms": 218,
+        "transfer": 2995,
+        "encoded": 2695,
+        "decoded": 6334
+      },
+      {
+        "url": "https://playnest.dev/_next/static/immutable/chunks/3kogxy03jf6wl.js",
+        "type": "script",
+        "start": 1264,
+        "ms": 221,
+        "transfer": 12998,
+        "encoded": 12698,
+        "decoded": 39593
+      },
+      {
+        "url": "https://playnest.dev/_next/static/immutable/chunks/2c43tx34fapwc.js",
+        "type": "script",
+        "start": 1264,
+        "ms": 258,
+        "transfer": 13042,
+        "encoded": 12742,
+        "decoded": 39775
+      },
+      {
+        "url": "https://playnest.dev/_next/static/immutable/chunks/2saw_ng82bmya.js",
+        "type": "script",
+        "start": 1264,
+        "ms": 259,
+        "transfer": 11476,
+        "encoded": 11176,
+        "decoded": 28082
+      },
+      {
+        "url": "https://playnest.dev/_next/static/immutable/chunks/3w0s441xao1_6.js",
+        "type": "script",
+        "start": 1264,
+        "ms": 275,
+        "transfer": 13514,
+        "encoded": 13214,
+        "decoded": 34266
+      },
+      {
+        "url": "https://playnest.dev/_next/static/immutable/chunks/29fpl0fv9zghv.js",
+        "type": "script",
+        "start": 1264,
+        "ms": 219,
+        "transfer": 933,
+        "encoded": 633,
+        "decoded": 1112
+      },
+      {
+        "url": "https://playnest.dev/_next/static/immutable/chunks/0uzk493nhdj67.js",
+        "type": "script",
+        "start": 1264,
+        "ms": 220,
+        "transfer": 10223,
+        "encoded": 9923,
+        "decoded": 40218
+      },
+      {
+        "url": "https://playnest.dev/_next/static/immutable/chunks/0yoo021_b68n0.js",
+        "type": "script",
+        "start": 1264,
+        "ms": 237,
+        "transfer": 14764,
+        "encoded": 14464,
+        "decoded": 44401
+      },
+      {
+        "url": "https://playnest.dev/_next/static/immutable/chunks/2_7qjf69cfrby.js",
+        "type": "script",
+        "start": 1264,
+        "ms": 275,
+        "transfer": 4474,
+        "encoded": 4174,
+        "decoded": 10613
+      },
+      {
+        "url": "https://playnest.dev/_next/static/immutable/chunks/3isyiavt6tcxp.js",
+        "type": "script",
+        "start": 1264,
+        "ms": 276,
+        "transfer": 14185,
+        "encoded": 13885,
+        "decoded": 40194
+      },
+      {
+        "url": "https://playnest.dev/_next/static/immutable/chunks/06l659hkhhzod.js",
+        "type": "script",
+        "start": 1264,
+        "ms": 276,
+        "transfer": 13091,
+        "encoded": 12791,
+        "decoded": 39480
+      },
+      {
+        "url": "https://wsrv.nl/?w=80&q=80&output=webp",
+        "type": "img",
+        "start": 1474,
+        "ms": 216,
+        "transfer": 2634,
+        "encoded": 2334,
+        "decoded": 2334
+      },
+      {
+        "url": "https://wsrv.nl/?w=80&q=80&output=webp",
+        "type": "img",
+        "start": 1474,
+        "ms": 218,
+        "transfer": 3222,
+        "encoded": 2922,
+        "decoded": 2922
+      },
+      {
+        "url": "https://wsrv.nl/?w=80&q=80&output=webp",
+        "type": "img",
+        "start": 1474,
+        "ms": 203,
+        "transfer": 3466,
+        "encoded": 3166,
+        "decoded": 3166
+      },
+      {
+        "url": "https://wsrv.nl/?w=80&q=80&output=webp",
+        "type": "img",
+        "start": 1474,
+        "ms": 206,
+        "transfer": 3534,
+        "encoded": 3234,
+        "decoded": 3234
+      },
+      {
+        "url": "https://wsrv.nl/?w=80&q=80&output=webp",
+        "type": "img",
+        "start": 1474,
+        "ms": 215,
+        "transfer": 2658,
+        "encoded": 2358,
+        "decoded": 2358
+      },
+      {
+        "url": "https://wsrv.nl/?w=80&q=80&output=webp",
+        "type": "img",
+        "start": 1474,
+        "ms": 215,
+        "transfer": 3192,
+        "encoded": 2892,
+        "decoded": 2892
+      },
+      {
+        "url": "https://wsrv.nl/?w=80&q=80&output=webp",
+        "type": "img",
+        "start": 1474,
+        "ms": 328,
+        "transfer": 3028,
+        "encoded": 2728,
+        "decoded": 2728
+      },
+      {
+        "url": "https://wsrv.nl/?w=80&q=80&output=webp",
+        "type": "img",
+        "start": 1474,
+        "ms": 310,
+        "transfer": 1334,
+        "encoded": 1034,
+        "decoded": 1034
+      },
+      {
+        "url": "https://wsrv.nl/?w=80&q=80&output=webp",
+        "type": "img",
+        "start": 1474,
+        "ms": 342,
+        "transfer": 2864,
+        "encoded": 2564,
+        "decoded": 2564
+      },
+      {
+        "url": "https://wsrv.nl/?w=80&q=80&output=webp",
+        "type": "img",
+        "start": 1474,
+        "ms": 332,
+        "transfer": 1956,
+        "encoded": 1656,
+        "decoded": 1656
+      },
+      {
+        "url": "https://wsrv.nl/?w=80&q=80&output=webp",
+        "type": "img",
+        "start": 1474,
+        "ms": 342,
+        "transfer": 2838,
+        "encoded": 2538,
+        "decoded": 2538
+      },
+      {
+        "url": "https://wsrv.nl/?w=80&q=80&output=webp",
+        "type": "img",
+        "start": 1474,
+        "ms": 344,
+        "transfer": 3056,
+        "encoded": 2756,
+        "decoded": 2756
+      },
+      {
+        "url": "https://wsrv.nl/?w=80&q=80&output=webp",
+        "type": "img",
+        "start": 1474,
+        "ms": 346,
+        "transfer": 2044,
+        "encoded": 1744,
+        "decoded": 1744
+      },
+      {
+        "url": "https://wsrv.nl/?w=80&q=80&output=webp",
+        "type": "img",
+        "start": 1474,
+        "ms": 356,
+        "transfer": 3766,
+        "encoded": 3466,
+        "decoded": 3466
+      },
+      {
+        "url": "https://wsrv.nl/?w=80&q=80&output=webp",
+        "type": "img",
+        "start": 1474,
+        "ms": 499,
+        "transfer": 3986,
+        "encoded": 3686,
+        "decoded": 3686
+      },
+      {
+        "url": "https://wsrv.nl/?w=80&q=80&output=webp",
+        "type": "img",
+        "start": 1474,
+        "ms": 338,
+        "transfer": 1330,
+        "encoded": 1030,
+        "decoded": 1030
+      },
+      {
+        "url": "https://wsrv.nl/?w=80&q=80&output=webp",
+        "type": "img",
+        "start": 1474,
+        "ms": 344,
+        "transfer": 3016,
+        "encoded": 2716,
+        "decoded": 2716
+      },
+      {
+        "url": "https://wsrv.nl/?w=80&q=80&output=webp",
+        "type": "img",
+        "start": 1474,
+        "ms": 356,
+        "transfer": 3286,
+        "encoded": 2986,
+        "decoded": 2986
+      },
+      {
+        "url": "https://wsrv.nl/?w=80&q=80&output=webp",
+        "type": "img",
+        "start": 1474,
+        "ms": 331,
+        "transfer": 1848,
+        "encoded": 1548,
+        "decoded": 1548
+      },
+      {
+        "url": "https://wsrv.nl/?w=80&q=80&output=webp",
+        "type": "img",
+        "start": 1474,
+        "ms": 348,
+        "transfer": 2924,
+        "encoded": 2624,
+        "decoded": 2624
+      },
+      {
+        "url": "https://wsrv.nl/?w=80&q=80&output=webp",
+        "type": "img",
+        "start": 1474,
+        "ms": 358,
+        "transfer": 3870,
+        "encoded": 3570,
+        "decoded": 3570
+      },
+      {
+        "url": "https://wsrv.nl/?w=140&q=80&output=webp",
+        "type": "img",
+        "start": 1474,
+        "ms": 399,
+        "transfer": 3538,
+        "encoded": 3238,
+        "decoded": 3238
+      },
+      {
+        "url": "https://playnest.dev/api/auth/get-session",
+        "type": "fetch",
+        "start": 1588,
+        "ms": 207,
+        "transfer": 310,
+        "encoded": 10,
+        "decoded": 4
+      },
+      {
+        "url": "https://playnest.dev/89bcc021ec3e5789/script.js",
+        "type": "script",
+        "start": 1635,
+        "ms": 60,
+        "transfer": 2376,
+        "encoded": 2076,
+        "decoded": 4522
+      },
+      {
+        "url": "https://wsrv.nl/?w=256&q=70&output=webp",
+        "type": "link",
+        "start": 1654,
+        "ms": 236,
+        "transfer": 20142,
+        "encoded": 19842,
+        "decoded": 19842
+      },
+      {
+        "url": "https://wsrv.nl/?w=256&q=70&output=webp",
+        "type": "link",
+        "start": 1654,
+        "ms": 221,
+        "transfer": 13502,
+        "encoded": 13202,
+        "decoded": 13202
+      },
+      {
+        "url": "https://wsrv.nl/?w=256&q=70&output=webp",
+        "type": "link",
+        "start": 1654,
+        "ms": 228,
+        "transfer": 13830,
+        "encoded": 13530,
+        "decoded": 13530
+      },
+      {
+        "url": "https://wsrv.nl/?w=256&q=70&output=webp",
+        "type": "link",
+        "start": 1654,
+        "ms": 176,
+        "transfer": 6404,
+        "encoded": 6104,
+        "decoded": 6104
+      },
+      {
+        "url": "https://wsrv.nl/?w=256&q=70&output=webp",
+        "type": "link",
+        "start": 1654,
+        "ms": 228,
+        "transfer": 20732,
+        "encoded": 20432,
+        "decoded": 20432
+      },
+      {
+        "url": "https://wsrv.nl/?w=256&q=70&output=webp",
+        "type": "img",
+        "start": 1793,
+        "ms": 141,
+        "transfer": 4804,
+        "encoded": 4504,
+        "decoded": 4504
+      },
+      {
+        "url": "https://wsrv.nl/?w=256&q=70&output=webp",
+        "type": "img",
+        "start": 1793,
+        "ms": 162,
+        "transfer": 8352,
+        "encoded": 8052,
+        "decoded": 8052
+      },
+      {
+        "url": "https://wsrv.nl/?w=256&q=70&output=webp",
+        "type": "img",
+        "start": 1793,
+        "ms": 166,
+        "transfer": 10392,
+        "encoded": 10092,
+        "decoded": 10092
+      },
+      {
+        "url": "https://wsrv.nl/?w=256&q=70&output=webp",
+        "type": "img",
+        "start": 1793,
+        "ms": 171,
+        "transfer": 13108,
+        "encoded": 12808,
+        "decoded": 12808
+      },
+      {
+        "url": "https://wsrv.nl/?w=256&q=70&output=webp",
+        "type": "img",
+        "start": 1793,
+        "ms": 179,
+        "transfer": 16570,
+        "encoded": 16270,
+        "decoded": 16270
+      },
+      {
+        "url": "https://wsrv.nl/?w=256&q=70&output=webp",
+        "type": "img",
+        "start": 1793,
+        "ms": 152,
+        "transfer": 13880,
+        "encoded": 13580,
+        "decoded": 13580
+      },
+      {
+        "url": "https://wsrv.nl/?w=256&q=70&output=webp",
+        "type": "img",
+        "start": 1793,
+        "ms": 176,
+        "transfer": 16482,
+        "encoded": 16182,
+        "decoded": 16182
+      },
+      {
+        "url": "https://wsrv.nl/?w=256&q=70&output=webp",
+        "type": "img",
+        "start": 1793,
+        "ms": 176,
+        "transfer": 15508,
+        "encoded": 15208,
+        "decoded": 15208
+      },
+      {
+        "url": "https://wsrv.nl/?w=256&q=70&output=webp",
+        "type": "img",
+        "start": 1793,
+        "ms": 178,
+        "transfer": 21192,
+        "encoded": 20892,
+        "decoded": 20892
+      },
+      {
+        "url": "https://wsrv.nl/?w=256&q=70&output=webp",
+        "type": "img",
+        "start": 1794,
+        "ms": 174,
+        "transfer": 14662,
+        "encoded": 14362,
+        "decoded": 14362
+      },
+      {
+        "url": "https://playnest.dev/",
+        "type": "fetch",
+        "start": 1807,
+        "ms": 249,
+        "transfer": 478,
+        "encoded": 178,
+        "decoded": 268
+      },
+      {
+        "url": "https://playnest.dev/events",
+        "type": "fetch",
+        "start": 1807,
+        "ms": 269,
+        "transfer": 491,
+        "encoded": 191,
+        "decoded": 310
+      },
+      {
+        "url": "https://playnest.dev/games/hot-new-releases",
+        "type": "fetch",
+        "start": 1807,
+        "ms": 217,
+        "transfer": 507,
+        "encoded": 207,
+        "decoded": 361
+      },
+      {
+        "url": "https://playnest.dev/premium",
+        "type": "fetch",
+        "start": 1807,
+        "ms": 253,
+        "transfer": 492,
+        "encoded": 192,
+        "decoded": 311
+      },
+      {
+        "url": "https://playnest.dev/icon.svg",
+        "type": "other",
+        "start": 1895,
+        "ms": 42,
+        "transfer": 1328,
+        "encoded": 1028,
+        "decoded": 2177
+      },
+      {
+        "url": "https://playnest.dev/games/grand-theft-auto-v",
+        "type": "fetch",
+        "start": 2026,
+        "ms": 222,
+        "transfer": 618,
+        "encoded": 318,
+        "decoded": 545
+      },
+      {
+        "url": "https://playnest.dev/games/the-witcher-3-wild-hunt",
+        "type": "fetch",
+        "start": 2056,
+        "ms": 309,
+        "transfer": 615,
+        "encoded": 315,
+        "decoded": 550
+      },
+      {
+        "url": "https://playnest.dev/games/portal-2",
+        "type": "fetch",
+        "start": 2061,
+        "ms": 213,
+        "transfer": 608,
+        "encoded": 308,
+        "decoded": 535
+      },
+      {
+        "url": "https://playnest.dev/games/the-elder-scrolls-v-skyrim",
+        "type": "fetch",
+        "start": 2077,
+        "ms": 217,
+        "transfer": 621,
+        "encoded": 321,
+        "decoded": 553
+      },
+      {
+        "url": "https://playnest.dev/games/grand-theft-auto-san-andreas",
+        "type": "fetch",
+        "start": 2248,
+        "ms": 215,
+        "transfer": 625,
+        "encoded": 325,
+        "decoded": 555
+      },
+      {
+        "url": "https://playnest.dev/games/portal",
+        "type": "fetch",
+        "start": 2275,
+        "ms": 211,
+        "transfer": 612,
+        "encoded": 312,
+        "decoded": 533
+      },
+      {
+        "url": "https://playnest.dev/auth/login",
+        "type": "fetch",
+        "start": 2294,
+        "ms": 232,
+        "transfer": 499,
+        "encoded": 199,
+        "decoded": 349
+      },
+      {
+        "url": "https://playnest.dev/games/best-of-the-year",
+        "type": "fetch",
+        "start": 2366,
+        "ms": 237,
+        "transfer": 510,
+        "encoded": 210,
+        "decoded": 361
+      },
+      {
+        "url": "https://playnest.dev/games/most-anticipated",
+        "type": "fetch",
+        "start": 2464,
+        "ms": 225,
+        "transfer": 509,
+        "encoded": 209,
+        "decoded": 361
+      },
+      {
+        "url": "https://playnest.dev/games/most-wishlisted",
+        "type": "fetch",
+        "start": 2486,
+        "ms": 307,
+        "transfer": 509,
+        "encoded": 209,
+        "decoded": 360
+      },
+      {
+        "url": "https://playnest.dev/games/trending",
+        "type": "fetch",
+        "start": 2527,
+        "ms": 267,
+        "transfer": 504,
+        "encoded": 204,
+        "decoded": 353
+      },
+      {
+        "url": "https://playnest.dev/games/all-time-favorites",
+        "type": "fetch",
+        "start": 2605,
+        "ms": 225,
+        "transfer": 509,
+        "encoded": 209,
+        "decoded": 363
+      },
+      {
+        "url": "https://playnest.dev/games/upcoming",
+        "type": "fetch",
+        "start": 2689,
+        "ms": 217,
+        "transfer": 504,
+        "encoded": 204,
+        "decoded": 353
+      },
+      {
+        "url": "https://playnest.dev/games/this-week",
+        "type": "fetch",
+        "start": 2795,
+        "ms": 250,
+        "transfer": 504,
+        "encoded": 204,
+        "decoded": 354
+      },
+      {
+        "url": "https://playnest.dev/games/last-30-days",
+        "type": "fetch",
+        "start": 2796,
+        "ms": 229,
+        "transfer": 507,
+        "encoded": 207,
+        "decoded": 357
+      },
+      {
+        "url": "https://playnest.dev/games/grand-theft-auto-v",
+        "type": "fetch",
+        "start": 2831,
+        "ms": 304,
+        "transfer": 1934,
+        "encoded": 1634,
+        "decoded": 5151
+      },
+      {
+        "url": "https://playnest.dev/games/the-witcher-3-wild-hunt",
+        "type": "fetch",
+        "start": 2908,
+        "ms": 250,
+        "transfer": 2068,
+        "encoded": 1768,
+        "decoded": 5712
+      }
+    ]
+  },
+  "screenshot": "captured",
+  "responses": [
+    {
+      "url": "https://playnest.dev/games",
+      "type": "document",
+      "status": 200,
+      "method": "GET",
+      "headers": {
+        "cache-control": "private, no-cache, no-store, max-age=0, must-revalidate",
+        "content-type": "text/html; charset=utf-8",
+        "age": "0",
+        "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+        "server": "Vercel",
+        "x-vercel-cache": "MISS"
+      }
+    },
+    {
+      "url": "https://playnest.dev/games/hot-new-releases",
+      "type": "fetch",
+      "status": 200,
+      "method": "GET",
+      "headers": {
+        "cache-control": "private, no-cache, no-store, max-age=0, must-revalidate",
+        "content-type": "text/x-component",
+        "age": "0",
+        "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+        "server": "Vercel",
+        "x-vercel-cache": "MISS"
+      }
+    },
+    {
+      "url": "https://playnest.dev/",
+      "type": "fetch",
+      "status": 200,
+      "method": "GET",
+      "headers": {
+        "cache-control": "private, no-cache, no-store, max-age=0, must-revalidate",
+        "content-type": "text/x-component",
+        "age": "0",
+        "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+        "server": "Vercel",
+        "x-vercel-cache": "MISS"
+      }
+    },
+    {
+      "url": "https://playnest.dev/premium",
+      "type": "fetch",
+      "status": 200,
+      "method": "GET",
+      "headers": {
+        "cache-control": "private, no-cache, no-store, max-age=0, must-revalidate",
+        "content-type": "text/x-component",
+        "age": "0",
+        "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+        "server": "Vercel",
+        "x-vercel-cache": "MISS"
+      }
+    },
+    {
+      "url": "https://playnest.dev/events",
+      "type": "fetch",
+      "status": 200,
+      "method": "GET",
+      "headers": {
+        "cache-control": "private, no-cache, no-store, max-age=0, must-revalidate",
+        "content-type": "text/x-component",
+        "age": "0",
+        "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+        "server": "Vercel",
+        "x-vercel-cache": "MISS"
+      }
+    },
+    {
+      "url": "https://playnest.dev/games/grand-theft-auto-v",
+      "type": "fetch",
+      "status": 200,
+      "method": "GET",
+      "headers": {
+        "cache-control": "private, no-cache, no-store, max-age=0, must-revalidate",
+        "content-type": "text/x-component",
+        "age": "0",
+        "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+        "server": "Vercel",
+        "x-vercel-cache": "MISS"
+      }
+    },
+    {
+      "url": "https://playnest.dev/games/portal-2",
+      "type": "fetch",
+      "status": 200,
+      "method": "GET",
+      "headers": {
+        "cache-control": "private, no-cache, no-store, max-age=0, must-revalidate",
+        "content-type": "text/x-component",
+        "age": "0",
+        "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+        "server": "Vercel",
+        "x-vercel-cache": "MISS"
+      }
+    },
+    {
+      "url": "https://playnest.dev/games/the-elder-scrolls-v-skyrim",
+      "type": "fetch",
+      "status": 200,
+      "method": "GET",
+      "headers": {
+        "cache-control": "private, no-cache, no-store, max-age=0, must-revalidate",
+        "content-type": "text/x-component",
+        "age": "0",
+        "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+        "server": "Vercel",
+        "x-vercel-cache": "MISS"
+      }
+    },
+    {
+      "url": "https://playnest.dev/games/the-witcher-3-wild-hunt",
+      "type": "fetch",
+      "status": 200,
+      "method": "GET",
+      "headers": {
+        "cache-control": "private, no-cache, no-store, max-age=0, must-revalidate",
+        "content-type": "text/x-component",
+        "age": "0",
+        "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+        "server": "Vercel",
+        "x-vercel-cache": "MISS"
+      }
+    },
+    {
+      "url": "https://playnest.dev/games/grand-theft-auto-san-andreas",
+      "type": "fetch",
+      "status": 200,
+      "method": "GET",
+      "headers": {
+        "cache-control": "private, no-cache, no-store, max-age=0, must-revalidate",
+        "content-type": "text/x-component",
+        "age": "0",
+        "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+        "server": "Vercel",
+        "x-vercel-cache": "MISS"
+      }
+    },
+    {
+      "url": "https://playnest.dev/games/portal",
+      "type": "fetch",
+      "status": 200,
+      "method": "GET",
+      "headers": {
+        "cache-control": "private, no-cache, no-store, max-age=0, must-revalidate",
+        "content-type": "text/x-component",
+        "age": "0",
+        "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+        "server": "Vercel",
+        "x-vercel-cache": "MISS"
+      }
+    },
+    {
+      "url": "https://playnest.dev/games/best-of-the-year",
+      "type": "fetch",
+      "status": 200,
+      "method": "GET",
+      "headers": {
+        "cache-control": "private, no-cache, no-store, max-age=0, must-revalidate",
+        "content-type": "text/x-component",
+        "age": "0",
+        "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+        "server": "Vercel",
+        "x-vercel-cache": "MISS"
+      }
+    },
+    {
+      "url": "https://playnest.dev/games/most-anticipated",
+      "type": "fetch",
+      "status": 200,
+      "method": "GET",
+      "headers": {
+        "cache-control": "private, no-cache, no-store, max-age=0, must-revalidate",
+        "content-type": "text/x-component",
+        "age": "0",
+        "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+        "server": "Vercel",
+        "x-vercel-cache": "MISS"
+      }
+    },
+    {
+      "url": "https://playnest.dev/games/most-wishlisted",
+      "type": "fetch",
+      "status": 200,
+      "method": "GET",
+      "headers": {
+        "cache-control": "private, no-cache, no-store, max-age=0, must-revalidate",
+        "content-type": "text/x-component",
+        "age": "0",
+        "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+        "server": "Vercel",
+        "x-vercel-cache": "MISS"
+      }
+    },
+    {
+      "url": "https://playnest.dev/games/trending",
+      "type": "fetch",
+      "status": 200,
+      "method": "GET",
+      "headers": {
+        "cache-control": "private, no-cache, no-store, max-age=0, must-revalidate",
+        "content-type": "text/x-component",
+        "age": "0",
+        "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+        "server": "Vercel",
+        "x-vercel-cache": "MISS"
+      }
+    },
+    {
+      "url": "https://playnest.dev/games/all-time-favorites",
+      "type": "fetch",
+      "status": 200,
+      "method": "GET",
+      "headers": {
+        "cache-control": "private, no-cache, no-store, max-age=0, must-revalidate",
+        "content-type": "text/x-component",
+        "age": "0",
+        "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+        "server": "Vercel",
+        "x-vercel-cache": "MISS"
+      }
+    },
+    {
+      "url": "https://playnest.dev/games/upcoming",
+      "type": "fetch",
+      "status": 200,
+      "method": "GET",
+      "headers": {
+        "cache-control": "private, no-cache, no-store, max-age=0, must-revalidate",
+        "content-type": "text/x-component",
+        "age": "0",
+        "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+        "server": "Vercel",
+        "x-vercel-cache": "MISS"
+      }
+    },
+    {
+      "url": "https://playnest.dev/games/last-30-days",
+      "type": "fetch",
+      "status": 200,
+      "method": "GET",
+      "headers": {
+        "cache-control": "private, no-cache, no-store, max-age=0, must-revalidate",
+        "content-type": "text/x-component",
+        "age": "0",
+        "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+        "server": "Vercel",
+        "x-vercel-cache": "MISS"
+      }
+    },
+    {
+      "url": "https://playnest.dev/games/this-week",
+      "type": "fetch",
+      "status": 200,
+      "method": "GET",
+      "headers": {
+        "cache-control": "private, no-cache, no-store, max-age=0, must-revalidate",
+        "content-type": "text/x-component",
+        "age": "0",
+        "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+        "server": "Vercel",
+        "x-vercel-cache": "MISS"
+      }
+    },
+    {
+      "url": "https://playnest.dev/games/the-witcher-3-wild-hunt",
+      "type": "fetch",
+      "status": 200,
+      "method": "GET",
+      "headers": {
+        "cache-control": "private, no-cache, no-store, max-age=0, must-revalidate",
+        "content-type": "text/x-component",
+        "age": "0",
+        "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+        "server": "Vercel",
+        "x-vercel-cache": "MISS"
+      }
+    },
+    {
+      "url": "https://playnest.dev/games/grand-theft-auto-v",
+      "type": "fetch",
+      "status": 200,
+      "method": "GET",
+      "headers": {
+        "cache-control": "private, no-cache, no-store, max-age=0, must-revalidate",
+        "content-type": "text/x-component",
+        "age": "0",
+        "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+        "server": "Vercel",
+        "x-vercel-cache": "MISS"
+      }
+    },
+    {
+      "url": "https://playnest.dev/games/portal-2",
+      "type": "fetch",
+      "status": 200,
+      "method": "GET",
+      "headers": {
+        "cache-control": "private, no-cache, no-store, max-age=0, must-revalidate",
+        "content-type": "text/x-component",
+        "age": "0",
+        "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+        "server": "Vercel",
+        "x-vercel-cache": "MISS"
+      }
+    },
+    {
+      "url": "https://playnest.dev/games/the-elder-scrolls-v-skyrim",
+      "type": "fetch",
+      "status": 200,
+      "method": "GET",
+      "headers": {
+        "cache-control": "private, no-cache, no-store, max-age=0, must-revalidate",
+        "content-type": "text/x-component",
+        "age": "0",
+        "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+        "server": "Vercel",
+        "x-vercel-cache": "MISS"
+      }
+    }
+  ]
+}

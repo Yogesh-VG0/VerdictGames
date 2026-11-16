@@ -1,0 +1,102 @@
+{
+  "measuredAt": "2026-11-16T10:44:54.893Z",
+  "scope": "Exact SQL/helper in disposable local migration-replay database; two actual sessions, no hosted changes",
+  "checks": [
+    "ready=false preserves original source results",
+    "exact helper locks/copies two rows, validates all inputs and publishes readiness",
+    "backfill resumption avoids identical-row writes",
+    "unready/lost projection uses original accurate source query",
+    "unclassified source rows union before ranking without loss or duplication",
+    "wide Unicode metadata, implicit classifiers, accepted/conflicting inserts, authenticated writer and cascade delete",
+    "restrictive source policy disables all projection access and retains original filtered ranking",
+    "anon/authenticated/service_role cannot write projection directly",
+    "definer trigger rejects attachment to another relation",
+    "two-session repeatable-read policy tightening uses original source visibility"
+  ],
+  "rows": [
+    {
+      "kind": "inputs",
+      "equal": true
+    },
+    {
+      "kind": "description",
+      "safe": false
+    },
+    {
+      "kind": "tags",
+      "early": true
+    },
+    {
+      "kind": "conflict",
+      "count": 1
+    },
+    {
+      "kind": "writer",
+      "players": 12345
+    },
+    {
+      "kind": "restricted",
+      "guard": false,
+      "projectionRows": 0,
+      "sourceRows": 7,
+      "rpcCount": 3
+    },
+    {
+      "kind": "delete",
+      "remaining": 0
+    }
+  ],
+  "race": {
+    "guard": false,
+    "sourceCount": 1,
+    "rpcCount": 1
+  },
+  "helper": {
+    "startedAt": "2026-11-16T10:43:51.779Z",
+    "hosted": false,
+    "transport": "local Docker psql",
+    "sqlSha256": "43c89033017f07ad6dbe8bd964accecf6f9a18febf522465a3366dd8ce107565",
+    "batchSize": 100,
+    "batches": [
+      {
+        "rows": 2,
+        "serverMs": 0.232,
+        "clientMs": 3141
+      }
+    ],
+    "visited": 2,
+    "copied": 2,
+    "sourceWrites": 0,
+    "pendingAtStart": 2,
+    "validation": {
+      "ready": true,
+      "differences": 0
+    },
+    "completedAt": "2026-11-16T10:44:04.328Z",
+    "totalMs": 12548
+  },
+  "repeated": {
+    "startedAt": "2026-11-16T10:44:07.620Z",
+    "hosted": false,
+    "transport": "local Docker psql",
+    "sqlSha256": "43c89033017f07ad6dbe8bd964accecf6f9a18febf522465a3366dd8ce107565",
+    "batchSize": 100,
+    "batches": [
+      {
+        "rows": 0,
+        "serverMs": 0.132,
+        "clientMs": 3143
+      }
+    ],
+    "visited": 2,
+    "copied": 0,
+    "sourceWrites": 0,
+    "pendingAtStart": 2,
+    "validation": {
+      "ready": true,
+      "differences": 0
+    },
+    "completedAt": "2026-11-16T10:44:20.217Z",
+    "totalMs": 12596
+  }
+}

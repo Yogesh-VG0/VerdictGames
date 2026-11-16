@@ -66,6 +66,7 @@ scripts/apply-schema.mjs
 scripts/backfill-*.mjs
 !scripts/backfill-games.mjs
 !scripts/backfill-explore-classification.mjs
+!scripts/backfill-explore-inputs.mjs
 !scripts/backfill-mobile-listings.mjs
 scripts/check-igdb.mjs
 scripts/cleanup-public-safety.mjs

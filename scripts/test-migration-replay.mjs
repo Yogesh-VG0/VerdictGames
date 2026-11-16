@@ -56,16 +56,22 @@ try {
     try { query(replay, `SET search_path=public,extensions;\n${source}`); }
     catch (error) { throw new Error(`Migration ${file}: ${error.message}`); }
     migrations.push({ file, sha256: createHash('sha256').update(source).digest('hex') });
+    if(file.endsWith('_cache_explore_classification.sql')) {
+      assert.equal(query(replay,"SELECT count(*) FROM public.games WHERE explore_primary_safe IS NULL;").trim(),'2');
+      const unfilled=query(replay,"SET ROLE anon; SELECT public.explore_catalogue_page('all-time',0,'','','default',1,40,'2026-11-15'); RESET ROLE;").split('\n').find(line=>line.startsWith('{'));
+      assert.equal(JSON.parse(unfilled).count,2,'Unfilled derived fields retain accurate live classification');
+      execFileSync(process.execPath,['scripts/backfill-explore-classification.mjs','--database='+replay,'--evidence-path=.verification/replay-classification-backfill.json'],{stdio:['ignore','pipe','pipe']});
+      const backfill=JSON.parse(readFileSync('.verification/replay-classification-backfill.json','utf8'));
+      assert.equal(backfill.updated,2);assert.equal(backfill.remaining,0);assert.equal(backfill.allSourceValuesPreserved,true);
+    }
   }
   const permissions = query(replay, "SELECT has_column_privilege('anon','public.profiles','role','SELECT'),has_table_privilege('anon','public.user_games','SELECT');").trim();
   assert.equal(permissions, 'f|f', 'Replayed privacy boundary must match intended state');
-  assert.equal(query(replay,"SELECT count(*) FROM public.games WHERE explore_primary_safe IS NULL;").trim(),'2');
+  assert.equal(query(replay,"SELECT count(*) FROM public.games WHERE explore_primary_safe IS NULL;").trim(),'0');
   const fallback=query(replay,"SET ROLE anon; SELECT public.explore_catalogue_page('all-time',0,'','','default',1,40,'2026-11-15'); RESET ROLE;")
     .split('\n').find(line=>line.startsWith('{'));
-  assert.equal(JSON.parse(fallback).count,2,'Unfilled derived fields use the accurate live fallback');
-  execFileSync(process.execPath,['scripts/backfill-explore-classification.mjs','--database='+replay,'--evidence-path=.verification/replay-classification-backfill.json'],{stdio:['ignore','pipe','pipe']});
-  const backfill=JSON.parse(readFileSync('.verification/replay-classification-backfill.json','utf8'));
-  assert.equal(backfill.updated,2);assert.equal(backfill.remaining,0);assert.equal(backfill.allSourceValuesPreserved,true);
+  assert.equal(JSON.parse(fallback).count,2,'Unready compact projection uses the accurate source fallback');
+  execFileSync(process.execPath,['scripts/test-explore-inputs.mjs','--database='+replay],{stdio:['ignore','pipe','pipe']});
   assert.equal(query(replay,"SELECT count(*) FROM public.games WHERE updated_at='2001-01-01'::timestamptz;").trim(),'2','Derived-only backfill preserves existing freshness timestamps');
   query(replay,"DELETE FROM public.games WHERE slug IN ('preclass-a','preclass-b');");
   console.log('PASS staged classification fallback and actual CLI backfill preserve all source fields');
@@ -129,7 +135,12 @@ try {
   if (restore.status !== 0) throw new Error(`Local restore failed: ${restore.stderr.toString().slice(-2500)}`);
   assert.equal(query(restored, 'SELECT payload FROM public.recovery_fixture WHERE id=1;').trim(), 'synthetic restore verification');
   assert.equal(query(restored, "SELECT has_column_privilege('anon','public.profiles','role','SELECT'),has_table_privilege('anon','public.user_games','SELECT');").trim(), permissions);
-  writeFileSync(path.join(output, 'migration-replay.json'), JSON.stringify({ migrations, restore: 'passed', privatePrivileges: 'passed', backupBytes: dump.stdout.length }, null, 2));
+  assert.equal(query(restored,"SET ROLE anon; SELECT public.explore_source_unrestricted(); SELECT public.explore_catalogue_page('all-time',0,'','','default',1,40,'2026-11-16')->>'count'; RESET ROLE;").split('\n').filter(line=>line==='t'||line==='0').join('|'),'t|0','Restored live-input functions and access policies work');
+  query(restored,readFileSync('output/targeted-release/proposals/rollback_live_explore_inputs.sql','utf8'));
+  assert.equal(query(restored,"SELECT to_regclass('public.explore_inputs') IS NULL AND to_regclass('public.explore_input_state') IS NULL;").trim(),'t');
+  assert.equal(query(restored,"SET ROLE anon; SELECT public.explore_catalogue_page('all-time',0,'','','default',1,40,'2026-11-16')->>'count'; RESET ROLE;").split('\n').filter(line=>line==='0').join(''),'0','Rollback retains the compatible original invoker function');
+  assert.equal(query(restored, "SELECT has_column_privilege('anon','public.profiles','role','SELECT'),has_table_privilege('anon','public.user_games','SELECT');").trim(), permissions,'Performance rollback must not restore insecure private grants');
+  writeFileSync(path.join(output, 'migration-replay.json'), JSON.stringify({ migrations, restore: 'passed', privatePrivileges: 'passed', liveInputsRestore: 'passed', liveInputsRollback: 'passed', backupBytes: dump.stdout.length }, null, 2));
   console.log(`PASS ${files.length} migrations replayed; synthetic backup restored with data and private privileges intact`);
 } finally {
   for (const name of created.reverse()) {
