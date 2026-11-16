@@ -1,0 +1,40 @@
+{
+  "measuredAt": "2026-11-16T11:02:08.730Z",
+  "scope": "Read-only anonymous direct POST to currently installed upcoming SQL fallback: no RAWG, framework cache or durable discovery snapshot used. Fresh transport; database/storage cache state unknown; this is not full app/provider cold-deployment acceptance",
+  "samples": [
+    {
+      "platform": "PC",
+      "page": 1,
+      "status": 500,
+      "ms": 4004,
+      "decodedBytes": 100,
+      "code": "57014"
+    },
+    {
+      "platform": "PC",
+      "page": 2,
+      "status": 500,
+      "ms": 3775,
+      "decodedBytes": 100,
+      "code": "57014"
+    },
+    {
+      "platform": "PlayStation 5",
+      "page": 1,
+      "status": 200,
+      "ms": 3353,
+      "decodedBytes": 27425,
+      "count": 32,
+      "rows": 32
+    },
+    {
+      "platform": "PC",
+      "page": 1,
+      "status": 200,
+      "ms": 453,
+      "decodedBytes": 32299,
+      "count": 255,
+      "rows": 40
+    }
+  ]
+}

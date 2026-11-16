@@ -23,7 +23,7 @@ REVOKE ALL ON FUNCTION public.explore_source_unrestricted() FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.explore_source_unrestricted() TO anon,authenticated,service_role;
 COMMENT ON FUNCTION public.explore_source_unrestricted() IS 'Conservative invoker guard: source SELECT plus no active RLS, or a provably unconditional applicable permissive policy and no applicable restrictive policy. Unknown conditions fail closed.';
 
-CREATE TABLE public.explore_inputs AS SELECT id,slug,title,release_date,steam_app_id,review_count,platforms,genres,created_at,current_players,verdict_score,score,confidence,release_status,explore_title_key,explore_year_suffix,explore_franchise_key,explore_developer_key,explore_publisher_key,explore_primary_safe,explore_early_access FROM public.games WITH NO DATA;
+CREATE TABLE public.explore_inputs AS SELECT id,slug,title,release_date,steam_app_id,review_count,platforms,genres,tags,created_at,current_players,verdict_score,score,confidence,release_status,explore_title_key,explore_year_suffix,explore_franchise_key,explore_developer_key,explore_publisher_key,explore_primary_safe,explore_early_access FROM public.games WITH NO DATA;
 ALTER TABLE public.explore_inputs ADD PRIMARY KEY(id);
 ALTER TABLE public.explore_inputs ADD CONSTRAINT explore_inputs_game_fk FOREIGN KEY(id) REFERENCES public.games(id) ON UPDATE CASCADE ON DELETE CASCADE;
 CREATE TABLE public.explore_input_state(singleton boolean PRIMARY KEY DEFAULT true CHECK(singleton),ready boolean NOT NULL DEFAULT false);
@@ -41,9 +41,9 @@ BEGIN
  IF TG_RELID <> 'public.games'::regclass OR TG_WHEN <> 'AFTER' OR TG_LEVEL <> 'ROW' OR TG_OP NOT IN ('INSERT','UPDATE') THEN
   RAISE EXCEPTION 'Invalid Explore input maintenance trigger context' USING ERRCODE='42501';
  END IF;
- IF TG_OP='UPDATE' AND ROW(OLD.id,OLD.slug,OLD.title,OLD.release_date,OLD.steam_app_id,OLD.review_count,OLD.platforms,OLD.genres,OLD.created_at,OLD.current_players,OLD.verdict_score,OLD.score,OLD.confidence,OLD.release_status,OLD.explore_title_key,OLD.explore_year_suffix,OLD.explore_franchise_key,OLD.explore_developer_key,OLD.explore_publisher_key,OLD.explore_primary_safe,OLD.explore_early_access) IS NOT DISTINCT FROM ROW(NEW.id,NEW.slug,NEW.title,NEW.release_date,NEW.steam_app_id,NEW.review_count,NEW.platforms,NEW.genres,NEW.created_at,NEW.current_players,NEW.verdict_score,NEW.score,NEW.confidence,NEW.release_status,NEW.explore_title_key,NEW.explore_year_suffix,NEW.explore_franchise_key,NEW.explore_developer_key,NEW.explore_publisher_key,NEW.explore_primary_safe,NEW.explore_early_access) THEN RETURN NEW; END IF;
- INSERT INTO public.explore_inputs(id,slug,title,release_date,steam_app_id,review_count,platforms,genres,created_at,current_players,verdict_score,score,confidence,release_status,explore_title_key,explore_year_suffix,explore_franchise_key,explore_developer_key,explore_publisher_key,explore_primary_safe,explore_early_access) VALUES(NEW.id,NEW.slug,NEW.title,NEW.release_date,NEW.steam_app_id,NEW.review_count,NEW.platforms,NEW.genres,NEW.created_at,NEW.current_players,NEW.verdict_score,NEW.score,NEW.confidence,NEW.release_status,NEW.explore_title_key,NEW.explore_year_suffix,NEW.explore_franchise_key,NEW.explore_developer_key,NEW.explore_publisher_key,NEW.explore_primary_safe,NEW.explore_early_access)
- ON CONFLICT(id) DO UPDATE SET slug=excluded.slug,title=excluded.title,release_date=excluded.release_date,steam_app_id=excluded.steam_app_id,review_count=excluded.review_count,platforms=excluded.platforms,genres=excluded.genres,created_at=excluded.created_at,current_players=excluded.current_players,verdict_score=excluded.verdict_score,score=excluded.score,confidence=excluded.confidence,release_status=excluded.release_status,explore_title_key=excluded.explore_title_key,explore_year_suffix=excluded.explore_year_suffix,explore_franchise_key=excluded.explore_franchise_key,explore_developer_key=excluded.explore_developer_key,explore_publisher_key=excluded.explore_publisher_key,explore_primary_safe=excluded.explore_primary_safe,explore_early_access=excluded.explore_early_access;
+ IF TG_OP='UPDATE' AND ROW(OLD.id,OLD.slug,OLD.title,OLD.release_date,OLD.steam_app_id,OLD.review_count,OLD.platforms,OLD.genres,OLD.tags,OLD.created_at,OLD.current_players,OLD.verdict_score,OLD.score,OLD.confidence,OLD.release_status,OLD.explore_title_key,OLD.explore_year_suffix,OLD.explore_franchise_key,OLD.explore_developer_key,OLD.explore_publisher_key,OLD.explore_primary_safe,OLD.explore_early_access) IS NOT DISTINCT FROM ROW(NEW.id,NEW.slug,NEW.title,NEW.release_date,NEW.steam_app_id,NEW.review_count,NEW.platforms,NEW.genres,NEW.tags,NEW.created_at,NEW.current_players,NEW.verdict_score,NEW.score,NEW.confidence,NEW.release_status,NEW.explore_title_key,NEW.explore_year_suffix,NEW.explore_franchise_key,NEW.explore_developer_key,NEW.explore_publisher_key,NEW.explore_primary_safe,NEW.explore_early_access) THEN RETURN NEW; END IF;
+ INSERT INTO public.explore_inputs(id,slug,title,release_date,steam_app_id,review_count,platforms,genres,tags,created_at,current_players,verdict_score,score,confidence,release_status,explore_title_key,explore_year_suffix,explore_franchise_key,explore_developer_key,explore_publisher_key,explore_primary_safe,explore_early_access) VALUES(NEW.id,NEW.slug,NEW.title,NEW.release_date,NEW.steam_app_id,NEW.review_count,NEW.platforms,NEW.genres,NEW.tags,NEW.created_at,NEW.current_players,NEW.verdict_score,NEW.score,NEW.confidence,NEW.release_status,NEW.explore_title_key,NEW.explore_year_suffix,NEW.explore_franchise_key,NEW.explore_developer_key,NEW.explore_publisher_key,NEW.explore_primary_safe,NEW.explore_early_access)
+ ON CONFLICT(id) DO UPDATE SET slug=excluded.slug,title=excluded.title,release_date=excluded.release_date,steam_app_id=excluded.steam_app_id,review_count=excluded.review_count,platforms=excluded.platforms,genres=excluded.genres,tags=excluded.tags,created_at=excluded.created_at,current_players=excluded.current_players,verdict_score=excluded.verdict_score,score=excluded.score,confidence=excluded.confidence,release_status=excluded.release_status,explore_title_key=excluded.explore_title_key,explore_year_suffix=excluded.explore_year_suffix,explore_franchise_key=excluded.explore_franchise_key,explore_developer_key=excluded.explore_developer_key,explore_publisher_key=excluded.explore_publisher_key,explore_primary_safe=excluded.explore_primary_safe,explore_early_access=excluded.explore_early_access;
  RETURN NEW;
 END;
 $maintain$;
@@ -73,7 +73,7 @@ BEGIN
   selected_sort := CASE WHEN p_sort <> 'default' THEN p_sort
     WHEN p_type = 'recent' THEN 'newest'
     WHEN p_type IN ('best-of-year','genre') THEN 'popular' ELSE 'rating' END;
-  IF p_type='best-of-year' OR NOT public.explore_source_unrestricted()
+  IF NOT public.explore_source_unrestricted()
     OR NOT coalesce((SELECT ready FROM public.explore_input_state WHERE singleton),false) THEN
     -- Exact original source/RLS path while unavailable or caller-restricted.
     RETURN (
@@ -204,16 +204,22 @@ BEGIN
             ELSE greatest(0,60-least(greatest(0,extract(epoch FROM (now() - (g.release_date::timestamp AT TIME ZONE 'UTC')))::double precision / 86400) / 30,60)) END
         ) AS representative_score
       FROM public.explore_inputs g
-      WHERE g.explore_primary_safe IS TRUE AND g.explore_title_key IS NOT NULL AND g.explore_year_suffix IS NOT NULL AND g.explore_franchise_key IS NOT NULL AND g.explore_developer_key IS NOT NULL AND g.explore_publisher_key IS NOT NULL AND g.explore_primary_safe IS NOT NULL AND g.explore_early_access IS NOT NULL
-        AND g.release_date <= p_day
-        AND (p_type <> 'popular-in-year' OR g.release_date BETWEEN make_date(p_year,1,1) AND make_date(p_year,12,31))
-        AND (p_type <> 'recent' OR g.release_date >= p_day - 30)
-        AND (p_type <> 'genre' OR g.genres @> ARRAY[p_genre])
-        AND (p_type NOT IN ('all-time','popular-in-year') OR g.review_count >= 100)
-        AND coalesce(g.release_status,'') NOT IN ('cancelled','canceled','delisted')
-        AND (p_type NOT IN ('all-time','popular-in-year','recent') OR (
-          coalesce(g.release_status,'') NOT IN ('announced','coming_soon','upcoming','tba')
-          AND NOT g.explore_early_access))
+      WHERE (
+        p_type = 'best-of-year' AND (g.release_date > p_day
+          OR g.release_status IN ('announced','coming_soon','upcoming','tba','early_access')
+          OR g.tags @> ARRAY['Early Access'] OR g.tags @> ARRAY['early-access'] OR g.tags @> ARRAY['early access'])
+        OR p_type <> 'best-of-year' AND g.release_date <= p_day
+      )
+      AND (p_type <> 'popular-in-year' OR g.release_date BETWEEN make_date(p_year,1,1) AND make_date(p_year,12,31))
+      AND (p_type <> 'recent' OR g.release_date >= p_day - 30)
+      AND (p_type <> 'genre' OR g.genres @> ARRAY[p_genre])
+      AND (p_type NOT IN ('all-time','popular-in-year') OR g.review_count >= 100)
+      AND coalesce(g.release_status,'') NOT IN ('cancelled','canceled','delisted')
+      AND (p_type NOT IN ('all-time','popular-in-year','recent') OR (
+        coalesce(g.release_status,'') NOT IN ('announced','coming_soon','upcoming','tba')
+        AND NOT g.explore_early_access
+      ))
+      AND g.explore_primary_safe IS TRUE AND g.explore_title_key IS NOT NULL AND g.explore_year_suffix IS NOT NULL AND g.explore_franchise_key IS NOT NULL AND g.explore_developer_key IS NOT NULL AND g.explore_publisher_key IS NOT NULL AND g.explore_primary_safe IS NOT NULL AND g.explore_early_access IS NOT NULL
       UNION ALL
       -- Carry only ranking/identity fields through sorts. Fetch card metadata
       -- after pagination, avoiding multi-megabyte sort rows and temp spills.

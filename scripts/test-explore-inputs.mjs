@@ -18,7 +18,11 @@ const checks=[];
  assert.deepEqual({count:lost.count,rows:lost.rows},{count:fallback.count,rows:fallback.rows});checks.push('unready/lost projection uses original accurate source query');
  const partial=JSON.parse(query(db,"BEGIN; ALTER TABLE public.games DISABLE TRIGGER zzz_refresh_explore_classification; UPDATE public.games SET explore_title_key=NULL WHERE slug='preclass-a'; ALTER TABLE public.games ENABLE TRIGGER zzz_refresh_explore_classification; SET LOCAL ROLE anon; SELECT public.explore_catalogue_page('all-time',0,'','','default',1,40,'2026-11-16'); ROLLBACK;"));
  assert.deepEqual({count:partial.count,rows:partial.rows},{count:fallback.count,rows:fallback.rows});checks.push('unclassified source rows union before ranking without loss or duplication');
+ const approved=readFileSync('supabase/migrations/20261115203820_cache_explore_classification.sql','utf8');
+ const sourceStart=approved.indexOf('CREATE OR REPLACE FUNCTION public.explore_catalogue_page('),sourceEnd=approved.indexOf('$function$;',sourceStart)+'$function$;'.length;
+ const reference=approved.slice(sourceStart,sourceEnd).replace('public.explore_catalogue_page(','public.explore_catalogue_page_reference(');
  const test=`BEGIN;
+ ${reference}
  INSERT INTO public.games(slug,title,release_date,review_count,verdict_score,confidence,genres,platforms,developer) VALUES
  ('live-wide',repeat('遊戲',600),'2020-01-01',5000,95,1,ARRAY['Action'],ARRAY['PC'],repeat('Studio',500)),
  ('live-fast','Synthetic Shared (2020)','2020-01-01',5000,92,1,ARRAY['Action'],ARRAY['PC'],'Studio'),
@@ -30,6 +34,34 @@ const checks=[];
  SELECT json_build_object('kind','description','safe',(SELECT explore_primary_safe FROM public.explore_inputs WHERE slug='live-wide'));
  UPDATE public.games SET description='',tags=ARRAY['Early Access'] WHERE slug='live-wide';
  SELECT json_build_object('kind','tags','early',(SELECT explore_early_access FROM public.explore_inputs WHERE slug='live-wide'));
+ INSERT INTO public.games(slug,title,release_date,review_count,score,tags,genres,release_status) VALUES
+ ('upcoming-exact-tag','Exact Tag','2020-01-01',1000,90,ARRAY['Early Access'],'{}',NULL),
+ ('upcoming-tag-variant','Tag Variant','2020-01-01',1000,90,ARRAY['early_access'],'{}',NULL),
+ ('upcoming-tag-uppercase','Uppercase Tag','2020-01-01',1000,90,ARRAY['EARLY ACCESS'],'{}',NULL),
+ ('upcoming-genre-only','Genre Only','2020-01-01',1000,90,'{}',ARRAY['Early Access'],NULL),
+ ('upcoming-status-case','Status Case','2020-01-01',1000,90,'{}','{}','EARLY_ACCESS'),
+ ('upcoming-status-exact','Status Exact','2020-01-01',1000,90,'{}','{}','early_access'),
+ ('upcoming-future','Future Date','2028-01-01',1000,90,'{}','{}',NULL);
+ SET LOCAL ROLE anon;
+ SELECT json_build_object('kind','upcomingExact','equal',public.explore_catalogue_page('best-of-year',0,'','','default',1,40,'2026-11-16')=public.explore_catalogue_page_reference('best-of-year',0,'','','default',1,40,'2026-11-16'));
+ RESET ROLE;
+ -- Broad EA stays true for both spellings, but original upcoming semantics
+ -- must change and the AFTER trigger must publish that tag-only distinction.
+ UPDATE public.games SET tags=ARRAY['early_access'] WHERE slug='upcoming-exact-tag';
+ SET LOCAL ROLE anon;
+ SELECT json_build_object('kind','upcomingTagEdit','equal',public.explore_catalogue_page('best-of-year',0,'','','default',1,40,'2026-11-16')=public.explore_catalogue_page_reference('best-of-year',0,'','','default',1,40,'2026-11-16'),
+  'unexpected',(SELECT count(*) FROM jsonb_array_elements(public.explore_catalogue_page('best-of-year',0,'','','default',1,40,'2026-11-16')->'rows') r WHERE r->>'slug' IN ('upcoming-exact-tag','upcoming-tag-variant','upcoming-tag-uppercase','upcoming-genre-only','upcoming-status-case')));
+ RESET ROLE;
+ UPDATE public.games SET tags=ARRAY['Early Access'] WHERE slug='upcoming-genre-only';
+ SET LOCAL ROLE anon;
+ SELECT json_build_object('kind','upcomingGenreTagAdded','equal',public.explore_catalogue_page('best-of-year',0,'','','default',1,40,'2026-11-16')=public.explore_catalogue_page_reference('best-of-year',0,'','','default',1,40,'2026-11-16'),
+  'present',(SELECT count(*) FROM jsonb_array_elements(public.explore_catalogue_page('best-of-year',0,'','','default',1,40,'2026-11-16')->'rows') r WHERE r->>'slug'='upcoming-genre-only'));
+ RESET ROLE;
+ UPDATE public.games SET tags='{}' WHERE slug='upcoming-genre-only';
+ SET LOCAL ROLE anon;
+ SELECT json_build_object('kind','upcomingGenreTagRemoved','equal',public.explore_catalogue_page('best-of-year',0,'','','default',1,40,'2026-11-16')=public.explore_catalogue_page_reference('best-of-year',0,'','','default',1,40,'2026-11-16'),
+  'present',(SELECT count(*) FROM jsonb_array_elements(public.explore_catalogue_page('best-of-year',0,'','','default',1,40,'2026-11-16')->'rows') r WHERE r->>'slug'='upcoming-genre-only'));
+ RESET ROLE;
  INSERT INTO public.games(slug,title) VALUES('live-conflict','Conflict') ON CONFLICT(slug) DO NOTHING;
  INSERT INTO public.games(slug,title) VALUES('live-conflict','Conflict') ON CONFLICT(slug) DO NOTHING;
  SELECT json_build_object('kind','conflict','count',(SELECT count(*) FROM public.explore_inputs WHERE slug='live-conflict'));
@@ -49,6 +81,8 @@ const checks=[];
  const rows=query(db,test).trim().split('\n').filter(x=>x.startsWith('{')).map(x=>JSON.parse(x));
  assert.equal(rows.find(x=>x.kind==='inputs').equal,true);assert.equal(rows.find(x=>x.kind==='description').safe,false);assert.equal(rows.find(x=>x.kind==='tags').early,true);assert.equal(rows.find(x=>x.kind==='conflict').count,1);assert.equal(rows.find(x=>x.kind==='writer').players,12345);assert.equal(rows.find(x=>x.kind==='delete').remaining,0);
  const restricted=rows.find(x=>x.kind==='restricted');assert.equal(restricted.guard,false);assert.equal(restricted.projectionRows,0);assert.equal(restricted.rpcCount,3);checks.push('wide Unicode metadata, implicit classifiers, accepted/conflicting inserts, authenticated writer and cascade delete');checks.push('restrictive source policy disables all projection access and retains original filtered ranking');
+ assert.equal(rows.find(x=>x.kind==='upcomingExact').equal,true);assert.equal(rows.find(x=>x.kind==='upcomingTagEdit').equal,true);assert.equal(rows.find(x=>x.kind==='upcomingTagEdit').unexpected,0);checks.push('upcoming matches exact date/status/tag semantics and propagates tag-only edits without broadening eligibility');
+ assert.equal(rows.find(x=>x.kind==='upcomingGenreTagAdded').equal,true);assert.equal(rows.find(x=>x.kind==='upcomingGenreTagAdded').present,1);assert.equal(rows.find(x=>x.kind==='upcomingGenreTagRemoved').equal,true);assert.equal(rows.find(x=>x.kind==='upcomingGenreTagRemoved').present,0);checks.push('adding/removing exact upcoming tags propagates while genre-based EA remains true');
  for(const role of ['anon','authenticated','service_role']){
   assert.throws(()=>query(db,`BEGIN; SET LOCAL ROLE ${role}; UPDATE public.explore_inputs SET current_players=9; COMMIT;`),/permission denied/);
  }checks.push('anon/authenticated/service_role cannot write projection directly');

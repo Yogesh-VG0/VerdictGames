@@ -1,5 +1,5 @@
 {
-  "measuredAt": "2026-11-16T10:41:44.729Z",
+  "measuredAt": "2026-11-16T11:37:23.672Z",
   "scope": "Isolated local8350-game public benchmark; every source update and trigger-disable operation rolled back; warm local samples, not hosted write overhead",
   "plans": {
     "sourceOnly": [
@@ -15,13 +15,13 @@
           "Total Cost": 875.01,
           "Plan Rows": 0,
           "Plan Width": 0,
-          "Actual Startup Time": 12.91,
-          "Actual Total Time": 12.914,
+          "Actual Startup Time": 9.732,
+          "Actual Total Time": 9.734,
           "Actual Rows": 0,
           "Actual Loops": 1,
           "Shared Hit Blocks": 6347,
           "Shared Read Blocks": 0,
-          "Shared Dirtied Blocks": 731,
+          "Shared Dirtied Blocks": 739,
           "Shared Written Blocks": 0,
           "Local Hit Blocks": 0,
           "Local Read Blocks": 0,
@@ -29,9 +29,9 @@
           "Local Written Blocks": 0,
           "Temp Read Blocks": 0,
           "Temp Written Blocks": 0,
-          "WAL Records": 2722,
-          "WAL FPI": 701,
-          "WAL Bytes": 3361619,
+          "WAL Records": 2723,
+          "WAL FPI": 709,
+          "WAL Bytes": 3345197,
           "Plans": [
             {
               "Node Type": "Nested Loop",
@@ -43,8 +43,8 @@
               "Total Cost": 875.01,
               "Plan Rows": 100,
               "Plan Width": 50,
-              "Actual Startup Time": 0.31,
-              "Actual Total Time": 0.662,
+              "Actual Startup Time": 0.194,
+              "Actual Total Time": 0.371,
               "Actual Rows": 100,
               "Actual Loops": 1,
               "Inner Unique": true,
@@ -73,8 +73,8 @@
                   "Total Cost": 222.65,
                   "Plan Rows": 100,
                   "Plan Width": 56,
-                  "Actual Startup Time": 0.302,
-                  "Actual Total Time": 0.341,
+                  "Actual Startup Time": 0.188,
+                  "Actual Total Time": 0.207,
                   "Actual Rows": 100,
                   "Actual Loops": 1,
                   "Group Key": [
@@ -108,8 +108,8 @@
                       "Total Cost": 221.4,
                       "Plan Rows": 100,
                       "Plan Width": 56,
-                      "Actual Startup Time": 0.054,
-                      "Actual Total Time": 0.286,
+                      "Actual Startup Time": 0.03,
+                      "Actual Total Time": 0.173,
                       "Actual Rows": 100,
                       "Actual Loops": 1,
                       "Shared Hit Blocks": 48,
@@ -135,8 +135,8 @@
                           "Total Cost": 220.4,
                           "Plan Rows": 100,
                           "Plan Width": 16,
-                          "Actual Startup Time": 0.018,
-                          "Actual Total Time": 0.239,
+                          "Actual Startup Time": 0.021,
+                          "Actual Total Time": 0.155,
                           "Actual Rows": 100,
                           "Actual Loops": 1,
                           "Shared Hit Blocks": 48,
@@ -166,8 +166,8 @@
                               "Total Cost": 11688.58,
                               "Plan Rows": 5310,
                               "Plan Width": 16,
-                              "Actual Startup Time": 0.018,
-                              "Actual Total Time": 0.233,
+                              "Actual Startup Time": 0.02,
+                              "Actual Total Time": 0.15,
                               "Actual Rows": 100,
                               "Actual Loops": 1,
                               "Filter": "(steam_app_id IS NOT NULL)",
@@ -205,8 +205,8 @@
                   "Total Cost": 6.58,
                   "Plan Rows": 1,
                   "Plan Width": 26,
-                  "Actual Startup Time": 0.002,
-                  "Actual Total Time": 0.002,
+                  "Actual Startup Time": 0.001,
+                  "Actual Total Time": 0.001,
                   "Actual Rows": 1,
                   "Actual Loops": 100,
                   "Index Cond": "(id = \"ANY_subquery\".id)",
@@ -230,9 +230,9 @@
           ]
         },
         "Planning": {
-          "Shared Hit Blocks": 628,
+          "Shared Hit Blocks": 630,
           "Shared Read Blocks": 0,
-          "Shared Dirtied Blocks": 0,
+          "Shared Dirtied Blocks": 2,
           "Shared Written Blocks": 0,
           "Local Hit Blocks": 0,
           "Local Read Blocks": 0,
@@ -241,16 +241,16 @@
           "Temp Read Blocks": 0,
           "Temp Written Blocks": 0
         },
-        "Planning Time": 1.263,
+        "Planning Time": 1.426,
         "Triggers": [
           {
             "Trigger Name": "set_games_updated_at",
             "Relation": "games",
-            "Time": 0.669,
+            "Time": 0.528,
             "Calls": 100
           }
         ],
-        "Execution Time": 13.088
+        "Execution Time": 9.874
       }
     ],
     "liveProjection": [
@@ -266,8 +266,8 @@
           "Total Cost": 875.01,
           "Plan Rows": 0,
           "Plan Width": 0,
-          "Actual Startup Time": 8.883,
-          "Actual Total Time": 8.886,
+          "Actual Startup Time": 6.941,
+          "Actual Total Time": 6.942,
           "Actual Rows": 0,
           "Actual Loops": 1,
           "Shared Hit Blocks": 6510,
@@ -282,7 +282,7 @@
           "Temp Written Blocks": 0,
           "WAL Records": 2721,
           "WAL FPI": 71,
-          "WAL Bytes": 982979,
+          "WAL Bytes": 982977,
           "Plans": [
             {
               "Node Type": "Nested Loop",
@@ -294,8 +294,8 @@
               "Total Cost": 875.01,
               "Plan Rows": 100,
               "Plan Width": 50,
-              "Actual Startup Time": 0.528,
-              "Actual Total Time": 0.866,
+              "Actual Startup Time": 0.119,
+              "Actual Total Time": 0.286,
               "Actual Rows": 100,
               "Actual Loops": 1,
               "Inner Unique": true,
@@ -324,8 +324,8 @@
                   "Total Cost": 222.65,
                   "Plan Rows": 100,
                   "Plan Width": 56,
-                  "Actual Startup Time": 0.522,
-                  "Actual Total Time": 0.556,
+                  "Actual Startup Time": 0.116,
+                  "Actual Total Time": 0.131,
                   "Actual Rows": 100,
                   "Actual Loops": 1,
                   "Group Key": [
@@ -359,8 +359,8 @@
                       "Total Cost": 221.4,
                       "Plan Rows": 100,
                       "Plan Width": 56,
-                      "Actual Startup Time": 0.02,
-                      "Actual Total Time": 0.497,
+                      "Actual Startup Time": 0.009,
+                      "Actual Total Time": 0.103,
                       "Actual Rows": 100,
                       "Actual Loops": 1,
                       "Shared Hit Blocks": 217,
@@ -386,8 +386,8 @@
                           "Total Cost": 220.4,
                           "Plan Rows": 100,
                           "Plan Width": 16,
-                          "Actual Startup Time": 0.015,
-                          "Actual Total Time": 0.476,
+                          "Actual Startup Time": 0.007,
+                          "Actual Total Time": 0.092,
                           "Actual Rows": 100,
                           "Actual Loops": 1,
                           "Shared Hit Blocks": 217,
@@ -417,8 +417,8 @@
                               "Total Cost": 11688.58,
                               "Plan Rows": 5310,
                               "Plan Width": 16,
-                              "Actual Startup Time": 0.014,
-                              "Actual Total Time": 0.468,
+                              "Actual Startup Time": 0.007,
+                              "Actual Total Time": 0.087,
                               "Actual Rows": 100,
                               "Actual Loops": 1,
                               "Filter": "(steam_app_id IS NOT NULL)",
@@ -456,8 +456,8 @@
                   "Total Cost": 6.58,
                   "Plan Rows": 1,
                   "Plan Width": 26,
-                  "Actual Startup Time": 0.003,
-                  "Actual Total Time": 0.003,
+                  "Actual Startup Time": 0.001,
+                  "Actual Total Time": 0.001,
                   "Actual Rows": 1,
                   "Actual Loops": 100,
                   "Index Cond": "(id = \"ANY_subquery\".id)",
@@ -492,22 +492,22 @@
           "Temp Read Blocks": 0,
           "Temp Written Blocks": 0
         },
-        "Planning Time": 0.358,
+        "Planning Time": 0.217,
         "Triggers": [
           {
             "Trigger Name": "refresh_explore_inputs",
             "Relation": "games",
-            "Time": 2.889,
+            "Time": 2.419,
             "Calls": 100
           },
           {
             "Trigger Name": "set_games_updated_at",
             "Relation": "games",
-            "Time": 0.424,
+            "Time": 0.253,
             "Calls": 100
           }
         ],
-        "Execution Time": 11.846
+        "Execution Time": 9.401
       }
     ],
     "oldAllTrending": [
@@ -523,23 +523,23 @@
           "Total Cost": 6155.27,
           "Plan Rows": 0,
           "Plan Width": 0,
-          "Actual Startup Time": 565.448,
-          "Actual Total Time": 565.451,
+          "Actual Startup Time": 417.317,
+          "Actual Total Time": 417.319,
           "Actual Rows": 0,
           "Actual Loops": 1,
-          "Shared Hit Blocks": 459213,
+          "Shared Hit Blocks": 460620,
           "Shared Read Blocks": 0,
-          "Shared Dirtied Blocks": 5533,
-          "Shared Written Blocks": 1656,
+          "Shared Dirtied Blocks": 5489,
+          "Shared Written Blocks": 1209,
           "Local Hit Blocks": 0,
           "Local Read Blocks": 0,
           "Local Dirtied Blocks": 0,
           "Local Written Blocks": 0,
           "Temp Read Blocks": 0,
           "Temp Written Blocks": 0,
-          "WAL Records": 216405,
-          "WAL FPI": 2965,
-          "WAL Bytes": 59334069,
+          "WAL Records": 216294,
+          "WAL FPI": 2975,
+          "WAL Bytes": 59242454,
           "Plans": [
             {
               "Node Type": "Seq Scan",
@@ -552,8 +552,8 @@
               "Total Cost": 6155.27,
               "Plan Rows": 8350,
               "Plan Width": 7,
-              "Actual Startup Time": 10.036,
-              "Actual Total Time": 13.786,
+              "Actual Startup Time": 7.746,
+              "Actual Total Time": 10.649,
               "Actual Rows": 8350,
               "Actual Loops": 1,
               "Shared Hit Blocks": 5832,
@@ -580,8 +580,8 @@
                   "Total Cost": 3137.85,
                   "Plan Rows": 20,
                   "Plan Width": 20,
-                  "Actual Startup Time": 10.017,
-                  "Actual Total Time": 10.021,
+                  "Actual Startup Time": 7.735,
+                  "Actual Total Time": 7.738,
                   "Actual Rows": 20,
                   "Actual Loops": 1,
                   "Shared Hit Blocks": 2919,
@@ -607,8 +607,8 @@
                       "Total Cost": 3151.07,
                       "Plan Rows": 5310,
                       "Plan Width": 20,
-                      "Actual Startup Time": 10.016,
-                      "Actual Total Time": 10.018,
+                      "Actual Startup Time": 7.734,
+                      "Actual Total Time": 7.736,
                       "Actual Rows": 20,
                       "Actual Loops": 1,
                       "Sort Key": [
@@ -643,8 +643,8 @@
                           "Total Cost": 2996.5,
                           "Plan Rows": 5310,
                           "Plan Width": 20,
-                          "Actual Startup Time": 0.006,
-                          "Actual Total Time": 9.557,
+                          "Actual Startup Time": 0.004,
+                          "Actual Total Time": 7.427,
                           "Actual Rows": 5310,
                           "Actual Loops": 1,
                           "Filter": "(steam_app_id IS NOT NULL)",
@@ -683,22 +683,22 @@
           "Temp Read Blocks": 0,
           "Temp Written Blocks": 0
         },
-        "Planning Time": 0.182,
+        "Planning Time": 0.115,
         "Triggers": [
           {
             "Trigger Name": "refresh_explore_inputs",
             "Relation": "games",
-            "Time": 22.871,
+            "Time": 24.857,
             "Calls": 8350
           },
           {
             "Trigger Name": "set_games_updated_at",
             "Relation": "games",
-            "Time": 21.066,
+            "Time": 17.721,
             "Calls": 8350
           }
         ],
-        "Execution Time": 588.705
+        "Execution Time": 442.553
       }
     ],
     "changedTrendingOnly": [
@@ -714,8 +714,8 @@
           "Total Cost": 13205.82,
           "Plan Rows": 0,
           "Plan Width": 0,
-          "Actual Startup Time": 22.82,
-          "Actual Total Time": 22.824,
+          "Actual Startup Time": 11.997,
+          "Actual Total Time": 11.999,
           "Actual Rows": 0,
           "Actual Loops": 1,
           "Shared Hit Blocks": 12598,
@@ -730,7 +730,7 @@
           "Temp Written Blocks": 0,
           "WAL Records": 2192,
           "WAL FPI": 0,
-          "WAL Bytes": 131218,
+          "WAL Bytes": 131216,
           "Plans": [
             {
               "Node Type": "Seq Scan",
@@ -743,8 +743,8 @@
               "Total Cost": 13205.82,
               "Plan Rows": 11754,
               "Plan Width": 7,
-              "Actual Startup Time": 18.395,
-              "Actual Total Time": 22.124,
+              "Actual Startup Time": 9.769,
+              "Actual Total Time": 11.542,
               "Actual Rows": 4,
               "Actual Loops": 1,
               "Filter": "(trending IS DISTINCT FROM (ANY (id = (hashed SubPlan 2).col1)))",
@@ -773,8 +773,8 @@
                   "Total Cost": 4439.07,
                   "Plan Rows": 20,
                   "Plan Width": 20,
-                  "Actual Startup Time": 4.66,
-                  "Actual Total Time": 4.662,
+                  "Actual Startup Time": 3.659,
+                  "Actual Total Time": 3.661,
                   "Actual Rows": 20,
                   "Actual Loops": 1,
                   "Shared Hit Blocks": 4121,
@@ -800,8 +800,8 @@
                       "Total Cost": 4457.8,
                       "Plan Rows": 7512,
                       "Plan Width": 20,
-                      "Actual Startup Time": 4.658,
-                      "Actual Total Time": 4.659,
+                      "Actual Startup Time": 3.659,
+                      "Actual Total Time": 3.659,
                       "Actual Rows": 20,
                       "Actual Loops": 1,
                       "Sort Key": [
@@ -836,8 +836,8 @@
                           "Total Cost": 4239.13,
                           "Plan Rows": 7512,
                           "Plan Width": 20,
-                          "Actual Startup Time": 0.01,
-                          "Actual Total Time": 4.42,
+                          "Actual Startup Time": 0.005,
+                          "Actual Total Time": 3.439,
                           "Actual Rows": 5310,
                           "Actual Loops": 1,
                           "Filter": "(steam_app_id IS NOT NULL)",
@@ -870,8 +870,8 @@
                   "Total Cost": 4439.07,
                   "Plan Rows": 20,
                   "Plan Width": 20,
-                  "Actual Startup Time": 12.824,
-                  "Actual Total Time": 12.827,
+                  "Actual Startup Time": 5.39,
+                  "Actual Total Time": 5.392,
                   "Actual Rows": 20,
                   "Actual Loops": 1,
                   "Shared Hit Blocks": 4121,
@@ -897,8 +897,8 @@
                       "Total Cost": 4457.8,
                       "Plan Rows": 7512,
                       "Plan Width": 20,
-                      "Actual Startup Time": 12.823,
-                      "Actual Total Time": 12.824,
+                      "Actual Startup Time": 5.389,
+                      "Actual Total Time": 5.39,
                       "Actual Rows": 20,
                       "Actual Loops": 1,
                       "Sort Key": [
@@ -934,7 +934,7 @@
                           "Plan Rows": 7512,
                           "Plan Width": 20,
                           "Actual Startup Time": 0.005,
-                          "Actual Total Time": 12.565,
+                          "Actual Total Time": 5.141,
                           "Actual Rows": 5310,
                           "Actual Loops": 1,
                           "Filter": "(steam_app_id IS NOT NULL)",
@@ -973,22 +973,22 @@
           "Temp Read Blocks": 0,
           "Temp Written Blocks": 0
         },
-        "Planning Time": 0.217,
+        "Planning Time": 0.202,
         "Triggers": [
           {
             "Trigger Name": "refresh_explore_inputs",
             "Relation": "games",
-            "Time": 0.048,
+            "Time": 0.05,
             "Calls": 4
           },
           {
             "Trigger Name": "set_games_updated_at",
             "Relation": "games",
-            "Time": 0.103,
+            "Time": 0.049,
             "Calls": 4
           }
         ],
-        "Execution Time": 22.925
+        "Execution Time": 12.084
       }
     ]
   }

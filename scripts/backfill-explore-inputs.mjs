@@ -53,9 +53,15 @@ try{
  const preflight=await transaction(`SELECT jsonb_build_object('stateRows',(SELECT count(*) FROM public.explore_input_state),
   'trigger',(SELECT count(*) FROM pg_trigger WHERE tgrelid='public.games'::regclass AND tgname='refresh_explore_inputs' AND tgenabled IN ('O','A')),
   'rls',(SELECT relrowsecurity FROM pg_class WHERE oid='public.explore_inputs'::regclass),
+  'columns',(SELECT jsonb_agg(attname ORDER BY attnum) FROM pg_attribute WHERE attrelid='public.explore_inputs'::regclass AND attnum>0 AND NOT attisdropped),
+  'sourceTypesMatch',NOT EXISTS(SELECT 1 FROM pg_attribute i LEFT JOIN pg_attribute g ON g.attrelid='public.games'::regclass AND g.attname=i.attname AND g.attnum>0 AND NOT g.attisdropped
+   WHERE i.attrelid='public.explore_inputs'::regclass AND i.attnum>0 AND NOT i.attisdropped
+    AND (g.attname IS NULL OR i.atttypid<>g.atttypid OR i.atttypmod<>g.atttypmod OR i.attcollation<>g.attcollation)),
   'publicWrite',has_table_privilege('anon','public.explore_inputs','INSERT,UPDATE,DELETE') OR has_table_privilege('authenticated','public.explore_inputs','INSERT,UPDATE,DELETE'),
   'ids',(SELECT coalesce(jsonb_agg(id ORDER BY id),'[]') FROM(SELECT id FROM public.games LIMIT 20001) ids)) result`,true);
  assert.equal(preflight.stateRows,1);assert.equal(preflight.trigger,1);assert.equal(preflight.rls,true);assert.equal(preflight.publicWrite,false);
+ assert.deepEqual(preflight.columns,fields,'Every projection column must be copied and validated');assert.equal(preflight.sourceTypesMatch,true,'Projection types/collations must match original game fields');
+ evidence.fieldCount=fields.length;evidence.sourceTypesMatch=true;
  assert.ok(preflight.ids.length<=20000,'Finite catalogue budget exceeded');
  assert.ok(preflight.ids.every(id=>/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(id)));
  await transaction("WITH changed AS(UPDATE public.explore_input_state SET ready=false WHERE singleton RETURNING 1) SELECT jsonb_build_object('rows',count(*)) result FROM changed");
