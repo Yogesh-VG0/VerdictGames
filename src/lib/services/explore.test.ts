@@ -51,6 +51,14 @@ describe('Explore catalogue regressions', () => {
     const items = [{ name:'Same', slug:'b' }, { name:'Same', slug:'a' }] as RawgListGameItem[];
     expect(sortExploreItems(items, 'name-asc', 'genre').map(i => i.slug)).toEqual(['a','b']);
   });
+  it('records failed provider work and the accurate catalogue fallback separately', async () => {
+    state.upcoming.mockRejectedValue(new Error('provider unavailable'));
+    const timings: [string,number][] = [];
+    const result = await loadExplore('best-of-year',1,20,2025,'action','default','',(phase,ms)=>timings.push([phase,ms]));
+    expect(result).toMatchObject({source:'catalogue',degraded:true,items:[]});
+    expect(timings.map(([phase])=>phase)).toEqual(['snapshot','catalogue_query','legacy_pool']);
+    expect(timings.every(([,ms])=>Number.isFinite(ms)&&ms>=0)).toBe(true);
+  });
   it('uses title cover art instead of a gameplay header for year and genre grids', async () => {
     state.rows = [{ slug:'game', title:'Game', cover_image:'poster.jpg', header_image:'gameplay.jpg', score:90, tags:[], genres:[] }];
     expect((await loadExplore('popular-in-year')).items[0].image).toBe('poster.jpg');

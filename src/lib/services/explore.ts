@@ -102,7 +102,13 @@ export function sortExploreItems(items: RawgListGameItem[], sort: ExploreSort, t
   });
 }
 
-export async function loadExplore(type: RawgListType, page = 1, pageSize = 20, year = new Date().getFullYear() - 1, genre = 'action', sort: ExploreSort = 'default', platform = ''): Promise<RawgListResponse> {
+export type ExplorePhase = 'snapshot' | 'matches' | 'portraits' | 'provider_artwork' | 'catalogue_query' | 'catalogue_artwork' | 'legacy_pool';
+export async function loadExplore(type: RawgListType, page = 1, pageSize = 20, year = new Date().getFullYear() - 1, genre = 'action', sort: ExploreSort = 'default', platform = '', onTiming?: (phase: ExplorePhase, milliseconds: number) => void): Promise<RawgListResponse> {
+  // Measure outside cache callbacks so diagnostics never multiply cache keys.
+  async function measure<T>(phase: ExplorePhase, operation: () => PromiseLike<T>): Promise<T> {
+    const start = performance.now();
+    try { return await operation(); } finally { onTiming?.(phase, performance.now() - start); }
+  }
   const today = new Date().toISOString().slice(0, 10);
   let items: RawgListGameItem[] | undefined;
   let source: 'rawg' | 'catalogue' = 'catalogue';
@@ -110,15 +116,15 @@ export async function loadExplore(type: RawgListType, page = 1, pageSize = 20, y
   const artworkRows = new Map<string, Pick<GameRow, 'cover_image' | 'header_image' | 'steam_app_id'>>();
   if (type === 'best-of-year') {
     try {
-      const response = await readUpcoming();
+      const response = await measure('snapshot', () => readUpcoming());
       const seen = new Set<number>();
       const upcoming = response.results.filter(item => isPublicSafeRawgGame(item) && (item.tba || !item.released || item.released > today) && !seen.has(item.id) && Boolean(seen.add(item.id)));
-      const { data: matches, error } = await getPublicSupabase().from('games').select('rawg_id,slug,cover_image,header_image,steam_app_id,tags,genres,release_status').in('rawg_id', upcoming.map(item => item.id));
+      const { data: matches, error } = await measure('matches', () => getPublicSupabase().from('games').select('rawg_id,slug,cover_image,header_image,steam_app_id,tags,genres,release_status').in('rawg_id', upcoming.map(item => item.id)));
       if (error) throw error;
       const byId = new Map((matches || []).map(item => [item.rawg_id, item]));
       const missing = upcoming.filter(item => !isPortraitArtwork(byId.get(item.id)?.cover_image));
-      const portraits = missing.length ? await readPortraits(missing.map(item => item.name)).catch(() => []) : [];
-      items = await Promise.all(upcoming.map(async item => {
+      const portraits = missing.length ? await measure('portraits', () => readPortraits(missing.map(item => item.name))).catch(() => []) : [];
+      items = await measure('provider_artwork', () => Promise.all(upcoming.map(async item => {
         const local = byId.get(item.id);
         const image = (local && isPortraitArtwork(local.cover_image) ? local.cover_image : matchPortrait(item, portraits))
           || (local ? await titleArtwork(local) : null) || item.background_image;
@@ -130,12 +136,12 @@ export async function loadExplore(type: RawgListType, page = 1, pageSize = 20, y
           added: item.added, toplay: item.added_by_status?.toplay || 0, playing: item.added_by_status?.playing || 0, owned: item.added_by_status?.owned || 0,
           platforms: (item.platforms || []).map(p => p.platform.name), genres: (item.genres || []).map(g => g.name), screenshots: [], clip: null,
         };
-      }));
+      })));
       source = 'rawg'; fetchedAt = response.fetchedAt;
     } catch (error) { console.warn('[Explore] Stored catalogue fallback', { type: error instanceof Error ? error.name : 'provider' }); }
   }
   if (!items) {
-    const compact = await readCataloguePage(type,year,EXPLORE_GENRES[genre] || '',platform,sort,page,pageSize,today);
+    const compact = await measure('catalogue_query', () => readCataloguePage(type,year,EXPLORE_GENRES[genre] || '',platform,sort,page,pageSize,today));
     if (compact) {
       const visible:RawgListGameItem[]=compact.rows.map(row=>({
         rawgId:row.rawg_id || 0,slug:row.slug,name:row.title,image:row.cover_image || row.header_image,
@@ -147,16 +153,16 @@ export async function loadExplore(type: RawgListType, page = 1, pageSize = 20, y
         rating:0,ratingsCount:row.review_count || 0,metacritic:null,added:0,toplay:0,playing:0,owned:0,
         platforms:row.platforms || [],genres:row.genres || [],screenshots:[],clip:null,
       }));
-      for (let index=0;index<visible.length;index+=4) await Promise.all(visible.slice(index,index+4).map(async (item,offset)=>{
+      await measure('catalogue_artwork', async () => { for (let index=0;index<visible.length;index+=4) await Promise.all(visible.slice(index,index+4).map(async (item,offset)=>{
         if (!isPortraitArtwork(item.image)) {
           item.image=await titleArtwork(compact.rows[index+offset]);
           item.imageKind=isPortraitArtwork(item.image)?'cover':'artwork';
         }
-      }));
+      })); });
       return {count:compact.count,page,pageSize,hasNext:page*pageSize<compact.count,items:visible,source:'catalogue',
         fetchedAt:compact.fetchedAt,degraded:type==='best-of-year',definition:definitions[type]};
     }
-    const pool = await readCataloguePool(type, type === 'popular-in-year' ? year : 0, type === 'genre' ? genre : '', today);
+    const pool = await measure('legacy_pool', () => readCataloguePool(type, type === 'popular-in-year' ? year : 0, type === 'genre' ? genre : '', today));
     fetchedAt = pool.fetchedAt;
     for (const row of pool.rows) artworkRows.set(row.slug, row);
     items = pool.rows.map(row => ({

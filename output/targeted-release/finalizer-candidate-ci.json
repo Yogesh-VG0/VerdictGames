@@ -1,0 +1,15 @@
+{
+  "commit": "6bc3c28768629aeaf3e7a1d4e28b96468699e3f7",
+  "scriptSha256": "0ef1fa720d2fc3207713ff196d96a214f3ac07f51be0832a2b50c1f055b3dc04",
+  "quality": {"runId": 43917206576, "conclusion": "success"},
+  "securityBrowser": {"runId": 43917206569, "conclusion": "success"},
+  "preview": {
+    "id": "dpl_BR9mB3EugajXN5vH6VQHCM3pMzYR",
+    "url": "https://verdict-games-6d2tiem1o-yogesh-vg0s-projects.vercel.app",
+    "state": "READY",
+    "projectId": "prj_vg8APVv7HRncrYJCkiti95FyfaqD",
+    "teamId": "team_IZjGDcej6BUnVM4IHK165gfb"
+  },
+  "hostedReadinessPublished": false,
+  "productionReleaseApproved": false
+}
