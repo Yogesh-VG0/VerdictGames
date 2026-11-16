@@ -1,0 +1,53 @@
+[
+  {
+    "path": "/api/rawg/lists?type=all-time&page=3&pageSize=40&platform=PC",
+    "ms": 495,
+    "status": 200,
+    "bytes": 22930,
+    "headers": {
+      "cache-control": "public",
+      "cdn-cache-control": null,
+      "vercel-cdn-cache-control": null,
+      "x-vercel-cache": "HIT",
+      "age": "16",
+      "vary": null
+    },
+    "count": 250,
+    "items": 40,
+    "fetchedAt": "2026-11-16T07:01:46.725287+00:00"
+  },
+  {
+    "path": "/api/rawg/lists?type=all-time&page=4&pageSize=40&platform=PC",
+    "ms": 2631,
+    "status": 200,
+    "bytes": 22696,
+    "headers": {
+      "cache-control": "public",
+      "cdn-cache-control": null,
+      "vercel-cdn-cache-control": null,
+      "x-vercel-cache": "MISS",
+      "age": "0",
+      "vary": null
+    },
+    "count": 250,
+    "items": 40,
+    "fetchedAt": "2026-11-16T07:02:06.723735+00:00"
+  },
+  {
+    "path": "/api/rawg/lists?type=all-time&page=5&pageSize=40&platform=PC",
+    "ms": 1417,
+    "status": 200,
+    "bytes": 22696,
+    "headers": {
+      "cache-control": "public",
+      "cdn-cache-control": null,
+      "vercel-cdn-cache-control": null,
+      "x-vercel-cache": "MISS",
+      "age": "0",
+      "vary": null
+    },
+    "count": 250,
+    "items": 40,
+    "fetchedAt": "2026-11-16T07:02:09.030927+00:00"
+  }
+]

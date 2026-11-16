@@ -1,0 +1,26 @@
+{
+  "startedAt": "2026-11-16T06:57:15.486Z",
+  "hosted": true,
+  "sqlSha256": "1a7e3b5c901f159494e4d1d61b2cfd71c9564533a013843e490942f358295a10",
+  "batchSize": 100,
+  "batches": [
+    {
+      "rows": 55,
+      "ms": 1343
+    }
+  ],
+  "updated": 55,
+  "allSourceValuesPreserved": true,
+  "before": {
+    "heap": "52731904",
+    "indexes": "29097984"
+  },
+  "pendingAtStart": 55,
+  "remaining": 0,
+  "after": {
+    "heap": "52731904",
+    "indexes": "29097984"
+  },
+  "completedAt": "2026-11-16T06:57:20.707Z",
+  "totalMs": 5220
+}

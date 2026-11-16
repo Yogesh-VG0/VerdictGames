@@ -1,0 +1,15 @@
+{
+  "startedAt": "2026-11-15T20:50:35.548Z",
+  "hosted": true,
+  "sqlSha256": "1a7e3b5c901f159494e4d1d61b2cfd71c9564533a013843e490942f358295a10",
+  "batchSize": 100,
+  "batches": [],
+  "updated": 0,
+  "allSourceValuesPreserved": true,
+  "before": {
+    "heap": "51388416",
+    "indexes": "29097984"
+  },
+  "failed": true,
+  "code": "57014"
+}

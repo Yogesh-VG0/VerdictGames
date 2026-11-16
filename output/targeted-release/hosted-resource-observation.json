@@ -1,0 +1,9 @@
+{
+  "measuredAt": "2026-11-16T07:09:23.125Z",
+  "cpuText": "CPU usage\n5.29%\n0%\n25%\n50%\n75%\n100%\nNov 16, 2026, 11:37am\nNov 16, 2026, 12:37pm\nSystem\nUser\nIOwait\nIRQs\nOther\nIdle\n\nUnable to load data for Network throughput\n\nUnable to load data for Disk Input/Output operations per second (IOPS)\n\nUnable to load data for Disk throughput\n\nUnable to load data for Database Connections\n\nUnable to load data for Disk Usage\n\nDatabase Size\n\nSpace used\n\n0.2 GB\n\nProvisioned disk size\n\n8 GB\nIncrease disk size\n\nLarge Objects\n\nObject\tSize\npublic.games\t78.07 MB (38.68%)\npublic.steam_reviews\t40.77 MB (20.20%)\npublic.game_sources\t23.34 MB (11.56%)\npublic.player_snapshots\t20.88 MB (10.34%)\npubli",
+  "memoryText": "Memory usage\n401.21 MB\n0 MB\n286.1 MB\n572.2 MB\n966.43MB\nNov 16, 2026, 11:37am\nNov 16, 2026, 12:37pm\nTotal RAM\nUsed\nCache + Buffers\nSwap\nMemory commitment\n1.29 GB\nSEVERE\n0 MB\n429.15 MB\n858.31 MB\n1.51 GB\nNov 16, 2026, 11:37am\nNov 16, 2026, 12:37pm\nCommitted\nCPU usage\n5.29%\n0%\n25%\n50%\n75%\n100%\nNov 16, 2026, 11:37am\nNov 16,",
+  "buttons": [
+    " Primary database  ",
+    " Last 60 minutes "
+  ]
+}

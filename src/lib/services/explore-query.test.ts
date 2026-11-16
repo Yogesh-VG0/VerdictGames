@@ -22,6 +22,29 @@ describe('bounded public SQL catalogue reads',()=>{
     response(null,{code:'57014'});const {readCataloguePage}=await import('./explore-query');
     await expect(readCataloguePage('all-time',0,'','','default',1,20,'2026-11-15')).rejects.toMatchObject({code:'57014'});
   });
+  it('reports a bounded transport cause without logging provider details',async()=>{
+    const warn=vi.spyOn(console,'warn').mockImplementation(()=>{});
+    const error={code:'',message:'TypeError: fetch failed DO_NOT_LOG',details:'Caused by: Error: socket closed (ECONNRESET) DO_NOT_LOG'};
+    try {
+      response(null,error);const {readCataloguePage}=await import('./explore-query');
+      await expect(readCataloguePage('all-time',0,'','PC','default',1,40,'2026-11-16')).rejects.toBe(error);
+      expect(warn).toHaveBeenCalledWith('[Explore] SQL request failed',expect.objectContaining({category:'network',cause:'ECONNRESET',aborted:false,elapsedMs:expect.any(Number)}));
+      expect(JSON.stringify(warn.mock.calls)).not.toContain('DO_NOT_LOG');
+      expect(state.rpc).toHaveBeenCalledTimes(1);
+    } finally {warn.mockRestore();}
+  });
+  it('distinguishes an expired caller budget while retaining the five-second bound',async()=>{
+    const controller=new AbortController();
+    const timeout=vi.spyOn(AbortSignal,'timeout').mockReturnValue(controller.signal);
+    const warn=vi.spyOn(console,'warn').mockImplementation(()=>{});
+    try {
+      state.rpc.mockReturnValue({abortSignal:()=>{controller.abort();return Promise.resolve({data:null,error:{code:'',message:'TimeoutError: operation aborted',details:''}});}});
+      const {readCataloguePage}=await import('./explore-query');
+      await expect(readCataloguePage('all-time',0,'','','default',1,40,'2026-11-16')).rejects.toMatchObject({code:''});
+      expect(timeout).toHaveBeenCalledWith(5000);
+      expect(warn).toHaveBeenCalledWith('[Explore] SQL request failed',expect.objectContaining({category:'timeout',aborted:true}));
+    } finally {timeout.mockRestore();warn.mockRestore();}
+  });
   it('bounds the missing-schema compatibility probe and then recovers',async()=>{
     const now=vi.spyOn(Date,'now').mockReturnValue(100000);response(null,{code:'PGRST202'});
     const {readCataloguePage}=await import('./explore-query');

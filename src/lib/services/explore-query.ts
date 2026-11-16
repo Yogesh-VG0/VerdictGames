@@ -12,11 +12,22 @@ class MissingCatalogueQuery extends Error {}
 let missingUntil = 0;
 
 async function query(type:RawgListType, year:number, genre:string, platform:string, sort:ExploreSort, page:number, pageSize:number, day:string):Promise<CataloguePage> {
+  const started=performance.now();
+  const signal=AbortSignal.timeout(5000);
   const { data, error } = await getPublicSupabase().rpc('explore_catalogue_page', {
     p_type:type,p_year:year,p_genre:genre,p_platform:platform,p_sort:sort,p_page:page,p_page_size:pageSize,p_day:day,
-  }).abortSignal(AbortSignal.timeout(5000));
+  }).abortSignal(signal);
   if (error) {
     if (error.code === 'PGRST202' || error.code === '42883') throw new MissingCatalogueQuery();
+    // The SDK uses an empty code for fetch failures. Distinguish those from
+    // PostgreSQL failures without logging raw URLs, headers, messages or stacks.
+    const errorType=/^(TimeoutError|AbortError|TypeError|FetchError|Error):/.exec(error.message || '')?.[1] || 'unknown';
+    const cause=/\b(ECONNRESET|ENOTFOUND|EAI_AGAIN|ETIMEDOUT|UND_ERR_CONNECT_TIMEOUT|UND_ERR_SOCKET|UND_ERR_HEADERS_TIMEOUT)\b/.exec(error.details || '')?.[1] || null;
+    const code=/^(?:[0-9A-Z]{5}|PGRST\d{3})$/.test(error.code || '') ? error.code : 'TRANSPORT';
+    console.warn('[Explore] SQL request failed',{
+      category:signal.aborted || errorType==='TimeoutError' ? 'timeout' : code==='TRANSPORT' ? 'network' : 'database',
+      code,errorType,cause,aborted:signal.aborted,elapsedMs:Math.round(performance.now()-started),type,page,pageSize,
+    });
     // An outage must not fan out into 20+ fallback reads.
     throw error;
   }
