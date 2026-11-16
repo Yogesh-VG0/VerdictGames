@@ -1,5 +1,5 @@
 {
-  "measuredAt": "2026-11-16T11:46:23.865Z",
+  "measuredAt": "2026-11-16T17:16:55.473Z",
   "scope": "Exact review-only rollback SQL tested only in disposable local schema clone",
   "sourceFullFingerprintPreserved": true,
   "newRelationsRemoved": true,

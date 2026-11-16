@@ -1,0 +1,437 @@
+{
+  "startedAt": "2026-11-16T16:50:20.159Z",
+  "hosted": true,
+  "transport": "native postgres",
+  "sqlSha256": "3205a44a254ea1145033b849afa205d441397664eb1893dc86c722e9da83ae48",
+  "batchSize": 100,
+  "batches": [
+    {
+      "rows": 100,
+      "serverMs": 195.274,
+      "clientMs": 851
+    },
+    {
+      "rows": 100,
+      "serverMs": 73.454,
+      "clientMs": 687
+    },
+    {
+      "rows": 100,
+      "serverMs": 136.841,
+      "clientMs": 732
+    },
+    {
+      "rows": 100,
+      "serverMs": 126.081,
+      "clientMs": 723
+    },
+    {
+      "rows": 100,
+      "serverMs": 136.182,
+      "clientMs": 725
+    },
+    {
+      "rows": 100,
+      "serverMs": 123.437,
+      "clientMs": 709
+    },
+    {
+      "rows": 100,
+      "serverMs": 126.164,
+      "clientMs": 735
+    },
+    {
+      "rows": 100,
+      "serverMs": 110.644,
+      "clientMs": 698
+    },
+    {
+      "rows": 100,
+      "serverMs": 117.759,
+      "clientMs": 704
+    },
+    {
+      "rows": 100,
+      "serverMs": 128.914,
+      "clientMs": 709
+    },
+    {
+      "rows": 100,
+      "serverMs": 141.627,
+      "clientMs": 735
+    },
+    {
+      "rows": 100,
+      "serverMs": 143.875,
+      "clientMs": 724
+    },
+    {
+      "rows": 100,
+      "serverMs": 128.409,
+      "clientMs": 709
+    },
+    {
+      "rows": 100,
+      "serverMs": 75.979,
+      "clientMs": 656
+    },
+    {
+      "rows": 100,
+      "serverMs": 73.728,
+      "clientMs": 657
+    },
+    {
+      "rows": 100,
+      "serverMs": 103.291,
+      "clientMs": 700
+    },
+    {
+      "rows": 100,
+      "serverMs": 119.812,
+      "clientMs": 703
+    },
+    {
+      "rows": 100,
+      "serverMs": 95.807,
+      "clientMs": 677
+    },
+    {
+      "rows": 100,
+      "serverMs": 125.654,
+      "clientMs": 711
+    },
+    {
+      "rows": 100,
+      "serverMs": 130.993,
+      "clientMs": 717
+    },
+    {
+      "rows": 100,
+      "serverMs": 129.253,
+      "clientMs": 714
+    },
+    {
+      "rows": 100,
+      "serverMs": 121.456,
+      "clientMs": 710
+    },
+    {
+      "rows": 100,
+      "serverMs": 118.906,
+      "clientMs": 715
+    },
+    {
+      "rows": 100,
+      "serverMs": 126.382,
+      "clientMs": 726
+    },
+    {
+      "rows": 100,
+      "serverMs": 109.085,
+      "clientMs": 1831
+    },
+    {
+      "rows": 100,
+      "serverMs": 118.529,
+      "clientMs": 691
+    },
+    {
+      "rows": 100,
+      "serverMs": 116.883,
+      "clientMs": 712
+    },
+    {
+      "rows": 100,
+      "serverMs": 123.19,
+      "clientMs": 696
+    },
+    {
+      "rows": 100,
+      "serverMs": 105.746,
+      "clientMs": 708
+    },
+    {
+      "rows": 100,
+      "serverMs": 100.417,
+      "clientMs": 678
+    },
+    {
+      "rows": 100,
+      "serverMs": 107.084,
+      "clientMs": 707
+    },
+    {
+      "rows": 100,
+      "serverMs": 109.625,
+      "clientMs": 687
+    },
+    {
+      "rows": 100,
+      "serverMs": 89.094,
+      "clientMs": 723
+    },
+    {
+      "rows": 100,
+      "serverMs": 93.668,
+      "clientMs": 662
+    },
+    {
+      "rows": 100,
+      "serverMs": 97.143,
+      "clientMs": 674
+    },
+    {
+      "rows": 100,
+      "serverMs": 82.515,
+      "clientMs": 650
+    },
+    {
+      "rows": 100,
+      "serverMs": 90.907,
+      "clientMs": 663
+    },
+    {
+      "rows": 100,
+      "serverMs": 97.286,
+      "clientMs": 673
+    },
+    {
+      "rows": 100,
+      "serverMs": 81.852,
+      "clientMs": 658
+    },
+    {
+      "rows": 100,
+      "serverMs": 80.898,
+      "clientMs": 662
+    },
+    {
+      "rows": 100,
+      "serverMs": 83.605,
+      "clientMs": 660
+    },
+    {
+      "rows": 100,
+      "serverMs": 88.58,
+      "clientMs": 671
+    },
+    {
+      "rows": 100,
+      "serverMs": 63.066,
+      "clientMs": 659
+    },
+    {
+      "rows": 100,
+      "serverMs": 45.275,
+      "clientMs": 658
+    },
+    {
+      "rows": 100,
+      "serverMs": 80.049,
+      "clientMs": 655
+    },
+    {
+      "rows": 100,
+      "serverMs": 76.928,
+      "clientMs": 653
+    },
+    {
+      "rows": 100,
+      "serverMs": 73.686,
+      "clientMs": 646
+    },
+    {
+      "rows": 100,
+      "serverMs": 67.699,
+      "clientMs": 647
+    },
+    {
+      "rows": 100,
+      "serverMs": 75.435,
+      "clientMs": 654
+    },
+    {
+      "rows": 100,
+      "serverMs": 77.87,
+      "clientMs": 663
+    },
+    {
+      "rows": 100,
+      "serverMs": 76.234,
+      "clientMs": 649
+    },
+    {
+      "rows": 100,
+      "serverMs": 72.491,
+      "clientMs": 645
+    },
+    {
+      "rows": 100,
+      "serverMs": 65.61,
+      "clientMs": 636
+    },
+    {
+      "rows": 100,
+      "serverMs": 62.477,
+      "clientMs": 1262
+    },
+    {
+      "rows": 100,
+      "serverMs": 60.04,
+      "clientMs": 656
+    },
+    {
+      "rows": 100,
+      "serverMs": 66.316,
+      "clientMs": 660
+    },
+    {
+      "rows": 100,
+      "serverMs": 67.14,
+      "clientMs": 673
+    },
+    {
+      "rows": 100,
+      "serverMs": 65.739,
+      "clientMs": 647
+    },
+    {
+      "rows": 100,
+      "serverMs": 59.143,
+      "clientMs": 667
+    },
+    {
+      "rows": 100,
+      "serverMs": 53.356,
+      "clientMs": 646
+    },
+    {
+      "rows": 100,
+      "serverMs": 66.49,
+      "clientMs": 654
+    },
+    {
+      "rows": 100,
+      "serverMs": 62.484,
+      "clientMs": 651
+    },
+    {
+      "rows": 100,
+      "serverMs": 55.05,
+      "clientMs": 639
+    },
+    {
+      "rows": 100,
+      "serverMs": 55.181,
+      "clientMs": 640
+    },
+    {
+      "rows": 100,
+      "serverMs": 46.378,
+      "clientMs": 648
+    },
+    {
+      "rows": 100,
+      "serverMs": 32.602,
+      "clientMs": 617
+    },
+    {
+      "rows": 100,
+      "serverMs": 49.175,
+      "clientMs": 3439
+    },
+    {
+      "rows": 100,
+      "serverMs": 45.449,
+      "clientMs": 752
+    },
+    {
+      "rows": 100,
+      "serverMs": 49.742,
+      "clientMs": 745
+    },
+    {
+      "rows": 100,
+      "serverMs": 50.912,
+      "clientMs": 677
+    },
+    {
+      "rows": 100,
+      "serverMs": 42.184,
+      "clientMs": 665
+    },
+    {
+      "rows": 100,
+      "serverMs": 51.557,
+      "clientMs": 648
+    },
+    {
+      "rows": 100,
+      "serverMs": 50.012,
+      "clientMs": 640
+    },
+    {
+      "rows": 100,
+      "serverMs": 44.273,
+      "clientMs": 628
+    },
+    {
+      "rows": 100,
+      "serverMs": 43.642,
+      "clientMs": 621
+    },
+    {
+      "rows": 100,
+      "serverMs": 44.748,
+      "clientMs": 651
+    },
+    {
+      "rows": 100,
+      "serverMs": 38.467,
+      "clientMs": 620
+    },
+    {
+      "rows": 100,
+      "serverMs": 45.473,
+      "clientMs": 641
+    },
+    {
+      "rows": 100,
+      "serverMs": 34.445,
+      "clientMs": 611
+    },
+    {
+      "rows": 100,
+      "serverMs": 65.232,
+      "clientMs": 670
+    },
+    {
+      "rows": 100,
+      "serverMs": 96.373,
+      "clientMs": 712
+    },
+    {
+      "rows": 100,
+      "serverMs": 91.089,
+      "clientMs": 684
+    },
+    {
+      "rows": 100,
+      "serverMs": 84.078,
+      "clientMs": 675
+    },
+    {
+      "rows": 55,
+      "serverMs": 31.995,
+      "clientMs": 644
+    }
+  ],
+  "visited": 8355,
+  "copied": 8355,
+  "sourceWrites": 0,
+  "fieldCount": 22,
+  "sourceTypesMatch": true,
+  "pendingAtStart": 8355,
+  "failed": true,
+  "code": "57014"
+}

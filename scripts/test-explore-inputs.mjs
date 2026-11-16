@@ -9,11 +9,40 @@ const db=process.argv.find(x=>x.startsWith('--database='))?.slice('--database='.
 const container='supabase_db_Verdict_Games';
 function query(database,input){const run=spawnSync('docker',['exec','-i',container,'psql','-X','-qAt','-v','ON_ERROR_STOP=1','-U','postgres','-d',database],{input,encoding:'utf8',maxBuffer:5*1024*1024,timeout:30000});if(run.status!==0)throw new Error(run.stderr.slice(0,1000));return run.stdout;}
 const checks=[];
+ for(const flags of [['--hosted-readonly','--publish-approved'],['--hosted-readonly','--hosted-approved','--publish-approved']]){
+  const rejected=spawnSync(process.execPath,['scripts/finalize-explore-inputs.mjs',...flags],{encoding:'utf8',timeout:10000});
+  assert.equal(rejected.status,1);assert.match(rejected.stderr,/Read-only mode cannot publish|Hosted modes are mutually exclusive/);
+ }
+ checks.push('read-only publication and conflicting hosted flags are rejected before configuration or connection');
+ {
+  const malformed='invalid-test-dsn-with-private-marker';
+  const rejected=spawnSync(process.execPath,['scripts/finalize-explore-inputs.mjs','--hosted-readonly','--sql-sha=3205a44a254ea1145033b849afa205d441397664eb1893dc86c722e9da83ae48'],{env:{...process.env,DATABASE_URL:malformed},encoding:'utf8',timeout:10000});
+  assert.equal(rejected.status,1);assert.match(rejected.stderr,/Invalid database connection configuration/);assert.equal((rejected.stderr+rejected.stdout).includes(malformed),false);
+ }
+ checks.push('malformed connection configuration is rejected without printing its value');
  const fallback=JSON.parse(query(db,"SET ROLE anon; SELECT public.explore_catalogue_page('all-time',0,'','','default',1,40,'2026-11-16');"));assert.equal(fallback.count,2);checks.push('ready=false preserves original source results');
  execFileSync(process.execPath,['scripts/backfill-explore-inputs.mjs',...(process.platform==='win32'?['--local-docker']:[]),'--database='+db,'--evidence-path=.verification/prototype-exact-input-backfill.json'],{stdio:['ignore','pipe','pipe'],timeout:60000});
  const helper=JSON.parse(readFileSync('.verification/prototype-exact-input-backfill.json','utf8'));assert.equal(helper.copied,2);assert.equal(helper.validation.ready,true);checks.push('exact helper locks/copies two rows, validates all inputs and publishes readiness');
  execFileSync(process.execPath,['scripts/backfill-explore-inputs.mjs',...(process.platform==='win32'?['--local-docker']:[]),'--database='+db,'--evidence-path=.verification/input-backfill-repeat.json'],{stdio:['ignore','pipe','pipe'],timeout:60000});
  const repeated=JSON.parse(readFileSync('.verification/input-backfill-repeat.json','utf8'));assert.equal(repeated.copied,0);assert.equal(repeated.visited,2);assert.equal(repeated.validation.ready,true);checks.push('backfill resumption avoids identical-row writes');
+ const finalizer=(publish=false)=>spawnSync(process.execPath,['scripts/finalize-explore-inputs.mjs',...(process.platform==='win32'?['--local-docker']:[]),'--database='+db,...(publish?['--publish-approved']:[]),'--evidence-path=.verification/input-finalizer-check.json'],{encoding:'utf8',timeout:60000});
+ const sourceFingerprint=query(db,"SELECT md5(string_agg(to_jsonb(g)::text,'' ORDER BY id)) FROM public.games g;");
+ query(db,"UPDATE public.explore_input_state SET ready=false; UPDATE public.explore_inputs SET tags=ARRAY['corrupted local fixture'] WHERE slug='preclass-a';");
+ assert.equal(finalizer(true).status,1);assert.equal(query(db,'SELECT ready FROM public.explore_input_state;').trim(),'f');
+ query(db,"UPDATE public.explore_inputs i SET tags=g.tags FROM public.games g WHERE i.id=g.id AND i.slug='preclass-a'; ALTER TABLE public.games DISABLE TRIGGER refresh_explore_inputs;");
+ assert.equal(finalizer(true).status,1);assert.equal(query(db,'SELECT ready FROM public.explore_input_state;').trim(),'f');
+ query(db,'ALTER TABLE public.games ENABLE TRIGGER refresh_explore_inputs;');
+ const missingFixture=query(db,"SELECT row_to_json(i)::text FROM public.explore_inputs i WHERE slug='preclass-a';").trim();
+ query(db,"DELETE FROM public.explore_inputs WHERE slug='preclass-a';");
+ assert.equal(finalizer(true).status,1);assert.equal(query(db,'SELECT ready FROM public.explore_input_state;').trim(),'f');
+ const encodedFixture=missingFixture.replaceAll("'","''");
+ query(db,`INSERT INTO public.explore_inputs SELECT * FROM json_populate_record(NULL::public.explore_inputs,'${encodedFixture}'::json);`);
+ assert.equal(finalizer(false).status,0);assert.equal(query(db,'SELECT ready FROM public.explore_input_state;').trim(),'f','Verification-only mode must not publish readiness');
+ assert.equal(finalizer(true).status,0);assert.equal(query(db,'SELECT ready FROM public.explore_input_state;').trim(),'t');
+ const boundedFinalizer=JSON.parse(readFileSync('.verification/input-finalizer-check.json','utf8'));
+ assert.equal(boundedFinalizer.verifiedRows,2);assert.equal(boundedFinalizer.fieldCount,22);assert.equal(boundedFinalizer.exactCoverage,true);assert.equal(boundedFinalizer.published,true);
+ assert.equal(query(db,"SELECT md5(string_agg(to_jsonb(g)::text,'' ORDER BY id)) FROM public.games g;"),sourceFingerprint);
+ checks.push('bounded finalizer rejects corrupted/missing values and disabled maintenance, verification-only never publishes, explicit validated publication preserves all source values');
  const lost=JSON.parse(query(db,"BEGIN; DELETE FROM public.explore_inputs; UPDATE public.explore_input_state SET ready=false; SET LOCAL ROLE anon; SELECT public.explore_catalogue_page('all-time',0,'','','default',1,40,'2026-11-16'); ROLLBACK;"));
  assert.deepEqual({count:lost.count,rows:lost.rows},{count:fallback.count,rows:fallback.rows});checks.push('unready/lost projection uses original accurate source query');
  const partial=JSON.parse(query(db,"BEGIN; ALTER TABLE public.games DISABLE TRIGGER zzz_refresh_explore_classification; UPDATE public.games SET explore_title_key=NULL WHERE slug='preclass-a'; ALTER TABLE public.games ENABLE TRIGGER zzz_refresh_explore_classification; SET LOCAL ROLE anon; SELECT public.explore_catalogue_page('all-time',0,'','','default',1,40,'2026-11-16'); ROLLBACK;"));
@@ -100,4 +129,4 @@ const checks=[];
  const race=JSON.parse(stdout.split('\n').find(x=>x.startsWith('{')));assert.equal(race.guard,false);assert.equal(race.sourceCount,1);assert.equal(race.rpcCount,1);checks.push('two-session repeatable-read policy tightening uses original source visibility');
  query(db,'DROP POLICY prototype_tightened ON public.games;');
  assert.equal(query(db,'SET ROLE anon; SELECT public.explore_source_unrestricted();').trim(),'t');
-writeFileSync('.verification/explore-input-checks.json',JSON.stringify({measuredAt:new Date().toISOString(),scope:'Exact SQL/helper in disposable local migration-replay database; two actual sessions, no hosted changes',checks,rows,race,helper,repeated},null,2));console.log('PASS '+checks.join('; '));
+writeFileSync('.verification/explore-input-checks.json',JSON.stringify({measuredAt:new Date().toISOString(),scope:'Exact SQL/helpers in disposable local migration-replay database; two actual sessions, no hosted changes',checks,rows,race,helper,repeated,boundedFinalizer},null,2));console.log('PASS '+checks.join('; '));

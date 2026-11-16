@@ -1,0 +1,13 @@
+{
+  "startedAt": "2026-11-16T16:47:57.357Z",
+  "hosted": true,
+  "transport": "native postgres",
+  "sqlSha256": "3205a44a254ea1145033b849afa205d441397664eb1893dc86c722e9da83ae48",
+  "batchSize": 100,
+  "batches": [],
+  "visited": 0,
+  "copied": 0,
+  "sourceWrites": 0,
+  "failed": true,
+  "code": "57014"
+}

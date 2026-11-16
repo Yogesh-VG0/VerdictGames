@@ -1,10 +1,13 @@
 {
-  "measuredAt": "2026-11-16T11:46:08.213Z",
-  "scope": "Exact SQL/helper in disposable local migration-replay database; two actual sessions, no hosted changes",
+  "measuredAt": "2026-11-16T17:16:54.829Z",
+  "scope": "Exact SQL/helpers in disposable local migration-replay database; two actual sessions, no hosted changes",
   "checks": [
+    "read-only publication and conflicting hosted flags are rejected before configuration or connection",
+    "malformed connection configuration is rejected without printing its value",
     "ready=false preserves original source results",
     "exact helper locks/copies two rows, validates all inputs and publishes readiness",
     "backfill resumption avoids identical-row writes",
+    "bounded finalizer rejects corrupted/missing values and disabled maintenance, verification-only never publishes, explicit validated publication preserves all source values",
     "unready/lost projection uses original accurate source query",
     "unclassified source rows union before ranking without loss or duplication",
     "wide Unicode metadata, implicit classifiers, accepted/conflicting inserts, authenticated writer and cascade delete",
@@ -73,7 +76,7 @@
     "rpcCount": 1
   },
   "helper": {
-    "startedAt": "2026-11-16T11:45:05.739Z",
+    "startedAt": "2026-11-16T17:16:47.884Z",
     "hosted": false,
     "transport": "local Docker psql",
     "sqlSha256": "3205a44a254ea1145033b849afa205d441397664eb1893dc86c722e9da83ae48",
@@ -81,8 +84,8 @@
     "batches": [
       {
         "rows": 2,
-        "serverMs": 0.119,
-        "clientMs": 3109
+        "serverMs": 0.116,
+        "clientMs": 111
       }
     ],
     "visited": 2,
@@ -95,11 +98,11 @@
       "ready": true,
       "differences": 0
     },
-    "completedAt": "2026-11-16T11:45:18.172Z",
-    "totalMs": 12432
+    "completedAt": "2026-11-16T17:16:48.345Z",
+    "totalMs": 461
   },
   "repeated": {
-    "startedAt": "2026-11-16T11:45:21.382Z",
+    "startedAt": "2026-11-16T17:16:48.566Z",
     "hosted": false,
     "transport": "local Docker psql",
     "sqlSha256": "3205a44a254ea1145033b849afa205d441397664eb1893dc86c722e9da83ae48",
@@ -107,8 +110,8 @@
     "batches": [
       {
         "rows": 0,
-        "serverMs": 0.089,
-        "clientMs": 3134
+        "serverMs": 0.105,
+        "clientMs": 113
       }
     ],
     "visited": 2,
@@ -121,7 +124,30 @@
       "ready": true,
       "differences": 0
     },
-    "completedAt": "2026-11-16T11:45:33.838Z",
-    "totalMs": 12456
+    "completedAt": "2026-11-16T17:16:49.030Z",
+    "totalMs": 463
+  },
+  "boundedFinalizer": {
+    "startedAt": "2026-11-16T17:16:52.579Z",
+    "hosted": false,
+    "publishRequested": true,
+    "sqlSha256": "3205a44a254ea1145033b849afa205d441397664eb1893dc86c722e9da83ae48",
+    "fieldCount": 22,
+    "sourceWrites": 0,
+    "projectionWrites": 0,
+    "batches": [
+      {
+        "rows": 2,
+        "serverMs": 0.06,
+        "clientMs": 119
+      }
+    ],
+    "verifiedRows": 2,
+    "readyBefore": false,
+    "sourceRows": 2,
+    "exactCoverage": true,
+    "published": true,
+    "completedAt": "2026-11-16T17:16:53.368Z",
+    "totalMs": 788
   }
 }
