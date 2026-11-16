@@ -35,7 +35,7 @@ export default function LibraryStatusSelector({ gameId, onAuthRequired }: Librar
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Check if game is in library — use cached library data if available
-  const { data: library } = useQuery({
+  const { data: library, isError: libraryError, refetch: reloadLibrary } = useQuery({
     queryKey: libraryKey,
     queryFn: () => getLibrary(),
     enabled: !!user,
@@ -117,6 +117,10 @@ export default function LibraryStatusSelector({ gameId, onAuthRequired }: Librar
       onAuthRequired();
       return;
     }
+    if (libraryError) {
+      void reloadLibrary();
+      return;
+    }
     setOpen(!open);
   }
 
@@ -141,13 +145,13 @@ export default function LibraryStatusSelector({ gameId, onAuthRequired }: Librar
       >
         <span className="flex items-center">{currentOption?.icon ?? <Plus className="w-4 h-4" />}</span>
         <span className="flex-1 text-left">
-          {currentOption?.label ?? "Add to Library"}
+          {libraryError ? "Retry library" : currentOption?.label ?? "Add to Library"}
         </span>
         <ChevronDown className={cn("w-4 h-4 transition-transform", open && "rotate-180")} />
       </button>
 
       <AnimatePresence>
-        {open && (
+        {open && !libraryError && (
           <motion.div
             initial={reducedMotion ? false : { opacity: 0, y: -4, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}

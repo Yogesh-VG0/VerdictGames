@@ -103,6 +103,21 @@ try {
   await page.waitForURL(`${base}/library`);
   await page.waitForFunction(async () => (await fetch('/api/auth/me')).status === 200);
   check(true, 'signup verification establishes a session and preserves the library destination');
+  // Local browser interception tests the real error UI; it changes no server
+  // configuration and never creates a hosted outage or fixture.
+  await page.route('**/api/library',route=>route.fulfill({status:503,json:{success:false,error:'Local simulated unavailable'}}));
+  await page.route('**/api/library/stats',route=>route.fulfill({status:503,json:{success:false,error:'Local simulated unavailable'}}));
+  await page.reload();
+  await page.getByText('Your library could not be loaded.',{exact:true}).waitFor({timeout:20000});
+  const statsFailure=page.getByRole('alert').filter({hasText:'Library statistics are temporarily unavailable.'});
+  await statsFailure.waitFor({timeout:20000});
+  check(!await page.getByText('Your library is empty',{exact:true}).isVisible(),'unavailable library and statistics render errors instead of successful emptiness');
+  await page.unroute('**/api/library');await page.unroute('**/api/library/stats');
+  await page.getByRole('alert').filter({hasText:'Your library could not be loaded.'}).getByRole('button',{name:'Try again',exact:true}).click();
+  await statsFailure.getByRole('button',{name:'Try again',exact:true}).click();
+  await page.getByText('Your library is empty',{exact:true}).waitFor({timeout:10000});
+  await statsFailure.waitFor({state:'hidden',timeout:10000});
+  check(true,'library retry recovers to the genuine empty state after the local outage clears');
   // Create one private disposable list; public reads and the other identity must not see it.
   const fixture = await admin.from('lists').insert({ slug:`private-refinement-${run}`,title:'Private local refinement list',owner_id:identity.data.id,is_public:false }).select('id').single(); assert.ifError(fixture.error); listIds.push(fixture.data.id);
   const own = await page.evaluate(async () => { const r=await fetch('/api/lists?scope=mine&view=summary'); return { status:r.status, cache:r.headers.get('cache-control'), body:await r.json() }; });

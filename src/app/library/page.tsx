@@ -104,7 +104,12 @@ function LibraryContent() {
         <div className="space-y-4">
           <SectionHeader title="My Library" icon={<BookOpen className="w-5 h-5" />} subtitle="Track your gaming journey" gradient="linear-gradient(90deg, #8b5cf6 0%, #a78bfa 25%, #c4b5fd 50%, #a78bfa 75%, #8b5cf6 100%)" />
 
-          {stats.data && (
+          {stats.isError ? (
+            <p role="alert" className="text-sm text-secondary">
+              Library statistics are temporarily unavailable.{" "}
+              <button type="button" onClick={() => void stats.refetch()} className="text-accent underline">Try again</button>
+            </p>
+          ) : stats.data && (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
               {([
                 { label: "Total", value: stats.data.total, color: "text-foreground" },
@@ -160,6 +165,11 @@ function LibraryContent() {
               {Array.from({ length: 8 }).map((_, i) => (
                 <div key={i} className="aspect-[3/4] rounded-2xl bg-surface animate-pulse" />
               ))}
+            </div>
+          ) : library.isError ? (
+            <div role="alert" className="text-center py-16 space-y-3">
+              <p className="text-secondary font-medium">Your library could not be loaded.</p>
+              <button type="button" onClick={() => void library.refetch()} className="rounded-xl bg-action text-action-foreground px-5 py-2.5">Try again</button>
             </div>
           ) : library.data && library.data.length > 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">

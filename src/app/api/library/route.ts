@@ -42,8 +42,10 @@ export async function GET(request: NextRequest) {
 
     return jsonOk(items);
   } catch (err) {
-    console.error("[API] /library GET error:", err);
-    return jsonOk([]);
+    const code=err && typeof err==='object' && 'code' in err && typeof err.code==='string'
+      && /^(?:[0-9A-Z]{5}|PGRST\d{3})$/.test(err.code) ? err.code : 'UNKNOWN';
+    console.error("[API] /library GET failed", {code});
+    return jsonError("Library is temporarily unavailable. Please retry.",503);
   }
 }
 

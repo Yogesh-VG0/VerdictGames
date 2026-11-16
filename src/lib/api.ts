@@ -435,7 +435,7 @@ export async function getUserReviews(username: string): Promise<Review[]> {
 /** Get user's game library. */
 export async function getLibrary(status?: string): Promise<UserGame[]> {
   const params = status ? `?status=${status}` : "";
-  return (await apiFetch<UserGame[]>(`/api/library${params}`)) ?? [];
+  return apiFetchOrThrow<UserGame[]>(`/api/library${params}`);
 }
 
 /** Add or update a game in library. */
@@ -465,7 +465,7 @@ export async function removeFromLibrary(gameId: string): Promise<boolean> {
 
 /** Get library stats. */
 export async function getLibraryStats(): Promise<LibraryStats | null> {
-  return apiFetch<LibraryStats>("/api/library/stats");
+  return apiFetchOrThrow<LibraryStats>("/api/library/stats");
 }
 
 /* ═══════════════════════════════════════════════════
