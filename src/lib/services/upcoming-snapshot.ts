@@ -19,7 +19,9 @@ export async function readUpcomingSnapshot() {
     } catch { /* Live provider or catalogue remain available. */ }
   }
   try {
-    const live = await getRawgUpcoming();
+    // Interactive discovery has an accurate catalogue fallback. Do not consume
+    // the worker's full eight-second provider budget before starting that read.
+    const live = await getRawgUpcoming(AbortSignal.timeout(2000));
     if (!isUpcomingSnapshot(live)) throw new Error('Invalid upcoming response');
     return { results: live.results, fetchedAt: new Date().toISOString() };
   } catch (error) {

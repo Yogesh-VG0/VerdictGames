@@ -11,6 +11,17 @@ describe('public RAWG read resilience', () => {
     expect(results).toEqual([{ results: [] }, { results: [] }]);
     expect(fetcher).toHaveBeenCalledTimes(1);
   });
+  it('honors a shorter caller deadline while retaining the provider failure circuit', async () => {
+    const controller=new AbortController();
+    const fetcher=vi.fn((_url,init)=>new Promise<Response>((_resolve,reject)=>init.signal.addEventListener('abort',()=>reject(init.signal.reason),{once:true})));
+    vi.stubGlobal('fetch',fetcher);
+    const {getRawgUpcoming}=await import('./rawg');
+    const request=getRawgUpcoming(controller.signal);
+    const rejected=expect(request).rejects.toMatchObject({name:'AbortError'});
+    controller.abort();await rejected;
+    await expect(getRawgUpcoming()).rejects.toThrow('temporarily unavailable');
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
   it.each([429, 500, 503])('stops repeat calls after HTTP %s, then recovers', async status => {
     vi.useFakeTimers();
     const fetcher = vi.fn().mockResolvedValue(new Response('Unavailable', { status }));

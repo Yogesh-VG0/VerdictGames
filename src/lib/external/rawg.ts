@@ -243,13 +243,13 @@ export interface RawgListResponse {
 }
 
 /** Forward-looking catalogue, rather than the current-year greatest list. */
-export async function getRawgUpcoming(): Promise<RawgListResponse> {
+export async function getRawgUpcoming(signal?: AbortSignal): Promise<RawgListResponse> {
   const today = new Date();
   const end = new Date(today); end.setFullYear(end.getFullYear() + 3);
   const params = new URLSearchParams({ key: getApiKey(), dates: `${today.toISOString().slice(0,10)},${end.toISOString().slice(0,10)}`, ordering: '-added', page_size: '100', exclude_additions: 'true' });
   // Successful snapshots are cached by the service, after schema admission.
   // Do not cache malformed/empty HTTP-200 provider responses for six hours.
-  const res = await trackedFetch('games/upcoming', `${RAWG_BASE}/games?${params}`, { cache: 'no-store' });
+  const res = await trackedFetch('games/upcoming', `${RAWG_BASE}/games?${params}`, { cache: 'no-store', signal });
   if (!res.ok) throw new Error(`Upcoming catalogue unavailable: ${res.status}`);
   const payload = await res.json();
   if (!isUpcomingSnapshot(payload)) {
