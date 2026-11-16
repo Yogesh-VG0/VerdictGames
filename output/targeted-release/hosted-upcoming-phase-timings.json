@@ -1,0 +1,475 @@
+{
+  "commit": "4e8cd63f0843e2c3a1b31e39d42f1d30d5c76b9e",
+  "preview": "https://verdict-games-bmaaxyo6b-yogesh-vg0s-projects.vercel.app",
+  "scope": "Actual protected browser first observed URL request on timing successor. 30-second diagnostic observation budget only; existing application/provider/database deadlines unchanged. Shared snapshot/artwork cache storage state unknown. Runtime log independently reports bom1.",
+  "samples": [
+    {
+      "measuredAt": "2026-11-16T18:04:00.974Z",
+      "path": "/api/rawg/lists?type=best-of-year&page=1&pageSize=40&platform=PC",
+      "status": 200,
+      "elapsedMs": 3990,
+      "decodedBytes": 13566,
+      "headers": {
+        "server-timing": "snapshot;dur=2004, matches;dur=793, portraits;dur=512, provider_artwork;dur=3, catalogue_total;dur=3316",
+        "cache-control": "public",
+        "cdn-cache-control": null,
+        "vercel-cdn-cache-control": null,
+        "x-vercel-cache": "MISS",
+        "x-vercel-id": "bom1::iad1::fhlx7-1794852237673-40b3a5e02cb3",
+        "age": "0",
+        "content-type": "application/json"
+      },
+      "timing": {
+        "transferSize": 2662,
+        "encodedBodySize": 2362,
+        "decodedBodySize": 13566,
+        "durationMs": 3989
+      },
+      "success": true,
+      "count": 30,
+      "page": 1,
+      "pageSize": 40,
+      "hasNext": false,
+      "source": "rawg",
+      "items": [
+        {
+          "slug": "path-of-exile-2",
+          "name": "Path of Exile 2",
+          "platforms": [
+            "PC"
+          ],
+          "genres": [
+            "Massively Multiplayer",
+            "Adventure",
+            "Action",
+            "RPG"
+          ],
+          "released": "2026-12-11",
+          "metricSource": "rawg"
+        },
+        {
+          "slug": "no-rest-for-the-wicked",
+          "name": "No Rest for the Wicked",
+          "platforms": [
+            "PC",
+            "PlayStation 5",
+            "Xbox Series S/X"
+          ],
+          "genres": [
+            "Adventure",
+            "Action",
+            "RPG"
+          ],
+          "released": "2027-03-31",
+          "metricSource": "rawg"
+        },
+        {
+          "slug": "tomb-raider-legacy-of-atlantis",
+          "name": "Tomb Raider: Legacy of Atlantis",
+          "platforms": [
+            "PC",
+            "PlayStation 5",
+            "Xbox Series S/X"
+          ],
+          "genres": [
+            "Action"
+          ],
+          "released": "2027-02-12",
+          "metricSource": "rawg"
+        },
+        {
+          "slug": "titan-quest-2",
+          "name": "Titan Quest 2",
+          "platforms": [
+            "PC",
+            "PlayStation 5",
+            "Xbox Series S/X"
+          ],
+          "genres": [
+            "Action",
+            "RPG"
+          ],
+          "released": "2027-01-19",
+          "metricSource": "rawg"
+        },
+        {
+          "slug": "tomb-raider-catalyst",
+          "name": "Tomb Raider: Catalyst",
+          "platforms": [
+            "PC",
+            "PlayStation 5",
+            "Xbox Series S/X"
+          ],
+          "genres": [
+            "Adventure",
+            "Action"
+          ],
+          "released": "2027-12-31",
+          "metricSource": "rawg"
+        },
+        {
+          "slug": "clockwork-revolution-xsx",
+          "name": "Clockwork Revolution",
+          "platforms": [
+            "PC",
+            "Xbox Series S/X"
+          ],
+          "genres": [
+            "Adventure",
+            "Action",
+            "RPG"
+          ],
+          "released": "2027-12-31",
+          "metricSource": "rawg"
+        },
+        {
+          "slug": "the-expanse-osiris-reborn",
+          "name": "The Expanse: Osiris Reborn",
+          "platforms": [
+            "PC",
+            "PlayStation 5",
+            "Xbox Series S/X"
+          ],
+          "genres": [
+            "Action",
+            "RPG"
+          ],
+          "released": "2027-12-31",
+          "metricSource": "rawg"
+        },
+        {
+          "slug": "kena-scars-of-kosmora",
+          "name": "Kena: Scars of Kosmora",
+          "platforms": [
+            "PC",
+            "PlayStation 5"
+          ],
+          "genres": [
+            "Adventure",
+            "Action",
+            "RPG"
+          ],
+          "released": "2027-12-31",
+          "metricSource": "rawg"
+        },
+        {
+          "slug": "lords-of-the-fallen-2-2",
+          "name": "Lords of the Fallen 2",
+          "platforms": [
+            "PC",
+            "PlayStation 5",
+            "Xbox Series S/X"
+          ],
+          "genres": [
+            "Action",
+            "RPG"
+          ],
+          "released": "2027-03-31",
+          "metricSource": "rawg"
+        },
+        {
+          "slug": "metro-2039",
+          "name": "Metro 2039",
+          "platforms": [
+            "PC",
+            "PlayStation 5",
+            "Xbox Series S/X"
+          ],
+          "genres": [
+            "Shooter"
+          ],
+          "released": "2027-02-04",
+          "metricSource": "rawg"
+        },
+        {
+          "slug": "ananta",
+          "name": "ananta",
+          "platforms": [
+            "PC",
+            "PlayStation 5",
+            "iOS",
+            "Android"
+          ],
+          "genres": [
+            "Action"
+          ],
+          "released": "2027-01-15",
+          "metricSource": "rawg"
+        },
+        {
+          "slug": "rayman-legends-retold",
+          "name": "Rayman Legends Retold",
+          "platforms": [
+            "PC",
+            "PlayStation 5",
+            "Xbox Series S/X"
+          ],
+          "genres": [
+            "Platformer"
+          ],
+          "released": "2026-12-03",
+          "metricSource": "rawg"
+        },
+        {
+          "slug": "exodus-archetype-entertainment",
+          "name": "Exodus (Archetype Entertainment)",
+          "platforms": [
+            "PC",
+            "PlayStation 5",
+            "Xbox Series S/X"
+          ],
+          "genres": [
+            "Action",
+            "RPG"
+          ],
+          "released": "2027-04-07",
+          "metricSource": "rawg"
+        },
+        {
+          "slug": "resident-evil-veronica",
+          "name": "Resident Evil Veronica",
+          "platforms": [
+            "PC",
+            "PlayStation 5",
+            "Xbox Series S/X"
+          ],
+          "genres": [
+            "Adventure",
+            "Action"
+          ],
+          "released": "2027-12-31",
+          "metricSource": "rawg"
+        },
+        {
+          "slug": "final-fantasy-vii-revelations",
+          "name": "Final Fantasy VII: Revelation",
+          "platforms": [
+            "PC",
+            "PlayStation 5",
+            "Xbox Series S/X",
+            "Nintendo Switch"
+          ],
+          "genres": [
+            "RPG"
+          ],
+          "released": "2027-04-08",
+          "metricSource": "rawg"
+        },
+        {
+          "slug": "trine-6-together-in-time",
+          "name": "Trine 6: Together in Time",
+          "platforms": [
+            "PC",
+            "PlayStation 5",
+            "Xbox Series S/X",
+            "Nintendo Switch"
+          ],
+          "genres": [
+            "Adventure"
+          ],
+          "released": "2027-03-04",
+          "metricSource": "rawg"
+        },
+        {
+          "slug": "clutch-2027",
+          "name": "Clutch (2027)",
+          "platforms": [
+            "PC",
+            "PlayStation 5",
+            "Xbox Series S/X"
+          ],
+          "genres": [
+            "Racing"
+          ],
+          "released": "2027-05-31",
+          "metricSource": "rawg"
+        },
+        {
+          "slug": "beautiful-light",
+          "name": "Beautiful Light",
+          "platforms": [
+            "PC"
+          ],
+          "genres": [
+            "Indie",
+            "Shooter",
+            "Strategy"
+          ],
+          "released": "2026-12-01",
+          "metricSource": "rawg"
+        },
+        {
+          "slug": "cronos-lazarus",
+          "name": "Cronos: Lazarus",
+          "platforms": [
+            "PC",
+            "PlayStation 5",
+            "Xbox Series S/X"
+          ],
+          "genres": [
+            "Adventure",
+            "Action"
+          ],
+          "released": "2026-12-03",
+          "metricSource": "rawg"
+        },
+        {
+          "slug": "the-witcher-3-songs-of-the-past",
+          "name": "The Witcher 3: Songs of the Past",
+          "platforms": [
+            "PC",
+            "PlayStation 5",
+            "Xbox Series S/X"
+          ],
+          "genres": [
+            "RPG"
+          ],
+          "released": "2027-12-31",
+          "metricSource": "rawg"
+        },
+        {
+          "slug": "daba-land-of-water-scar",
+          "name": "Daba: Land of Water Scar",
+          "platforms": [
+            "PC",
+            "PlayStation 5"
+          ],
+          "genres": [
+            "Action",
+            "RPG"
+          ],
+          "released": "2027-05-31",
+          "metricSource": "rawg"
+        },
+        {
+          "slug": "exodus-2026",
+          "name": "Exodus (2026)",
+          "platforms": [
+            "PC",
+            "PlayStation 5",
+            "Xbox Series S/X"
+          ],
+          "genres": [
+            "Adventure",
+            "Action",
+            "RPG"
+          ],
+          "released": "2027-12-31",
+          "metricSource": "rawg"
+        },
+        {
+          "slug": "guns-of-eschaton",
+          "name": "Guns of Eschaton",
+          "platforms": [
+            "PC",
+            "PlayStation 5",
+            "Xbox Series S/X"
+          ],
+          "genres": [
+            "Shooter",
+            "Action"
+          ],
+          "released": "2026-12-08",
+          "metricSource": "rawg"
+        },
+        {
+          "slug": "outward-2",
+          "name": "Outward 2",
+          "platforms": [
+            "PC"
+          ],
+          "genres": [
+            "Adventure",
+            "Action",
+            "RPG"
+          ],
+          "released": "2027-02-07",
+          "metricSource": "rawg"
+        },
+        {
+          "slug": "parking-in-tight-spaces",
+          "name": "Parking in Tight Spaces",
+          "platforms": [
+            "PC"
+          ],
+          "genres": [
+            "Simulation",
+            "Puzzle"
+          ],
+          "released": "2027-08-15",
+          "metricSource": "rawg"
+        },
+        {
+          "slug": "untitled-carnivores-game-2024",
+          "name": "Untitled Carnivores Game (2024)",
+          "platforms": [
+            "PC",
+            "PlayStation 5",
+            "Xbox One"
+          ],
+          "genres": [
+            "Casual",
+            "Action",
+            "Simulation",
+            "Sports"
+          ],
+          "released": "2028-09-20",
+          "metricSource": "rawg"
+        },
+        {
+          "slug": "lelu",
+          "name": "Lelu",
+          "platforms": [
+            "PC"
+          ],
+          "genres": [],
+          "released": "2027-01-20",
+          "metricSource": "rawg"
+        },
+        {
+          "slug": "space-station-designer",
+          "name": "Space Station Designer",
+          "platforms": [
+            "PC"
+          ],
+          "genres": [],
+          "released": "2026-11-17",
+          "metricSource": "rawg"
+        },
+        {
+          "slug": "they-come-in-fives",
+          "name": "They Come in Fives",
+          "platforms": [
+            "PC"
+          ],
+          "genres": [
+            "Card",
+            "Strategy"
+          ],
+          "released": "2026-12-16",
+          "metricSource": "rawg"
+        },
+        {
+          "slug": "unknown-carnivores-dinosaur-hunt-sequel",
+          "name": "Unknown Carnivores Dinosaur Hunt Sequel",
+          "platforms": [
+            "PC"
+          ],
+          "genres": [
+            "Indie",
+            "Action"
+          ],
+          "released": "2027-09-07",
+          "metricSource": "rawg"
+        }
+      ],
+      "limits": {
+        "frameworkBypass": true,
+        "databaseStorageCache": "unknown",
+        "rawgDisabled": false
+      },
+      "label": "timed-successor-upcoming-first-url",
+      "probeBudgetMs": 30000
+    }
+  ]
+}

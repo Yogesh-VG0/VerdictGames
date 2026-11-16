@@ -1,0 +1,100 @@
+{
+  "startedAt": "2026-11-16T18:05:40.239Z",
+  "commit": "4e8cd63f0843e2c3a1b31e39d42f1d30d5c76b9e",
+  "scope": "Fresh isolated local production build of committed application; actual hosted public catalogue; RAWG disabled; no worker, fixture, hosted configuration or source writes. Initial framework cache removed only inside this owned build. Server role used only for the normal durable snapshot read.",
+  "directory": ".verification\\cold-app-20261116-1e289aef7a",
+  "samples": [
+    {
+      "query": {
+        "type": "best-of-year",
+        "page": 1,
+        "pageSize": 40,
+        "platform": "PC"
+      },
+      "status": 200,
+      "ms": 2425,
+      "decodedBytes": 21758,
+      "serverTiming": "snapshot;dur=943, catalogue_query;dur=1451, catalogue_artwork;dur=0, catalogue_total;dur=2396",
+      "cacheControl": "public, s-maxage=3600, stale-while-revalidate=86400",
+      "count": 255,
+      "source": "catalogue",
+      "degraded": true,
+      "rows": 40,
+      "rawgInterestInvented": false
+    },
+    {
+      "query": {
+        "type": "best-of-year",
+        "page": 2,
+        "pageSize": 40,
+        "platform": "PC"
+      },
+      "status": 200,
+      "ms": 4910,
+      "decodedBytes": 22310,
+      "serverTiming": "snapshot;dur=542, catalogue_query;dur=368, catalogue_artwork;dur=3993, catalogue_total;dur=4904",
+      "cacheControl": "public, s-maxage=3600, stale-while-revalidate=86400",
+      "count": 255,
+      "source": "catalogue",
+      "degraded": true,
+      "rows": 40,
+      "rawgInterestInvented": false
+    },
+    {
+      "query": {
+        "type": "all-time",
+        "page": 1,
+        "pageSize": 40,
+        "platform": "PlayStation 5"
+      },
+      "status": 200,
+      "ms": 1593,
+      "decodedBytes": 22597,
+      "serverTiming": "catalogue_query;dur=879, catalogue_artwork;dur=709, catalogue_total;dur=1588",
+      "cacheControl": "public, s-maxage=3600, stale-while-revalidate=86400",
+      "count": 38,
+      "source": "catalogue",
+      "degraded": false,
+      "rows": 38,
+      "rawgInterestInvented": false
+    },
+    {
+      "query": {
+        "type": "all-time",
+        "page": 2,
+        "pageSize": 40
+      },
+      "status": 200,
+      "ms": 885,
+      "decodedBytes": 22447,
+      "serverTiming": "catalogue_query;dur=879, catalogue_artwork;dur=0, catalogue_total;dur=880",
+      "cacheControl": "public, s-maxage=3600, stale-while-revalidate=86400",
+      "count": 250,
+      "source": "catalogue",
+      "degraded": false,
+      "rows": 40,
+      "rawgInterestInvented": false
+    },
+    {
+      "query": {
+        "type": "best-of-year",
+        "page": 1,
+        "pageSize": 40,
+        "platform": "PC"
+      },
+      "status": 200,
+      "ms": 1070,
+      "decodedBytes": 21758,
+      "serverTiming": "snapshot;dur=523, catalogue_query;dur=541, catalogue_artwork;dur=0, catalogue_total;dur=1065",
+      "cacheControl": "public, s-maxage=3600, stale-while-revalidate=86400",
+      "count": 255,
+      "source": "catalogue",
+      "degraded": true,
+      "rows": 40,
+      "rawgInterestInvented": false
+    }
+  ],
+  "buildMs": 22887,
+  "frameworkCacheAbsentBeforeStart": true,
+  "completedAt": "2026-11-16T18:06:15.011Z"
+}

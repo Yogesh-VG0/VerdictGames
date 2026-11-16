@@ -1,9 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-const state = vi.hoisted(() => ({ rows: [] as Record<string, unknown>[], upcoming: vi.fn(), portraits: vi.fn().mockResolvedValue([]) }));
+const state = vi.hoisted(() => ({ rows: [] as Record<string, unknown>[], compact: null as Record<string,unknown>|null, upcoming: vi.fn(), portraits: vi.fn().mockResolvedValue([]) }));
 vi.mock('next/cache', () => ({ unstable_cache: (fn: unknown) => fn }));
 vi.mock('@/lib/external/rawg', () => ({ getRawgUpcoming: state.upcoming }));
 vi.mock('@/lib/external/igdb', () => ({ getIgdbPortraits: state.portraits }));
-vi.mock('@/lib/services/explore-query', () => ({ readCataloguePage: async () => null }));
+vi.mock('@/lib/services/explore-query', () => ({ readCataloguePage: async () => state.compact }));
 vi.mock('@/lib/supabase/public', () => ({ getPublicSupabase: () => {
   const query: Record<string, unknown> = {};
   for (const name of ['select','in','not','neq','gt','gte','lte','contains','order','limit','abortSignal','range','or']) query[name] = () => query;
@@ -15,7 +15,7 @@ import type { RawgListGameItem } from '@/lib/api';
 
 describe('Explore catalogue regressions', () => {
   afterEach(() => vi.unstubAllGlobals());
-  beforeEach(() => { state.rows = []; state.upcoming.mockReset(); });
+  beforeEach(() => { state.rows = []; state.compact = null; state.upcoming.mockReset(); });
   it('keeps the provider upcoming pool even when only one entry is tracked locally, and resolves its cover and canonical slug', async () => {
     state.rows = [{ rawg_id: 1, slug: 'canonical-one', cover_image: 'https://images.igdb.com/igdb/image/upload/t_cover_big/co123.jpg' }];
     state.upcoming.mockResolvedValue({ results: [1,2,3].map(id => ({ id, slug: `game-${id}`, name: `Game ${id}`, released: '2099-01-01', tba: false, rating:0, ratings_count:0, background_image: `scene-${id}.jpg`, tags: id === 3 ? [{name:'NSFW'}] : [], genres: [], platforms: [], added: 100, added_by_status: {} })) });
@@ -71,5 +71,22 @@ describe('Explore catalogue regressions', () => {
     expect(fetchPoster.mock.calls[0][1].method).toBe('HEAD');
     fetchPoster.mockResolvedValue(new Response(null, {status:404}));
     expect((await loadExplore('popular-in-year')).items[0].image).toContain('/screenshots/game.jpg');
+  });
+  it.each(['compact','legacy'])('overlaps sparse missing posters within the existing limit on the %s path', async (mode) => {
+    const rows=Array.from({length:16},(_,index)=>({id:String(index),slug:`game-${String(index).padStart(2,'0')}`,title:`Game ${index}`,release_date:'2020-01-01',score:90,verdict_score:90,confidence:1,review_count:1000,tags:[],genres:[],platforms:['PC'],cover_image:'https://images.igdb.com/igdb/image/upload/t_cover_big/co123.jpg',steam_app_id:index+100,ranking_score:90,rank:index+1}));
+    for(const index of [10,13])rows[index].cover_image='https://media.rawg.io/media/screenshots/game.jpg';
+    state.rows=rows;
+    if(mode==='compact')state.compact={count:16,rows,fetchedAt:new Date().toISOString()};
+    let releaseFirst: (()=>void)|undefined;
+    const poster=()=>new Response(null,{status:200,headers:{'content-type':'image/jpeg'}});
+    const probes=vi.fn().mockImplementationOnce(()=>new Promise<Response>(resolve=>{releaseFirst=()=>resolve(poster());})).mockImplementation(()=>Promise.resolve(poster()));
+    vi.stubGlobal('fetch',probes);
+    const request=loadExplore('all-time',1,16);
+    try { await vi.waitFor(()=>expect(probes).toHaveBeenCalledTimes(2),{timeout:250,interval:10}); }
+    finally { releaseFirst?.(); await request; }
+    const result=await request;
+    expect(probes).toHaveBeenCalledTimes(2);
+    expect(result.items.filter(item=>item.image?.includes('library_600x900_2x.jpg'))).toHaveLength(2);
+    expect(result.items.filter(item=>item.image?.includes('co123.jpg'))).toHaveLength(14);
   });
 });

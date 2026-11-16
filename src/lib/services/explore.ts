@@ -42,6 +42,19 @@ async function titleArtwork(row: Pick<GameRow, 'cover_image' | 'header_image' | 
   return row.cover_image || row.header_image;
 }
 
+async function repairVisibleArtwork(items: RawgListGameItem[], rowFor: (item: RawgListGameItem, index: number) => Pick<GameRow, 'cover_image' | 'header_image' | 'steam_app_id'> | undefined) {
+  // Group actual repair work. Unchanged posters must not serialize two sparse
+  // network probes merely because their cards fall in different grid batches.
+  const repairs = items.flatMap((item,index) => {
+    const row = rowFor(item,index);
+    return row && !isPortraitArtwork(item.image) ? [{item,row}] : [];
+  });
+  for (let index=0;index<repairs.length;index+=4) await Promise.all(repairs.slice(index,index+4).map(async ({item,row}) => {
+    item.image = await titleArtwork(row);
+    item.imageKind = isPortraitArtwork(item.image) ? 'cover' : 'artwork';
+  }));
+}
+
 // A failure throws so Next retains its last good snapshot on revalidation.
 const readUpcoming = unstable_cache(readUpcomingSnapshot, ['explore-upcoming-snapshot-v2'], { revalidate: 21600 });
 
@@ -153,12 +166,7 @@ export async function loadExplore(type: RawgListType, page = 1, pageSize = 20, y
         rating:0,ratingsCount:row.review_count || 0,metacritic:null,added:0,toplay:0,playing:0,owned:0,
         platforms:row.platforms || [],genres:row.genres || [],screenshots:[],clip:null,
       }));
-      await measure('catalogue_artwork', async () => { for (let index=0;index<visible.length;index+=4) await Promise.all(visible.slice(index,index+4).map(async (item,offset)=>{
-        if (!isPortraitArtwork(item.image)) {
-          item.image=await titleArtwork(compact.rows[index+offset]);
-          item.imageKind=isPortraitArtwork(item.image)?'cover':'artwork';
-        }
-      })); });
+      await measure('catalogue_artwork', () => repairVisibleArtwork(visible,(_item,index)=>compact.rows[index]));
       return {count:compact.count,page,pageSize,hasNext:page*pageSize<compact.count,items:visible,source:'catalogue',
         fetchedAt:compact.fetchedAt,degraded:type==='best-of-year',definition:definitions[type]};
     }
@@ -181,13 +189,7 @@ export async function loadExplore(type: RawgListType, page = 1, pageSize = 20, y
   const offset = (page - 1) * pageSize;
   const visible = items.slice(offset, offset + pageSize);
   // At most four concurrent poster probes, and only for visible cards.
-  for (let index = 0; index < visible.length; index += 4) await Promise.all(visible.slice(index, index + 4).map(async item => {
-    const row = artworkRows.get(item.slug);
-    if (row && !isPortraitArtwork(item.image)) {
-      item.image = await titleArtwork(row);
-      item.imageKind = isPortraitArtwork(item.image) ? 'cover' : 'artwork';
-    }
-  }));
+  await repairVisibleArtwork(visible,item=>artworkRows.get(item.slug));
   return { count: items.length, page, pageSize, hasNext: offset + pageSize < items.length, items: visible, source, fetchedAt,
     degraded: type === 'best-of-year' && (source !== 'rawg' || Date.now() - Date.parse(fetchedAt) > 43200_000), definition: definitions[type] };
 }
