@@ -1,0 +1,12 @@
+{
+  "at": "2026-11-17T15:27:13.136Z",
+  "scope": "One normal protected-preview browser admission check. No cookies, request bodies or security tokens retained. All non-read requests remain blocked.",
+  "status": 200,
+  "title": "About | verdict.games",
+  "appMain": 1,
+  "counters": {
+    "blockedNonReads": 0,
+    "originReads": 23,
+    "blockedPaths": []
+  }
+}

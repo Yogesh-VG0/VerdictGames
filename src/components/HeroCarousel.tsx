@@ -210,7 +210,7 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
 
       {/* Content overlay — receives touch events for swipe */}
       <div className="absolute bottom-0 left-0 right-0 z-[2]">
-      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 pb-6 sm:pb-8 md:pb-12">
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 pb-20 sm:pb-8 md:pb-12">
           <div
             key={`content-${currentIndex}`}
             className="space-y-2.5 sm:space-y-3"
