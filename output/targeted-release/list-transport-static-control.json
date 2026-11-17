@@ -1,0 +1,53 @@
+{
+  "at": "2026-11-17T19:37:51.897Z",
+  "scope": "One text/plain robots admission and two intentional public summary reads, no application scripts/images, no cache bust/purge/hosted mutation. Same origin-only authentication and request routing as prior measurement;15s observer budget only.",
+  "samples": [
+    {
+      "ttfbMs": 273,
+      "bytes": 26766,
+      "status": 200,
+      "ms": 273,
+      "headers": {
+        "x-vercel-cache": "HIT",
+        "age": "95",
+        "x-vercel-id": "bom1::iad1::ls5f6-1794944273392-d2a74112d5e3",
+        "content-type": "application/json"
+      },
+      "resourceTiming": {
+        "duration": 271,
+        "beforeRequestMs": 2,
+        "requestToFirstByteMs": 269,
+        "bodyMs": 1,
+        "connectMs": 0
+      }
+    },
+    {
+      "ttfbMs": 284,
+      "bytes": 26766,
+      "status": 200,
+      "ms": 285,
+      "headers": {
+        "x-vercel-cache": "HIT",
+        "age": "95",
+        "x-vercel-id": "bom1::iad1::z9g6m-1794944273682-e5f9acdd6e1f",
+        "content-type": "application/json"
+      },
+      "resourceTiming": {
+        "duration": 283,
+        "beforeRequestMs": 2,
+        "requestToFirstByteMs": 281,
+        "bodyMs": 1,
+        "connectMs": 0
+      }
+    }
+  ],
+  "admission": {
+    "status": 200,
+    "contentType": "text/plain; charset=utf-8"
+  },
+  "counters": {
+    "blockedNonReads": 0,
+    "originReads": 3,
+    "blockedPaths": []
+  }
+}

@@ -1,0 +1,93 @@
+{
+  "at": "2026-11-17T19:35:59.201Z",
+  "scope": "Exactly four intentional public list GETs through normal protected browser; no cache bust, no purge, no database scan/plan, no credentials/bodies retained, all non-read browser requests blocked.15s observer budget, application deadlines unchanged. Resource timings are observational and may include browser/interception/protection overhead.",
+  "samples": [
+    {
+      "path": "/api/lists?view=summary&page=1",
+      "ttfbMs": 1989,
+      "status": 200,
+      "ms": 1990,
+      "bytes": 26766,
+      "headers": {
+        "x-vercel-cache": "MISS",
+        "age": "0",
+        "x-vercel-id": "bom1::iad1::dfm78-1794944176915-6b6632369b04",
+        "server-timing": null,
+        "cache-control": "public",
+        "content-type": "application/json"
+      },
+      "resourceTiming": {
+        "duration": 1987,
+        "beforeRequestMs": 3,
+        "requestToFirstByteMs": 1983,
+        "bodyMs": 1,
+        "dnsMs": 0,
+        "connectMs": 0,
+        "encodedBodySize": 6963,
+        "transferSize": 7263
+      }
+    },
+    {
+      "path": "/api/lists?view=summary&page=1",
+      "failed": true,
+      "error": "TimeoutError",
+      "ms": 15001
+    },
+    {
+      "path": "/api/lists/cozy-games-to-unwind",
+      "ttfbMs": 6388,
+      "status": 200,
+      "ms": 6389,
+      "bytes": 20912,
+      "headers": {
+        "x-vercel-cache": "MISS",
+        "age": "0",
+        "x-vercel-id": "bom1::iad1::q5bmn-1794944198247-0edd1fe32250",
+        "server-timing": null,
+        "cache-control": "public, max-age=0, must-revalidate",
+        "content-type": "application/json"
+      },
+      "resourceTiming": {
+        "duration": 6386,
+        "beforeRequestMs": 4369,
+        "requestToFirstByteMs": 2016,
+        "bodyMs": 1,
+        "dnsMs": 0,
+        "connectMs": 81,
+        "encodedBodySize": 5729,
+        "transferSize": 6029
+      }
+    },
+    {
+      "path": "/api/lists/cozy-games-to-unwind",
+      "ttfbMs": 317,
+      "status": 200,
+      "ms": 318,
+      "bytes": 20912,
+      "headers": {
+        "x-vercel-cache": "HIT",
+        "age": "0",
+        "x-vercel-id": "bom1::iad1::prxvh-1794944200277-dcb2f6c62f88",
+        "server-timing": null,
+        "cache-control": "public, max-age=0, must-revalidate",
+        "content-type": "application/json"
+      },
+      "resourceTiming": {
+        "duration": 316,
+        "beforeRequestMs": 4,
+        "requestToFirstByteMs": 311,
+        "bodyMs": 1,
+        "dnsMs": 0,
+        "connectMs": 0,
+        "encodedBodySize": 5729,
+        "transferSize": 6029
+      }
+    }
+  ],
+  "admission": 200,
+  "counters": {
+    "blockedNonReads": 0,
+    "originReads": 27,
+    "blockedPaths": []
+  }
+}

@@ -1,0 +1,68 @@
+{
+  "preparedAt": "2026-11-18 IST",
+  "state": "Prepared for one explicit consolidated approval; not executed",
+  "repository": "Yogesh-VG0/VerdictGames",
+  "pullRequest": 6,
+  "applicationSource": "0a4a0691302e7d6dcfdd366338d952d6d29fae1d",
+  "candidateSelection": "The successor on remediation/validated-security-and-signal contains only release documentation, compact receipts, ignore rules and removal of generated audit images from Git. Confirm exact HEAD and CI before approval/merge; no dirty workspace upload.",
+  "riskAcceptanceRequired": {
+    "advisory": "GHSA-fc5q-39xc-vjpf / CVE-2026-112366",
+    "affected": "picomatch <=4.0.7; npm latest 4.0.7; official advisory lists no patched release",
+    "risk": "High-severity regular-expression denial of service if attacker-controlled repeated-extglob patterns reach a matcher. Four affected npm copies are development dependencies; Next.js also contains an affected-looking compiled runtime matcher outside npm's production audit.",
+    "comparison": "Production 94011f269dad78f45dc8449198da6d88adec16d7 and candidate have byte-identical package.json/package-lock.json and unchanged image patterns. No matcher imports in changed application/worker files and no visitor-controlled glob-pattern route identified. No additional identified reachable exposure is introduced; this is bounded source evidence, not proof of universal safety.",
+    "exception": "One release only, by owner acceptance. The high-severity audit remains enabled, failing and visible. No suppression, changed threshold, fork, forced upgrade or permanent CI bypass. Monitor upstream and update supported packages and Next vendor when an official fix is available. Stop if any additional failing check or advisory appears."
+  },
+  "recovery": {
+    "archive": "production-2026-11-18-recovery-r4.7z",
+    "sha256": "61b93db82950482fa1df458fe11079405de006d9475f0256555191fc5ff4b394",
+    "bytes": 32473953,
+    "snapshotUtc": "2026-11-17T20:11:21.780Z",
+    "verification": "Offline restored 66 table counts, policies, 980 table grants, 9453 column privileges and one Storage file hash. Encrypted integrity test passed. R3 and existing verified portable wrapper unchanged; same recovered account-protected key opens R3/R4. Existing separately escrowed passphrase arrangement retained.",
+    "offsite": "Encrypted Google_Cloud folder copy hash passed. Upload/readback in the existing Restricted Google Drive folder remains required before merge. A local folder copy is not accepted as cloud recovery.",
+    "configuration": "Fresh database/Storage/application environment; previous owner-exported hosted management configuration preserved with explicit November 15 provenance. Current Google/Discord/email providers and confirmation enabled were reobserved read-only in the hosted dashboard. Save exact current affected Auth values privately before changing them and encrypt refreshed configuration after actual Auth or credential changes.",
+    "credentialRemediation": "None reported. No rotation is claimed. Credential remediation and subsequent encrypted configuration refresh remain owner-managed outstanding security work."
+  },
+  "destination": {
+    "team": "team_IZjGDcej6BUnVM4IHK165gfb",
+    "teamSlug": "yogesh-vg0s-projects",
+    "project": "prj_vg8APVv7HRncrYJCkiti95FyfaqD",
+    "projectName": "verdict-games",
+    "supabase": "vjzsvnaswronkctazarn",
+    "canonical": "https://www.verdict.games",
+    "apex": "https://verdict.games redirects to canonical"
+  },
+  "orderedActions": [
+    "Confirm explicit one-release risk acceptance, verified R4 Drive readback and exact current candidate CI; stop for new failures. Run bounded read-only identity/SQL preflights. No completed migration/backfill/index/data repair/snapshot is repeated.",
+    "Mark PR6 ready and squash merge its exact reviewed head to main. Let the existing Git integration create the production deployment in the intended project, then verify its main commit, READY state, canonical/apex domains, compatible application and deployment protection. Never deploy the dirty workspace or merge unrelated PR5.",
+    "After compatible production is verified, perform one wildcard Cache Tag * hard Delete in that project. Use Production environment when supported. Explicit fallback scope proposed for approval: this same project's All Environments only if production cannot be selected. No old-team/other-project purge. No stale-only invalidation. Public/Runtime/Data/ISR caches may become cold and refill; preserve cache directives and warm only a bounded sample.",
+    "Verify actual anonymous and two existing disposable cookie sessions, public CDN HIT and personalized no-store/private isolation before privacy SQL.",
+    "Apply the exact reviewed privacy SQL atomically, with bounded session lock/statement settings. Register only its version in the migration ledger after success; never bulk-push/replay migration history.",
+    "Repeat bounded case/trim collision preflight, then apply exact reviewed username SQL atomically and register only its version. Preserve legacy usernames and stop for a collision; no repair/rename is approved. Verify fail-closed availability/conflict behavior.",
+    "Save the current nine affected Auth fields privately, then apply only the existing nine-field Auth/email proposal. Preserve SMTP, providers, confirmation, redirects, expiry and all unrelated settings. Verify readback and refresh encrypted private configuration using the existing key arrangement.",
+    "Run bounded production route/visual/performance/cache/SEO/runtime/database/scheduler acceptance. Owner enters disposable signup/reset and Google/Discord credentials only in the application and confirms received messages. Agent read-only verification does not create new library/list/vote fixtures or modify real user records. Stop on privacy/Auth regressions; use compatible hotfix or roll forward."
+  ],
+  "privacyMigration": {
+    "path": "supabase/migrations/20261114121612_isolate_private_profile_library_and_avatars.sql",
+    "version": "20261114121612",
+    "sha256": "9c8d5f18d33451338320b5a150e5fc5fbf8d0665496384d39fd192d9dd7f2755",
+    "compatibility": "Old production app incompatible with restricted grants; candidate supports both current and restricted database. Application first is mandatory."
+  },
+  "usernameMigration": {
+    "path": "supabase/migrations/20261115094938_enforce_username_integrity.sql",
+    "version": "20261115094938",
+    "sha256": "27dd8ecd7dd6458c9460c39175ff2e846a566178db6a6ae7bb868f1bacbb8a09",
+    "compatibility": "Apply after candidate and zero case/trim collisions, before raising hosted Auth minimum. Existing legacy names preserved."
+  },
+  "authProposal": {
+    "path": "docs/audits/2026-11-15/auth-change-proposal.json",
+    "sha256": "e28d5798ed53dc90753b714ad955e116e797b8640cfd1ebed218fedea2f2661c",
+    "settings": "password_min_length=15; existing confirmation/recovery/email-change/magic-link subject/body pairs only (nine fields total). No comprehensive compromised-password enforcement is claimed."
+  },
+  "separateOptionalGithubConfigurationApproval": {
+    "mainProtection": "Apply docs/audits/2026-11-14/proposals/main-protection.json after the explicitly accepted merge: strict check + security-regression, administrators included, linear history, resolved conversations, no force pushes/deletions. Do not weaken these checks for later releases.",
+    "dependabot": "Enable vulnerability alerts and security updates on this repository only; keep existing weekly dependency/Actions update configuration. Access may require the owner to authorize the existing GitHub tool's missing administration scope, without sharing a token.",
+    "currentState": "Main unprotected, no rulesets; Dependabot alerts explicitly disabled. No settings changed."
+  },
+  "rollback": "Never promote old incompatible main or restore insecure grants after privacy migration. Failed atomic migrations stop subsequent actions and leave the compatible application serving. Keep compatible deployed artifacts, use bounded hotfix/roll-forward, and treat disaster restoration as isolated until restricted permissions and identity isolation are reconciled. Auth reversal is limited to the privately saved exact changed fields. Cache deletion has no cache-content rollback.",
+  "futureMilestone": "Preserve the existing PlayNest-inspired roadmap separately after this release. No advanced discovery features, new image services, dependencies, infrastructure or billing changes are included."
+}

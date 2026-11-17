@@ -1,0 +1,319 @@
+{
+  "at": "2026-11-17T20:22:48.590Z",
+  "scope": "Final targeted release preparation; no hosted writes or workflow dispatch",
+  "testedApplicationSource": "0a4a0691302e7d6dcfdd366338d952d6d29fae1d",
+  "checks": [
+    {
+      "id": 44154317570,
+      "name": "Local security and browser regression",
+      "sha": "0a4a0691302e7d6dcfdd366338d952d6d29fae1d",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/Yogesh-VG0/VerdictGames/actions/runs/44154317570",
+      "jobs": [
+        {
+          "name": "security-regression",
+          "conclusion": "success",
+          "steps": [
+            {
+              "name": "Set up job",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/setup-node@820762786026740c76f36085b0efc47a31fe5020",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run npm ci --ignore-scripts",
+              "conclusion": "success"
+            },
+            {
+              "name": "Install isolated pinned verification tools",
+              "conclusion": "success"
+            },
+            {
+              "name": "Start local test services without printing credentials",
+              "conclusion": "success"
+            },
+            {
+              "name": "Replay migrations and drill a synthetic backup restore",
+              "conclusion": "success"
+            },
+            {
+              "name": "Build and serve local verification application",
+              "conclusion": "success"
+            },
+            {
+              "name": "Test real identity, Data API, Storage, and mutation boundaries",
+              "conclusion": "success"
+            },
+            {
+              "name": "Test provider outages and repeated maintenance deferrals",
+              "conclusion": "success"
+            },
+            {
+              "name": "Test independent metadata discovery during permanent RAWG outage",
+              "conclusion": "success"
+            },
+            {
+              "name": "Test long and Unicode password provider compatibility",
+              "conclusion": "success"
+            },
+            {
+              "name": "Test actual browser login and account switching",
+              "conclusion": "success"
+            },
+            {
+              "name": "Test signup email recovery usernames and private collection summaries",
+              "conclusion": "success"
+            },
+            {
+              "name": "Test responsive pages keyboard flows themes and reduced motion",
+              "conclusion": "success"
+            },
+            {
+              "name": "Stop disposable local test services",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/setup-node@820762786026740c76f36085b0efc47a31fe5020",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+              "conclusion": "success"
+            },
+            {
+              "name": "Complete job",
+              "conclusion": "success"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 44154317649,
+      "name": "Quality and dependency checks",
+      "sha": "0a4a0691302e7d6dcfdd366338d952d6d29fae1d",
+      "status": "completed",
+      "conclusion": "failure",
+      "url": "https://github.com/Yogesh-VG0/VerdictGames/actions/runs/44154317649",
+      "jobs": [
+        {
+          "name": "check",
+          "conclusion": "failure",
+          "steps": [
+            {
+              "name": "Set up job",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/setup-node@820762786026740c76f36085b0efc47a31fe5020",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run npm ci --ignore-scripts",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run npm test",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run npx next typegen",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run npx tsc --noEmit",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run npm run lint",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run npm audit --audit-level=high",
+              "conclusion": "failure"
+            },
+            {
+              "name": "Production build without production data or credentials",
+              "conclusion": "skipped"
+            },
+            {
+              "name": "Post Run actions/setup-node@820762786026740c76f36085b0efc47a31fe5020",
+              "conclusion": "skipped"
+            },
+            {
+              "name": "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+              "conclusion": "success"
+            },
+            {
+              "name": "Complete job",
+              "conclusion": "success"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "workflows": [
+    {
+      "name": "Keep scheduled workflows active",
+      "path": ".github/workflows/keep-scheduled-workflows-active.yml",
+      "state": "active"
+    },
+    {
+      "name": "Quality and dependency checks",
+      "path": ".github/workflows/quality-checks.yml",
+      "state": "active"
+    },
+    {
+      "name": "Scheduled maintenance",
+      "path": ".github/workflows/scheduled-maintenance.yml",
+      "state": "active"
+    },
+    {
+      "name": "Local security and browser regression",
+      "path": ".github/workflows/security-regression.yml",
+      "state": "active"
+    }
+  ],
+  "requiredSecretNames": [
+    {
+      "name": "RAWG_API_KEY",
+      "present": true
+    },
+    {
+      "name": "STEAM_API_KEY",
+      "present": true
+    },
+    {
+      "name": "SUPABASE_DB_URL",
+      "present": true
+    },
+    {
+      "name": "TWITCH_CLIENT_ID",
+      "present": true
+    },
+    {
+      "name": "TWITCH_CLIENT_SECRET",
+      "present": true
+    },
+    {
+      "name": "WORKFLOW_IMMORTALITY_TOKEN",
+      "present": true
+    }
+  ],
+  "secretValuesRead": false,
+  "scheduled": [
+    {
+      "id": 44106801234,
+      "sha": "94011f269dad78f45dc8449198da6d88adec16d7",
+      "event": "schedule",
+      "createdAt": "2026-11-17T14:46:32Z",
+      "conclusion": "success",
+      "url": "https://github.com/Yogesh-VG0/VerdictGames/actions/runs/44106801234"
+    },
+    {
+      "id": 44097386352,
+      "sha": "94011f269dad78f45dc8449198da6d88adec16d7",
+      "event": "schedule",
+      "createdAt": "2026-11-17T13:54:14Z",
+      "conclusion": "success",
+      "url": "https://github.com/Yogesh-VG0/VerdictGames/actions/runs/44097386352"
+    },
+    {
+      "id": 44082346148,
+      "sha": "94011f269dad78f45dc8449198da6d88adec16d7",
+      "event": "schedule",
+      "createdAt": "2026-11-17T12:21:19Z",
+      "conclusion": "success",
+      "url": "https://github.com/Yogesh-VG0/VerdictGames/actions/runs/44082346148"
+    },
+    {
+      "id": 44068882507,
+      "sha": "94011f269dad78f45dc8449198da6d88adec16d7",
+      "event": "schedule",
+      "createdAt": "2026-11-17T10:52:53Z",
+      "conclusion": "success",
+      "url": "https://github.com/Yogesh-VG0/VerdictGames/actions/runs/44068882507"
+    },
+    {
+      "id": 44058269233,
+      "sha": "94011f269dad78f45dc8449198da6d88adec16d7",
+      "event": "schedule",
+      "createdAt": "2026-11-17T09:44:04Z",
+      "conclusion": "success",
+      "url": "https://github.com/Yogesh-VG0/VerdictGames/actions/runs/44058269233"
+    },
+    {
+      "id": 44046826125,
+      "sha": "94011f269dad78f45dc8449198da6d88adec16d7",
+      "event": "schedule",
+      "createdAt": "2026-11-17T08:27:04Z",
+      "conclusion": "failure",
+      "url": "https://github.com/Yogesh-VG0/VerdictGames/actions/runs/44046826125"
+    }
+  ],
+  "latestSuccessMeaning": "44106801234: Android listing verification, 62 verified/317 skipped/0 failed of379; real worker ran",
+  "earlierFailure": "44046826125: Steam review cache38 refreshed/3 invalid provider responses; exit1 retained",
+  "keepalive": "41279609174 November1 success; next monthly schedule unchanged",
+  "branchProtection": "GET main protection404: branch unprotected",
+  "rulesets": [],
+  "dependabot": "GET alerts403 explicitly says alerts disabled; enabling requires separate owner approval and adequate administration scope",
+  "pending": [
+    {
+      "file": "supabase/migrations/20261114121612_isolate_private_profile_library_and_avatars.sql",
+      "sha256": "9c8d5f18d33451338320b5a150e5fc5fbf8d0665496384d39fd192d9dd7f2755"
+    },
+    {
+      "file": "supabase/migrations/20261115094938_enforce_username_integrity.sql",
+      "sha256": "27dd8ecd7dd6458c9460c39175ff2e846a566178db6a6ae7bb868f1bacbb8a09"
+    },
+    {
+      "file": "docs/audits/2026-11-15/auth-change-proposal.json",
+      "sha256": "e28d5798ed53dc90753b714ad955e116e797b8640cfd1ebed218fedea2f2661c"
+    }
+  ],
+  "ledger": {
+    "entries": 46,
+    "latest": [
+      {
+        "version": "20261115191625",
+        "name": "optimize_public_explore_queries"
+      },
+      {
+        "version": "20261115203820",
+        "name": "cache_explore_classification"
+      },
+      {
+        "version": "20261116101802",
+        "name": "maintain_live_explore_inputs"
+      },
+      {
+        "version": "20261117141832",
+        "name": "respect_verified_full_release_status"
+      },
+      {
+        "version": "20261117141906",
+        "name": "index_homepage_trending_pool"
+      },
+      {
+        "version": "20261117185654",
+        "name": "index_default_browse_pool"
+      }
+    ],
+    "pendingVersionsAbsent": true
+  },
+  "credentialRemediation": "none reported",
+  "recovery": "R4 offline restore/encryption/folder copy passed; fresh Drive upload/readback pending",
+  "productionUnchanged": true
+}

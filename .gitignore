@@ -84,3 +84,7 @@ scripts/seed-flags.mjs
 
 # Audit files (local only)
 AUDIT_FINDINGS.md
+
+# Generated audit captures stay local; compact acceptance receipts are committed.
+/docs/audits/**/screenshots/**/*.png
+/output/**/*.png
