@@ -1,5 +1,5 @@
 {
-  "status": "prepared-not-approved-not-executed",
+  "status": "approved-applied-and-verified",
   "project": "vjzsvnaswronkctazarn",
   "sourceParent": "03dc095494e151880b7ab06282836751a7e9116f",
   "migration": "supabase/migrations/20261117182900_index_default_browse_pool.sql",
@@ -44,5 +44,8 @@
     "infrastructure or billing"
   ],
   "rollback": "Transaction failure leaves no index. Keeping this performance-only index is compatible with current and candidate apps. Any later index removal needs separate approval; never restore insecure grants or an incompatible application.",
-  "sha256": "43f5af22f9b6d3eff628625c71e682a9f37207d67b077eba61e9943d77a3bc14"
+  "sha256": "43f5af22f9b6d3eff628625c71e682a9f37207d67b077eba61e9943d77a3bc14",
+  "approvalCommit": "83a5456ad914b912de930898ce966ae8ea073758",
+  "executionReceipt": "output/targeted-release/approved-browse-index.json",
+  "alignedMigration": "supabase/migrations/20261117185654_index_default_browse_pool.sql"
 }

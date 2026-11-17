@@ -1,0 +1,167 @@
+{
+  "candidate": "83a5456ad914b912de930898ce966ae8ea073758",
+  "at": "2026-11-17T19:00:25.796Z",
+  "scope": "Serial actual protected-preview public reads after approved index. CDN status measured; framework/DB cache state uncontrolled. No cache-busting, no settings changes or hosted writes.12s browser diagnostic budget only.",
+  "samples": [
+    {
+      "path": "/api/search",
+      "ttfbMs": 1998,
+      "status": 200,
+      "ms": 2201,
+      "bytes": 44487,
+      "headers": {
+        "cache-control": "public, max-age=0, must-revalidate",
+        "cdn-cache-control": null,
+        "vercel-cdn-cache-control": null,
+        "vary": null,
+        "x-vercel-cache": "MISS",
+        "age": "0",
+        "server-timing": null,
+        "content-type": "application/json"
+      },
+      "items": 25,
+      "total": 136
+    },
+    {
+      "path": "/api/search?page=2",
+      "ttfbMs": 1991,
+      "status": 200,
+      "ms": 2182,
+      "bytes": 44026,
+      "headers": {
+        "cache-control": "public, max-age=0, must-revalidate",
+        "cdn-cache-control": null,
+        "vercel-cdn-cache-control": null,
+        "vary": null,
+        "x-vercel-cache": "MISS",
+        "age": "0",
+        "server-timing": null,
+        "content-type": "application/json"
+      },
+      "items": 25,
+      "total": 136
+    },
+    {
+      "path": "/api/search?platform=PC",
+      "ttfbMs": 1968,
+      "status": 200,
+      "ms": 2184,
+      "bytes": 44514,
+      "headers": {
+        "cache-control": "public, max-age=0, must-revalidate",
+        "cdn-cache-control": null,
+        "vercel-cdn-cache-control": null,
+        "vary": null,
+        "x-vercel-cache": "MISS",
+        "age": "0",
+        "server-timing": null,
+        "content-type": "application/json"
+      },
+      "items": 25,
+      "total": 136
+    },
+    {
+      "path": "/api/lists?view=summary&page=1",
+      "ttfbMs": 603,
+      "status": 200,
+      "ms": 604,
+      "bytes": 26766,
+      "headers": {
+        "cache-control": "public",
+        "cdn-cache-control": null,
+        "vercel-cdn-cache-control": null,
+        "vary": null,
+        "x-vercel-cache": "MISS",
+        "age": "0",
+        "server-timing": null,
+        "content-type": "application/json"
+      },
+      "items": 22
+    },
+    {
+      "path": "/api/lists?view=summary&page=1",
+      "ttfbMs": 309,
+      "status": 200,
+      "ms": 309,
+      "bytes": 26766,
+      "headers": {
+        "cache-control": "public",
+        "cdn-cache-control": null,
+        "vercel-cdn-cache-control": null,
+        "vary": null,
+        "x-vercel-cache": "HIT",
+        "age": "1",
+        "server-timing": null,
+        "content-type": "application/json"
+      },
+      "items": 22
+    },
+    {
+      "path": "/api/lists/cozy-games-to-unwind",
+      "ttfbMs": 3615,
+      "status": 200,
+      "ms": 3615,
+      "bytes": 20912,
+      "headers": {
+        "cache-control": "public, max-age=0, must-revalidate",
+        "cdn-cache-control": null,
+        "vercel-cdn-cache-control": null,
+        "vary": null,
+        "x-vercel-cache": "MISS",
+        "age": "0",
+        "server-timing": null,
+        "content-type": "application/json"
+      },
+      "games": 12
+    },
+    {
+      "path": "/api/rawg/lists?type=all-time&page=2&pageSize=40",
+      "ttfbMs": 1847,
+      "status": 200,
+      "ms": 1848,
+      "bytes": 22454,
+      "headers": {
+        "cache-control": "public",
+        "cdn-cache-control": null,
+        "vercel-cdn-cache-control": null,
+        "vary": null,
+        "x-vercel-cache": "MISS",
+        "age": "0",
+        "server-timing": "catalogue_query;dur=1347, catalogue_artwork;dur=5, catalogue_total;dur=1355",
+        "content-type": "application/json"
+      },
+      "items": 40,
+      "count": 250,
+      "firstRank": 41,
+      "lastRank": 80
+    },
+    {
+      "path": "/api/rawg/lists?type=all-time&page=1&pageSize=40&platform=PlayStation+5",
+      "ttfbMs": 1249,
+      "status": 200,
+      "ms": 1250,
+      "bytes": 22015,
+      "headers": {
+        "cache-control": "public",
+        "cdn-cache-control": null,
+        "vercel-cdn-cache-control": null,
+        "vary": null,
+        "x-vercel-cache": "MISS",
+        "age": "0",
+        "server-timing": "catalogue_query;dur=756, catalogue_artwork;dur=5, catalogue_total;dur=762",
+        "content-type": "application/json"
+      },
+      "items": 37,
+      "count": 37,
+      "firstRank": 1,
+      "lastRank": 249
+    }
+  ],
+  "admission": 200,
+  "counters": {
+    "blockedNonReads": 0,
+    "originReads": 31,
+    "blockedPaths": []
+  },
+  "completedAt": "2026-11-17T19:00:41.192Z"
+}

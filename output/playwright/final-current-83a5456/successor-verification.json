@@ -1,0 +1,227 @@
+{
+  "candidate": "83a5456ad914b912de930898ce966ae8ea073758",
+  "startedAt": "2026-11-17T18:35:54.156Z",
+  "scope": "Targeted actual successor Explore count layout and public Lists reads; bounded anonymous/private-header checks. No fixtures or hosted mutations. Unchanged routes reuse102-view03dc baseline.",
+  "visual": [
+    {
+      "width": 390,
+      "theme": "dark",
+      "status": 200,
+      "file": "explore-count-dark-390.png",
+      "count": "267 games",
+      "gap": 16,
+      "overlap": false,
+      "overflow": false,
+      "light": false
+    },
+    {
+      "width": 390,
+      "theme": "light",
+      "status": 200,
+      "file": "explore-count-light-390.png",
+      "count": "267 games",
+      "gap": 16,
+      "overlap": false,
+      "overflow": false,
+      "light": true
+    },
+    {
+      "width": 768,
+      "theme": "dark",
+      "status": 200,
+      "file": "explore-count-dark-768.png",
+      "count": "267 games",
+      "gap": 16,
+      "overlap": false,
+      "overflow": false,
+      "light": false
+    },
+    {
+      "width": 768,
+      "theme": "light",
+      "status": 200,
+      "file": "explore-count-light-768.png",
+      "count": "267 games",
+      "gap": 16,
+      "overlap": false,
+      "overflow": false,
+      "light": true
+    },
+    {
+      "width": 1440,
+      "theme": "dark",
+      "status": 200,
+      "file": "explore-count-dark-1440.png",
+      "count": "267 games",
+      "gap": 523.703125,
+      "overlap": false,
+      "overflow": false,
+      "light": false
+    },
+    {
+      "width": 1440,
+      "theme": "light",
+      "status": 200,
+      "file": "explore-count-light-1440.png",
+      "count": "267 games",
+      "gap": 523.703125,
+      "overlap": false,
+      "overflow": false,
+      "light": true
+    }
+  ],
+  "http": [
+    {
+      "path": "/api/auth/me",
+      "status": 401,
+      "ms": 808,
+      "bytes": 45,
+      "headers": {
+        "cache-control": "private, no-store, max-age=0",
+        "cdn-cache-control": "private, no-store",
+        "vercel-cdn-cache-control": null,
+        "vary": "Cookie",
+        "x-vercel-cache": "MISS",
+        "age": "0"
+      }
+    },
+    {
+      "path": "/api/library",
+      "status": 401,
+      "ms": 617,
+      "bytes": 45,
+      "headers": {
+        "cache-control": "private, no-store, max-age=0",
+        "cdn-cache-control": "private, no-store",
+        "vercel-cdn-cache-control": null,
+        "vary": "Cookie",
+        "x-vercel-cache": "MISS",
+        "age": "0"
+      }
+    },
+    {
+      "path": "/api/library/stats",
+      "status": 401,
+      "ms": 476,
+      "bytes": 45,
+      "headers": {
+        "cache-control": "private, no-store, max-age=0",
+        "cdn-cache-control": "private, no-store",
+        "vercel-cdn-cache-control": null,
+        "vary": "Cookie",
+        "x-vercel-cache": "MISS",
+        "age": "0"
+      }
+    },
+    {
+      "path": "/api/lists?scope=mine&view=summary",
+      "status": 401,
+      "ms": 764,
+      "bytes": 46,
+      "headers": {
+        "cache-control": "private, no-store, max-age=0",
+        "cdn-cache-control": "private, no-store",
+        "vercel-cdn-cache-control": null,
+        "vary": "Cookie",
+        "x-vercel-cache": "MISS",
+        "age": "0"
+      }
+    },
+    {
+      "path": "/api/lists?view=summary&page=1",
+      "status": 200,
+      "ms": 4662,
+      "bytes": 26766,
+      "headers": {
+        "cache-control": "public",
+        "cdn-cache-control": null,
+        "vercel-cdn-cache-control": null,
+        "vary": null,
+        "x-vercel-cache": "MISS",
+        "age": "0"
+      },
+      "publicSha256": "9ce66dceb2bf46abf81fb94ce0f04781c70926d53d298fd42ed594ef0a716e1d",
+      "items": 22
+    },
+    {
+      "path": "/api/lists?view=summary&page=1",
+      "status": 200,
+      "ms": 19561,
+      "bytes": 26766,
+      "headers": {
+        "cache-control": "public",
+        "cdn-cache-control": null,
+        "vercel-cdn-cache-control": null,
+        "vary": null,
+        "x-vercel-cache": "HIT",
+        "age": "19"
+      },
+      "publicSha256": "9ce66dceb2bf46abf81fb94ce0f04781c70926d53d298fd42ed594ef0a716e1d",
+      "items": 22
+    },
+    {
+      "path": "/api/games/hades",
+      "status": 200,
+      "ms": 667,
+      "bytes": 3500,
+      "headers": {
+        "cache-control": "public, max-age=0, must-revalidate",
+        "cdn-cache-control": null,
+        "vercel-cdn-cache-control": null,
+        "vary": null,
+        "x-vercel-cache": "MISS",
+        "age": "0"
+      }
+    },
+    {
+      "path": "/api/games/hades",
+      "status": 200,
+      "ms": 258,
+      "bytes": 3500,
+      "headers": {
+        "cache-control": "public, max-age=0, must-revalidate",
+        "cdn-cache-control": null,
+        "vercel-cdn-cache-control": null,
+        "vary": null,
+        "x-vercel-cache": "HIT",
+        "age": "0"
+      }
+    }
+  ],
+  "network-390-dark": {
+    "blockedNonReads": 0,
+    "originReads": 25,
+    "blockedPaths": []
+  },
+  "network-390-light": {
+    "blockedNonReads": 0,
+    "originReads": 25,
+    "blockedPaths": []
+  },
+  "network-768-dark": {
+    "blockedNonReads": 0,
+    "originReads": 25,
+    "blockedPaths": []
+  },
+  "network-768-light": {
+    "blockedNonReads": 0,
+    "originReads": 25,
+    "blockedPaths": []
+  },
+  "network-1440-dark": {
+    "blockedNonReads": 0,
+    "originReads": 25,
+    "blockedPaths": []
+  },
+  "lists": {
+    "status": 200,
+    "cards": 22
+  },
+  "network-1440-light": {
+    "blockedNonReads": 0,
+    "originReads": 58,
+    "blockedPaths": []
+  },
+  "completedAt": "2026-11-17T18:37:02.975Z",
+  "passed": true
+}

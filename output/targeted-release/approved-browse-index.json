@@ -1,0 +1,126 @@
+{
+  "candidate": "83a5456ad914b912de930898ce966ae8ea073758",
+  "project": "vjzsvnaswronkctazarn",
+  "approval": "Owner approved only this Browse index in separate user reply.",
+  "approvedPath": "supabase/migrations/20261117182900_index_default_browse_pool.sql",
+  "sha256": "43f5af22f9b6d3eff628625c71e682a9f37207d67b077eba61e9943d77a3bc14",
+  "hostedVersion": "20261117185654",
+  "alignedPath": "supabase/migrations/20261117185654_index_default_browse_pool.sql",
+  "apply": {
+    "startedAt": "2026-11-17T18:56:48.236Z",
+    "clientMs": 8212,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\"success\":true}"
+        }
+      ],
+      "structuredContent": null,
+      "isError": false
+    }
+  },
+  "before": {
+    "games": 8355,
+    "observed_at": "2026-11-17T18:56:38.914617+00:00",
+    "index_exists": false,
+    "table_boundaries": [
+      {
+        "acl": "{postgres=arwdDxtm/postgres,anon=r/postgres,authenticated=r/postgres,service_role=r/postgres}",
+        "rls": true,
+        "owner": "16388",
+        "table": "explore_input_state",
+        "force_rls": false
+      },
+      {
+        "acl": "{postgres=arwdDxtm/postgres,anon=r/postgres,authenticated=r/postgres,service_role=r/postgres}",
+        "rls": true,
+        "owner": "16388",
+        "table": "explore_inputs",
+        "force_rls": false
+      },
+      {
+        "acl": "{postgres=arwdDxtm/postgres,anon=arwdDxtm/postgres,authenticated=arwdDxtm/postgres,service_role=arwdDxtm/postgres}",
+        "rls": true,
+        "owner": "16388",
+        "table": "games",
+        "force_rls": false
+      },
+      {
+        "acl": "{postgres=arwdDxtm/postgres,anon=arwdDxtm/postgres,authenticated=arwdDxtm/postgres,service_role=arwdDxtm/postgres}",
+        "rls": true,
+        "owner": "16388",
+        "table": "list_items",
+        "force_rls": false
+      },
+      {
+        "acl": "{postgres=arwdDxtm/postgres,anon=arwdDxtm/postgres,authenticated=arwdDxtm/postgres,service_role=arwdDxtm/postgres}",
+        "rls": true,
+        "owner": "16388",
+        "table": "lists",
+        "force_rls": false
+      }
+    ],
+    "existing_migration": null
+  },
+  "after": {
+    "games": 8355,
+    "observed_at": "2026-11-17T18:57:13.349205+00:00",
+    "index_exists": true,
+    "index_details": {
+      "bytes": 434176,
+      "ready": true,
+      "valid": true,
+      "definition": "CREATE INDEX idx_games_default_browse_pool ON public.games USING btree (trending DESC NULLS LAST, verdict_score DESC NULLS LAST, release_date DESC, id) WHERE (cover_image IS NOT NULL)"
+    },
+    "table_boundaries": [
+      {
+        "acl": "{postgres=arwdDxtm/postgres,anon=r/postgres,authenticated=r/postgres,service_role=r/postgres}",
+        "rls": true,
+        "owner": "16388",
+        "table": "explore_input_state",
+        "force_rls": false
+      },
+      {
+        "acl": "{postgres=arwdDxtm/postgres,anon=r/postgres,authenticated=r/postgres,service_role=r/postgres}",
+        "rls": true,
+        "owner": "16388",
+        "table": "explore_inputs",
+        "force_rls": false
+      },
+      {
+        "acl": "{postgres=arwdDxtm/postgres,anon=arwdDxtm/postgres,authenticated=arwdDxtm/postgres,service_role=arwdDxtm/postgres}",
+        "rls": true,
+        "owner": "16388",
+        "table": "games",
+        "force_rls": false
+      },
+      {
+        "acl": "{postgres=arwdDxtm/postgres,anon=arwdDxtm/postgres,authenticated=arwdDxtm/postgres,service_role=arwdDxtm/postgres}",
+        "rls": true,
+        "owner": "16388",
+        "table": "list_items",
+        "force_rls": false
+      },
+      {
+        "acl": "{postgres=arwdDxtm/postgres,anon=arwdDxtm/postgres,authenticated=arwdDxtm/postgres,service_role=arwdDxtm/postgres}",
+        "rls": true,
+        "owner": "16388",
+        "table": "lists",
+        "force_rls": false
+      }
+    ],
+    "existing_migration": [
+      {
+        "name": "index_default_browse_pool",
+        "version": "20261117185654"
+      }
+    ]
+  },
+  "checks": {
+    "catalogueCountUnchanged": true,
+    "tableOwnersGrantsAndRlsUnchanged": true,
+    "indexValidAndReady": true
+  },
+  "scope": "Only exact approved DDL installed. MCP client duration includes network overhead and is not SQL build time. No privacy/username/Auth/scheduler/fixtures/cache purge/merge/production approval."
+}

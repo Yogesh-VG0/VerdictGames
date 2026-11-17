@@ -1,0 +1,165 @@
+{
+  "at": "2026-11-17T19:00:21.814Z",
+  "scope": "Actual hosted read-only anon prepared queries after separately approved index; existing3s statement bound. Exact ordered150-row payload comparison across generic/custom plans. No hosted writes.",
+  "samples": [
+    {
+      "mode": "force_custom_plan",
+      "plan": [
+        {
+          "Plan": {
+            "Node Type": "Limit",
+            "Parallel Aware": false,
+            "Async Capable": false,
+            "Startup Cost": 0.29,
+            "Total Cost": 250.54,
+            "Plan Rows": 150,
+            "Plan Width": 900,
+            "Actual Startup Time": 1.738,
+            "Actual Total Time": 108.984,
+            "Actual Rows": 150,
+            "Actual Loops": 1,
+            "Shared Hit Blocks": 154,
+            "Shared Read Blocks": 0,
+            "Shared Dirtied Blocks": 0,
+            "Shared Written Blocks": 0,
+            "Local Hit Blocks": 0,
+            "Local Read Blocks": 0,
+            "Local Dirtied Blocks": 0,
+            "Local Written Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0,
+            "Plans": [
+              {
+                "Node Type": "Index Scan",
+                "Parent Relationship": "Outer",
+                "Parallel Aware": false,
+                "Async Capable": false,
+                "Scan Direction": "Forward",
+                "Index Name": "idx_games_default_browse_pool",
+                "Relation Name": "games",
+                "Alias": "games",
+                "Startup Cost": 0.29,
+                "Total Cost": 10911.31,
+                "Plan Rows": 6540,
+                "Plan Width": 900,
+                "Actual Startup Time": 1.736,
+                "Actual Total Time": 108.949,
+                "Actual Rows": 150,
+                "Actual Loops": 1,
+                "Filter": "((review_count >= 10) AND (score >= 55) AND (cover_image <> ''::text))",
+                "Rows Removed by Filter": 5,
+                "Shared Hit Blocks": 154,
+                "Shared Read Blocks": 0,
+                "Shared Dirtied Blocks": 0,
+                "Shared Written Blocks": 0,
+                "Local Hit Blocks": 0,
+                "Local Read Blocks": 0,
+                "Local Dirtied Blocks": 0,
+                "Local Written Blocks": 0,
+                "Temp Read Blocks": 0,
+                "Temp Written Blocks": 0
+              }
+            ]
+          },
+          "Planning": {
+            "Shared Hit Blocks": 921,
+            "Shared Read Blocks": 0,
+            "Shared Dirtied Blocks": 0,
+            "Shared Written Blocks": 0,
+            "Local Hit Blocks": 0,
+            "Local Read Blocks": 0,
+            "Local Dirtied Blocks": 0,
+            "Local Written Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          "Planning Time": 58.653,
+          "Triggers": [],
+          "Execution Time": 109.064
+        }
+      ],
+      "rows": 150,
+      "sha256": "df77e96a0a51cd25bcb70c3edec49e46c2ad33d5d480e3a012376226ffb6e15d"
+    },
+    {
+      "mode": "force_generic_plan",
+      "plan": [
+        {
+          "Plan": {
+            "Node Type": "Limit",
+            "Parallel Aware": false,
+            "Async Capable": false,
+            "Startup Cost": 1093.74,
+            "Total Cost": 2187.19,
+            "Plan Rows": 93,
+            "Plan Width": 900,
+            "Actual Startup Time": 0.02,
+            "Actual Total Time": 0.336,
+            "Actual Rows": 150,
+            "Actual Loops": 1,
+            "Shared Hit Blocks": 154,
+            "Shared Read Blocks": 0,
+            "Shared Dirtied Blocks": 0,
+            "Shared Written Blocks": 0,
+            "Local Hit Blocks": 0,
+            "Local Read Blocks": 0,
+            "Local Dirtied Blocks": 0,
+            "Local Written Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0,
+            "Plans": [
+              {
+                "Node Type": "Index Scan",
+                "Parent Relationship": "Outer",
+                "Parallel Aware": false,
+                "Async Capable": false,
+                "Scan Direction": "Forward",
+                "Index Name": "idx_games_default_browse_pool",
+                "Relation Name": "games",
+                "Alias": "games",
+                "Startup Cost": 0.29,
+                "Total Cost": 10911.31,
+                "Plan Rows": 928,
+                "Plan Width": 900,
+                "Actual Startup Time": 0.019,
+                "Actual Total Time": 0.32,
+                "Actual Rows": 150,
+                "Actual Loops": 1,
+                "Filter": "((review_count >= $1) AND (score >= $2) AND (cover_image <> $3))",
+                "Rows Removed by Filter": 5,
+                "Shared Hit Blocks": 154,
+                "Shared Read Blocks": 0,
+                "Shared Dirtied Blocks": 0,
+                "Shared Written Blocks": 0,
+                "Local Hit Blocks": 0,
+                "Local Read Blocks": 0,
+                "Local Dirtied Blocks": 0,
+                "Local Written Blocks": 0,
+                "Temp Read Blocks": 0,
+                "Temp Written Blocks": 0
+              }
+            ]
+          },
+          "Planning": {
+            "Shared Hit Blocks": 4,
+            "Shared Read Blocks": 0,
+            "Shared Dirtied Blocks": 0,
+            "Shared Written Blocks": 0,
+            "Local Hit Blocks": 0,
+            "Local Read Blocks": 0,
+            "Local Dirtied Blocks": 0,
+            "Local Written Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          "Planning Time": 0.363,
+          "Triggers": [],
+          "Execution Time": 0.382
+        }
+      ],
+      "rows": 150,
+      "sha256": "df77e96a0a51cd25bcb70c3edec49e46c2ad33d5d480e3a012376226ffb6e15d"
+    }
+  ],
+  "passed": true
+}
