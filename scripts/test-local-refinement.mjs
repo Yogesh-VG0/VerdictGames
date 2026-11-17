@@ -148,7 +148,13 @@ try {
   const otherDetail=await otherPage.evaluate(async slug=>{const r=await fetch('/api/lists/'+slug+'?scope=mine');return {status:r.status,cache:r.headers.get('cache-control')};},`private-refinement-${run}`);
   check(otherDetail.status===404&&otherDetail.cache.includes('no-store'),'second authenticated identity cannot read the owner-only detail API');
   const otherDocument=await otherPage.goto(`${base}/library/lists/private-refinement-${run}`);
-  check(otherDocument.status()===404&&otherDocument.headers()['cache-control'].includes('private')&&!await otherPage.getByRole('heading',{name:'Private local refinement list',exact:true}).count(),'second identity receives a private404 document without owner content');
+  const otherHtml=await otherDocument.text();
+  const noindex=await otherPage.locator('meta[name="robots"]').evaluateAll(nodes=>nodes.some(node=>node.content.includes('noindex')));
+  // Next keeps HTTP200 if notFound occurs after its loading shell streams.
+  // Both delivery forms must contain no owner payload and forbid shared caching.
+  const otherCache=otherDocument.headers()['cache-control'];
+  check([200,404].includes(otherDocument.status())&&otherCache.includes('private')&&otherCache.includes('no-store')&&noindex&&!otherHtml.includes('Private local refinement list')&&!await otherPage.getByRole('heading',{name:'Private local refinement list',exact:true}).count(),`second identity receives private noindex not-found HTML without owner content (HTTP${otherDocument.status()})`);
+  evidence.privateListBoundary={ownerDocumentStatus:privatePage.status(),otherDocumentStatus:otherDocument.status(),otherDocumentCache:otherCache,otherApiStatus:otherDetail.status,anonymousApiStatus:anonymousDetail.status,ownerContentAbsent:true};
   await otherContext.close();
   const expiredRecipient=other.data.user.email;
   const expiredRequest=await otherClient.auth.resetPasswordForEmail(expiredRecipient,{redirectTo:base+'/api/auth/callback?flow=recovery'});
