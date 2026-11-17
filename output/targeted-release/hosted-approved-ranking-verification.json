@@ -1,0 +1,190 @@
+{
+  "at": "2026-11-17T14:21:46.198Z",
+  "candidate": "12bc56e8b70bcaf9e675677bc889027c0114d692",
+  "scope": "Actual anonymous read-only SQL after the exact approved status and index changes. Each page retains3s statement cap; no framework/CDN cache. Database storage-cache state unknown.",
+  "pages": [
+    {
+      "type": "all-time",
+      "page": 1,
+      "platform": "",
+      "count": 250,
+      "rows": 40,
+      "ms": 3169,
+      "bytes": 30014,
+      "firstRank": 1,
+      "lastRank": 40
+    },
+    {
+      "type": "all-time",
+      "page": 2,
+      "platform": "",
+      "count": 250,
+      "rows": 40,
+      "ms": 943,
+      "bytes": 30308,
+      "firstRank": 41,
+      "lastRank": 80
+    },
+    {
+      "type": "all-time",
+      "page": 3,
+      "platform": "",
+      "count": 250,
+      "rows": 40,
+      "ms": 1000,
+      "bytes": 30292,
+      "firstRank": 81,
+      "lastRank": 120
+    },
+    {
+      "type": "all-time",
+      "page": 4,
+      "platform": "",
+      "count": 250,
+      "rows": 40,
+      "ms": 1323,
+      "bytes": 30373,
+      "firstRank": 121,
+      "lastRank": 160
+    },
+    {
+      "type": "all-time",
+      "page": 5,
+      "platform": "",
+      "count": 250,
+      "rows": 40,
+      "ms": 941,
+      "bytes": 30429,
+      "firstRank": 161,
+      "lastRank": 200
+    },
+    {
+      "type": "all-time",
+      "page": 6,
+      "platform": "",
+      "count": 250,
+      "rows": 40,
+      "ms": 936,
+      "bytes": 30962,
+      "firstRank": 201,
+      "lastRank": 240
+    },
+    {
+      "type": "all-time",
+      "page": 7,
+      "platform": "",
+      "count": 250,
+      "rows": 10,
+      "ms": 965,
+      "bytes": 7849,
+      "firstRank": 241,
+      "lastRank": 250
+    },
+    {
+      "type": "all-time",
+      "page": 1,
+      "platform": "PC",
+      "count": 250,
+      "rows": 40,
+      "ms": 947,
+      "bytes": 30014,
+      "firstRank": 1,
+      "lastRank": 40
+    },
+    {
+      "type": "best-of-year",
+      "page": 1,
+      "platform": "",
+      "count": 253,
+      "rows": 40,
+      "ms": 883,
+      "bytes": 30187,
+      "firstRank": null,
+      "lastRank": null
+    },
+    {
+      "type": "best-of-year",
+      "page": 2,
+      "platform": "",
+      "count": 253,
+      "rows": 40,
+      "ms": 920,
+      "bytes": 30189,
+      "firstRank": null,
+      "lastRank": null
+    },
+    {
+      "type": "best-of-year",
+      "page": 3,
+      "platform": "",
+      "count": 253,
+      "rows": 40,
+      "ms": 1067,
+      "bytes": 30160,
+      "firstRank": null,
+      "lastRank": null
+    },
+    {
+      "type": "best-of-year",
+      "page": 4,
+      "platform": "",
+      "count": 253,
+      "rows": 40,
+      "ms": 881,
+      "bytes": 30244,
+      "firstRank": null,
+      "lastRank": null
+    },
+    {
+      "type": "best-of-year",
+      "page": 5,
+      "platform": "",
+      "count": 253,
+      "rows": 40,
+      "ms": 878,
+      "bytes": 30364,
+      "firstRank": null,
+      "lastRank": null
+    },
+    {
+      "type": "best-of-year",
+      "page": 6,
+      "platform": "",
+      "count": 253,
+      "rows": 40,
+      "ms": 911,
+      "bytes": 30171,
+      "firstRank": null,
+      "lastRank": null
+    },
+    {
+      "type": "best-of-year",
+      "page": 7,
+      "platform": "",
+      "count": 253,
+      "rows": 13,
+      "ms": 922,
+      "bytes": 9738,
+      "firstRank": null,
+      "lastRank": null
+    }
+  ],
+  "checks": [
+    "Global250 exact unique positions, decreasing scores, stable slug ties, both corrected games eligible",
+    "PC filter retains absolute global positions",
+    "Complete direct upcoming pages exclude both full releases despite historical tags"
+  ],
+  "correctedGames": [
+    {
+      "slug": "hades",
+      "rank": 4,
+      "status": "released"
+    },
+    {
+      "slug": "hades-ii",
+      "rank": 47,
+      "status": "released"
+    }
+  ],
+  "passed": true
+}

@@ -1,0 +1,172 @@
+{
+  "candidate": "12bc56e8b70bcaf9e675677bc889027c0114d692",
+  "startedAt": "2026-11-17T14:23:38.095Z",
+  "scope": "Serial actual protected-preview public HTTP reads. Page size40 bypasses the Explore SQL framework cache; CDN cache status recorded, database/storage cache state unknown. No cache busting, writes or purges.",
+  "samples": [
+    {
+      "path": "/api/rawg/lists?type=all-time&page=1&pageSize=40&platform=PlayStation+5",
+      "status": 429,
+      "ttfbMs": 40,
+      "totalMs": 41,
+      "decodedBytes": 25091,
+      "headers": {
+        "cache-control": "private, no-store, max-age=0",
+        "x-vercel-cache": null,
+        "age": null,
+        "server-timing": null,
+        "vary": "Accept-Encoding"
+      },
+      "encodedBytes": 10658,
+      "transferBytes": 10958
+    },
+    {
+      "path": "/api/rawg/lists?type=all-time&page=2&pageSize=40&platform=Nintendo+Switch",
+      "status": 429,
+      "ttfbMs": 57,
+      "totalMs": 57,
+      "decodedBytes": 25091,
+      "headers": {
+        "cache-control": "private, no-store, max-age=0",
+        "x-vercel-cache": null,
+        "age": null,
+        "server-timing": null,
+        "vary": "Accept-Encoding"
+      },
+      "encodedBytes": 10658,
+      "transferBytes": 10958
+    },
+    {
+      "path": "/api/rawg/lists?type=all-time&page=2&pageSize=40",
+      "status": 429,
+      "ttfbMs": 66,
+      "totalMs": 195,
+      "decodedBytes": 25091,
+      "headers": {
+        "cache-control": "private, no-store, max-age=0",
+        "x-vercel-cache": null,
+        "age": null,
+        "server-timing": null,
+        "vary": "Accept-Encoding"
+      },
+      "encodedBytes": 10658,
+      "transferBytes": 10958
+    },
+    {
+      "path": "/api/rawg/lists?type=genre&genre=role-playing-games-rpg&page=2&pageSize=40&platform=PC&sort=rating",
+      "status": 429,
+      "ttfbMs": 133,
+      "totalMs": 133,
+      "decodedBytes": 25091,
+      "headers": {
+        "cache-control": "private, no-store, max-age=0",
+        "x-vercel-cache": null,
+        "age": null,
+        "server-timing": null,
+        "vary": "Accept-Encoding"
+      },
+      "encodedBytes": 10658,
+      "transferBytes": 10958
+    },
+    {
+      "path": "/api/rawg/lists?type=popular-in-year&year=2024&page=1&pageSize=40&platform=PC&sort=name-asc",
+      "status": 429,
+      "ttfbMs": 80,
+      "totalMs": 80,
+      "decodedBytes": 25091,
+      "headers": {
+        "cache-control": "private, no-store, max-age=0",
+        "x-vercel-cache": null,
+        "age": null,
+        "server-timing": null,
+        "vary": "Accept-Encoding"
+      },
+      "encodedBytes": 10658,
+      "transferBytes": 10958
+    },
+    {
+      "path": "/api/rawg/lists?type=recent&page=1&pageSize=40&platform=PC",
+      "status": 429,
+      "ttfbMs": 64,
+      "totalMs": 65,
+      "decodedBytes": 25091,
+      "headers": {
+        "cache-control": "private, no-store, max-age=0",
+        "x-vercel-cache": null,
+        "age": null,
+        "server-timing": null,
+        "vary": "Accept-Encoding"
+      },
+      "encodedBytes": 10658,
+      "transferBytes": 10958
+    },
+    {
+      "path": "/api/rawg/lists?type=best-of-year&page=1&pageSize=40&platform=PC",
+      "status": 429,
+      "ttfbMs": 68,
+      "totalMs": 69,
+      "decodedBytes": 25091,
+      "headers": {
+        "cache-control": "private, no-store, max-age=0",
+        "x-vercel-cache": null,
+        "age": null,
+        "server-timing": null,
+        "vary": "Accept-Encoding"
+      },
+      "encodedBytes": 10658,
+      "transferBytes": 10958
+    },
+    {
+      "path": "/api/rawg/lists?type=best-of-year&page=2&pageSize=40&platform=PC",
+      "status": 429,
+      "ttfbMs": 151,
+      "totalMs": 151,
+      "decodedBytes": 25091,
+      "headers": {
+        "cache-control": "private, no-store, max-age=0",
+        "x-vercel-cache": null,
+        "age": null,
+        "server-timing": null,
+        "vary": "Accept-Encoding"
+      },
+      "encodedBytes": 10658,
+      "transferBytes": 10958
+    },
+    {
+      "path": "/",
+      "status": 429,
+      "ttfbMs": 87,
+      "totalMs": 87,
+      "decodedBytes": 25091,
+      "headers": {
+        "cache-control": "private, no-store, max-age=0",
+        "x-vercel-cache": null,
+        "age": null,
+        "server-timing": null,
+        "vary": "Accept-Encoding"
+      },
+      "encodedBytes": 10658,
+      "transferBytes": 10958,
+      "hasHomepageHeading": false,
+      "hasRuntimeError": false
+    },
+    {
+      "path": "/",
+      "status": 429,
+      "ttfbMs": 128,
+      "totalMs": 128,
+      "decodedBytes": 25091,
+      "headers": {
+        "cache-control": "private, no-store, max-age=0",
+        "x-vercel-cache": null,
+        "age": null,
+        "server-timing": null,
+        "vary": "Accept-Encoding"
+      },
+      "encodedBytes": 10658,
+      "transferBytes": 10958,
+      "hasHomepageHeading": false,
+      "hasRuntimeError": false
+    }
+  ],
+  "completedAt": "2026-11-17T14:23:40.368Z"
+}

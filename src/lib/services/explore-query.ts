@@ -14,9 +14,24 @@ let missingUntil = 0;
 async function query(type:RawgListType, year:number, genre:string, platform:string, sort:ExploreSort, page:number, pageSize:number, day:string):Promise<CataloguePage> {
   const started=performance.now();
   const signal=AbortSignal.timeout(5000);
-  const { data, error } = await getPublicSupabase().rpc('explore_catalogue_page', {
+  const args = {
     p_type:type,p_year:year,p_genre:genre,p_platform:platform,p_sort:sort,p_page:page,p_page_size:pageSize,p_day:day,
-  }).abortSignal(signal);
+  };
+  const request = () => getPublicSupabase().rpc('explore_catalogue_page', args).abortSignal(signal);
+  let result = await request();
+  const resetCause = /\b(ECONNRESET|UND_ERR_SOCKET)\b/.exec(result.error?.details || '')?.[1];
+  // A reset pooled connection can fail before this read reaches PostgreSQL.
+  // Retry this fixed, read-only RPC once, within the original shared deadline.
+  // Slow failures, database errors and an expired caller budget must not retry.
+  if (result.error && !result.error.code && !signal.aborted && resetCause
+    && /^(TypeError|FetchError):/.test(result.error.message || '')
+    && performance.now() - started <= 250) {
+    console.warn('[Explore] Retrying early connection reset', {
+      cause: resetCause, type, page, pageSize, elapsedMs: Math.round(performance.now() - started),
+    });
+    result = await request();
+  }
+  const { data, error } = result;
   if (error) {
     // PostgREST's missing-RPC code is specific. SQLSTATE 42883 can instead
     // mean a helper inside an installed function failed; never fan out then.

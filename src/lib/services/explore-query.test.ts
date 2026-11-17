@@ -30,8 +30,38 @@ describe('bounded public SQL catalogue reads',()=>{
       await expect(readCataloguePage('all-time',0,'','PC','default',1,40,'2026-11-16')).rejects.toBe(error);
       expect(warn).toHaveBeenCalledWith('[Explore] SQL request failed',expect.objectContaining({category:'network',cause:'ECONNRESET',aborted:false,elapsedMs:expect.any(Number)}));
       expect(JSON.stringify(warn.mock.calls)).not.toContain('DO_NOT_LOG');
-      expect(state.rpc).toHaveBeenCalledTimes(1);
+      expect(state.rpc).toHaveBeenCalledTimes(2);
     } finally {warn.mockRestore();}
+  });
+  it('recovers one early reset using the same original five-second signal',async()=>{
+    const warn=vi.spyOn(console,'warn').mockImplementation(()=>{});
+    const timeout=vi.spyOn(AbortSignal,'timeout');
+    const first=vi.fn().mockResolvedValue({data:null,error:{code:'',message:'TypeError: fetch failed',details:'ECONNRESET DO_NOT_LOG'}});
+    const second=vi.fn().mockResolvedValue({data:valid,error:null});
+    try{
+      state.rpc.mockReturnValueOnce({abortSignal:first}).mockReturnValueOnce({abortSignal:second});
+      const {readCataloguePage}=await import('./explore-query');
+      expect(await readCataloguePage('all-time',0,'','PC','default',2,40,'2026-11-17')).toEqual(valid);
+      expect(state.rpc).toHaveBeenCalledTimes(2);
+      expect(timeout).toHaveBeenCalledTimes(1);expect(timeout).toHaveBeenCalledWith(5000);
+      expect(first.mock.calls[0][0]).toBe(second.mock.calls[0][0]);
+      expect(JSON.stringify(warn.mock.calls)).not.toContain('DO_NOT_LOG');
+    }finally{warn.mockRestore();timeout.mockRestore();}
+  });
+  it.each(['ENOTFOUND','EAI_AGAIN','ETIMEDOUT'])('does not retry a general transport failure: %s',async cause=>{
+    const warn=vi.spyOn(console,'warn').mockImplementation(()=>{});
+    try{response(null,{code:'',message:'TypeError: fetch failed',details:cause});const {readCataloguePage}=await import('./explore-query');
+      await expect(readCataloguePage('all-time',0,'','PC','default',1,40,'2026-11-17')).rejects.toMatchObject({code:''});
+      expect(state.rpc).toHaveBeenCalledTimes(1);
+    }finally{warn.mockRestore();}
+  });
+  it('does not retry a reset after meaningful request time has elapsed',async()=>{
+    const clock=vi.spyOn(performance,'now').mockReturnValue(300).mockReturnValueOnce(0);
+    const warn=vi.spyOn(console,'warn').mockImplementation(()=>{});
+    try{response(null,{code:'',message:'TypeError: fetch failed',details:'ECONNRESET'});const {readCataloguePage}=await import('./explore-query');
+      await expect(readCataloguePage('all-time',0,'','PC','default',1,40,'2026-11-17')).rejects.toMatchObject({code:''});
+      expect(state.rpc).toHaveBeenCalledTimes(1);
+    }finally{clock.mockRestore();warn.mockRestore();}
   });
   it('distinguishes an expired caller budget while retaining the five-second bound',async()=>{
     const controller=new AbortController();
