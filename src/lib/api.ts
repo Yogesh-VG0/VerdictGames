@@ -413,6 +413,9 @@ export async function getCuratedLists(owner?: string): Promise<GameListSummary[]
 export async function getListBySlug(slug: string): Promise<GameList | null> {
   return apiFetch<GameList>(`/api/lists/${encodeURIComponent(slug)}`);
 }
+export async function getOwnedListBySlug(slug: string): Promise<GameList> {
+  return apiFetchOrThrow<GameList>(`/api/lists/${encodeURIComponent(slug)}?scope=mine`);
+}
 
 /* ═══════════════════════════════════════════════════
    USER QUERIES

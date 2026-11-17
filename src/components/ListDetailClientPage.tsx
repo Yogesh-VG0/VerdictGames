@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import { getListBySlug } from "@/lib/api";
+import { getListBySlug, getOwnedListBySlug } from "@/lib/api";
+import { useAuth } from '@/hooks/useAuth';
 import type { GameList } from "@/lib/types";
 import GameGrid from "@/components/GameGrid";
 import PixelBadge from "@/components/ui/PixelBadge";
@@ -12,17 +13,22 @@ import { Skeleton, GameGridSkeleton } from "@/components/ui/Skeleton";
 interface Props {
   slug: string;
   initialList: GameList;
+  privateOwner?: string;
 }
 
-export default function ListDetailClientPage({ slug, initialList }: Props) {
+export default function ListDetailClientPage({ slug, initialList, privateOwner }: Props) {
+  const {user,loading:authLoading}=useAuth();
+  const ownerMatches=!privateOwner||user?.id===privateOwner;
 
-  const { data: list, isLoading } = useQuery({
-    queryKey: ["list", slug],
-    queryFn: () => getListBySlug(slug),
-    initialData: initialList,
+  const { data: list, isLoading, isError, refetch } = useQuery({
+    queryKey: privateOwner?["privateLists","detail",user?.id,slug]:["list", slug],
+    queryFn: () => privateOwner?getOwnedListBySlug(slug):getListBySlug(slug),
+    initialData: ownerMatches?initialList:undefined,
+    enabled: ownerMatches,
+    gcTime: privateOwner?0:undefined,
   });
 
-  if (isLoading) {
+  if (isLoading || privateOwner && authLoading) {
     return (
       <div className="max-w-[1400px] mx-auto px-4 py-6 space-y-6">
         <Skeleton className="h-8 w-64" />
@@ -32,7 +38,13 @@ export default function ListDetailClientPage({ slug, initialList }: Props) {
     );
   }
 
-  if (!list) {
+  if(ownerMatches&&isError){
+    return <div role="alert" className="min-h-[60vh] flex flex-col items-center justify-center text-center space-y-4">
+      <h2 className="text-xl font-bold text-foreground">List temporarily unavailable</h2>
+      <PixelButton onClick={()=>void refetch()}>Retry</PixelButton>
+    </div>;
+  }
+  if (!ownerMatches || !list) {
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center text-center space-y-4">
         <div className="text-5xl">📋</div>

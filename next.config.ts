@@ -13,6 +13,15 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
+        source:'/library/lists/:path*',
+        headers:[
+          {key:'Cache-Control',value:'private, no-store, max-age=0'},
+          {key:'CDN-Cache-Control',value:'private, no-store'},
+          {key:'Vercel-CDN-Cache-Control',value:'private, no-store'},
+          {key:'Vary',value:'Cookie'},
+        ],
+      },
+      {
         source: "/(.*)",
         headers: [
           { key: "X-Frame-Options", value: "DENY" },

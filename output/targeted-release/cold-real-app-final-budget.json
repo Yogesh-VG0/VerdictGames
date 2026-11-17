@@ -1,0 +1,225 @@
+{
+  "startedAt": "2026-11-16T18:30:18.386Z",
+  "commit": "c0c5f712fcb3bbe9cfb6c23cce5267c07c476871",
+  "scope": "Fresh isolated local production build of committed application; actual hosted public catalogue; RAWG disabled; no worker, fixture, hosted configuration or source writes. Initial framework cache removed only inside this owned build. Server role used only for the normal durable snapshot read.",
+  "directory": ".verification\\cold-app-20261116-624fc1e8e3",
+  "samples": [
+    {
+      "query": {
+        "type": "best-of-year",
+        "page": 1,
+        "pageSize": 40,
+        "platform": "PC"
+      },
+      "status": 200,
+      "ms": 2673,
+      "decodedBytes": 21758,
+      "serverTiming": "snapshot;dur=1011, catalogue_query;dur=1634, catalogue_artwork;dur=0, catalogue_total;dur=2646",
+      "cacheControl": "public, s-maxage=3600, stale-while-revalidate=86400",
+      "count": 255,
+      "source": "catalogue",
+      "degraded": true,
+      "rows": 40,
+      "rawgInterestInvented": false
+    },
+    {
+      "query": {
+        "type": "best-of-year",
+        "page": 2,
+        "pageSize": 40,
+        "platform": "PC"
+      },
+      "status": 200,
+      "ms": 2229,
+      "decodedBytes": 22304,
+      "serverTiming": "snapshot;dur=657, catalogue_query;dur=499, catalogue_artwork;dur=1068, catalogue_total;dur=2224",
+      "cacheControl": "public, s-maxage=3600, stale-while-revalidate=86400",
+      "count": 255,
+      "source": "catalogue",
+      "degraded": true,
+      "rows": 40,
+      "rawgInterestInvented": false
+    },
+    {
+      "query": {
+        "type": "all-time",
+        "page": 1,
+        "pageSize": 40,
+        "platform": "PlayStation 5"
+      },
+      "status": 200,
+      "ms": 836,
+      "decodedBytes": 22596,
+      "serverTiming": "catalogue_query;dur=731, catalogue_artwork;dur=99, catalogue_total;dur=831",
+      "cacheControl": "public, s-maxage=3600, stale-while-revalidate=86400",
+      "count": 38,
+      "source": "catalogue",
+      "degraded": false,
+      "rows": 38,
+      "rawgInterestInvented": false
+    },
+    {
+      "query": {
+        "type": "all-time",
+        "page": 2,
+        "pageSize": 40
+      },
+      "status": 200,
+      "ms": 416,
+      "decodedBytes": 22448,
+      "serverTiming": "catalogue_query;dur=409, catalogue_artwork;dur=1, catalogue_total;dur=411",
+      "cacheControl": "public, s-maxage=3600, stale-while-revalidate=86400",
+      "count": 250,
+      "source": "catalogue",
+      "degraded": false,
+      "rows": 40,
+      "rawgInterestInvented": false
+    },
+    {
+      "query": {
+        "type": "best-of-year",
+        "page": 1,
+        "pageSize": 40,
+        "platform": "PC"
+      },
+      "status": 200,
+      "ms": 637,
+      "decodedBytes": 21758,
+      "serverTiming": "snapshot;dur=301, catalogue_query;dur=330, catalogue_artwork;dur=0, catalogue_total;dur=632",
+      "cacheControl": "public, s-maxage=3600, stale-while-revalidate=86400",
+      "count": 255,
+      "source": "catalogue",
+      "degraded": true,
+      "rows": 40,
+      "rawgInterestInvented": false
+    }
+  ],
+  "buildMs": 24339,
+  "frameworkCacheAbsentBeforeStart": true,
+  "stage": "complete",
+  "network": {
+    "rpcReads": 5,
+    "legacyGameReads": 0,
+    "durableReads": 3,
+    "rawgAttempts": 0,
+    "posterHeads": 3,
+    "blockedWrites": 0
+  },
+  "scenarios": [
+    {
+      "mode": "rawg-stall",
+      "freshProcess": true,
+      "frameworkCacheCleared": true,
+      "samples": [
+        {
+          "attempt": 0,
+          "query": {
+            "type": "best-of-year",
+            "page": 1,
+            "pageSize": 40,
+            "platform": "PC"
+          },
+          "probeBudgetMs": 30000,
+          "status": 200,
+          "ms": 2993,
+          "decodedBytes": 21758,
+          "headers": {
+            "server-timing": "snapshot;dur=2573, catalogue_query;dur=396, catalogue_artwork;dur=0, catalogue_total;dur=2971",
+            "cache-control": "public, s-maxage=3600, stale-while-revalidate=86400",
+            "cdn-cache-control": null,
+            "vercel-cdn-cache-control": null,
+            "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch, Accept-Encoding"
+          },
+          "source": "catalogue",
+          "count": 255,
+          "degraded": true
+        },
+        {
+          "attempt": 1,
+          "query": {
+            "type": "best-of-year",
+            "page": 1,
+            "pageSize": 40,
+            "platform": "PC"
+          },
+          "probeBudgetMs": 30000,
+          "status": 200,
+          "ms": 991,
+          "decodedBytes": 21758,
+          "headers": {
+            "server-timing": "snapshot;dur=461, catalogue_query;dur=526, catalogue_artwork;dur=0, catalogue_total;dur=987",
+            "cache-control": "public, s-maxage=3600, stale-while-revalidate=86400",
+            "cdn-cache-control": null,
+            "vercel-cdn-cache-control": null,
+            "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch, Accept-Encoding"
+          },
+          "source": "catalogue",
+          "count": 255,
+          "degraded": true
+        }
+      ],
+      "network": {
+        "rpcReads": 2,
+        "legacyGameReads": 0,
+        "durableReads": 2,
+        "rawgAttempts": 1,
+        "posterHeads": 0,
+        "blockedWrites": 0
+      }
+    },
+    {
+      "mode": "database-failure",
+      "freshProcess": true,
+      "frameworkCacheCleared": true,
+      "samples": [
+        {
+          "attempt": 0,
+          "query": {
+            "type": "all-time",
+            "page": 1,
+            "pageSize": 40
+          },
+          "probeBudgetMs": 30000,
+          "status": 503,
+          "ms": 29,
+          "decodedBytes": 96,
+          "headers": {
+            "server-timing": "catalogue_query;dur=4, catalogue_total;dur=5",
+            "cache-control": "private, no-store, max-age=0",
+            "cdn-cache-control": "private, no-store",
+            "vercel-cdn-cache-control": "private, no-store",
+            "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch, Cookie, Accept-Encoding"
+          }
+        },
+        {
+          "attempt": 1,
+          "query": {
+            "type": "all-time",
+            "page": 2,
+            "pageSize": 40
+          },
+          "probeBudgetMs": 30000,
+          "status": 503,
+          "ms": 9,
+          "decodedBytes": 96,
+          "headers": {
+            "server-timing": "catalogue_query;dur=2, catalogue_total;dur=3",
+            "cache-control": "private, no-store, max-age=0",
+            "cdn-cache-control": "private, no-store",
+            "vercel-cdn-cache-control": "private, no-store",
+            "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch, Cookie, Accept-Encoding"
+          }
+        }
+      ],
+      "network": {
+        "rpcReads": 2,
+        "legacyGameReads": 0,
+        "durableReads": 0,
+        "rawgAttempts": 0,
+        "posterHeads": 0,
+        "blockedWrites": 0
+      }
+    }
+  ],
+  "completedAt": "2026-11-16T18:30:56.661Z"
+}
