@@ -1,6 +1,6 @@
 import { igdbEssentialRecord } from '../../src/lib/external/igdb-record.mjs';
 import { preferExistingCover } from '../../src/lib/utils/artwork-policy.mjs';
-const fields='id,name,slug,summary,storyline,first_release_date,release_dates.date,release_dates.date_format.format,updated_at,url,game_type,game_status.status,cover.image_id,screenshots.image_id,genres.name,themes.name,platforms.name,websites.url,involved_companies.company.name,involved_companies.developer,involved_companies.publisher,aggregated_rating';
+const fields='id,name,slug,summary,storyline,first_release_date,release_dates.date,release_dates.date_format.format,release_dates.status.name,updated_at,url,game_type,game_status.status,cover.image_id,screenshots.image_id,genres.name,themes.name,platforms.name,websites.url,involved_companies.company.name,involved_companies.developer,involved_companies.publisher,aggregated_rating';
 export async function readIgdbDiscovery(query) {
   const start=Math.floor(Date.now()/1000),end=start+3*366*86400;
   const games=await query('games','fields '+fields+'; where game_type = 0 & cover != null & first_release_date > '+start+' & first_release_date < '+end+'; sort hypes desc; limit 40;');
@@ -20,6 +20,10 @@ export async function upsertIgdbEssential(sql,game,{allowCreate=false}={}) {
       const existing=matches[0];
       if(existing.igdb_id&&existing.igdb_id!==record.igdb_id) throw new Error('Conflicting IGDB identity; existing mapping preserved');
       const cover=preferExistingCover(existing.cover_image,record.cover_image)?existing.cover_image:record.cover_image||existing.cover_image;
+      const explicitCurrentStatus=Boolean(game.game_status?.status);
+      const preserveStatus=!explicitCurrentStatus && (['released','cancelled','delisted'].includes(existing.release_status)
+        || existing.release_status==='early_access'&&record.release_status!=='released');
+      const preserveFullReleaseDate=existing.release_status==='released'&&!explicitCurrentStatus&&record.release_status!=='released';
       const update={igdb_id:record.igdb_id,igdb_url:record.igdb_url,igdb_summary:record.igdb_summary,
         igdb_rating:record.igdb_rating??existing.igdb_rating,
         steam_app_id:existing.steam_app_id||record.steam_app_id,steam_url:existing.steam_url||record.steam_url,
@@ -27,8 +31,8 @@ export async function upsertIgdbEssential(sql,game,{allowCreate=false}={}) {
         genres:existing.genres?.length?existing.genres:record.genres,
         developer:existing.developer||record.developer,publisher:existing.publisher||record.publisher,
         description:!existing.description||existing.description===existing.igdb_summary?record.description||existing.description:existing.description,
-        release_date:record.release_date||existing.release_date,
-        release_status:['early_access','cancelled','delisted'].includes(existing.release_status)&&!game.game_status?.status?existing.release_status:record.release_status||existing.release_status,
+        release_date:preserveFullReleaseDate?existing.release_date:record.release_date||existing.release_date,
+        release_status:preserveStatus?existing.release_status:record.release_status||existing.release_status,
         cover_image:cover,media_source:cover===existing.cover_image?existing.media_source:record.media_source,
         header_image:existing.header_image||record.header_image,
         screenshots:existing.screenshots?.length?existing.screenshots:record.screenshots,

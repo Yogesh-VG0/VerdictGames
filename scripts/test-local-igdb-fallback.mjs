@@ -36,6 +36,19 @@ try {
   assert.equal(stored.slug,canonical);assert.equal(stored.rawg_id,id);assert.equal(stored.review_count,1234);
   assert.equal(stored.verdict_score,87);assert.equal(stored.description,'Preserve this manually edited description.');
   assert.equal(stored.release_status,'early_access');assert.ok(stored.cover_image.includes('coOLD'));
+  const early=Date.parse('2024-05-06')/1000,full=Date.parse('2025-09-25')/1000;
+  await upsertIgdbEssential(sql,{...game,slug:slug+'--provider',first_release_date:early,game_status:null,release_dates:[
+    {date:early,date_format:{format:'YYYYMMDD'},status:{name:'Early Access'}},
+    {date:full,date_format:{format:'YYYYMMDD'},status:{name:'Full Release'}}]});
+  [stored]=await sql`SELECT * FROM public.games WHERE igdb_id=${id}`;
+  assert.equal(stored.slug,canonical);assert.equal(stored.release_status,'released');
+  assert.equal(stored.release_date.toISOString().slice(0,10),'2025-09-25');
+  await upsertIgdbEssential(sql,{...game,first_release_date:early,game_status:null,release_dates:[
+    {date:early,date_format:{format:'YYYYMMDD'},status:{name:'Early Access'}}]});
+  [stored]=await sql`SELECT * FROM public.games WHERE igdb_id=${id}`;
+  assert.equal(stored.release_status,'released');assert.equal(stored.release_date.toISOString().slice(0,10),'2025-09-25');
+  assert.equal(stored.verdict_score,87);assert.equal(stored.review_count,1234);assert.equal(stored.rawg_id,id);
+  console.log('PASS verified full-release progress, disambiguated provider slug, original public identity and no regression from historical release dates');
   const [mapping]=await sql`SELECT * FROM public.game_sources WHERE source_name='igdb' AND source_game_id=${String(id)}`;
   assert.equal(mapping.game_id,stored.id);
   const [collision]=await sql`INSERT INTO public.games(slug,title,igdb_id) VALUES(${slug+'-collision'},'Local conflicting provider fixture',${id}) RETURNING id`;

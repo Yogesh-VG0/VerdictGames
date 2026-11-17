@@ -40,6 +40,21 @@ describe('Explore catalogue regressions', () => {
     expect(result.degraded).toBe(true);
     expect(result.items[0]).toMatchObject({ added: 0, toplay: 0, metricSource: 'catalogue' });
   });
+  it('excludes a locally verified full release from provider TBA discovery without changing remaining interest counts',async()=>{
+    state.rows=[{rawg_id:1,slug:'released',release_status:'released',tags:['Early Access'],cover_image:'https://images.igdb.com/igdb/image/upload/t_cover_big/co123.jpg'}];
+    state.upcoming.mockResolvedValue({results:[1,2].map(id=>({id,slug:`game-${id}`,name:`Game ${id}`,released:null,tba:true,rating:0,ratings_count:0,background_image:'poster.jpg',tags:[],genres:[],platforms:[],added:123,added_by_status:{toplay:17}}))});
+    const result=await loadExplore('best-of-year');
+    expect(result.count).toBe(1);
+    expect(result.items[0]).toMatchObject({slug:'game-2',added:123,toplay:17,metricSource:'rawg'});
+  });
+  it('keeps verified full releases out of the legacy upcoming fallback despite historical tags',async()=>{
+    state.upcoming.mockRejectedValue(new Error('Provider unavailable'));
+    state.rows=[{id:'1',slug:'released',title:'Released',release_date:'2020-09-17',release_status:'released',tags:['Early Access'],genres:[],cover_image:'poster.jpg'},
+      {id:'2',slug:'awaiting',title:'Awaiting',release_date:'2099-01-01',release_status:null,tags:['Early Access'],genres:[],cover_image:'poster.jpg'}];
+    const result=await loadExplore('best-of-year');
+    expect(result.items.map(item=>item.slug)).toEqual(['awaiting']);
+    expect(result.items[0]).toMatchObject({added:0,toplay:0,metricSource:'catalogue'});
+  });
   it('sorts the complete result set before slicing and keeps the Top 250 ranks stable under filters', async () => {
     state.rows = Array.from({ length: 40 }, (_, i) => ({ id: String(i), slug: `game-${i}`, title: `Game ${String(39-i).padStart(2,'0')}`, score: 60+i, review_count:10000, release_date:'2025-01-01', platforms: i%2 ? ['PC'] : ['PlayStation 5'], tags:[], genres:[] }));
     const first = await loadExplore('popular-in-year', 1, 5, 2025, 'action', 'name-asc');

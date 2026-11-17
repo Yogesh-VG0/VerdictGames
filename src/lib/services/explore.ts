@@ -7,7 +7,7 @@ import { matchPortrait, isPortraitArtwork } from '@/lib/utils/artwork';
 import { isPrimaryDiscoveryGame } from '@/lib/utils/discovery';
 import { dedupePublicCanonicalRows } from '@/lib/utils/publicCanonical';
 import { confidenceWeightedScore } from '@/lib/utils/quality';
-import { hasEarlyAccessSignal } from '@/lib/utils/release-status';
+import { hasEarlyAccessSignal, hasKnownFullRelease } from '@/lib/utils/release-status';
 import { readCataloguePage } from '@/lib/services/explore-query';
 import type { GameRow } from '@/lib/supabase/types';
 import type { RawgListResponse, RawgListType, RawgListGameItem, ExploreSort } from '@/lib/api';
@@ -73,10 +73,11 @@ const readCatalogueChunk = unstable_cache(async (type: RawgListType, year: numbe
     if (error) throw error;
     const rows = (data || []) as unknown as GameRow[];
     return { complete: rows.length < 250, rows: rows.filter(row => isPublicSafeGame(row) && isPrimaryDiscoveryGame(row)
+      && (type !== 'best-of-year' || !hasKnownFullRelease(row))
       && !['cancelled', 'canceled', 'delisted'].includes(row.release_status || '')
       && (!['all-time','popular-in-year','recent'].includes(type) || !hasEarlyAccessSignal(row) && !['announced','coming_soon','upcoming','tba'].includes(row.release_status || '')))
       .map(row => ({ ...row, description: '' })), fetchedAt: new Date().toISOString() };
-}, ['explore-catalogue-chunk-v2'], { revalidate: 21600 });
+}, ['explore-catalogue-chunk-v3'], { revalidate: 21600 });
 
 async function readCataloguePool(type: RawgListType, year: number, genre: string, day: string) {
   const rows: GameRow[] = [];
@@ -135,9 +136,10 @@ export async function loadExplore(type: RawgListType, page = 1, pageSize = 20, y
       const { data: matches, error } = await measure('matches', () => getPublicSupabase().from('games').select('rawg_id,slug,cover_image,header_image,steam_app_id,tags,genres,release_status').in('rawg_id', upcoming.map(item => item.id)));
       if (error) throw error;
       const byId = new Map((matches || []).map(item => [item.rawg_id, item]));
-      const missing = upcoming.filter(item => !isPortraitArtwork(byId.get(item.id)?.cover_image));
+      const eligibleUpcoming = upcoming.filter(item => !hasKnownFullRelease(byId.get(item.id) || {}));
+      const missing = eligibleUpcoming.filter(item => !isPortraitArtwork(byId.get(item.id)?.cover_image));
       const portraits = missing.length ? await measure('portraits', () => readPortraits(missing.map(item => item.name))).catch(() => []) : [];
-      items = await measure('provider_artwork', () => Promise.all(upcoming.map(async item => {
+      items = await measure('provider_artwork', () => Promise.all(eligibleUpcoming.map(async item => {
         const local = byId.get(item.id);
         const image = (local && isPortraitArtwork(local.cover_image) ? local.cover_image : matchPortrait(item, portraits))
           || (local ? await titleArtwork(local) : null) || item.background_image;

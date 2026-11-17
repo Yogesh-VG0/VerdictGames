@@ -1,0 +1,61 @@
+{
+  "status": "prepared-not-approved-not-executed",
+  "project": "vjzsvnaswronkctazarn",
+  "sourceParent": "8b5b2d5aadc02b40d187c479595cc36ed5d70d49",
+  "steps": [
+    {
+      "path": "supabase/migrations/20261117101323_respect_verified_full_release_status.sql",
+      "sha256": "89eed6c84fd73fee4ff3775c5085d76e3ee07aaaa9f586395a475fa7acbe50bd",
+      "scope": "Replace existing classifier/RPC bodies only. No table, grant, source data, trigger or readiness changes.",
+      "lockTimeout": "2s",
+      "statementTimeout": "5s"
+    },
+    {
+      "path": "output/targeted-release/proposals/repair_hades_release_status.sql",
+      "sha256": "1aa07113c3057997fbfd9b40ef2a3f52c26efa53beb0d6be34e83aab4333bb28",
+      "scope": "Exactly two verified public-game release_status fields: null -> released. Preserve original tags/IDs/dates/media/metrics/relationships and every other source field; atomically maintained derived classification/projection values change accordingly.",
+      "lockTimeout": "500ms",
+      "statementTimeout": "3s"
+    }
+  ],
+  "records": [
+    {
+      "slug": "hades",
+      "igdbId": 113112,
+      "steamId": 1145360,
+      "fullReleaseDate": "2020-09-17",
+      "evidence": "https://www.supergiantgames.com/blog/hades-now-out-of-early-access/"
+    },
+    {
+      "slug": "hades-ii",
+      "igdbId": 228525,
+      "steamId": 1145350,
+      "fullReleaseDate": "2025-09-25",
+      "evidence": "https://www.supergiantgames.com/blog/hades2-now-available/"
+    }
+  ],
+  "providerEvidence": "output/targeted-release/hades-release-provider-evidence.json",
+  "localSqlEvidence": "output/targeted-release/local-release-status-sql.json",
+  "localChecks": {
+    "unitTests": 296,
+    "sqlCasesUnchangedBeforeRepair": 624,
+    "historicalPublicRows": 8350,
+    "allOtherSourceFieldsPreserved": true,
+    "projectionInputsChecked": 22,
+    "sourceRestrictedFallback": true,
+    "grantsUnchanged": true,
+    "repeatRepairRefuses": true
+  },
+  "excludes": [
+    "user records",
+    "provider identity changes",
+    "scores or community-interest substitution",
+    "bulk catalogue repair",
+    "scheduler runs",
+    "privacy/username migrations",
+    "Auth/email changes",
+    "merge/production deployment",
+    "infrastructure/billing"
+  ],
+  "afterApproval": "Verify source/projection fields and direct anonymous SQL rankings without cache masking; final preview/cache-loss checks on the verified successor. Existing public cache entries may remain until expiry or separately approved invalidation; no purge included."
+}

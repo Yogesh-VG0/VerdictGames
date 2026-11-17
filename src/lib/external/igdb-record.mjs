@@ -8,7 +8,7 @@ const platforms={'PC (Microsoft Windows)':'PC',PC:'PC','PlayStation 5':'PlayStat
 const image=id=>typeof id==='string'&&/^[a-zA-Z0-9_]{1,128}$/.test(id)?'https://images.igdb.com/igdb/image/upload/t_cover_big_2x/'+id+'.jpg':'';
 export function igdbEssentialRecord(game,now=new Date()) {
   if(!Number.isSafeInteger(game?.id)||game.id<=0||typeof game.name!=='string'||!game.name.trim()
-    ||typeof game.slug!=='string'||game.slug.length>200||!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(game.slug)) return null;
+    ||typeof game.slug!=='string'||game.slug.length>200||!/^[a-z0-9]+(?:-+[a-z0-9]+)*$/.test(game.slug)) return null;
   if(['themes','platforms','genres','websites','screenshots','release_dates','involved_companies'].some(key=>game[key]!=null&&!Array.isArray(game[key]))
     ||['summary','storyline'].some(key=>game[key]!=null&&typeof game[key]!=='string')) return null;
   if(game.game_type!=null&&game.game_type!==0&&game.game_type?.id!==0) return null;
@@ -22,11 +22,27 @@ export function igdbEssentialRecord(game,now=new Date()) {
   const rawReleaseDate=release&&Number.isFinite(release.getTime())?release.toISOString().slice(0,10):null;
   // IGDB first_release_date can encode a year/quarter/month placeholder.
   // Store a day only when a matching release has day-level precision.
-  const exact=(game.release_dates||[]).some(item=>item?.date===game.first_release_date&&item?.date_format?.format==='YYYYMMDD');
-  const releaseDate=exact?rawReleaseDate:null;
-  const status=String(game.game_status?.status||'').toLowerCase().replaceAll('_',' ');
+  const normalized=value=>String(value||'').toLowerCase().replace(/[-_]/g,' ').trim();
+  const day=now.toISOString().slice(0,10);
+  const exactDates=(game.release_dates||[]).flatMap(item=>{
+    if(!Number.isFinite(item?.date)||item?.date_format?.format!=='YYYYMMDD')return [];
+    const date=new Date(item.date*1000);if(!Number.isFinite(date.getTime()))return [];
+    return [{epoch:item.date,date:date.toISOString().slice(0,10),status:normalized(item.status?.name)}];
+  });
+  const fullDates=exactDates.filter(item=>item.status==='full release').sort((a,b)=>a.date.localeCompare(b.date));
+  const pastFull=fullDates.find(item=>item.date<=day);
+  const firstExact=exactDates.find(item=>item.epoch===game.first_release_date);
+  const status=normalized(game.game_status?.status);
+  // A game can omit current game_status while providing explicit platform
+  // Full Release records. First-playable/Early Access dates alone prove neither.
   const releaseStatus=status.includes('early access')?'early_access':status==='cancelled'||status==='canceled'?'cancelled'
-    :rawReleaseDate&&rawReleaseDate>now.toISOString().slice(0,10)?'upcoming':status==='released'?'released':null;
+    :status==='delisted'?'delisted':status==='released'||!status&&pastFull?'released'
+    :(fullDates[0]?.date||rawReleaseDate||'')>day?'upcoming':null;
+  // Preserve a known full-release date when refreshing an already released
+  // title whose only newly supplied date describes Early Access or a future port.
+  const releaseDate=releaseStatus==='released'
+    ?pastFull?.date||(firstExact&&firstExact.status!=='early access'&&firstExact.date<=day?firstExact.date:null)
+    :fullDates[0]?.date||(firstExact&&(firstExact.status!=='early access'||firstExact.date>day||status.includes('early access'))?rawReleaseDate:null);
   let steamId=null;
   for(const site of game.websites||[]) {
     try {const url=new URL(site.url);const match=url.pathname.match(/^\/app\/([0-9]+)(?:\/|$)/);

@@ -1,0 +1,18 @@
+{
+  "scope": "Isolated clone of local historical public catalogue; no network provider/hosted connection. Generated database is dropped after testing.",
+  "checks": [
+    "All 624 existing catalogue cases retain counts, representatives, order and absolute ranks before any source correction",
+    "Existing function/table grants and invoker boundary unchanged",
+    "Pure migration performs zero source-row writes",
+    "Exact two-record guarded repair commits with all other source values and all 22 projection inputs verified",
+    "Verified releases enter Top250; 1-250 ranks, existing relative order and absolute PC positions remain correct",
+    "Verified releases are excluded from catalogue upcoming despite retained historical tags",
+    "Null-classification union and readiness=false source fallback retain identical corrected ranks",
+    "Restrictive caller policy denies projection and remains enforced through RPC fallback",
+    "Repeat repair refuses already changed source facts"
+  ],
+  "cases": 624,
+  "sourceRows": 8350,
+  "passed": true,
+  "completedAt": "2026-11-17T10:25:50.661Z"
+}
