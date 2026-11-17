@@ -294,14 +294,14 @@ export default function ExplorePage({ initialData, initialKey = '' }: { initialD
         ]} /></div>}
         {params.size > 0 && <button className="h-11 px-3 text-sm text-accent underline" onClick={() => router.push('/explore', { scroll: false })}>Reset filters</button>}
       </div>
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex items-center justify-between gap-4">
+        <div className="min-w-0">
           <h2 className="text-lg font-bold text-foreground">{activeTab === 'popular-in-year' ? `Best of ${year}` : activeTabInfo?.label}</h2>
           <p className="max-w-3xl text-xs text-secondary leading-relaxed">{query.data?.definition || activeTabInfo?.desc}</p>
           {query.data?.fetchedAt && <p className="mt-1 text-xs text-tertiary">Catalogue snapshot: {new Date(query.data.fetchedAt).toLocaleDateString()}</p>}
         </div>
         {query.data && (
-          <span className="text-xs text-tertiary">
+          <span className="shrink-0 whitespace-nowrap text-xs text-tertiary">
             {query.data.count.toLocaleString()} {query.data.count === 1 ? 'game' : 'games'}
           </span>
         )}

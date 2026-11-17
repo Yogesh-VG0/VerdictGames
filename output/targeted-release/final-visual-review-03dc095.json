@@ -1,0 +1,678 @@
+{
+  "candidate": "03dc095494e151880b7ab06282836751a7e9116f",
+  "deployment": "dpl_DV43NfpVkyeJUusXzzkssD1SffhP",
+  "preview": "https://verdict-games-7xllzv2h4-yogesh-vg0s-projects.vercel.app",
+  "ci": {
+    "quality": 44115832806,
+    "securityBrowser": 44115832776,
+    "status": "success"
+  },
+  "scope": "Actual protected public preview. 102 viewport screenshots inspected in17 route contact sheets with full-size spot checks; ten separate decoded artwork card captures. Anonymous only here; earlier hosted A/B/populated-fixture evidence retained separately. HTTP/DOM success is distinct from runtime reliability.",
+  "capturedViews": 102,
+  "detectedTransportOrDomFailures": 0,
+  "heroClickVerification": "output/playwright/final-current-03dc095/hero-click-verification.json",
+  "reviewFindings": [
+    "Mobile hero control overlap resolved:10 widths/theme combinations confirm no intersection, center hits actual link, pause and game navigation pass.",
+    "Explore count lacks separation from long definition at phone/tablet; successor adds gap, no-shrink count and minimum-width text container. Recheck successor.",
+    "Lists/search background cache refresh timeouts remain a release reliability gate despite rendered content success. Slow collection-detail capture15948ms retained; warm899-1271ms samples do not close cold gate."
+  ],
+  "artwork": {
+    "candidate": "03dc095494e151880b7ab06282836751a7e9116f",
+    "scope": "Actual protected anticipated cards; public reads only, no images generated or fixtures used.",
+    "cards": [
+      {
+        "title": "Path of Exile 2",
+        "page": 1,
+        "loaded": true,
+        "screenshot": "anticipated-01.png",
+        "text": "Path of Exile 2Early Access · full release pendingMassively Multiplayer·Adventure202653717540",
+        "href": "/game/path-of-exile-2",
+        "image": {
+          "alt": "Path of Exile 2",
+          "width": 528,
+          "height": 704,
+          "browserDensityCorrectedWidth": 396,
+          "browserDensityCorrectedHeight": 528,
+          "coverId": "co8ae0"
+        }
+      },
+      {
+        "title": "No Rest for the Wicked",
+        "page": 1,
+        "loaded": true,
+        "screenshot": "anticipated-02.png",
+        "text": "No Rest for the WickedEarly Access · full release pendingAdventure·Action202736915115",
+        "href": "/game/no-rest-for-the-wicked",
+        "image": {
+          "alt": "No Rest for the Wicked",
+          "width": 528,
+          "height": 704,
+          "browserDensityCorrectedWidth": 39,
+          "browserDensityCorrectedHeight": 52,
+          "coverId": "co7h9r"
+        }
+      },
+      {
+        "title": "Tomb Raider: Legacy of Atlantis",
+        "page": 1,
+        "loaded": true,
+        "screenshot": "anticipated-03.png",
+        "text": "Tomb Raider: Legacy of AtlantisAction202711869",
+        "href": "/game/tomb-raider-legacy-of-atlantis",
+        "image": {
+          "alt": "Tomb Raider: Legacy of Atlantis",
+          "width": 528,
+          "height": 704,
+          "browserDensityCorrectedWidth": 39,
+          "browserDensityCorrectedHeight": 52,
+          "coverId": "cob1kg"
+        }
+      },
+      {
+        "title": "Tomb Raider: Catalyst",
+        "page": 1,
+        "loaded": true,
+        "screenshot": "anticipated-04.png",
+        "text": "Tomb Raider: CatalystAdventure·Action20278355",
+        "href": "/game/tomb-raider-catalyst",
+        "image": {
+          "alt": "Tomb Raider: Catalyst",
+          "width": 528,
+          "height": 704,
+          "browserDensityCorrectedWidth": 39,
+          "browserDensityCorrectedHeight": 52,
+          "coverId": "cob0g4"
+        }
+      },
+      {
+        "title": "Titan Quest 2",
+        "page": 1,
+        "loaded": true,
+        "screenshot": "anticipated-05.png",
+        "text": "Titan Quest 2Action·RPG2027110543",
+        "href": "/game/titan-quest-2",
+        "image": {
+          "alt": "Titan Quest 2",
+          "width": 528,
+          "height": 704,
+          "browserDensityCorrectedWidth": 39,
+          "browserDensityCorrectedHeight": 52,
+          "coverId": "co6x9v"
+        }
+      },
+      {
+        "title": "The Expanse: Osiris Reborn",
+        "page": 1,
+        "loaded": true,
+        "screenshot": "anticipated-06.png",
+        "text": "The Expanse: Osiris RebornAction·RPG202766431",
+        "href": "/game/the-expanse-osiris-reborn",
+        "image": {
+          "alt": "The Expanse: Osiris Reborn",
+          "width": 528,
+          "height": 704,
+          "browserDensityCorrectedWidth": 39,
+          "browserDensityCorrectedHeight": 52,
+          "coverId": "co9xoa"
+        }
+      },
+      {
+        "title": "Ananta",
+        "page": 1,
+        "loaded": true,
+        "screenshot": "anticipated-07.png",
+        "text": "anantaAction20273218",
+        "href": "/game/ananta",
+        "image": {
+          "alt": "ananta",
+          "width": 528,
+          "height": 704,
+          "browserDensityCorrectedWidth": 39,
+          "browserDensityCorrectedHeight": 52,
+          "coverId": "cocrlo"
+        }
+      },
+      {
+        "title": "Rayman Legends Retold",
+        "page": 1,
+        "loaded": true,
+        "screenshot": "anticipated-08.png",
+        "text": "Rayman Legends RetoldPlatformer20262715",
+        "href": "/game/rayman-legends-retold",
+        "image": {
+          "alt": "Rayman Legends Retold",
+          "width": 528,
+          "height": 704,
+          "browserDensityCorrectedWidth": 39,
+          "browserDensityCorrectedHeight": 52,
+          "coverId": "coc5tb"
+        }
+      },
+      {
+        "title": "Until Dawn 2",
+        "page": 1,
+        "loaded": true,
+        "screenshot": "anticipated-09.png",
+        "text": "Until Dawn 2Adventure20272515",
+        "href": "/game/until-dawn-2-2",
+        "image": {
+          "alt": "Until Dawn 2",
+          "width": 528,
+          "height": 704,
+          "browserDensityCorrectedWidth": 39,
+          "browserDensityCorrectedHeight": 52,
+          "coverId": "cocvjf"
+        }
+      },
+      {
+        "title": "Exodus (Archetype Entertainment)",
+        "page": 1,
+        "loaded": true,
+        "screenshot": "anticipated-10.png",
+        "text": "Exodus (Archetype Entertainment)Action·RPG20272312",
+        "href": "/game/exodus-archetype-entertainment",
+        "image": {
+          "alt": "Exodus (Archetype Entertainment)",
+          "width": 528,
+          "height": 704,
+          "browserDensityCorrectedWidth": 39,
+          "browserDensityCorrectedHeight": 52,
+          "coverId": "coaott"
+        }
+      }
+    ],
+    "missing": [],
+    "completedAt": "2026-11-17T18:26:28.515Z"
+  },
+  "images": [
+    {
+      "file": "anticipated-01.png",
+      "sha256": "192d3d4cd7fae90a71798ebaf794d7ab1ea645a33b40a872fac07a4cc6643f59"
+    },
+    {
+      "file": "anticipated-02.png",
+      "sha256": "f64706d77a0b0ab04f18cef12c9a5094fc4c162bbf7cd90a47fd2879d733c2e6"
+    },
+    {
+      "file": "anticipated-03.png",
+      "sha256": "93090db790072edd076fd5a1bc60ec377bed25fc756fddd642ab3de9edffea70"
+    },
+    {
+      "file": "anticipated-04.png",
+      "sha256": "d938c5527b42950be0d4ee0d344406373e2178fe33e86d07ae2a7014c3cb788c"
+    },
+    {
+      "file": "anticipated-05.png",
+      "sha256": "d8ca38455aed35eab91af87f53bf93ae42c165b06fe6a6eeb1071f5bf7e4c180"
+    },
+    {
+      "file": "anticipated-06.png",
+      "sha256": "9a9b5ae970290cceb9af8aa12154fbf1a98747e0c6ed56c11398c3ff3089346e"
+    },
+    {
+      "file": "anticipated-07.png",
+      "sha256": "61b1ca4359bc8db6c4516464cd0c0dd43210aff337d7f35ce9532749a89dd401"
+    },
+    {
+      "file": "anticipated-08.png",
+      "sha256": "984f354064472976f7a22e8e34e22b299cce056eb3bd1114f2f19314baaee164"
+    },
+    {
+      "file": "anticipated-09.png",
+      "sha256": "2e6d3bbd6e8e4d45d2367b90751d804fa427ace6132a34d390ab01e52839281d"
+    },
+    {
+      "file": "anticipated-10.png",
+      "sha256": "a5c02a879d9439c953ced140249c4c1114569fc678c5eca42549811216405e1d"
+    },
+    {
+      "file": "browse-dark-1440.png",
+      "sha256": "826bf23d71b17238112207d5012c826e66228a6ebf1d8aff5ac33c1969126088"
+    },
+    {
+      "file": "browse-dark-390.png",
+      "sha256": "194ac55396a9f9586db27888fe2b049bef992fb5ee1993ee61ca21a23514444e"
+    },
+    {
+      "file": "browse-dark-768.png",
+      "sha256": "44995ad00cb0db6247ae825331f4bdfb5e666f4869889e6cb104cbef5dfbc93f"
+    },
+    {
+      "file": "browse-light-1440.png",
+      "sha256": "7647e490d42c8c3d45f8733acb8ffe8d6e01d8b035ca0faec09cb26d44f77ac0"
+    },
+    {
+      "file": "browse-light-390.png",
+      "sha256": "d2118ba20ef0de7b1818dd762fce75f0091b396b004f023e608c6e8d28ee87c6"
+    },
+    {
+      "file": "browse-light-768.png",
+      "sha256": "82d0c062dd423bacec1a00d3f5f12b8ebeabd24ae4ab9aae46ffcef45e246a97"
+    },
+    {
+      "file": "explore-anticipated-dark-1440.png",
+      "sha256": "2430204d4bfa1d5e7201fbf10e7422504d4e15168af89806462e786e4e6c6cef"
+    },
+    {
+      "file": "explore-anticipated-dark-390.png",
+      "sha256": "bde6888340e93efd8863a280f819df85ddf7f6368758e4112ea0a30017ebf5b1"
+    },
+    {
+      "file": "explore-anticipated-dark-768.png",
+      "sha256": "a130dcd4b54f3f0975c45162283d9d2d126c8fc6e28d4ebd1b038aceaac687c3"
+    },
+    {
+      "file": "explore-anticipated-light-1440.png",
+      "sha256": "0d43962e04e9cc5ead50bb46e5114e12941d36ce81119b517d9f0a888b3ed9e0"
+    },
+    {
+      "file": "explore-anticipated-light-390.png",
+      "sha256": "1ec11b729efa35ca28ced0c30bbe5d84748dc8f29170c016e03df01790dbdb86"
+    },
+    {
+      "file": "explore-anticipated-light-768.png",
+      "sha256": "dbd5ec29e4493eb0b3693a9ad398fb32b3082ca88a07b7140dac29bab425555d"
+    },
+    {
+      "file": "explore-recent-dark-1440.png",
+      "sha256": "927fc9968813ddcb0b1d5968994e7ad60d41523921026727b97cf4ac6695d172"
+    },
+    {
+      "file": "explore-recent-dark-390.png",
+      "sha256": "1e493821be1ff78e59ac84a3c211819d2a4f7cbf20b4edbb6a25d54f73c87689"
+    },
+    {
+      "file": "explore-recent-dark-768.png",
+      "sha256": "b973c4b250ca93876e62a889b69465fee283e612c8ed576db641b6bc462a1a84"
+    },
+    {
+      "file": "explore-recent-light-1440.png",
+      "sha256": "a315a96802dc3032c904ce3542248d0e38a3f98d7bd5bc6c3df7d991b99a94d3"
+    },
+    {
+      "file": "explore-recent-light-390.png",
+      "sha256": "e59cf75b953bf69bf8a3f222a5a51f3c44cb704e3409c676ccdb70f3b5b862e2"
+    },
+    {
+      "file": "explore-recent-light-768.png",
+      "sha256": "be98d4f2d5917c77588412fb9c47d5b35e4d3b55e18269acc14532bb201fdcf2"
+    },
+    {
+      "file": "explore-rpg-dark-1440.png",
+      "sha256": "9bb78b59bcc5ed27dd06f12a87aafaa6b700f552bbc74cc6afdb3bf5ac03e7dd"
+    },
+    {
+      "file": "explore-rpg-dark-390.png",
+      "sha256": "264d11d48d5ccfc0c5379eba4f44b023349909cfd3f849e7aa194e240ad5b9cd"
+    },
+    {
+      "file": "explore-rpg-dark-768.png",
+      "sha256": "c19365245fc03331b58535dbcd8a8621e13377a0085d0de81d869eaadb210460"
+    },
+    {
+      "file": "explore-rpg-light-1440.png",
+      "sha256": "788e0818356574ef899f7a7ccab359d3e3e93137ae7479cba64c81c193cacdc8"
+    },
+    {
+      "file": "explore-rpg-light-390.png",
+      "sha256": "0e5938d868e448aee24db6d99ee179bc6af86e31c8e0a3bd82d515db0040f435"
+    },
+    {
+      "file": "explore-rpg-light-768.png",
+      "sha256": "abd5a5bbc4f5fb1e6563ae4872c79ac441bb640452c075800493c8469c4a0d19"
+    },
+    {
+      "file": "explore-top250-dark-1440.png",
+      "sha256": "55e80a3c3612ad0325c13f1534c5455e733ecd075159b65a236658f5702d0ba2"
+    },
+    {
+      "file": "explore-top250-dark-390.png",
+      "sha256": "06d261615716506da1be3ea0d1586a162ed58e1f614446583459040e53279d1b"
+    },
+    {
+      "file": "explore-top250-dark-768.png",
+      "sha256": "f6f456e5a7053449acbbdb12018a537ba37fefbda1f7be2a9d2ffc35b920e942"
+    },
+    {
+      "file": "explore-top250-light-1440.png",
+      "sha256": "2d130b5fd2b01d2b06f777267626c64916cd770a9138f4cec690fc1969523dd8"
+    },
+    {
+      "file": "explore-top250-light-390.png",
+      "sha256": "97b26bb44738180ff16f88ecd0ae9a2cca9f52fe7760d8cd44490af1dc18e483"
+    },
+    {
+      "file": "explore-top250-light-768.png",
+      "sha256": "21431e72702aad01abf19fcfa8f5c4cf665d705a8c0f2ad92db2f9a8bd2637e8"
+    },
+    {
+      "file": "explore-year-dark-1440.png",
+      "sha256": "af9ead7e1e108ddf1116ca8a3509e7f0585e386ceafca8130542cb40bb04c8e8"
+    },
+    {
+      "file": "explore-year-dark-390.png",
+      "sha256": "76609161327f98b6b41596b3db032a446d348b714a1ab3170511dd497d55d99e"
+    },
+    {
+      "file": "explore-year-dark-768.png",
+      "sha256": "bb0d6dad53a0138ff483bde1553800e6874484e3ac14b806de6f050476ddd730"
+    },
+    {
+      "file": "explore-year-light-1440.png",
+      "sha256": "c66ee154a4d3c372e5eee3f87f2dfdfce3f2ccc593f2d8bddab5c4ac232e8bd5"
+    },
+    {
+      "file": "explore-year-light-390.png",
+      "sha256": "7eb865c0ceae57e2bb4b6a886958ea3e5431bf21ecda37cf64b331ca83260e25"
+    },
+    {
+      "file": "explore-year-light-768.png",
+      "sha256": "06ecb6ff6a8d0d47c9b9cdac08177cfe64da97c91d91f057a063f4d2b95c214a"
+    },
+    {
+      "file": "forgot-password-dark-1440.png",
+      "sha256": "30ee462893a599918e783a0b3d22fc632e0a6ad17c8e669e743ba7bf49fb53e1"
+    },
+    {
+      "file": "forgot-password-dark-390.png",
+      "sha256": "4dc2b1eeb06effa3dc5c09e82c69377a657b2ca765693009cde179b7e041b19a"
+    },
+    {
+      "file": "forgot-password-dark-768.png",
+      "sha256": "c1fba91aacca01353f73169d0cbe44c667dc333a5ca9d0189eafe881e4cfbb86"
+    },
+    {
+      "file": "forgot-password-light-1440.png",
+      "sha256": "c306d3e768d2f9904e598eab7108519a66a6f98fe969371ceaa11e794aef41e0"
+    },
+    {
+      "file": "forgot-password-light-390.png",
+      "sha256": "d583337e7e3b19a149f9b68c75a75ce54f5fd17e9a3c63bdffff91ebfaea8f60"
+    },
+    {
+      "file": "forgot-password-light-768.png",
+      "sha256": "4b3787d97905ce66e972c54817d73233cb3ff580726375918d755f90e7ba0639"
+    },
+    {
+      "file": "game-dark-1440.png",
+      "sha256": "3fe5b1a616628af468cd1771b38a53ca49589ec9c418e4188fd1b4ffa20318b8"
+    },
+    {
+      "file": "game-dark-390.png",
+      "sha256": "4772b5f829c1c448a30f34fb0bf5924bc7516ec7f440b70ad8cf710b45e3ba77"
+    },
+    {
+      "file": "game-dark-768.png",
+      "sha256": "1d03660b0d8f2238edae432220071b539250404fb6bafed4ea9113d705604a2f"
+    },
+    {
+      "file": "game-light-1440.png",
+      "sha256": "3675d0589c62fad3e91c30be4c44282e2d21892baf602fe0191cd30e50ee726f"
+    },
+    {
+      "file": "game-light-390.png",
+      "sha256": "2764ba7e09e791f4ee8518b693755c33e0a94dd18dec9bc8c5faa3f83829638f"
+    },
+    {
+      "file": "game-light-768.png",
+      "sha256": "0ff5efd2453da9b242014d3ed4a5156edb351bd46969263edcfba221658ad8db"
+    },
+    {
+      "file": "hero-click-dark-1440.png",
+      "sha256": "6550db0da8536900acce9b26cc07316d82b7ffbf22213b57454eda3c00e42728"
+    },
+    {
+      "file": "hero-click-dark-320.png",
+      "sha256": "f3fe3dabf40efdec657f1afe839946514b8b0a69f0d6e41e0e21094f1b041097"
+    },
+    {
+      "file": "hero-click-dark-390.png",
+      "sha256": "2a3ea9b24832399e16cb2cabecd1fd1519db17c5f5e078bd9c6b271bc5a5cd65"
+    },
+    {
+      "file": "hero-click-dark-502.png",
+      "sha256": "089448eb8b03214c1f86a07b8fdb585d45245f60c5bb83149100c07f38a9b86a"
+    },
+    {
+      "file": "hero-click-dark-768.png",
+      "sha256": "d4abd6dbf390b9e6b8f634357d2263d9698db0a91ca93696be72efc93c7419f1"
+    },
+    {
+      "file": "hero-click-light-1440.png",
+      "sha256": "1d4b34e86daf22fd871b13cb73c1c086e053d963ee41366c5a3ae1e4163d95d7"
+    },
+    {
+      "file": "hero-click-light-320.png",
+      "sha256": "28951b8c824537347aabc328322e3e47a566fcde6c35c3477e83e29271722c4d"
+    },
+    {
+      "file": "hero-click-light-390.png",
+      "sha256": "222cb3e5e292df07ebfc056743054fe9f77f9b9d01c124fecc57c22d2a85c8ee"
+    },
+    {
+      "file": "hero-click-light-502.png",
+      "sha256": "9a180627add93b41f1749e5c958acc54ddf3dd80a01026669a8cc8e2c951eeed"
+    },
+    {
+      "file": "hero-click-light-768.png",
+      "sha256": "3bd8fce91b3b438cd669694fe2dfc2d580da57a3be6db289dc811f47f3abf100"
+    },
+    {
+      "file": "home-anticipated-dark-1440.png",
+      "sha256": "6d7eacb2615eb3d70c945916631c718b9d072ebe7e7dcdd05e3bcc917c544b98"
+    },
+    {
+      "file": "home-anticipated-dark-390.png",
+      "sha256": "2bb531e439e4375a2023edc939637b4c620d16d4b73458cf109e0acf2931b311"
+    },
+    {
+      "file": "home-anticipated-dark-768.png",
+      "sha256": "0d8e3895d4aee61781fbe278ffe35d65c8711770a0d0357ea5db2c879f58279a"
+    },
+    {
+      "file": "home-anticipated-light-1440.png",
+      "sha256": "96e07a6a51202b6b13e2be8d753cdfb8f32919476d431cf2dac84d3d2b399b28"
+    },
+    {
+      "file": "home-anticipated-light-390.png",
+      "sha256": "4542ab8d35e306357577cea594d79e20cce5ab58373cd6244796403cf0587c51"
+    },
+    {
+      "file": "home-anticipated-light-768.png",
+      "sha256": "42908abb2eb766933d7d403d5f59f5efcf1e9abfd5cd30803e23efc2296536de"
+    },
+    {
+      "file": "home-dark-1440.png",
+      "sha256": "85460185b5db8042720b2a8d77defe83063dda4fa72a1b8a861d7a286ed1ace7"
+    },
+    {
+      "file": "home-dark-390.png",
+      "sha256": "d7ab4d2e699e74e57985aaa7f1a059bbb9d9db4694bf1757f476480e2a090c38"
+    },
+    {
+      "file": "home-dark-768.png",
+      "sha256": "6b4bfc9846437032e55da239954de34128103732b48deae86d2b2ca111caa032"
+    },
+    {
+      "file": "home-light-1440.png",
+      "sha256": "c94b2a778c894b621e815c60c707c43bce6d089e31cb5bb5ea52ab4244a05598"
+    },
+    {
+      "file": "home-light-390.png",
+      "sha256": "f4fce42f16d3b0f33d35af7eee322ab756469dfd4a6b5d316d912f076c5eab14"
+    },
+    {
+      "file": "home-light-768.png",
+      "sha256": "facb24477c3ace1ac0fa2cec1eccdca50b9a33ad2da19f4e02e75f3053531211"
+    },
+    {
+      "file": "library-anonymous-dark-1440.png",
+      "sha256": "5b34ebad11ffd95346e3f26837bc4ddbe7b8cf7693b2941bfd65af595f2c620a"
+    },
+    {
+      "file": "library-anonymous-dark-390.png",
+      "sha256": "3324d4da57b80290e7341475419a0110ce5b3c7658687687f93aa6fafbab258c"
+    },
+    {
+      "file": "library-anonymous-dark-768.png",
+      "sha256": "f617ba8ad59c6fbec50a992a35c79770a997029028e7b962fc0fdd6fe5cd043a"
+    },
+    {
+      "file": "library-anonymous-light-1440.png",
+      "sha256": "dee30235b1c05f8ea44100b8b7f57aa11a3ca0411d19d1c358ba665d181ad18a"
+    },
+    {
+      "file": "library-anonymous-light-390.png",
+      "sha256": "71717fd3e4d353c4764d59377d1c725555ced017a8ad6241b19e7feb6670e042"
+    },
+    {
+      "file": "library-anonymous-light-768.png",
+      "sha256": "d06719d6a204a37726038199e466f3ffbc4230018bcf4759bdc63785b31324ef"
+    },
+    {
+      "file": "lists-dark-1440.png",
+      "sha256": "2a96bc0f333daaf78dfd3bc7213585239b1bd338d6257b9aaad89936e839cf16"
+    },
+    {
+      "file": "lists-dark-390.png",
+      "sha256": "62450502591b174a6b076a086dccbd32be0cb635945ddd706b05842a6a7577cf"
+    },
+    {
+      "file": "lists-dark-768.png",
+      "sha256": "7a1bca5968def5a275ff3d8facb56bf071fe61d98bf69b1fade22620c3eb5d16"
+    },
+    {
+      "file": "lists-light-1440.png",
+      "sha256": "56b65e3b0ed6c9e963dc05cee91b762defd24146772c33f408fb979b1f5b1efc"
+    },
+    {
+      "file": "lists-light-390.png",
+      "sha256": "208e0c8b4881080118b5f139bcd55a4aeda63e10fca71cf4cd095f94f4bf7e1c"
+    },
+    {
+      "file": "lists-light-768.png",
+      "sha256": "b86be4c3db8015ebd38f5f346b5c271fb0dacd2e3124a8c4c761e15b4fe0d50d"
+    },
+    {
+      "file": "login-dark-1440.png",
+      "sha256": "0884609fa6e9d444131c622c2e83d1c6eb760c76fbe07e6134149b60cbe2e11a"
+    },
+    {
+      "file": "login-dark-390.png",
+      "sha256": "701eefdf7cb4eb79df9cda755bb51da64691adec0a56d1ac8966ee07240399b9"
+    },
+    {
+      "file": "login-dark-768.png",
+      "sha256": "76b739306e465f977382e3e23c9e590e4c4f3c1bee33746bb75d15b5ea3f9caa"
+    },
+    {
+      "file": "login-light-1440.png",
+      "sha256": "581f274f1b6dccad9d76dfcb9a84160c19ff62cd1ed3b98913ffb8459c3dc782"
+    },
+    {
+      "file": "login-light-390.png",
+      "sha256": "42d78ecb6981811035fb72db343eaee96d787e764d68bcd7e085f33e05d5514c"
+    },
+    {
+      "file": "login-light-768.png",
+      "sha256": "d97565fb31c6cafd10a1f7c0cf423e0916830b53238f3b43901d338ae829eae0"
+    },
+    {
+      "file": "public-list-detail-dark-1440.png",
+      "sha256": "1ecd9c78100c6b02c23f8dc86ca09128e772e8f48c107434d4a1b0c4c4a75dfe"
+    },
+    {
+      "file": "public-list-detail-dark-390.png",
+      "sha256": "5fc879348096b5bc7449b730c76cfc36387a02d5f1b5af05e741a4b95c6e338b"
+    },
+    {
+      "file": "public-list-detail-dark-768.png",
+      "sha256": "0db427bff46290d54d524f8a9d74d284300760e778d05d9694a0831194d320ce"
+    },
+    {
+      "file": "public-list-detail-light-1440.png",
+      "sha256": "f09a660ebf2e917757299cc72177d9603fcbc506fbc5dfd54a81de3f8e9c30b0"
+    },
+    {
+      "file": "public-list-detail-light-390.png",
+      "sha256": "54799a44c72d902bb8fd9f8ab210225e8390196b207037e7a12234c452f337f4"
+    },
+    {
+      "file": "public-list-detail-light-768.png",
+      "sha256": "4c028f1021a6bc66fc2c6de9177724035c62a7426665af28cc39f29bccce4b1f"
+    },
+    {
+      "file": "reset-expired-dark-1440.png",
+      "sha256": "039984a6ee7377093c711c7523168377a14cedf6a11958a9ddde390b49850941"
+    },
+    {
+      "file": "reset-expired-dark-390.png",
+      "sha256": "e49f5a0636bab8e05e55173960e9e75865bec7665346a37873371abc0b6d10f5"
+    },
+    {
+      "file": "reset-expired-dark-768.png",
+      "sha256": "5d57d687163b4321fb200c17420b7eddcb5292833a8beea54b164177169910fc"
+    },
+    {
+      "file": "reset-expired-light-1440.png",
+      "sha256": "2c3bceab9560f87ab6a4ef9088b05781e7763901f6ce742ba92911d7fb7b131c"
+    },
+    {
+      "file": "reset-expired-light-390.png",
+      "sha256": "b1582d981c91046ca0bef8adbfeacf83c80b1add310af78a0e62aff7bda118df"
+    },
+    {
+      "file": "reset-expired-light-768.png",
+      "sha256": "661af396f4ce5aedb4081a85dadb2a2ede88689662e47a123aabf96a9901ec8b"
+    },
+    {
+      "file": "search-dark-1440.png",
+      "sha256": "fc0b076581af9aa3edcb32e8082c4674c337fbc1c05de2c6c19cb619d5fb8ffc"
+    },
+    {
+      "file": "search-dark-390.png",
+      "sha256": "03cc2bdcf705cddefddd0fbd69665af53f0fe9bea6d7c946c24339c82c4a4234"
+    },
+    {
+      "file": "search-dark-768.png",
+      "sha256": "f8620cba84c0377bef32c534659beee19df8bab4101031a1589859454428622c"
+    },
+    {
+      "file": "search-light-1440.png",
+      "sha256": "a2d5a2bdfa2415e77c9496823e8cd12632862b0be188d979a96a3dc46e661be9"
+    },
+    {
+      "file": "search-light-390.png",
+      "sha256": "04696c61ef8619cd3dff0d03804c6d7ccbe1481ce6ebe807a21159855ccf191d"
+    },
+    {
+      "file": "search-light-768.png",
+      "sha256": "19a32806ea4c69fbe278771a8088e2110b64242e37c0646c0664dda9f21d7fe1"
+    },
+    {
+      "file": "signup-dark-1440.png",
+      "sha256": "6f05f7746372aa470fa2cb0f084a4bf81438cbc067ba52c7cf6650babd733267"
+    },
+    {
+      "file": "signup-dark-390.png",
+      "sha256": "3fc3830527c3a747f5b122ab2d87796e57e3dfc9f11c735b7be397c7f24bbcac"
+    },
+    {
+      "file": "signup-dark-768.png",
+      "sha256": "9d5e26a9a1f03f770df82171a82fae67d00a486096f9c3dc265dabcc0bbf8857"
+    },
+    {
+      "file": "signup-light-1440.png",
+      "sha256": "3646852f3cbceba0ddbb619226e2eaf51e1137904321aadf5c660106d07469be"
+    },
+    {
+      "file": "signup-light-390.png",
+      "sha256": "69342617b95781874ef31593120fea97c282c1cf9274e61eb9a8e4d630a35827"
+    },
+    {
+      "file": "signup-light-768.png",
+      "sha256": "caab0117601eac5ae9df280d65623bfa726af12c1db8733589b6c5915ed61784"
+    }
+  ],
+  "reviewedAt": "2026-11-17T18:33:33.345Z"
+}

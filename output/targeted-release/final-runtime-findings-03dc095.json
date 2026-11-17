@@ -1,0 +1,34 @@
+{
+  "candidate": "03dc095494e151880b7ab06282836751a7e9116f",
+  "deployment": "dpl_DV43NfpVkyeJUusXzzkssD1SffhP",
+  "scope": "Read-only deployment logs and bounded Supabase logs/health inspection; no private response bodies, credentials or raw request headers retained.",
+  "vercel": {
+    "windowStart": "2026-11-17T18:07:25.797Z",
+    "windowEnd": "2026-11-17T18:22:25.797Z",
+    "runtime": "nodejs24.x",
+    "region": "bom1",
+    "cacheRevalidationTimeouts": [
+      {"at":"2026-11-17T18:21:39.420Z","path":"/api/lists","key":"public-list-summaries-v1-[1,null,all]"},
+      {"at":"2026-11-17T18:21:46.902Z","path":"/lists/cozy-games-to-unwind","key":"public-list-v2"},
+      {"at":"2026-11-17T18:21:47.887Z","path":"/lists","key":"public-list-summaries-v1-[1]"},
+      {"at":"2026-11-17T18:22:08.312Z","path":"/","key":"search-results-v4-empty-relevance"},
+      {"at":"2026-11-17T18:22:19.035Z","path":"/lists","key":"public-list-summaries-v1-[1]"}
+    ]
+  },
+  "postgres": {
+    "windowStart":"2026-11-17T18:20:00Z",
+    "windowEnd":"2026-11-17T18:26:00Z",
+    "code":"57014",
+    "timestamps":["2026-11-17T18:21:23.842000Z","2026-11-17T18:22:01.749000Z","2026-11-17T18:22:20.627000Z","2026-11-17T18:22:38.230000Z"],
+    "statementShape":"All four logged statements select the public games card columns plus description with review_count >= $1, score >= $2, cover_image IS NOT NULL and cover_image <> $3, ordered trending DESC NULLS LAST, verdict_score DESC NULLS LAST, release_date DESC, id ASC, LIMIT $4 OFFSET $5, then PostgREST JSON aggregation.",
+    "notAttributedTo":"No Explore RPC or list membership SQL was present in these four PostgreSQL cancellations. Application list deadlines are separate observations."
+  },
+  "healthObservation": {
+    "at":"2026-11-17T18:23:24.232528Z",
+    "idleAuthenticatorConnections":11,
+    "otherActiveWorkExcludingObserver":0,
+    "healthAdvisorLints":[],
+    "limits":"A later point-in-time observation does not exclude earlier transient contention or establish the cause of network resets."
+  },
+  "decision":"Release reliability remains open pending separately approved index and actual cold/warm/concurrent HTTP verification; rendered cached success is insufficient."
+}

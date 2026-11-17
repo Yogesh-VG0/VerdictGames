@@ -6,6 +6,7 @@ import type { GameListSummary } from '@/lib/types';
 import { passesCuratedListSelection } from '@/lib/utils/curatedLists';
 import { dedupePublicCanonicalRows } from '@/lib/utils/publicCanonical';
 import { isPublicSafeGame } from '@/lib/utils/publicSafety';
+import { coalesceCatalogueRead } from '@/lib/db/cached-catalogue';
 
 export const LIST_PAGE_SIZE = 24;
 export interface ListSummaries { items: GameListSummary[]; hasNext: boolean; page: number }
@@ -55,5 +56,17 @@ export async function readListSummaries(client: SupabaseClient<Database>, page: 
   }) };
 }
 
-// This cache can only call the anonymous client and explicitly public query.
-export const loadPublicListSummaries = unstable_cache((page = 1, ownerId?: string, kind = 'all') => readListSummaries(getPublicSupabase(), page, ownerId, false, kind), ['public-list-summaries-v1'], { revalidate: 300, tags: ['public-lists'] });
+// Share pending work only for the fixed, anonymous overview. Personalized reads
+// use readListSummaries directly and never enter either shared cache.
+const readPublicOverview = coalesceCatalogueRead(() => readListSummaries(getPublicSupabase(), 1));
+const readCachedPublicListSummaries = unstable_cache((page: number, ownerId: string | null, kind: string) =>
+  page === 1 && !ownerId && kind === 'all'
+    ? readPublicOverview()
+    : readListSummaries(getPublicSupabase(), page, ownerId ?? undefined, false, kind),
+['public-list-summaries-v2'], { revalidate: 300, tags: ['public-lists'] });
+
+// Normalize defaults before building the key: SSR(1) and API(1,undefined,'all')
+// must not create independent entries and duplicate catalogue refreshes.
+export function loadPublicListSummaries(page = 1, ownerId?: string, kind = 'all'): Promise<ListSummaries> {
+  return readCachedPublicListSummaries(page, ownerId ?? null, kind);
+}

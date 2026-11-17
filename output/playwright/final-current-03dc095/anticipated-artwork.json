@@ -1,0 +1,168 @@
+{
+  "candidate": "03dc095494e151880b7ab06282836751a7e9116f",
+  "scope": "Actual protected anticipated cards; public reads only, no images generated or fixtures used.",
+  "cards": [
+    {
+      "title": "Path of Exile 2",
+      "page": 1,
+      "loaded": true,
+      "screenshot": "anticipated-01.png",
+      "text": "Path of Exile 2Early Access · full release pendingMassively Multiplayer·Adventure202653717540",
+      "href": "/game/path-of-exile-2",
+      "image": {
+        "alt": "Path of Exile 2",
+        "width": 528,
+        "height": 704,
+        "browserDensityCorrectedWidth": 396,
+        "browserDensityCorrectedHeight": 528,
+        "coverId": "co8ae0"
+      }
+    },
+    {
+      "title": "No Rest for the Wicked",
+      "page": 1,
+      "loaded": true,
+      "screenshot": "anticipated-02.png",
+      "text": "No Rest for the WickedEarly Access · full release pendingAdventure·Action202736915115",
+      "href": "/game/no-rest-for-the-wicked",
+      "image": {
+        "alt": "No Rest for the Wicked",
+        "width": 528,
+        "height": 704,
+        "browserDensityCorrectedWidth": 39,
+        "browserDensityCorrectedHeight": 52,
+        "coverId": "co7h9r"
+      }
+    },
+    {
+      "title": "Tomb Raider: Legacy of Atlantis",
+      "page": 1,
+      "loaded": true,
+      "screenshot": "anticipated-03.png",
+      "text": "Tomb Raider: Legacy of AtlantisAction202711869",
+      "href": "/game/tomb-raider-legacy-of-atlantis",
+      "image": {
+        "alt": "Tomb Raider: Legacy of Atlantis",
+        "width": 528,
+        "height": 704,
+        "browserDensityCorrectedWidth": 39,
+        "browserDensityCorrectedHeight": 52,
+        "coverId": "cob1kg"
+      }
+    },
+    {
+      "title": "Tomb Raider: Catalyst",
+      "page": 1,
+      "loaded": true,
+      "screenshot": "anticipated-04.png",
+      "text": "Tomb Raider: CatalystAdventure·Action20278355",
+      "href": "/game/tomb-raider-catalyst",
+      "image": {
+        "alt": "Tomb Raider: Catalyst",
+        "width": 528,
+        "height": 704,
+        "browserDensityCorrectedWidth": 39,
+        "browserDensityCorrectedHeight": 52,
+        "coverId": "cob0g4"
+      }
+    },
+    {
+      "title": "Titan Quest 2",
+      "page": 1,
+      "loaded": true,
+      "screenshot": "anticipated-05.png",
+      "text": "Titan Quest 2Action·RPG2027110543",
+      "href": "/game/titan-quest-2",
+      "image": {
+        "alt": "Titan Quest 2",
+        "width": 528,
+        "height": 704,
+        "browserDensityCorrectedWidth": 39,
+        "browserDensityCorrectedHeight": 52,
+        "coverId": "co6x9v"
+      }
+    },
+    {
+      "title": "The Expanse: Osiris Reborn",
+      "page": 1,
+      "loaded": true,
+      "screenshot": "anticipated-06.png",
+      "text": "The Expanse: Osiris RebornAction·RPG202766431",
+      "href": "/game/the-expanse-osiris-reborn",
+      "image": {
+        "alt": "The Expanse: Osiris Reborn",
+        "width": 528,
+        "height": 704,
+        "browserDensityCorrectedWidth": 39,
+        "browserDensityCorrectedHeight": 52,
+        "coverId": "co9xoa"
+      }
+    },
+    {
+      "title": "Ananta",
+      "page": 1,
+      "loaded": true,
+      "screenshot": "anticipated-07.png",
+      "text": "anantaAction20273218",
+      "href": "/game/ananta",
+      "image": {
+        "alt": "ananta",
+        "width": 528,
+        "height": 704,
+        "browserDensityCorrectedWidth": 39,
+        "browserDensityCorrectedHeight": 52,
+        "coverId": "cocrlo"
+      }
+    },
+    {
+      "title": "Rayman Legends Retold",
+      "page": 1,
+      "loaded": true,
+      "screenshot": "anticipated-08.png",
+      "text": "Rayman Legends RetoldPlatformer20262715",
+      "href": "/game/rayman-legends-retold",
+      "image": {
+        "alt": "Rayman Legends Retold",
+        "width": 528,
+        "height": 704,
+        "browserDensityCorrectedWidth": 39,
+        "browserDensityCorrectedHeight": 52,
+        "coverId": "coc5tb"
+      }
+    },
+    {
+      "title": "Until Dawn 2",
+      "page": 1,
+      "loaded": true,
+      "screenshot": "anticipated-09.png",
+      "text": "Until Dawn 2Adventure20272515",
+      "href": "/game/until-dawn-2-2",
+      "image": {
+        "alt": "Until Dawn 2",
+        "width": 528,
+        "height": 704,
+        "browserDensityCorrectedWidth": 39,
+        "browserDensityCorrectedHeight": 52,
+        "coverId": "cocvjf"
+      }
+    },
+    {
+      "title": "Exodus (Archetype Entertainment)",
+      "page": 1,
+      "loaded": true,
+      "screenshot": "anticipated-10.png",
+      "text": "Exodus (Archetype Entertainment)Action·RPG20272312",
+      "href": "/game/exodus-archetype-entertainment",
+      "image": {
+        "alt": "Exodus (Archetype Entertainment)",
+        "width": 528,
+        "height": 704,
+        "browserDensityCorrectedWidth": 39,
+        "browserDensityCorrectedHeight": 52,
+        "coverId": "coaott"
+      }
+    }
+  ],
+  "missing": [],
+  "completedAt": "2026-11-17T18:26:28.515Z"
+}
