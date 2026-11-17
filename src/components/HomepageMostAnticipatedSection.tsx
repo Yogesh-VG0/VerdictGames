@@ -34,7 +34,7 @@ export default function HomepageMostAnticipatedSection({
           />
           <HorizontalScroll>
             {games.map((game) => (
-              <div key={game.rawgId} className="shrink-0 w-44 sm:w-52 md:w-56 h-full">
+              <div key={game.slug} className="shrink-0 w-44 sm:w-52 md:w-56 h-full">
                 <Link href={`/game/${game.slug}?rawgId=${game.rawgId}`} prefetch={false} className="block group">
                   <div className="relative aspect-[3/4] rounded-2xl overflow-hidden border border-border bg-surface-2 group-hover:border-accent/40 transition-all">
                     {game.image ? (
@@ -42,6 +42,7 @@ export default function HomepageMostAnticipatedSection({
                         src={game.image}
                         alt={game.name}
                         sizes="(max-width: 640px) 176px, 224px"
+                        fit={game.imageKind === 'artwork' ? 'contain' : 'cover'}
                         className="group-hover:scale-105 transition-transform duration-500"
                         priority={false}
                         fallbackClassName="bg-surface-2"
@@ -51,6 +52,7 @@ export default function HomepageMostAnticipatedSection({
                     )}
                     <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent p-3 pt-8">
                       <p className="text-sm font-bold text-white line-clamp-1 drop-shadow-lg">{game.name}</p>
+                      {game.earlyAccess && <p className="mt-1 text-[10px] text-white/80">Early Access · full release pending</p>}
                       <div className="flex items-center gap-2 mt-1">
                         {game.genres.slice(0, 2).map((genre, genreIndex) => (
                           <span key={genre} className="text-[10px] text-white/60">
@@ -69,8 +71,8 @@ export default function HomepageMostAnticipatedSection({
                     </div>
                   </div>
                   <div className="flex items-center gap-3 mt-2 px-1 text-[10px] text-secondary">
-                    <span className="text-accent font-medium">{formatNumber(game.added)} wishlisted</span>
-                    {game.toplay > 0 && <span>{formatNumber(game.toplay)} want</span>}
+                    {Number(game.added) > 0 && <span title="RAWG users who added this game to any library status" className="text-secondary font-medium">{formatNumber(game.added)} library adds</span>}
+                    {game.toplay > 0 && <span title="RAWG want-to-play status">{formatNumber(game.toplay)} want to play</span>}
                   </div>
                 </Link>
               </div>

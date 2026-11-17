@@ -1,0 +1,14 @@
+{
+  "scope": "credential-free public GET; response header allowlist only",
+  "status": 200,
+  "headers": {
+    "cache-control": "private, no-cache, no-store, max-age=0, must-revalidate",
+    "content-type": "text/html; charset=utf-8",
+    "content-length": null,
+    "server": "Vercel",
+    "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+    "age": "0",
+    "x-nextjs-cache": null,
+    "cf-cache-status": null
+  }
+}

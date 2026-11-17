@@ -1,0 +1,33 @@
+{
+  "label": "after-8b5b2d5",
+  "startedAt": "2026-11-17T10:02:28.974Z",
+  "scope": "One real protected-preview public Lists visit, three bounded scrolls. Installed Chrome; normal Next prefetch behavior; no clicks on collection links. Only read requests permitted; authentication header restricted to preview origin.",
+  "details": [
+    {
+      "phase": "navigation",
+      "path": "/lists/cozy-games-to-unwind",
+      "status": 200,
+      "prefetch": null,
+      "segmentPrefetch": null
+    }
+  ],
+  "overviewStatus": 200,
+  "resources": [],
+  "uniqueDetails": [],
+  "peakBrowserDetailRequests": 0,
+  "detailRequests": 0,
+  "totalEncodedBytes": 0,
+  "totalDecodedBytes": 0,
+  "network": {
+    "blockedNonReads": 0,
+    "originReads": 30
+  },
+  "completedAt": "2026-11-17T10:02:44.965Z",
+  "navigation": {
+    "ms": 5331,
+    "path": "/lists/cozy-games-to-unwind",
+    "heading": "Cozy Games to Unwind With",
+    "gameCards": 12,
+    "detailRequests": 1
+  }
+}

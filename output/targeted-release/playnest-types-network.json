@@ -1,0 +1,12 @@
+{
+  "url": "https://playnest.dev/games?genres=12&platforms=6&gameTypes=main_game",
+  "requests": [
+    {
+      "url": "https://playnest.dev/games?genres=12&platforms=6&gameTypes=main_game",
+      "ms": 1310,
+      "encoded": 25623,
+      "decoded": 110314,
+      "transfer": 25923
+    }
+  ]
+}

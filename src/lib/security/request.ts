@@ -34,3 +34,18 @@ export function safeRedirectPath(path: string | null, fallback = '/'): string {
     return parsed.origin === base ? `${parsed.pathname}${parsed.search}${parsed.hash}` : fallback;
   } catch { return fallback; }
 }
+
+/** Next's internal URL can use localhost behind a proxy. Redirect only to a
+ * known site/deployment origin, or the same loopback listener during tests. */
+export function safeAuthOrigin(internalUrl: string, host: string | null, knownOrigins: string[] = []): string {
+  const internal = new URL(internalUrl);
+  const allowed = new Set([internal.origin]);
+  for (const origin of knownOrigins) { try { allowed.add(new URL(origin).origin); } catch { /* Ignore invalid configuration. */ } }
+  try {
+    const candidate = new URL(`${internal.protocol}//${host}`);
+    const loopback = new Set(['localhost', '127.0.0.1', '[::1]']);
+    if (!candidate.username && !candidate.password && candidate.pathname === '/' && !candidate.search && !candidate.hash
+      && (allowed.has(candidate.origin) || loopback.has(internal.hostname) && loopback.has(candidate.hostname) && candidate.port === internal.port)) return candidate.origin;
+  } catch { /* Fail back to an origin that did not come from request headers. */ }
+  return internal.origin;
+}

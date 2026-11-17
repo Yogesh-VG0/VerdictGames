@@ -1,0 +1,20 @@
+{
+  "commit": "236883d3ef9c5b2c61a34d54f9100da7bb36a52b",
+  "note": "Corrected diagnostic URL uses canonical role-playing-games-rpg; shorthand rpg in earlier controls receipt correctly returned private400. No product bug or code change inferred.",
+  "measuredAt": "2026-11-17T08:40:29.714Z",
+  "path": "/api/rawg/lists?type=genre&genre=role-playing-games-rpg&sort=rating&platform=PC&page=2&pageSize=40",
+  "status": 200,
+  "ms": 4425,
+  "decodedBytes": 22589,
+  "count": 1186,
+  "items": 40,
+  "allPc": true,
+  "allRpg": true,
+  "eligibleReviews": true,
+  "headers": {
+    "cache-control": "public",
+    "x-vercel-cache": "MISS",
+    "age": "0",
+    "server-timing": "catalogue_query;dur=3873, catalogue_artwork;dur=20, catalogue_total;dur=3894"
+  }
+}

@@ -1,0 +1,210 @@
+{
+  "candidate": "ce0b1359d68a87be9ac698e41c44686092615181",
+  "startedAt": "2026-11-17T13:41:26.516Z",
+  "scope": "Serial actual protected-preview public HTTP reads. Page size40 bypasses the Explore SQL framework cache; CDN cache status recorded, database/storage cache state unknown. No cache busting, writes or purges.",
+  "samples": [
+    {
+      "path": "/api/rawg/lists?type=all-time&page=1&pageSize=40&platform=PlayStation+5",
+      "status": 200,
+      "ttfbMs": 3062,
+      "totalMs": 3062,
+      "decodedBytes": 22597,
+      "headers": {
+        "cache-control": "public",
+        "x-vercel-cache": "MISS",
+        "age": "0",
+        "server-timing": "catalogue_query;dur=2312, catalogue_artwork;dur=60, catalogue_total;dur=2377",
+        "vary": null
+      },
+      "encodedBytes": 3685,
+      "transferBytes": 3985,
+      "count": 38,
+      "rows": 38,
+      "firstRank": 1,
+      "lastRank": 250,
+      "source": "catalogue",
+      "degraded": false
+    },
+    {
+      "path": "/api/rawg/lists?type=all-time&page=2&pageSize=40&platform=Nintendo+Switch",
+      "status": 200,
+      "ttfbMs": 1677,
+      "totalMs": 1677,
+      "decodedBytes": 24234,
+      "headers": {
+        "cache-control": "public",
+        "x-vercel-cache": "MISS",
+        "age": "0",
+        "server-timing": "catalogue_query;dur=1102, catalogue_artwork;dur=13, catalogue_total;dur=1116",
+        "vary": null
+      },
+      "encodedBytes": 4114,
+      "transferBytes": 4414,
+      "count": 86,
+      "rows": 40,
+      "firstRank": 125,
+      "lastRank": 244,
+      "source": "catalogue",
+      "degraded": false
+    },
+    {
+      "path": "/api/rawg/lists?type=all-time&page=2&pageSize=40",
+      "status": 200,
+      "ttfbMs": 1455,
+      "totalMs": 1456,
+      "decodedBytes": 22445,
+      "headers": {
+        "cache-control": "public",
+        "x-vercel-cache": "MISS",
+        "age": "0",
+        "server-timing": "catalogue_query;dur=934, catalogue_artwork;dur=5, catalogue_total;dur=940",
+        "vary": null
+      },
+      "encodedBytes": 3698,
+      "transferBytes": 3998,
+      "count": 250,
+      "rows": 40,
+      "firstRank": 41,
+      "lastRank": 80,
+      "source": "catalogue",
+      "degraded": false
+    },
+    {
+      "path": "/api/rawg/lists?type=genre&genre=role-playing-games-rpg&page=2&pageSize=40&platform=PC&sort=rating",
+      "status": 200,
+      "ttfbMs": 1413,
+      "totalMs": 1413,
+      "decodedBytes": 22588,
+      "headers": {
+        "cache-control": "public",
+        "x-vercel-cache": "MISS",
+        "age": "0",
+        "server-timing": "catalogue_query;dur=914, catalogue_artwork;dur=12, catalogue_total;dur=927",
+        "vary": null
+      },
+      "encodedBytes": 3684,
+      "transferBytes": 3984,
+      "count": 1186,
+      "rows": 40,
+      "source": "catalogue",
+      "degraded": false
+    },
+    {
+      "path": "/api/rawg/lists?type=popular-in-year&year=2024&page=1&pageSize=40&platform=PC&sort=name-asc",
+      "status": 200,
+      "ttfbMs": 1513,
+      "totalMs": 1514,
+      "decodedBytes": 22177,
+      "headers": {
+        "cache-control": "public",
+        "x-vercel-cache": "MISS",
+        "age": "0",
+        "server-timing": "catalogue_query;dur=885, catalogue_artwork;dur=146, catalogue_total;dur=1032",
+        "vary": null
+      },
+      "encodedBytes": 3517,
+      "transferBytes": 3817,
+      "count": 267,
+      "rows": 40,
+      "source": "catalogue",
+      "degraded": false
+    },
+    {
+      "path": "/api/rawg/lists?type=recent&page=1&pageSize=40&platform=PC",
+      "status": 200,
+      "ttfbMs": 1353,
+      "totalMs": 1354,
+      "decodedBytes": 1913,
+      "headers": {
+        "cache-control": "public",
+        "x-vercel-cache": "MISS",
+        "age": "0",
+        "server-timing": "catalogue_query;dur=856, catalogue_artwork;dur=0, catalogue_total;dur=856",
+        "vary": null
+      },
+      "encodedBytes": 723,
+      "transferBytes": 1023,
+      "count": 3,
+      "rows": 3,
+      "source": "catalogue",
+      "degraded": false
+    },
+    {
+      "path": "/api/rawg/lists?type=best-of-year&page=1&pageSize=40&platform=PC",
+      "status": 200,
+      "ttfbMs": 2194,
+      "totalMs": 2194,
+      "decodedBytes": 13158,
+      "headers": {
+        "cache-control": "public",
+        "x-vercel-cache": "MISS",
+        "age": "0",
+        "server-timing": "snapshot;dur=10, matches;dur=876, portraits;dur=530, provider_artwork;dur=3, catalogue_total;dur=1420",
+        "vary": null
+      },
+      "encodedBytes": 2319,
+      "transferBytes": 2619,
+      "count": 29,
+      "rows": 29,
+      "source": "rawg",
+      "degraded": false
+    },
+    {
+      "path": "/api/rawg/lists?type=best-of-year&page=2&pageSize=40&platform=PC",
+      "status": 200,
+      "ttfbMs": 980,
+      "totalMs": 980,
+      "decodedBytes": 301,
+      "headers": {
+        "cache-control": "public",
+        "x-vercel-cache": "MISS",
+        "age": "0",
+        "server-timing": "snapshot;dur=8, matches;dur=439, portraits;dur=5, provider_artwork;dur=2, catalogue_total;dur=455",
+        "vary": null
+      },
+      "encodedBytes": 228,
+      "transferBytes": 528,
+      "count": 29,
+      "rows": 0,
+      "source": "rawg",
+      "degraded": false
+    },
+    {
+      "path": "/",
+      "status": 200,
+      "ttfbMs": 1167,
+      "totalMs": 1758,
+      "decodedBytes": 790554,
+      "headers": {
+        "cache-control": "private, no-cache, no-store, max-age=0, must-revalidate",
+        "x-vercel-cache": "MISS",
+        "age": "0",
+        "server-timing": null,
+        "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"
+      },
+      "encodedBytes": 68149,
+      "transferBytes": 68449,
+      "hasHomepageHeading": true,
+      "hasRuntimeError": false
+    },
+    {
+      "path": "/",
+      "status": 200,
+      "ttfbMs": 448,
+      "totalMs": 1047,
+      "decodedBytes": 790554,
+      "headers": {
+        "cache-control": "private, no-cache, no-store, max-age=0, must-revalidate",
+        "x-vercel-cache": "MISS",
+        "age": "0",
+        "server-timing": null,
+        "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"
+      },
+      "encodedBytes": 67990,
+      "transferBytes": 68290,
+      "hasHomepageHeading": true,
+      "hasRuntimeError": false
+    }
+  ],
+  "completedAt": "2026-11-17T13:41:44.902Z"
+}

@@ -1,0 +1,42 @@
+{
+  "scope": "Disposable local databases only; historical public catalogue",
+  "measuredAt": "2026-11-15T19:35:46.369Z",
+  "results": [
+    {
+      "database": "verdict_perf_20261115",
+      "before": {
+        "rows": 8350,
+        "heap": "26173440",
+        "indexes": "6873088"
+      },
+      "after": {
+        "rows": 8350,
+        "heap": "26550272",
+        "indexes": "6873088",
+        "derived_bytes": "401712"
+      },
+      "migrationMs": 1002,
+      "queryMs": 31.07,
+      "count": 250,
+      "bytes": 30066
+    },
+    {
+      "database": "postgres",
+      "before": {
+        "rows": 0,
+        "heap": "352256",
+        "indexes": "4210688"
+      },
+      "after": {
+        "rows": 0,
+        "heap": "8192",
+        "indexes": "196608",
+        "derived_bytes": null
+      },
+      "migrationMs": 32,
+      "queryMs": 4.97,
+      "count": 0,
+      "bytes": 68
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "project": "vjzsvnaswronkctazarn",
+  "feedKey": "discovery:rawg:upcoming:v1",
+  "sourceHashes": {
+    "scripts/lib/discovery-snapshot.mjs": "a2bbc5ef3a4f200d8d66e58231d8b9911b532579608652bcdfeb0209d458b6fb",
+    "scripts/lib/rawg-client.mjs": "cd6088d3556ac312936193b896d684d7bbbe43d2b635adabc0cf5c1f442ed9c5",
+    "src/lib/external/rawg-snapshot.mjs": "2b6d87bca597b9be631b0cadfa64966db4be1d0602c49a15818d9c58e8b9eaaa"
+  },
+  "scriptSha256": "9046004139c67dd12cac4a4ced0d989233e72293a8cca41a8d712cc3e1e080bc",
+  "provider": "RAWG",
+  "count": 40,
+  "fetchedAt": "2026-11-17T09:27:05.713Z",
+  "payloadBytes": 87357,
+  "payloadSha256": "cfe217c3174b9d882f08d2b88bc75a09d32baec8ef7c773ec83ebfd7fe9c149e",
+  "sourceGameWrites": 0,
+  "schedulerRuns": 0,
+  "cacheKeysWritten": 1,
+  "committed": true,
+  "elapsedMs": 4808,
+  "verifiedAt": "2026-11-17T09:27:08.258Z",
+  "candidate": "236883d3ef9c5b2c61a34d54f9100da7bb36a52b"
+}

@@ -61,7 +61,7 @@ export default function DeveloperClientPage({ slug, initialHub }: Props) {
       {/* Hero */}
       <FadeInSection>
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={false}
           animate={{ opacity: 1, y: 0 }}
           className="rounded-2xl border border-white/[0.08] bg-surface p-6 md:p-8"
         >
@@ -100,7 +100,7 @@ export default function DeveloperClientPage({ slug, initialHub }: Props) {
           {hub.games.map((game, i) => (
             <motion.div
               key={game.id}
-              initial={{ opacity: 0, y: 20 }}
+              initial={false}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.05, duration: 0.3 }}
             >

@@ -6,12 +6,14 @@
  */
 
 import { NextRequest } from "next/server";
-import { jsonOk, jsonError, jsonBadRequest } from "@/lib/api/response";
+import { jsonPrivateOk as jsonOk, jsonError, jsonBadRequest } from "@/lib/api/response";
 import { mapReviewRow } from "@/lib/db/mappers";
 import { attachReviewVoteFields, getReviewVoteAggregates, getUserReviewVotes } from "@/lib/reviewVotes";
 import type { PaginatedResponse, Review } from "@/lib/types";
 
 const PAGE_SIZE = 12;
+export const dynamic = "force-dynamic";
+export const maxDuration = 30;
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
@@ -85,7 +87,7 @@ export async function GET(request: NextRequest) {
       hasMore: start + PAGE_SIZE < (count ?? 0),
     };
 
-    return jsonOk(result, 200, { cache: true });
+    return jsonOk(result);
   } catch (err) {
     console.error("[API] /reviews error:", err);
     const empty: PaginatedResponse<Review> = { items: [], total: 0, page, pageSize: PAGE_SIZE, hasMore: false };

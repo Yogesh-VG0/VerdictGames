@@ -1,0 +1,134 @@
+{
+  "measuredAt": "2026-11-17T10:05:15.355Z",
+  "scope": "Two identity-mapped existing IGDB records, read-only API query; no database connection/worker invocation.",
+  "records": [
+    {
+      "id": 113112,
+      "name": "Hades",
+      "slug": "hades--1",
+      "gameStatus": null,
+      "firstPlayableDate": "2020-09-17T00:00:00.000Z",
+      "releaseDates": [
+        {
+          "date": "2020-09-17T00:00:00.000Z",
+          "format": "YYYYMMDD",
+          "status": "Full Release"
+        },
+        {
+          "date": "2021-08-13T00:00:00.000Z",
+          "format": "YYYYMMDD",
+          "status": "Full Release"
+        },
+        {
+          "date": "2021-08-13T00:00:00.000Z",
+          "format": "YYYYMMDD",
+          "status": "Full Release"
+        },
+        {
+          "date": "2021-08-13T00:00:00.000Z",
+          "format": "YYYYMMDD",
+          "status": "Full Release"
+        },
+        {
+          "date": "2024-03-19T00:00:00.000Z",
+          "format": "YYYYMMDD",
+          "status": "Full Release"
+        },
+        {
+          "date": "2020-09-17T00:00:00.000Z",
+          "format": "YYYYMMDD",
+          "status": "Full Release"
+        },
+        {
+          "date": "2021-06-24T00:00:00.000Z",
+          "format": "YYYYMMDD",
+          "status": "Full Release"
+        },
+        {
+          "date": "2021-08-13T00:00:00.000Z",
+          "format": "YYYYMMDD",
+          "status": "Full Release"
+        },
+        {
+          "date": "2019-12-10T00:00:00.000Z",
+          "format": "YYYYMMDD",
+          "status": "Early Access"
+        },
+        {
+          "date": "2020-09-17T00:00:00.000Z",
+          "format": "YYYYMMDD",
+          "status": "Full Release"
+        },
+        {
+          "date": "2021-03-18T00:00:00.000Z",
+          "format": "YYYYMMDD",
+          "status": "Full Release"
+        },
+        {
+          "date": "2020-09-17T00:00:00.000Z",
+          "format": "YYYYMMDD",
+          "status": "Full Release"
+        },
+        {
+          "date": "2018-12-07T00:00:00.000Z",
+          "format": "YYYYMMDD",
+          "status": "Early Access"
+        }
+      ],
+      "currentMapperResult": {}
+    },
+    {
+      "id": 228525,
+      "name": "Hades II",
+      "slug": "hades-ii",
+      "gameStatus": null,
+      "firstPlayableDate": "2025-09-25T00:00:00.000Z",
+      "releaseDates": [
+        {
+          "date": "2024-10-16T00:00:00.000Z",
+          "format": "YYYYMMDD",
+          "status": "Early Access"
+        },
+        {
+          "date": "2024-05-06T00:00:00.000Z",
+          "format": "YYYYMMDD",
+          "status": "Early Access"
+        },
+        {
+          "date": "2025-09-25T00:00:00.000Z",
+          "format": "YYYYMMDD",
+          "status": "Full Release"
+        },
+        {
+          "date": "2025-09-25T00:00:00.000Z",
+          "format": "YYYYMMDD",
+          "status": "Full Release"
+        },
+        {
+          "date": "2025-09-25T00:00:00.000Z",
+          "format": "YYYYMMDD",
+          "status": "Full Release"
+        },
+        {
+          "date": "2025-09-25T00:00:00.000Z",
+          "format": "YYYYMMDD",
+          "status": "Full Release"
+        },
+        {
+          "date": "2026-04-14T00:00:00.000Z",
+          "format": "YYYYMMDD",
+          "status": "Full Release"
+        },
+        {
+          "date": "2026-04-14T00:00:00.000Z",
+          "format": "YYYYMMDD",
+          "status": "Full Release"
+        }
+      ],
+      "currentMapperResult": {
+        "releaseDate": "2025-09-25",
+        "releaseStatus": null
+      }
+    }
+  ]
+}

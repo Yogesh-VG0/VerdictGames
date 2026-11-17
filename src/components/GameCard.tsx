@@ -80,7 +80,7 @@ export default function GameCard({
       <Link href={`/game/${game.slug}`} prefetch={prefetch} className={cn("block group", className)}>
         <article
           className={cn(
-            "relative rounded-2xl border border-border bg-surface overflow-hidden card-shimmer h-full hover:border-accent/30 hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-300",
+            "relative rounded-2xl border border-border bg-surface overflow-hidden signal-card h-full hover:border-border-hover",
             hasRealScore(game) ? scoreGlowBorder(game.score) : "hover:shadow-[0_0_20px_-8px_rgba(168,85,247,0.12)]"
           )}
         >
@@ -91,7 +91,7 @@ export default function GameCard({
                 src={game.coverImage}
                 alt={game.title}
                 sizes="(max-width: 640px) 88vw, (max-width: 1024px) 320px, 360px"
-                className="object-cover group-hover:scale-110"
+                className="object-cover motion-safe:group-hover:scale-[1.03]"
                 priority={priority}
               />
             ) : (
@@ -104,16 +104,16 @@ export default function GameCard({
               <div
                 className={cn(
                   "absolute top-3 right-3 rounded-xl px-2.5 py-1 flex items-center gap-1.5",
-                  "bg-black/60 backdrop-blur-md border border-white/10 text-sm font-bold tabular-nums",
+                  "hero-score-palette bg-[#050509] border border-white/15 text-lg font-bold tabular-nums",
                   scoreColor(game.score),
                   "group-hover:" + scoreGlowClass(game.score),
-                  "transition-all duration-300"
+                  "transition-colors duration-150"
                 )}
                 title={`Verdict Score: ${game.score} (source: ${game.scoreSource ?? "blended"})`}
               >
                 {game.score}
                 {sourceLabel(game.scoreSource) && (
-                  <span className="text-[8px] opacity-50 font-medium uppercase">{sourceLabel(game.scoreSource)}</span>
+                  <span className="text-[10px] text-white/80 font-medium uppercase">{sourceLabel(game.scoreSource)}</span>
                 )}
               </div>
             ) : isUnreleased(game) ? (
@@ -173,7 +173,7 @@ export default function GameCard({
     <Link href={`/game/${game.slug}`} prefetch={prefetch} className={cn("block group", className)}>
       <article
         className={cn(
-          "relative rounded-2xl border border-border bg-surface overflow-hidden card-shimmer h-full hover:border-accent/30 hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-300",
+          "relative rounded-2xl border border-border bg-surface overflow-hidden signal-card h-full hover:border-border-hover",
           hasRealScore(game) ? scoreGlowBorder(game.score) : "hover:shadow-[0_0_20px_-8px_rgba(168,85,247,0.1)]"
         )}
       >
@@ -184,7 +184,7 @@ export default function GameCard({
               src={game.coverImage}
               alt={game.title}
               sizes="(max-width: 640px) 44vw, (max-width: 768px) 208px, (max-width: 1024px) 224px, 240px"
-              className="object-cover group-hover:scale-110"
+              className="object-cover motion-safe:group-hover:scale-[1.03]"
               priority={priority}
             />
           ) : (
@@ -199,15 +199,15 @@ export default function GameCard({
             <div
               className={cn(
                 "absolute top-2.5 right-2.5 rounded-xl px-2 py-1 flex items-center gap-1",
-                "bg-black/60 backdrop-blur-md border border-white/10 text-xs font-bold tabular-nums",
+                "hero-score-palette bg-[#050509] border border-white/15 text-base font-bold tabular-nums",
                 scoreColor(game.score),
-                "transition-all duration-300"
+                "transition-colors duration-150"
               )}
               title={`Verdict ${game.score} (${game.scoreSource ?? "blended"})`}
             >
               {game.score}
               {sourceLabel(game.scoreSource) && (
-                <span className="text-[7px] opacity-40 font-medium uppercase">{sourceLabel(game.scoreSource)}</span>
+                <span className="text-[10px] text-white/80 font-medium uppercase">{sourceLabel(game.scoreSource)}</span>
               )}
             </div>
           )}

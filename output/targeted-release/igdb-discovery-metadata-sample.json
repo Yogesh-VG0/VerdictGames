@@ -1,0 +1,24 @@
+{
+  "measuredAt": "2026-11-16T08:23:37.913Z",
+  "scope": "40 existing IGDB mappings selected by catalogue UUID order; descriptive sample, not population completeness; no writes",
+  "requested": 40,
+  "status": 200,
+  "ms": 1221,
+  "bytes": 112171,
+  "returned": 40,
+  "present": {
+    "game_type": 40,
+    "game_modes": 38,
+    "themes": 37,
+    "player_perspectives": 38,
+    "franchises": 14,
+    "collections": 25,
+    "platforms": 40,
+    "release_dates": 39,
+    "involved_companies": 40,
+    "cover": 40,
+    "artworks": 34,
+    "similar_games": 40
+  },
+  "mainGames": 39
+}

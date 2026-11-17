@@ -1,0 +1,81 @@
+{
+  "candidate": "516bc021d46a1acc2b93c89e712335bfdf00fb3e",
+  "scope": "Actual protected preview; public browser reads and isolated local preferences only. No signup/email submission, hosted fixture or data write.",
+  "startedAt": "2026-11-17T13:22:39.723Z",
+  "cases": [
+    {
+      "width": 390,
+      "theme": "dark",
+      "checks": [
+        "year/platform/sort controls update the shareable URL and reset page",
+        "refresh preserves selected controls and rendered order",
+        "expanded Browse/Search filters fit the viewport",
+        "normal visible gradient headings move",
+        "pause stops headings and persists across reload",
+        "system reduced motion keeps the visible heading static"
+      ],
+      "filterOverflow": false,
+      "passed": true
+    },
+    {
+      "width": 390,
+      "theme": "light",
+      "checks": [],
+      "failed": true,
+      "error": "TimeoutError"
+    },
+    {
+      "width": 768,
+      "theme": "dark",
+      "checks": [
+        "year/platform/sort controls update the shareable URL and reset page",
+        "refresh preserves selected controls and rendered order",
+        "expanded Browse/Search filters fit the viewport",
+        "normal visible gradient headings move",
+        "pause stops headings and persists across reload",
+        "system reduced motion keeps the visible heading static"
+      ],
+      "filterOverflow": false,
+      "passed": true
+    },
+    {
+      "width": 768,
+      "theme": "light",
+      "checks": [
+        "year/platform/sort controls update the shareable URL and reset page",
+        "refresh preserves selected controls and rendered order",
+        "expanded Browse/Search filters fit the viewport",
+        "normal visible gradient headings move",
+        "pause stops headings and persists across reload",
+        "system reduced motion keeps the visible heading static"
+      ],
+      "filterOverflow": false,
+      "passed": true
+    },
+    {
+      "width": 1440,
+      "theme": "dark",
+      "checks": [
+        "year/platform/sort controls update the shareable URL and reset page",
+        "refresh preserves selected controls and rendered order",
+        "expanded Browse/Search filters fit the viewport"
+      ],
+      "filterOverflow": false,
+      "failed": true,
+      "error": "AssertionError"
+    },
+    {
+      "width": 1440,
+      "theme": "light",
+      "checks": [
+        "year/platform/sort controls update the shareable URL and reset page",
+        "refresh preserves selected controls and rendered order",
+        "expanded Browse/Search filters fit the viewport"
+      ],
+      "filterOverflow": false,
+      "failed": true,
+      "error": "AssertionError"
+    }
+  ],
+  "completedAt": "2026-11-17T13:24:40.375Z"
+}

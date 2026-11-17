@@ -1,5 +1,6 @@
 "use client";
 
+import { preferredScrollBehavior } from '@/lib/utils/motion';
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
@@ -160,6 +161,7 @@ function SearchClientPageContent({
   initialTopGamesData,
 }: SearchClientPageProps) {
   const [browseTab, setBrowseTab] = useState<SearchBrowseTab>(initialState.browseTab);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [query, setQuery] = useState(initialState.games.query);
   const [debouncedQuery, setDebouncedQuery] = useState(initialState.games.query);
   const [platform, setPlatform] = useState<Platform | "All">(initialState.games.platform);
@@ -184,7 +186,7 @@ function SearchClientPageContent({
     const scrollAmount = 200;
     ref.current.scrollBy({
       left: direction === "left" ? -scrollAmount : scrollAmount,
-      behavior: "smooth",
+      behavior: preferredScrollBehavior(),
     });
   };
 
@@ -413,7 +415,7 @@ function SearchClientPageContent({
   return (
     <div className="max-w-[1400px] mx-auto px-4 py-8 sm:py-10 space-y-8 overflow-x-hidden page-enter">
       <motion.div
-        initial={{ opacity: 0, y: 16 }}
+        initial={false}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
         className="mb-0"
@@ -491,13 +493,19 @@ function SearchClientPageContent({
       )}
 
       {browseTab === "games" && (
-      <div className="space-y-4">
+      <div>
+        <button type="button" aria-controls="search-filter-controls" aria-expanded={filtersOpen} onClick={() => setFiltersOpen(!filtersOpen)}
+          className="md:hidden w-full text-left rounded-xl border border-border px-4 py-3 text-sm font-medium text-foreground">
+          Filters and sorting{[platform !== 'All', monetization !== 'All', Boolean(genre), Boolean(year)].filter(Boolean).length > 0 ? ` (${[platform !== 'All', monetization !== 'All', Boolean(genre), Boolean(year)].filter(Boolean).length} active)` : ''}
+        </button>
+        <div id="search-filter-controls" className={cn('space-y-4', filtersOpen ? 'block pt-4 md:pt-0' : 'hidden md:block')}>
         <div className="space-y-2">
           <label className="text-[10px] uppercase tracking-wider text-tertiary font-medium block">
             Platform
           </label>
           <div className="overflow-x-auto scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
             <FilterChips
+              label="Platform"
               options={PLATFORM_FILTER_OPTIONS.map((option) => option.value)}
               selected={platform}
               onChange={(value) => {
@@ -516,6 +524,7 @@ function SearchClientPageContent({
           </label>
           <div className="overflow-x-auto scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
             <FilterChips
+              label="Price"
               options={MONETIZATION_OPTIONS as unknown as string[]}
               selected={monetization}
               onChange={(value) => {
@@ -528,7 +537,7 @@ function SearchClientPageContent({
 
         <div className="flex flex-wrap items-end gap-4">
           <div className="space-y-2">
-            <label htmlFor="search-genre-filter" className="text-[10px] uppercase tracking-wider text-tertiary font-medium">
+            <label htmlFor="search-genre-filter" className="block text-xs uppercase tracking-wider text-secondary font-medium">
               Genre
             </label>
             <select
@@ -539,7 +548,7 @@ function SearchClientPageContent({
                 setGenre(e.target.value);
                 setPage(1);
               }}
-              className="h-10 px-3 text-sm rounded-xl border border-border bg-surface-2 text-foreground focus:outline-none focus:border-accent/50 transition-colors"
+              className="vg-select text-sm"
             >
               <option value="">All Genres</option>
               {SEARCH_GENRE_OPTIONS.map((candidate) => (
@@ -551,7 +560,7 @@ function SearchClientPageContent({
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="search-year-filter" className="text-[10px] uppercase tracking-wider text-tertiary font-medium">
+            <label htmlFor="search-year-filter" className="block text-xs uppercase tracking-wider text-secondary font-medium">
               Year
             </label>
             <select
@@ -562,7 +571,7 @@ function SearchClientPageContent({
                 setYear(e.target.value);
                 setPage(1);
               }}
-              className="h-10 px-3 text-sm rounded-xl border border-border bg-surface-2 text-foreground focus:outline-none focus:border-accent/50 transition-colors"
+              className="vg-select text-sm"
             >
               <option value="">All Years</option>
               {allYears.map((candidate) => (
@@ -573,8 +582,8 @@ function SearchClientPageContent({
             </select>
           </div>
 
-          <div className="space-y-1 ml-auto">
-            <label htmlFor="search-sort" className="text-[10px] uppercase tracking-wider text-tertiary font-medium">
+          <div className="space-y-2 sm:ml-auto">
+            <label htmlFor="search-sort" className="block text-xs uppercase tracking-wider text-secondary font-medium">
               Sort
             </label>
             <SortDropdown
@@ -596,6 +605,7 @@ function SearchClientPageContent({
             />
           </div>
         </div>
+        </div>
       </div>
       )}
 
@@ -605,9 +615,12 @@ function SearchClientPageContent({
           {isInitialLoad ? (
             <motion.div
               key="loading"
-              initial={{ opacity: 0 }}
+              role="status"
+              aria-label="Loading games"
+              aria-busy="true"
+              initial={false}
               animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+              exit={undefined}
               transition={{ duration: 0.2 }}
               className="space-y-4"
             >
@@ -616,9 +629,9 @@ function SearchClientPageContent({
           ) : games.length > 0 ? (
             <motion.div
               key={`results-${searchApiPath}`}
-              initial={{ opacity: 0, y: 8 }}
+              initial={false}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
+              exit={undefined}
               transition={{ duration: 0.3 }}
               className="transition-opacity relative"
               aria-busy={isResultsRefreshing}
@@ -643,7 +656,7 @@ function SearchClientPageContent({
               {totalPages > 1 && (
                 <div className="flex items-center justify-center gap-2 pt-8">
                   <button
-                    onClick={() => { setPage((currentPage) => Math.max(1, currentPage - 1)); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                    onClick={() => { setPage((currentPage) => Math.max(1, currentPage - 1)); window.scrollTo({ top: 0, behavior: preferredScrollBehavior() }); }}
                     disabled={page <= 1}
                     className="px-4 py-2 text-sm font-medium rounded-lg border border-border text-secondary hover:text-foreground hover:border-accent/50 transition-colors disabled:opacity-30 disabled:pointer-events-none"
                   >
@@ -667,7 +680,7 @@ function SearchClientPageContent({
                         ) : (
                           <button
                             key={candidate}
-                            onClick={() => { setPage(candidate); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                            onClick={() => { setPage(candidate); window.scrollTo({ top: 0, behavior: preferredScrollBehavior() }); }}
                             className={`w-9 h-9 text-sm font-medium rounded-lg transition-colors ${
                               candidate === page
                                 ? "bg-accent text-white"
@@ -681,7 +694,7 @@ function SearchClientPageContent({
                     })()}
                   </div>
                   <button
-                    onClick={() => { setPage((currentPage) => Math.min(totalPages, currentPage + 1)); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                    onClick={() => { setPage((currentPage) => Math.min(totalPages, currentPage + 1)); window.scrollTo({ top: 0, behavior: preferredScrollBehavior() }); }}
                     disabled={!hasMore}
                     className="px-4 py-2 text-sm font-medium rounded-lg border border-border text-secondary hover:text-foreground hover:border-accent/50 transition-colors disabled:opacity-30 disabled:pointer-events-none"
                   >
@@ -693,9 +706,10 @@ function SearchClientPageContent({
           ) : searchErrorMessage ? (
             <motion.div
               key="error"
-              initial={{ opacity: 0, y: 8 }}
+              role="alert"
+              initial={false}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
+              exit={undefined}
               transition={{ duration: 0.3 }}
               className="text-center py-16 space-y-4"
             >
@@ -715,9 +729,9 @@ function SearchClientPageContent({
           ) : !isLoading ? (
             <motion.div
               key="empty"
-              initial={{ opacity: 0, y: 8 }}
+              initial={false}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
+              exit={undefined}
               transition={{ duration: 0.3 }}
               className="text-center py-16 space-y-4"
             >
@@ -876,7 +890,7 @@ function SearchClientPageContent({
               {filteredDeals.map((deal, index) => (
                 <motion.div
                   key={deal.id}
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={false}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: Math.min(index * 0.03, 0.5), duration: 0.4 }}
                 >
@@ -936,9 +950,9 @@ function SearchClientPageContent({
             <AnimatePresence mode="wait">
               {freeSubTab === "subscriptions" && availableServices.length > 1 && (
                 <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
+                  initial={false}
+                  animate={undefined}
+                  exit={undefined}
                   className="overflow-hidden space-y-2"
                 >
                   <label className="text-[10px] uppercase tracking-wider text-tertiary font-medium">
@@ -1086,7 +1100,7 @@ function SearchClientPageContent({
                     return (
                       <motion.div
                         key={game.id}
-                        initial={{ opacity: 0, y: 20 }}
+                        initial={false}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: Math.min(index * 0.03, 0.5), duration: 0.4 }}
                       >
@@ -1206,7 +1220,7 @@ function SearchClientPageContent({
                     return (
                       <motion.div
                         key={game.id}
-                        initial={{ opacity: 0, y: 20 }}
+                        initial={false}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: Math.min(index * 0.03, 0.5), duration: 0.4 }}
                       >

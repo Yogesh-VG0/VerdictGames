@@ -1,0 +1,109 @@
+{
+  "candidate": "b3eb53754e2f89e7b2606f393e0b2e7832da8008",
+  "at": "2026-11-17T14:55:01.075Z",
+  "scope": "Actual anonymous state after normal application Sign Out and confirmation. Read-only requests; no fixture creation or private contents recorded.",
+  "samples": [
+    {
+      "path": "/api/auth/me",
+      "status": 401,
+      "ms": 506,
+      "headers": {
+        "cache-control": "private, no-store, max-age=0",
+        "cdn-cache-control": "private, no-store",
+        "vary": "Cookie",
+        "x-vercel-cache": "MISS",
+        "age": "0"
+      }
+    },
+    {
+      "path": "/api/library",
+      "status": 401,
+      "ms": 534,
+      "headers": {
+        "cache-control": "private, no-store, max-age=0",
+        "cdn-cache-control": "private, no-store",
+        "vary": "Cookie",
+        "x-vercel-cache": "MISS",
+        "age": "0"
+      }
+    },
+    {
+      "path": "/api/library/stats",
+      "status": 401,
+      "ms": 548,
+      "headers": {
+        "cache-control": "private, no-store, max-age=0",
+        "cdn-cache-control": "private, no-store",
+        "vary": "Cookie",
+        "x-vercel-cache": "MISS",
+        "age": "0"
+      }
+    },
+    {
+      "path": "/api/lists?scope=mine&view=summary&page=1",
+      "status": 401,
+      "ms": 577,
+      "headers": {
+        "cache-control": "private, no-store, max-age=0",
+        "cdn-cache-control": "private, no-store",
+        "vary": "Cookie",
+        "x-vercel-cache": "MISS",
+        "age": "0"
+      }
+    },
+    {
+      "path": "/api/lists/acceptance-private-a-20261116-756d4bfe?scope=mine",
+      "status": 401,
+      "ms": 604,
+      "headers": {
+        "cache-control": "private, no-store, max-age=0",
+        "cdn-cache-control": "private, no-store",
+        "vary": "Cookie",
+        "x-vercel-cache": "MISS",
+        "age": "0"
+      }
+    },
+    {
+      "path": "/api/lists?view=summary&page=1",
+      "status": 200,
+      "ms": 272,
+      "headers": {
+        "cache-control": "public",
+        "cdn-cache-control": null,
+        "vary": null,
+        "x-vercel-cache": "STALE",
+        "age": "309"
+      },
+      "bytes": 26766,
+      "sha256": "9ce66dceb2bf46abf81fb94ce0f04781c70926d53d298fd42ed594ef0a716e1d"
+    },
+    {
+      "path": "/api/games/hades",
+      "status": 200,
+      "ms": 248,
+      "headers": {
+        "cache-control": "public, max-age=0, must-revalidate",
+        "cdn-cache-control": null,
+        "vary": null,
+        "x-vercel-cache": "HIT",
+        "age": "308"
+      },
+      "bytes": 3500,
+      "sha256": "346edd197fcee094b52241bfa12f12b7d7fb4fc34e6126a612f99216094dea5f"
+    },
+    {
+      "path": "/api/games/hades",
+      "status": 200,
+      "ms": 266,
+      "headers": {
+        "cache-control": "public, max-age=0, must-revalidate",
+        "cdn-cache-control": null,
+        "vary": null,
+        "x-vercel-cache": "HIT",
+        "age": "308"
+      },
+      "bytes": 3500,
+      "sha256": "346edd197fcee094b52241bfa12f12b7d7fb4fc34e6126a612f99216094dea5f"
+    }
+  ]
+}

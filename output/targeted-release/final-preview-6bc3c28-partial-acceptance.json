@@ -1,0 +1,18 @@
+{
+  "commit": "6bc3c28768629aeaf3e7a1d4e28b96468699e3f7",
+  "preview": "https://verdict-games-6d2tiem1o-yogesh-vg0s-projects.vercel.app",
+  "scope": "Actual protected rendered content inspected through Chrome; partial acceptance only, no hosted data writes",
+  "renderedScreenshotsInspected": [
+    {"route":"/search?q=hades","viewport":"390x844","theme":"dark","state":"expanded filters","result":"labels, spacing and controls visible; platform rail intentionally scrolls"},
+    {"route":"/search?q=hades","viewport":"390x844","theme":"light","state":"expanded filters","result":"labels, spacing and controls visible; no document horizontal overflow"},
+    {"route":"/search?q=hades&year=2020","viewport":"768x1024","theme":"light","result":"one correctly matched Hades poster and result; filters fit"},
+    {"route":"/search?q=hades&platform=PC&year=2020&sort=top-rated","viewport":"768x1024","theme":"dark","result":"PC/year/sort selections reflected in URL and rendered result"}
+  ],
+  "additionalDomOnly": [
+    {"route":"/game/hades","viewport":"1440x1000","result":"correct title, h1, initial artwork and trailer image loaded, no horizontal document overflow; screenshot capture did not finish, so full visual acceptance is pending"}
+  ],
+  "applicationSession":"anonymous",
+  "notCovered":"All Explore categories, complete desktop/theme matrix, signup/recovery delivery, populated authenticated library/private lists and multi-user isolation remain pending",
+  "protectionDisabled":false,
+  "hostedFixturesCreated":false
+}

@@ -11,8 +11,8 @@ import HomepageNewsSection from "@/components/HomepageNewsSection";
 import GradientText from "@/components/ui/GradientText";
 import {
   HOMEPAGE_REVALIDATE_SECONDS,
-  loadHomepageData,
-  loadHomepageMostAnticipated,
+  loadHomepageDataWithStatus,
+  loadHomepageMostAnticipatedWithStatus,
 } from "@/lib/services/homepage";
 
 const CARD_WIDTH = "shrink-0 w-44 sm:w-52 md:w-56 lg:w-60 h-full";
@@ -22,6 +22,7 @@ export const revalidate = 300;
 // Catalogue data is cached independently in the service layer. Render the
 // shell at request time so a transient database outage cannot block a deploy.
 export const dynamic = "force-dynamic";
+export const maxDuration = 30;
 
 if (HOMEPAGE_REVALIDATE_SECONDS !== revalidate) {
   throw new Error("Homepage page revalidate must stay aligned with the shared homepage loader contract.");
@@ -53,10 +54,13 @@ export const metadata: Metadata = {
 };
 
 export default async function HomePage() {
-  const [homepage, mostAnticipatedGames] = await Promise.all([
-    loadHomepageData(),
-    loadHomepageMostAnticipated(),
+  const [homepageResult, anticipatedResult] = await Promise.all([
+    loadHomepageDataWithStatus(),
+    loadHomepageMostAnticipatedWithStatus(),
   ]);
+  const { data: homepage } = homepageResult;
+  const mostAnticipatedGames = anticipatedResult.data;
+  const degraded = homepageResult.degraded || anticipatedResult.degraded;
   const featured = homepage.hero.filter((game) => game.headerImage || game.coverImage).slice(0, 6);
   const trendingGames = homepage.trending
     .filter((game) => game.coverImage)
@@ -70,6 +74,11 @@ export default async function HomePage() {
 
   return (
     <div className="space-y-0">
+      {degraded && (
+        <p role="status" className="max-w-[1400px] mx-auto px-4 py-4 text-sm text-secondary">
+          Some game collections are temporarily unavailable. You can still <a className="text-accent underline underline-offset-4" href="/search">browse available games</a> or try again shortly.
+        </p>
+      )}
       {/* ── 1. Hero Carousel ── */}
       <section className="relative">
         <div className="absolute inset-0 hero-spotlight pointer-events-none" />

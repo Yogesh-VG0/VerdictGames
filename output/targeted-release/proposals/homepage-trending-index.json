@@ -1,0 +1,32 @@
+{
+  "status": "prepared-not-approved-not-executed",
+  "project": "vjzsvnaswronkctazarn",
+  "sourceParent": "89d8830688bab58c5234673f518b889ec1ded915",
+  "migration": "supabase/migrations/20261117135956_index_homepage_trending_pool.sql",
+  "sha256": "83cbd40470081c70b8adf63527c5fe28090294c39ad58cc1ed53483b826b28b4",
+  "problem": "Actual anonymous trending pool repeatedly fails its3s database bound; the estimated hosted plan scans and sorts the wide games heap, with4044 estimated qualifying rows. Exact candidate lacks an index matching the seven-column order. Concurrent cold homepage reads amplify this work.",
+  "change": "One partial B-tree index matching the existing seven-column trending order. No query, source data, grant, RLS, function, schedule or application timeout changes.",
+  "limits": {"lockTimeout":"2s","statementTimeout":"5s","transaction":"atomic; any failure rolls back the index"},
+  "resourceImplications": "Index creation briefly blocks source writers; ordinary reads remain possible. It consumes storage and adds maintenance for relevant source-field changes. Hosted build duration and resource costs remain unverified.",
+  "localEvidence": {
+    "receipt":"output/targeted-release/local-trending-index.json",
+    "historicalRows":8350,
+    "unchangedExactOrderedPayloadRows":120,
+    "indexBytes":376832,
+    "beforeMs":10.444,
+    "afterMs":0.564,
+    "afterRolledBackPlayerChurnMs":0.594,
+    "buildClientMsIncludingPsqlStartup":166,
+    "hundredRowWriteMsIncludingExistingTriggers":18.848,
+    "writeOverheadAttributableToIndex":"not isolated",
+    "sourceFingerprintPreserved":true,
+    "anonymousAllowDenyRlsPassed":true,
+    "cloneDropped":true,
+    "storageCache":"uncontrolled; no cold database claim"
+  },
+  "hostedEvidence":"output/targeted-release/hosted-homepage-plans.json",
+  "compatibleWithCurrentProductionAndCandidate":true,
+  "afterApproval":"Verify exact valid index definition, unchanged row count and privileges; repeat bounded anonymous plan and exact-candidate cold/warm/concurrent HTTP checks. Do not infer success from the local speedup.",
+  "excludes":["other migrations","Hades status repairs","user fixtures","Auth/email changes","scheduler runs","cache purge","merge/production deployment","infrastructure/billing"],
+  "rollback":"A failed transaction leaves no index. After commit, retaining or separately approving removal of this performance-only index is compatible with both applications; no insecure grants or incompatible app rollback is needed."
+}

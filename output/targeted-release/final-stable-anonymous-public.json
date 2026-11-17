@@ -1,0 +1,61 @@
+{
+  "commit": "236883d3ef9c5b2c61a34d54f9100da7bb36a52b",
+  "actor": "application-anonymous",
+  "scope": "Same exact public URLs just read by B; no cache-busting query/no-cache/Authorization. A older receipt hashes differ; equality only claimed for contemporaneous B/anonymous payloads.",
+  "measuredAt": "2026-11-17T08:57:25.040Z",
+  "samples": [
+    {
+      "label": "public-summary",
+      "path": "/api/lists?view=summary&page=1",
+      "status": 200,
+      "ms": 303,
+      "bytes": 26782,
+      "aMarkerAbsent": true,
+      "aMembershipAbsent": true,
+      "bodySha256": "2859ed73aedc3f8ff0043afe5ade7936c3fc11c2c76ff5089500379275b080df",
+      "matchesBBody": true,
+      "headers": {
+        "cache-control": "public",
+        "cdn-cache-control": null,
+        "vary": null,
+        "x-vercel-cache": "HIT",
+        "age": "146"
+      }
+    },
+    {
+      "label": "public-catalogue",
+      "path": "/api/rawg/lists?type=all-time&page=1&pageSize=40",
+      "status": 200,
+      "ms": 311,
+      "bytes": 22215,
+      "aMarkerAbsent": true,
+      "aMembershipAbsent": true,
+      "bodySha256": "c63ed73b582f7d4129ad633ba748485d637eae186dbfe0aad105987244c1d0a4",
+      "matchesBBody": true,
+      "headers": {
+        "cache-control": "public",
+        "cdn-cache-control": null,
+        "vary": null,
+        "x-vercel-cache": "HIT",
+        "age": "143"
+      }
+    },
+    {
+      "label": "owner-document",
+      "path": "/library/lists/[approved-private-slug]",
+      "status": 200,
+      "ms": 549,
+      "bytes": 44071,
+      "aMarkerAbsent": true,
+      "aMembershipAbsent": true,
+      "noindex": true,
+      "headers": {
+        "cache-control": "private, no-cache, no-store, max-age=0, must-revalidate",
+        "cdn-cache-control": "private, no-store",
+        "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+        "x-vercel-cache": "MISS",
+        "age": "0"
+      }
+    }
+  ]
+}

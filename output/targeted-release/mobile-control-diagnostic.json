@@ -1,0 +1,54 @@
+{
+  "candidate": "516bc021d46a1acc2b93c89e712335bfdf00fb3e",
+  "startedAt": "2026-11-17T13:37:25.798Z",
+  "events": [
+    {
+      "at": 313,
+      "type": "request",
+      "path": "/explore?type=popular-in-year&page=2"
+    },
+    {
+      "at": 1026,
+      "type": "response",
+      "path": "/explore",
+      "status": 200
+    },
+    {
+      "at": 7463,
+      "type": "request",
+      "path": "/explore?type=popular-in-year&year=2023&_rsc=omitted"
+    },
+    {
+      "at": 7738,
+      "type": "response",
+      "path": "/explore",
+      "status": 200
+    }
+  ],
+  "scope": "One public mobile-light preview visit; read-only network, no credentials or sensitive headers recorded.",
+  "before": {
+    "at": 1394,
+    "value": "2025",
+    "reactBound": false,
+    "url": "/explore?type=popular-in-year&page=2"
+  },
+  "after": {
+    "at": 3930,
+    "value": "2024",
+    "reactBound": true,
+    "url": "/explore?type=popular-in-year&page=2"
+  },
+  "delayed": {
+    "at": 7446,
+    "value": "2024",
+    "reactBound": true,
+    "url": "/explore?type=popular-in-year&page=2"
+  },
+  "retry": {
+    "at": 8979,
+    "value": "2023",
+    "reactBound": true,
+    "url": "/explore?type=popular-in-year&year=2023"
+  },
+  "completedAt": "2026-11-17T13:37:34.833Z"
+}

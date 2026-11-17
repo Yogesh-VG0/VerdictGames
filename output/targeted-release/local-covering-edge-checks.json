@@ -1,0 +1,73 @@
+{
+  "measuredAt": "2026-11-16T10:10:51.680Z",
+  "scope": "Only existing isolated local public benchmark; every schema/permission/policy/fixture change rolled back; exact previous installed SQL body is reference, no hosted writes",
+  "checks": [
+    {
+      "kind": "parity",
+      "role": "anon",
+      "type": "all-time",
+      "sort": "default",
+      "platform": "",
+      "equal": true
+    },
+    {
+      "kind": "parity",
+      "role": "anon",
+      "type": "all-time",
+      "sort": "default",
+      "platform": "PlayStation 5",
+      "equal": true
+    },
+    {
+      "kind": "parity",
+      "role": "anon",
+      "type": "genre",
+      "sort": "popular",
+      "platform": "PC",
+      "equal": true
+    },
+    {
+      "kind": "parity",
+      "role": "anon",
+      "type": "genre",
+      "sort": "rating",
+      "platform": "",
+      "equal": true
+    },
+    {
+      "kind": "parity",
+      "role": "anon",
+      "type": "popular-in-year",
+      "sort": "popular",
+      "platform": "",
+      "equal": true
+    },
+    {
+      "kind": "parity",
+      "role": "anon",
+      "type": "best-of-year",
+      "sort": "default",
+      "platform": "",
+      "equal": true
+    },
+    {
+      "kind": "hidden",
+      "count": 0
+    },
+    {
+      "kind": "authenticated",
+      "equal": true
+    },
+    {
+      "kind": "guards",
+      "wideDeveloper": false,
+      "wideUnicode": false,
+      "manyElements": false,
+      "mixedDimensions": true
+    },
+    {
+      "kind": "cleanup",
+      "remaining": 0
+    }
+  ]
+}

@@ -1,0 +1,438 @@
+{
+  "startedAt": "2026-11-16T17:46:53.744Z",
+  "hosted": true,
+  "publishRequested": true,
+  "sqlSha256": "3205a44a254ea1145033b849afa205d441397664eb1893dc86c722e9da83ae48",
+  "fieldCount": 22,
+  "sourceWrites": 0,
+  "projectionWrites": 0,
+  "batches": [
+    {
+      "rows": 100,
+      "serverMs": 156.396,
+      "clientMs": 906
+    },
+    {
+      "rows": 100,
+      "serverMs": 114.727,
+      "clientMs": 902
+    },
+    {
+      "rows": 100,
+      "serverMs": 115.025,
+      "clientMs": 830
+    },
+    {
+      "rows": 100,
+      "serverMs": 106.251,
+      "clientMs": 829
+    },
+    {
+      "rows": 100,
+      "serverMs": 118.09,
+      "clientMs": 837
+    },
+    {
+      "rows": 100,
+      "serverMs": 107.484,
+      "clientMs": 831
+    },
+    {
+      "rows": 100,
+      "serverMs": 112.557,
+      "clientMs": 833
+    },
+    {
+      "rows": 100,
+      "serverMs": 106.832,
+      "clientMs": 828
+    },
+    {
+      "rows": 100,
+      "serverMs": 92.82,
+      "clientMs": 807
+    },
+    {
+      "rows": 100,
+      "serverMs": 94.584,
+      "clientMs": 812
+    },
+    {
+      "rows": 100,
+      "serverMs": 102.315,
+      "clientMs": 831
+    },
+    {
+      "rows": 100,
+      "serverMs": 101.586,
+      "clientMs": 818
+    },
+    {
+      "rows": 100,
+      "serverMs": 96.786,
+      "clientMs": 818
+    },
+    {
+      "rows": 100,
+      "serverMs": 97.436,
+      "clientMs": 832
+    },
+    {
+      "rows": 100,
+      "serverMs": 85.246,
+      "clientMs": 810
+    },
+    {
+      "rows": 100,
+      "serverMs": 97.058,
+      "clientMs": 824
+    },
+    {
+      "rows": 100,
+      "serverMs": 78.974,
+      "clientMs": 805
+    },
+    {
+      "rows": 100,
+      "serverMs": 82.546,
+      "clientMs": 811
+    },
+    {
+      "rows": 100,
+      "serverMs": 79.402,
+      "clientMs": 813
+    },
+    {
+      "rows": 100,
+      "serverMs": 87.148,
+      "clientMs": 818
+    },
+    {
+      "rows": 100,
+      "serverMs": 87.744,
+      "clientMs": 814
+    },
+    {
+      "rows": 100,
+      "serverMs": 76.844,
+      "clientMs": 798
+    },
+    {
+      "rows": 100,
+      "serverMs": 75.718,
+      "clientMs": 797
+    },
+    {
+      "rows": 100,
+      "serverMs": 88.402,
+      "clientMs": 809
+    },
+    {
+      "rows": 100,
+      "serverMs": 79.346,
+      "clientMs": 811
+    },
+    {
+      "rows": 100,
+      "serverMs": 76.226,
+      "clientMs": 794
+    },
+    {
+      "rows": 100,
+      "serverMs": 743.874,
+      "clientMs": 1562
+    },
+    {
+      "rows": 100,
+      "serverMs": 289.592,
+      "clientMs": 1067
+    },
+    {
+      "rows": 100,
+      "serverMs": 52.28,
+      "clientMs": 786
+    },
+    {
+      "rows": 100,
+      "serverMs": 97.935,
+      "clientMs": 837
+    },
+    {
+      "rows": 100,
+      "serverMs": 113.932,
+      "clientMs": 1163
+    },
+    {
+      "rows": 100,
+      "serverMs": 57.314,
+      "clientMs": 1366
+    },
+    {
+      "rows": 100,
+      "serverMs": 58.92,
+      "clientMs": 768
+    },
+    {
+      "rows": 100,
+      "serverMs": 61.883,
+      "clientMs": 802
+    },
+    {
+      "rows": 100,
+      "serverMs": 115.097,
+      "clientMs": 833
+    },
+    {
+      "rows": 100,
+      "serverMs": 106.978,
+      "clientMs": 829
+    },
+    {
+      "rows": 100,
+      "serverMs": 106.819,
+      "clientMs": 824
+    },
+    {
+      "rows": 100,
+      "serverMs": 106.063,
+      "clientMs": 892
+    },
+    {
+      "rows": 100,
+      "serverMs": 101.361,
+      "clientMs": 820
+    },
+    {
+      "rows": 100,
+      "serverMs": 98.333,
+      "clientMs": 802
+    },
+    {
+      "rows": 100,
+      "serverMs": 92.48,
+      "clientMs": 800
+    },
+    {
+      "rows": 100,
+      "serverMs": 98.104,
+      "clientMs": 809
+    },
+    {
+      "rows": 100,
+      "serverMs": 83.969,
+      "clientMs": 796
+    },
+    {
+      "rows": 100,
+      "serverMs": 98.893,
+      "clientMs": 820
+    },
+    {
+      "rows": 100,
+      "serverMs": 96.344,
+      "clientMs": 861
+    },
+    {
+      "rows": 100,
+      "serverMs": 87.33,
+      "clientMs": 824
+    },
+    {
+      "rows": 100,
+      "serverMs": 82.326,
+      "clientMs": 816
+    },
+    {
+      "rows": 100,
+      "serverMs": 76.915,
+      "clientMs": 1131
+    },
+    {
+      "rows": 100,
+      "serverMs": 82.481,
+      "clientMs": 789
+    },
+    {
+      "rows": 100,
+      "serverMs": 86.217,
+      "clientMs": 825
+    },
+    {
+      "rows": 100,
+      "serverMs": 83.971,
+      "clientMs": 788
+    },
+    {
+      "rows": 100,
+      "serverMs": 76.621,
+      "clientMs": 1115
+    },
+    {
+      "rows": 100,
+      "serverMs": 79.303,
+      "clientMs": 847
+    },
+    {
+      "rows": 100,
+      "serverMs": 66.359,
+      "clientMs": 789
+    },
+    {
+      "rows": 100,
+      "serverMs": 70.573,
+      "clientMs": 787
+    },
+    {
+      "rows": 100,
+      "serverMs": 74.857,
+      "clientMs": 780
+    },
+    {
+      "rows": 100,
+      "serverMs": 75.348,
+      "clientMs": 780
+    },
+    {
+      "rows": 100,
+      "serverMs": 74.135,
+      "clientMs": 792
+    },
+    {
+      "rows": 100,
+      "serverMs": 60.351,
+      "clientMs": 771
+    },
+    {
+      "rows": 100,
+      "serverMs": 56.126,
+      "clientMs": 780
+    },
+    {
+      "rows": 100,
+      "serverMs": 58.865,
+      "clientMs": 786
+    },
+    {
+      "rows": 100,
+      "serverMs": 70.693,
+      "clientMs": 1114
+    },
+    {
+      "rows": 100,
+      "serverMs": 79.801,
+      "clientMs": 814
+    },
+    {
+      "rows": 100,
+      "serverMs": 61.912,
+      "clientMs": 766
+    },
+    {
+      "rows": 100,
+      "serverMs": 63.061,
+      "clientMs": 789
+    },
+    {
+      "rows": 100,
+      "serverMs": 55.187,
+      "clientMs": 791
+    },
+    {
+      "rows": 100,
+      "serverMs": 61.942,
+      "clientMs": 769
+    },
+    {
+      "rows": 100,
+      "serverMs": 55.729,
+      "clientMs": 770
+    },
+    {
+      "rows": 100,
+      "serverMs": 55.546,
+      "clientMs": 768
+    },
+    {
+      "rows": 100,
+      "serverMs": 63.644,
+      "clientMs": 819
+    },
+    {
+      "rows": 100,
+      "serverMs": 46.855,
+      "clientMs": 752
+    },
+    {
+      "rows": 100,
+      "serverMs": 52.275,
+      "clientMs": 772
+    },
+    {
+      "rows": 100,
+      "serverMs": 53.776,
+      "clientMs": 767
+    },
+    {
+      "rows": 100,
+      "serverMs": 44.303,
+      "clientMs": 755
+    },
+    {
+      "rows": 100,
+      "serverMs": 49.331,
+      "clientMs": 751
+    },
+    {
+      "rows": 100,
+      "serverMs": 47.275,
+      "clientMs": 749
+    },
+    {
+      "rows": 100,
+      "serverMs": 44.56,
+      "clientMs": 745
+    },
+    {
+      "rows": 100,
+      "serverMs": 54.29,
+      "clientMs": 776
+    },
+    {
+      "rows": 100,
+      "serverMs": 37.448,
+      "clientMs": 786
+    },
+    {
+      "rows": 100,
+      "serverMs": 36.866,
+      "clientMs": 757
+    },
+    {
+      "rows": 100,
+      "serverMs": 53.171,
+      "clientMs": 760
+    },
+    {
+      "rows": 100,
+      "serverMs": 39.684,
+      "clientMs": 1079
+    },
+    {
+      "rows": 100,
+      "serverMs": 35.821,
+      "clientMs": 745
+    },
+    {
+      "rows": 55,
+      "serverMs": 14.558,
+      "clientMs": 721
+    }
+  ],
+  "verifiedRows": 8355,
+  "readyBefore": false,
+  "sourceRows": 8355,
+  "exactCoverage": true,
+  "published": true,
+  "completedAt": "2026-11-16T17:48:31.706Z",
+  "totalMs": 97955
+}

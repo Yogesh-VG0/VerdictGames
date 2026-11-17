@@ -1,0 +1,66 @@
+{
+  "name": "metacritic",
+  "url": "https://www.metacritic.com/game/",
+  "measuredAt": "2026-11-16T08:09:07.704Z",
+  "conditions": "New anonymous context per site; Chrome 1440x1000 DPR1; unthrottled CPU/network; origin cache unknown; ordinary page requests including automatic prefetch; no access challenge bypass",
+  "navigationError": "TimeoutError",
+  "observed": {
+    "url": "https://www.metacritic.com/game/",
+    "title": "Video Game Reviews, Articles, Trailers and more - Metacritic",
+    "readyState": "loading",
+    "restricted": false,
+    "headings": [
+      "Games",
+      "New Releases",
+      "Upcoming Games",
+      "Best Games on PS5",
+      "1. Elden Ring",
+      "2. Baldur's Gate 3",
+      "3. Astro Bot",
+      "4. Elden Ring: Shadow of the Erdtree",
+      "5. Hades II",
+      "6. The Witcher 3: Wild Hunt - Complete Edition",
+      "7. Metaphor: ReFantazio",
+      "8. God of War: Ragnarok"
+    ],
+    "viewport": {
+      "w": 1440,
+      "h": 1000,
+      "dpr": 1
+    },
+    "navigation": {
+      "status": 200,
+      "ttfbMs": 181,
+      "responseEndMs": 14533,
+      "domInteractiveMs": 0,
+      "loadEventEndMs": 0,
+      "durationMs": 0,
+      "transfer": 118598,
+      "encoded": 118298,
+      "decoded": 933693
+    },
+    "paints": [],
+    "requestCount": 0,
+    "observableTransferBytes": 0,
+    "bytesLimitation": "ResourceTiming bytes may be zero for cross-origin resources without Timing-Allow-Origin; this is not total traffic",
+    "byType": {},
+    "byHost": {},
+    "images": [],
+    "requests": []
+  },
+  "screenshot": "captured",
+  "responses": [
+    {
+      "url": "https://www.metacritic.com/game/",
+      "type": "document",
+      "status": 200,
+      "method": "GET",
+      "headers": {
+        "cache-control": "public, max-age=60, s-maxage=600",
+        "content-type": "text/html;charset=utf-8",
+        "server": "cloudflare",
+        "cf-cache-status": "HIT"
+      }
+    }
+  ]
+}

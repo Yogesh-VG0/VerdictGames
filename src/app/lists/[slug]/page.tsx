@@ -5,6 +5,7 @@ import { loadPublicList } from '@/lib/services/public-list';
 import { SITE_URL, buildSocialMetadata } from '@/lib/seo';
 
 export const revalidate = 300;
+export const maxDuration = 30;
 export function generateStaticParams() { return []; }
 type Props = { params: Promise<{ slug: string }> };
 export async function generateMetadata({ params }: Props): Promise<Metadata> {

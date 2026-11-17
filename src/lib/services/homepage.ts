@@ -26,6 +26,7 @@ import { getPublicSupabase } from "@/lib/supabase/public";
 import { mapGameRow } from "@/lib/db/mappers";
 import { GAME_CARD_COLUMNS_WITH_DESC } from "@/lib/db/columns";
 import { retryCatalogRead } from '@/lib/db/catalog-read';
+import { admitCataloguePayload, coalesceCatalogueRead, readCachedCatalogue } from '@/lib/db/cached-catalogue';
 import { isFutureDate } from "@/lib/utils";
 import {
   filterQualityGames,
@@ -703,7 +704,7 @@ export async function fetchTrendingGames(limit = 20, homepageOnly = true): Promi
   const cutoff4yr = monthsAgoISO(120);
   const today = new Date().toISOString().slice(0, 10);
 
-  const { data: pool } = await supabase
+  const { data: pool, error: poolError } = await supabase
     .from("games")
     .select(GAME_CARD_COLUMNS_WITH_DESC)
     .not("release_date", "is", null)
@@ -719,7 +720,9 @@ export async function fetchTrendingGames(limit = 20, homepageOnly = true): Promi
     .order("verdict_score", { ascending: false, nullsFirst: false })
     .order("review_count", { ascending: false, nullsFirst: false })
     .order("score", { ascending: false })
-    .limit(getHomepageQueryFetchLimit(limit)) as { data: GameRow[] | null };
+    .limit(getHomepageQueryFetchLimit(limit)) as { data: GameRow[] | null; error: unknown };
+
+  if (poolError) throw poolError;
 
   // Step 3: Build combined candidate set — flagged first, then scored pool
   const flaggedIds = new Set((flagged ?? []).map((g) => g.id));
@@ -1470,11 +1473,7 @@ export async function fetchHomepageRecommendations(limit = 20): Promise<Game[]> 
    ═══════════════════════════════════════════════════ */
 
 export async function fetchDeals(): Promise<GXDeal[]> {
-  try {
-    return await loadGXDeals();
-  } catch {
-    return [];
-  }
+  return loadGXDeals();
 }
 
 /* ═══════════════════════════════════════════════════
@@ -1495,6 +1494,8 @@ export interface HomepageData {
 }
 
 export interface HomepageAnticipatedGame {
+  earlyAccess?: boolean;
+  imageKind?: 'cover' | 'artwork';
   rawgId: number;
   slug: string;
   name: string;
@@ -1518,50 +1519,56 @@ export const EMPTY_HOMEPAGE_DATA: HomepageData = {
   recommendations: [],
 };
 
+// Successful rail snapshots survive failures independently. The aggregate is
+// admitted only when every requested section resolved; cold partial results
+// remain displayable but never replace a shared successful value.
+const sectionCacheOptions = { revalidate: HOMEPAGE_REVALIDATE_SECONDS };
+const cachedHero = unstable_cache(() => retryCatalogRead(() => fetchHeroCandidates(HOMEPAGE_HERO_FETCH_TARGET)), ['homepage-hero-v1'], sectionCacheOptions);
+const cachedTrending = unstable_cache(() => retryCatalogRead(() => fetchTrendingGames(HOMEPAGE_SECTION_FETCH_TARGET, true)), ['homepage-trending-v1'], sectionCacheOptions);
+const cachedNewReleases = unstable_cache(() => retryCatalogRead(() => fetchNewReleases(HOMEPAGE_SECTION_FETCH_TARGET)), ['homepage-new-v1'], sectionCacheOptions);
+const cachedTopRated = unstable_cache(() => retryCatalogRead(() => fetchHomepageTopRated(HOMEPAGE_SECTION_FETCH_TARGET)), ['homepage-top-v1'], sectionCacheOptions);
+const cachedRecommendations = unstable_cache(() => retryCatalogRead(() => fetchHomepageRecommendations(HOMEPAGE_SECTION_FETCH_TARGET)), ['homepage-recommendations-v1'], sectionCacheOptions);
+
 const getCachedHomepageData = unstable_cache(
-  async () => {
-    const data = await fetchHomepageData();
-    if (!data.hero.length && !data.trending.length && !data.topRated.length) {
-      throw new Error('Catalogue unavailable; preserve the last successful homepage cache');
-    }
-    return data;
-  },
-  ["homepage-data-v23"],
+  coalesceCatalogueRead(fetchHomepageData),
+  ["homepage-data-v24"],
   { revalidate: HOMEPAGE_REVALIDATE_SECONDS }
 );
 
 const getCachedHomepageMostAnticipated = unstable_cache(
-  async () => {
+  coalesceCatalogueRead(async () => {
     const { loadExplore } = await import('@/lib/services/explore');
     const data = await loadExplore('best-of-year', 1, HOMEPAGE_MOST_ANTICIPATED_TARGET);
-    return data.items.map(item => ({ rawgId: item.rawgId, slug: item.slug, name: item.name, released: item.released, tba: item.tba, image: item.image, added: item.added, toplay: item.toplay, genres: item.genres }));
-  },
-  ["homepage-most-anticipated-v3"],
+    const items = data.items.map(item => ({ rawgId: item.rawgId, slug: item.slug, name: item.name, released: item.released, tba: item.tba, earlyAccess: item.earlyAccess, image: item.image, imageKind: item.imageKind, added: item.added, toplay: item.toplay, genres: item.genres }));
+    return admitCataloguePayload(items, { discovery: data.degraded
+      ? { status: 'rejected', reason: 'Discovery snapshot temporarily unavailable' }
+      : { status: 'fulfilled', value: true } });
+  }),
+  ["homepage-most-anticipated-v6"],
   { revalidate: 3600 }
 );
 
 export async function loadHomepageData(): Promise<HomepageData> {
+  return (await loadHomepageDataWithStatus()).data;
+}
+
+export async function loadHomepageDataWithStatus(): Promise<{ data: HomepageData; degraded: boolean }> {
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-    return EMPTY_HOMEPAGE_DATA;
+    return { data: EMPTY_HOMEPAGE_DATA, degraded: true };
   }
 
-  try {
-    return await getCachedHomepageData();
-  } catch {
-    return EMPTY_HOMEPAGE_DATA;
-  }
+  return readCachedCatalogue(getCachedHomepageData, EMPTY_HOMEPAGE_DATA);
 }
 
 export async function loadHomepageMostAnticipated(): Promise<HomepageAnticipatedGame[]> {
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
-    return [];
-  }
+  return (await loadHomepageMostAnticipatedWithStatus()).data;
+}
 
-  try {
-    return await getCachedHomepageMostAnticipated();
-  } catch {
-    return [];
+export async function loadHomepageMostAnticipatedWithStatus(): Promise<{ data: HomepageAnticipatedGame[]; degraded: boolean }> {
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
+    return { data: [], degraded: true };
   }
+  return readCachedCatalogue(getCachedHomepageMostAnticipated, []);
 }
 
 function resolveHomepageSection<T>(result: PromiseSettledResult<T>, label: string, fallback: T): T {
@@ -1748,16 +1755,16 @@ function isReservedHomepageTopRatedGame(game: Game): boolean {
 export async function fetchHomepageData(): Promise<HomepageData> {
   // Fetch the heaviest DB-backed rails with less concurrency to avoid build-time statement timeouts.
   const [heroResult, trendingPrimaryResult, newReleasesResult, dealsResult] = await Promise.allSettled([
-    retryCatalogRead(() => fetchHeroCandidates(HOMEPAGE_HERO_FETCH_TARGET)),
-    retryCatalogRead(() => fetchTrendingGames(HOMEPAGE_SECTION_FETCH_TARGET, true)),
-    retryCatalogRead(() => fetchNewReleases(HOMEPAGE_SECTION_FETCH_TARGET)),
+    cachedHero(),
+    cachedTrending(),
+    cachedNewReleases(),
     fetchDeals(),
   ]);
   const [topRatedResult] = await Promise.allSettled([
-    retryCatalogRead(() => fetchHomepageTopRated(HOMEPAGE_SECTION_FETCH_TARGET)),
+    cachedTopRated(),
   ]);
   const [recsResult] = await Promise.allSettled([
-    retryCatalogRead(() => fetchHomepageRecommendations(HOMEPAGE_SECTION_FETCH_TARGET)),
+    cachedRecommendations(),
   ]);
 
   const heroRaw = resolveHomepageSection(heroResult, "hero rail", [] as Game[]);
@@ -1766,17 +1773,14 @@ export async function fetchHomepageData(): Promise<HomepageData> {
   const newReleasesRaw = resolveHomepageSection(newReleasesResult, "new releases rail", [] as Game[]);
   const deals = resolveHomepageSection(dealsResult, "deals rail", [] as GXDeal[]);
   const recsRaw = resolveHomepageSection(recsResult, "recommendations rail", [] as Game[]);
+  const sectionResults: Record<string, PromiseSettledResult<unknown>> = {
+    hero: heroResult, trending: trendingPrimaryResult, newReleases: newReleasesResult,
+    topRated: topRatedResult, recommendations: recsResult, deals: dealsResult,
+  };
 
-  if (trendingRaw.length < HOMEPAGE_RAIL_TARGET) {
-    try {
-      const expandedTrending = await fetchTrendingGames(HOMEPAGE_RAIL_TARGET * 2, true);
-      if (expandedTrending.length > 0) {
-        trendingRaw = prioritizeById(trendingRaw, expandedTrending, HOMEPAGE_RAIL_TARGET * 2);
-      }
-    } catch (error) {
-      console.error("[homepage] Failed to load trending rail fallback:", error);
-    }
-  }
+  // The primary already requests100 results from the capped120-row pool.
+  // A second40-result request reads that same pool and cannot expand it.
+  // Recover a thin/failed rail from the available sections below instead.
 
   if (trendingRaw.length < HOMEPAGE_RAIL_TARGET) {
     const fallbackTrending = buildHomepageTrendingFallback([
@@ -1867,7 +1871,7 @@ export async function fetchHomepageData(): Promise<HomepageData> {
     : topRatedClaimed;
   const recommendations = claimSlots(recsRaw, HOMEPAGE_RAIL_TARGET, HOMEPAGE_RECOMMENDATION_REPEAT_BUDGET);
 
-  return { hero, trending, topRated, newReleases, deals, recommendations };
+  return admitCataloguePayload({ hero, trending, topRated, newReleases, deals, recommendations }, sectionResults);
 }
 
 function prioritizeById<T extends { id: string }>(primary: T[], fallback: T[], limit: number): T[] {

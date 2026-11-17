@@ -16,17 +16,13 @@ function parsePositiveInteger(value, fallback) {
 }
 
 export function getDbUrl() {
-  // Priority 1: Explicit DATABASE_URL
-  if (process.env.DATABASE_URL) {
-    return process.env.DATABASE_URL;
+  const target=process.env.DATABASE_URL || process.env.SUPABASE_DB_URL || null;
+  if(target && process.env.VERDICT_LOCAL_VERIFY==='1') {
+    if(!['localhost','127.0.0.1','[::1]'].includes(new URL(target).hostname)) {
+      throw new Error('Local verification refuses a non-loopback database');
+    }
   }
-
-  // Priority 2: Explicit Supabase DB URL
-  if (process.env.SUPABASE_DB_URL) {
-    return process.env.SUPABASE_DB_URL;
-  }
-
-  return null;
+  return target;
 }
 
 /**

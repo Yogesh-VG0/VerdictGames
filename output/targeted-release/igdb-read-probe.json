@@ -1,0 +1,175 @@
+{
+  "measuredAt": "2026-11-15T14:48:26.607Z",
+  "provider": "igdb",
+  "mode": "read-only; zero catalogue writes",
+  "elapsedMs": 1658,
+  "returned": 40,
+  "admitted": 37,
+  "bytes": 103546,
+  "examples": [
+    {
+      "id": 52189,
+      "slug": "grand-theft-auto-vi",
+      "title": "Grand Theft Auto VI",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/cocv1v.jpg",
+      "releaseDate": "2026-11-19",
+      "platforms": [
+        "Xbox Series X|S",
+        "PlayStation 5"
+      ],
+      "genres": [
+        "Shooter",
+        "Racing",
+        "Adventure"
+      ]
+    },
+    {
+      "id": 194662,
+      "slug": "the-witcher-iv",
+      "title": "The Witcher IV",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/co95i0.jpg",
+      "releaseDate": null,
+      "platforms": [
+        "Xbox Series X|S",
+        "PC",
+        "PlayStation 5"
+      ],
+      "genres": [
+        "RPG",
+        "Adventure"
+      ]
+    },
+    {
+      "id": 51523,
+      "slug": "the-wolf-among-us-2",
+      "title": "The Wolf Among Us 2",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/co4ha1.jpg",
+      "releaseDate": null,
+      "platforms": [
+        "Xbox Series X|S",
+        "Nintendo Switch 2",
+        "PC",
+        "PlayStation 5",
+        "Xbox One",
+        "Nintendo Switch"
+      ],
+      "genres": [
+        "Point-and-click",
+        "Adventure"
+      ]
+    },
+    {
+      "id": 142520,
+      "slug": "ill",
+      "title": "Ill",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/co9xio.jpg",
+      "releaseDate": null,
+      "platforms": [
+        "Xbox Series X|S",
+        "PC",
+        "PlayStation 5"
+      ],
+      "genres": [
+        "Shooter",
+        "Adventure"
+      ]
+    },
+    {
+      "id": 325611,
+      "slug": "intergalactic-the-heretic-prophet",
+      "title": "Intergalactic: The Heretic Prophet",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/co95gc.jpg",
+      "releaseDate": null,
+      "platforms": [
+        "PlayStation 5"
+      ],
+      "genres": [
+        "Action",
+        "Adventure"
+      ]
+    },
+    {
+      "id": 343335,
+      "slug": "silver-palace",
+      "title": "Silver Palace",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/cocikv.jpg",
+      "releaseDate": "2026-12-14",
+      "platforms": [
+        "Android",
+        "PC",
+        "iOS",
+        "PlayStation 5"
+      ],
+      "genres": [
+        "RPG",
+        "Adventure"
+      ]
+    },
+    {
+      "id": 381234,
+      "slug": "tomb-raider-catalyst",
+      "title": "Tomb Raider: Catalyst",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/cob0g4.jpg",
+      "releaseDate": null,
+      "platforms": [
+        "Xbox Series X|S",
+        "PC",
+        "PlayStation 5"
+      ],
+      "genres": [
+        "Platformer",
+        "Puzzle",
+        "Adventure"
+      ]
+    },
+    {
+      "id": 325599,
+      "slug": "stranger-than-heaven",
+      "title": "Stranger Than Heaven",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/cobu6l.jpg",
+      "releaseDate": "2027-01-15",
+      "platforms": [
+        "Xbox Series X|S",
+        "PC",
+        "PlayStation 5"
+      ],
+      "genres": [
+        "Fighting",
+        "Puzzle",
+        "RPG",
+        "Adventure"
+      ]
+    },
+    {
+      "id": 398225,
+      "slug": "metro-2039",
+      "title": "Metro 2039",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/cobxor.jpg",
+      "releaseDate": "2027-02-04",
+      "platforms": [
+        "Xbox Series X|S",
+        "PC",
+        "PlayStation 5"
+      ],
+      "genres": [
+        "Shooter",
+        "Adventure"
+      ]
+    },
+    {
+      "id": 404063,
+      "slug": "god-of-war-laufey",
+      "title": "God of War Laufey",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/coc5rc.jpg",
+      "releaseDate": "2027-05-20",
+      "platforms": [
+        "PlayStation 5"
+      ],
+      "genres": [
+        "RPG",
+        "Action",
+        "Adventure"
+      ]
+    }
+  ]
+}

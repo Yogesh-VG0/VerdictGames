@@ -56,7 +56,6 @@ export async function tryInsertGameFromIgdbSlug(
       ? new Date(igdb.first_release_date * 1000).toISOString().slice(0, 10)
       : null;
 
-  const today = new Date().toISOString().slice(0, 10);
   const description =
     (enrich.igdbSummary || igdb.summary || "").slice(0, 8000) ||
     `Metadata from IGDB for “${igdb.name}”.`;

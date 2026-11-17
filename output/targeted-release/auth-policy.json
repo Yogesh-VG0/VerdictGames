@@ -1,0 +1,22 @@
+{
+  "checks": [
+    "long-ascii passphrase accepted through direct local Auth API",
+    "long-ascii passphrase signs in without truncation or normalization",
+    "unicode passphrase accepted through direct local Auth API",
+    "unicode passphrase signs in without truncation or normalization",
+    "direct local Auth rejects oversized bcrypt input"
+  ],
+  "providerObservations": [
+    {
+      "case": "over-72-bytes",
+      "accepted": false,
+      "code": "validation_failed"
+    },
+    {
+      "case": "unicode-minimum",
+      "codePoints": 14,
+      "bytes": 42,
+      "accepted": true
+    }
+  ]
+}

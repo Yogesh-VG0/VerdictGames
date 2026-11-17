@@ -1,0 +1,38 @@
+{
+  "candidate": "236883d3ef9c5b2c61a34d54f9100da7bb36a52b",
+  "window": {
+    "start": "2026-11-17T09:46:00Z",
+    "end": "2026-11-17T09:50:15Z"
+  },
+  "scope": "Actual protected visual verification, at most two serial browser sessions. Collection links caused additional automatic RSC requests. New concrete evidence reopens performance acceptance.",
+  "explore": {
+    "category": "recent",
+    "page": 1,
+    "pageSize": 20,
+    "ssrTimeoutAt": "2026-11-17T09:47:29.461Z",
+    "apiTimeoutAt": "2026-11-17T09:47:35.286Z",
+    "transportElapsedMs": 5002,
+    "callerAborted": true,
+    "apiErrorType": "TimeoutError",
+    "renderedContentNotReached": true
+  },
+  "database": {
+    "cancelledGameCardQueries": 20,
+    "cancelledExploreRpcQueries": 2,
+    "otherCancellation": 1,
+    "sqlstate": "57014",
+    "laterListErrors": "25P02"
+  },
+  "homepage": {
+    "runtimeTimeoutSeconds": 30,
+    "at": "2026-11-17T09:49:17.789Z"
+  },
+  "postRunObservation": {
+    "at": "2026-11-17T09:52:40.532336Z",
+    "idleClients": 13,
+    "activeQueries": 1,
+    "note": "Diagnostic read was the active query; this later instant does not explain earlier cancellations."
+  },
+  "prefetchReceipt": "collection-prefetch-before-236883d.json",
+  "conclusion": "Viewport/scroll prefetch is measured avoidable fanout. Correlation with database cancellations is established; sole causality and successful mitigation require after-change measurements. No timeout/compute/protection changes."
+}

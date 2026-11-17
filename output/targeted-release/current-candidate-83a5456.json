@@ -1,0 +1,87 @@
+{
+  "candidate": "83a5456ad914b912de930898ce966ae8ea073758",
+  "at": "2026-11-17T19:02:25.961Z",
+  "production": "HOLD; no merge/deploy/permissions/Auth/cache-purge action authorized or performed",
+  "ci": {
+    "quality": {
+      "run": 44149316577,
+      "status": "failure",
+      "passed": [
+        "312 unit tests,1 skipped",
+        "types",
+        "lint"
+      ],
+      "failure": "Unchanged npm audit gate: GHSA-fc5q-39xc-vjpf,17 high dependency nodes from one development-tooling vulnerability, no patched npm version available at check time"
+    },
+    "securityBrowser": {
+      "run": 44149316344,
+      "status": "success"
+    }
+  },
+  "deployment": {
+    "id": "dpl_6xMwF2LdQvSBqrCjUH1aPgvTN3hc",
+    "project": "prj_vg8APVv7HRncrYJCkiti95FyfaqD",
+    "team": "team_IZjGDcej6BUnVM4IHK165gfb",
+    "url": "https://verdict-games-iehfkyzij-yogesh-vg0s-projects.vercel.app",
+    "state": "READY",
+    "stableAliasExactHeadVerified": true
+  },
+  "privateHostedAcceptance": {
+    "source": "b3eb53754e2f89e7b2606f393e0b2e7832da8008",
+    "receipt": "output/targeted-release/final-authenticated-B-b3eb537.json",
+    "scope": "Hosted A/B and prior populated-fixture evidence reused only for unchanged private implementation. Exact successor CI also executes actual local multi-user boundaries. New hosted anonymous checks are separate.",
+    "privateReuse": [
+      {
+        "file": "src/lib/services/public-list.ts",
+        "unchanged": true,
+        "sha256": "da899cbeba05d7491d597a18eb43e93cbae38f997c94058ed99ac14544ee77f1"
+      },
+      {
+        "file": "src/lib/supabase/auth.ts",
+        "unchanged": true,
+        "sha256": "51b1d6d3d9fb42e38cfa6fa4abf968b130c898307a8f6cfc4fe376b948aefd8b"
+      },
+      {
+        "file": "src/app/api/auth/me/route.ts",
+        "unchanged": true,
+        "sha256": "aca62dd12d43dd5d027bfa4e0e465d6b30a5110b6dd1c12b1bf058ba8e320bf3"
+      },
+      {
+        "file": "src/app/api/library/route.ts",
+        "unchanged": true,
+        "sha256": "1503a66e0dd54fdf74ef012b2d8220392f880e524162b872a1b9e082b9f9bb11"
+      },
+      {
+        "file": "src/app/api/library/stats/route.ts",
+        "unchanged": true,
+        "sha256": "7eeb7f084cc8c9fa1ce99d37a23c297adc00971be894e4e84380712357cec5fc"
+      },
+      {
+        "file": "src/app/library/lists/[slug]/page.tsx",
+        "unchanged": true,
+        "sha256": "d6aa6fd3821478b867ab772ea26dc28874dc43a6dcaa55b3364a8b8a39f44522"
+      },
+      {
+        "file": "src/lib/services/lists.ts",
+        "scope": "readListSummaries implementation used by authenticated owner reads",
+        "unchanged": true,
+        "sha256": "65068e373335e62874dd91a0a1857dac08950f41d80e121b6c07b8e63fe6c0fc"
+      }
+    ]
+  },
+  "visual": {
+    "baseline": "output/targeted-release/final-visual-review-03dc095.json",
+    "successor": "output/playwright/final-current-83a5456/successor-verification.json"
+  },
+  "performance": {
+    "coldLists": "output/targeted-release/cold-list-summary-83a5456.json",
+    "outlier": "Public list CDN HIT19561ms retained; direct Node comparison gets protection HTML429 and does not isolate cause.",
+    "browseIndex": "Approved and applied once; hosted ledger20261117185654, valid/ready434176B, source count and grants/RLS preserved.",
+    "migration": "supabase/migrations/20261117185654_index_default_browse_pool.sql",
+    "sha256": "43f5af22f9b6d3eff628625c71e682a9f37207d67b077eba61e9943d77a3bc14",
+    "receipt": "output/targeted-release/approved-browse-index.json",
+    "postIndexColdReceipt": "output/targeted-release/cold-after-browse-index.json",
+    "postIndexHttpReceipt": "output/targeted-release/hosted-http-after-browse-index.json"
+  },
+  "nextReleaseApproval": "Not ready: full dependency audit remains failing on the newly reviewed advisory with no patched published version at the recorded check; no audit waiver or production approval requested."
+}

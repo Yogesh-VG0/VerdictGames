@@ -41,6 +41,7 @@ import ReviewForm from "@/components/ReviewForm";
 import CommentThread from "@/components/CommentThread";
 import AuthModal from "@/components/AuthModal";
 import { getGameNotices } from "@/lib/utils/gameNotices";
+import { useAuth } from "@/hooks/useAuth";
 import { slugify } from "@/lib/utils/slugify";
 import {
   Zap, Trophy, Newspaper, MessageSquare, Clock,
@@ -102,6 +103,7 @@ export default function GameDetailClientPage({
   initialEditorialReviews,
   initialSteamReviewsData,
 }: GameDetailClientPageProps) {
+  const { user } = useAuth();
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [playingTrailer, setPlayingTrailer] = useState<string | null>(null);
   const [achievementsPage, setAchievementsPage] = useState(1);
@@ -147,10 +149,10 @@ export default function GameDetailClientPage({
   });
 
   const { data: reviewsData, isLoading: isReviewsLoading } = useQuery({
-    queryKey: ["gameReviews", slug],
+    queryKey: ["gameReviews", slug, user?.id ?? null],
     queryFn: () => getGameReviews(slug, { sort: "helpful" }),
     enabled: !!game && !initialGame.isPreview,
-    initialData: initialReviewsData,
+    initialData: user ? undefined : initialReviewsData,
     staleTime: 60 * 1000,
   });
 
@@ -438,7 +440,7 @@ export default function GameDetailClientPage({
         <div className="absolute bottom-0 left-0 right-0">
           <div className="max-w-6xl mx-auto px-4 pb-8 md:pb-12">
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={false}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
               className="space-y-3"
@@ -521,7 +523,9 @@ export default function GameDetailClientPage({
             )}
             <span className="text-foreground font-medium truncate">{game.title}</span>
           </nav>
-          <div className="relative shrink-0" ref={shareRef}>
+          <div className="flex items-center gap-2 shrink-0">
+          <Link href={`/compare?g1=${encodeURIComponent(game.slug)}`} prefetch={false} className="rounded-xl border border-border bg-surface px-3 py-1.5 text-xs font-medium text-foreground hover:bg-elevated transition-colors">Compare</Link>
+          <div className="relative" ref={shareRef}>
             <button
               onClick={() => setShareOpen(!shareOpen)}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium text-secondary hover:text-foreground border border-border hover:border-accent/30 bg-surface transition-all"
@@ -563,6 +567,7 @@ export default function GameDetailClientPage({
               </div>
             )}
           </div>
+          </div>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
 
@@ -573,7 +578,7 @@ export default function GameDetailClientPage({
             <FadeInSection>
               {isProvisional || isPreviewGame ? (
                 <motion.section
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={false}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2, duration: 0.5 }}
                   className="rounded-2xl border border-accent/20 bg-surface overflow-hidden"
@@ -607,7 +612,7 @@ export default function GameDetailClientPage({
                 </motion.section>
               ) : (
               <motion.section
-                initial={{ opacity: 0, y: 20 }}
+                initial={false}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2, duration: 0.5 }}
                 className="rounded-2xl border border-border bg-surface overflow-hidden"
@@ -685,6 +690,7 @@ export default function GameDetailClientPage({
                         {con}
                       </p>
                     ))}
+                    {game.cons.length === 0 && <p className="text-sm text-secondary">No specific drawbacks have been verified yet.</p>}
                   </div>
                 </div>
               </motion.section>
@@ -852,7 +858,8 @@ export default function GameDetailClientPage({
                           className="absolute inset-0 w-full h-full flex items-center justify-center bg-surface-2 text-foreground font-semibold hover:bg-surface transition-colors"
                           aria-label={`Play ${game.title} trailer`}
                         >
-                          <HeroImage src={game.trailerThumbnail || `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`} alt={`${game.title} trailer preview`} sizes="(min-width: 1024px) 720px, 100vw" />
+                          <HeroImage src={game.trailerThumbnail || `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`} alt={`${game.title} trailer preview`} sizes="(min-width: 1024px) 720px, 100vw"
+                            fallback={<HeroImage src={game.headerImage || game.coverImage} alt={`${game.title} artwork`} sizes="(min-width: 1024px) 720px, 100vw" />} />
                           <span className="absolute inset-0 bg-black/30" />
                           <span className="relative flex items-center gap-3 rounded-full bg-black/75 border border-white/25 px-5 py-3 text-white shadow-lg">
                             <svg aria-hidden="true" className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>

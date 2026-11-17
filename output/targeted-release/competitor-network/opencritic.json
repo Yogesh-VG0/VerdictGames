@@ -1,0 +1,254 @@
+{
+  "name": "opencritic",
+  "url": "https://www.opencritic.com",
+  "measuredAt": "2026-11-16T08:09:01.113Z",
+  "conditions": "New anonymous context per site; Chrome 1440x1000 DPR1; unthrottled CPU/network; origin cache unknown; ordinary page requests including automatic prefetch; no access challenge bypass",
+  "observed": {
+    "url": "https://opencritic.com/",
+    "title": "OpenCritic - Video Game Reviews from the Top Critics in Gaming - OpenCritic",
+    "readyState": "interactive",
+    "restricted": false,
+    "headings": [
+      "Popular Games",
+      "2026 Hall of Fame",
+      "2026 Hall of Fame",
+      "Featured Deals",
+      "Who is \"Mighty Man\"?",
+      "Industry Headlines"
+    ],
+    "viewport": {
+      "w": 1440,
+      "h": 1000,
+      "dpr": 1
+    },
+    "navigation": {
+      "status": 200,
+      "ttfbMs": 2356,
+      "responseEndMs": 2552,
+      "domInteractiveMs": 4056,
+      "loadEventEndMs": 0,
+      "durationMs": 0,
+      "transfer": 30677,
+      "encoded": 30377,
+      "decoded": 263387
+    },
+    "paints": [
+      {
+        "name": "first-paint",
+        "ms": 4008
+      },
+      {
+        "name": "first-contentful-paint",
+        "ms": 4084
+      }
+    ],
+    "requestCount": 15,
+    "observableTransferBytes": 700207,
+    "bytesLimitation": "ResourceTiming bytes may be zero for cross-origin resources without Timing-Allow-Origin; this is not total traffic",
+    "byType": {
+      "script": 5,
+      "link": 1,
+      "img": 5,
+      "css": 4
+    },
+    "byHost": {
+      "www.googletagmanager.com": 1,
+      "connect.facebook.net": 1,
+      "opencritic.com": 8,
+      "img.opencritic.com": 5
+    },
+    "images": [
+      {
+        "url": "https://img.opencritic.com/logo-light.png",
+        "w": 140,
+        "h": 37
+      },
+      {
+        "url": "https://img.opencritic.com/mighty-man/mighty-head.png",
+        "w": 100,
+        "h": 120
+      },
+      {
+        "url": "https://img.opencritic.com/mighty-man/strong-head.png",
+        "w": 100,
+        "h": 120
+      },
+      {
+        "url": "https://img.opencritic.com/mighty-man/strong-head.png",
+        "w": 100,
+        "h": 120
+      },
+      {
+        "url": "https://img.opencritic.com/mighty-man/strong-head.png",
+        "w": 100,
+        "h": 120
+      },
+      {
+        "url": "https://img.opencritic.com/mighty-man/strong-head.png",
+        "w": 100,
+        "h": 120
+      },
+      {
+        "url": "https://img.opencritic.com/mighty-man/strong-head.png",
+        "w": 100,
+        "h": 120
+      },
+      {
+        "url": "https://img.opencritic.com/mighty-man/mighty-head.png",
+        "w": 100,
+        "h": 120
+      }
+    ],
+    "requests": [
+      {
+        "url": "https://www.googletagmanager.com/gtag/js",
+        "type": "script",
+        "start": 2361,
+        "ms": 955,
+        "transfer": 0,
+        "encoded": 0,
+        "decoded": 0
+      },
+      {
+        "url": "https://connect.facebook.net/en_US/sdk.js",
+        "type": "script",
+        "start": 2361,
+        "ms": 508,
+        "transfer": 0,
+        "encoded": 0,
+        "decoded": 0
+      },
+      {
+        "url": "https://opencritic.com/styles.1c42871b69582c57.css",
+        "type": "link",
+        "start": 2361,
+        "ms": 1622,
+        "transfer": 204600,
+        "encoded": 204300,
+        "decoded": 1362100
+      },
+      {
+        "url": "https://img.opencritic.com/logo-light.png",
+        "type": "img",
+        "start": 2361,
+        "ms": 2525,
+        "transfer": 0,
+        "encoded": 0,
+        "decoded": 0
+      },
+      {
+        "url": "https://img.opencritic.com/mighty-man/mighty-head.png",
+        "type": "img",
+        "start": 2361,
+        "ms": 2703,
+        "transfer": 0,
+        "encoded": 0,
+        "decoded": 0
+      },
+      {
+        "url": "https://img.opencritic.com/mighty-man/fair-head.png",
+        "type": "img",
+        "start": 2361,
+        "ms": 2738,
+        "transfer": 0,
+        "encoded": 0,
+        "decoded": 0
+      },
+      {
+        "url": "https://img.opencritic.com/mighty-man/strong-head.png",
+        "type": "img",
+        "start": 2361,
+        "ms": 2770,
+        "transfer": 0,
+        "encoded": 0,
+        "decoded": 0
+      },
+      {
+        "url": "https://img.opencritic.com/mighty-man/weak-head.png",
+        "type": "img",
+        "start": 2361,
+        "ms": 2918,
+        "transfer": 0,
+        "encoded": 0,
+        "decoded": 0
+      },
+      {
+        "url": "https://opencritic.com/polyfills.fa4f27b30d4a73b6.js",
+        "type": "script",
+        "start": 2361,
+        "ms": 1418,
+        "transfer": 12283,
+        "encoded": 11983,
+        "decoded": 34615
+      },
+      {
+        "url": "https://opencritic.com/runtime.24b6295e9149d845.js",
+        "type": "script",
+        "start": 2361,
+        "ms": 1622,
+        "transfer": 2135,
+        "encoded": 1835,
+        "decoded": 3519
+      },
+      {
+        "url": "https://opencritic.com/main.a345972b4e5d42bb.js",
+        "type": "script",
+        "start": 2361,
+        "ms": 2233,
+        "transfer": 212421,
+        "encoded": 212121,
+        "decoded": 831227
+      },
+      {
+        "url": "https://opencritic.com/Roboto-Regular.793b729fcc55fb15.woff2",
+        "type": "css",
+        "start": 4011,
+        "ms": 431,
+        "transfer": 49536,
+        "encoded": 49236,
+        "decoded": 49236
+      },
+      {
+        "url": "https://opencritic.com/Roboto-Bold.6690f2dc3ac60371.woff2",
+        "type": "css",
+        "start": 4011,
+        "ms": 701,
+        "transfer": 50276,
+        "encoded": 49976,
+        "decoded": 49976
+      },
+      {
+        "url": "https://opencritic.com/Roboto-Light.0ccfdf89065a00b3.woff2",
+        "type": "css",
+        "start": 4011,
+        "ms": 972,
+        "transfer": 49680,
+        "encoded": 49380,
+        "decoded": 49380
+      },
+      {
+        "url": "https://opencritic.com/fa-brands-400.70a6c07e6b18e299.woff2",
+        "type": "css",
+        "start": 4012,
+        "ms": 1246,
+        "transfer": 119276,
+        "encoded": 118976,
+        "decoded": 118976
+      }
+    ]
+  },
+  "screenshot": "captured",
+  "responses": [
+    {
+      "url": "https://www.opencritic.com/",
+      "type": "document",
+      "status": 301,
+      "method": "GET",
+      "headers": {
+        "content-type": "text/html",
+        "content-length": "162",
+        "server": "nginx"
+      }
+    }
+  ]
+}

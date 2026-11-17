@@ -1,5 +1,6 @@
 "use client";
 
+import { preferredScrollBehavior } from '@/lib/utils/motion';
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
@@ -237,7 +238,7 @@ export default function CalendarClientPage({ initialMonth, initialMonthData, tod
 
     const active = monthNavRef.current.querySelector("[data-active=true]");
     if (active) {
-      active.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+      active.scrollIntoView({ behavior: preferredScrollBehavior(), inline: "center", block: "nearest" });
     }
   }, [selectedMonth]);
 
@@ -330,6 +331,8 @@ export default function CalendarClientPage({ initialMonth, initialMonthData, tod
               <button
                 key={monthOption.key}
                 data-active={monthOption.key === selectedMonth}
+                aria-pressed={monthOption.key === selectedMonth}
+                onFocus={event => event.currentTarget.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'instant' })}
                 onPointerDown={() => {
                   hasDragged.current = false;
                 }}
@@ -387,9 +390,9 @@ export default function CalendarClientPage({ initialMonth, initialMonthData, tod
         {games.length > 0 ? (
           <motion.div
             key={selectedMonth}
-            initial={{ opacity: 0, y: 10 }}
+            initial={false}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
+            exit={undefined}
             transition={{ duration: 0.3 }}
             className={`space-y-4 transition-opacity ${isMonthLoading ? "opacity-60" : ""}`}
           >
@@ -405,6 +408,8 @@ export default function CalendarClientPage({ initialMonth, initialMonthData, tod
                   <div className="rounded-2xl border border-border bg-surface overflow-hidden">
                     <button
                       onClick={() => toggleDay(date)}
+                      aria-expanded={!isCollapsed}
+                      aria-controls={`calendar-day-${date}`}
                       className="w-full flex items-center gap-3 px-4 py-3 hover:bg-surface-2 transition-colors text-left"
                     >
                       <div className={`w-2 h-2 rounded-full shrink-0 ${isToday ? "bg-accent animate-pulse" : "bg-tertiary"}`} />
@@ -423,9 +428,10 @@ export default function CalendarClientPage({ initialMonth, initialMonthData, tod
                     <AnimatePresence initial={false}>
                       {!isCollapsed && (
                         <motion.div
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: "auto", opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
+                          id={`calendar-day-${date}`}
+                          initial={false}
+                          animate={undefined}
+                          exit={undefined}
                           transition={{ duration: 0.2 }}
                           className="overflow-hidden"
                         >
@@ -576,9 +582,9 @@ export default function CalendarClientPage({ initialMonth, initialMonthData, tod
         ) : (
           <motion.div
             key="empty"
-            initial={{ opacity: 0 }}
+            initial={false}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            exit={undefined}
             className={`text-center py-16 space-y-4 transition-opacity ${isMonthLoading ? "opacity-60" : ""}`}
           >
             <CalendarX className="w-10 h-10 text-accent mx-auto" />

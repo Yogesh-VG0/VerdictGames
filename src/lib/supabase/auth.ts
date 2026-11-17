@@ -8,6 +8,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import type { Database, ProfileRow } from "./types";
+import { getServerSupabase } from "./server";
 
 export async function getAuthSupabase() {
   const cookieStore = await cookies();
@@ -41,10 +42,14 @@ export async function getCurrentUser() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return null;
 
+    // Read private identity/role columns only after Auth has verified the
+    // session. Never accept an auth ID or role from browser input/metadata.
+    const profileClient = getServerSupabase();
+
     // Try fetching with `role` column first (migration 004); fall back without it.
     let resolvedProfile: (ProfileRow & { role?: string }) | null = null;
 
-    const { data: profile, error: profileErr } = await supabase
+    const { data: profile, error: profileErr } = await profileClient
       .from("profiles")
       .select("id, username, display_name, avatar_url, role")
       .eq("auth_id", user.id)
@@ -54,7 +59,7 @@ export async function getCurrentUser() {
       resolvedProfile = profile;
     } else {
       // Fallback: role column may not exist, or auth_id lookup failed
-      const { data: profileFallback } = await supabase
+      const { data: profileFallback } = await profileClient
         .from("profiles")
         .select("id, username, display_name, avatar_url")
         .eq("auth_id", user.id)
@@ -62,10 +67,11 @@ export async function getCurrentUser() {
 
       if (!profileFallback) {
         // Try by id (legacy schema)
-        const { data: profileById } = await supabase
+        const { data: profileById } = await profileClient
           .from("profiles")
           .select("id, username, display_name, avatar_url")
           .eq("id", user.id)
+          .is("auth_id", null)
           .maybeSingle() as { data: ProfileRow | null };
         resolvedProfile = profileById;
       } else {

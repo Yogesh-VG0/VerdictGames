@@ -1,0 +1,118 @@
+{
+  "measuredAt": "2026-11-15T15:14:31.920Z",
+  "requests": [
+    {
+      "path": "/api/lists",
+      "sample": 1,
+      "status": 200,
+      "elapsedMs": 149,
+      "bytes": 26681
+    },
+    {
+      "path": "/api/lists",
+      "sample": 2,
+      "status": 200,
+      "elapsedMs": 6,
+      "bytes": 26681
+    },
+    {
+      "path": "/api/lists",
+      "sample": 3,
+      "status": 200,
+      "elapsedMs": 7,
+      "bytes": 26681
+    },
+    {
+      "path": "/api/rawg/lists?type=best-of-year",
+      "sample": 1,
+      "status": 200,
+      "elapsedMs": 399,
+      "bytes": 10831
+    },
+    {
+      "path": "/api/rawg/lists?type=best-of-year",
+      "sample": 2,
+      "status": 200,
+      "elapsedMs": 8,
+      "bytes": 10831
+    },
+    {
+      "path": "/api/rawg/lists?type=best-of-year",
+      "sample": 3,
+      "status": 200,
+      "elapsedMs": 8,
+      "bytes": 10831
+    },
+    {
+      "path": "/api/rawg/lists?type=all-time",
+      "sample": 1,
+      "status": 200,
+      "elapsedMs": 252,
+      "bytes": 11385
+    },
+    {
+      "path": "/api/rawg/lists?type=all-time",
+      "sample": 2,
+      "status": 200,
+      "elapsedMs": 3,
+      "bytes": 11385
+    },
+    {
+      "path": "/api/rawg/lists?type=all-time",
+      "sample": 3,
+      "status": 200,
+      "elapsedMs": 3,
+      "bytes": 11385
+    },
+    {
+      "path": "/api/rawg/lists?type=recent",
+      "sample": 1,
+      "status": 200,
+      "elapsedMs": 9,
+      "bytes": 2923
+    },
+    {
+      "path": "/api/rawg/lists?type=recent",
+      "sample": 2,
+      "status": 200,
+      "elapsedMs": 3,
+      "bytes": 2923
+    },
+    {
+      "path": "/api/rawg/lists?type=recent",
+      "sample": 3,
+      "status": 200,
+      "elapsedMs": 2,
+      "bytes": 2923
+    },
+    {
+      "path": "/api/rawg/lists?type=popular-in-year&year=2025",
+      "sample": 1,
+      "status": 200,
+      "elapsedMs": 27,
+      "bytes": 10911
+    },
+    {
+      "path": "/api/rawg/lists?type=popular-in-year&year=2025",
+      "sample": 2,
+      "status": 200,
+      "elapsedMs": 3,
+      "bytes": 10911
+    },
+    {
+      "path": "/api/rawg/lists?type=popular-in-year&year=2025",
+      "sample": 3,
+      "status": 200,
+      "elapsedMs": 2,
+      "bytes": 10911
+    }
+  ],
+  "pages": [],
+  "interactions": [],
+  "rankings": {
+    "total": 250,
+    "uniqueSlugs": 250,
+    "consecutiveRanks": true,
+    "platformRanksPreserved": true
+  }
+}

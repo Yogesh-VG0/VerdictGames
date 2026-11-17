@@ -1,0 +1,104 @@
+{
+  "commit": "236883d3ef9c5b2c61a34d54f9100da7bb36a52b",
+  "deployment": "dpl_FENZXfE14KB458MjJT3CAsvPhgEq",
+  "scope": "Final protected stable alias, actual browser GETs. PageSize40 bypasses SQL framework cache, but shared snapshot/artwork and PostgreSQL storage may be warm. Observer deadline25s; application/provider/DB limits unchanged. No cache-busting query or forced no-cache.",
+  "measuredAt": "2026-11-17T08:36:39.041Z",
+  "samples": [
+    {
+      "path": "/api/rawg/lists?type=best-of-year&page=1&pageSize=40&platform=PC",
+      "status": 200,
+      "ms": 5227,
+      "decodedBytes": 13158,
+      "headers": {
+        "cache-control": "public",
+        "cdn-cache-control": null,
+        "vary": null,
+        "x-vercel-cache": "MISS",
+        "age": "0",
+        "server-timing": "snapshot;dur=1991, matches;dur=756, portraits;dur=531, provider_artwork;dur=3, catalogue_total;dur=3285"
+      },
+      "source": "rawg",
+      "count": 29,
+      "page": 1,
+      "items": 29,
+      "timing": {
+        "transferSize": 2619,
+        "encodedBodySize": 2319,
+        "decodedBodySize": 13158
+      }
+    },
+    {
+      "path": "/api/rawg/lists?type=best-of-year&page=2&pageSize=40&platform=PC",
+      "status": 200,
+      "ms": 1302,
+      "decodedBytes": 301,
+      "headers": {
+        "cache-control": "public",
+        "cdn-cache-control": null,
+        "vary": null,
+        "x-vercel-cache": "MISS",
+        "age": "0",
+        "server-timing": "snapshot;dur=10, matches;dur=545, portraits;dur=5, provider_artwork;dur=2, catalogue_total;dur=564"
+      },
+      "source": "rawg",
+      "count": 29,
+      "page": 2,
+      "items": 0,
+      "timing": {
+        "transferSize": 528,
+        "encodedBodySize": 228,
+        "decodedBodySize": 301
+      }
+    },
+    {
+      "path": "/api/rawg/lists?type=all-time&page=1&pageSize=40&platform=PlayStation+5",
+      "status": 200,
+      "ms": 2646,
+      "decodedBytes": 22597,
+      "headers": {
+        "cache-control": "public",
+        "cdn-cache-control": null,
+        "vary": null,
+        "x-vercel-cache": "MISS",
+        "age": "0",
+        "server-timing": "catalogue_query;dur=1489, catalogue_artwork;dur=7, catalogue_total;dur=1497"
+      },
+      "source": "catalogue",
+      "count": 38,
+      "page": 1,
+      "items": 38,
+      "firstRank": 1,
+      "lastRank": 250,
+      "timing": {
+        "transferSize": 3983,
+        "encodedBodySize": 3683,
+        "decodedBodySize": 22597
+      }
+    },
+    {
+      "path": "/api/rawg/lists?type=all-time&page=2&pageSize=40",
+      "status": 200,
+      "ms": 1358,
+      "decodedBytes": 22448,
+      "headers": {
+        "cache-control": "public",
+        "cdn-cache-control": null,
+        "vary": null,
+        "x-vercel-cache": "MISS",
+        "age": "0",
+        "server-timing": "catalogue_query;dur=449, catalogue_artwork;dur=8, catalogue_total;dur=458"
+      },
+      "source": "catalogue",
+      "count": 250,
+      "page": 2,
+      "items": 40,
+      "firstRank": 41,
+      "lastRank": 80,
+      "timing": {
+        "transferSize": 4000,
+        "encodedBodySize": 3700,
+        "decodedBodySize": 22448
+      }
+    }
+  ]
+}

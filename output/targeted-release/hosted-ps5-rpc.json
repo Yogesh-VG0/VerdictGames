@@ -1,0 +1,53 @@
+{
+  "measuredAt": "2026-11-16T07:11:46.865Z",
+  "samples": [
+    {
+      "transport": "native SQL anon",
+      "ms": 6767,
+      "bytes": 29672,
+      "count": 38,
+      "rows": 38
+    },
+    {
+      "transport": "native SQL anon",
+      "ms": 940,
+      "bytes": 29672,
+      "count": 38,
+      "rows": 38
+    },
+    {
+      "transport": "native SQL anon",
+      "ms": 787,
+      "bytes": 29672,
+      "count": 38,
+      "rows": 38
+    },
+    {
+      "transport": "REST anon POST",
+      "status": 200,
+      "ms": 1618,
+      "bytes": 31659,
+      "count": 38,
+      "rows": 38,
+      "cache": "DYNAMIC"
+    },
+    {
+      "transport": "REST anon POST",
+      "status": 200,
+      "ms": 528,
+      "bytes": 31659,
+      "count": 38,
+      "rows": 38,
+      "cache": "DYNAMIC"
+    },
+    {
+      "transport": "REST anon POST",
+      "status": 200,
+      "ms": 709,
+      "bytes": 31659,
+      "count": 38,
+      "rows": 38,
+      "cache": "DYNAMIC"
+    }
+  ]
+}

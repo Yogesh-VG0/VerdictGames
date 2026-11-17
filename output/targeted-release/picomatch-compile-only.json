@@ -1,0 +1,27 @@
+{
+  "at": "2026-11-17T19:39:31.287Z",
+  "scope": "Local compile-only check of installed packages, one-second child bound per module, no regex matching against adversarial strings, no .env loading/network/database/fixtures. Child receives only PATH/SystemRoot.",
+  "samples": [
+    {
+      "module": "node_modules/picomatch",
+      "status": 0,
+      "pattern": "+(*a)",
+      "source": "^(?:(?=.)(?:[^\\\\/]*?a)+)$",
+      "fixedPatternSource": "^(?:[\\\\/]storage[\\\\/]v1[\\\\/]object[\\\\/]public(?:[\\\\/](?!\\.)(?:(?:(?!(?:^|[\\\\/])\\.).)*?)|$))$"
+    },
+    {
+      "module": "node_modules/tinyglobby/node_modules/picomatch",
+      "status": 0,
+      "pattern": "+(*a)",
+      "source": "^(?:(?=.)(?:[^/]*?a)+)$",
+      "fixedPatternSource": "^(?:\\/storage\\/v1\\/object\\/public(?:\\/(?!\\.)(?:(?:(?!(?:^|\\/)\\.).)*?)|$))$"
+    },
+    {
+      "module": "node_modules/next/dist/compiled/picomatch",
+      "status": 0,
+      "pattern": "+(*a)",
+      "source": "^(?:(?=.)(?:[^/]*?a)+)$",
+      "fixedPatternSource": "^(?:\\/storage\\/v1\\/object\\/public(?:\\/(?!\\.)(?:(?:(?!(?:^|\\/)\\.).)*?)|$))$"
+    }
+  ]
+}

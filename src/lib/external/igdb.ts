@@ -49,6 +49,7 @@ async function getIgdbToken(): Promise<string | null> {
         client_secret: clientSecret,
         grant_type: "client_credentials",
       }),
+      signal: AbortSignal.timeout(5000),
     });
 
     if (!res.ok) {
@@ -155,6 +156,7 @@ async function igdbQuery<T>(
         "Content-Type": "text/plain",
       },
       body,
+      signal: AbortSignal.timeout(5000),
     });
 
     // Fire-and-forget tracking (non-blocking)
@@ -382,6 +384,23 @@ export async function findIgdbMatch(
   }
 
   return bestMatch;
+}
+
+/** One bounded read for artwork repair; only exact title/alias matches are admitted. */
+export async function getIgdbPortraits(titles: string[]): Promise<{ id: number; name: string; slug: string; year: number | null; companies: string[]; aliases: string[]; image: string }[]> {
+  if (!isIgdbConfigured() || titles.length === 0) return [];
+  const names = [...new Set(titles.slice(0, 100).flatMap(name => {
+    const base = name.replace(/\s+\(Archetype Entertainment\)$/i, '');
+    return [name, base, base.toUpperCase(), base.toLowerCase(), base.replace(/\b\w/g, letter => letter.toUpperCase()), base.replace(/\b2\b/g, 'II')];
+  }))].map(name => `"${escapeQuotes(name)}"`);
+  const rows = await igdbQuery<{ id: number; name: string; slug: string; first_release_date?: number; involved_companies?: { company: { name: string } }[]; alternative_names?: { name: string }[]; cover?: { image_id: string } }>('games',
+    `fields name,slug,first_release_date,involved_companies.company.name,alternative_names.name,cover.image_id; where name = (${names.join(',')}) & cover != null; limit 200;`);
+  if (!rows) throw new Error('IGDB artwork lookup unavailable');
+  return rows.filter(row => /^[a-z0-9]+$/i.test(row.cover?.image_id || '')).map(row => ({
+    id: row.id, name: row.name, slug: row.slug, year: row.first_release_date ? new Date(row.first_release_date * 1000).getUTCFullYear() : null,
+    companies: row.involved_companies?.map(company => company.company.name) || [], aliases: row.alternative_names?.map(alias => alias.name) || [],
+    image: igdbImageUrl(row.cover!.image_id, 'cover_big_2x'),
+  }));
 }
 
 /**
@@ -655,7 +674,7 @@ function pickBestTrailer(
 /* ───────── Utilities ───────── */
 
 function escapeQuotes(str: string): string {
-  return str.replace(/"/g, '\\"').replace(/[;\n\r]/g, "");
+  return str.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/[;\n\r]/g, "");
 }
 
 /**

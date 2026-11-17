@@ -1,0 +1,155 @@
+{
+  "commit": "236883d3ef9c5b2c61a34d54f9100da7bb36a52b",
+  "deployment": "dpl_FENZXfE14KB458MjJT3CAsvPhgEq",
+  "alias": "verdict-games-git-remediation-valid-556752-yogesh-vg0s-projects.vercel.app",
+  "measuredAt": "2026-11-17T07:57:11.403Z",
+  "actor": "approved-disposable-A",
+  "samples": [
+    {
+      "label": "library",
+      "status": 200,
+      "ms": 3947,
+      "bytes": 1693,
+      "probeBudgetMs": 30000,
+      "count": 1,
+      "approvedOwner": true,
+      "fixturePresent": true,
+      "preserved": true,
+      "headers": {
+        "cache-control": "private, no-store, max-age=0",
+        "cdn-cache-control": "private, no-store",
+        "vercel-cdn-cache-control": null,
+        "vary": "Cookie",
+        "x-vercel-cache": "MISS"
+      }
+    },
+    {
+      "label": "library-repeat",
+      "status": 200,
+      "ms": 2507,
+      "bytes": 1693,
+      "probeBudgetMs": 30000,
+      "count": 1,
+      "approvedOwner": true,
+      "fixturePresent": true,
+      "preserved": true,
+      "headers": {
+        "cache-control": "private, no-store, max-age=0",
+        "cdn-cache-control": "private, no-store",
+        "vercel-cdn-cache-control": null,
+        "vary": "Cookie",
+        "x-vercel-cache": "MISS"
+      }
+    },
+    {
+      "label": "statistics",
+      "status": 200,
+      "ms": 3192,
+      "bytes": 193,
+      "probeBudgetMs": 30000,
+      "count": 1,
+      "statistics": {
+        "total": 1,
+        "completed": 1,
+        "playing": 0,
+        "hours": 3,
+        "averageRating": 77
+      },
+      "headers": {
+        "cache-control": "private, no-store, max-age=0",
+        "cdn-cache-control": "private, no-store",
+        "vercel-cdn-cache-control": null,
+        "vary": "Cookie",
+        "x-vercel-cache": "MISS"
+      }
+    },
+    {
+      "label": "owned-summary",
+      "status": 200,
+      "ms": 5834,
+      "bytes": 586,
+      "probeBudgetMs": 30000,
+      "count": 1,
+      "fixturePresent": true,
+      "headers": {
+        "cache-control": "private, no-store, max-age=0",
+        "cdn-cache-control": "private, no-store",
+        "vercel-cdn-cache-control": null,
+        "vary": "Cookie",
+        "x-vercel-cache": "MISS"
+      }
+    },
+    {
+      "label": "owned-detail",
+      "status": 200,
+      "ms": 5295,
+      "bytes": 2205,
+      "probeBudgetMs": 30000,
+      "fixturePresent": true,
+      "private": true,
+      "gameCount": 1,
+      "expectedMembership": true,
+      "headers": {
+        "cache-control": "private, no-store, max-age=0",
+        "cdn-cache-control": "private, no-store",
+        "vercel-cdn-cache-control": null,
+        "vary": "Cookie",
+        "x-vercel-cache": "MISS"
+      }
+    },
+    {
+      "label": "public-lookup-of-private",
+      "status": 404,
+      "ms": 21026,
+      "bytes": 43,
+      "probeBudgetMs": 30000,
+      "fixturePresent": false,
+      "private": false,
+      "headers": {
+        "cache-control": "private, no-store, max-age=0",
+        "cdn-cache-control": "private, no-store",
+        "vercel-cdn-cache-control": null,
+        "vary": "Cookie",
+        "x-vercel-cache": "MISS"
+      }
+    },
+    {
+      "label": "public-summary",
+      "status": 200,
+      "ms": 1703,
+      "bytes": 26777,
+      "probeBudgetMs": 30000,
+      "count": 22,
+      "fixturePresent": false,
+      "bodySha256": "43c77f6d2353675e08e30a82bf74ab90aabc95bdd8e0dbc40a22c54d29a418d6",
+      "headers": {
+        "cache-control": "public",
+        "cdn-cache-control": null,
+        "vercel-cdn-cache-control": null,
+        "vary": null,
+        "x-vercel-cache": "MISS",
+        "server-timing": null
+      }
+    },
+    {
+      "label": "public-catalogue",
+      "status": 200,
+      "ms": 2402,
+      "bytes": 22215,
+      "probeBudgetMs": 30000,
+      "count": 250,
+      "fixturePresent": false,
+      "bodySha256": "3dd0d4e4eb0ddf443e2358353578e9fb321af0ff1582516c67668001dbdfe804",
+      "headers": {
+        "cache-control": "public",
+        "cdn-cache-control": null,
+        "vercel-cdn-cache-control": null,
+        "vary": null,
+        "x-vercel-cache": "MISS",
+        "server-timing": "catalogue_query;dur=1846, catalogue_artwork;dur=0, catalogue_total;dur=1849"
+      }
+    }
+  ],
+  "ownerDetailHeadingObserved": true,
+  "ownerDetailExpectedGameObserved": true
+}

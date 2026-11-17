@@ -1,0 +1,9 @@
+{
+  "measuredAt": "2026-11-17T14:00:45.371Z",
+  "scope": "Disposable clone of local8350-row historical public catalogue; no hosted connections, provider calls or persistent source writes. OS cache uncontrolled.",
+  "checks": [],
+  "sourceRows": 8350,
+  "failed": true,
+  "error": "Unexpected end of JSON input",
+  "cloneDropped": true
+}

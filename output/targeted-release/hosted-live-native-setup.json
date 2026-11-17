@@ -1,0 +1,129 @@
+{
+  "startedAt": "2026-11-16T16:47:26.753Z",
+  "sqlSha256": "3205a44a254ea1145033b849afa205d441397664eb1893dc86c722e9da83ae48",
+  "scope": "Exact approved SQL, original BEGIN/COMMIT and2s/5s bounds, native sequential protocol messages; no extra DDL/data/settings statements",
+  "steps": [
+    {
+      "number": 1,
+      "label": "BEGIN;",
+      "clientMs": 118
+    },
+    {
+      "number": 2,
+      "label": "SET LOCAL lock_timeout='2s';",
+      "clientMs": 143
+    },
+    {
+      "number": 3,
+      "label": "SET LOCAL statement_timeout='5s';",
+      "clientMs": 121
+    },
+    {
+      "number": 4,
+      "label": "CREATE FUNCTION public.explore_source_unrestricted() RETURNS boolean LANGUAGE sq",
+      "clientMs": 243
+    },
+    {
+      "number": 5,
+      "label": "REVOKE ALL ON FUNCTION public.explore_source_unrestricted() FROM PUBLIC;",
+      "clientMs": 214
+    },
+    {
+      "number": 6,
+      "label": "GRANT EXECUTE ON FUNCTION public.explore_source_unrestricted() TO anon,authentic",
+      "clientMs": 122
+    },
+    {
+      "number": 7,
+      "label": "COMMENT ON FUNCTION public.explore_source_unrestricted() IS 'Conservative invoke",
+      "clientMs": 137
+    },
+    {
+      "number": 8,
+      "label": "CREATE TABLE public.explore_inputs AS SELECT id,slug,title,release_date,steam_ap",
+      "clientMs": 198
+    },
+    {
+      "number": 9,
+      "label": "ALTER TABLE public.explore_inputs ADD PRIMARY KEY(id);",
+      "clientMs": 135
+    },
+    {
+      "number": 10,
+      "label": "ALTER TABLE public.explore_inputs ADD CONSTRAINT explore_inputs_game_fk FOREIGN ",
+      "clientMs": 211
+    },
+    {
+      "number": 11,
+      "label": "CREATE TABLE public.explore_input_state(singleton boolean PRIMARY KEY DEFAULT tr",
+      "clientMs": 130
+    },
+    {
+      "number": 12,
+      "label": "INSERT INTO public.explore_input_state(singleton,ready) VALUES(true,false);",
+      "clientMs": 138
+    },
+    {
+      "number": 13,
+      "label": "ALTER TABLE public.explore_inputs ENABLE ROW LEVEL SECURITY;",
+      "clientMs": 115
+    },
+    {
+      "number": 14,
+      "label": "ALTER TABLE public.explore_input_state ENABLE ROW LEVEL SECURITY;",
+      "clientMs": 118
+    },
+    {
+      "number": 15,
+      "label": "REVOKE ALL ON public.explore_inputs,public.explore_input_state FROM PUBLIC,anon,",
+      "clientMs": 117
+    },
+    {
+      "number": 16,
+      "label": "GRANT SELECT ON public.explore_inputs,public.explore_input_state TO anon,authent",
+      "clientMs": 115
+    },
+    {
+      "number": 17,
+      "label": "CREATE POLICY explore_inputs_source_visibility ON public.explore_inputs FOR SELE",
+      "clientMs": 140
+    },
+    {
+      "number": 18,
+      "label": "CREATE POLICY explore_input_state_public ON public.explore_input_state FOR SELEC",
+      "clientMs": 115
+    },
+    {
+      "number": 19,
+      "label": "CREATE FUNCTION public.refresh_explore_inputs() RETURNS trigger LANGUAGE plpgsql",
+      "clientMs": 118
+    },
+    {
+      "number": 20,
+      "label": "REVOKE ALL ON FUNCTION public.refresh_explore_inputs() FROM PUBLIC,anon,authenti",
+      "clientMs": 127
+    },
+    {
+      "number": 21,
+      "label": "CREATE TRIGGER refresh_explore_inputs AFTER INSERT OR UPDATE ON public.games FOR",
+      "clientMs": 115
+    },
+    {
+      "number": 22,
+      "label": "CREATE INDEX games_explore_unclassified_idx ON public.games(id) WHERE explore_ti",
+      "clientMs": 2609
+    },
+    {
+      "number": 23,
+      "label": "CREATE OR REPLACE FUNCTION public.explore_catalogue_page( p_type text, p_year in",
+      "clientMs": 139
+    },
+    {
+      "number": 24,
+      "label": "COMMIT; ",
+      "clientMs": 117
+    }
+  ],
+  "committed": true,
+  "completedAt": "2026-11-16T16:47:34.082Z"
+}

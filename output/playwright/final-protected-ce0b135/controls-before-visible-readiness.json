@@ -1,0 +1,94 @@
+{
+  "candidate": "ce0b1359d68a87be9ac698e41c44686092615181",
+  "scope": "Actual protected preview; public browser reads and isolated local preferences only. No signup/email submission, hosted fixture or data write.",
+  "startedAt": "2026-11-17T13:42:21.232Z",
+  "cases": [
+    {
+      "width": 390,
+      "theme": "dark",
+      "checks": [
+        "year/platform/sort controls update the shareable URL and reset page",
+        "refresh preserves selected controls and rendered order",
+        "expanded Browse/Search filters fit the viewport",
+        "normal visible gradient headings move",
+        "pause stops headings and persists across reload",
+        "system reduced motion keeps the visible heading static"
+      ],
+      "filterOverflow": false,
+      "passed": true
+    },
+    {
+      "width": 390,
+      "theme": "light",
+      "checks": [
+        "year/platform/sort controls update the shareable URL and reset page",
+        "refresh preserves selected controls and rendered order",
+        "expanded Browse/Search filters fit the viewport"
+      ],
+      "filterOverflow": false,
+      "failed": true,
+      "error": "AssertionError",
+      "stage": "motion",
+      "url": "https://verdict-games-git-remediation-valid-556752-yogesh-vg0s-projects.vercel.app/",
+      "visibleState": "SPOTLIGHT\nAce Combat 8: Wings of Theve\n86\nSTEAM\nWORTH IT\nRead Verdict\nⅡ\nClick to pause\nTrending Right Now\nView all\n\nBased on recent player activity & community signals\n\n94\nSTEAM\n2024\nTrending Up\nBlack Myth: Wukong\nMUST PLAY\nAction\n·Adventure\n95\nSTEAM\n2025\nTop Rated\nSplit Fiction\nMUST PLAY\nAction\n·Adventure\n97\nSTEAM\n2024\nTrending Up\nMiSide\nMUST PLAY\nAdventure\n·RPG\n93\nSTEAM\n2024\nTop Rated\nPalworld\nMUST PLAY\nAction\n·Adventure\n86\nSTEAM\n2026\nAce Combat 8: Wings of Theve\nWORTH IT\nAction\n·Simulation\n93\nSTEAM\n2024\nTop Rated\nPersona 3 Reload\nMUST PLAY\nAction\n·Adventure\n91\nSTEAM\n2025\nTop Rated\nBall x Pit\nMUST PLAY\nAction\n·Indie\n94\nSTEAM\n2026\nTop Rated\nResident Evil 9: Requiem\nMUST PLAY\nAction\n89\nSTEAM\n+2\n2025\nFalling\nHollow Knight: Silksong\nMUST PLAY\nAction\n·Adventure\n94\nSTEAM\n2025\nTop Rated\nKingdom Come: Deliverance II\nMUST PLAY\nAction\n·Adventure\n95\nSTEAM\n+1\n2024\nTop Rated\nBalatro\nMUST PLAY\nStrategy\n·Casual\n95\nSTEAM\n2025\nTop Rated\nAbiotic Factor\nMUST PLAY\nAction\n·Shooter\n95\nSTEAM\n2025\nTop Rated\nHades II\nMUST PLAY\nAction\n·Adventure\n92\nSTEAM\n2026\nTop Rated\nMewgenics\nMUST PLAY\nStrategy\n93\nSTEAM\n2025\nTop Rated\nClair Obscur: Expedition 33\nMUST PLAY\nRPG\n96\nSTEAM\n2024\nTop Rated\nSatisfactory\nMUST P"
+    },
+    {
+      "width": 768,
+      "theme": "dark",
+      "checks": [
+        "year/platform/sort controls update the shareable URL and reset page",
+        "refresh preserves selected controls and rendered order",
+        "expanded Browse/Search filters fit the viewport",
+        "normal visible gradient headings move",
+        "pause stops headings and persists across reload",
+        "system reduced motion keeps the visible heading static"
+      ],
+      "filterOverflow": false,
+      "passed": true
+    },
+    {
+      "width": 768,
+      "theme": "light",
+      "checks": [
+        "year/platform/sort controls update the shareable URL and reset page",
+        "refresh preserves selected controls and rendered order",
+        "expanded Browse/Search filters fit the viewport",
+        "normal visible gradient headings move",
+        "pause stops headings and persists across reload",
+        "system reduced motion keeps the visible heading static"
+      ],
+      "filterOverflow": false,
+      "passed": true
+    },
+    {
+      "width": 1440,
+      "theme": "dark",
+      "checks": [
+        "year/platform/sort controls update the shareable URL and reset page",
+        "refresh preserves selected controls and rendered order",
+        "expanded Browse/Search filters fit the viewport"
+      ],
+      "filterOverflow": false,
+      "failed": true,
+      "error": "AssertionError",
+      "stage": "motion",
+      "url": "https://verdict-games-git-remediation-valid-556752-yogesh-vg0s-projects.vercel.app/",
+      "visibleState": "SPOTLIGHT\nAce Combat 8: Wings of Theve\n86\nSTEAM\nWORTH IT\n2026\n\nAce Combat 8: Wings of Theve is a 2026 combat flight simulation game developed by Bandai Namco Aces and published by Bandai Namco Entertainment. It is the ninth mainline installment in the Ace Combat …\n\nAction\n·Simulation\n·\n2.7K playing\nRead Verdict\nⅡ\nClick to pause\nTrending Right Now\nView all\n\nBased on recent player activity & community signals\n\n94\nSTEAM\n2024\nTrending Up\nBlack Myth: Wukong\nMUST PLAY\nAction\n·Adventure\n95\nSTEAM\n2025\nTop Rated\nSplit Fiction\nMUST PLAY\nAction\n·Adventure\n97\nSTEAM\n2024\nTrending Up\nMiSide\nMUST PLAY\nAdventure\n·RPG\n93\nSTEAM\n2024\nTop Rated\nPalworld\nMUST PLAY\nAction\n·Adventure\n86\nSTEAM\n2026\nAce Combat 8: Wings of Theve\nWORTH IT\nAction\n·Simulation\n93\nSTEAM\n2024\nTop Rated\nPersona 3 Reload\nMUST PLAY\nAction\n·Adventure\n91\nSTEAM\n2025\nTop Rated\nBall x Pit\nMUST PLAY\nAction\n·Indie\n94\nSTEAM\n2026\nTop Rated\nResident Evil 9: Requiem\nMUST PLAY\nAction\n89\nSTEAM\n+2\n2025\nFalling\nHollow Knight: Silksong\nMUST PLAY\nAction\n·Adventure\n94\nSTEAM\n2025\nTop Rated\nKingdom Come: Deliverance II\nMUST PLAY\nAction\n·Adventure\n95\nSTEAM\n+1\n2024\nTop Rated\nBalatro\nMUST PLAY\nStrategy\n·Casual\n95\nSTEAM\n2025\nTop Rated\nAbiotic Factor\nMUST P"
+    },
+    {
+      "width": 1440,
+      "theme": "light",
+      "checks": [
+        "year/platform/sort controls update the shareable URL and reset page",
+        "refresh preserves selected controls and rendered order",
+        "expanded Browse/Search filters fit the viewport",
+        "normal visible gradient headings move",
+        "pause stops headings and persists across reload",
+        "system reduced motion keeps the visible heading static"
+      ],
+      "filterOverflow": false,
+      "passed": true
+    }
+  ],
+  "completedAt": "2026-11-17T13:43:56.474Z"
+}

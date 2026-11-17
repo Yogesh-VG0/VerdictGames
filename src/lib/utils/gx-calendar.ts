@@ -368,14 +368,32 @@ function hasGXCalendarPromoMetaSignal(value: string | null | undefined): boolean
 }
 
 export function shouldHideGXCalendarEntry(item: GXCalendarGame): boolean {
-  return hasGXCalendarPromoTitleSignal(item.title)
+  return isNonGameCalendarCampaign(item)
+    || hasGXCalendarPromoTitleSignal(item.title)
     || hasGXCalendarPromoTitleSignal(item.slug)
     || hasGXCalendarPromoMetaSignal(item.tagLabel)
     || hasGXCalendarPromoMetaSignal(item.ctaLabel);
 }
 
-function shouldHideCalendarGame(item: Pick<CalendarGame, "title" | "slug" | "calendarEntryTag" | "calendarCtaLabel">): boolean {
-  return hasGXCalendarPromoTitleSignal(item.title)
+// Do not require a local detail page: genuine new games may be GX-only. Match
+// explicit advertising classification or the observed vendor campaign pattern,
+// never a broad substring such as "ROG" (which would also hide real game names).
+function isNonGameCalendarCampaign(item: Pick<GXCalendarGame, "title" | "url" | "tagLabel">): boolean {
+  if (/^(sponsored|advertisement|advertising|hardware campaign)$/i.test(item.tagLabel?.trim() ?? "")) return true;
+  const vendorEvent = /\b(asus|rog|proart)\b/i.test(item.title)
+    && /\b(campaign|black friday|masters? talks?|giveaway|promotion)\b/i.test(item.title);
+  let hardwareCampaignUrl = false;
+  try {
+    const url = new URL(item.url ?? "");
+    hardwareCampaignUrl = /(^|\.)asus\.com$/i.test(url.hostname)
+      && /\/(campaign|events?|promotion)(\/|$)/i.test(url.pathname);
+  } catch { /* A missing URL alone is not evidence of advertising. */ }
+  return vendorEvent || hardwareCampaignUrl;
+}
+
+function shouldHideCalendarGame(item: Pick<CalendarGame, "title" | "slug" | "calendarEntryTag" | "calendarCtaLabel" | "calendarUrl">): boolean {
+  return isNonGameCalendarCampaign({ title: item.title, tagLabel: item.calendarEntryTag ?? null, url: item.calendarUrl ?? null })
+    || hasGXCalendarPromoTitleSignal(item.title)
     || hasGXCalendarPromoTitleSignal(item.slug)
     || hasGXCalendarPromoMetaSignal(item.calendarEntryTag)
     || hasGXCalendarPromoMetaSignal(item.calendarCtaLabel);

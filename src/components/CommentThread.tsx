@@ -75,9 +75,9 @@ function CommentNode({
       <AnimatePresence>
         {showReply && (
           <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
+            initial={false}
+            animate={undefined}
+            exit={undefined}
             className="overflow-hidden"
           >
             <div className="flex gap-2 py-1">
@@ -179,9 +179,9 @@ export default function CommentThread({ reviewId, onAuthRequired }: CommentThrea
       <AnimatePresence>
         {isExpanded && (
           <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
+            initial={false}
+            animate={undefined}
+            exit={undefined}
             className="overflow-hidden space-y-4"
           >
             {/* New comment input */}

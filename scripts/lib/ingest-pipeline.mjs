@@ -13,6 +13,8 @@
 import { rawgFetchJson } from "./rawg-client.mjs";
 import { isInfrastructureDbError } from "./scheduler-logger.mjs";
 import { fetchSteamReviews } from "../../src/lib/external/steam-reviews-api.mjs";
+import { preferExistingCover } from '../../src/lib/utils/artwork-policy.mjs';
+import { refreshIgdbCatalogue } from './igdb-fallback.mjs';
 
 // ══════════════════════════════════════════════════
 // Configuration
@@ -34,37 +36,8 @@ const WIKI_BASE = "https://en.wikipedia.org/api/rest_v1";
 //   4. Keep existing trusted media or leave empty for repair
 // ══════════════════════════════════════════════════
 
-/**
- * Known-good image URL patterns (trusted sources that rarely 404).
- * IGDB and RAWG are preferred over Steam.
- */
-const TRUSTED_IMAGE_PATTERNS = [
-  /images\.igdb\.com/,      // IGDB - highest priority
-  /media\.rawg\.io/,        // RAWG - second priority
-  /upload\.wikimedia\.org/, // Wikipedia - trusted
-];
-
 /** Media source priority ranking (lower = better) */
-const MEDIA_SOURCE_PRIORITY = { igdb: 1, rawg: 2, steam: 3, unknown: 99 };
-
-/**
- * Check if an image URL is from a trusted source.
- */
-function isTrustedImageUrl(url) {
-  if (!url) return false;
-  return TRUSTED_IMAGE_PATTERNS.some(p => p.test(url));
-}
-
-/**
- * Get media source from URL.
- */
-function getMediaSourceFromUrl(url) {
-  if (!url) return null;
-  if (/images\.igdb\.com/.test(url)) return "igdb";
-  if (/media\.rawg\.io/.test(url)) return "rawg";
-  if (/steamstatic\.com|steamcdn/.test(url)) return "steam";
-  return "unknown";
-}
+const MEDIA_SOURCE_PRIORITY = { igdb: 1, steam: 2, rawg: 3, unknown: 99 };
 
 /**
  * Check if new media source is better than existing.
@@ -272,7 +245,7 @@ async function igdbToken() {
   if (!cid || !cs) return null;
   if (_igdbToken && Date.now() < _igdbToken.exp - 300000) return _igdbToken.tok;
   try { const r = await fetch(TWITCH_TOKEN_URL, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({ client_id: cid, client_secret: cs, grant_type: "client_credentials" }) });
+    body: new URLSearchParams({ client_id: cid, client_secret: cs, grant_type: "client_credentials" }),signal:AbortSignal.timeout(5000) });
     if (!r.ok) return null; const d = await r.json(); _igdbToken = { tok: d.access_token, exp: Date.now() + d.expires_in * 1000 }; return _igdbToken.tok;
   } catch { return null; }
 }
@@ -283,6 +256,11 @@ async function igdbQ(endpoint, body) {
     body, signal: AbortSignal.timeout(15000) }); if (!r.ok) return null; return r.json(); } catch { return null; }
 }
 function igdbConfigured() { return !!(process.env.TWITCH_CLIENT_ID && process.env.TWITCH_CLIENT_SECRET); }
+export async function discoverIgdbDirect(sql) {
+  if(!igdbConfigured()) throw new Error('Independent IGDB discovery is not configured');
+  return refreshIgdbCatalogue(sql,igdbQ);
+}
+export { igdbQ as queryIgdbDirect };
 function esc(s) { return s.replace(/"/g, '\\"'); }
 function igdbImg(id, sz = "cover_big") { return `https://images.igdb.com/igdb/image/upload/t_${sz}/${id}.jpg`; }
 
@@ -447,7 +425,7 @@ function genCons(game, sr, igdb) {
   const cons = [], tags = (game.tags ?? []).map(t => t.name.toLowerCase());
   if (sr) { const pct = Math.round((sr.total_positive / sr.total_reviews) * 100); if (pct < 70) cons.push(`Mixed Steam reception (${pct}% positive)`); }
   if (tags.includes("difficult") || tags.includes("souls-like")) cons.push("Steep difficulty curve may not appeal to casual players");
-  if (tags.includes("early access")) cons.push("Still in Early Access — content may be incomplete");
+  // Historical RAWG tags cannot establish a game's current release state.
   if (tags.includes("microtransactions") || tags.includes("in-app purchases")) cons.push("Contains microtransactions");
   if (tags.includes("grinding") || tags.includes("grindy")) cons.push("Can require significant grinding");
   if (game.rating < 3.5 && (game.ratings_count ?? 0) > 100) cons.push("Below-average player reception");
@@ -600,13 +578,7 @@ export async function ingestGameDirect(sql, query, options = {}) {
     mediaSource = "igdb";
     coverDebug = "[cover] Using IGDB cover (priority 1)";
   }
-  // Priority 2: RAWG background image
-  else if (rawgCover) {
-    cover = rawgCover;
-    mediaSource = "rawg";
-    coverDebug = "[cover] Using RAWG background (priority 2)";
-  }
-  // Priority 3: Steam validated cover (last resort)
+  // Prefer a verified Steam portrait before the landscape fallback.
   else if (steamAppId) {
     const steamResult = await validateAndGetSteamCover(steamAppId);
     if (steamResult?.coverUrl) {
@@ -622,6 +594,7 @@ export async function ingestGameDirect(sql, query, options = {}) {
     coverDebug = "[cover] No cover sources available";
   }
   
+  if (!cover && rawgCover) { cover = rawgCover; mediaSource = 'rawg'; }
   // Log cover source for debugging (can be disabled in production)
   if (process.env.DEBUG_MEDIA) console.log(`  ${fullGame.name}: ${coverDebug}`);
   
@@ -697,9 +670,10 @@ export async function ingestGameDirect(sql, query, options = {}) {
         if (!isEmpty) {
           // ══════════════════════════════════════════════════
           // NO-REGRESSION PROTECTION FOR MEDIA:
-          // - Never overwrite IGDB/RAWG with Steam
-          // - Only allow upgrades (igdb > rawg > steam)
+          // - Preserve a known portrait over a landscape fallback.
+          // - IGDB portraits, then verified Steam portraits, then RAWG art.
           // ══════════════════════════════════════════════════
+          if (key === 'cover_image' && preferExistingCover(cur.cover_image, rec.cover_image)) continue;
           if (key === "cover_image" && cur.media_source) {
             const existingSource = cur.media_source;
             const newSource = mediaSource;
@@ -721,6 +695,7 @@ export async function ingestGameDirect(sql, query, options = {}) {
       }
       upd[key] = val;
     }
+    if (cur?.cover_image && !Object.hasOwn(upd, 'cover_image')) upd.media_source = cur.media_source;
 
     if (Object.keys(upd).length > 0) {
       await sql`UPDATE games SET ${sql(upd)} WHERE id = ${existing.id}`;

@@ -1,0 +1,3904 @@
+{
+  "candidate": "c644fbb1d0bcf1320844de4e2f5e52113c8bde12",
+  "set": "base",
+  "startedAt": "2026-11-17T15:29:50.656Z",
+  "scope": "Actual public protected preview screenshots. Isolated anonymous application context; origin-only short-lived OIDC; all non-read requests blocked. No cookie/header/token capture, HAR, new dependencies or hosted writes.",
+  "samples": [
+    {
+      "label": "home",
+      "path": "/",
+      "width": 390,
+      "theme": "dark",
+      "status": 200,
+      "state": {
+        "title": "The Verdict on Every Game",
+        "heading": "Ace Combat 8: Wings of Theve",
+        "light": false,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          },
+          {
+            "alt": "Ace Combat 8: Wings of Theve",
+            "loaded": true,
+            "width": 442,
+            "height": 249
+          },
+          {
+            "alt": "Slay the Spire 2",
+            "loaded": true,
+            "width": 23,
+            "height": 31
+          },
+          {
+            "alt": "Limbus Company",
+            "loaded": true,
+            "width": 23,
+            "height": 31
+          }
+        ],
+        "selectedControls": []
+      },
+      "screenshot": "home-dark-390.png",
+      "ms": 1941
+    },
+    {
+      "label": "browse",
+      "path": "/search",
+      "width": 390,
+      "theme": "dark",
+      "status": 200,
+      "state": {
+        "title": "Search Games | verdict.games",
+        "heading": "Browse Games",
+        "light": false,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          },
+          {
+            "alt": "Servant of the Lake",
+            "loaded": true,
+            "width": 235,
+            "height": 314
+          },
+          {
+            "alt": "Rhythm Doctor",
+            "loaded": true,
+            "width": 235,
+            "height": 314
+          },
+          {
+            "alt": "MiSide",
+            "loaded": true,
+            "width": 235,
+            "height": 314
+          },
+          {
+            "alt": "Dave the Diver",
+            "loaded": true,
+            "width": 235,
+            "height": 314
+          }
+        ],
+        "selectedControls": []
+      },
+      "screenshot": "browse-dark-390.png",
+      "ms": 1461
+    },
+    {
+      "label": "search",
+      "path": "/search?q=Hades",
+      "width": 390,
+      "theme": "dark",
+      "status": 200,
+      "state": {
+        "title": "Search results for \"Hades\" | verdict.games",
+        "heading": "Browse Games",
+        "light": false,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          },
+          {
+            "alt": "Hades II",
+            "loaded": true,
+            "width": 23,
+            "height": 31
+          },
+          {
+            "alt": "Hades",
+            "loaded": true,
+            "width": 23,
+            "height": 31
+          }
+        ],
+        "selectedControls": []
+      },
+      "screenshot": "search-dark-390.png",
+      "ms": 1531
+    },
+    {
+      "label": "game",
+      "path": "/game/hades",
+      "width": 390,
+      "theme": "dark",
+      "status": 200,
+      "state": {
+        "title": "Hades — 97/100 Verdict | verdict.games",
+        "heading": "Hades",
+        "light": false,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          },
+          {
+            "alt": "Hades",
+            "loaded": true,
+            "width": 442,
+            "height": 249
+          }
+        ],
+        "selectedControls": []
+      },
+      "screenshot": "game-dark-390.png",
+      "ms": 2479
+    },
+    {
+      "label": "lists",
+      "path": "/lists",
+      "width": 390,
+      "theme": "dark",
+      "status": 200,
+      "state": {
+        "title": "Curated Lists | verdict.games",
+        "heading": "Curated Lists",
+        "light": false,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          },
+          {
+            "alt": "Creature Kitchen",
+            "loaded": true,
+            "width": 201,
+            "height": 268
+          },
+          {
+            "alt": "Katawa Shoujo",
+            "loaded": true,
+            "width": 201,
+            "height": 268
+          },
+          {
+            "alt": "Is This Seat Taken?",
+            "loaded": true,
+            "width": 201,
+            "height": 268
+          },
+          {
+            "alt": "Leaf it Alone",
+            "loaded": true,
+            "width": 201,
+            "height": 268
+          },
+          {
+            "alt": "Sam & Max: Beyond Time and Space - Remastered",
+            "loaded": true,
+            "width": 487,
+            "height": 274
+          },
+          {
+            "alt": "Descent (1996)",
+            "loaded": true,
+            "width": 487,
+            "height": 304
+          },
+          {
+            "alt": "Fallen Hero: Rebirth",
+            "loaded": true,
+            "width": 201,
+            "height": 268
+          },
+          {
+            "alt": "Micro Mages",
+            "loaded": true,
+            "width": 201,
+            "height": 268
+          },
+          {
+            "alt": "Dawnfolk",
+            "loaded": true,
+            "width": 201,
+            "height": 268
+          },
+          {
+            "alt": "Platypus Reclayed",
+            "loaded": true,
+            "width": 600,
+            "height": 900
+          },
+          {
+            "alt": "Sektori",
+            "loaded": true,
+            "width": 201,
+            "height": 268
+          },
+          {
+            "alt": "Wilmot Works It Out",
+            "loaded": true,
+            "width": 201,
+            "height": 268
+          }
+        ],
+        "selectedControls": [
+          {
+            "text": "All collections",
+            "label": null,
+            "value": null
+          }
+        ]
+      },
+      "screenshot": "lists-dark-390.png",
+      "ms": 2689
+    },
+    {
+      "label": "library-anonymous",
+      "path": "/library",
+      "width": 390,
+      "theme": "dark",
+      "status": 200,
+      "state": {
+        "title": "My Library | verdict.games",
+        "heading": "Your Game Library",
+        "light": false,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          }
+        ],
+        "selectedControls": []
+      },
+      "screenshot": "library-anonymous-dark-390.png",
+      "ms": 1396
+    },
+    {
+      "label": "reset-expired",
+      "path": "/reset-password?reset_error=otp_expired",
+      "width": 390,
+      "theme": "dark",
+      "status": 200,
+      "state": {
+        "title": "Reset Password | verdict.games",
+        "heading": "Reset your password without the friction",
+        "light": false,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          }
+        ],
+        "selectedControls": []
+      },
+      "screenshot": "reset-expired-dark-390.png",
+      "ms": 1231
+    },
+    {
+      "label": "public-list-detail",
+      "path": "/lists/cozy-games-to-unwind",
+      "width": 390,
+      "theme": "dark",
+      "status": 200,
+      "state": {
+        "title": "Cozy Games to Unwind With",
+        "heading": "Cozy Games to Unwind With",
+        "light": false,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          },
+          {
+            "alt": "Creature Kitchen",
+            "loaded": true,
+            "width": 23,
+            "height": 31
+          },
+          {
+            "alt": "Katawa Shoujo",
+            "loaded": true,
+            "width": 23,
+            "height": 31
+          },
+          {
+            "alt": "Is This Seat Taken?",
+            "loaded": true,
+            "width": 23,
+            "height": 31
+          },
+          {
+            "alt": "Leaf it Alone",
+            "loaded": true,
+            "width": 23,
+            "height": 31
+          }
+        ],
+        "selectedControls": []
+      },
+      "screenshot": "public-list-detail-dark-390.png",
+      "ms": 4429
+    },
+    {
+      "label": "login",
+      "path": "/library",
+      "width": 390,
+      "theme": "dark",
+      "status": 200,
+      "state": {
+        "title": "My Library | verdict.games",
+        "heading": "Your Game Library",
+        "light": false,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          }
+        ],
+        "selectedControls": []
+      },
+      "screenshot": "login-dark-390.png",
+      "ms": 936
+    },
+    {
+      "label": "signup",
+      "path": "/library",
+      "width": 390,
+      "theme": "dark",
+      "status": 200,
+      "state": {
+        "title": "My Library | verdict.games",
+        "heading": "Your Game Library",
+        "light": false,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          }
+        ],
+        "selectedControls": []
+      },
+      "screenshot": "signup-dark-390.png",
+      "ms": 1204
+    },
+    {
+      "label": "forgot-password",
+      "path": "/library",
+      "width": 390,
+      "theme": "dark",
+      "status": 200,
+      "state": {
+        "title": "My Library | verdict.games",
+        "heading": "Your Game Library",
+        "light": false,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          }
+        ],
+        "selectedControls": []
+      },
+      "screenshot": "forgot-password-dark-390.png",
+      "ms": 1224
+    },
+    {
+      "label": "home-anticipated",
+      "path": "/",
+      "width": 390,
+      "theme": "dark",
+      "status": 200,
+      "state": {
+        "title": "The Verdict on Every Game",
+        "heading": "Ace Combat 8: Wings of Theve",
+        "light": false,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          },
+          {
+            "alt": "Slay the Spire 2",
+            "loaded": true,
+            "width": 23,
+            "height": 31
+          },
+          {
+            "alt": "Limbus Company",
+            "loaded": true,
+            "width": 23,
+            "height": 31
+          },
+          {
+            "alt": "Path of Exile 2",
+            "loaded": true,
+            "width": 181,
+            "height": 242
+          },
+          {
+            "alt": "No Rest for the Wicked",
+            "loaded": true,
+            "width": 181,
+            "height": 242
+          }
+        ],
+        "selectedControls": []
+      },
+      "screenshot": "home-anticipated-dark-390.png",
+      "ms": 2318
+    },
+    {
+      "label": "home",
+      "path": "/",
+      "width": 390,
+      "theme": "light",
+      "status": 200,
+      "state": {
+        "title": "The Verdict on Every Game",
+        "heading": "Ace Combat 8: Wings of Theve",
+        "light": true,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          },
+          {
+            "alt": "Ace Combat 8: Wings of Theve",
+            "loaded": true,
+            "width": 442,
+            "height": 249
+          },
+          {
+            "alt": "Slay the Spire 2",
+            "loaded": true,
+            "width": 23,
+            "height": 31
+          },
+          {
+            "alt": "Limbus Company",
+            "loaded": true,
+            "width": 23,
+            "height": 31
+          }
+        ],
+        "selectedControls": []
+      },
+      "screenshot": "home-light-390.png",
+      "ms": 2175
+    },
+    {
+      "label": "browse",
+      "path": "/search",
+      "width": 390,
+      "theme": "light",
+      "status": 200,
+      "state": {
+        "title": "Search Games | verdict.games",
+        "heading": "Browse Games",
+        "light": true,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          },
+          {
+            "alt": "Servant of the Lake",
+            "loaded": true,
+            "width": 23,
+            "height": 31
+          },
+          {
+            "alt": "Rhythm Doctor",
+            "loaded": true,
+            "width": 23,
+            "height": 31
+          },
+          {
+            "alt": "MiSide",
+            "loaded": true,
+            "width": 23,
+            "height": 31
+          },
+          {
+            "alt": "Dave the Diver",
+            "loaded": true,
+            "width": 23,
+            "height": 31
+          }
+        ],
+        "selectedControls": []
+      },
+      "screenshot": "browse-light-390.png",
+      "ms": 1458
+    },
+    {
+      "label": "search",
+      "path": "/search?q=Hades",
+      "width": 390,
+      "theme": "light",
+      "status": 200,
+      "state": {
+        "title": "Search results for \"Hades\" | verdict.games",
+        "heading": "Browse Games",
+        "light": true,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          },
+          {
+            "alt": "Hades II",
+            "loaded": true,
+            "width": 23,
+            "height": 31
+          },
+          {
+            "alt": "Hades",
+            "loaded": true,
+            "width": 23,
+            "height": 31
+          }
+        ],
+        "selectedControls": []
+      },
+      "screenshot": "search-light-390.png",
+      "ms": 1497
+    },
+    {
+      "label": "game",
+      "path": "/game/hades",
+      "width": 390,
+      "theme": "light",
+      "status": 200,
+      "state": {
+        "title": "Hades — 97/100 Verdict | verdict.games",
+        "heading": "Hades",
+        "light": true,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          },
+          {
+            "alt": "Hades",
+            "loaded": true,
+            "width": 442,
+            "height": 249
+          }
+        ],
+        "selectedControls": []
+      },
+      "screenshot": "game-light-390.png",
+      "ms": 1142
+    },
+    {
+      "label": "lists",
+      "path": "/lists",
+      "width": 390,
+      "theme": "light",
+      "status": 200,
+      "state": {
+        "title": "Curated Lists | verdict.games",
+        "heading": "Curated Lists",
+        "light": true,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          },
+          {
+            "alt": "Creature Kitchen",
+            "loaded": true,
+            "width": 201,
+            "height": 268
+          },
+          {
+            "alt": "Katawa Shoujo",
+            "loaded": true,
+            "width": 201,
+            "height": 268
+          },
+          {
+            "alt": "Is This Seat Taken?",
+            "loaded": true,
+            "width": 201,
+            "height": 268
+          },
+          {
+            "alt": "Leaf it Alone",
+            "loaded": true,
+            "width": 201,
+            "height": 268
+          },
+          {
+            "alt": "Sam & Max: Beyond Time and Space - Remastered",
+            "loaded": true,
+            "width": 487,
+            "height": 274
+          },
+          {
+            "alt": "Descent (1996)",
+            "loaded": true,
+            "width": 487,
+            "height": 304
+          },
+          {
+            "alt": "Fallen Hero: Rebirth",
+            "loaded": true,
+            "width": 201,
+            "height": 268
+          },
+          {
+            "alt": "Micro Mages",
+            "loaded": true,
+            "width": 201,
+            "height": 268
+          },
+          {
+            "alt": "Dawnfolk",
+            "loaded": true,
+            "width": 201,
+            "height": 268
+          },
+          {
+            "alt": "Platypus Reclayed",
+            "loaded": true,
+            "width": 600,
+            "height": 900
+          },
+          {
+            "alt": "Sektori",
+            "loaded": true,
+            "width": 201,
+            "height": 268
+          },
+          {
+            "alt": "Wilmot Works It Out",
+            "loaded": true,
+            "width": 201,
+            "height": 268
+          }
+        ],
+        "selectedControls": [
+          {
+            "text": "All collections",
+            "label": null,
+            "value": null
+          }
+        ]
+      },
+      "screenshot": "lists-light-390.png",
+      "ms": 1726
+    },
+    {
+      "label": "library-anonymous",
+      "path": "/library",
+      "width": 390,
+      "theme": "light",
+      "status": 200,
+      "state": {
+        "title": "My Library | verdict.games",
+        "heading": "Your Game Library",
+        "light": true,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          }
+        ],
+        "selectedControls": []
+      },
+      "screenshot": "library-anonymous-light-390.png",
+      "ms": 1084
+    },
+    {
+      "label": "reset-expired",
+      "path": "/reset-password?reset_error=otp_expired",
+      "width": 390,
+      "theme": "light",
+      "status": 200,
+      "state": {
+        "title": "Reset Password | verdict.games",
+        "heading": "Reset your password without the friction",
+        "light": true,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          }
+        ],
+        "selectedControls": []
+      },
+      "screenshot": "reset-expired-light-390.png",
+      "ms": 1280
+    },
+    {
+      "label": "public-list-detail",
+      "path": "/lists/cozy-games-to-unwind",
+      "width": 390,
+      "theme": "light",
+      "status": 200,
+      "state": {
+        "title": "Cozy Games to Unwind With",
+        "heading": "Cozy Games to Unwind With",
+        "light": true,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          },
+          {
+            "alt": "Creature Kitchen",
+            "loaded": true,
+            "width": 23,
+            "height": 31
+          },
+          {
+            "alt": "Katawa Shoujo",
+            "loaded": true,
+            "width": 23,
+            "height": 31
+          },
+          {
+            "alt": "Is This Seat Taken?",
+            "loaded": true,
+            "width": 23,
+            "height": 31
+          },
+          {
+            "alt": "Leaf it Alone",
+            "loaded": true,
+            "width": 23,
+            "height": 31
+          }
+        ],
+        "selectedControls": []
+      },
+      "screenshot": "public-list-detail-light-390.png",
+      "ms": 967
+    },
+    {
+      "label": "login",
+      "path": "/library",
+      "width": 390,
+      "theme": "light",
+      "status": 200,
+      "state": {
+        "title": "My Library | verdict.games",
+        "heading": "Your Game Library",
+        "light": true,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          }
+        ],
+        "selectedControls": []
+      },
+      "screenshot": "login-light-390.png",
+      "ms": 989
+    },
+    {
+      "label": "signup",
+      "path": "/library",
+      "width": 390,
+      "theme": "light",
+      "status": 200,
+      "state": {
+        "title": "My Library | verdict.games",
+        "heading": "Your Game Library",
+        "light": true,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          }
+        ],
+        "selectedControls": []
+      },
+      "screenshot": "signup-light-390.png",
+      "ms": 1258
+    },
+    {
+      "label": "forgot-password",
+      "path": "/library",
+      "width": 390,
+      "theme": "light",
+      "status": 200,
+      "state": {
+        "title": "My Library | verdict.games",
+        "heading": "Your Game Library",
+        "light": true,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          }
+        ],
+        "selectedControls": []
+      },
+      "screenshot": "forgot-password-light-390.png",
+      "ms": 1434
+    },
+    {
+      "label": "home-anticipated",
+      "path": "/",
+      "width": 390,
+      "theme": "light",
+      "status": 200,
+      "state": {
+        "title": "The Verdict on Every Game",
+        "heading": "Ace Combat 8: Wings of Theve",
+        "light": true,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          },
+          {
+            "alt": "Slay the Spire 2",
+            "loaded": true,
+            "width": 23,
+            "height": 31
+          },
+          {
+            "alt": "Limbus Company",
+            "loaded": true,
+            "width": 23,
+            "height": 31
+          },
+          {
+            "alt": "Path of Exile 2",
+            "loaded": true,
+            "width": 181,
+            "height": 242
+          },
+          {
+            "alt": "No Rest for the Wicked",
+            "loaded": true,
+            "width": 181,
+            "height": 242
+          }
+        ],
+        "selectedControls": []
+      },
+      "screenshot": "home-anticipated-light-390.png",
+      "ms": 1738
+    },
+    {
+      "label": "home",
+      "path": "/",
+      "width": 768,
+      "theme": "dark",
+      "status": 200,
+      "state": {
+        "title": "The Verdict on Every Game",
+        "heading": "Ace Combat 8: Wings of Theve",
+        "light": false,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          },
+          {
+            "alt": "Ace Combat 8: Wings of Theve",
+            "loaded": true,
+            "width": 871,
+            "height": 490
+          },
+          {
+            "alt": "Slay the Spire 2",
+            "loaded": true,
+            "width": 28,
+            "height": 38
+          },
+          {
+            "alt": "Limbus Company",
+            "loaded": true,
+            "width": 28,
+            "height": 38
+          },
+          {
+            "alt": "Elden Ring Nightreign",
+            "loaded": true,
+            "width": 28,
+            "height": 38
+          },
+          {
+            "alt": "Black Myth: Wukong",
+            "loaded": true,
+            "width": 28,
+            "height": 38
+          }
+        ],
+        "selectedControls": []
+      },
+      "screenshot": "home-dark-768.png",
+      "ms": 2484
+    },
+    {
+      "label": "browse",
+      "path": "/search",
+      "width": 768,
+      "theme": "dark",
+      "status": 200,
+      "state": {
+        "title": "Search Games | verdict.games",
+        "heading": "Browse Games",
+        "light": false,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          },
+          {
+            "alt": "Servant of the Lake",
+            "loaded": true,
+            "width": 286,
+            "height": 381
+          },
+          {
+            "alt": "Rhythm Doctor",
+            "loaded": true,
+            "width": 286,
+            "height": 381
+          },
+          {
+            "alt": "MiSide",
+            "loaded": true,
+            "width": 286,
+            "height": 381
+          },
+          {
+            "alt": "Dave the Diver",
+            "loaded": true,
+            "width": 286,
+            "height": 381
+          },
+          {
+            "alt": "Split Fiction",
+            "loaded": true,
+            "width": 286,
+            "height": 381
+          },
+          {
+            "alt": "Slay the Spire",
+            "loaded": true,
+            "width": 286,
+            "height": 381
+          },
+          {
+            "alt": "Lego Batman: Legacy of the Dark Knight",
+            "loaded": true,
+            "width": 286,
+            "height": 381
+          },
+          {
+            "alt": "Brotato",
+            "loaded": true,
+            "width": 286,
+            "height": 381
+          }
+        ],
+        "selectedControls": []
+      },
+      "screenshot": "browse-dark-768.png",
+      "ms": 1488
+    },
+    {
+      "label": "search",
+      "path": "/search?q=Hades",
+      "width": 768,
+      "theme": "dark",
+      "status": 200,
+      "state": {
+        "title": "Search results for \"Hades\" | verdict.games",
+        "heading": "Browse Games",
+        "light": false,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          },
+          {
+            "alt": "Hades II",
+            "loaded": true,
+            "width": 28,
+            "height": 38
+          },
+          {
+            "alt": "Hades",
+            "loaded": true,
+            "width": 28,
+            "height": 38
+          }
+        ],
+        "selectedControls": []
+      },
+      "screenshot": "search-dark-768.png",
+      "ms": 1516
+    },
+    {
+      "label": "game",
+      "path": "/game/hades",
+      "width": 768,
+      "theme": "dark",
+      "status": 200,
+      "state": {
+        "title": "Hades — 97/100 Verdict | verdict.games",
+        "heading": "Hades",
+        "light": false,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          },
+          {
+            "alt": "Hades",
+            "loaded": true,
+            "width": 871,
+            "height": 490
+          }
+        ],
+        "selectedControls": []
+      },
+      "screenshot": "game-dark-768.png",
+      "ms": 1086
+    },
+    {
+      "label": "lists",
+      "path": "/lists",
+      "width": 768,
+      "theme": "dark",
+      "status": 200,
+      "state": {
+        "title": "Curated Lists | verdict.games",
+        "heading": "Curated Lists",
+        "light": false,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          },
+          {
+            "alt": "Creature Kitchen",
+            "loaded": true,
+            "width": 253,
+            "height": 337
+          },
+          {
+            "alt": "Katawa Shoujo",
+            "loaded": true,
+            "width": 253,
+            "height": 337
+          },
+          {
+            "alt": "Is This Seat Taken?",
+            "loaded": true,
+            "width": 253,
+            "height": 337
+          },
+          {
+            "alt": "Leaf it Alone",
+            "loaded": true,
+            "width": 253,
+            "height": 337
+          },
+          {
+            "alt": "Sam & Max: Beyond Time and Space - Remastered",
+            "loaded": true,
+            "width": 614,
+            "height": 345
+          },
+          {
+            "alt": "Descent (1996)",
+            "loaded": true,
+            "width": 614,
+            "height": 384
+          },
+          {
+            "alt": "Fallen Hero: Rebirth",
+            "loaded": true,
+            "width": 253,
+            "height": 337
+          },
+          {
+            "alt": "Micro Mages",
+            "loaded": true,
+            "width": 253,
+            "height": 337
+          },
+          {
+            "alt": "Dawnfolk",
+            "loaded": true,
+            "width": 253,
+            "height": 337
+          },
+          {
+            "alt": "Platypus Reclayed",
+            "loaded": true,
+            "width": 600,
+            "height": 900
+          },
+          {
+            "alt": "Sektori",
+            "loaded": true,
+            "width": 253,
+            "height": 337
+          },
+          {
+            "alt": "Wilmot Works It Out",
+            "loaded": true,
+            "width": 253,
+            "height": 337
+          },
+          {
+            "alt": "StarVaders",
+            "loaded": true,
+            "width": 253,
+            "height": 337
+          },
+          {
+            "alt": "Balatro",
+            "loaded": true,
+            "width": 253,
+            "height": 337
+          },
+          {
+            "alt": "I Was a Teenage Exocolonist",
+            "loaded": true,
+            "width": 253,
+            "height": 337
+          },
+          {
+            "alt": "Wandering Sword",
+            "loaded": true,
+            "width": 253,
+            "height": 337
+          },
+          {
+            "alt": "SaGa SCARLET GRACE AMBITIONS",
+            "loaded": true,
+            "width": 614,
+            "height": 345
+          },
+          {
+            "alt": "The Beatbox Soundpad",
+            "loaded": true,
+            "width": 614,
+            "height": 344
+          },
+          {
+            "alt": "Max Payne Remake 1-2",
+            "loaded": true,
+            "width": 614,
+            "height": 345
+          },
+          {
+            "alt": "Disney Magical World 2: Enchanted Edition",
+            "loaded": true,
+            "width": 614,
+            "height": 345
+          },
+          {
+            "alt": "Counter-Strike 2",
+            "loaded": true,
+            "width": 253,
+            "height": 337
+          },
+          {
+            "alt": "Marvel Rivals",
+            "loaded": true,
+            "width": 253,
+            "height": 337
+          },
+          {
+            "alt": "ARC Raiders",
+            "loaded": true,
+            "width": 253,
+            "height": 337
+          },
+          {
+            "alt": "HELLDIVERS 2",
+            "loaded": true,
+            "width": 253,
+            "height": 337
+          },
+          {
+            "alt": "HoloCure - Save the Fans!",
+            "loaded": true,
+            "width": 253,
+            "height": 337
+          },
+          {
+            "alt": "The WereCleaner",
+            "loaded": true,
+            "width": 253,
+            "height": 337
+          },
+          {
+            "alt": "Creature Kitchen",
+            "loaded": true,
+            "width": 253,
+            "height": 337
+          },
+          {
+            "alt": "Lethal Company",
+            "loaded": true,
+            "width": 253,
+            "height": 337
+          },
+          {
+            "alt": "MiSide",
+            "loaded": true,
+            "width": 253,
+            "height": 337
+          },
+          {
+            "alt": "Resident Evil 4",
+            "loaded": true,
+            "width": 253,
+            "height": 337
+          },
+          {
+            "alt": "Dave the Diver",
+            "loaded": true,
+            "width": 253,
+            "height": 337
+          },
+          {
+            "alt": "Sanabi",
+            "loaded": true,
+            "width": 253,
+            "height": 337
+          }
+        ],
+        "selectedControls": [
+          {
+            "text": "All collections",
+            "label": null,
+            "value": null
+          }
+        ]
+      },
+      "screenshot": "lists-dark-768.png",
+      "ms": 1636
+    },
+    {
+      "label": "library-anonymous",
+      "path": "/library",
+      "width": 768,
+      "theme": "dark",
+      "status": 200,
+      "state": {
+        "title": "My Library | verdict.games",
+        "heading": "Your Game Library",
+        "light": false,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          }
+        ],
+        "selectedControls": []
+      },
+      "screenshot": "library-anonymous-dark-768.png",
+      "ms": 892
+    },
+    {
+      "label": "reset-expired",
+      "path": "/reset-password?reset_error=otp_expired",
+      "width": 768,
+      "theme": "dark",
+      "status": 200,
+      "state": {
+        "title": "Reset Password | verdict.games",
+        "heading": "Reset your password without the friction",
+        "light": false,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          }
+        ],
+        "selectedControls": []
+      },
+      "screenshot": "reset-expired-dark-768.png",
+      "ms": 1917
+    },
+    {
+      "label": "public-list-detail",
+      "path": "/lists/cozy-games-to-unwind",
+      "width": 768,
+      "theme": "dark",
+      "status": 200,
+      "state": {
+        "title": "Cozy Games to Unwind With",
+        "heading": "Cozy Games to Unwind With",
+        "light": false,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          },
+          {
+            "alt": "Creature Kitchen",
+            "loaded": true,
+            "width": 28,
+            "height": 38
+          },
+          {
+            "alt": "Katawa Shoujo",
+            "loaded": true,
+            "width": 28,
+            "height": 38
+          },
+          {
+            "alt": "Is This Seat Taken?",
+            "loaded": true,
+            "width": 28,
+            "height": 38
+          },
+          {
+            "alt": "Leaf it Alone",
+            "loaded": true,
+            "width": 28,
+            "height": 38
+          },
+          {
+            "alt": "TOEM",
+            "loaded": true,
+            "width": 286,
+            "height": 381
+          },
+          {
+            "alt": "Mini Metro",
+            "loaded": true,
+            "width": 286,
+            "height": 381
+          },
+          {
+            "alt": "Leaf Blower Revolution - Idle Game",
+            "loaded": true,
+            "width": 286,
+            "height": 381
+          },
+          {
+            "alt": "inbento",
+            "loaded": true,
+            "width": 286,
+            "height": 381
+          },
+          {
+            "alt": "Wylde Flowers",
+            "loaded": true,
+            "width": 286,
+            "height": 381
+          },
+          {
+            "alt": "A Space for the Unbound",
+            "loaded": true,
+            "width": 286,
+            "height": 381
+          },
+          {
+            "alt": "Spilled!",
+            "loaded": true,
+            "width": 286,
+            "height": 381
+          },
+          {
+            "alt": "STORY OF SEASONS: Grand Bazaar",
+            "loaded": true,
+            "width": 346,
+            "height": 195
+          }
+        ],
+        "selectedControls": []
+      },
+      "screenshot": "public-list-detail-dark-768.png",
+      "ms": 984
+    },
+    {
+      "label": "login",
+      "path": "/library",
+      "width": 768,
+      "theme": "dark",
+      "status": 200,
+      "state": {
+        "title": "My Library | verdict.games",
+        "heading": "Your Game Library",
+        "light": false,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          }
+        ],
+        "selectedControls": []
+      },
+      "screenshot": "login-dark-768.png",
+      "ms": 982
+    },
+    {
+      "label": "signup",
+      "path": "/library",
+      "width": 768,
+      "theme": "dark",
+      "status": 200,
+      "state": {
+        "title": "My Library | verdict.games",
+        "heading": "Your Game Library",
+        "light": false,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          }
+        ],
+        "selectedControls": []
+      },
+      "screenshot": "signup-dark-768.png",
+      "ms": 1135
+    },
+    {
+      "label": "forgot-password",
+      "path": "/library",
+      "width": 768,
+      "theme": "dark",
+      "status": 200,
+      "state": {
+        "title": "My Library | verdict.games",
+        "heading": "Your Game Library",
+        "light": false,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          }
+        ],
+        "selectedControls": []
+      },
+      "screenshot": "forgot-password-dark-768.png",
+      "ms": 1298
+    },
+    {
+      "label": "home-anticipated",
+      "path": "/",
+      "width": 768,
+      "theme": "dark",
+      "status": 200,
+      "state": {
+        "title": "The Verdict on Every Game",
+        "heading": "Ace Combat 8: Wings of Theve",
+        "light": false,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          },
+          {
+            "alt": "Slay the Spire 2",
+            "loaded": true,
+            "width": 28,
+            "height": 38
+          },
+          {
+            "alt": "Limbus Company",
+            "loaded": true,
+            "width": 28,
+            "height": 38
+          },
+          {
+            "alt": "Elden Ring Nightreign",
+            "loaded": true,
+            "width": 28,
+            "height": 38
+          },
+          {
+            "alt": "Black Myth: Wukong",
+            "loaded": true,
+            "width": 28,
+            "height": 38
+          },
+          {
+            "alt": "Path of Exile 2",
+            "loaded": true,
+            "width": 230,
+            "height": 307
+          },
+          {
+            "alt": "No Rest for the Wicked",
+            "loaded": true,
+            "width": 230,
+            "height": 307
+          },
+          {
+            "alt": "Tomb Raider: Legacy of Atlantis",
+            "loaded": true,
+            "width": 230,
+            "height": 307
+          },
+          {
+            "alt": "Titan Quest 2",
+            "loaded": true,
+            "width": 230,
+            "height": 307
+          }
+        ],
+        "selectedControls": []
+      },
+      "screenshot": "home-anticipated-dark-768.png",
+      "ms": 2100
+    },
+    {
+      "label": "home",
+      "path": "/",
+      "width": 768,
+      "theme": "light",
+      "status": 200,
+      "state": {
+        "title": "The Verdict on Every Game",
+        "heading": "Ace Combat 8: Wings of Theve",
+        "light": true,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          },
+          {
+            "alt": "Ace Combat 8: Wings of Theve",
+            "loaded": true,
+            "width": 871,
+            "height": 490
+          },
+          {
+            "alt": "Slay the Spire 2",
+            "loaded": true,
+            "width": 286,
+            "height": 381
+          },
+          {
+            "alt": "Limbus Company",
+            "loaded": true,
+            "width": 286,
+            "height": 381
+          },
+          {
+            "alt": "Elden Ring Nightreign",
+            "loaded": true,
+            "width": 286,
+            "height": 381
+          },
+          {
+            "alt": "Black Myth: Wukong",
+            "loaded": true,
+            "width": 286,
+            "height": 381
+          }
+        ],
+        "selectedControls": []
+      },
+      "screenshot": "home-light-768.png",
+      "ms": 1719
+    },
+    {
+      "label": "browse",
+      "path": "/search",
+      "width": 768,
+      "theme": "light",
+      "status": 200,
+      "state": {
+        "title": "Search Games | verdict.games",
+        "heading": "Browse Games",
+        "light": true,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          },
+          {
+            "alt": "Servant of the Lake",
+            "loaded": true,
+            "width": 28,
+            "height": 38
+          },
+          {
+            "alt": "Rhythm Doctor",
+            "loaded": true,
+            "width": 28,
+            "height": 38
+          },
+          {
+            "alt": "MiSide",
+            "loaded": true,
+            "width": 28,
+            "height": 38
+          },
+          {
+            "alt": "Dave the Diver",
+            "loaded": true,
+            "width": 28,
+            "height": 38
+          },
+          {
+            "alt": "Split Fiction",
+            "loaded": true,
+            "width": 28,
+            "height": 38
+          },
+          {
+            "alt": "Slay the Spire",
+            "loaded": true,
+            "width": 286,
+            "height": 381
+          },
+          {
+            "alt": "Lego Batman: Legacy of the Dark Knight",
+            "loaded": true,
+            "width": 286,
+            "height": 381
+          },
+          {
+            "alt": "Brotato",
+            "loaded": true,
+            "width": 286,
+            "height": 381
+          }
+        ],
+        "selectedControls": []
+      },
+      "screenshot": "browse-light-768.png",
+      "ms": 1941
+    },
+    {
+      "label": "search",
+      "path": "/search?q=Hades",
+      "width": 768,
+      "theme": "light",
+      "status": 200,
+      "state": {
+        "title": "Search results for \"Hades\" | verdict.games",
+        "heading": "Browse Games",
+        "light": true,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          },
+          {
+            "alt": "Hades II",
+            "loaded": true,
+            "width": 28,
+            "height": 38
+          },
+          {
+            "alt": "Hades",
+            "loaded": true,
+            "width": 28,
+            "height": 38
+          }
+        ],
+        "selectedControls": []
+      },
+      "screenshot": "search-light-768.png",
+      "ms": 1573
+    },
+    {
+      "label": "game",
+      "path": "/game/hades",
+      "width": 768,
+      "theme": "light",
+      "status": 200,
+      "state": {
+        "title": "Hades — 97/100 Verdict | verdict.games",
+        "heading": "Hades",
+        "light": true,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          },
+          {
+            "alt": "Hades",
+            "loaded": true,
+            "width": 871,
+            "height": 490
+          }
+        ],
+        "selectedControls": []
+      },
+      "screenshot": "game-light-768.png",
+      "ms": 1174
+    },
+    {
+      "label": "lists",
+      "path": "/lists",
+      "width": 768,
+      "theme": "light",
+      "status": 200,
+      "state": {
+        "title": "Curated Lists | verdict.games",
+        "heading": "Curated Lists",
+        "light": true,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          },
+          {
+            "alt": "Creature Kitchen",
+            "loaded": true,
+            "width": 253,
+            "height": 337
+          },
+          {
+            "alt": "Katawa Shoujo",
+            "loaded": true,
+            "width": 253,
+            "height": 337
+          },
+          {
+            "alt": "Is This Seat Taken?",
+            "loaded": true,
+            "width": 253,
+            "height": 337
+          },
+          {
+            "alt": "Leaf it Alone",
+            "loaded": true,
+            "width": 253,
+            "height": 337
+          },
+          {
+            "alt": "Sam & Max: Beyond Time and Space - Remastered",
+            "loaded": true,
+            "width": 614,
+            "height": 345
+          },
+          {
+            "alt": "Descent (1996)",
+            "loaded": true,
+            "width": 614,
+            "height": 384
+          },
+          {
+            "alt": "Fallen Hero: Rebirth",
+            "loaded": true,
+            "width": 253,
+            "height": 337
+          },
+          {
+            "alt": "Micro Mages",
+            "loaded": true,
+            "width": 253,
+            "height": 337
+          },
+          {
+            "alt": "Dawnfolk",
+            "loaded": true,
+            "width": 253,
+            "height": 337
+          },
+          {
+            "alt": "Platypus Reclayed",
+            "loaded": true,
+            "width": 600,
+            "height": 900
+          },
+          {
+            "alt": "Sektori",
+            "loaded": true,
+            "width": 253,
+            "height": 337
+          },
+          {
+            "alt": "Wilmot Works It Out",
+            "loaded": true,
+            "width": 253,
+            "height": 337
+          },
+          {
+            "alt": "StarVaders",
+            "loaded": true,
+            "width": 253,
+            "height": 337
+          },
+          {
+            "alt": "Balatro",
+            "loaded": true,
+            "width": 253,
+            "height": 337
+          },
+          {
+            "alt": "I Was a Teenage Exocolonist",
+            "loaded": true,
+            "width": 253,
+            "height": 337
+          },
+          {
+            "alt": "Wandering Sword",
+            "loaded": true,
+            "width": 253,
+            "height": 337
+          },
+          {
+            "alt": "SaGa SCARLET GRACE AMBITIONS",
+            "loaded": true,
+            "width": 614,
+            "height": 345
+          },
+          {
+            "alt": "The Beatbox Soundpad",
+            "loaded": true,
+            "width": 614,
+            "height": 344
+          },
+          {
+            "alt": "Max Payne Remake 1-2",
+            "loaded": true,
+            "width": 614,
+            "height": 345
+          },
+          {
+            "alt": "Disney Magical World 2: Enchanted Edition",
+            "loaded": true,
+            "width": 614,
+            "height": 345
+          },
+          {
+            "alt": "Counter-Strike 2",
+            "loaded": true,
+            "width": 253,
+            "height": 337
+          },
+          {
+            "alt": "Marvel Rivals",
+            "loaded": true,
+            "width": 253,
+            "height": 337
+          },
+          {
+            "alt": "ARC Raiders",
+            "loaded": true,
+            "width": 253,
+            "height": 337
+          },
+          {
+            "alt": "HELLDIVERS 2",
+            "loaded": true,
+            "width": 253,
+            "height": 337
+          },
+          {
+            "alt": "HoloCure - Save the Fans!",
+            "loaded": true,
+            "width": 253,
+            "height": 337
+          },
+          {
+            "alt": "The WereCleaner",
+            "loaded": true,
+            "width": 253,
+            "height": 337
+          },
+          {
+            "alt": "Creature Kitchen",
+            "loaded": true,
+            "width": 253,
+            "height": 337
+          },
+          {
+            "alt": "Lethal Company",
+            "loaded": true,
+            "width": 253,
+            "height": 337
+          },
+          {
+            "alt": "MiSide",
+            "loaded": true,
+            "width": 253,
+            "height": 337
+          },
+          {
+            "alt": "Resident Evil 4",
+            "loaded": true,
+            "width": 253,
+            "height": 337
+          },
+          {
+            "alt": "Dave the Diver",
+            "loaded": true,
+            "width": 253,
+            "height": 337
+          },
+          {
+            "alt": "Sanabi",
+            "loaded": true,
+            "width": 253,
+            "height": 337
+          }
+        ],
+        "selectedControls": [
+          {
+            "text": "All collections",
+            "label": null,
+            "value": null
+          }
+        ]
+      },
+      "screenshot": "lists-light-768.png",
+      "ms": 2077
+    },
+    {
+      "label": "library-anonymous",
+      "path": "/library",
+      "width": 768,
+      "theme": "light",
+      "status": 200,
+      "state": {
+        "title": "My Library | verdict.games",
+        "heading": "Your Game Library",
+        "light": true,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          }
+        ],
+        "selectedControls": []
+      },
+      "screenshot": "library-anonymous-light-768.png",
+      "ms": 928
+    },
+    {
+      "label": "reset-expired",
+      "path": "/reset-password?reset_error=otp_expired",
+      "width": 768,
+      "theme": "light",
+      "status": 200,
+      "state": {
+        "title": "Reset Password | verdict.games",
+        "heading": "Reset your password without the friction",
+        "light": true,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          }
+        ],
+        "selectedControls": []
+      },
+      "screenshot": "reset-expired-light-768.png",
+      "ms": 1159
+    },
+    {
+      "label": "public-list-detail",
+      "path": "/lists/cozy-games-to-unwind",
+      "width": 768,
+      "theme": "light",
+      "status": 200,
+      "state": {
+        "title": "Cozy Games to Unwind With",
+        "heading": "Cozy Games to Unwind With",
+        "light": true,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          },
+          {
+            "alt": "Creature Kitchen",
+            "loaded": true,
+            "width": 28,
+            "height": 38
+          },
+          {
+            "alt": "Katawa Shoujo",
+            "loaded": true,
+            "width": 28,
+            "height": 38
+          },
+          {
+            "alt": "Is This Seat Taken?",
+            "loaded": true,
+            "width": 28,
+            "height": 38
+          },
+          {
+            "alt": "Leaf it Alone",
+            "loaded": true,
+            "width": 28,
+            "height": 38
+          },
+          {
+            "alt": "TOEM",
+            "loaded": true,
+            "width": 286,
+            "height": 381
+          },
+          {
+            "alt": "Mini Metro",
+            "loaded": true,
+            "width": 286,
+            "height": 381
+          },
+          {
+            "alt": "Leaf Blower Revolution - Idle Game",
+            "loaded": true,
+            "width": 286,
+            "height": 381
+          },
+          {
+            "alt": "inbento",
+            "loaded": true,
+            "width": 286,
+            "height": 381
+          },
+          {
+            "alt": "Wylde Flowers",
+            "loaded": true,
+            "width": 286,
+            "height": 381
+          },
+          {
+            "alt": "A Space for the Unbound",
+            "loaded": true,
+            "width": 286,
+            "height": 381
+          },
+          {
+            "alt": "Spilled!",
+            "loaded": true,
+            "width": 286,
+            "height": 381
+          },
+          {
+            "alt": "STORY OF SEASONS: Grand Bazaar",
+            "loaded": true,
+            "width": 346,
+            "height": 195
+          }
+        ],
+        "selectedControls": []
+      },
+      "screenshot": "public-list-detail-light-768.png",
+      "ms": 1750
+    },
+    {
+      "label": "login",
+      "path": "/library",
+      "width": 768,
+      "theme": "light",
+      "status": 200,
+      "state": {
+        "title": "My Library | verdict.games",
+        "heading": "Your Game Library",
+        "light": true,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          }
+        ],
+        "selectedControls": []
+      },
+      "screenshot": "login-light-768.png",
+      "ms": 1012
+    },
+    {
+      "label": "signup",
+      "path": "/library",
+      "width": 768,
+      "theme": "light",
+      "status": 200,
+      "state": {
+        "title": "My Library | verdict.games",
+        "heading": "Your Game Library",
+        "light": true,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          }
+        ],
+        "selectedControls": []
+      },
+      "screenshot": "signup-light-768.png",
+      "ms": 1184
+    },
+    {
+      "label": "forgot-password",
+      "path": "/library",
+      "width": 768,
+      "theme": "light",
+      "status": 200,
+      "state": {
+        "title": "My Library | verdict.games",
+        "heading": "Your Game Library",
+        "light": true,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          }
+        ],
+        "selectedControls": []
+      },
+      "screenshot": "forgot-password-light-768.png",
+      "ms": 1346
+    },
+    {
+      "label": "home-anticipated",
+      "path": "/",
+      "width": 768,
+      "theme": "light",
+      "status": 200,
+      "state": {
+        "title": "The Verdict on Every Game",
+        "heading": "Ace Combat 8: Wings of Theve",
+        "light": true,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          },
+          {
+            "alt": "Slay the Spire 2",
+            "loaded": true,
+            "width": 28,
+            "height": 38
+          },
+          {
+            "alt": "Limbus Company",
+            "loaded": true,
+            "width": 28,
+            "height": 38
+          },
+          {
+            "alt": "Elden Ring Nightreign",
+            "loaded": true,
+            "width": 28,
+            "height": 38
+          },
+          {
+            "alt": "Black Myth: Wukong",
+            "loaded": true,
+            "width": 28,
+            "height": 38
+          },
+          {
+            "alt": "Path of Exile 2",
+            "loaded": true,
+            "width": 230,
+            "height": 307
+          },
+          {
+            "alt": "No Rest for the Wicked",
+            "loaded": true,
+            "width": 230,
+            "height": 307
+          },
+          {
+            "alt": "Tomb Raider: Legacy of Atlantis",
+            "loaded": true,
+            "width": 230,
+            "height": 307
+          },
+          {
+            "alt": "Titan Quest 2",
+            "loaded": true,
+            "width": 230,
+            "height": 307
+          }
+        ],
+        "selectedControls": []
+      },
+      "screenshot": "home-anticipated-light-768.png",
+      "ms": 2231
+    },
+    {
+      "label": "home",
+      "path": "/",
+      "width": 1440,
+      "theme": "dark",
+      "status": 200,
+      "state": {
+        "title": "The Verdict on Every Game",
+        "heading": "Ace Combat 8: Wings of Theve",
+        "light": false,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          },
+          {
+            "alt": "Ace Combat 8: Wings of Theve",
+            "loaded": true,
+            "width": 720,
+            "height": 405
+          },
+          {
+            "alt": "Slay the Spire 2",
+            "loaded": true,
+            "width": 33,
+            "height": 44
+          },
+          {
+            "alt": "Limbus Company",
+            "loaded": true,
+            "width": 33,
+            "height": 44
+          },
+          {
+            "alt": "Elden Ring Nightreign",
+            "loaded": true,
+            "width": 33,
+            "height": 44
+          },
+          {
+            "alt": "Black Myth: Wukong",
+            "loaded": true,
+            "width": 33,
+            "height": 44
+          },
+          {
+            "alt": "Oxygen Not Included",
+            "loaded": true,
+            "width": 33,
+            "height": 44
+          },
+          {
+            "alt": "Slay the Spire",
+            "loaded": true,
+            "width": 33,
+            "height": 44
+          }
+        ],
+        "selectedControls": []
+      },
+      "screenshot": "home-dark-1440.png",
+      "ms": 2313
+    },
+    {
+      "label": "browse",
+      "path": "/search",
+      "width": 1440,
+      "theme": "dark",
+      "status": 200,
+      "state": {
+        "title": "Search Games | verdict.games",
+        "heading": "Browse Games",
+        "light": false,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          },
+          {
+            "alt": "Servant of the Lake",
+            "loaded": true,
+            "width": 33,
+            "height": 44
+          },
+          {
+            "alt": "Rhythm Doctor",
+            "loaded": true,
+            "width": 33,
+            "height": 44
+          },
+          {
+            "alt": "MiSide",
+            "loaded": true,
+            "width": 33,
+            "height": 44
+          },
+          {
+            "alt": "Dave the Diver",
+            "loaded": true,
+            "width": 33,
+            "height": 44
+          },
+          {
+            "alt": "Split Fiction",
+            "loaded": true,
+            "width": 33,
+            "height": 44
+          }
+        ],
+        "selectedControls": []
+      },
+      "screenshot": "browse-dark-1440.png",
+      "ms": 1721
+    },
+    {
+      "label": "search",
+      "path": "/search?q=Hades",
+      "width": 1440,
+      "theme": "dark",
+      "status": 200,
+      "state": {
+        "title": "Search results for \"Hades\" | verdict.games",
+        "heading": "Browse Games",
+        "light": false,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          },
+          {
+            "alt": "Hades II",
+            "loaded": true,
+            "width": 33,
+            "height": 44
+          },
+          {
+            "alt": "Hades",
+            "loaded": true,
+            "width": 33,
+            "height": 44
+          }
+        ],
+        "selectedControls": []
+      },
+      "screenshot": "search-dark-1440.png",
+      "ms": 1407
+    },
+    {
+      "label": "game",
+      "path": "/game/hades",
+      "width": 1440,
+      "theme": "dark",
+      "status": 200,
+      "state": {
+        "title": "Hades — 97/100 Verdict | verdict.games",
+        "heading": "Hades",
+        "light": false,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          },
+          {
+            "alt": "Hades",
+            "loaded": true,
+            "width": 720,
+            "height": 405
+          }
+        ],
+        "selectedControls": []
+      },
+      "screenshot": "game-dark-1440.png",
+      "ms": 1174
+    },
+    {
+      "label": "lists",
+      "path": "/lists",
+      "width": 1440,
+      "theme": "dark",
+      "status": 200,
+      "state": {
+        "title": "Curated Lists | verdict.games",
+        "heading": "Curated Lists",
+        "light": false,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          },
+          {
+            "alt": "Creature Kitchen",
+            "loaded": true,
+            "width": 133,
+            "height": 178
+          },
+          {
+            "alt": "Katawa Shoujo",
+            "loaded": true,
+            "width": 133,
+            "height": 178
+          },
+          {
+            "alt": "Is This Seat Taken?",
+            "loaded": true,
+            "width": 133,
+            "height": 178
+          },
+          {
+            "alt": "Leaf it Alone",
+            "loaded": true,
+            "width": 133,
+            "height": 178
+          },
+          {
+            "alt": "Sam & Max: Beyond Time and Space - Remastered",
+            "loaded": true,
+            "width": 324,
+            "height": 182
+          },
+          {
+            "alt": "Descent (1996)",
+            "loaded": true,
+            "width": 324,
+            "height": 202
+          },
+          {
+            "alt": "Fallen Hero: Rebirth",
+            "loaded": true,
+            "width": 133,
+            "height": 178
+          },
+          {
+            "alt": "Micro Mages",
+            "loaded": true,
+            "width": 133,
+            "height": 178
+          },
+          {
+            "alt": "Dawnfolk",
+            "loaded": true,
+            "width": 133,
+            "height": 178
+          },
+          {
+            "alt": "Platypus Reclayed",
+            "loaded": true,
+            "width": 600,
+            "height": 900
+          },
+          {
+            "alt": "Sektori",
+            "loaded": true,
+            "width": 133,
+            "height": 178
+          },
+          {
+            "alt": "Wilmot Works It Out",
+            "loaded": true,
+            "width": 133,
+            "height": 178
+          },
+          {
+            "alt": "StarVaders",
+            "loaded": true,
+            "width": 133,
+            "height": 178
+          },
+          {
+            "alt": "Balatro",
+            "loaded": true,
+            "width": 133,
+            "height": 178
+          },
+          {
+            "alt": "I Was a Teenage Exocolonist",
+            "loaded": true,
+            "width": 133,
+            "height": 178
+          },
+          {
+            "alt": "Wandering Sword",
+            "loaded": true,
+            "width": 133,
+            "height": 178
+          },
+          {
+            "alt": "SaGa SCARLET GRACE AMBITIONS",
+            "loaded": true,
+            "width": 324,
+            "height": 182
+          },
+          {
+            "alt": "The Beatbox Soundpad",
+            "loaded": true,
+            "width": 324,
+            "height": 181
+          },
+          {
+            "alt": "Max Payne Remake 1-2",
+            "loaded": true,
+            "width": 324,
+            "height": 182
+          },
+          {
+            "alt": "Disney Magical World 2: Enchanted Edition",
+            "loaded": true,
+            "width": 324,
+            "height": 182
+          },
+          {
+            "alt": "Counter-Strike 2",
+            "loaded": true,
+            "width": 133,
+            "height": 178
+          },
+          {
+            "alt": "Marvel Rivals",
+            "loaded": true,
+            "width": 133,
+            "height": 178
+          },
+          {
+            "alt": "ARC Raiders",
+            "loaded": true,
+            "width": 133,
+            "height": 178
+          },
+          {
+            "alt": "HELLDIVERS 2",
+            "loaded": true,
+            "width": 133,
+            "height": 178
+          },
+          {
+            "alt": "HoloCure - Save the Fans!",
+            "loaded": true,
+            "width": 133,
+            "height": 178
+          },
+          {
+            "alt": "The WereCleaner",
+            "loaded": true,
+            "width": 133,
+            "height": 178
+          },
+          {
+            "alt": "Creature Kitchen",
+            "loaded": true,
+            "width": 133,
+            "height": 178
+          },
+          {
+            "alt": "Lethal Company",
+            "loaded": true,
+            "width": 133,
+            "height": 178
+          },
+          {
+            "alt": "MiSide",
+            "loaded": true,
+            "width": 133,
+            "height": 178
+          },
+          {
+            "alt": "Resident Evil 4",
+            "loaded": true,
+            "width": 133,
+            "height": 178
+          },
+          {
+            "alt": "Dave the Diver",
+            "loaded": true,
+            "width": 133,
+            "height": 178
+          },
+          {
+            "alt": "Sanabi",
+            "loaded": true,
+            "width": 133,
+            "height": 178
+          },
+          {
+            "alt": "The WereCleaner",
+            "loaded": true,
+            "width": 133,
+            "height": 178
+          },
+          {
+            "alt": "Patrick's Parabox",
+            "loaded": true,
+            "width": 133,
+            "height": 178
+          },
+          {
+            "alt": "Schedule I",
+            "loaded": true,
+            "width": 133,
+            "height": 178
+          },
+          {
+            "alt": "Satisfactory",
+            "loaded": true,
+            "width": 133,
+            "height": 178
+          }
+        ],
+        "selectedControls": [
+          {
+            "text": "All collections",
+            "label": null,
+            "value": null
+          }
+        ]
+      },
+      "screenshot": "lists-dark-1440.png",
+      "ms": 1822
+    },
+    {
+      "label": "library-anonymous",
+      "path": "/library",
+      "width": 1440,
+      "theme": "dark",
+      "status": 200,
+      "state": {
+        "title": "My Library | verdict.games",
+        "heading": "Your Game Library",
+        "light": false,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          }
+        ],
+        "selectedControls": []
+      },
+      "screenshot": "library-anonymous-dark-1440.png",
+      "ms": 953
+    },
+    {
+      "label": "reset-expired",
+      "path": "/reset-password?reset_error=otp_expired",
+      "width": 1440,
+      "theme": "dark",
+      "status": 200,
+      "state": {
+        "title": "Reset Password | verdict.games",
+        "heading": "Reset your password without the friction",
+        "light": false,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          }
+        ],
+        "selectedControls": []
+      },
+      "screenshot": "reset-expired-dark-1440.png",
+      "ms": 1445
+    },
+    {
+      "label": "public-list-detail",
+      "path": "/lists/cozy-games-to-unwind",
+      "width": 1440,
+      "theme": "dark",
+      "status": 200,
+      "state": {
+        "title": "Cozy Games to Unwind With",
+        "heading": "Cozy Games to Unwind With",
+        "light": false,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          },
+          {
+            "alt": "Creature Kitchen",
+            "loaded": true,
+            "width": 33,
+            "height": 44
+          },
+          {
+            "alt": "Katawa Shoujo",
+            "loaded": true,
+            "width": 33,
+            "height": 44
+          },
+          {
+            "alt": "Is This Seat Taken?",
+            "loaded": true,
+            "width": 33,
+            "height": 44
+          },
+          {
+            "alt": "Leaf it Alone",
+            "loaded": true,
+            "width": 33,
+            "height": 44
+          },
+          {
+            "alt": "TOEM",
+            "loaded": true,
+            "width": 330,
+            "height": 440
+          },
+          {
+            "alt": "Mini Metro",
+            "loaded": true,
+            "width": 330,
+            "height": 440
+          },
+          {
+            "alt": "Leaf Blower Revolution - Idle Game",
+            "loaded": true,
+            "width": 330,
+            "height": 440
+          },
+          {
+            "alt": "inbento",
+            "loaded": true,
+            "width": 330,
+            "height": 440
+          }
+        ],
+        "selectedControls": []
+      },
+      "screenshot": "public-list-detail-dark-1440.png",
+      "ms": 1055
+    },
+    {
+      "label": "login",
+      "path": "/library",
+      "width": 1440,
+      "theme": "dark",
+      "status": 200,
+      "state": {
+        "title": "My Library | verdict.games",
+        "heading": "Your Game Library",
+        "light": false,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          }
+        ],
+        "selectedControls": []
+      },
+      "screenshot": "login-dark-1440.png",
+      "ms": 1099
+    },
+    {
+      "label": "signup",
+      "path": "/library",
+      "width": 1440,
+      "theme": "dark",
+      "status": 200,
+      "state": {
+        "title": "My Library | verdict.games",
+        "heading": "Your Game Library",
+        "light": false,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          }
+        ],
+        "selectedControls": []
+      },
+      "screenshot": "signup-dark-1440.png",
+      "ms": 1405
+    },
+    {
+      "label": "forgot-password",
+      "path": "/library",
+      "width": 1440,
+      "theme": "dark",
+      "status": 200,
+      "state": {
+        "title": "My Library | verdict.games",
+        "heading": "Your Game Library",
+        "light": false,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          }
+        ],
+        "selectedControls": []
+      },
+      "screenshot": "forgot-password-dark-1440.png",
+      "ms": 1284
+    },
+    {
+      "label": "home-anticipated",
+      "path": "/",
+      "width": 1440,
+      "theme": "dark",
+      "status": 200,
+      "state": {
+        "title": "The Verdict on Every Game",
+        "heading": "Ace Combat 8: Wings of Theve",
+        "light": false,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          },
+          {
+            "alt": "Slay the Spire 2",
+            "loaded": true,
+            "width": 330,
+            "height": 440
+          },
+          {
+            "alt": "Limbus Company",
+            "loaded": true,
+            "width": 330,
+            "height": 440
+          },
+          {
+            "alt": "Elden Ring Nightreign",
+            "loaded": true,
+            "width": 330,
+            "height": 440
+          },
+          {
+            "alt": "Black Myth: Wukong",
+            "loaded": true,
+            "width": 330,
+            "height": 440
+          },
+          {
+            "alt": "Oxygen Not Included",
+            "loaded": true,
+            "width": 330,
+            "height": 440
+          },
+          {
+            "alt": "Slay the Spire",
+            "loaded": true,
+            "width": 330,
+            "height": 440
+          },
+          {
+            "alt": "Path of Exile 2",
+            "loaded": true,
+            "width": 230,
+            "height": 307
+          },
+          {
+            "alt": "No Rest for the Wicked",
+            "loaded": true,
+            "width": 230,
+            "height": 307
+          },
+          {
+            "alt": "Tomb Raider: Legacy of Atlantis",
+            "loaded": true,
+            "width": 230,
+            "height": 307
+          },
+          {
+            "alt": "Titan Quest 2",
+            "loaded": true,
+            "width": 230,
+            "height": 307
+          },
+          {
+            "alt": "Tomb Raider: Catalyst",
+            "loaded": true,
+            "width": 230,
+            "height": 307
+          },
+          {
+            "alt": "Clockwork Revolution",
+            "loaded": true,
+            "width": 230,
+            "height": 307
+          }
+        ],
+        "selectedControls": []
+      },
+      "screenshot": "home-anticipated-dark-1440.png",
+      "ms": 2244
+    },
+    {
+      "label": "home",
+      "path": "/",
+      "width": 1440,
+      "theme": "light",
+      "status": 200,
+      "state": {
+        "title": "The Verdict on Every Game",
+        "heading": "Ace Combat 8: Wings of Theve",
+        "light": true,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          },
+          {
+            "alt": "Ace Combat 8: Wings of Theve",
+            "loaded": true,
+            "width": 720,
+            "height": 405
+          },
+          {
+            "alt": "Slay the Spire 2",
+            "loaded": true,
+            "width": 33,
+            "height": 44
+          },
+          {
+            "alt": "Limbus Company",
+            "loaded": true,
+            "width": 33,
+            "height": 44
+          },
+          {
+            "alt": "Elden Ring Nightreign",
+            "loaded": true,
+            "width": 33,
+            "height": 44
+          },
+          {
+            "alt": "Black Myth: Wukong",
+            "loaded": true,
+            "width": 33,
+            "height": 44
+          },
+          {
+            "alt": "Oxygen Not Included",
+            "loaded": true,
+            "width": 33,
+            "height": 44
+          },
+          {
+            "alt": "Slay the Spire",
+            "loaded": true,
+            "width": 33,
+            "height": 44
+          }
+        ],
+        "selectedControls": []
+      },
+      "screenshot": "home-light-1440.png",
+      "ms": 2124
+    },
+    {
+      "label": "browse",
+      "path": "/search",
+      "width": 1440,
+      "theme": "light",
+      "status": 200,
+      "state": {
+        "title": "Search Games | verdict.games",
+        "heading": "Browse Games",
+        "light": true,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          },
+          {
+            "alt": "Servant of the Lake",
+            "loaded": true,
+            "width": 33,
+            "height": 44
+          },
+          {
+            "alt": "Rhythm Doctor",
+            "loaded": true,
+            "width": 33,
+            "height": 44
+          },
+          {
+            "alt": "MiSide",
+            "loaded": true,
+            "width": 33,
+            "height": 44
+          },
+          {
+            "alt": "Dave the Diver",
+            "loaded": true,
+            "width": 33,
+            "height": 44
+          },
+          {
+            "alt": "Split Fiction",
+            "loaded": true,
+            "width": 33,
+            "height": 44
+          }
+        ],
+        "selectedControls": []
+      },
+      "screenshot": "browse-light-1440.png",
+      "ms": 1786
+    },
+    {
+      "label": "search",
+      "path": "/search?q=Hades",
+      "width": 1440,
+      "theme": "light",
+      "status": 200,
+      "state": {
+        "title": "Search results for \"Hades\" | verdict.games",
+        "heading": "Browse Games",
+        "light": true,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          },
+          {
+            "alt": "Hades II",
+            "loaded": true,
+            "width": 33,
+            "height": 44
+          },
+          {
+            "alt": "Hades",
+            "loaded": true,
+            "width": 33,
+            "height": 44
+          }
+        ],
+        "selectedControls": []
+      },
+      "screenshot": "search-light-1440.png",
+      "ms": 1610
+    },
+    {
+      "label": "game",
+      "path": "/game/hades",
+      "width": 1440,
+      "theme": "light",
+      "status": 200,
+      "state": {
+        "title": "Hades — 97/100 Verdict | verdict.games",
+        "heading": "Hades",
+        "light": true,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          },
+          {
+            "alt": "Hades",
+            "loaded": true,
+            "width": 720,
+            "height": 405
+          }
+        ],
+        "selectedControls": []
+      },
+      "screenshot": "game-light-1440.png",
+      "ms": 1269
+    },
+    {
+      "label": "lists",
+      "path": "/lists",
+      "width": 1440,
+      "theme": "light",
+      "status": 200,
+      "state": {
+        "title": "Curated Lists | verdict.games",
+        "heading": "Curated Lists",
+        "light": true,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          },
+          {
+            "alt": "Creature Kitchen",
+            "loaded": true,
+            "width": 133,
+            "height": 178
+          },
+          {
+            "alt": "Katawa Shoujo",
+            "loaded": true,
+            "width": 133,
+            "height": 178
+          },
+          {
+            "alt": "Is This Seat Taken?",
+            "loaded": true,
+            "width": 133,
+            "height": 178
+          },
+          {
+            "alt": "Leaf it Alone",
+            "loaded": true,
+            "width": 133,
+            "height": 178
+          },
+          {
+            "alt": "Sam & Max: Beyond Time and Space - Remastered",
+            "loaded": true,
+            "width": 324,
+            "height": 182
+          },
+          {
+            "alt": "Descent (1996)",
+            "loaded": true,
+            "width": 324,
+            "height": 202
+          },
+          {
+            "alt": "Fallen Hero: Rebirth",
+            "loaded": true,
+            "width": 133,
+            "height": 178
+          },
+          {
+            "alt": "Micro Mages",
+            "loaded": true,
+            "width": 133,
+            "height": 178
+          },
+          {
+            "alt": "Dawnfolk",
+            "loaded": true,
+            "width": 133,
+            "height": 178
+          },
+          {
+            "alt": "Platypus Reclayed",
+            "loaded": true,
+            "width": 600,
+            "height": 900
+          },
+          {
+            "alt": "Sektori",
+            "loaded": true,
+            "width": 133,
+            "height": 178
+          },
+          {
+            "alt": "Wilmot Works It Out",
+            "loaded": true,
+            "width": 133,
+            "height": 178
+          },
+          {
+            "alt": "StarVaders",
+            "loaded": true,
+            "width": 133,
+            "height": 178
+          },
+          {
+            "alt": "Balatro",
+            "loaded": true,
+            "width": 133,
+            "height": 178
+          },
+          {
+            "alt": "I Was a Teenage Exocolonist",
+            "loaded": true,
+            "width": 133,
+            "height": 178
+          },
+          {
+            "alt": "Wandering Sword",
+            "loaded": true,
+            "width": 133,
+            "height": 178
+          },
+          {
+            "alt": "SaGa SCARLET GRACE AMBITIONS",
+            "loaded": true,
+            "width": 324,
+            "height": 182
+          },
+          {
+            "alt": "The Beatbox Soundpad",
+            "loaded": true,
+            "width": 324,
+            "height": 181
+          },
+          {
+            "alt": "Max Payne Remake 1-2",
+            "loaded": true,
+            "width": 324,
+            "height": 182
+          },
+          {
+            "alt": "Disney Magical World 2: Enchanted Edition",
+            "loaded": true,
+            "width": 324,
+            "height": 182
+          },
+          {
+            "alt": "Counter-Strike 2",
+            "loaded": true,
+            "width": 133,
+            "height": 178
+          },
+          {
+            "alt": "Marvel Rivals",
+            "loaded": true,
+            "width": 133,
+            "height": 178
+          },
+          {
+            "alt": "ARC Raiders",
+            "loaded": true,
+            "width": 133,
+            "height": 178
+          },
+          {
+            "alt": "HELLDIVERS 2",
+            "loaded": true,
+            "width": 133,
+            "height": 178
+          },
+          {
+            "alt": "HoloCure - Save the Fans!",
+            "loaded": true,
+            "width": 133,
+            "height": 178
+          },
+          {
+            "alt": "The WereCleaner",
+            "loaded": true,
+            "width": 133,
+            "height": 178
+          },
+          {
+            "alt": "Creature Kitchen",
+            "loaded": true,
+            "width": 133,
+            "height": 178
+          },
+          {
+            "alt": "Lethal Company",
+            "loaded": true,
+            "width": 133,
+            "height": 178
+          },
+          {
+            "alt": "MiSide",
+            "loaded": true,
+            "width": 133,
+            "height": 178
+          },
+          {
+            "alt": "Resident Evil 4",
+            "loaded": true,
+            "width": 133,
+            "height": 178
+          },
+          {
+            "alt": "Dave the Diver",
+            "loaded": true,
+            "width": 133,
+            "height": 178
+          },
+          {
+            "alt": "Sanabi",
+            "loaded": true,
+            "width": 133,
+            "height": 178
+          },
+          {
+            "alt": "The WereCleaner",
+            "loaded": true,
+            "width": 133,
+            "height": 178
+          },
+          {
+            "alt": "Patrick's Parabox",
+            "loaded": true,
+            "width": 133,
+            "height": 178
+          },
+          {
+            "alt": "Schedule I",
+            "loaded": true,
+            "width": 133,
+            "height": 178
+          },
+          {
+            "alt": "Satisfactory",
+            "loaded": true,
+            "width": 133,
+            "height": 178
+          }
+        ],
+        "selectedControls": [
+          {
+            "text": "All collections",
+            "label": null,
+            "value": null
+          }
+        ]
+      },
+      "screenshot": "lists-light-1440.png",
+      "ms": 2174
+    },
+    {
+      "label": "library-anonymous",
+      "path": "/library",
+      "width": 1440,
+      "theme": "light",
+      "status": 200,
+      "state": {
+        "title": "My Library | verdict.games",
+        "heading": "Your Game Library",
+        "light": true,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          }
+        ],
+        "selectedControls": []
+      },
+      "screenshot": "library-anonymous-light-1440.png",
+      "ms": 1041
+    },
+    {
+      "label": "reset-expired",
+      "path": "/reset-password?reset_error=otp_expired",
+      "width": 1440,
+      "theme": "light",
+      "status": 200,
+      "state": {
+        "title": "Reset Password | verdict.games",
+        "heading": "Reset your password without the friction",
+        "light": true,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          }
+        ],
+        "selectedControls": []
+      },
+      "screenshot": "reset-expired-light-1440.png",
+      "ms": 1228
+    },
+    {
+      "label": "public-list-detail",
+      "path": "/lists/cozy-games-to-unwind",
+      "width": 1440,
+      "theme": "light",
+      "status": 200,
+      "state": {
+        "title": "Cozy Games to Unwind With",
+        "heading": "Cozy Games to Unwind With",
+        "light": true,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          },
+          {
+            "alt": "Creature Kitchen",
+            "loaded": true,
+            "width": 33,
+            "height": 44
+          },
+          {
+            "alt": "Katawa Shoujo",
+            "loaded": true,
+            "width": 33,
+            "height": 44
+          },
+          {
+            "alt": "Is This Seat Taken?",
+            "loaded": true,
+            "width": 33,
+            "height": 44
+          },
+          {
+            "alt": "Leaf it Alone",
+            "loaded": true,
+            "width": 33,
+            "height": 44
+          },
+          {
+            "alt": "TOEM",
+            "loaded": true,
+            "width": 330,
+            "height": 440
+          },
+          {
+            "alt": "Mini Metro",
+            "loaded": true,
+            "width": 330,
+            "height": 440
+          },
+          {
+            "alt": "Leaf Blower Revolution - Idle Game",
+            "loaded": true,
+            "width": 330,
+            "height": 440
+          },
+          {
+            "alt": "inbento",
+            "loaded": true,
+            "width": 330,
+            "height": 440
+          }
+        ],
+        "selectedControls": []
+      },
+      "screenshot": "public-list-detail-light-1440.png",
+      "ms": 1076
+    },
+    {
+      "label": "login",
+      "path": "/library",
+      "width": 1440,
+      "theme": "light",
+      "status": 200,
+      "state": {
+        "title": "My Library | verdict.games",
+        "heading": "Your Game Library",
+        "light": true,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          }
+        ],
+        "selectedControls": []
+      },
+      "screenshot": "login-light-1440.png",
+      "ms": 1043
+    },
+    {
+      "label": "signup",
+      "path": "/library",
+      "width": 1440,
+      "theme": "light",
+      "status": 200,
+      "state": {
+        "title": "My Library | verdict.games",
+        "heading": "Your Game Library",
+        "light": true,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          }
+        ],
+        "selectedControls": []
+      },
+      "screenshot": "signup-light-1440.png",
+      "ms": 1371
+    },
+    {
+      "label": "forgot-password",
+      "path": "/library",
+      "width": 1440,
+      "theme": "light",
+      "status": 200,
+      "state": {
+        "title": "My Library | verdict.games",
+        "heading": "Your Game Library",
+        "light": true,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          }
+        ],
+        "selectedControls": []
+      },
+      "screenshot": "forgot-password-light-1440.png",
+      "ms": 1206
+    },
+    {
+      "label": "home-anticipated",
+      "path": "/",
+      "width": 1440,
+      "theme": "light",
+      "status": 200,
+      "state": {
+        "title": "The Verdict on Every Game",
+        "heading": "Ace Combat 8: Wings of Theve",
+        "light": true,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          },
+          {
+            "alt": "Slay the Spire 2",
+            "loaded": true,
+            "width": 33,
+            "height": 44
+          },
+          {
+            "alt": "Limbus Company",
+            "loaded": true,
+            "width": 33,
+            "height": 44
+          },
+          {
+            "alt": "Elden Ring Nightreign",
+            "loaded": true,
+            "width": 33,
+            "height": 44
+          },
+          {
+            "alt": "Black Myth: Wukong",
+            "loaded": true,
+            "width": 33,
+            "height": 44
+          },
+          {
+            "alt": "Oxygen Not Included",
+            "loaded": true,
+            "width": 33,
+            "height": 44
+          },
+          {
+            "alt": "Slay the Spire",
+            "loaded": true,
+            "width": 33,
+            "height": 44
+          },
+          {
+            "alt": "Path of Exile 2",
+            "loaded": true,
+            "width": 230,
+            "height": 307
+          },
+          {
+            "alt": "No Rest for the Wicked",
+            "loaded": true,
+            "width": 230,
+            "height": 307
+          },
+          {
+            "alt": "Tomb Raider: Legacy of Atlantis",
+            "loaded": true,
+            "width": 230,
+            "height": 307
+          },
+          {
+            "alt": "Titan Quest 2",
+            "loaded": true,
+            "width": 230,
+            "height": 307
+          },
+          {
+            "alt": "Tomb Raider: Catalyst",
+            "loaded": true,
+            "width": 230,
+            "height": 307
+          },
+          {
+            "alt": "Clockwork Revolution",
+            "loaded": true,
+            "width": 230,
+            "height": 307
+          }
+        ],
+        "selectedControls": []
+      },
+      "screenshot": "home-anticipated-light-1440.png",
+      "ms": 2217
+    }
+  ],
+  "network-390-dark": {
+    "blockedNonReads": 0,
+    "originReads": 319,
+    "blockedPaths": []
+  },
+  "network-390-light": {
+    "blockedNonReads": 0,
+    "originReads": 319,
+    "blockedPaths": []
+  },
+  "network-768-dark": {
+    "blockedNonReads": 0,
+    "originReads": 319,
+    "blockedPaths": []
+  },
+  "network-768-light": {
+    "blockedNonReads": 0,
+    "originReads": 319,
+    "blockedPaths": []
+  },
+  "network-1440-dark": {
+    "blockedNonReads": 0,
+    "originReads": 319,
+    "blockedPaths": []
+  },
+  "network-1440-light": {
+    "blockedNonReads": 0,
+    "originReads": 319,
+    "blockedPaths": []
+  },
+  "completedAt": "2026-11-17T15:31:45.229Z",
+  "visualFinding": "Completed72-view baseline. Pixel inspection identifies mobile carousel controls overlapping Read Verdict; follow-up padding repair requires its own actual acceptance."
+}

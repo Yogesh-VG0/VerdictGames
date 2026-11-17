@@ -9,14 +9,16 @@ import { isPublicSafeGame } from '@/lib/utils/publicSafety';
 import { hasUsableCardImage } from '@/lib/utils/mediaReadiness';
 import { collectSitemapRows } from '@/lib/seo/sitemap';
 import type { GameRow, ListRow } from '@/lib/supabase/types';
+import type { Database } from '@/lib/supabase/types';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 const PUBLIC_DATABASE_READ_TIMEOUT_MS = 10_000;
 
-// Only public, anonymously readable content may enter this shared cache.
-export const loadPublicList = cache(unstable_cache(async (slug: string) => {
+async function readListDetail(db: SupabaseClient<Database>, slug: string, ownerId?: string) {
   if (!/^[a-z0-9_-]{1,150}$/i.test(slug)) return null;
-  const db = getPublicSupabase();
-  const { data: list, error } = await db.from('lists').select('*').eq('slug', slug).eq('is_public', true)
+  let query = db.from('lists').select('*').eq('slug', slug);
+  query = ownerId ? query.eq('owner_id', ownerId) : query.eq('is_public', true);
+  const { data: list, error } = await query
     .abortSignal(AbortSignal.timeout(PUBLIC_DATABASE_READ_TIMEOUT_MS)).maybeSingle();
   if (error) throw error;
   if (!list) return null;
@@ -39,4 +41,14 @@ export const loadPublicList = cache(unstable_cache(async (slug: string) => {
   const ordered = items.map(item => byId.get(item.game_id)).filter((row): row is GameRow => !!row);
   const games = dedupePublicCanonicalRows(ordered.filter(row => passesCuratedListSelection(list as ListRow, row))).map(mapGameRow);
   return mapListRow(list as ListRow, games);
-}, ['public-list-v1'], { revalidate: 300 }));
+}
+
+// Only public, anonymously readable content may enter this shared cache.
+export const loadPublicList = cache(unstable_cache((slug: string) => readListDetail(getPublicSupabase(),slug), ['public-list-v2'], { revalidate: 300, tags:['public-lists'] }));
+
+// Caller-authenticated/RLS reads stay outside all shared caches. The explicit
+// owner predicate also prevents a caller from reading another user's list.
+export async function readOwnedList(db: SupabaseClient<Database>, slug: string, ownerId: string) {
+  if (!/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(ownerId)) return null;
+  return readListDetail(db,slug,ownerId);
+}

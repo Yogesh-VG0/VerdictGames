@@ -31,3 +31,5 @@ jobs:
       - run: npx tsc --noEmit
       - run: npm run lint
       - run: npm audit --audit-level=high
+      - name: Production build without production data or credentials
+        run: node scripts/build-isolated.mjs

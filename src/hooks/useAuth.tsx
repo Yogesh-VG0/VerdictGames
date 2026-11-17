@@ -7,10 +7,14 @@
 
 "use client";
 
-import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, useCallback, useRef, type ReactNode } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { createBrowserClient } from "@supabase/ssr";
 import type { AuthUser } from "@/lib/types";
 import type { Database } from "@/lib/supabase/types";
+import { loadOwnProfile } from '@/lib/auth/own-profile';
+import { getPasswordValidationError } from '@/lib/auth/password';
+import { getUsernameValidationError, normalizeUsername } from '@/lib/auth/username';
 
 interface AuthContextType {
   user: AuthUser | null;
@@ -78,11 +82,11 @@ function mapAuthError(message: string, action: AuthAction) {
   }
 
   if (normalizedMessage.includes("user already registered")) {
-    return "An account with this email already exists. Try signing in instead.";
+    return "Check your inbox for a verification link. If you already have an account, sign in or reset your password.";
   }
 
   if (normalizedMessage.includes("password should be at least")) {
-    return "Use a stronger password with at least 8 characters, one letter, and one number.";
+    return "Use a unique password with at least 15 characters.";
   }
 
   if (normalizedMessage.includes("same password")) {
@@ -125,86 +129,50 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
   const [sessionEmail, setSessionEmail] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [profileLoading, setProfileLoading] = useState(false);
   const [supabase] = useState(() => getSupabaseBrowser());
+  const queryClient = useQueryClient();
+  const profileRequest = useRef(0);
+  const pendingProfile = useRef<{ id: string; requestId: number; promise: Promise<void> } | null>(null);
+  const activeAuthId = useRef<string | null>(null);
+  const activateIdentity = useCallback((id: string | null) => {
+    if (activeAuthId.current === id) return;
+    activeAuthId.current = id;
+    profileRequest.current++;
+    pendingProfile.current = null;
+    setProfileLoading(false);
+    const privateScopes = new Set(['library', 'libraryStats', 'gameReviews', 'globalReviews', 'userReviews', 'personalized', 'privateLists']);
+    const filters = { predicate: (query: { queryKey: readonly unknown[] }) => privateScopes.has(String(query.queryKey[0])) };
+    void queryClient.cancelQueries(filters);
+    queryClient.removeQueries(filters);
+    setUser(null);
+  }, [queryClient]);
   const clearPasswordRecovery = useCallback(() => {
     setIsPasswordRecovery(false);
   }, []);
 
-  const fetchProfile = useCallback(async (authId: string, email: string) => {
-    if (!supabase) return;
-    // Try `auth_id` first (newer schema). If API returns 400, fall back to `id` (older schema).
-    // NOTE: `role` may not exist in some deployed DBs yet (would cause PostgREST 400).
-    // Try fetching with `role` column (migration 004); fall back without it.
-    type ProfileData = { id: string; username: string; display_name: string; avatar_url: string; role?: string };
-    const { data: profile, error: profileErr } = await supabase
-      .from("profiles")
-      .select("id, username, display_name, avatar_url, role")
-      .eq("auth_id", authId)
-      .maybeSingle();
-
-    let resolvedProfile: ProfileData | null = profile as ProfileData | null;
-    if (profileErr) {
-      // role column may not exist yet, retry without it
-      const { data: profileNoRole, error: profileNoRoleErr } = await supabase
-        .from("profiles")
-        .select("id, username, display_name, avatar_url")
-        .eq("auth_id", authId)
-        .maybeSingle();
-      resolvedProfile = profileNoRole as ProfileData | null;
-      if (profileNoRoleErr) {
-        const { data: profileById } = await supabase
-          .from("profiles")
-          .select("id, username, display_name, avatar_url")
-          .eq("id", authId)
-          .maybeSingle();
-        resolvedProfile = profileById as ProfileData | null;
+  const fetchProfile = useCallback((authId: string) => {
+    if (pendingProfile.current?.id === authId) return pendingProfile.current.promise;
+    const requestId = ++profileRequest.current;
+    setProfileLoading(true);
+    const promise = (async () => {
+    try {
+      const profile = await loadOwnProfile(authId,
+        () => requestId === profileRequest.current && activeAuthId.current === authId);
+      if (profile) setUser(profile);
+    } catch {
+      // Leave the session available for retry without retaining another user's
+      // profile or inferring an administrator role from editable metadata.
+    } finally {
+      if (pendingProfile.current?.requestId === requestId) {
+        pendingProfile.current = null;
+        setProfileLoading(false);
       }
     }
-
-    if (!resolvedProfile) {
-      // If OAuth succeeded but profile doesn't exist yet, bootstrap it server-side.
-      try {
-        await fetch("/api/auth/bootstrap", { method: "POST" });
-        const { data: profile2, error: profile2Err } = await supabase
-          .from("profiles")
-          .select("id, username, display_name, avatar_url, role")
-          .eq("auth_id", authId)
-          .maybeSingle();
-        let bootProfile: ProfileData | null = profile2 as ProfileData | null;
-        if (profile2Err) {
-          const { data: profile2ById } = await supabase
-            .from("profiles")
-            .select("id, username, display_name, avatar_url")
-            .eq("id", authId)
-            .maybeSingle();
-          bootProfile = (profile2ById ?? null) as ProfileData | null;
-        }
-        if (!bootProfile) return;
-        setUser({
-          id: authId,
-          email,
-          profileId: bootProfile.id,
-          username: bootProfile.username,
-          displayName: bootProfile.display_name,
-          avatar: bootProfile.avatar_url,
-          role: bootProfile.role === "admin" ? "admin" : "user",
-        });
-      } catch {
-        return;
-      }
-      return;
-    }
-
-    setUser({
-      id: authId,
-      email,
-      profileId: resolvedProfile.id,
-      username: resolvedProfile.username,
-      displayName: resolvedProfile.display_name,
-      avatar: resolvedProfile.avatar_url,
-      role: resolvedProfile.role === "admin" ? "admin" : "user",
-    });
-  }, [supabase]);
+    })();
+    pendingProfile.current = { id: authId, requestId, promise };
+    return promise;
+  }, []);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -214,10 +182,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Then await fetchProfile before clearing loading so user is populated first.
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session?.user) {
+        activateIdentity(session.user.id);
         setHasSession(true);
         setSessionEmail(session.user.email ?? null);
-        await fetchProfile(session.user.id, session.user.email ?? "");
+        await fetchProfile(session.user.id);
       } else {
+        activateIdentity(null);
         setHasSession(false);
         setSessionEmail(null);
         setUser(null);
@@ -234,10 +204,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       if (session?.user) {
+        activateIdentity(session.user.id);
         setHasSession(true);
         setSessionEmail(session.user.email ?? null);
-        fetchProfile(session.user.id, session.user.email ?? "");
+        void fetchProfile(session.user.id);
       } else {
+        activateIdentity(null);
         setHasSession(false);
         setSessionEmail(null);
         setUser(null);
@@ -245,7 +217,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     return () => subscription.unsubscribe();
-  }, [supabase, fetchProfile]);
+  }, [supabase, fetchProfile, activateIdentity]);
 
   const signInWithEmail = async (email: string, password: string) => {
     if (!supabase) return { error: "Auth not configured" };
@@ -256,12 +228,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signUpWithEmail = async (email: string, password: string, username: string, options?: { nextPath?: string }) => {
     if (!supabase) return { error: "Auth not configured" };
+    const validationError = getPasswordValidationError(password) || getUsernameValidationError(username);
+    if (validationError) return { error: validationError };
     const emailRedirectTo = buildAuthCallbackRedirect(options?.nextPath);
     const { error } = await supabase.auth.signUp({
       email: normalizeEmail(email),
       password,
       options: {
-        data: { preferred_username: username },
+        data: { preferred_username: normalizeUsername(username) },
         emailRedirectTo,
       },
     });
@@ -306,6 +280,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const updatePassword = async (password: string) => {
     if (!supabase) return { error: "Auth not configured" };
+    const validationError = getPasswordValidationError(password);
+    if (validationError) return { error: validationError };
     const { error } = await supabase.auth.updateUser({ password });
     if (error) return { error: mapAuthError(error.message, "password_update") };
     setIsPasswordRecovery(false);
@@ -315,6 +291,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = async () => {
     if (!supabase) return;
     await supabase.auth.signOut();
+    activateIdentity(null);
     setHasSession(false);
     setIsPasswordRecovery(false);
     setSessionEmail(null);
@@ -325,10 +302,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!supabase) return;
     const { data: { user: authUser } } = await supabase.auth.getUser();
     if (authUser) {
+      activateIdentity(authUser.id);
       setHasSession(true);
       setSessionEmail(authUser.email ?? null);
-      await fetchProfile(authUser.id, authUser.email ?? "");
+      await fetchProfile(authUser.id);
     } else {
+      activateIdentity(null);
       setHasSession(false);
       setSessionEmail(null);
       setUser(null);
@@ -342,7 +321,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         hasSession,
         isPasswordRecovery,
         sessionEmail,
-        loading,
+        loading: loading || (!user && profileLoading),
         signInWithEmail,
         signUpWithEmail,
         signInWithOAuth,

@@ -6,7 +6,6 @@ import { Game } from "@/lib/types";
 import { getStableYear } from "@/lib/utils";
 import VerdictBadge from "@/components/ui/VerdictBadge";
 import ScoreRing from "@/components/ui/ScoreRing";
-import PixelBadge from "@/components/ui/PixelBadge";
 import PixelButton from "@/components/ui/PixelButton";
 import PlatformIcon from "@/components/ui/PlatformIcon";
 import HeroImage from "@/components/ui/HeroImage";
@@ -17,7 +16,7 @@ interface FeaturedHeroProps {
 
 export default function FeaturedHero({ game }: FeaturedHeroProps) {
   return (
-    <section className="relative rounded-sm overflow-hidden border border-border scanlines group">
+    <section className="relative rounded-2xl overflow-hidden border border-border hero-score-palette group">
       {/* Background image */}
       <div className="relative aspect-[16/9] sm:aspect-[16/9] md:aspect-[21/9]">
         {game.headerImage ? (
@@ -43,7 +42,7 @@ export default function FeaturedHero({ game }: FeaturedHeroProps) {
       <div className="absolute bottom-0 left-0 right-0 p-4 md:p-8 space-y-3">
         {/* Featured label */}
         <motion.div
-          initial={{ opacity: 0, y: 10 }}
+          initial={false}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
         >
@@ -55,7 +54,7 @@ export default function FeaturedHero({ game }: FeaturedHeroProps) {
 
         {/* Title */}
         <motion.h1
-          initial={{ opacity: 0, y: 10 }}
+          initial={false}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
           className="text-2xl md:text-4xl lg:text-5xl font-bold hero-overlay-text leading-tight max-w-2xl drop-shadow-lg"
@@ -65,7 +64,7 @@ export default function FeaturedHero({ game }: FeaturedHeroProps) {
 
         {/* Score + Verdict + Platform */}
         <motion.div
-          initial={{ opacity: 0, y: 10 }}
+          initial={false}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
           className="flex items-center gap-3 flex-wrap"
@@ -86,7 +85,7 @@ export default function FeaturedHero({ game }: FeaturedHeroProps) {
 
         {/* Summary */}
         <motion.p
-          initial={{ opacity: 0, y: 10 }}
+          initial={false}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
           className="text-sm md:text-base hero-overlay-text-secondary max-w-2xl line-clamp-2"
@@ -96,7 +95,7 @@ export default function FeaturedHero({ game }: FeaturedHeroProps) {
 
         {/* CTA */}
         <motion.div
-          initial={{ opacity: 0, y: 10 }}
+          initial={false}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
           className="flex gap-3 pt-1"

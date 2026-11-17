@@ -1,0 +1,1153 @@
+{
+  "at": "2026-11-17T19:33:50.843Z",
+  "lockfileSha256": "a8ce25df56df81c7a6ca2802161531caa77f04e874944b0554e557b5cbe0b916",
+  "scope": "Every simple installed lockfile dependency/optional/peer path from each direct root. Edges are labelled: peer links can reference an existing installation rather than introduce it. Cycles are stopped. No installation, execution of dependency code or hosted request.",
+  "copies": [
+    {
+      "path": "node_modules/picomatch",
+      "version": "2.3.2",
+      "dev": true
+    },
+    {
+      "path": "node_modules/tinyglobby/node_modules/picomatch",
+      "version": "4.0.7",
+      "dev": true
+    },
+    {
+      "path": "node_modules/vite/node_modules/picomatch",
+      "version": "4.0.7",
+      "dev": true
+    },
+    {
+      "path": "node_modules/vitest/node_modules/picomatch",
+      "version": "4.0.7",
+      "dev": true
+    }
+  ],
+  "paths": [
+    {
+      "rootKind": "devDependencies",
+      "chain": [
+        {
+          "name": "@vitejs/plugin-react",
+          "version": "6.3.0",
+          "path": "node_modules/@vitejs/plugin-react",
+          "edgeType": "direct"
+        },
+        {
+          "name": "vite",
+          "version": "8.3.7",
+          "path": "node_modules/vite",
+          "edgeType": "peer"
+        },
+        {
+          "name": "picomatch",
+          "version": "4.0.7",
+          "path": "node_modules/vite/node_modules/picomatch",
+          "edgeType": "dependency"
+        }
+      ]
+    },
+    {
+      "rootKind": "devDependencies",
+      "chain": [
+        {
+          "name": "@vitejs/plugin-react",
+          "version": "6.3.0",
+          "path": "node_modules/@vitejs/plugin-react",
+          "edgeType": "direct"
+        },
+        {
+          "name": "vite",
+          "version": "8.3.7",
+          "path": "node_modules/vite",
+          "edgeType": "peer"
+        },
+        {
+          "name": "tinyglobby",
+          "version": "0.2.17",
+          "path": "node_modules/tinyglobby",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "fdir",
+          "version": "6.5.0",
+          "path": "node_modules/tinyglobby/node_modules/fdir",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "picomatch",
+          "version": "4.0.7",
+          "path": "node_modules/tinyglobby/node_modules/picomatch",
+          "edgeType": "peer"
+        }
+      ]
+    },
+    {
+      "rootKind": "devDependencies",
+      "chain": [
+        {
+          "name": "@vitejs/plugin-react",
+          "version": "6.3.0",
+          "path": "node_modules/@vitejs/plugin-react",
+          "edgeType": "direct"
+        },
+        {
+          "name": "vite",
+          "version": "8.3.7",
+          "path": "node_modules/vite",
+          "edgeType": "peer"
+        },
+        {
+          "name": "tinyglobby",
+          "version": "0.2.17",
+          "path": "node_modules/tinyglobby",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "picomatch",
+          "version": "4.0.7",
+          "path": "node_modules/tinyglobby/node_modules/picomatch",
+          "edgeType": "dependency"
+        }
+      ]
+    },
+    {
+      "rootKind": "devDependencies",
+      "chain": [
+        {
+          "name": "eslint-config-next",
+          "version": "16.4.6",
+          "path": "node_modules/eslint-config-next",
+          "edgeType": "direct"
+        },
+        {
+          "name": "@next/eslint-plugin-next",
+          "version": "16.4.6",
+          "path": "node_modules/@next/eslint-plugin-next",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "fast-glob",
+          "version": "3.3.1",
+          "path": "node_modules/fast-glob",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "micromatch",
+          "version": "4.0.8",
+          "path": "node_modules/micromatch",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "picomatch",
+          "version": "2.3.2",
+          "path": "node_modules/picomatch",
+          "edgeType": "dependency"
+        }
+      ]
+    },
+    {
+      "rootKind": "devDependencies",
+      "chain": [
+        {
+          "name": "eslint-config-next",
+          "version": "16.4.6",
+          "path": "node_modules/eslint-config-next",
+          "edgeType": "direct"
+        },
+        {
+          "name": "eslint-import-resolver-typescript",
+          "version": "3.10.1",
+          "path": "node_modules/eslint-import-resolver-typescript",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "tinyglobby",
+          "version": "0.2.17",
+          "path": "node_modules/tinyglobby",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "fdir",
+          "version": "6.5.0",
+          "path": "node_modules/tinyglobby/node_modules/fdir",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "picomatch",
+          "version": "4.0.7",
+          "path": "node_modules/tinyglobby/node_modules/picomatch",
+          "edgeType": "peer"
+        }
+      ]
+    },
+    {
+      "rootKind": "devDependencies",
+      "chain": [
+        {
+          "name": "eslint-config-next",
+          "version": "16.4.6",
+          "path": "node_modules/eslint-config-next",
+          "edgeType": "direct"
+        },
+        {
+          "name": "eslint-import-resolver-typescript",
+          "version": "3.10.1",
+          "path": "node_modules/eslint-import-resolver-typescript",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "tinyglobby",
+          "version": "0.2.17",
+          "path": "node_modules/tinyglobby",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "picomatch",
+          "version": "4.0.7",
+          "path": "node_modules/tinyglobby/node_modules/picomatch",
+          "edgeType": "dependency"
+        }
+      ]
+    },
+    {
+      "rootKind": "devDependencies",
+      "chain": [
+        {
+          "name": "eslint-config-next",
+          "version": "16.4.6",
+          "path": "node_modules/eslint-config-next",
+          "edgeType": "direct"
+        },
+        {
+          "name": "typescript-eslint",
+          "version": "8.72.2",
+          "path": "node_modules/typescript-eslint",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "@typescript-eslint/eslint-plugin",
+          "version": "8.72.2",
+          "path": "node_modules/@typescript-eslint/eslint-plugin",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "@typescript-eslint/type-utils",
+          "version": "8.72.2",
+          "path": "node_modules/@typescript-eslint/type-utils",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "@typescript-eslint/typescript-estree",
+          "version": "8.72.2",
+          "path": "node_modules/@typescript-eslint/typescript-estree",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "tinyglobby",
+          "version": "0.2.17",
+          "path": "node_modules/tinyglobby",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "fdir",
+          "version": "6.5.0",
+          "path": "node_modules/tinyglobby/node_modules/fdir",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "picomatch",
+          "version": "4.0.7",
+          "path": "node_modules/tinyglobby/node_modules/picomatch",
+          "edgeType": "peer"
+        }
+      ]
+    },
+    {
+      "rootKind": "devDependencies",
+      "chain": [
+        {
+          "name": "eslint-config-next",
+          "version": "16.4.6",
+          "path": "node_modules/eslint-config-next",
+          "edgeType": "direct"
+        },
+        {
+          "name": "typescript-eslint",
+          "version": "8.72.2",
+          "path": "node_modules/typescript-eslint",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "@typescript-eslint/eslint-plugin",
+          "version": "8.72.2",
+          "path": "node_modules/@typescript-eslint/eslint-plugin",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "@typescript-eslint/type-utils",
+          "version": "8.72.2",
+          "path": "node_modules/@typescript-eslint/type-utils",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "@typescript-eslint/typescript-estree",
+          "version": "8.72.2",
+          "path": "node_modules/@typescript-eslint/typescript-estree",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "tinyglobby",
+          "version": "0.2.17",
+          "path": "node_modules/tinyglobby",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "picomatch",
+          "version": "4.0.7",
+          "path": "node_modules/tinyglobby/node_modules/picomatch",
+          "edgeType": "dependency"
+        }
+      ]
+    },
+    {
+      "rootKind": "devDependencies",
+      "chain": [
+        {
+          "name": "eslint-config-next",
+          "version": "16.4.6",
+          "path": "node_modules/eslint-config-next",
+          "edgeType": "direct"
+        },
+        {
+          "name": "typescript-eslint",
+          "version": "8.72.2",
+          "path": "node_modules/typescript-eslint",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "@typescript-eslint/eslint-plugin",
+          "version": "8.72.2",
+          "path": "node_modules/@typescript-eslint/eslint-plugin",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "@typescript-eslint/type-utils",
+          "version": "8.72.2",
+          "path": "node_modules/@typescript-eslint/type-utils",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "@typescript-eslint/utils",
+          "version": "8.72.2",
+          "path": "node_modules/@typescript-eslint/utils",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "@typescript-eslint/typescript-estree",
+          "version": "8.72.2",
+          "path": "node_modules/@typescript-eslint/typescript-estree",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "tinyglobby",
+          "version": "0.2.17",
+          "path": "node_modules/tinyglobby",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "fdir",
+          "version": "6.5.0",
+          "path": "node_modules/tinyglobby/node_modules/fdir",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "picomatch",
+          "version": "4.0.7",
+          "path": "node_modules/tinyglobby/node_modules/picomatch",
+          "edgeType": "peer"
+        }
+      ]
+    },
+    {
+      "rootKind": "devDependencies",
+      "chain": [
+        {
+          "name": "eslint-config-next",
+          "version": "16.4.6",
+          "path": "node_modules/eslint-config-next",
+          "edgeType": "direct"
+        },
+        {
+          "name": "typescript-eslint",
+          "version": "8.72.2",
+          "path": "node_modules/typescript-eslint",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "@typescript-eslint/eslint-plugin",
+          "version": "8.72.2",
+          "path": "node_modules/@typescript-eslint/eslint-plugin",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "@typescript-eslint/type-utils",
+          "version": "8.72.2",
+          "path": "node_modules/@typescript-eslint/type-utils",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "@typescript-eslint/utils",
+          "version": "8.72.2",
+          "path": "node_modules/@typescript-eslint/utils",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "@typescript-eslint/typescript-estree",
+          "version": "8.72.2",
+          "path": "node_modules/@typescript-eslint/typescript-estree",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "tinyglobby",
+          "version": "0.2.17",
+          "path": "node_modules/tinyglobby",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "picomatch",
+          "version": "4.0.7",
+          "path": "node_modules/tinyglobby/node_modules/picomatch",
+          "edgeType": "dependency"
+        }
+      ]
+    },
+    {
+      "rootKind": "devDependencies",
+      "chain": [
+        {
+          "name": "eslint-config-next",
+          "version": "16.4.6",
+          "path": "node_modules/eslint-config-next",
+          "edgeType": "direct"
+        },
+        {
+          "name": "typescript-eslint",
+          "version": "8.72.2",
+          "path": "node_modules/typescript-eslint",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "@typescript-eslint/eslint-plugin",
+          "version": "8.72.2",
+          "path": "node_modules/@typescript-eslint/eslint-plugin",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "@typescript-eslint/utils",
+          "version": "8.72.2",
+          "path": "node_modules/@typescript-eslint/utils",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "@typescript-eslint/typescript-estree",
+          "version": "8.72.2",
+          "path": "node_modules/@typescript-eslint/typescript-estree",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "tinyglobby",
+          "version": "0.2.17",
+          "path": "node_modules/tinyglobby",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "fdir",
+          "version": "6.5.0",
+          "path": "node_modules/tinyglobby/node_modules/fdir",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "picomatch",
+          "version": "4.0.7",
+          "path": "node_modules/tinyglobby/node_modules/picomatch",
+          "edgeType": "peer"
+        }
+      ]
+    },
+    {
+      "rootKind": "devDependencies",
+      "chain": [
+        {
+          "name": "eslint-config-next",
+          "version": "16.4.6",
+          "path": "node_modules/eslint-config-next",
+          "edgeType": "direct"
+        },
+        {
+          "name": "typescript-eslint",
+          "version": "8.72.2",
+          "path": "node_modules/typescript-eslint",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "@typescript-eslint/eslint-plugin",
+          "version": "8.72.2",
+          "path": "node_modules/@typescript-eslint/eslint-plugin",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "@typescript-eslint/utils",
+          "version": "8.72.2",
+          "path": "node_modules/@typescript-eslint/utils",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "@typescript-eslint/typescript-estree",
+          "version": "8.72.2",
+          "path": "node_modules/@typescript-eslint/typescript-estree",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "tinyglobby",
+          "version": "0.2.17",
+          "path": "node_modules/tinyglobby",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "picomatch",
+          "version": "4.0.7",
+          "path": "node_modules/tinyglobby/node_modules/picomatch",
+          "edgeType": "dependency"
+        }
+      ]
+    },
+    {
+      "rootKind": "devDependencies",
+      "chain": [
+        {
+          "name": "eslint-config-next",
+          "version": "16.4.6",
+          "path": "node_modules/eslint-config-next",
+          "edgeType": "direct"
+        },
+        {
+          "name": "typescript-eslint",
+          "version": "8.72.2",
+          "path": "node_modules/typescript-eslint",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "@typescript-eslint/eslint-plugin",
+          "version": "8.72.2",
+          "path": "node_modules/@typescript-eslint/eslint-plugin",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "@typescript-eslint/parser",
+          "version": "8.72.2",
+          "path": "node_modules/@typescript-eslint/parser",
+          "edgeType": "peer"
+        },
+        {
+          "name": "@typescript-eslint/typescript-estree",
+          "version": "8.72.2",
+          "path": "node_modules/@typescript-eslint/typescript-estree",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "tinyglobby",
+          "version": "0.2.17",
+          "path": "node_modules/tinyglobby",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "fdir",
+          "version": "6.5.0",
+          "path": "node_modules/tinyglobby/node_modules/fdir",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "picomatch",
+          "version": "4.0.7",
+          "path": "node_modules/tinyglobby/node_modules/picomatch",
+          "edgeType": "peer"
+        }
+      ]
+    },
+    {
+      "rootKind": "devDependencies",
+      "chain": [
+        {
+          "name": "eslint-config-next",
+          "version": "16.4.6",
+          "path": "node_modules/eslint-config-next",
+          "edgeType": "direct"
+        },
+        {
+          "name": "typescript-eslint",
+          "version": "8.72.2",
+          "path": "node_modules/typescript-eslint",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "@typescript-eslint/eslint-plugin",
+          "version": "8.72.2",
+          "path": "node_modules/@typescript-eslint/eslint-plugin",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "@typescript-eslint/parser",
+          "version": "8.72.2",
+          "path": "node_modules/@typescript-eslint/parser",
+          "edgeType": "peer"
+        },
+        {
+          "name": "@typescript-eslint/typescript-estree",
+          "version": "8.72.2",
+          "path": "node_modules/@typescript-eslint/typescript-estree",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "tinyglobby",
+          "version": "0.2.17",
+          "path": "node_modules/tinyglobby",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "picomatch",
+          "version": "4.0.7",
+          "path": "node_modules/tinyglobby/node_modules/picomatch",
+          "edgeType": "dependency"
+        }
+      ]
+    },
+    {
+      "rootKind": "devDependencies",
+      "chain": [
+        {
+          "name": "eslint-config-next",
+          "version": "16.4.6",
+          "path": "node_modules/eslint-config-next",
+          "edgeType": "direct"
+        },
+        {
+          "name": "typescript-eslint",
+          "version": "8.72.2",
+          "path": "node_modules/typescript-eslint",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "@typescript-eslint/parser",
+          "version": "8.72.2",
+          "path": "node_modules/@typescript-eslint/parser",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "@typescript-eslint/typescript-estree",
+          "version": "8.72.2",
+          "path": "node_modules/@typescript-eslint/typescript-estree",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "tinyglobby",
+          "version": "0.2.17",
+          "path": "node_modules/tinyglobby",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "fdir",
+          "version": "6.5.0",
+          "path": "node_modules/tinyglobby/node_modules/fdir",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "picomatch",
+          "version": "4.0.7",
+          "path": "node_modules/tinyglobby/node_modules/picomatch",
+          "edgeType": "peer"
+        }
+      ]
+    },
+    {
+      "rootKind": "devDependencies",
+      "chain": [
+        {
+          "name": "eslint-config-next",
+          "version": "16.4.6",
+          "path": "node_modules/eslint-config-next",
+          "edgeType": "direct"
+        },
+        {
+          "name": "typescript-eslint",
+          "version": "8.72.2",
+          "path": "node_modules/typescript-eslint",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "@typescript-eslint/parser",
+          "version": "8.72.2",
+          "path": "node_modules/@typescript-eslint/parser",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "@typescript-eslint/typescript-estree",
+          "version": "8.72.2",
+          "path": "node_modules/@typescript-eslint/typescript-estree",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "tinyglobby",
+          "version": "0.2.17",
+          "path": "node_modules/tinyglobby",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "picomatch",
+          "version": "4.0.7",
+          "path": "node_modules/tinyglobby/node_modules/picomatch",
+          "edgeType": "dependency"
+        }
+      ]
+    },
+    {
+      "rootKind": "devDependencies",
+      "chain": [
+        {
+          "name": "eslint-config-next",
+          "version": "16.4.6",
+          "path": "node_modules/eslint-config-next",
+          "edgeType": "direct"
+        },
+        {
+          "name": "typescript-eslint",
+          "version": "8.72.2",
+          "path": "node_modules/typescript-eslint",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "@typescript-eslint/typescript-estree",
+          "version": "8.72.2",
+          "path": "node_modules/@typescript-eslint/typescript-estree",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "tinyglobby",
+          "version": "0.2.17",
+          "path": "node_modules/tinyglobby",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "fdir",
+          "version": "6.5.0",
+          "path": "node_modules/tinyglobby/node_modules/fdir",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "picomatch",
+          "version": "4.0.7",
+          "path": "node_modules/tinyglobby/node_modules/picomatch",
+          "edgeType": "peer"
+        }
+      ]
+    },
+    {
+      "rootKind": "devDependencies",
+      "chain": [
+        {
+          "name": "eslint-config-next",
+          "version": "16.4.6",
+          "path": "node_modules/eslint-config-next",
+          "edgeType": "direct"
+        },
+        {
+          "name": "typescript-eslint",
+          "version": "8.72.2",
+          "path": "node_modules/typescript-eslint",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "@typescript-eslint/typescript-estree",
+          "version": "8.72.2",
+          "path": "node_modules/@typescript-eslint/typescript-estree",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "tinyglobby",
+          "version": "0.2.17",
+          "path": "node_modules/tinyglobby",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "picomatch",
+          "version": "4.0.7",
+          "path": "node_modules/tinyglobby/node_modules/picomatch",
+          "edgeType": "dependency"
+        }
+      ]
+    },
+    {
+      "rootKind": "devDependencies",
+      "chain": [
+        {
+          "name": "eslint-config-next",
+          "version": "16.4.6",
+          "path": "node_modules/eslint-config-next",
+          "edgeType": "direct"
+        },
+        {
+          "name": "typescript-eslint",
+          "version": "8.72.2",
+          "path": "node_modules/typescript-eslint",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "@typescript-eslint/utils",
+          "version": "8.72.2",
+          "path": "node_modules/@typescript-eslint/utils",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "@typescript-eslint/typescript-estree",
+          "version": "8.72.2",
+          "path": "node_modules/@typescript-eslint/typescript-estree",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "tinyglobby",
+          "version": "0.2.17",
+          "path": "node_modules/tinyglobby",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "fdir",
+          "version": "6.5.0",
+          "path": "node_modules/tinyglobby/node_modules/fdir",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "picomatch",
+          "version": "4.0.7",
+          "path": "node_modules/tinyglobby/node_modules/picomatch",
+          "edgeType": "peer"
+        }
+      ]
+    },
+    {
+      "rootKind": "devDependencies",
+      "chain": [
+        {
+          "name": "eslint-config-next",
+          "version": "16.4.6",
+          "path": "node_modules/eslint-config-next",
+          "edgeType": "direct"
+        },
+        {
+          "name": "typescript-eslint",
+          "version": "8.72.2",
+          "path": "node_modules/typescript-eslint",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "@typescript-eslint/utils",
+          "version": "8.72.2",
+          "path": "node_modules/@typescript-eslint/utils",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "@typescript-eslint/typescript-estree",
+          "version": "8.72.2",
+          "path": "node_modules/@typescript-eslint/typescript-estree",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "tinyglobby",
+          "version": "0.2.17",
+          "path": "node_modules/tinyglobby",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "picomatch",
+          "version": "4.0.7",
+          "path": "node_modules/tinyglobby/node_modules/picomatch",
+          "edgeType": "dependency"
+        }
+      ]
+    },
+    {
+      "rootKind": "devDependencies",
+      "chain": [
+        {
+          "name": "vitest",
+          "version": "4.1.12",
+          "path": "node_modules/vitest",
+          "edgeType": "direct"
+        },
+        {
+          "name": "@vitest/mocker",
+          "version": "4.1.12",
+          "path": "node_modules/@vitest/mocker",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "vite",
+          "version": "8.3.7",
+          "path": "node_modules/vite",
+          "edgeType": "peer"
+        },
+        {
+          "name": "picomatch",
+          "version": "4.0.7",
+          "path": "node_modules/vite/node_modules/picomatch",
+          "edgeType": "dependency"
+        }
+      ]
+    },
+    {
+      "rootKind": "devDependencies",
+      "chain": [
+        {
+          "name": "vitest",
+          "version": "4.1.12",
+          "path": "node_modules/vitest",
+          "edgeType": "direct"
+        },
+        {
+          "name": "@vitest/mocker",
+          "version": "4.1.12",
+          "path": "node_modules/@vitest/mocker",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "vite",
+          "version": "8.3.7",
+          "path": "node_modules/vite",
+          "edgeType": "peer"
+        },
+        {
+          "name": "tinyglobby",
+          "version": "0.2.17",
+          "path": "node_modules/tinyglobby",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "fdir",
+          "version": "6.5.0",
+          "path": "node_modules/tinyglobby/node_modules/fdir",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "picomatch",
+          "version": "4.0.7",
+          "path": "node_modules/tinyglobby/node_modules/picomatch",
+          "edgeType": "peer"
+        }
+      ]
+    },
+    {
+      "rootKind": "devDependencies",
+      "chain": [
+        {
+          "name": "vitest",
+          "version": "4.1.12",
+          "path": "node_modules/vitest",
+          "edgeType": "direct"
+        },
+        {
+          "name": "@vitest/mocker",
+          "version": "4.1.12",
+          "path": "node_modules/@vitest/mocker",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "vite",
+          "version": "8.3.7",
+          "path": "node_modules/vite",
+          "edgeType": "peer"
+        },
+        {
+          "name": "tinyglobby",
+          "version": "0.2.17",
+          "path": "node_modules/tinyglobby",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "picomatch",
+          "version": "4.0.7",
+          "path": "node_modules/tinyglobby/node_modules/picomatch",
+          "edgeType": "dependency"
+        }
+      ]
+    },
+    {
+      "rootKind": "devDependencies",
+      "chain": [
+        {
+          "name": "vitest",
+          "version": "4.1.12",
+          "path": "node_modules/vitest",
+          "edgeType": "direct"
+        },
+        {
+          "name": "picomatch",
+          "version": "4.0.7",
+          "path": "node_modules/vitest/node_modules/picomatch",
+          "edgeType": "dependency"
+        }
+      ]
+    },
+    {
+      "rootKind": "devDependencies",
+      "chain": [
+        {
+          "name": "vitest",
+          "version": "4.1.12",
+          "path": "node_modules/vitest",
+          "edgeType": "direct"
+        },
+        {
+          "name": "tinyglobby",
+          "version": "0.2.17",
+          "path": "node_modules/tinyglobby",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "fdir",
+          "version": "6.5.0",
+          "path": "node_modules/tinyglobby/node_modules/fdir",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "picomatch",
+          "version": "4.0.7",
+          "path": "node_modules/tinyglobby/node_modules/picomatch",
+          "edgeType": "peer"
+        }
+      ]
+    },
+    {
+      "rootKind": "devDependencies",
+      "chain": [
+        {
+          "name": "vitest",
+          "version": "4.1.12",
+          "path": "node_modules/vitest",
+          "edgeType": "direct"
+        },
+        {
+          "name": "tinyglobby",
+          "version": "0.2.17",
+          "path": "node_modules/tinyglobby",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "picomatch",
+          "version": "4.0.7",
+          "path": "node_modules/tinyglobby/node_modules/picomatch",
+          "edgeType": "dependency"
+        }
+      ]
+    },
+    {
+      "rootKind": "devDependencies",
+      "chain": [
+        {
+          "name": "vitest",
+          "version": "4.1.12",
+          "path": "node_modules/vitest",
+          "edgeType": "direct"
+        },
+        {
+          "name": "vite",
+          "version": "8.3.7",
+          "path": "node_modules/vite",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "picomatch",
+          "version": "4.0.7",
+          "path": "node_modules/vite/node_modules/picomatch",
+          "edgeType": "dependency"
+        }
+      ]
+    },
+    {
+      "rootKind": "devDependencies",
+      "chain": [
+        {
+          "name": "vitest",
+          "version": "4.1.12",
+          "path": "node_modules/vitest",
+          "edgeType": "direct"
+        },
+        {
+          "name": "vite",
+          "version": "8.3.7",
+          "path": "node_modules/vite",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "tinyglobby",
+          "version": "0.2.17",
+          "path": "node_modules/tinyglobby",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "fdir",
+          "version": "6.5.0",
+          "path": "node_modules/tinyglobby/node_modules/fdir",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "picomatch",
+          "version": "4.0.7",
+          "path": "node_modules/tinyglobby/node_modules/picomatch",
+          "edgeType": "peer"
+        }
+      ]
+    },
+    {
+      "rootKind": "devDependencies",
+      "chain": [
+        {
+          "name": "vitest",
+          "version": "4.1.12",
+          "path": "node_modules/vitest",
+          "edgeType": "direct"
+        },
+        {
+          "name": "vite",
+          "version": "8.3.7",
+          "path": "node_modules/vite",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "tinyglobby",
+          "version": "0.2.17",
+          "path": "node_modules/tinyglobby",
+          "edgeType": "dependency"
+        },
+        {
+          "name": "picomatch",
+          "version": "4.0.7",
+          "path": "node_modules/tinyglobby/node_modules/picomatch",
+          "edgeType": "dependency"
+        }
+      ]
+    }
+  ],
+  "vendoredNext": {
+    "package": "next@16.4.6",
+    "file": "node_modules/next/dist/compiled/picomatch/index.js",
+    "bytes": 23909,
+    "sha256": "607dc79784c1161c33076903769dba23e63d9d9ccfe3c4695a32ebe3a5ab892d",
+    "manifestContainsVersion": false,
+    "version": "Not specified in compiled package manifest; do not infer a patched version from npm audit.",
+    "references": [
+      "node_modules/next/dist/shared/lib/match-remote-pattern.js",
+      "node_modules/next/dist/shared/lib/match-local-pattern.js"
+    ],
+    "notes": "Next.js image configuration passes developer-controlled hostname/pathname globs; request URL supplies the string to test. Build trace/middleware consumers take repository/configuration patterns. This separate vendored copy is not one of the four npm lockfile package nodes."
+  }
+}

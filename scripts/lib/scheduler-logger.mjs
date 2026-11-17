@@ -121,8 +121,8 @@ export async function acquireLock(sql, jobName) {
       console.error(`❌ Advisory lock check failed after retries: ${message}. Aborting this run.`);
       throw err;
     }
-    console.warn(`⚠ Advisory lock check failed: ${message}. Proceeding without advisory lock.`);
-    return true;
+    console.error(`❌ Advisory lock check failed: ${message}. Aborting this run.`);
+    throw err;
   }
 }
 
@@ -194,15 +194,16 @@ export async function checkMinInterval(sql, jobName, minIntervalHours) {
 /**
  * Start a scheduler run. Returns { id } for the new run row.
  */
-export async function startRun(sql, jobName, metadata = {}) {
+export async function startRun(sql, jobName, metadata = {}, { strict = false } = {}) {
   try {
     const [row] = await sql`
       INSERT INTO scheduler_runs (job_name, status, metadata)
-      VALUES (${jobName}, 'running', ${JSON.stringify(metadata)}::jsonb)
+      VALUES (${jobName}, 'running', ${metadata}::jsonb)
       RETURNING id, started_at
     `;
     return { id: row.id, startedAt: row.started_at };
   } catch (err) {
+    if (strict) throw err;
     const message = getErrorMessage(err);
     if (isSchedulerRunsTableMissing(err)) {
       console.warn(`⚠ scheduler_runs logging failed (table may not exist): ${message}`);
@@ -218,6 +219,11 @@ export async function startRun(sql, jobName, metadata = {}) {
 
 /**
  * Finish a scheduler run. Call with counters and/or error.
+ * @param {*} sql
+ * @param {string|null} runId
+ * @param {{rows_scanned?: number, rows_created?: number, rows_updated?: number,
+ * rows_skipped?: number, error_message?: string|null, metadata?: Record<string, unknown>|null,
+ * outcome?: 'success'|'error'|'deferred'|null, strict?: boolean}} options
  */
 export async function finishRun(sql, runId, {
   rows_scanned = 0,
@@ -226,12 +232,15 @@ export async function finishRun(sql, runId, {
   rows_skipped = 0,
   error_message = null,
   metadata = null,
+  outcome = null,
+  strict = false,
 } = {}) {
   if (!runId) return;
 
-  const status = error_message ? 'error' : 'success';
+  if (outcome !== null && !['success', 'error', 'deferred'].includes(outcome)) throw new Error('Invalid scheduler outcome');
+  const status = outcome ?? (error_message ? 'error' : 'success');
   try {
-    const metadataClause = metadata ? JSON.stringify(metadata) : null;
+    const metadataClause = metadata ?? null;
     await retryInfrastructureDbOperation(`Finish scheduler run ${runId}`, () => sql`
         UPDATE scheduler_runs SET
           finished_at = now(),
@@ -246,7 +255,7 @@ export async function finishRun(sql, runId, {
         WHERE id = ${runId}
       `);
   } catch (err) {
-    if (isInfrastructureDbError(err)) throw err;
+    if (strict || isInfrastructureDbError(err)) throw err;
     console.warn(`⚠ scheduler_runs finish logging failed: ${getErrorMessage(err)}`);
   }
 }

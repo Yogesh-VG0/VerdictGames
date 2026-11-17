@@ -1,0 +1,153 @@
+{
+  "measuredAt": "2026-11-16T17:16:54.829Z",
+  "scope": "Exact SQL/helpers in disposable local migration-replay database; two actual sessions, no hosted changes",
+  "checks": [
+    "read-only publication and conflicting hosted flags are rejected before configuration or connection",
+    "malformed connection configuration is rejected without printing its value",
+    "ready=false preserves original source results",
+    "exact helper locks/copies two rows, validates all inputs and publishes readiness",
+    "backfill resumption avoids identical-row writes",
+    "bounded finalizer rejects corrupted/missing values and disabled maintenance, verification-only never publishes, explicit validated publication preserves all source values",
+    "unready/lost projection uses original accurate source query",
+    "unclassified source rows union before ranking without loss or duplication",
+    "wide Unicode metadata, implicit classifiers, accepted/conflicting inserts, authenticated writer and cascade delete",
+    "restrictive source policy disables all projection access and retains original filtered ranking",
+    "upcoming matches exact date/status/tag semantics and propagates tag-only edits without broadening eligibility",
+    "adding/removing exact upcoming tags propagates while genre-based EA remains true",
+    "anon/authenticated/service_role cannot write projection directly",
+    "definer trigger rejects attachment to another relation",
+    "two-session repeatable-read policy tightening uses original source visibility"
+  ],
+  "rows": [
+    {
+      "kind": "inputs",
+      "equal": true
+    },
+    {
+      "kind": "description",
+      "safe": false
+    },
+    {
+      "kind": "tags",
+      "early": true
+    },
+    {
+      "kind": "upcomingExact",
+      "equal": true
+    },
+    {
+      "kind": "upcomingTagEdit",
+      "equal": true,
+      "unexpected": 0
+    },
+    {
+      "kind": "upcomingGenreTagAdded",
+      "equal": true,
+      "present": 1
+    },
+    {
+      "kind": "upcomingGenreTagRemoved",
+      "equal": true,
+      "present": 0
+    },
+    {
+      "kind": "conflict",
+      "count": 1
+    },
+    {
+      "kind": "writer",
+      "players": 12345
+    },
+    {
+      "kind": "restricted",
+      "guard": false,
+      "projectionRows": 0,
+      "sourceRows": 14,
+      "rpcCount": 3
+    },
+    {
+      "kind": "delete",
+      "remaining": 0
+    }
+  ],
+  "race": {
+    "guard": false,
+    "sourceCount": 1,
+    "rpcCount": 1
+  },
+  "helper": {
+    "startedAt": "2026-11-16T17:16:47.884Z",
+    "hosted": false,
+    "transport": "local Docker psql",
+    "sqlSha256": "3205a44a254ea1145033b849afa205d441397664eb1893dc86c722e9da83ae48",
+    "batchSize": 100,
+    "batches": [
+      {
+        "rows": 2,
+        "serverMs": 0.116,
+        "clientMs": 111
+      }
+    ],
+    "visited": 2,
+    "copied": 2,
+    "sourceWrites": 0,
+    "fieldCount": 22,
+    "sourceTypesMatch": true,
+    "pendingAtStart": 2,
+    "validation": {
+      "ready": true,
+      "differences": 0
+    },
+    "completedAt": "2026-11-16T17:16:48.345Z",
+    "totalMs": 461
+  },
+  "repeated": {
+    "startedAt": "2026-11-16T17:16:48.566Z",
+    "hosted": false,
+    "transport": "local Docker psql",
+    "sqlSha256": "3205a44a254ea1145033b849afa205d441397664eb1893dc86c722e9da83ae48",
+    "batchSize": 100,
+    "batches": [
+      {
+        "rows": 0,
+        "serverMs": 0.105,
+        "clientMs": 113
+      }
+    ],
+    "visited": 2,
+    "copied": 0,
+    "sourceWrites": 0,
+    "fieldCount": 22,
+    "sourceTypesMatch": true,
+    "pendingAtStart": 2,
+    "validation": {
+      "ready": true,
+      "differences": 0
+    },
+    "completedAt": "2026-11-16T17:16:49.030Z",
+    "totalMs": 463
+  },
+  "boundedFinalizer": {
+    "startedAt": "2026-11-16T17:16:52.579Z",
+    "hosted": false,
+    "publishRequested": true,
+    "sqlSha256": "3205a44a254ea1145033b849afa205d441397664eb1893dc86c722e9da83ae48",
+    "fieldCount": 22,
+    "sourceWrites": 0,
+    "projectionWrites": 0,
+    "batches": [
+      {
+        "rows": 2,
+        "serverMs": 0.06,
+        "clientMs": 119
+      }
+    ],
+    "verifiedRows": 2,
+    "readyBefore": false,
+    "sourceRows": 2,
+    "exactCoverage": true,
+    "published": true,
+    "completedAt": "2026-11-16T17:16:53.368Z",
+    "totalMs": 788
+  }
+}

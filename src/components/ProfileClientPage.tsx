@@ -34,14 +34,14 @@ export default function ProfileClientPage({ username, initialUser }: Props) {
   });
 
   const { data: reviews } = useQuery({
-    queryKey: ["userReviews", username],
+    queryKey: ["userReviews", username, currentUser?.id ?? null],
     queryFn: () => getUserReviews(username),
     enabled: !!user,
   });
 
   const { data: allLists } = useQuery({
-    queryKey: ["lists"],
-    queryFn: getCuratedLists,
+    queryKey: ["lists", 'owner', user?.id],
+    queryFn: () => getCuratedLists(user?.id),
     enabled: !!user,
   });
   const userLists = (allLists ?? []).filter(

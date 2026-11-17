@@ -158,10 +158,6 @@ function normalizeGenre(value: string | null | undefined): string {
   return SEARCH_GENRE_LOOKUP.get(normalizeGenreKey(candidate)) ?? candidate;
 }
 
-function normalizeFreeText(value: string | null | undefined, limit: number): string {
-  return (value ?? "").trim().slice(0, limit);
-}
-
 function appendGamesParams(params: URLSearchParams, games: SearchGamesState) {
   if (games.query) {
     params.set("q", games.query);

@@ -1,0 +1,58 @@
+{
+  "scope": "Two simultaneous homepage requests, fresh application process and empty framework caches in both experiments; real shared database storage cache uncontrolled; includes five subsequent public Explore reads in network totals.",
+  "before": {
+    "commit": "ce0b1359d68a87be9ac698e41c44686092615181",
+    "home": [
+      {
+        "path": "/",
+        "failed": true,
+        "ms": 35008,
+        "error": "TimeoutError"
+      },
+      {
+        "path": "/",
+        "failed": true,
+        "ms": 35008,
+        "error": "TimeoutError"
+      }
+    ],
+    "games": 42,
+    "reads": 53,
+    "bytes": 3691388,
+    "hostedWrites": 0,
+    "rawgCalls": 0
+  },
+  "after": {
+    "commit": "89d8830688bab58c5234673f518b889ec1ded915",
+    "home": [
+      {
+        "path": "/",
+        "ttfbMs": 14644,
+        "status": 200,
+        "ms": 14655,
+        "decodedBytes": 822009,
+        "hasHomepageHeading": true,
+        "hasRuntimeError": false
+      },
+      {
+        "path": "/",
+        "ttfbMs": 14646,
+        "status": 200,
+        "ms": 14656,
+        "decodedBytes": 822009,
+        "hasHomepageHeading": true,
+        "hasRuntimeError": false
+      }
+    ],
+    "games": 14,
+    "reads": 20,
+    "bytes": 1898517,
+    "hostedWrites": 0,
+    "rawgCalls": 0
+  },
+  "limitations": [
+    "Single uncontrolled observation per version, not a latency SLA.",
+    "Coalescing is per server instance; requests routed to different instances may duplicate work.",
+    "Trending pool failures and high cold latency remain unresolved."
+  ]
+}

@@ -1,0 +1,99 @@
+{
+  "name": "steamdb",
+  "url": "https://steamdb.info",
+  "measuredAt": "2026-11-16T08:09:46.812Z",
+  "conditions": "New anonymous context per site; Chrome 1440x1000 DPR1; unthrottled CPU/network; origin cache unknown; ordinary page requests including automatic prefetch; no access challenge bypass",
+  "observed": {
+    "url": "https://steamdb.info/",
+    "title": "SteamDB",
+    "readyState": "complete",
+    "restricted": false,
+    "headings": [
+      "You have been banned on SteamDB"
+    ],
+    "viewport": {
+      "w": 1440,
+      "h": 1000,
+      "dpr": 1
+    },
+    "navigation": {
+      "status": 403,
+      "ttfbMs": 3434,
+      "responseEndMs": 3435,
+      "domInteractiveMs": 3461,
+      "loadEventEndMs": 4016,
+      "durationMs": 4016,
+      "transfer": 5173,
+      "encoded": 4873,
+      "decoded": 9580
+    },
+    "paints": [
+      {
+        "name": "first-paint",
+        "ms": 3484
+      },
+      {
+        "name": "first-contentful-paint",
+        "ms": 3484
+      }
+    ],
+    "requestCount": 2,
+    "observableTransferBytes": 300,
+    "bytesLimitation": "ResourceTiming bytes may be zero for cross-origin resources without Timing-Allow-Origin; this is not total traffic",
+    "byType": {
+      "script": 1,
+      "xmlhttprequest": 1
+    },
+    "byHost": {
+      "static.cloudflareinsights.com": 1,
+      "steamdb.info": 1
+    },
+    "images": [],
+    "requests": [
+      {
+        "url": "https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092",
+        "type": "script",
+        "start": 3442,
+        "ms": 567,
+        "transfer": 0,
+        "encoded": 0,
+        "decoded": 0
+      },
+      {
+        "url": "https://steamdb.info/cdn-cgi/rum?",
+        "type": "xmlhttprequest",
+        "start": 4018,
+        "ms": 377,
+        "transfer": 300,
+        "encoded": 0,
+        "decoded": 0
+      }
+    ]
+  },
+  "screenshot": "captured",
+  "responses": [
+    {
+      "url": "https://steamdb.info/",
+      "type": "document",
+      "status": 403,
+      "method": "GET",
+      "headers": {
+        "cache-control": "private, max-age=0, no-store, no-cache, must-revalidate, post-check=0, pre-check=0",
+        "content-type": "text/html; charset=UTF-8",
+        "vary": "accept-encoding",
+        "server": "cloudflare"
+      }
+    },
+    {
+      "url": "https://steamdb.info/cdn-cgi/rum?",
+      "type": "xhr",
+      "status": 204,
+      "method": "POST",
+      "headers": {
+        "content-type": "text/plain",
+        "vary": "Origin, accept-encoding",
+        "server": "cloudflare"
+      }
+    }
+  ]
+}

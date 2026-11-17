@@ -1,0 +1,30 @@
+{
+  "at": "2026-11-17T20:12:24.573Z",
+  "production": "94011f269dad78f45dc8449198da6d88adec16d7",
+  "candidate": "0a4a0691302e7d6dcfdd366338d952d6d29fae1d",
+  "blobs": {
+    "package.json": {
+      "production": "e025b8ae2cec2bf285331788b79df6be2e0c06f77f07a80d1a1cf0292b5205fa",
+      "candidate": "e025b8ae2cec2bf285331788b79df6be2e0c06f77f07a80d1a1cf0292b5205fa",
+      "identical": true
+    },
+    "package-lock.json": {
+      "production": "a8ce25df56df81c7a6ca2802161531caa77f04e874944b0554e557b5cbe0b916",
+      "candidate": "a8ce25df56df81c7a6ca2802161531caa77f04e874944b0554e557b5cbe0b916",
+      "identical": true
+    },
+    "next.config.ts": {
+      "production": "232be12ab937edae512fbe9b42d038fc8e88527e10005b533780c3dd897f2356",
+      "candidate": "e3e826a7220d714b8b66051e8c193bac19e8e2867936a971b797ef722e3b5b93",
+      "identical": false
+    }
+  },
+  "directMatcherImportsInChangedApplicationAndWorkerFiles": [],
+  "nextConfigDiff": "diff --git a/next.config.ts b/next.config.ts\nindex 14afcb2..2233721 100644\n--- a/next.config.ts\n+++ b/next.config.ts\n@@ -12,6 +12,15 @@ const evalSource = process.env.NODE_ENV === 'development' ? \" 'unsafe-eval'\" : \"\n const nextConfig: NextConfig = {\n   async headers() {\n     return [\n+      {\n+        source:'/library/lists/:path*',\n+        headers:[\n+          {key:'Cache-Control',value:'private, no-store, max-age=0'},\n+          {key:'CDN-Cache-Control',value:'private, no-store'},\n+          {key:'Vercel-CDN-Cache-Control',value:'private, no-store'},\n+          {key:'Vary',value:'Cookie'},\n+        ],\n+      },\n       {\n         source: \"/(.*)\",\n         headers: [\n",
+  "newAuditImages": {
+    "count": 157,
+    "bytes": 37541050
+  },
+  "changedFileCount": 566,
+  "privateTracked": []
+}

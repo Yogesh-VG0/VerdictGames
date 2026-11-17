@@ -1,0 +1,116 @@
+{
+  "candidate": "0a4a0691302e7d6dcfdd366338d952d6d29fae1d",
+  "scope": "Targeted November18 follow-up. No application/dependency/workflow/schema/hosted configuration changes. Completed catalogue research, migrations/backfills, durable snapshot, artwork, visual/Auth fixtures and R3 recovery were reused.",
+  "dependencyEvidence": "output/targeted-release/picomatch-dependency-inventory.json",
+  "compileEvidence": "output/targeted-release/picomatch-compile-only.json",
+  "advisory": {
+    "id": "GHSA-fc5q-39xc-vjpf",
+    "cve": "CVE-2026-112366",
+    "affected": "<=4.0.7",
+    "npmLatest": "4.0.7",
+    "patchedRelease": "none recorded",
+    "source": "https://github.com/advisories/GHSA-fc5q-39xc-vjpf"
+  },
+  "upstream": [
+    {
+      "url": "https://github.com/micromatch/picomatch/pull/194",
+      "status": "open",
+      "scope": "Leading-question-mark extglob parser correctness; not a released repeated-extglob remediation"
+    },
+    {
+      "url": "https://github.com/micromatch/picomatch/pull/237",
+      "status": "open",
+      "scope": "Proposed CVE single-branch repeated-extglob fix for master; no installed or published fix claimed"
+    },
+    {
+      "url": "https://github.com/micromatch/picomatch/pull/246",
+      "status": "open",
+      "scope": "Proposed v2 backport; no release/version bump or installed fix claimed"
+    }
+  ],
+  "parentEvaluation": [
+    {
+      "package": "vitest",
+      "installed": "4.1.12",
+      "latestChecked": "5.1.0",
+      "finding": "Latest still depends on picomatch^4.0.7 and tinyglobby^0.2.17; major update does not close gate"
+    },
+    {
+      "package": "vite",
+      "installed": "8.3.7",
+      "latestChecked": "8.3.8",
+      "finding": "Latest still depends on picomatch^4.0.7 and tinyglobby^0.2.17"
+    },
+    {
+      "package": "eslint-config-next",
+      "installed": "16.4.6",
+      "latestChecked": "16.4.6",
+      "finding": "Existing fast-glob/micromatch and TypeScript/tinyglobby paths remain affected"
+    },
+    {
+      "package": "@vitejs/plugin-react",
+      "installed": "6.3.0",
+      "finding": "Not referenced by node-only Vitest configuration or checked app/scripts/configs. Removal does not remove Vitest's Vite, direct picomatch or lint paths, so no release-time dependency churn was performed"
+    }
+  ],
+  "exposure": {
+    "npmCopies": "Four affected copies, all dev:true;29 installed dependency/optional/peer paths,12 without peer edges,three direct development roots; no direct production root reaches these npm nodes",
+    "vendoredRuntime": "Next16.4.6 also ships a separate compiled picomatch without a version in its compiled manifest. Compile-only check retains the repeated nested quantifier form. Zero production npm findings does not cover this vendor copy",
+    "visitorBoundary": "Checked image-matcher call sites compile developer-controlled hostname/pathname configuration; visitor URL is the matched string. App search uses database filters, and no direct application glob API/import was found. No current visitor-controlled glob-pattern route identified; this is bounded reachability evidence, not a universal non-exploitability claim",
+    "buildCi": "Lint/test/build operate on repository/configuration patterns; malicious repository changes can affect them. Existing contents:read workflows,15/20-minute job limits,npm ci--ignore-scripts,isolated local env and loopback guards remain; these bound exposure without fixing picomatch"
+  },
+  "decision": "HOLD. No safe published dependency resolution found. Full audit remains failed; no suppression, threshold change, force-fix, unreviewed fork, gate waiver or production authorization",
+  "oldIntegration": {
+    "historicalScope": "stocks-projects-6bb2b313",
+    "readResult": "403; connector consent recovery404 Team not found; no resource settings inspected or altered",
+    "ownerReply": "Already taken care of",
+    "status": "Owner-reported resolved; independent ownership/dependency/deletion proof unavailable. Historical GitHub status alone does not establish a currently active duplicate installation",
+    "intendedIntegration": "Supabase external nonbillable integration icfg_3woyl8mAtdAGG2krp6vmqsjJ belongs to intended team and selects only prj_vg8APVv7HRncrYJCkiti95FyfaqD"
+  },
+  "remainingTransport": "15s observer timeout reproduced in app-page context. Collection6.389s includes4.369s before HTTP request and2.016s request-to-first-byte; repeat318ms HIT. Static-text control two HITs273/285ms with2ms pre-request. Same routing/authentication retained; context differs, no causal isolation of historical19.561s HIT. Requested Vercel trace unavailable404. No new database index/timeout/configuration change justified",
+  "testSafety": "No fixture was recreated. Compile-only child has only PATH/SystemRoot and1s limit. Hosted browser helper blocks non-read methods. Existing with-local-supabase/verificationEnv and loopback assertions remain unchanged",
+  "recordedAt": "2026-11-17T19:46:19.381Z",
+  "audit": {
+    "full": "17 high dependency nodes",
+    "productionNpm": "0;does not cover Next vendor",
+    "fullGate": "failed,unchanged"
+  },
+  "production": {
+    "main": "94011f269dad78f45dc8449198da6d88adec16d7",
+    "deployment": "dpl_HMoTAbkMJUwNxLg3e9tCnkyVH2FS",
+    "intendedProject": "prj_vg8APVv7HRncrYJCkiti95FyfaqD",
+    "domains": [
+      "www.verdict.games",
+      "verdict.games"
+    ],
+    "apexRedirect": 308
+  },
+  "report": "docs/audits/2026-11-15/PRODUCT_REFINEMENT.md",
+  "ci": {
+    "securityBrowser": {
+      "run": 44154317570,
+      "status": "success"
+    },
+    "quality": {
+      "run": 44154317649,
+      "status": "failure",
+      "failedStep": "npm audit --audit-level=high",
+      "unitsPassed": 312,
+      "unitsSkipped": 1
+    }
+  },
+  "preview": {
+    "id": "dpl_BzLCrdEgP7JtBpRCGbN2NnDHbjrk",
+    "url": "https://verdict-games-ko6bgs59u-yogesh-vg0s-projects.vercel.app",
+    "state": "READY",
+    "source": "0a4a0691302e7d6dcfdd366338d952d6d29fae1d"
+  },
+  "pendingProposals": {
+    "privacySha256": "9c8d5f18d33451338320b5a150e5fc5fbf8d0665496384d39fd192d9dd7f2755",
+    "usernameSha256": "27dd8ecd7dd6458c9460c39175ff2e846a566178db6a6ae7bb868f1bacbb8a09",
+    "authSha256": "e28d5798ed53dc90753b714ad955e116e797b8640cfd1ebed218fedea2f2661c",
+    "authFields": 9,
+    "minimumPassword": 15,
+    "applied": false
+  }
+}

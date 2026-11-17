@@ -1,0 +1,526 @@
+{
+  "startedAt": "2026-11-17T14:30:24.900Z",
+  "commit": "b3eb53754e2f89e7b2606f393e0b2e7832da8008",
+  "scope": "Fresh isolated local production build of committed application; actual hosted public catalogue; RAWG disabled; no worker, fixture, hosted configuration or source writes. Initial framework cache removed only inside this owned build. Server role serves normal public durable snapshot/GX matching reads; all hosted mutations are blocked by the verification guard.",
+  "directory": ".verification\\cold-app-20261116-dcbf8b8e1c",
+  "samples": [
+    {
+      "query": {
+        "type": "best-of-year",
+        "page": 1,
+        "pageSize": 40,
+        "platform": "PC"
+      },
+      "status": 200,
+      "ms": 453,
+      "decodedBytes": 13430,
+      "serverTiming": "snapshot;dur=236, matches;dur=183, portraits;dur=1, provider_artwork;dur=1, catalogue_total;dur=423",
+      "cacheControl": "public, s-maxage=3600, stale-while-revalidate=86400",
+      "count": 29,
+      "source": "rawg",
+      "degraded": false,
+      "rows": 29,
+      "fetchedAt": "2026-11-17T09:27:05.713303+00:00",
+      "rawgInterestInvented": false
+    },
+    {
+      "query": {
+        "type": "best-of-year",
+        "page": 2,
+        "pageSize": 40,
+        "platform": "PC"
+      },
+      "status": 200,
+      "ms": 266,
+      "decodedBytes": 309,
+      "serverTiming": "snapshot;dur=0, matches;dur=259, portraits;dur=0, provider_artwork;dur=0, catalogue_total;dur=260",
+      "cacheControl": "public, s-maxage=3600, stale-while-revalidate=86400",
+      "count": 29,
+      "source": "rawg",
+      "degraded": false,
+      "rows": 0,
+      "fetchedAt": "2026-11-17T09:27:05.713303+00:00",
+      "rawgInterestInvented": false
+    },
+    {
+      "query": {
+        "type": "all-time",
+        "page": 1,
+        "pageSize": 40,
+        "platform": "PlayStation 5"
+      },
+      "status": 200,
+      "ms": 564,
+      "decodedBytes": 22015,
+      "serverTiming": "catalogue_query;dur=412, catalogue_artwork;dur=144, catalogue_total;dur=557",
+      "cacheControl": "public, s-maxage=3600, stale-while-revalidate=86400",
+      "count": 37,
+      "source": "catalogue",
+      "degraded": false,
+      "rows": 37,
+      "fetchedAt": "2026-11-17T14:30:58.758801+00:00",
+      "rawgInterestInvented": false
+    },
+    {
+      "query": {
+        "type": "all-time",
+        "page": 2,
+        "pageSize": 40
+      },
+      "status": 200,
+      "ms": 276,
+      "decodedBytes": 22454,
+      "serverTiming": "catalogue_query;dur=271, catalogue_artwork;dur=0, catalogue_total;dur=271",
+      "cacheControl": "public, s-maxage=3600, stale-while-revalidate=86400",
+      "count": 250,
+      "source": "catalogue",
+      "degraded": false,
+      "rows": 40,
+      "fetchedAt": "2026-11-17T14:30:59.188575+00:00",
+      "rawgInterestInvented": false
+    },
+    {
+      "query": {
+        "type": "best-of-year",
+        "page": 1,
+        "pageSize": 40,
+        "platform": "PC"
+      },
+      "status": 200,
+      "ms": 175,
+      "decodedBytes": 13430,
+      "serverTiming": "snapshot;dur=0, matches;dur=171, portraits;dur=0, provider_artwork;dur=0, catalogue_total;dur=171",
+      "cacheControl": "public, s-maxage=3600, stale-while-revalidate=86400",
+      "count": 29,
+      "source": "rawg",
+      "degraded": false,
+      "rows": 29,
+      "fetchedAt": "2026-11-17T09:27:05.713303+00:00",
+      "rawgInterestInvented": false
+    }
+  ],
+  "buildMs": 25277,
+  "frameworkCacheAbsentBeforeStart": true,
+  "stage": "complete",
+  "homepage": [
+    {
+      "path": "/",
+      "ttfbMs": 5856,
+      "status": 200,
+      "ms": 5870,
+      "decodedBytes": 847792,
+      "hasHomepageHeading": true,
+      "hasRuntimeError": false
+    },
+    {
+      "path": "/",
+      "ttfbMs": 5857,
+      "status": 200,
+      "ms": 5871,
+      "decodedBytes": 847792,
+      "hasHomepageHeading": true,
+      "hasRuntimeError": false
+    }
+  ],
+  "network": {
+    "rpcReads": 3,
+    "legacyGameReads": 12,
+    "durableReads": 3,
+    "rawgAttempts": 0,
+    "posterHeads": 1,
+    "blockedWrites": 0,
+    "reads": [
+      {
+        "path": "/rest/v1/games",
+        "startedAt": "2026-11-17T14:30:51.357Z",
+        "columns": "id,slug,title,subtitle,cover_image,header_image,platforms,genres,tags,developer,publisher,release_date,score,verdict_score,verdict_label,verdict_summary,confidence,review_count,monetization,steam_total_count,critic_source_count,price_current,price_currency,is_free,price_deal_url,price_lowest,current_players,peak_players_24h,momentum,trending,featured,is_featured_manual,is_trending_manual,is_provisional,release_status,community_score,critic_score,score_source,user_score,steam_rating_label,rawg_metacritic,rawg_rating,steam_app_id,created_at,updated_at,description",
+        "order": "release_date.desc",
+        "limit": "60",
+        "offset": null,
+        "status": 200,
+        "bytes": 14888,
+        "ms": 1812
+      },
+      {
+        "path": "/rest/v1/games",
+        "startedAt": "2026-11-17T14:30:51.367Z",
+        "columns": "id,slug,title,subtitle,cover_image,header_image,platforms,genres,tags,developer,publisher,release_date,score,verdict_score,verdict_label,verdict_summary,confidence,review_count,monetization,steam_total_count,critic_source_count,price_current,price_currency,is_free,price_deal_url,price_lowest,current_players,peak_players_24h,momentum,trending,featured,is_featured_manual,is_trending_manual,is_provisional,release_status,community_score,critic_score,score_source,user_score,steam_rating_label,rawg_metacritic,rawg_rating,steam_app_id,created_at,updated_at,description",
+        "order": null,
+        "limit": "40",
+        "offset": null,
+        "status": 200,
+        "bytes": 2,
+        "ms": 1740
+      },
+      {
+        "path": "/rest/v1/games",
+        "startedAt": "2026-11-17T14:30:51.368Z",
+        "columns": "id,slug,title,subtitle,cover_image,header_image,platforms,genres,tags,developer,publisher,release_date,score,verdict_score,verdict_label,verdict_summary,confidence,review_count,monetization,steam_total_count,critic_source_count,price_current,price_currency,is_free,price_deal_url,price_lowest,current_players,peak_players_24h,momentum,trending,featured,is_featured_manual,is_trending_manual,is_provisional,release_status,community_score,critic_score,score_source,user_score,steam_rating_label,rawg_metacritic,rawg_rating,steam_app_id,created_at,updated_at,description",
+        "order": "release_date.desc",
+        "limit": "120",
+        "offset": null,
+        "status": 200,
+        "bytes": 207099,
+        "ms": 2263
+      },
+      {
+        "path": "/rest/v1/gx_cache",
+        "startedAt": "2026-11-17T14:30:51.369Z",
+        "columns": "payload,fetched_at",
+        "order": null,
+        "limit": null,
+        "offset": null,
+        "status": 200,
+        "bytes": 278179,
+        "ms": 1808
+      },
+      {
+        "path": "/rest/v1/gx_cache",
+        "startedAt": "2026-11-17T14:30:51.372Z",
+        "columns": "payload,fetched_at",
+        "order": null,
+        "limit": null,
+        "offset": null,
+        "error": "TimeoutError",
+        "ms": 1512
+      },
+      {
+        "path": "/rest/v1/rpc/explore_catalogue_page",
+        "startedAt": "2026-11-17T14:30:52.931Z",
+        "columns": null,
+        "order": null,
+        "limit": null,
+        "offset": null,
+        "status": 200,
+        "bytes": 16029,
+        "ms": 1798
+      },
+      {
+        "path": "/rest/v1/games",
+        "startedAt": "2026-11-17T14:30:53.108Z",
+        "columns": "id,slug,title,subtitle,cover_image,header_image,platforms,genres,tags,developer,publisher,release_date,score,verdict_score,verdict_label,verdict_summary,confidence,review_count,monetization,steam_total_count,critic_source_count,price_current,price_currency,is_free,price_deal_url,price_lowest,current_players,peak_players_24h,momentum,trending,featured,is_featured_manual,is_trending_manual,is_provisional,release_status,community_score,critic_score,score_source,user_score,steam_rating_label,rawg_metacritic,rawg_rating,steam_app_id,created_at,updated_at,description",
+        "order": "is_trending_manual.desc.nullslast,trending.desc.nullslast,current_players.desc.nullslast,momentum.desc.nullslast,verdict_score.desc.nullslast,review_count.desc.nullslast,score.desc",
+        "limit": "120",
+        "offset": null,
+        "status": 200,
+        "bytes": 236046,
+        "ms": 1380
+      },
+      {
+        "path": "/rest/v1/games",
+        "startedAt": "2026-11-17T14:30:53.170Z",
+        "columns": "id,slug,title,subtitle,cover_image,header_image,platforms,genres,tags,developer,publisher,release_date,score,verdict_score,verdict_label,verdict_summary,confidence,review_count,monetization,steam_total_count,critic_source_count,price_current,price_currency,is_free,price_deal_url,price_lowest,current_players,peak_players_24h,momentum,trending,featured,is_featured_manual,is_trending_manual,is_provisional,release_status,community_score,critic_score,score_source,user_score,steam_rating_label,rawg_metacritic,rawg_rating,steam_app_id,created_at,updated_at,description",
+        "order": "verdict_score.desc.nullslast,score.desc",
+        "limit": "4",
+        "offset": null,
+        "status": 200,
+        "bytes": 2,
+        "ms": 637
+      },
+      {
+        "path": "/rest/v1/games",
+        "startedAt": "2026-11-17T14:30:53.808Z",
+        "columns": "id,slug,title,subtitle,cover_image,header_image,platforms,genres,tags,developer,publisher,release_date,score,verdict_score,verdict_label,verdict_summary,confidence,review_count,monetization,steam_total_count,critic_source_count,price_current,price_currency,is_free,price_deal_url,price_lowest,current_players,peak_players_24h,momentum,trending,featured,is_featured_manual,is_trending_manual,is_provisional,release_status,community_score,critic_score,score_source,user_score,steam_rating_label,rawg_metacritic,rawg_rating,steam_app_id,created_at,updated_at,description",
+        "order": "verdict_score.desc.nullslast,score.desc",
+        "limit": "40",
+        "offset": null,
+        "status": 200,
+        "bytes": 79143,
+        "ms": 973
+      },
+      {
+        "path": "/rest/v1/games",
+        "startedAt": "2026-11-17T14:30:54.785Z",
+        "columns": "id,slug,title,subtitle,cover_image,header_image,platforms,genres,tags,developer,publisher,release_date,score,verdict_score,verdict_label,verdict_summary,confidence,review_count,monetization,steam_total_count,critic_source_count,price_current,price_currency,is_free,price_deal_url,price_lowest,current_players,peak_players_24h,momentum,trending,featured,is_featured_manual,is_trending_manual,is_provisional,release_status,community_score,critic_score,score_source,user_score,steam_rating_label,rawg_metacritic,rawg_rating,steam_app_id,created_at,updated_at,description",
+        "order": "verdict_score.desc.nullslast,confidence.desc.nullslast,score.desc",
+        "limit": "180",
+        "offset": null,
+        "status": 200,
+        "bytes": 345307,
+        "ms": 895
+      },
+      {
+        "path": "/rest/v1/games",
+        "startedAt": "2026-11-17T14:30:55.684Z",
+        "columns": "id,slug,title,subtitle,cover_image,header_image,platforms,genres,tags,developer,publisher,release_date,score,verdict_score,verdict_label,verdict_summary,confidence,review_count,monetization,steam_total_count,critic_source_count,price_current,price_currency,is_free,price_deal_url,price_lowest,current_players,peak_players_24h,momentum,trending,featured,is_featured_manual,is_trending_manual,is_provisional,release_status,community_score,critic_score,score_source,user_score,steam_rating_label,rawg_metacritic,rawg_rating,steam_app_id,created_at,updated_at,description",
+        "order": "verdict_score.desc.nullslast,confidence.desc.nullslast,score.desc",
+        "limit": "240",
+        "offset": null,
+        "status": 200,
+        "bytes": 480041,
+        "ms": 748
+      },
+      {
+        "path": "/rest/v1/games",
+        "startedAt": "2026-11-17T14:30:56.439Z",
+        "columns": "id,slug,title,subtitle,cover_image,header_image,platforms,genres,tags,developer,publisher,release_date,score,verdict_score,verdict_label,verdict_summary,confidence,review_count,monetization,steam_total_count,critic_source_count,price_current,price_currency,is_free,price_deal_url,price_lowest,current_players,peak_players_24h,momentum,trending,featured,is_featured_manual,is_trending_manual,is_provisional,release_status,community_score,critic_score,score_source,user_score,steam_rating_label,rawg_metacritic,rawg_rating,steam_app_id,created_at,updated_at,description",
+        "order": "verdict_score.desc.nullslast,score.desc",
+        "limit": "160",
+        "offset": null,
+        "status": 200,
+        "bytes": 315555,
+        "ms": 572
+      },
+      {
+        "path": "/rest/v1/gx_cache",
+        "startedAt": "2026-11-17T14:30:57.141Z",
+        "columns": "payload,fetched_at",
+        "order": null,
+        "limit": null,
+        "offset": null,
+        "status": 200,
+        "bytes": 94380,
+        "ms": 231
+      },
+      {
+        "path": "/rest/v1/games",
+        "startedAt": "2026-11-17T14:30:57.375Z",
+        "columns": "rawg_id,slug,cover_image,header_image,steam_app_id,tags,genres,release_status",
+        "order": null,
+        "limit": null,
+        "offset": null,
+        "status": 200,
+        "bytes": 1287,
+        "ms": 182
+      },
+      {
+        "path": "/rest/v1/games",
+        "startedAt": "2026-11-17T14:30:57.568Z",
+        "columns": "rawg_id,slug,cover_image,header_image,steam_app_id,tags,genres,release_status",
+        "order": null,
+        "limit": null,
+        "offset": null,
+        "status": 200,
+        "bytes": 1287,
+        "ms": 257
+      },
+      {
+        "path": "/rest/v1/rpc/explore_catalogue_page",
+        "startedAt": "2026-11-17T14:30:57.834Z",
+        "columns": null,
+        "order": null,
+        "limit": null,
+        "offset": null,
+        "status": 200,
+        "bytes": 30802,
+        "ms": 410
+      },
+      {
+        "path": "/rest/v1/rpc/explore_catalogue_page",
+        "startedAt": "2026-11-17T14:30:58.396Z",
+        "columns": null,
+        "order": null,
+        "limit": null,
+        "offset": null,
+        "status": 200,
+        "bytes": 32350,
+        "ms": 270
+      },
+      {
+        "path": "/rest/v1/games",
+        "startedAt": "2026-11-17T14:30:58.672Z",
+        "columns": "rawg_id,slug,cover_image,header_image,steam_app_id,tags,genres,release_status",
+        "order": null,
+        "limit": null,
+        "offset": null,
+        "status": 200,
+        "bytes": 1287,
+        "ms": 170
+      }
+    ]
+  },
+  "scenarios": [
+    {
+      "mode": "early-reset",
+      "freshProcess": true,
+      "frameworkCacheCleared": true,
+      "samples": [
+        {
+          "attempt": 0,
+          "query": {
+            "type": "all-time",
+            "page": 1,
+            "pageSize": 40
+          },
+          "probeBudgetMs": 30000,
+          "status": 200,
+          "ms": 386,
+          "decodedBytes": 22176,
+          "headers": {
+            "server-timing": "catalogue_query;dur=359, catalogue_artwork;dur=0, catalogue_total;dur=360",
+            "cache-control": "public, s-maxage=3600, stale-while-revalidate=86400",
+            "cdn-cache-control": null,
+            "vercel-cdn-cache-control": null,
+            "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch, Accept-Encoding"
+          },
+          "source": "catalogue",
+          "count": 250,
+          "degraded": false
+        },
+        {
+          "attempt": 1,
+          "query": {
+            "type": "all-time",
+            "page": 2,
+            "pageSize": 40
+          },
+          "probeBudgetMs": 30000,
+          "status": 200,
+          "ms": 836,
+          "decodedBytes": 22454,
+          "headers": {
+            "server-timing": "catalogue_query;dur=272, catalogue_artwork;dur=558, catalogue_total;dur=831",
+            "cache-control": "public, s-maxage=3600, stale-while-revalidate=86400",
+            "cdn-cache-control": null,
+            "vercel-cdn-cache-control": null,
+            "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch, Accept-Encoding"
+          },
+          "source": "catalogue",
+          "count": 250,
+          "degraded": false
+        }
+      ],
+      "network": {
+        "rpcReads": 3,
+        "legacyGameReads": 0,
+        "durableReads": 0,
+        "rawgAttempts": 0,
+        "posterHeads": 1,
+        "blockedWrites": 0,
+        "reads": [
+          {
+            "path": "/rest/v1/rpc/explore_catalogue_page",
+            "startedAt": "2026-11-17T14:30:59.886Z",
+            "columns": null,
+            "order": null,
+            "limit": null,
+            "offset": null,
+            "status": 200,
+            "bytes": 32083,
+            "ms": 353
+          },
+          {
+            "path": "/rest/v1/rpc/explore_catalogue_page",
+            "startedAt": "2026-11-17T14:31:00.247Z",
+            "columns": null,
+            "order": null,
+            "limit": null,
+            "offset": null,
+            "status": 200,
+            "bytes": 32350,
+            "ms": 271
+          }
+        ]
+      }
+    },
+    {
+      "mode": "repeat-reset",
+      "freshProcess": true,
+      "frameworkCacheCleared": true,
+      "samples": [
+        {
+          "attempt": 0,
+          "query": {
+            "type": "all-time",
+            "page": 1,
+            "pageSize": 40
+          },
+          "probeBudgetMs": 30000,
+          "status": 503,
+          "ms": 30,
+          "decodedBytes": 96,
+          "headers": {
+            "server-timing": "catalogue_query;dur=5, catalogue_total;dur=5",
+            "cache-control": "private, no-store, max-age=0",
+            "cdn-cache-control": "private, no-store",
+            "vercel-cdn-cache-control": "private, no-store",
+            "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch, Cookie, Accept-Encoding"
+          }
+        },
+        {
+          "attempt": 1,
+          "query": {
+            "type": "all-time",
+            "page": 2,
+            "pageSize": 40
+          },
+          "probeBudgetMs": 30000,
+          "status": 503,
+          "ms": 6,
+          "decodedBytes": 96,
+          "headers": {
+            "server-timing": "catalogue_query;dur=3, catalogue_total;dur=3",
+            "cache-control": "private, no-store, max-age=0",
+            "cdn-cache-control": "private, no-store",
+            "vercel-cdn-cache-control": "private, no-store",
+            "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch, Cookie, Accept-Encoding"
+          }
+        }
+      ],
+      "network": {
+        "rpcReads": 4,
+        "legacyGameReads": 0,
+        "durableReads": 0,
+        "rawgAttempts": 0,
+        "posterHeads": 0,
+        "blockedWrites": 0,
+        "reads": []
+      }
+    },
+    {
+      "mode": "database-failure",
+      "freshProcess": true,
+      "frameworkCacheCleared": true,
+      "samples": [
+        {
+          "attempt": 0,
+          "query": {
+            "type": "all-time",
+            "page": 1,
+            "pageSize": 40
+          },
+          "probeBudgetMs": 30000,
+          "status": 503,
+          "ms": 29,
+          "decodedBytes": 96,
+          "headers": {
+            "server-timing": "catalogue_query;dur=5, catalogue_total;dur=5",
+            "cache-control": "private, no-store, max-age=0",
+            "cdn-cache-control": "private, no-store",
+            "vercel-cdn-cache-control": "private, no-store",
+            "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch, Cookie, Accept-Encoding"
+          }
+        },
+        {
+          "attempt": 1,
+          "query": {
+            "type": "all-time",
+            "page": 2,
+            "pageSize": 40
+          },
+          "probeBudgetMs": 30000,
+          "status": 503,
+          "ms": 12,
+          "decodedBytes": 96,
+          "headers": {
+            "server-timing": "catalogue_query;dur=8, catalogue_total;dur=8",
+            "cache-control": "private, no-store, max-age=0",
+            "cdn-cache-control": "private, no-store",
+            "vercel-cdn-cache-control": "private, no-store",
+            "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch, Cookie, Accept-Encoding"
+          }
+        }
+      ],
+      "network": {
+        "rpcReads": 2,
+        "legacyGameReads": 0,
+        "durableReads": 0,
+        "rawgAttempts": 0,
+        "posterHeads": 0,
+        "blockedWrites": 0,
+        "reads": []
+      }
+    }
+  ],
+  "completedAt": "2026-11-17T14:31:03.220Z"
+}

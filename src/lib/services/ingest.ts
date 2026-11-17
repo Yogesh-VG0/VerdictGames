@@ -38,7 +38,8 @@ import {
 } from "../external/steam";
 import { findCheapSharkDeal } from "../external/cheapshark";
 import { findIgdbMatch, extractIgdbEnrichment, isIgdbConfigured } from "../external/igdb";
-import { validateAndGetSteamCover, isMediaUpgrade, MEDIA_SOURCE_PRIORITY } from "../utils/mediaReadiness";
+import { validateAndGetSteamCover } from "../utils/mediaReadiness";
+import { preferExistingCover } from '../utils/artwork-policy.mjs';
 import { findGameWikiSummary } from "../external/wikipedia";
 import { fetchHLTBData } from "../external/howlongtobeat";
 import { slugify } from "../utils/slugify";
@@ -183,9 +184,9 @@ export async function ingestGame(options: IngestOptions): Promise<IngestResult> 
   // ── Step 2: Check if game already exists ──
   const { data: existing } = await supabase
     .from("games")
-    .select("id, slug")
+    .select("id, slug, cover_image, media_source")
     .or(`slug.eq.${slug},rawg_id.eq.${bestMatch.id}`)
-    .maybeSingle() as { data: { id: string; slug: string } | null };
+    .maybeSingle() as { data: { id: string; slug: string; cover_image: string; media_source: string | null } | null };
 
   if (existing && !forceRefresh) {
     return {
@@ -397,13 +398,7 @@ export async function ingestGame(options: IngestOptions): Promise<IngestResult> 
     mediaSource = "igdb";
     console.log(`  [cover] ${fullGame.name}: Using IGDB cover (priority 1)`);
   }
-  // Priority 2: RAWG background image
-  else if (rawgCover) {
-    finalCover = rawgCover;
-    mediaSource = "rawg";
-    console.log(`  [cover] ${fullGame.name}: Using RAWG background (priority 2)`);
-  }
-  // Priority 3: Steam validated cover (last resort)
+  // Priority 2: validated official Steam portrait before a landscape fallback.
   else if (steamAppId) {
     const steamResult = await validateAndGetSteamCover(steamAppId);
     if (steamResult?.coverUrl) {
@@ -417,6 +412,12 @@ export async function ingestGame(options: IngestOptions): Promise<IngestResult> 
   // No cover found
   else {
     console.log(`  [cover] ${fullGame.name}: No cover sources available`);
+  }
+
+  if (!finalCover && rawgCover) { finalCover = rawgCover; mediaSource = 'rawg'; }
+  if (existing && preferExistingCover(existing.cover_image, finalCover)) {
+    finalCover = existing.cover_image;
+    mediaSource = existing.media_source;
   }
 
   const finalScreenshots = igdbScreenshots.length > 0 ? igdbScreenshots : screenshotUrls;
@@ -1021,7 +1022,7 @@ function generateSmartCons(
   }
 
   if (tags.includes("difficult") || tags.includes("souls-like")) cons.push("Steep difficulty curve may not appeal to casual players");
-  if (tags.includes("early access")) cons.push("Still in Early Access — content may be incomplete");
+  // RAWG tags are historical/community labels, not current release-state evidence.
   if (tags.includes("microtransactions") || tags.includes("in-app purchases")) cons.push("Contains microtransactions");
   if (tags.includes("grinding") || tags.includes("grindy")) cons.push("Can require significant grinding");
 

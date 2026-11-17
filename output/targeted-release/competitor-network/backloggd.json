@@ -1,0 +1,112 @@
+{
+  "name": "backloggd",
+  "url": "https://backloggd.com/lists/",
+  "measuredAt": "2026-11-16T08:08:58.218Z",
+  "conditions": "New anonymous context per site; Chrome 1440x1000 DPR1; unthrottled CPU/network; origin cache unknown; ordinary page requests including automatic prefetch; no access challenge bypass",
+  "observed": {
+    "url": "https://backloggd.com/lists/",
+    "title": "Oh noes!",
+    "readyState": "complete",
+    "restricted": true,
+    "headings": [
+      "Oh noes!"
+    ],
+    "viewport": {
+      "w": 1440,
+      "h": 1000,
+      "dpr": 1
+    },
+    "navigation": {
+      "status": 200,
+      "ttfbMs": 1273,
+      "responseEndMs": 1275,
+      "domInteractiveMs": 1279,
+      "loadEventEndMs": 1651,
+      "durationMs": 1651,
+      "transfer": 1321,
+      "encoded": 1021,
+      "decoded": 2227
+    },
+    "paints": [
+      {
+        "name": "first-paint",
+        "ms": 1696
+      },
+      {
+        "name": "first-contentful-paint",
+        "ms": 1696
+      }
+    ],
+    "requestCount": 4,
+    "observableTransferBytes": 12242,
+    "bytesLimitation": "ResourceTiming bytes may be zero for cross-origin resources without Timing-Allow-Origin; this is not total traffic",
+    "byType": {
+      "link": 2,
+      "img": 1,
+      "other": 1
+    },
+    "byHost": {
+      "backloggd.com": 4
+    },
+    "images": [
+      {
+        "url": "https://backloggd.com/.within.website/x/cmd/anubis/static/img/reject.webp",
+        "w": 384,
+        "h": 384
+      }
+    ],
+    "requests": [
+      {
+        "url": "https://backloggd.com/.within.website/x/xess/xess.min.css",
+        "type": "link",
+        "start": 1277,
+        "ms": 345,
+        "transfer": 1039,
+        "encoded": 739,
+        "decoded": 1692
+      },
+      {
+        "url": "https://backloggd.com/.within.website/x/cmd/anubis/static/img/reject.webp",
+        "type": "img",
+        "start": 1277,
+        "ms": 367,
+        "transfer": 7562,
+        "encoded": 7262,
+        "decoded": 7262
+      },
+      {
+        "url": "https://backloggd.com/.within.website/x/cmd/anubis/static/css/custom.css",
+        "type": "link",
+        "start": 1277,
+        "ms": 373,
+        "transfer": 402,
+        "encoded": 102,
+        "decoded": 113
+      },
+      {
+        "url": "https://backloggd.com/favicon.ico",
+        "type": "other",
+        "start": 1670,
+        "ms": 884,
+        "transfer": 3239,
+        "encoded": 2939,
+        "decoded": 67646
+      }
+    ]
+  },
+  "responses": [
+    {
+      "url": "https://backloggd.com/lists/",
+      "type": "document",
+      "status": 200,
+      "method": "GET",
+      "headers": {
+        "cache-control": "public, max-age=0",
+        "content-type": "text/html; charset=utf-8",
+        "vary": "Accept-Encoding",
+        "server": "BunnyCDN-MU1-1528",
+        "cf-cache-status": "DYNAMIC"
+      }
+    }
+  ]
+}

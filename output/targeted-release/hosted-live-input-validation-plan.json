@@ -1,0 +1,88 @@
+{
+  "measuredAt": "2026-11-16T16:54:10.225Z",
+  "scope": "Read-only estimated and actual input-equality SELECT;3s bound, no readiness update, source write or setting change",
+  "storage": [
+    {
+      "relname": "games",
+      "reltuples": 8355,
+      "relpages": 4721,
+      "bytes": "81870848"
+    },
+    {
+      "relname": "explore_inputs",
+      "reltuples": 8355,
+      "relpages": 446,
+      "bytes": "3973120"
+    }
+  ],
+  "estimatedPlan": [
+    {
+      "Plan": {
+        "Node Type": "Aggregate",
+        "Strategy": "Plain",
+        "Partial Mode": "Simple",
+        "Parallel Aware": false,
+        "Async Capable": false,
+        "Startup Cost": 5481.42,
+        "Total Cost": 5481.43,
+        "Plan Rows": 1,
+        "Plan Width": 8,
+        "Plans": [
+          {
+            "Node Type": "Hash Join",
+            "Parent Relationship": "Outer",
+            "Parallel Aware": false,
+            "Async Capable": false,
+            "Join Type": "Full",
+            "Startup Cost": 633.99,
+            "Total Cost": 5460.54,
+            "Plan Rows": 8355,
+            "Plan Width": 0,
+            "Inner Unique": true,
+            "Hash Cond": "(g.id = i.id)",
+            "Filter": "((g.id IS NULL) OR (i.id IS NULL) OR (g.id IS DISTINCT FROM i.id) OR (g.slug IS DISTINCT FROM i.slug) OR (g.title IS DISTINCT FROM i.title) OR (g.release_date IS DISTINCT FROM i.release_date) OR (g.steam_app_id IS DISTINCT FROM i.steam_app_id) OR (g.review_count IS DISTINCT FROM i.review_count) OR (g.platforms IS DISTINCT FROM i.platforms) OR (g.genres IS DISTINCT FROM i.genres) OR (g.tags IS DISTINCT FROM i.tags) OR (g.created_at IS DISTINCT FROM i.created_at) OR (g.current_players IS DISTINCT FROM i.current_players) OR (g.verdict_score IS DISTINCT FROM i.verdict_score) OR (g.score IS DISTINCT FROM i.score) OR (g.confidence IS DISTINCT FROM i.confidence) OR (g.release_status IS DISTINCT FROM i.release_status) OR (g.explore_title_key IS DISTINCT FROM i.explore_title_key) OR (g.explore_year_suffix IS DISTINCT FROM i.explore_year_suffix) OR (g.explore_franchise_key IS DISTINCT FROM i.explore_franchise_key) OR (g.explore_developer_key IS DISTINCT FROM i.explore_developer_key) OR (g.explore_publisher_key IS DISTINCT FROM i.explore_publisher_key) OR (g.explore_primary_safe IS DISTINCT FROM i.explore_primary_safe) OR (g.explore_early_access IS DISTINCT FROM i.explore_early_access))",
+            "Plans": [
+              {
+                "Node Type": "Seq Scan",
+                "Parent Relationship": "Outer",
+                "Parallel Aware": false,
+                "Async Capable": false,
+                "Relation Name": "games",
+                "Alias": "g",
+                "Startup Cost": 0,
+                "Total Cost": 4804.55,
+                "Plan Rows": 8355,
+                "Plan Width": 407
+              },
+              {
+                "Node Type": "Hash",
+                "Parent Relationship": "Inner",
+                "Parallel Aware": false,
+                "Async Capable": false,
+                "Startup Cost": 529.55,
+                "Total Cost": 529.55,
+                "Plan Rows": 8355,
+                "Plan Width": 414,
+                "Plans": [
+                  {
+                    "Node Type": "Seq Scan",
+                    "Parent Relationship": "Outer",
+                    "Parallel Aware": false,
+                    "Async Capable": false,
+                    "Relation Name": "explore_inputs",
+                    "Alias": "i",
+                    "Startup Cost": 0,
+                    "Total Cost": 529.55,
+                    "Plan Rows": 8355,
+                    "Plan Width": 414
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "actualError": "57014"
+}

@@ -1,0 +1,84 @@
+{
+  "name": "igdb",
+  "url": "https://www.igdb.com",
+  "measuredAt": "2026-11-16T08:08:33.507Z",
+  "conditions": "New anonymous context per site; Chrome 1440x1000 DPR1; unthrottled CPU/network; origin cache unknown; ordinary page requests including automatic prefetch; no access challenge bypass",
+  "observed": {
+    "url": "https://www.igdb.com/",
+    "title": "Just a moment...",
+    "readyState": "interactive",
+    "restricted": true,
+    "headings": [
+      "www.igdb.com",
+      "Performing security verification",
+      "Verification successful. Waiting for www.igdb.com to respond"
+    ],
+    "viewport": {
+      "w": 1440,
+      "h": 1000,
+      "dpr": 1
+    },
+    "navigation": {
+      "status": 403,
+      "ttfbMs": 194,
+      "responseEndMs": 194,
+      "domInteractiveMs": 208,
+      "loadEventEndMs": 0,
+      "durationMs": 0,
+      "transfer": 3901,
+      "encoded": 3601,
+      "decoded": 6160
+    },
+    "paints": [],
+    "requestCount": 2,
+    "observableTransferBytes": 234082,
+    "bytesLimitation": "ResourceTiming bytes may be zero for cross-origin resources without Timing-Allow-Origin; this is not total traffic",
+    "byType": {
+      "script": 2
+    },
+    "byHost": {
+      "www.igdb.com": 1,
+      "challenges.cloudflare.com": 1
+    },
+    "images": [],
+    "requests": [
+      {
+        "url": "https://www.igdb.com/cdn-cgi/challenge-platform/h/b/orchestrate/chl_page/v1",
+        "type": "script",
+        "start": 207,
+        "ms": 483,
+        "transfer": 205748,
+        "encoded": 205448,
+        "decoded": 626140
+      },
+      {
+        "url": "https://challenges.cloudflare.com/turnstile/v0/b/f8df4d4a0cd6/api.js",
+        "type": "script",
+        "start": 728,
+        "ms": 74,
+        "transfer": 28334,
+        "encoded": 28034,
+        "decoded": 86968
+      }
+    ]
+  },
+  "responses": [
+    {
+      "url": "https://www.igdb.com/",
+      "type": "document",
+      "status": 307,
+      "method": "GET",
+      "headers": {}
+    },
+    {
+      "url": "https://www.igdb.com/",
+      "type": "document",
+      "status": 403,
+      "method": "GET",
+      "headers": {
+        "content-type": "text/html; charset=UTF-8",
+        "server": "cloudflare"
+      }
+    }
+  ]
+}

@@ -1,7 +1,8 @@
-import { jsonOk } from "@/lib/api/response";
+import { jsonPrivateOk as jsonOk } from "@/lib/api/response";
 import { requireAdmin } from "@/lib/admin";
 import { getServerSupabase } from "@/lib/supabase/server";
 import { NextRequest } from "next/server";
+import { parseSchedulerMetadata } from '@/lib/scheduler-metadata';
 
 export async function GET(req: NextRequest) {
   const { error } = await requireAdmin();
@@ -39,7 +40,7 @@ export async function GET(req: NextRequest) {
   // Also fetch summary stats
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: stats } = await (supabase.from("scheduler_runs") as any)
-    .select("job_name, status, started_at")
+    .select("job_name, status, started_at, metadata")
     .gte("started_at", new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
     .order("started_at", { ascending: false });
 
@@ -50,25 +51,32 @@ export async function GET(req: NextRequest) {
     error: number;
     running: number;
     stale: number;
+    deferred: number;
     lastRun: string | null;
+    lastSuccess: string | null;
     lastStatus: string | null;
   }> = {};
 
   for (const row of (stats ?? [])) {
     if (!jobSummary[row.job_name]) {
-      jobSummary[row.job_name] = { total: 0, success: 0, error: 0, running: 0, stale: 0, lastRun: null, lastStatus: null };
+      jobSummary[row.job_name] = { total: 0, success: 0, error: 0, running: 0, stale: 0, deferred: 0, lastRun: null, lastSuccess: null, lastStatus: null };
     }
     const s = jobSummary[row.job_name];
     s.total++;
-    if (row.status === "success") s.success++;
+    // Older health checks stored deferrals as errors. Preserve that history
+    // while making their operational meaning visible in the dashboard.
+    const status = parseSchedulerMetadata(row.metadata)?.outcome === 'deferred' ? 'deferred' : row.status;
+    if (status === "success") { s.success++; s.lastSuccess ??= row.started_at; }
+    else if (status === "deferred") s.deferred++;
     else if (row.status === "error") s.error++;
     else if (row.status === "running") s.running++;
     else if (row.status === "stale") s.stale++;
     if (!s.lastRun) {
       s.lastRun = row.started_at;
-      s.lastStatus = row.status;
+      s.lastStatus = status;
     }
   }
 
-  return jsonOk({ runs: data ?? [], summary: jobSummary });
+  return jsonOk({ runs: (data ?? []).map((row: { status: string; metadata?: unknown }) =>
+    parseSchedulerMetadata(row.metadata)?.outcome === 'deferred' ? { ...row, status: 'deferred' } : row), summary: jobSummary });
 }

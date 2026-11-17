@@ -1,0 +1,273 @@
+{
+  "measuredAt": "2026-11-16T17:53:10.567Z",
+  "scope": "Hosted read-only actual plans after first HTTP probes; storage/cache warmed to unknown extent; no source writes or configuration changes; 3s diagnostic statement cap",
+  "samples": [
+    {
+      "args": [
+        "all-time",
+        0,
+        "",
+        "PlayStation 5",
+        "default",
+        1,
+        40,
+        "2026-11-16",
+        "rating"
+      ],
+      "guard": true,
+      "functionPlan": [
+        {
+          "Plan": {
+            "Node Type": "Result",
+            "Parallel Aware": false,
+            "Async Capable": false,
+            "Startup Cost": 0,
+            "Total Cost": 0.26,
+            "Plan Rows": 1,
+            "Plan Width": 32,
+            "Actual Startup Time": 528.787,
+            "Actual Total Time": 528.787,
+            "Actual Rows": 1,
+            "Actual Loops": 1,
+            "Shared Hit Blocks": 2147,
+            "Shared Read Blocks": 0,
+            "Shared Dirtied Blocks": 0,
+            "Shared Written Blocks": 0,
+            "Local Hit Blocks": 0,
+            "Local Read Blocks": 0,
+            "Local Dirtied Blocks": 0,
+            "Local Written Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          "Planning": {
+            "Shared Hit Blocks": 0,
+            "Shared Read Blocks": 0,
+            "Shared Dirtied Blocks": 0,
+            "Shared Written Blocks": 0,
+            "Local Hit Blocks": 0,
+            "Local Read Blocks": 0,
+            "Local Dirtied Blocks": 0,
+            "Local Written Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          "Planning Time": 0.025,
+          "Triggers": [],
+          "Execution Time": 528.817
+        }
+      ],
+      "functionClientMs": 658,
+      "failed": true,
+      "code": "22P02"
+    },
+    {
+      "args": [
+        "all-time",
+        0,
+        "",
+        "",
+        "default",
+        2,
+        40,
+        "2026-11-16",
+        "rating"
+      ],
+      "guard": true,
+      "functionPlan": [
+        {
+          "Plan": {
+            "Node Type": "Result",
+            "Parallel Aware": false,
+            "Async Capable": false,
+            "Startup Cost": 0,
+            "Total Cost": 0.26,
+            "Plan Rows": 1,
+            "Plan Width": 32,
+            "Actual Startup Time": 114.695,
+            "Actual Total Time": 114.697,
+            "Actual Rows": 1,
+            "Actual Loops": 1,
+            "Shared Hit Blocks": 593,
+            "Shared Read Blocks": 0,
+            "Shared Dirtied Blocks": 0,
+            "Shared Written Blocks": 0,
+            "Local Hit Blocks": 0,
+            "Local Read Blocks": 0,
+            "Local Dirtied Blocks": 0,
+            "Local Written Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          "Planning": {
+            "Shared Hit Blocks": 0,
+            "Shared Read Blocks": 0,
+            "Shared Dirtied Blocks": 0,
+            "Shared Written Blocks": 0,
+            "Local Hit Blocks": 0,
+            "Local Read Blocks": 0,
+            "Local Dirtied Blocks": 0,
+            "Local Written Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          "Planning Time": 0.022,
+          "Triggers": [],
+          "Execution Time": 114.718
+        }
+      ],
+      "functionClientMs": 230,
+      "failed": true,
+      "code": "22P02"
+    },
+    {
+      "args": [
+        "genre",
+        0,
+        "RPG",
+        "PC",
+        "rating",
+        2,
+        40,
+        "2026-11-16",
+        "rating"
+      ],
+      "guard": true,
+      "functionPlan": [
+        {
+          "Plan": {
+            "Node Type": "Result",
+            "Parallel Aware": false,
+            "Async Capable": false,
+            "Startup Cost": 0,
+            "Total Cost": 0.26,
+            "Plan Rows": 1,
+            "Plan Width": 32,
+            "Actual Startup Time": 81.795,
+            "Actual Total Time": 81.796,
+            "Actual Rows": 1,
+            "Actual Loops": 1,
+            "Shared Hit Blocks": 612,
+            "Shared Read Blocks": 0,
+            "Shared Dirtied Blocks": 0,
+            "Shared Written Blocks": 0,
+            "Local Hit Blocks": 0,
+            "Local Read Blocks": 0,
+            "Local Dirtied Blocks": 0,
+            "Local Written Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          "Planning": {
+            "Shared Hit Blocks": 0,
+            "Shared Read Blocks": 0,
+            "Shared Dirtied Blocks": 0,
+            "Shared Written Blocks": 0,
+            "Local Hit Blocks": 0,
+            "Local Read Blocks": 0,
+            "Local Dirtied Blocks": 0,
+            "Local Written Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          "Planning Time": 0.023,
+          "Triggers": [],
+          "Execution Time": 81.827
+        }
+      ],
+      "functionClientMs": 197,
+      "failed": true,
+      "code": "22P02"
+    },
+    {
+      "args": [
+        "best-of-year",
+        0,
+        "",
+        "PC",
+        "default",
+        1,
+        40,
+        "2026-11-16",
+        "popular"
+      ],
+      "guard": true,
+      "functionPlan": [
+        {
+          "Plan": {
+            "Node Type": "Result",
+            "Parallel Aware": false,
+            "Async Capable": false,
+            "Startup Cost": 0,
+            "Total Cost": 0.26,
+            "Plan Rows": 1,
+            "Plan Width": 32,
+            "Actual Startup Time": 89.59,
+            "Actual Total Time": 89.59,
+            "Actual Rows": 1,
+            "Actual Loops": 1,
+            "Shared Hit Blocks": 619,
+            "Shared Read Blocks": 0,
+            "Shared Dirtied Blocks": 0,
+            "Shared Written Blocks": 0,
+            "Local Hit Blocks": 0,
+            "Local Read Blocks": 0,
+            "Local Dirtied Blocks": 0,
+            "Local Written Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          "Planning": {
+            "Shared Hit Blocks": 0,
+            "Shared Read Blocks": 0,
+            "Shared Dirtied Blocks": 0,
+            "Shared Written Blocks": 0,
+            "Local Hit Blocks": 0,
+            "Local Read Blocks": 0,
+            "Local Dirtied Blocks": 0,
+            "Local Written Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          "Planning Time": 0.023,
+          "Triggers": [],
+          "Execution Time": 89.61
+        }
+      ],
+      "functionClientMs": 205,
+      "failed": true,
+      "code": "22P02"
+    }
+  ],
+  "state": {
+    "ready": true,
+    "storage": [
+      {
+        "pages": 4721,
+        "relation": "games",
+        "heapBytes": 38674432,
+        "totalBytes": 81870848
+      },
+      {
+        "pages": 446,
+        "relation": "explore_inputs",
+        "heapBytes": 3653632,
+        "totalBytes": 3973120
+      },
+      {
+        "pages": 0,
+        "relation": "explore_input_state",
+        "heapBytes": 8192,
+        "totalBytes": 24576
+      },
+      {
+        "pages": 1,
+        "relation": "games_explore_unclassified_idx",
+        "heapBytes": 8192,
+        "totalBytes": 8192
+      }
+    ],
+    "inputRows": 8355,
+    "sourceRows": 8355
+  }
+}

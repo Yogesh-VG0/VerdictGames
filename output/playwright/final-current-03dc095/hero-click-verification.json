@@ -1,0 +1,339 @@
+{
+  "candidate": "03dc095494e151880b7ab06282836751a7e9116f",
+  "startedAt": "2026-11-17T18:23:41.077Z",
+  "scope": "Actual protected preview, public read-only contexts; mobile CTA geometry, center hit testing and ordinary navigation. No hosted fixtures.",
+  "samples": [
+    {
+      "width": 320,
+      "theme": "dark",
+      "status": 200,
+      "cta": {
+        "x": 16,
+        "y": 639,
+        "width": 117.953125,
+        "height": 38,
+        "bottom": 677,
+        "right": 133.953125
+      },
+      "controls": {
+        "x": 22,
+        "y": 697,
+        "width": 276,
+        "height": 44,
+        "bottom": 741,
+        "right": 298
+      },
+      "overlap": false,
+      "centerHitsLink": true,
+      "href": "/game/ace-combat-8-wings-of-theve",
+      "overflow": false,
+      "paused": true,
+      "navigationPassed": true,
+      "gameHeading": "Ace Combat 8: Wings of Theve",
+      "network": {
+        "blockedNonReads": 0,
+        "originReads": 39,
+        "blockedPaths": []
+      }
+    },
+    {
+      "width": 320,
+      "theme": "light",
+      "status": 200,
+      "cta": {
+        "x": 16,
+        "y": 639,
+        "width": 117.953125,
+        "height": 38,
+        "bottom": 677,
+        "right": 133.953125
+      },
+      "controls": {
+        "x": 22,
+        "y": 697,
+        "width": 276,
+        "height": 44,
+        "bottom": 741,
+        "right": 298
+      },
+      "overlap": false,
+      "centerHitsLink": true,
+      "href": "/game/ace-combat-8-wings-of-theve",
+      "overflow": false,
+      "paused": true,
+      "navigationPassed": true,
+      "gameHeading": "Ace Combat 8: Wings of Theve",
+      "network": {
+        "blockedNonReads": 0,
+        "originReads": 39,
+        "blockedPaths": []
+      }
+    },
+    {
+      "width": 390,
+      "theme": "dark",
+      "status": 200,
+      "cta": {
+        "x": 16,
+        "y": 529.796875,
+        "width": 117.953125,
+        "height": 38,
+        "bottom": 567.796875,
+        "right": 133.953125
+      },
+      "controls": {
+        "x": 57,
+        "y": 587.796875,
+        "width": 276,
+        "height": 44,
+        "bottom": 631.796875,
+        "right": 333
+      },
+      "overlap": false,
+      "centerHitsLink": true,
+      "href": "/game/ace-combat-8-wings-of-theve",
+      "overflow": false,
+      "paused": true,
+      "navigationPassed": true,
+      "gameHeading": "Ace Combat 8: Wings of Theve",
+      "network": {
+        "blockedNonReads": 0,
+        "originReads": 39,
+        "blockedPaths": []
+      }
+    },
+    {
+      "width": 390,
+      "theme": "light",
+      "status": 200,
+      "cta": {
+        "x": 16,
+        "y": 529.796875,
+        "width": 117.953125,
+        "height": 38,
+        "bottom": 567.796875,
+        "right": 133.953125
+      },
+      "controls": {
+        "x": 57,
+        "y": 587.796875,
+        "width": 276,
+        "height": 44,
+        "bottom": 631.796875,
+        "right": 333
+      },
+      "overlap": false,
+      "centerHitsLink": true,
+      "href": "/game/ace-combat-8-wings-of-theve",
+      "overflow": false,
+      "paused": true,
+      "navigationPassed": true,
+      "gameHeading": "Ace Combat 8: Wings of Theve",
+      "network": {
+        "blockedNonReads": 0,
+        "originReads": 39,
+        "blockedPaths": []
+      }
+    },
+    {
+      "width": 502,
+      "theme": "dark",
+      "status": 200,
+      "cta": {
+        "x": 16,
+        "y": 639,
+        "width": 117.953125,
+        "height": 38,
+        "bottom": 677,
+        "right": 133.953125
+      },
+      "controls": {
+        "x": 113,
+        "y": 697,
+        "width": 276,
+        "height": 44,
+        "bottom": 741,
+        "right": 389
+      },
+      "overlap": false,
+      "centerHitsLink": true,
+      "href": "/game/ace-combat-8-wings-of-theve",
+      "overflow": false,
+      "paused": true,
+      "navigationPassed": true,
+      "gameHeading": "Ace Combat 8: Wings of Theve",
+      "network": {
+        "blockedNonReads": 0,
+        "originReads": 39,
+        "blockedPaths": []
+      }
+    },
+    {
+      "width": 502,
+      "theme": "light",
+      "status": 200,
+      "cta": {
+        "x": 16,
+        "y": 639,
+        "width": 117.953125,
+        "height": 38,
+        "bottom": 677,
+        "right": 133.953125
+      },
+      "controls": {
+        "x": 113,
+        "y": 697,
+        "width": 276,
+        "height": 44,
+        "bottom": 741,
+        "right": 389
+      },
+      "overlap": false,
+      "centerHitsLink": true,
+      "href": "/game/ace-combat-8-wings-of-theve",
+      "overflow": false,
+      "paused": true,
+      "navigationPassed": true,
+      "gameHeading": "Ace Combat 8: Wings of Theve",
+      "network": {
+        "blockedNonReads": 0,
+        "originReads": 39,
+        "blockedPaths": []
+      }
+    },
+    {
+      "width": 768,
+      "theme": "dark",
+      "status": 200,
+      "cta": {
+        "x": 24,
+        "y": 739,
+        "width": 117.953125,
+        "height": 38,
+        "bottom": 777,
+        "right": 141.953125
+      },
+      "controls": {
+        "x": 440,
+        "y": 761,
+        "width": 288,
+        "height": 44,
+        "bottom": 805,
+        "right": 728
+      },
+      "overlap": false,
+      "centerHitsLink": true,
+      "href": "/game/ace-combat-8-wings-of-theve",
+      "overflow": false,
+      "paused": true,
+      "navigationPassed": true,
+      "gameHeading": "Ace Combat 8: Wings of Theve",
+      "network": {
+        "blockedNonReads": 0,
+        "originReads": 39,
+        "blockedPaths": []
+      }
+    },
+    {
+      "width": 768,
+      "theme": "light",
+      "status": 200,
+      "cta": {
+        "x": 24,
+        "y": 739,
+        "width": 117.953125,
+        "height": 38,
+        "bottom": 777,
+        "right": 141.953125
+      },
+      "controls": {
+        "x": 440,
+        "y": 761,
+        "width": 288,
+        "height": 44,
+        "bottom": 805,
+        "right": 728
+      },
+      "overlap": false,
+      "centerHitsLink": true,
+      "href": "/game/ace-combat-8-wings-of-theve",
+      "overflow": false,
+      "paused": true,
+      "navigationPassed": true,
+      "gameHeading": "Ace Combat 8: Wings of Theve",
+      "network": {
+        "blockedNonReads": 0,
+        "originReads": 39,
+        "blockedPaths": []
+      }
+    },
+    {
+      "width": 1440,
+      "theme": "dark",
+      "status": 200,
+      "cta": {
+        "x": 44,
+        "y": 721,
+        "width": 117.953125,
+        "height": 38,
+        "bottom": 759,
+        "right": 161.953125
+      },
+      "controls": {
+        "x": 1112,
+        "y": 743,
+        "width": 288,
+        "height": 44,
+        "bottom": 787,
+        "right": 1400
+      },
+      "overlap": false,
+      "centerHitsLink": true,
+      "href": "/game/ace-combat-8-wings-of-theve",
+      "overflow": false,
+      "paused": true,
+      "navigationPassed": true,
+      "gameHeading": "Ace Combat 8: Wings of Theve",
+      "network": {
+        "blockedNonReads": 0,
+        "originReads": 39,
+        "blockedPaths": []
+      }
+    },
+    {
+      "width": 1440,
+      "theme": "light",
+      "status": 200,
+      "cta": {
+        "x": 44,
+        "y": 721,
+        "width": 117.953125,
+        "height": 38,
+        "bottom": 759,
+        "right": 161.953125
+      },
+      "controls": {
+        "x": 1112,
+        "y": 743,
+        "width": 288,
+        "height": 44,
+        "bottom": 787,
+        "right": 1400
+      },
+      "overlap": false,
+      "centerHitsLink": true,
+      "href": "/game/ace-combat-8-wings-of-theve",
+      "overflow": false,
+      "paused": true,
+      "navigationPassed": true,
+      "gameHeading": "Ace Combat 8: Wings of Theve",
+      "network": {
+        "blockedNonReads": 0,
+        "originReads": 39,
+        "blockedPaths": []
+      }
+    }
+  ],
+  "passed": true,
+  "completedAt": "2026-11-17T18:24:07.935Z"
+}

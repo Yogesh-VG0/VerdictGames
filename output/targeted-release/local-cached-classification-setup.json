@@ -1,0 +1,37 @@
+{
+  "scope": "Local-only conversion of disposable test proposal; no hosted mutation",
+  "results": [
+    {
+      "database": "verdict_perf_20261115",
+      "before": {
+        "rows": 8350,
+        "heap": "26583040",
+        "indexes": "6873088"
+      },
+      "after": {
+        "rows": 8350,
+        "missing": 8350,
+        "heap": "26583040",
+        "indexes": "6873088"
+      },
+      "setupMs": 11,
+      "unfilledFallbackCount": 250
+    },
+    {
+      "database": "postgres",
+      "before": {
+        "rows": 0,
+        "heap": "360448",
+        "indexes": "4210688"
+      },
+      "after": {
+        "rows": 0,
+        "missing": 0,
+        "heap": "360448",
+        "indexes": "4210688"
+      },
+      "setupMs": 6,
+      "unfilledFallbackCount": 0
+    }
+  ]
+}

@@ -4,12 +4,11 @@
  * Returns API provider usage summary for budget monitoring.
  */
 
-import { NextRequest } from "next/server";
 import { jsonOk, jsonError } from "@/lib/api/response";
 import { requireAdmin } from "@/lib/admin";
 import { getProviderUsageSummary } from "@/lib/utils/providerUsage";
 
-export async function GET(_request: NextRequest) {
+export async function GET() {
   const { error } = await requireAdmin();
   if (error) return error;
 

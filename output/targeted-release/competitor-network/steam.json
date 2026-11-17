@@ -1,0 +1,68 @@
+{
+  "name": "steam",
+  "url": "https://store.steampowered.com/search/",
+  "measuredAt": "2026-11-16T08:09:25.219Z",
+  "conditions": "New anonymous context per site; Chrome 1440x1000 DPR1; unthrottled CPU/network; origin cache unknown; ordinary page requests including automatic prefetch; no access challenge bypass",
+  "navigationError": "TimeoutError",
+  "observed": {
+    "url": "https://store.steampowered.com/search/",
+    "title": "Steam Search",
+    "readyState": "loading",
+    "restricted": false,
+    "headings": [],
+    "viewport": {
+      "w": 1440,
+      "h": 1000,
+      "dpr": 1
+    },
+    "navigation": {
+      "status": 200,
+      "ttfbMs": 14667,
+      "responseEndMs": 14808,
+      "domInteractiveMs": 0,
+      "loadEventEndMs": 0,
+      "durationMs": 0,
+      "transfer": 41280,
+      "encoded": 40980,
+      "decoded": 714475
+    },
+    "paints": [],
+    "requestCount": 1,
+    "observableTransferBytes": 0,
+    "bytesLimitation": "ResourceTiming bytes may be zero for cross-origin resources without Timing-Allow-Origin; this is not total traffic",
+    "byType": {
+      "link": 1
+    },
+    "byHost": {
+      "store.fastly.steamstatic.com": 1
+    },
+    "images": [],
+    "requests": [
+      {
+        "url": "https://store.fastly.steamstatic.com/public/shared/css/shared_responsive.css",
+        "type": "link",
+        "start": 14673,
+        "ms": 1143,
+        "transfer": 0,
+        "encoded": 0,
+        "decoded": 0
+      }
+    ]
+  },
+  "screenshot": "unavailable",
+  "responses": [
+    {
+      "url": "https://store.steampowered.com/search/",
+      "type": "document",
+      "status": 200,
+      "method": "GET",
+      "headers": {
+        "cache-control": "no-cache",
+        "content-type": "text/html; charset=UTF-8",
+        "content-length": "40980",
+        "vary": "Accept-Encoding, Origin, Accept-Encoding",
+        "server": "nginx"
+      }
+    }
+  ]
+}

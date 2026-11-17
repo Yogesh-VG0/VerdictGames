@@ -12,6 +12,8 @@
 
 # testing
 /coverage
+/.verification/
+/.private-backups/
 
 # next.js
 /.next/
@@ -63,6 +65,8 @@ scripts/apply-schema.mjs
 !scripts/apply-schema.mjs
 scripts/backfill-*.mjs
 !scripts/backfill-games.mjs
+!scripts/backfill-explore-classification.mjs
+!scripts/backfill-explore-inputs.mjs
 !scripts/backfill-mobile-listings.mjs
 scripts/check-igdb.mjs
 scripts/cleanup-public-safety.mjs
@@ -80,3 +84,7 @@ scripts/seed-flags.mjs
 
 # Audit files (local only)
 AUDIT_FINDINGS.md
+
+# Generated audit captures stay local; compact acceptance receipts are committed.
+/docs/audits/**/screenshots/**/*.png
+/output/**/*.png

@@ -1,0 +1,121 @@
+{
+  "commit": "236883d3ef9c5b2c61a34d54f9100da7bb36a52b",
+  "scope": "Actual protected final-head public GETs. Paired concurrency2. First pair repeats earlier exact URLs; CDN status reported. Later categories/filters use pageSize40 SQL cache bypass; Upcoming pageSize20 platform filter has separate snapshot caches. No claim of cold database or new-deployment framework cache.",
+  "measuredAt": "2026-11-17T08:39:54.775Z",
+  "samples": [
+    {
+      "path": "/api/rawg/lists?type=all-time&page=1&pageSize=40&platform=PlayStation+5",
+      "group": 0,
+      "concurrent": 2,
+      "status": 200,
+      "ms": 464,
+      "decodedBytes": 22597,
+      "count": 38,
+      "items": 38,
+      "source": "catalogue",
+      "firstRank": 1,
+      "lastRank": 250,
+      "headers": {
+        "cache-control": "public",
+        "cdn-cache-control": null,
+        "vary": null,
+        "x-vercel-cache": "HIT",
+        "age": "193",
+        "server-timing": "catalogue_query;dur=1489, catalogue_artwork;dur=7, catalogue_total;dur=1497"
+      }
+    },
+    {
+      "path": "/api/rawg/lists?type=best-of-year&page=1&pageSize=40&platform=PC",
+      "group": 0,
+      "concurrent": 2,
+      "status": 200,
+      "ms": 413,
+      "decodedBytes": 13158,
+      "count": 29,
+      "items": 29,
+      "source": "rawg",
+      "headers": {
+        "cache-control": "public",
+        "cdn-cache-control": null,
+        "vary": null,
+        "x-vercel-cache": "HIT",
+        "age": "197",
+        "server-timing": "snapshot;dur=1991, matches;dur=756, portraits;dur=531, provider_artwork;dur=3, catalogue_total;dur=3285"
+      }
+    },
+    {
+      "path": "/api/rawg/lists?type=genre&genre=rpg&sort=rating&platform=PC&page=2&pageSize=40",
+      "group": 1,
+      "concurrent": 2,
+      "status": 400,
+      "ms": 827,
+      "decodedBytes": 64,
+      "items": 0,
+      "headers": {
+        "cache-control": "private, no-store, max-age=0",
+        "cdn-cache-control": "private, no-store",
+        "vary": "Cookie",
+        "x-vercel-cache": "MISS",
+        "age": "0",
+        "server-timing": null
+      }
+    },
+    {
+      "path": "/api/rawg/lists?type=popular-in-year&year=2024&platform=PC&page=1&pageSize=40",
+      "group": 1,
+      "concurrent": 2,
+      "status": 200,
+      "ms": 2086,
+      "decodedBytes": 22216,
+      "count": 267,
+      "items": 40,
+      "source": "catalogue",
+      "headers": {
+        "cache-control": "public",
+        "cdn-cache-control": null,
+        "vary": null,
+        "x-vercel-cache": "MISS",
+        "age": "0",
+        "server-timing": "catalogue_query;dur=1507, catalogue_artwork;dur=25, catalogue_total;dur=1532"
+      }
+    },
+    {
+      "path": "/api/rawg/lists?type=recent&platform=PC&page=1&pageSize=40",
+      "group": 2,
+      "concurrent": 2,
+      "status": 200,
+      "ms": 1002,
+      "decodedBytes": 1913,
+      "count": 3,
+      "items": 3,
+      "source": "catalogue",
+      "headers": {
+        "cache-control": "public",
+        "cdn-cache-control": null,
+        "vary": null,
+        "x-vercel-cache": "MISS",
+        "age": "0",
+        "server-timing": "catalogue_query;dur=359, catalogue_artwork;dur=0, catalogue_total;dur=360"
+      }
+    },
+    {
+      "path": "/api/rawg/lists?type=best-of-year&platform=PC&page=2&pageSize=20",
+      "group": 2,
+      "concurrent": 2,
+      "status": 200,
+      "ms": 1641,
+      "decodedBytes": 4019,
+      "count": 29,
+      "items": 9,
+      "source": "rawg",
+      "headers": {
+        "cache-control": "public",
+        "cdn-cache-control": null,
+        "vary": null,
+        "x-vercel-cache": "MISS",
+        "age": "0",
+        "server-timing": "snapshot;dur=8, matches;dur=903, portraits;dur=5, provider_artwork;dur=2, catalogue_total;dur=919"
+      }
+    }
+  ]
+}

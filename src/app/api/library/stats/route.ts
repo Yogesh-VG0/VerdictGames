@@ -2,9 +2,10 @@
  * GET /api/library/stats — Get library statistics for current user
  */
 
-import { jsonOk, jsonError } from "@/lib/api/response";
+import { jsonPrivateOk as jsonOk, jsonError } from "@/lib/api/response";
 import { getAuthSupabase, getCurrentUser } from "@/lib/supabase/auth";
 import type { LibraryStats } from "@/lib/types";
+export const maxDuration = 30;
 
 export async function GET() {
   const user = await getCurrentUser();
@@ -14,10 +15,11 @@ export async function GET() {
     const supabase = await getAuthSupabase();
 
     // Get all user games with joined game data for genre breakdown
-    const { data: userGames } = await supabase
+    const { data: userGames, error } = await supabase
       .from("user_games")
       .select("status, personal_rating, hours_played, game:games!inner(genres)")
-      .eq("user_id", user.profileId) as { data: { status: string; personal_rating: number | null; hours_played: number; game: { genres: string[] } | null }[] | null };
+      .eq("user_id", user.profileId) as { data: { status: string; personal_rating: number | null; hours_played: number; game: { genres: string[] } | null }[] | null; error: unknown };
+    if (error) throw error;
 
     const items = userGames ?? [];
 
@@ -53,7 +55,9 @@ export async function GET() {
 
     return jsonOk(stats);
   } catch (err) {
-    console.error("[API] /library/stats error:", err);
-    return jsonError("Failed to fetch stats");
+    const code=err && typeof err==='object' && 'code' in err && typeof err.code==='string'
+      && /^(?:[0-9A-Z]{5}|PGRST\d{3})$/.test(err.code) ? err.code : 'UNKNOWN';
+    console.error("[API] /library/stats failed", {code});
+    return jsonError("Library statistics are temporarily unavailable. Please retry.",503);
   }
 }

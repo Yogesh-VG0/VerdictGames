@@ -1,0 +1,51 @@
+{
+  "status": "approved-applied-and-verified",
+  "project": "vjzsvnaswronkctazarn",
+  "sourceParent": "03dc095494e151880b7ab06282836751a7e9116f",
+  "migration": "supabase/migrations/20261117182900_index_default_browse_pool.sql",
+  "problem": "Four actual PostgreSQL 57014 cancellations during latest protected-preview acceptance identify the same default Browse SELECT. Native anonymous execution also hits the existing3s cap; the estimated plan scans/sorts6540 qualifying wide rows. A second full-JSON plan takes1741.935ms after the failed sample. List summary/detail cache revalidation also hits application deadlines; their measured inner SQL is below1ms, so causality is not assigned solely to Browse.",
+  "change": "One four-column B-tree matching unchanged Browse order. Partial predicate cover_image IS NOT NULL is independent of bound parameters and works with generic/custom PostgREST plans. No query, row, grant, RLS, function, schedule or timeout changes.",
+  "limits": {
+    "lockTimeout": "2s",
+    "statementTimeout": "5s",
+    "transaction": "atomic; failure rolls back index"
+  },
+  "resourceImplications": {
+    "localIndexBytes": 434176,
+    "localBuildClientMsIncludingPsqlStartup": 90,
+    "local100RowTrendingUpdateMsIncludingExistingTriggers": 7.434,
+    "isolatedWriteOverhead": "not measured",
+    "hostedBuildAndStorage": "unverified; creation may briefly block writers"
+  },
+  "localEvidence": {
+    "receipt": "output/targeted-release/local-browse-index.json",
+    "rows": 8350,
+    "orderedRowsPreserved": 150,
+    "sourceFingerprintPreserved": true,
+    "beforeMs": 11.313,
+    "afterMs": 0.589,
+    "customPreparedMs": 0.553,
+    "genericPreparedMs": 0.528,
+    "afterRolledBackTrendingChurnMs": 0.643,
+    "anonymousAllowDenyRlsPassed": true,
+    "cloneDropped": true,
+    "storageCache": "uncontrolled"
+  },
+  "hostedEvidence": "output/targeted-release/hosted-browse-default-plans.json",
+  "compatibleWithCurrentProductionAndCandidate": true,
+  "afterApproval": "Check exact valid/ready index definition, unchanged source count/permissions; rerun bounded anonymous actual plan and final cold/warm/concurrent HTTP without framework cache, including Lists. Keep original failing evidence. No success inferred from local timings.",
+  "excludes": [
+    "other migrations or data repairs",
+    "Auth/email changes",
+    "scheduler runs",
+    "user fixtures",
+    "cache purges",
+    "merge or production deployment",
+    "infrastructure or billing"
+  ],
+  "rollback": "Transaction failure leaves no index. Keeping this performance-only index is compatible with current and candidate apps. Any later index removal needs separate approval; never restore insecure grants or an incompatible application.",
+  "sha256": "43f5af22f9b6d3eff628625c71e682a9f37207d67b077eba61e9943d77a3bc14",
+  "approvalCommit": "83a5456ad914b912de930898ce966ae8ea073758",
+  "executionReceipt": "output/targeted-release/approved-browse-index.json",
+  "alignedMigration": "supabase/migrations/20261117185654_index_default_browse_pool.sql"
+}

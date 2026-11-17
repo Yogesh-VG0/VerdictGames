@@ -9,7 +9,7 @@
  * Command: node scripts/heroku-discover-games.mjs
  *
  * Required environment variables:
- *   RAWG_API_KEY,
+ *   RAWG_API_KEY or TWITCH_CLIENT_ID + TWITCH_CLIENT_SECRET,
  *   DATABASE_URL or SUPABASE_DB_URL
  *   (optional) TWITCH_CLIENT_ID, TWITCH_CLIENT_SECRET for IGDB enrichment
  */
@@ -18,7 +18,7 @@
 // For local testing, load .env file.
 try {
   const { readFileSync } = await import("fs");
-  const env = readFileSync(".env", "utf8");
+  const env = process.env.VERDICT_LOCAL_VERIFY==='1' ? '' : readFileSync(".env", "utf8");
   for (const line of env.split("\n")) {
     const t = line.trim();
     if (!t || t.startsWith("#")) continue;
@@ -33,8 +33,9 @@ try {
 
 import { startRun, finishRun, acquireLock, releaseLock, checkMinInterval, isInfrastructureDbError } from './lib/scheduler-logger.mjs';
 import { connectDb, closeDb } from './lib/db-connect.mjs';
-import { ingestGameDirect } from './lib/ingest-pipeline.mjs';
+import { ingestGameDirect, discoverIgdbDirect } from './lib/ingest-pipeline.mjs';
 import { rawgFetchJson } from './lib/rawg-client.mjs';
+import { refreshDiscoverySnapshot } from './lib/discovery-snapshot.mjs';
 
 const RAWG_KEY     = process.env.RAWG_API_KEY;
 const DEEP         = process.argv.includes("--deep");
@@ -43,7 +44,7 @@ const CONCURRENCY  = Math.max(1, Math.min(5, parseInt(process.env.SCHEDULER_INGE
 const DELAY_MS     = 300;
 const INGEST_LOCK  = "games-ingest";
 
-if (!RAWG_KEY) { console.error("✗ RAWG_API_KEY not set"); process.exit(1); }
+if (!RAWG_KEY && !(process.env.TWITCH_CLIENT_ID && process.env.TWITCH_CLIENT_SECRET)) { console.error("No discovery provider configured"); process.exit(1); }
 
 const sql = connectDb("discover-games");
 
@@ -111,6 +112,25 @@ try {
   // ── Step 1: Fetch game lists from RAWG (standalone process, no Vercel timeout) ──
   console.log("📡 Step 1: Fetching game lists from RAWG...\n");
 
+  let snapshotCount;
+  try {
+    if(process.env.DISCOVERY_PROVIDER==='igdb') throw new Error('RAWG health gate selected independent discovery');
+    snapshotCount=await refreshDiscoverySnapshot(sql);
+  }
+  catch (error) {
+    if(isInfrastructureDbError(error)) throw error;
+    const fallback=await discoverIgdbDirect(sql);
+    console.log('RAWG unavailable; independent IGDB essential-metadata progress:',fallback);
+    await finishRun(sql,run.id,{outcome:'deferred',rows_scanned:fallback.scanned,rows_created:fallback.created,rows_updated:fallback.updated,
+      rows_skipped:fallback.skipped,error_message:'RAWG discovery unavailable; IGDB fallback completed',
+      metadata:{...fallback,github_run_id:process.env.GITHUB_RUN_ID||null},strict:true});
+    // Preserve repeated-provider-outage alerts despite useful IGDB progress.
+    const recent=await sql`SELECT status FROM scheduler_runs WHERE job_name=${JOB_NAME} ORDER BY started_at DESC LIMIT 3`;
+    const repeated=recent.length===3&&recent.every(row=>row.status==='deferred');
+    if(repeated) console.error('::error title=Repeated RAWG discovery outage::Three consecutive attempts were deferred from RAWG; IGDB progress is recorded.');
+    await releaseLock(sql,INGEST_LOCK);await closeDb(sql,JOB_NAME);process.exit(repeated?1:0);
+  }
+  console.log(`Preserved upcoming discovery snapshot: ${snapshotCount} provider records`);
   const fetches = [
     rawgFetch("games", { ordering: "-added", dates: recentWindow }, 40),
     rawgFetch("games", { ordering: "-released", dates: lastMonth }, 40),

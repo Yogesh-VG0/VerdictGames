@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { updateLibraryGame, removeFromLibrary, getLibrary } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
@@ -26,15 +26,17 @@ const STATUS_OPTIONS: { value: LibraryStatus; label: string; icon: ReactNode }[]
 ];
 
 export default function LibraryStatusSelector({ gameId, onAuthRequired }: LibraryStatusSelectorProps) {
+  const reducedMotion = useReducedMotion();
   const { user } = useAuth();
+  const libraryKey = ["library", user?.id ?? null];
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [toast, setToast] = useState<{ message: string; status: LibraryStatus } | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Check if game is in library — use cached library data if available
-  const { data: library } = useQuery({
-    queryKey: ["library"],
+  const { data: library, isError: libraryError, refetch: reloadLibrary } = useQuery({
+    queryKey: libraryKey,
     queryFn: () => getLibrary(),
     enabled: !!user,
     staleTime: 30_000,
@@ -54,8 +56,8 @@ export default function LibraryStatusSelector({ gameId, onAuthRequired }: Librar
     // Optimistic update: immediately update cached library
     onMutate: async (newStatus) => {
       await queryClient.cancelQueries({ queryKey: ["library"] });
-      const prev = queryClient.getQueryData<UserGame[]>(["library"]);
-      queryClient.setQueryData<UserGame[]>(["library"], (old) => {
+      const prev = queryClient.getQueryData<UserGame[]>(libraryKey);
+      queryClient.setQueryData<UserGame[]>(libraryKey, (old) => {
         if (!old) return old;
         const idx = old.findIndex(ug => ug.gameId === gameId);
         if (idx >= 0) {
@@ -71,7 +73,7 @@ export default function LibraryStatusSelector({ gameId, onAuthRequired }: Librar
       return { prev };
     },
     onError: (_err, _status, context) => {
-      if (context?.prev) queryClient.setQueryData(["library"], context.prev);
+      if (context?.prev) queryClient.setQueryData(libraryKey, context.prev);
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["library"] });
@@ -83,15 +85,15 @@ export default function LibraryStatusSelector({ gameId, onAuthRequired }: Librar
     mutationFn: () => removeFromLibrary(gameId),
     onMutate: async () => {
       await queryClient.cancelQueries({ queryKey: ["library"] });
-      const prev = queryClient.getQueryData<UserGame[]>(["library"]);
-      queryClient.setQueryData<UserGame[]>(["library"], (old) =>
+      const prev = queryClient.getQueryData<UserGame[]>(libraryKey);
+      queryClient.setQueryData<UserGame[]>(libraryKey, (old) =>
         old ? old.filter(ug => ug.gameId !== gameId) : old
       );
       setOpen(false);
       return { prev };
     },
     onError: (_err, _vars, context) => {
-      if (context?.prev) queryClient.setQueryData(["library"], context.prev);
+      if (context?.prev) queryClient.setQueryData(libraryKey, context.prev);
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["library"] });
@@ -113,6 +115,10 @@ export default function LibraryStatusSelector({ gameId, onAuthRequired }: Librar
   function handleClick() {
     if (!user) {
       onAuthRequired();
+      return;
+    }
+    if (libraryError) {
+      void reloadLibrary();
       return;
     }
     setOpen(!open);
@@ -139,18 +145,18 @@ export default function LibraryStatusSelector({ gameId, onAuthRequired }: Librar
       >
         <span className="flex items-center">{currentOption?.icon ?? <Plus className="w-4 h-4" />}</span>
         <span className="flex-1 text-left">
-          {currentOption?.label ?? "Add to Library"}
+          {libraryError ? "Retry library" : currentOption?.label ?? "Add to Library"}
         </span>
         <ChevronDown className={cn("w-4 h-4 transition-transform", open && "rotate-180")} />
       </button>
 
       <AnimatePresence>
-        {open && (
+        {open && !libraryError && (
           <motion.div
-            initial={{ opacity: 0, y: -4, scale: 0.95 }}
+            initial={reducedMotion ? false : { opacity: 0, y: -4, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -4, scale: 0.95 }}
-            transition={{ duration: 0.15 }}
+            exit={reducedMotion ? undefined : { opacity: 0, y: -4, scale: 0.95 }}
+            transition={{ duration: reducedMotion ? 0 : 0.15 }}
             className="absolute top-full mt-1 left-0 right-0 z-50 rounded-xl bg-surface border border-border shadow-2xl overflow-hidden"
           >
             {STATUS_OPTIONS.map((opt) => (
@@ -195,10 +201,10 @@ export default function LibraryStatusSelector({ gameId, onAuthRequired }: Librar
       <AnimatePresence>
         {toast && (
           <motion.div
-            initial={{ opacity: 0, y: 8 }}
+            initial={reducedMotion ? false : { opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 8 }}
-            transition={{ duration: 0.2 }}
+            exit={reducedMotion ? undefined : { opacity: 0, y: 8 }}
+            transition={{ duration: reducedMotion ? 0 : 0.18 }}
             className="absolute top-full mt-2 left-0 right-0 z-50 rounded-xl bg-surface border border-accent/30 shadow-lg px-3 py-2.5 flex items-center justify-between gap-2"
           >
             <span className="text-xs font-medium text-foreground">{toast.message}</span>

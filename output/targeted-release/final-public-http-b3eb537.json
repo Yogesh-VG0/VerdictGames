@@ -1,0 +1,211 @@
+{
+  "candidate": "b3eb53754e2f89e7b2606f393e0b2e7832da8008",
+  "at": "2026-11-17T14:38:08.323Z",
+  "scope": "Existing owner-authorized Chrome on stable protected preview; serial public HTTP reads, no request credentials or private bodies persisted. Page40 bypasses SQL framework cache; CDN status recorded, DB/storage cache unknown. No purges or writes.",
+  "samples": [
+    {
+      "path": "/api/rawg/lists?type=all-time&page=1&pageSize=40&platform=PlayStation+5",
+      "status": 200,
+      "ttfbMs": 2465,
+      "ms": 2465,
+      "bytes": 22015,
+      "encodedBytes": 3611,
+      "headers": {
+        "cache-control": "public",
+        "x-vercel-cache": "MISS",
+        "age": "0",
+        "server-timing": "catalogue_query;dur=1666, catalogue_artwork;dur=12, catalogue_total;dur=1680",
+        "vary": null
+      },
+      "count": 37,
+      "rows": 37,
+      "firstRank": 1,
+      "lastRank": 249,
+      "correctedGames": [],
+      "source": "catalogue",
+      "degraded": false
+    },
+    {
+      "path": "/api/rawg/lists?type=all-time&page=2&pageSize=40&platform=Nintendo+Switch",
+      "status": 200,
+      "ttfbMs": 1187,
+      "ms": 1187,
+      "bytes": 24251,
+      "encodedBytes": 4165,
+      "headers": {
+        "cache-control": "public",
+        "x-vercel-cache": "MISS",
+        "age": "0",
+        "server-timing": "catalogue_query;dur=505, catalogue_artwork;dur=10, catalogue_total;dur=516",
+        "vary": null
+      },
+      "count": 85,
+      "rows": 40,
+      "firstRank": 126,
+      "lastRank": 245,
+      "correctedGames": [],
+      "source": "catalogue",
+      "degraded": false
+    },
+    {
+      "path": "/api/rawg/lists?type=all-time&page=2&pageSize=40",
+      "status": 200,
+      "ttfbMs": 1561,
+      "ms": 1562,
+      "bytes": 22454,
+      "encodedBytes": 3665,
+      "headers": {
+        "cache-control": "public",
+        "x-vercel-cache": "MISS",
+        "age": "0",
+        "server-timing": "catalogue_query;dur=845, catalogue_artwork;dur=5, catalogue_total;dur=851",
+        "vary": null
+      },
+      "count": 250,
+      "rows": 40,
+      "firstRank": 41,
+      "lastRank": 80,
+      "correctedGames": [
+        {
+          "slug": "hades-ii",
+          "rank": 47,
+          "earlyAccess": false
+        }
+      ],
+      "source": "catalogue",
+      "degraded": false
+    },
+    {
+      "path": "/api/rawg/lists?type=genre&genre=role-playing-games-rpg&page=2&pageSize=40&platform=PC&sort=rating",
+      "status": 200,
+      "ttfbMs": 1662,
+      "ms": 1663,
+      "bytes": 22589,
+      "encodedBytes": 3681,
+      "headers": {
+        "cache-control": "public",
+        "x-vercel-cache": "MISS",
+        "age": "0",
+        "server-timing": "catalogue_query;dur=928, catalogue_artwork;dur=12, catalogue_total;dur=942",
+        "vary": null
+      },
+      "count": 1186,
+      "rows": 40,
+      "correctedGames": [],
+      "source": "catalogue",
+      "degraded": false
+    },
+    {
+      "path": "/api/rawg/lists?type=popular-in-year&year=2024&page=1&pageSize=40&platform=PC&sort=name-asc",
+      "status": 200,
+      "ttfbMs": 1197,
+      "ms": 1197,
+      "bytes": 22177,
+      "encodedBytes": 3516,
+      "headers": {
+        "cache-control": "public",
+        "x-vercel-cache": "MISS",
+        "age": "0",
+        "server-timing": "catalogue_query;dur=380, catalogue_artwork;dur=16, catalogue_total;dur=397",
+        "vary": null
+      },
+      "count": 267,
+      "rows": 40,
+      "correctedGames": [],
+      "source": "catalogue",
+      "degraded": false
+    },
+    {
+      "path": "/api/rawg/lists?type=recent&page=1&pageSize=40&platform=PC",
+      "status": 200,
+      "ttfbMs": 1025,
+      "ms": 1025,
+      "bytes": 1913,
+      "encodedBytes": 724,
+      "headers": {
+        "cache-control": "public",
+        "x-vercel-cache": "MISS",
+        "age": "0",
+        "server-timing": "catalogue_query;dur=302, catalogue_artwork;dur=0, catalogue_total;dur=302",
+        "vary": null
+      },
+      "count": 3,
+      "rows": 3,
+      "correctedGames": [],
+      "source": "catalogue",
+      "degraded": false
+    },
+    {
+      "path": "/api/rawg/lists?type=best-of-year&page=1&pageSize=40&platform=PC",
+      "status": 200,
+      "ttfbMs": 2834,
+      "ms": 2834,
+      "bytes": 13166,
+      "encodedBytes": 2323,
+      "headers": {
+        "cache-control": "public",
+        "x-vercel-cache": "MISS",
+        "age": "0",
+        "server-timing": "snapshot;dur=972, matches;dur=831, portraits;dur=490, provider_artwork;dur=5, catalogue_total;dur=2300",
+        "vary": null
+      },
+      "count": 29,
+      "rows": 29,
+      "correctedGames": [],
+      "source": "rawg",
+      "degraded": false
+    },
+    {
+      "path": "/api/rawg/lists?type=best-of-year&page=2&pageSize=40&platform=PC",
+      "status": 200,
+      "ttfbMs": 1345,
+      "ms": 1345,
+      "bytes": 309,
+      "encodedBytes": 234,
+      "headers": {
+        "cache-control": "public",
+        "x-vercel-cache": "MISS",
+        "age": "0",
+        "server-timing": "snapshot;dur=9, matches;dur=826, portraits;dur=5, provider_artwork;dur=1, catalogue_total;dur=843",
+        "vary": null
+      },
+      "count": 29,
+      "rows": 0,
+      "correctedGames": [],
+      "source": "rawg",
+      "degraded": false
+    },
+    {
+      "path": "/",
+      "status": 200,
+      "ttfbMs": 2091,
+      "ms": 2556,
+      "bytes": 784826,
+      "encodedBytes": 67376,
+      "headers": {
+        "cache-control": "private, no-cache, no-store, max-age=0, must-revalidate",
+        "x-vercel-cache": "MISS",
+        "age": "0",
+        "server-timing": null,
+        "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"
+      },
+      "homepageHeading": true
+    },
+    {
+      "path": "/",
+      "status": 200,
+      "ttfbMs": 677,
+      "ms": 1399,
+      "bytes": 784826,
+      "encodedBytes": 67173,
+      "headers": {
+        "cache-control": "private, no-cache, no-store, max-age=0, must-revalidate",
+        "x-vercel-cache": "MISS",
+        "age": "0",
+        "server-timing": null,
+        "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"
+      },
+      "homepageHeading": true
+    }
+  ]
+}

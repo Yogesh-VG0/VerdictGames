@@ -1,0 +1,2127 @@
+{
+  "candidate": "03dc095494e151880b7ab06282836751a7e9116f",
+  "set": "explore",
+  "startedAt": "2026-11-17T18:24:10.471Z",
+  "scope": "Actual public protected preview screenshots. Isolated anonymous application context; origin-only short-lived OIDC; all non-read requests blocked. No cookie/header/token capture, HAR, new dependencies or hosted writes.",
+  "samples": [
+    {
+      "label": "explore-anticipated",
+      "path": "/explore?type=best-of-year",
+      "width": 390,
+      "theme": "dark",
+      "status": 200,
+      "state": {
+        "title": "Explore Games | verdict.games",
+        "heading": "Explore Games",
+        "light": false,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          },
+          {
+            "alt": "Path of Exile 2",
+            "loaded": true,
+            "width": 201,
+            "height": 268
+          },
+          {
+            "alt": "No Rest for the Wicked",
+            "loaded": true,
+            "width": 201,
+            "height": 268
+          }
+        ],
+        "selectedControls": [
+          {
+            "text": "Most Anticipated",
+            "label": null,
+            "value": null
+          }
+        ]
+      },
+      "screenshot": "explore-anticipated-dark-390.png",
+      "ms": 2005
+    },
+    {
+      "label": "explore-year",
+      "path": "/explore?type=popular-in-year&year=2024&platform=PC&sort=rating",
+      "width": 390,
+      "theme": "dark",
+      "status": 200,
+      "state": {
+        "title": "Explore Games | verdict.games",
+        "heading": "Explore Games",
+        "light": false,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          },
+          {
+            "alt": "The WereCleaner",
+            "loaded": true,
+            "width": 201,
+            "height": 268
+          },
+          {
+            "alt": "Satisfactory",
+            "loaded": true,
+            "width": 201,
+            "height": 268
+          }
+        ],
+        "selectedControls": [
+          {
+            "text": "Best of 2024",
+            "label": null,
+            "value": null
+          }
+        ]
+      },
+      "screenshot": "explore-year-dark-390.png",
+      "ms": 2475
+    },
+    {
+      "label": "explore-top250",
+      "path": "/explore?type=all-time&platform=PlayStation+5",
+      "width": 390,
+      "theme": "dark",
+      "status": 200,
+      "state": {
+        "title": "Explore Games | verdict.games",
+        "heading": "Explore Games",
+        "light": false,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          },
+          {
+            "alt": "Baldur's Gate III",
+            "loaded": true,
+            "width": 201,
+            "height": 268
+          },
+          {
+            "alt": "Neon White",
+            "loaded": true,
+            "width": 201,
+            "height": 268
+          },
+          {
+            "alt": "TOEM",
+            "loaded": true,
+            "width": 201,
+            "height": 268
+          },
+          {
+            "alt": "Quake",
+            "loaded": true,
+            "width": 201,
+            "height": 268
+          }
+        ],
+        "selectedControls": [
+          {
+            "text": "All-Time Top 250",
+            "label": null,
+            "value": null
+          }
+        ]
+      },
+      "screenshot": "explore-top250-dark-390.png",
+      "ms": 1600
+    },
+    {
+      "label": "explore-recent",
+      "path": "/explore?type=recent&platform=PC",
+      "width": 390,
+      "theme": "dark",
+      "status": 200,
+      "state": {
+        "title": "Explore Games | verdict.games",
+        "heading": "Explore Games",
+        "light": false,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          },
+          {
+            "alt": "Fable",
+            "loaded": true,
+            "width": 201,
+            "height": 268
+          },
+          {
+            "alt": "Phantom Blade Zero",
+            "loaded": true,
+            "width": 201,
+            "height": 268
+          }
+        ],
+        "selectedControls": [
+          {
+            "text": "New Releases",
+            "label": null,
+            "value": null
+          }
+        ]
+      },
+      "screenshot": "explore-recent-dark-390.png",
+      "ms": 1525
+    },
+    {
+      "label": "explore-rpg",
+      "path": "/explore?type=genre&genre=role-playing-games-rpg&platform=PC&sort=rating",
+      "width": 390,
+      "theme": "dark",
+      "status": 200,
+      "state": {
+        "title": "Explore Games | verdict.games",
+        "heading": "Explore Games",
+        "light": false,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          },
+          {
+            "alt": "Baldur's Gate III",
+            "loaded": true,
+            "width": 201,
+            "height": 268
+          },
+          {
+            "alt": "Dishonored",
+            "loaded": true,
+            "width": 201,
+            "height": 268
+          }
+        ],
+        "selectedControls": [
+          {
+            "text": "Browse by Genre",
+            "label": null,
+            "value": null
+          },
+          {
+            "text": "RPG",
+            "label": null,
+            "value": null
+          }
+        ]
+      },
+      "screenshot": "explore-rpg-dark-390.png",
+      "ms": 1544
+    },
+    {
+      "label": "explore-anticipated",
+      "path": "/explore?type=best-of-year",
+      "width": 390,
+      "theme": "light",
+      "status": 200,
+      "state": {
+        "title": "Explore Games | verdict.games",
+        "heading": "Explore Games",
+        "light": true,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          },
+          {
+            "alt": "Path of Exile 2",
+            "loaded": true,
+            "width": 201,
+            "height": 268
+          },
+          {
+            "alt": "No Rest for the Wicked",
+            "loaded": true,
+            "width": 201,
+            "height": 268
+          }
+        ],
+        "selectedControls": [
+          {
+            "text": "Most Anticipated",
+            "label": null,
+            "value": null
+          }
+        ]
+      },
+      "screenshot": "explore-anticipated-light-390.png",
+      "ms": 1661
+    },
+    {
+      "label": "explore-year",
+      "path": "/explore?type=popular-in-year&year=2024&platform=PC&sort=rating",
+      "width": 390,
+      "theme": "light",
+      "status": 200,
+      "state": {
+        "title": "Explore Games | verdict.games",
+        "heading": "Explore Games",
+        "light": true,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          },
+          {
+            "alt": "The WereCleaner",
+            "loaded": true,
+            "width": 201,
+            "height": 268
+          },
+          {
+            "alt": "Satisfactory",
+            "loaded": true,
+            "width": 201,
+            "height": 268
+          }
+        ],
+        "selectedControls": [
+          {
+            "text": "Best of 2024",
+            "label": null,
+            "value": null
+          }
+        ]
+      },
+      "screenshot": "explore-year-light-390.png",
+      "ms": 1491
+    },
+    {
+      "label": "explore-top250",
+      "path": "/explore?type=all-time&platform=PlayStation+5",
+      "width": 390,
+      "theme": "light",
+      "status": 200,
+      "state": {
+        "title": "Explore Games | verdict.games",
+        "heading": "Explore Games",
+        "light": true,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          },
+          {
+            "alt": "Baldur's Gate III",
+            "loaded": true,
+            "width": 201,
+            "height": 268
+          },
+          {
+            "alt": "Neon White",
+            "loaded": true,
+            "width": 201,
+            "height": 268
+          },
+          {
+            "alt": "TOEM",
+            "loaded": true,
+            "width": 201,
+            "height": 268
+          },
+          {
+            "alt": "Quake",
+            "loaded": true,
+            "width": 201,
+            "height": 268
+          }
+        ],
+        "selectedControls": [
+          {
+            "text": "All-Time Top 250",
+            "label": null,
+            "value": null
+          }
+        ]
+      },
+      "screenshot": "explore-top250-light-390.png",
+      "ms": 1952
+    },
+    {
+      "label": "explore-recent",
+      "path": "/explore?type=recent&platform=PC",
+      "width": 390,
+      "theme": "light",
+      "status": 200,
+      "state": {
+        "title": "Explore Games | verdict.games",
+        "heading": "Explore Games",
+        "light": true,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          },
+          {
+            "alt": "Fable",
+            "loaded": true,
+            "width": 201,
+            "height": 268
+          },
+          {
+            "alt": "Phantom Blade Zero",
+            "loaded": true,
+            "width": 201,
+            "height": 268
+          }
+        ],
+        "selectedControls": [
+          {
+            "text": "New Releases",
+            "label": null,
+            "value": null
+          }
+        ]
+      },
+      "screenshot": "explore-recent-light-390.png",
+      "ms": 3722
+    },
+    {
+      "label": "explore-rpg",
+      "path": "/explore?type=genre&genre=role-playing-games-rpg&platform=PC&sort=rating",
+      "width": 390,
+      "theme": "light",
+      "status": 200,
+      "state": {
+        "title": "Explore Games | verdict.games",
+        "heading": "Explore Games",
+        "light": true,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          },
+          {
+            "alt": "Baldur's Gate III",
+            "loaded": true,
+            "width": 201,
+            "height": 268
+          },
+          {
+            "alt": "Dishonored",
+            "loaded": true,
+            "width": 201,
+            "height": 268
+          }
+        ],
+        "selectedControls": [
+          {
+            "text": "Browse by Genre",
+            "label": null,
+            "value": null
+          },
+          {
+            "text": "RPG",
+            "label": null,
+            "value": null
+          }
+        ]
+      },
+      "screenshot": "explore-rpg-light-390.png",
+      "ms": 5064
+    },
+    {
+      "label": "explore-anticipated",
+      "path": "/explore?type=best-of-year",
+      "width": 768,
+      "theme": "dark",
+      "status": 200,
+      "state": {
+        "title": "Explore Games | verdict.games",
+        "heading": "Explore Games",
+        "light": false,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          },
+          {
+            "alt": "Path of Exile 2",
+            "loaded": true,
+            "width": 261,
+            "height": 348
+          },
+          {
+            "alt": "No Rest for the Wicked",
+            "loaded": true,
+            "width": 261,
+            "height": 348
+          },
+          {
+            "alt": "Tomb Raider: Legacy of Atlantis",
+            "loaded": true,
+            "width": 261,
+            "height": 348
+          },
+          {
+            "alt": "Titan Quest 2",
+            "loaded": true,
+            "width": 261,
+            "height": 348
+          },
+          {
+            "alt": "Tomb Raider: Catalyst",
+            "loaded": true,
+            "width": 261,
+            "height": 348
+          },
+          {
+            "alt": "Clockwork Revolution",
+            "loaded": true,
+            "width": 261,
+            "height": 348
+          },
+          {
+            "alt": "The Expanse: Osiris Reborn",
+            "loaded": true,
+            "width": 261,
+            "height": 348
+          },
+          {
+            "alt": "Kena: Scars of Kosmora",
+            "loaded": true,
+            "width": 261,
+            "height": 348
+          },
+          {
+            "alt": "God of War Laufey",
+            "loaded": true,
+            "width": 261,
+            "height": 348
+          },
+          {
+            "alt": "Lords of the Fallen 2",
+            "loaded": true,
+            "width": 261,
+            "height": 348
+          },
+          {
+            "alt": "Metro 2039",
+            "loaded": true,
+            "width": 261,
+            "height": 348
+          },
+          {
+            "alt": "ananta",
+            "loaded": true,
+            "width": 261,
+            "height": 348
+          }
+        ],
+        "selectedControls": [
+          {
+            "text": "Most Anticipated",
+            "label": null,
+            "value": null
+          }
+        ]
+      },
+      "screenshot": "explore-anticipated-dark-768.png",
+      "ms": 2444
+    },
+    {
+      "label": "explore-year",
+      "path": "/explore?type=popular-in-year&year=2024&platform=PC&sort=rating",
+      "width": 768,
+      "theme": "dark",
+      "status": 200,
+      "state": {
+        "title": "Explore Games | verdict.games",
+        "heading": "Explore Games",
+        "light": false,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          },
+          {
+            "alt": "The WereCleaner",
+            "loaded": true,
+            "width": 261,
+            "height": 348
+          },
+          {
+            "alt": "Satisfactory",
+            "loaded": true,
+            "width": 261,
+            "height": 348
+          },
+          {
+            "alt": "MiSide",
+            "loaded": true,
+            "width": 261,
+            "height": 348
+          },
+          {
+            "alt": "Balatro",
+            "loaded": true,
+            "width": 261,
+            "height": 348
+          },
+          {
+            "alt": "Five Nights at Freddy's: Into the Pit",
+            "loaded": true,
+            "width": 261,
+            "height": 348
+          },
+          {
+            "alt": "I Am Your Beast",
+            "loaded": true,
+            "width": 261,
+            "height": 348
+          },
+          {
+            "alt": "Rusty's Retirement",
+            "loaded": true,
+            "width": 261,
+            "height": 348
+          },
+          {
+            "alt": "Until Then",
+            "loaded": true,
+            "width": 600,
+            "height": 900
+          }
+        ],
+        "selectedControls": [
+          {
+            "text": "Best of 2024",
+            "label": null,
+            "value": null
+          }
+        ]
+      },
+      "screenshot": "explore-year-dark-768.png",
+      "ms": 1868
+    },
+    {
+      "label": "explore-top250",
+      "path": "/explore?type=all-time&platform=PlayStation+5",
+      "width": 768,
+      "theme": "dark",
+      "status": 200,
+      "state": {
+        "title": "Explore Games | verdict.games",
+        "heading": "Explore Games",
+        "light": false,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          },
+          {
+            "alt": "Baldur's Gate III",
+            "loaded": true,
+            "width": 261,
+            "height": 348
+          },
+          {
+            "alt": "Neon White",
+            "loaded": true,
+            "width": 261,
+            "height": 348
+          },
+          {
+            "alt": "TOEM",
+            "loaded": true,
+            "width": 261,
+            "height": 348
+          },
+          {
+            "alt": "Quake",
+            "loaded": true,
+            "width": 261,
+            "height": 348
+          },
+          {
+            "alt": "Balatro",
+            "loaded": true,
+            "width": 261,
+            "height": 348
+          },
+          {
+            "alt": "Death Stranding 2: On The Beach",
+            "loaded": true,
+            "width": 261,
+            "height": 348
+          },
+          {
+            "alt": "Elden Ring",
+            "loaded": true,
+            "width": 261,
+            "height": 348
+          },
+          {
+            "alt": "Marvel's Spider-Man",
+            "loaded": true,
+            "width": 261,
+            "height": 348
+          }
+        ],
+        "selectedControls": [
+          {
+            "text": "All-Time Top 250",
+            "label": null,
+            "value": null
+          }
+        ]
+      },
+      "screenshot": "explore-top250-dark-768.png",
+      "ms": 2397
+    },
+    {
+      "label": "explore-recent",
+      "path": "/explore?type=recent&platform=PC",
+      "width": 768,
+      "theme": "dark",
+      "status": 200,
+      "state": {
+        "title": "Explore Games | verdict.games",
+        "heading": "Explore Games",
+        "light": false,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          },
+          {
+            "alt": "Fable",
+            "loaded": true,
+            "width": 261,
+            "height": 348
+          },
+          {
+            "alt": "Phantom Blade Zero",
+            "loaded": true,
+            "width": 261,
+            "height": 348
+          },
+          {
+            "alt": "Final Fantasy Resonance",
+            "loaded": true,
+            "width": 261,
+            "height": 348
+          }
+        ],
+        "selectedControls": [
+          {
+            "text": "New Releases",
+            "label": null,
+            "value": null
+          }
+        ]
+      },
+      "screenshot": "explore-recent-dark-768.png",
+      "ms": 1610
+    },
+    {
+      "label": "explore-rpg",
+      "path": "/explore?type=genre&genre=role-playing-games-rpg&platform=PC&sort=rating",
+      "width": 768,
+      "theme": "dark",
+      "status": 200,
+      "state": {
+        "title": "Explore Games | verdict.games",
+        "heading": "Explore Games",
+        "light": false,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          },
+          {
+            "alt": "Baldur's Gate III",
+            "loaded": true,
+            "width": 261,
+            "height": 348
+          },
+          {
+            "alt": "Dishonored",
+            "loaded": true,
+            "width": 261,
+            "height": 348
+          },
+          {
+            "alt": "Hades",
+            "loaded": true,
+            "width": 261,
+            "height": 348
+          },
+          {
+            "alt": "Undertale",
+            "loaded": true,
+            "width": 261,
+            "height": 348
+          },
+          {
+            "alt": "The Henry Stickmin Collection",
+            "loaded": true,
+            "width": 261,
+            "height": 350
+          },
+          {
+            "alt": "Chicory: A Colorful Tale",
+            "loaded": true,
+            "width": 261,
+            "height": 348
+          },
+          {
+            "alt": "Divinity: Original Sin 2",
+            "loaded": true,
+            "width": 261,
+            "height": 348
+          },
+          {
+            "alt": "Slay the Spire",
+            "loaded": true,
+            "width": 261,
+            "height": 348
+          }
+        ],
+        "selectedControls": [
+          {
+            "text": "Browse by Genre",
+            "label": null,
+            "value": null
+          },
+          {
+            "text": "RPG",
+            "label": null,
+            "value": null
+          }
+        ]
+      },
+      "screenshot": "explore-rpg-dark-768.png",
+      "ms": 1594
+    },
+    {
+      "label": "explore-anticipated",
+      "path": "/explore?type=best-of-year",
+      "width": 768,
+      "theme": "light",
+      "status": 200,
+      "state": {
+        "title": "Explore Games | verdict.games",
+        "heading": "Explore Games",
+        "light": true,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          },
+          {
+            "alt": "Path of Exile 2",
+            "loaded": true,
+            "width": 261,
+            "height": 348
+          },
+          {
+            "alt": "No Rest for the Wicked",
+            "loaded": true,
+            "width": 261,
+            "height": 348
+          },
+          {
+            "alt": "Tomb Raider: Legacy of Atlantis",
+            "loaded": true,
+            "width": 261,
+            "height": 348
+          },
+          {
+            "alt": "Titan Quest 2",
+            "loaded": true,
+            "width": 261,
+            "height": 348
+          },
+          {
+            "alt": "Tomb Raider: Catalyst",
+            "loaded": true,
+            "width": 261,
+            "height": 348
+          },
+          {
+            "alt": "Clockwork Revolution",
+            "loaded": true,
+            "width": 261,
+            "height": 348
+          },
+          {
+            "alt": "The Expanse: Osiris Reborn",
+            "loaded": true,
+            "width": 261,
+            "height": 348
+          },
+          {
+            "alt": "Kena: Scars of Kosmora",
+            "loaded": true,
+            "width": 261,
+            "height": 348
+          },
+          {
+            "alt": "God of War Laufey",
+            "loaded": true,
+            "width": 261,
+            "height": 348
+          },
+          {
+            "alt": "Lords of the Fallen 2",
+            "loaded": true,
+            "width": 261,
+            "height": 348
+          },
+          {
+            "alt": "Metro 2039",
+            "loaded": true,
+            "width": 261,
+            "height": 348
+          },
+          {
+            "alt": "ananta",
+            "loaded": true,
+            "width": 261,
+            "height": 348
+          }
+        ],
+        "selectedControls": [
+          {
+            "text": "Most Anticipated",
+            "label": null,
+            "value": null
+          }
+        ]
+      },
+      "screenshot": "explore-anticipated-light-768.png",
+      "ms": 2108
+    },
+    {
+      "label": "explore-year",
+      "path": "/explore?type=popular-in-year&year=2024&platform=PC&sort=rating",
+      "width": 768,
+      "theme": "light",
+      "status": 200,
+      "state": {
+        "title": "Explore Games | verdict.games",
+        "heading": "Explore Games",
+        "light": true,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          },
+          {
+            "alt": "The WereCleaner",
+            "loaded": true,
+            "width": 261,
+            "height": 348
+          },
+          {
+            "alt": "Satisfactory",
+            "loaded": true,
+            "width": 261,
+            "height": 348
+          },
+          {
+            "alt": "MiSide",
+            "loaded": true,
+            "width": 261,
+            "height": 348
+          },
+          {
+            "alt": "Balatro",
+            "loaded": true,
+            "width": 261,
+            "height": 348
+          },
+          {
+            "alt": "Five Nights at Freddy's: Into the Pit",
+            "loaded": true,
+            "width": 261,
+            "height": 348
+          },
+          {
+            "alt": "I Am Your Beast",
+            "loaded": true,
+            "width": 261,
+            "height": 348
+          },
+          {
+            "alt": "Rusty's Retirement",
+            "loaded": true,
+            "width": 261,
+            "height": 348
+          },
+          {
+            "alt": "Until Then",
+            "loaded": true,
+            "width": 600,
+            "height": 900
+          }
+        ],
+        "selectedControls": [
+          {
+            "text": "Best of 2024",
+            "label": null,
+            "value": null
+          }
+        ]
+      },
+      "screenshot": "explore-year-light-768.png",
+      "ms": 1633
+    },
+    {
+      "label": "explore-top250",
+      "path": "/explore?type=all-time&platform=PlayStation+5",
+      "width": 768,
+      "theme": "light",
+      "status": 200,
+      "state": {
+        "title": "Explore Games | verdict.games",
+        "heading": "Explore Games",
+        "light": true,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          },
+          {
+            "alt": "Baldur's Gate III",
+            "loaded": true,
+            "width": 261,
+            "height": 348
+          },
+          {
+            "alt": "Neon White",
+            "loaded": true,
+            "width": 261,
+            "height": 348
+          },
+          {
+            "alt": "TOEM",
+            "loaded": true,
+            "width": 261,
+            "height": 348
+          },
+          {
+            "alt": "Quake",
+            "loaded": true,
+            "width": 261,
+            "height": 348
+          },
+          {
+            "alt": "Balatro",
+            "loaded": true,
+            "width": 261,
+            "height": 348
+          },
+          {
+            "alt": "Death Stranding 2: On The Beach",
+            "loaded": true,
+            "width": 261,
+            "height": 348
+          },
+          {
+            "alt": "Elden Ring",
+            "loaded": true,
+            "width": 261,
+            "height": 348
+          },
+          {
+            "alt": "Marvel's Spider-Man",
+            "loaded": true,
+            "width": 261,
+            "height": 348
+          }
+        ],
+        "selectedControls": [
+          {
+            "text": "All-Time Top 250",
+            "label": null,
+            "value": null
+          }
+        ]
+      },
+      "screenshot": "explore-top250-light-768.png",
+      "ms": 2556
+    },
+    {
+      "label": "explore-recent",
+      "path": "/explore?type=recent&platform=PC",
+      "width": 768,
+      "theme": "light",
+      "status": 200,
+      "state": {
+        "title": "Explore Games | verdict.games",
+        "heading": "Explore Games",
+        "light": true,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          },
+          {
+            "alt": "Fable",
+            "loaded": true,
+            "width": 261,
+            "height": 348
+          },
+          {
+            "alt": "Phantom Blade Zero",
+            "loaded": true,
+            "width": 261,
+            "height": 348
+          },
+          {
+            "alt": "Final Fantasy Resonance",
+            "loaded": true,
+            "width": 261,
+            "height": 348
+          }
+        ],
+        "selectedControls": [
+          {
+            "text": "New Releases",
+            "label": null,
+            "value": null
+          }
+        ]
+      },
+      "screenshot": "explore-recent-light-768.png",
+      "ms": 2071
+    },
+    {
+      "label": "explore-rpg",
+      "path": "/explore?type=genre&genre=role-playing-games-rpg&platform=PC&sort=rating",
+      "width": 768,
+      "theme": "light",
+      "status": 200,
+      "state": {
+        "title": "Explore Games | verdict.games",
+        "heading": "Explore Games",
+        "light": true,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          },
+          {
+            "alt": "Baldur's Gate III",
+            "loaded": true,
+            "width": 261,
+            "height": 348
+          },
+          {
+            "alt": "Dishonored",
+            "loaded": true,
+            "width": 261,
+            "height": 348
+          },
+          {
+            "alt": "Hades",
+            "loaded": true,
+            "width": 261,
+            "height": 348
+          },
+          {
+            "alt": "Undertale",
+            "loaded": true,
+            "width": 261,
+            "height": 348
+          },
+          {
+            "alt": "The Henry Stickmin Collection",
+            "loaded": true,
+            "width": 261,
+            "height": 350
+          },
+          {
+            "alt": "Chicory: A Colorful Tale",
+            "loaded": true,
+            "width": 261,
+            "height": 348
+          },
+          {
+            "alt": "Divinity: Original Sin 2",
+            "loaded": true,
+            "width": 261,
+            "height": 348
+          },
+          {
+            "alt": "Slay the Spire",
+            "loaded": true,
+            "width": 261,
+            "height": 348
+          }
+        ],
+        "selectedControls": [
+          {
+            "text": "Browse by Genre",
+            "label": null,
+            "value": null
+          },
+          {
+            "text": "RPG",
+            "label": null,
+            "value": null
+          }
+        ]
+      },
+      "screenshot": "explore-rpg-light-768.png",
+      "ms": 2129
+    },
+    {
+      "label": "explore-anticipated",
+      "path": "/explore?type=best-of-year",
+      "width": 1440,
+      "theme": "dark",
+      "status": 200,
+      "state": {
+        "title": "Explore Games | verdict.games",
+        "heading": "Explore Games",
+        "light": false,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          },
+          {
+            "alt": "Path of Exile 2",
+            "loaded": true,
+            "width": 39,
+            "height": 52
+          },
+          {
+            "alt": "No Rest for the Wicked",
+            "loaded": true,
+            "width": 39,
+            "height": 52
+          },
+          {
+            "alt": "Tomb Raider: Legacy of Atlantis",
+            "loaded": true,
+            "width": 39,
+            "height": 52
+          },
+          {
+            "alt": "Titan Quest 2",
+            "loaded": true,
+            "width": 39,
+            "height": 52
+          },
+          {
+            "alt": "Tomb Raider: Catalyst",
+            "loaded": true,
+            "width": 396,
+            "height": 528
+          },
+          {
+            "alt": "Clockwork Revolution",
+            "loaded": true,
+            "width": 396,
+            "height": 528
+          },
+          {
+            "alt": "The Expanse: Osiris Reborn",
+            "loaded": true,
+            "width": 396,
+            "height": 528
+          },
+          {
+            "alt": "Kena: Scars of Kosmora",
+            "loaded": true,
+            "width": 396,
+            "height": 528
+          },
+          {
+            "alt": "God of War Laufey",
+            "loaded": true,
+            "width": 39,
+            "height": 52
+          },
+          {
+            "alt": "Lords of the Fallen 2",
+            "loaded": true,
+            "width": 39,
+            "height": 52
+          }
+        ],
+        "selectedControls": [
+          {
+            "text": "Most Anticipated",
+            "label": null,
+            "value": null
+          }
+        ]
+      },
+      "screenshot": "explore-anticipated-dark-1440.png",
+      "ms": 1868
+    },
+    {
+      "label": "explore-year",
+      "path": "/explore?type=popular-in-year&year=2024&platform=PC&sort=rating",
+      "width": 1440,
+      "theme": "dark",
+      "status": 200,
+      "state": {
+        "title": "Explore Games | verdict.games",
+        "heading": "Explore Games",
+        "light": false,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          },
+          {
+            "alt": "The WereCleaner",
+            "loaded": true,
+            "width": 39,
+            "height": 52
+          },
+          {
+            "alt": "Satisfactory",
+            "loaded": true,
+            "width": 39,
+            "height": 52
+          },
+          {
+            "alt": "MiSide",
+            "loaded": true,
+            "width": 39,
+            "height": 52
+          },
+          {
+            "alt": "Balatro",
+            "loaded": true,
+            "width": 39,
+            "height": 52
+          },
+          {
+            "alt": "Five Nights at Freddy's: Into the Pit",
+            "loaded": true,
+            "width": 39,
+            "height": 52
+          },
+          {
+            "alt": "I Am Your Beast",
+            "loaded": true,
+            "width": 396,
+            "height": 528
+          },
+          {
+            "alt": "Rusty's Retirement",
+            "loaded": true,
+            "width": 396,
+            "height": 528
+          },
+          {
+            "alt": "Until Then",
+            "loaded": true,
+            "width": 600,
+            "height": 900
+          },
+          {
+            "alt": "No Case Should Remain Unsolved",
+            "loaded": true,
+            "width": 396,
+            "height": 528
+          },
+          {
+            "alt": "Antonblast",
+            "loaded": true,
+            "width": 396,
+            "height": 528
+          }
+        ],
+        "selectedControls": [
+          {
+            "text": "Best of 2024",
+            "label": null,
+            "value": null
+          }
+        ]
+      },
+      "screenshot": "explore-year-dark-1440.png",
+      "ms": 2070
+    },
+    {
+      "label": "explore-top250",
+      "path": "/explore?type=all-time&platform=PlayStation+5",
+      "width": 1440,
+      "theme": "dark",
+      "status": 200,
+      "state": {
+        "title": "Explore Games | verdict.games",
+        "heading": "Explore Games",
+        "light": false,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          },
+          {
+            "alt": "Baldur's Gate III",
+            "loaded": true,
+            "width": 39,
+            "height": 52
+          },
+          {
+            "alt": "Neon White",
+            "loaded": true,
+            "width": 39,
+            "height": 52
+          },
+          {
+            "alt": "TOEM",
+            "loaded": true,
+            "width": 39,
+            "height": 52
+          },
+          {
+            "alt": "Quake",
+            "loaded": true,
+            "width": 39,
+            "height": 52
+          },
+          {
+            "alt": "Balatro",
+            "loaded": true,
+            "width": 39,
+            "height": 52
+          },
+          {
+            "alt": "Death Stranding 2: On The Beach",
+            "loaded": true,
+            "width": 39,
+            "height": 52
+          },
+          {
+            "alt": "Elden Ring",
+            "loaded": true,
+            "width": 39,
+            "height": 52
+          },
+          {
+            "alt": "Marvel's Spider-Man",
+            "loaded": true,
+            "width": 39,
+            "height": 52
+          },
+          {
+            "alt": "Split Fiction",
+            "loaded": true,
+            "width": 39,
+            "height": 52
+          },
+          {
+            "alt": "Lego Batman: Legacy of the Dark Knight",
+            "loaded": true,
+            "width": 39,
+            "height": 52
+          }
+        ],
+        "selectedControls": [
+          {
+            "text": "All-Time Top 250",
+            "label": null,
+            "value": null
+          }
+        ]
+      },
+      "screenshot": "explore-top250-dark-1440.png",
+      "ms": 2137
+    },
+    {
+      "label": "explore-recent",
+      "path": "/explore?type=recent&platform=PC",
+      "width": 1440,
+      "theme": "dark",
+      "status": 200,
+      "state": {
+        "title": "Explore Games | verdict.games",
+        "heading": "Explore Games",
+        "light": false,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          },
+          {
+            "alt": "Fable",
+            "loaded": true,
+            "width": 396,
+            "height": 528
+          },
+          {
+            "alt": "Phantom Blade Zero",
+            "loaded": true,
+            "width": 396,
+            "height": 528
+          },
+          {
+            "alt": "Final Fantasy Resonance",
+            "loaded": true,
+            "width": 396,
+            "height": 528
+          }
+        ],
+        "selectedControls": [
+          {
+            "text": "New Releases",
+            "label": null,
+            "value": null
+          }
+        ]
+      },
+      "screenshot": "explore-recent-dark-1440.png",
+      "ms": 1602
+    },
+    {
+      "label": "explore-rpg",
+      "path": "/explore?type=genre&genre=role-playing-games-rpg&platform=PC&sort=rating",
+      "width": 1440,
+      "theme": "dark",
+      "status": 200,
+      "state": {
+        "title": "Explore Games | verdict.games",
+        "heading": "Explore Games",
+        "light": false,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          },
+          {
+            "alt": "Baldur's Gate III",
+            "loaded": true,
+            "width": 39,
+            "height": 52
+          },
+          {
+            "alt": "Dishonored",
+            "loaded": true,
+            "width": 39,
+            "height": 52
+          },
+          {
+            "alt": "Hades",
+            "loaded": true,
+            "width": 39,
+            "height": 52
+          },
+          {
+            "alt": "Undertale",
+            "loaded": true,
+            "width": 39,
+            "height": 52
+          },
+          {
+            "alt": "The Henry Stickmin Collection",
+            "loaded": true,
+            "width": 396,
+            "height": 531
+          },
+          {
+            "alt": "Chicory: A Colorful Tale",
+            "loaded": true,
+            "width": 39,
+            "height": 52
+          },
+          {
+            "alt": "Divinity: Original Sin 2",
+            "loaded": true,
+            "width": 39,
+            "height": 52
+          },
+          {
+            "alt": "Slay the Spire",
+            "loaded": true,
+            "width": 39,
+            "height": 52
+          },
+          {
+            "alt": "Cassette Beasts",
+            "loaded": true,
+            "width": 39,
+            "height": 52
+          },
+          {
+            "alt": "Dave the Diver",
+            "loaded": true,
+            "width": 39,
+            "height": 52
+          }
+        ],
+        "selectedControls": [
+          {
+            "text": "Browse by Genre",
+            "label": null,
+            "value": null
+          },
+          {
+            "text": "RPG",
+            "label": null,
+            "value": null
+          }
+        ]
+      },
+      "screenshot": "explore-rpg-dark-1440.png",
+      "ms": 1730
+    },
+    {
+      "label": "explore-anticipated",
+      "path": "/explore?type=best-of-year",
+      "width": 1440,
+      "theme": "light",
+      "status": 200,
+      "state": {
+        "title": "Explore Games | verdict.games",
+        "heading": "Explore Games",
+        "light": true,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          },
+          {
+            "alt": "Path of Exile 2",
+            "loaded": true,
+            "width": 39,
+            "height": 52
+          },
+          {
+            "alt": "No Rest for the Wicked",
+            "loaded": true,
+            "width": 39,
+            "height": 52
+          },
+          {
+            "alt": "Tomb Raider: Legacy of Atlantis",
+            "loaded": true,
+            "width": 39,
+            "height": 52
+          },
+          {
+            "alt": "Titan Quest 2",
+            "loaded": true,
+            "width": 39,
+            "height": 52
+          },
+          {
+            "alt": "Tomb Raider: Catalyst",
+            "loaded": true,
+            "width": 39,
+            "height": 52
+          },
+          {
+            "alt": "Clockwork Revolution",
+            "loaded": true,
+            "width": 39,
+            "height": 52
+          },
+          {
+            "alt": "The Expanse: Osiris Reborn",
+            "loaded": true,
+            "width": 39,
+            "height": 52
+          },
+          {
+            "alt": "Kena: Scars of Kosmora",
+            "loaded": true,
+            "width": 39,
+            "height": 52
+          },
+          {
+            "alt": "God of War Laufey",
+            "loaded": true,
+            "width": 39,
+            "height": 52
+          },
+          {
+            "alt": "Lords of the Fallen 2",
+            "loaded": true,
+            "width": 39,
+            "height": 52
+          }
+        ],
+        "selectedControls": [
+          {
+            "text": "Most Anticipated",
+            "label": null,
+            "value": null
+          }
+        ]
+      },
+      "screenshot": "explore-anticipated-light-1440.png",
+      "ms": 2323
+    },
+    {
+      "label": "explore-year",
+      "path": "/explore?type=popular-in-year&year=2024&platform=PC&sort=rating",
+      "width": 1440,
+      "theme": "light",
+      "status": 200,
+      "state": {
+        "title": "Explore Games | verdict.games",
+        "heading": "Explore Games",
+        "light": true,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          },
+          {
+            "alt": "The WereCleaner",
+            "loaded": true,
+            "width": 39,
+            "height": 52
+          },
+          {
+            "alt": "Satisfactory",
+            "loaded": true,
+            "width": 39,
+            "height": 52
+          },
+          {
+            "alt": "MiSide",
+            "loaded": true,
+            "width": 39,
+            "height": 52
+          },
+          {
+            "alt": "Balatro",
+            "loaded": true,
+            "width": 39,
+            "height": 52
+          },
+          {
+            "alt": "Five Nights at Freddy's: Into the Pit",
+            "loaded": true,
+            "width": 39,
+            "height": 52
+          },
+          {
+            "alt": "I Am Your Beast",
+            "loaded": true,
+            "width": 396,
+            "height": 528
+          },
+          {
+            "alt": "Rusty's Retirement",
+            "loaded": true,
+            "width": 396,
+            "height": 528
+          },
+          {
+            "alt": "Until Then",
+            "loaded": true,
+            "width": 600,
+            "height": 900
+          },
+          {
+            "alt": "No Case Should Remain Unsolved",
+            "loaded": true,
+            "width": 396,
+            "height": 528
+          },
+          {
+            "alt": "Antonblast",
+            "loaded": true,
+            "width": 396,
+            "height": 528
+          }
+        ],
+        "selectedControls": [
+          {
+            "text": "Best of 2024",
+            "label": null,
+            "value": null
+          }
+        ]
+      },
+      "screenshot": "explore-year-light-1440.png",
+      "ms": 2134
+    },
+    {
+      "label": "explore-top250",
+      "path": "/explore?type=all-time&platform=PlayStation+5",
+      "width": 1440,
+      "theme": "light",
+      "status": 200,
+      "state": {
+        "title": "Explore Games | verdict.games",
+        "heading": "Explore Games",
+        "light": true,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          },
+          {
+            "alt": "Baldur's Gate III",
+            "loaded": true,
+            "width": 39,
+            "height": 52
+          },
+          {
+            "alt": "Neon White",
+            "loaded": true,
+            "width": 39,
+            "height": 52
+          },
+          {
+            "alt": "TOEM",
+            "loaded": true,
+            "width": 39,
+            "height": 52
+          },
+          {
+            "alt": "Quake",
+            "loaded": true,
+            "width": 39,
+            "height": 52
+          },
+          {
+            "alt": "Balatro",
+            "loaded": true,
+            "width": 39,
+            "height": 52
+          },
+          {
+            "alt": "Death Stranding 2: On The Beach",
+            "loaded": true,
+            "width": 39,
+            "height": 52
+          },
+          {
+            "alt": "Elden Ring",
+            "loaded": true,
+            "width": 39,
+            "height": 52
+          },
+          {
+            "alt": "Marvel's Spider-Man",
+            "loaded": true,
+            "width": 39,
+            "height": 52
+          },
+          {
+            "alt": "Split Fiction",
+            "loaded": true,
+            "width": 39,
+            "height": 52
+          },
+          {
+            "alt": "Lego Batman: Legacy of the Dark Knight",
+            "loaded": true,
+            "width": 39,
+            "height": 52
+          }
+        ],
+        "selectedControls": [
+          {
+            "text": "All-Time Top 250",
+            "label": null,
+            "value": null
+          }
+        ]
+      },
+      "screenshot": "explore-top250-light-1440.png",
+      "ms": 1952
+    },
+    {
+      "label": "explore-recent",
+      "path": "/explore?type=recent&platform=PC",
+      "width": 1440,
+      "theme": "light",
+      "status": 200,
+      "state": {
+        "title": "Explore Games | verdict.games",
+        "heading": "Explore Games",
+        "light": true,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          },
+          {
+            "alt": "Fable",
+            "loaded": true,
+            "width": 39,
+            "height": 52
+          },
+          {
+            "alt": "Phantom Blade Zero",
+            "loaded": true,
+            "width": 39,
+            "height": 52
+          },
+          {
+            "alt": "Final Fantasy Resonance",
+            "loaded": true,
+            "width": 39,
+            "height": 52
+          }
+        ],
+        "selectedControls": [
+          {
+            "text": "New Releases",
+            "label": null,
+            "value": null
+          }
+        ]
+      },
+      "screenshot": "explore-recent-light-1440.png",
+      "ms": 1616
+    },
+    {
+      "label": "explore-rpg",
+      "path": "/explore?type=genre&genre=role-playing-games-rpg&platform=PC&sort=rating",
+      "width": 1440,
+      "theme": "light",
+      "status": 200,
+      "state": {
+        "title": "Explore Games | verdict.games",
+        "heading": "Explore Games",
+        "light": true,
+        "overflow": false,
+        "errorVisible": false,
+        "images": [
+          {
+            "alt": "Verdict Games",
+            "loaded": true,
+            "width": 48,
+            "height": 48
+          },
+          {
+            "alt": "Baldur's Gate III",
+            "loaded": true,
+            "width": 39,
+            "height": 52
+          },
+          {
+            "alt": "Dishonored",
+            "loaded": true,
+            "width": 39,
+            "height": 52
+          },
+          {
+            "alt": "Hades",
+            "loaded": true,
+            "width": 39,
+            "height": 52
+          },
+          {
+            "alt": "Undertale",
+            "loaded": true,
+            "width": 39,
+            "height": 52
+          },
+          {
+            "alt": "The Henry Stickmin Collection",
+            "loaded": true,
+            "width": 39,
+            "height": 53
+          },
+          {
+            "alt": "Chicory: A Colorful Tale",
+            "loaded": true,
+            "width": 39,
+            "height": 52
+          },
+          {
+            "alt": "Divinity: Original Sin 2",
+            "loaded": true,
+            "width": 39,
+            "height": 52
+          },
+          {
+            "alt": "Slay the Spire",
+            "loaded": true,
+            "width": 39,
+            "height": 52
+          },
+          {
+            "alt": "Cassette Beasts",
+            "loaded": true,
+            "width": 396,
+            "height": 528
+          },
+          {
+            "alt": "Dave the Diver",
+            "loaded": true,
+            "width": 396,
+            "height": 528
+          }
+        ],
+        "selectedControls": [
+          {
+            "text": "Browse by Genre",
+            "label": null,
+            "value": null
+          },
+          {
+            "text": "RPG",
+            "label": null,
+            "value": null
+          }
+        ]
+      },
+      "screenshot": "explore-rpg-light-1440.png",
+      "ms": 3112
+    }
+  ],
+  "network-390-dark": {
+    "blockedNonReads": 0,
+    "originReads": 125,
+    "blockedPaths": []
+  },
+  "network-390-light": {
+    "blockedNonReads": 0,
+    "originReads": 125,
+    "blockedPaths": []
+  },
+  "network-768-dark": {
+    "blockedNonReads": 0,
+    "originReads": 125,
+    "blockedPaths": []
+  },
+  "network-768-light": {
+    "blockedNonReads": 0,
+    "originReads": 125,
+    "blockedPaths": []
+  },
+  "network-1440-dark": {
+    "blockedNonReads": 0,
+    "originReads": 125,
+    "blockedPaths": []
+  },
+  "network-1440-light": {
+    "blockedNonReads": 0,
+    "originReads": 125,
+    "blockedPaths": []
+  },
+  "completedAt": "2026-11-17T18:25:15.259Z"
+}

@@ -1,0 +1,14 @@
+{
+  "verifiedAt": "2026-11-17T09:28:51.921Z",
+  "readOnly": true,
+  "postCommit": true,
+  "validSnapshot": true,
+  "count": 40,
+  "countMatches": true,
+  "payloadSha256": "cfe217c3174b9d882f08d2b88bc75a09d32baec8ef7c773ec83ebfd7fe9c149e",
+  "hashMatches": true,
+  "timestampMatchesAtJavascriptPrecision": true,
+  "payloadBytes": 87357,
+  "storedPayloadBytes": 31136,
+  "sourceGameWrites": 0
+}

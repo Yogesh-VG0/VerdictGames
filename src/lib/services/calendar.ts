@@ -14,7 +14,7 @@ export const CALENDAR_REVALIDATE_SECONDS = 300;
 export const CALENDAR_API_CACHE_CONTROL = `s-maxage=${CALENDAR_REVALIDATE_SECONDS}, stale-while-revalidate=3600`;
 export const CALENDAR_DEFAULT_LIMIT = 50;
 export const CALENDAR_MAX_LIMIT = 200;
-const CALENDAR_MONTH_CACHE_NAMESPACE = "calendar-month-v2";
+const CALENDAR_MONTH_CACHE_NAMESPACE = "calendar-month-v3-games-only";
 
 export function normalizeCalendarLimit(limit?: number): number {
   return Number.isFinite(limit) && Number(limit) > 0

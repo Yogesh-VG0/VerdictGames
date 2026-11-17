@@ -8,6 +8,7 @@ import {
 import { buildSocialMetadata, DEFAULT_OG_IMAGE, serializeJsonLd, SITE_URL } from "@/lib/seo";
 
 export const revalidate = 900;
+export const maxDuration = 30;
 
 // Generate on first visit, then serve cached HTML. Query strings do not change
 // the canonical game; RAWG ID resolution remains available through the API.

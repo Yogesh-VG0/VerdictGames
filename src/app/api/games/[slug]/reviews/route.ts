@@ -9,7 +9,7 @@
  */
 
 import { NextRequest } from "next/server";
-import { jsonOk, jsonNotFound } from "@/lib/api/response";
+import { jsonPrivateOk as jsonOk, jsonNotFound } from "@/lib/api/response";
 import { mapReviewRow } from "@/lib/db/mappers";
 import { getAuthSupabase, getCurrentUser } from "@/lib/supabase/auth";
 import { attachReviewVoteFields, getReviewVoteAggregates, getUserReviewVotes } from "@/lib/reviewVotes";

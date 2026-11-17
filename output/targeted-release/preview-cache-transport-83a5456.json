@@ -1,0 +1,20 @@
+{
+  "candidate": "83a5456ad914b912de930898ce966ae8ea073758",
+  "at": "2026-11-17T18:40:05.741Z",
+  "scope": "Four serial public reads using the existing short-lived origin-scoped preview credential. No cache-busting, no client no-cache, no browser request interception, no settings change, no stored credentials.12s diagnostic budget only; application deadlines unchanged.",
+  "samples": [
+    {
+      "path": "/api/lists?view=summary&page=1",
+      "ttfbMs": 226,
+      "status": 429,
+      "headers": {
+        "cache-control": "private, no-store, max-age=0",
+        "x-vercel-cache": null,
+        "age": null,
+        "content-type": "text/html; charset=utf-8"
+      },
+      "bytes": 25091,
+      "ms": 229
+    }
+  ]
+}

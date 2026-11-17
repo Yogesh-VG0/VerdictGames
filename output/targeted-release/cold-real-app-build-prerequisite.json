@@ -1,0 +1,10 @@
+{
+  "startedAt": "2026-11-16T18:03:16.716Z",
+  "commit": "4e8cd63f0843e2c3a1b31e39d42f1d30d5c76b9e",
+  "scope": "Fresh isolated local production build of committed application; actual hosted public catalogue; RAWG disabled; no worker, fixture, hosted configuration or source writes. Initial framework cache removed only inside this owned build. Server role used only for the normal durable snapshot read.",
+  "directory": ".verification\\cold-app-20261116-220897c976",
+  "samples": [],
+  "buildMs": 24808,
+  "failed": true,
+  "reason": "Local verification stopped"
+}

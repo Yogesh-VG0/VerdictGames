@@ -15,12 +15,14 @@
  * Command: node scripts/heroku-refresh-trending.mjs
  *
  * Required Config Vars:
- *   DATABASE_URL, RAWG_API_KEY, TWITCH_CLIENT_ID, TWITCH_CLIENT_SECRET
+ *   DATABASE_URL (or SUPABASE_DB_URL).
+ * Optional: RAWG_API_KEY for new-game ingestion; Twitch credentials for IGDB fallback.
  */
 
 import { startRun, finishRun, acquireLock, releaseLock, checkMinInterval, isInfrastructureDbError } from './lib/scheduler-logger.mjs';
 import { connectDb, closeDb } from './lib/db-connect.mjs';
 import { ingestGameDirect } from './lib/ingest-pipeline.mjs';
+import { groupSteamPlayerRows } from './lib/steam-player-groups.mjs';
 
 // Load .env for local development; hosted schedulers inject environment variables.
 try {
@@ -256,7 +258,9 @@ if (globalTop.length > 0) {
   const missing = globalTop.filter((r) => !ourAppSet.has(r.appid));
   console.log(`\n🆕 Step 1: ${missing.length} top Steam games not in our DB`);
 
-  if (missing.length > 0) {
+  if (missing.length > 0 && !process.env.RAWG_API_KEY) {
+    console.log('  RAWG is not configured; skipping optional new-game ingestion. Existing Steam metadata refresh continues.');
+  } else if (missing.length > 0) {
     // Auto-ingest up to 20 missing games per run via local pipeline
     const toIngest = missing.slice(0, 20);
     let ingested = 0;
@@ -289,36 +293,38 @@ if (globalTop.length > 0) {
 console.log("\n🔄 Step 2: Refreshing Steam current player counts...");
 const steamGames = await sql`SELECT id, title, steam_app_id FROM games WHERE steam_app_id IS NOT NULL ORDER BY score DESC`;
 console.log(`  ${steamGames.length} games with Steam App IDs`);
+const steamGroups = groupSteamPlayerRows(steamGames);
+console.log(`  ${steamGroups.length} unique Steam player-count requests`);
 
 let playerUpdates = 0;
 const now = new Date().toISOString();
 const pendingPlayerUpdates = [];
 
-for (let i = 0; i < steamGames.length; i += 10) {
-  const batch = steamGames.slice(i, i + 10);
+for (let i = 0; i < steamGroups.length; i += 10) {
+  const batch = steamGroups.slice(i, i + 10);
   const results = await Promise.allSettled(
     batch.map(async (g) => {
       // Steam Charts exposes a rollup peak, not a current count, so always use
       // the live per-game endpoint for this field.
       try {
-        const res = await fetch(`${STEAM_API}?appid=${g.steam_app_id}`, { signal: AbortSignal.timeout(8000) });
+        const res = await fetch(`${STEAM_API}?appid=${g.appId}`, { signal: AbortSignal.timeout(8000) });
         if (!res.ok) return null;
         const data = await res.json();
         if (data.response?.result !== 1) return null;
-        return { id: g.id, players: data.response.player_count };
+        return g.rows.map(row => ({ id: row.id, players: data.response.player_count }));
       } catch { return null; }
     })
   );
 
   const updates = results
     .filter((r) => r.status === "fulfilled" && r.value)
-    .map((r) => r.value);
+    .flatMap((r) => r.value);
   if (updates.length > 0) {
     pendingPlayerUpdates.push(...updates);
   }
 
   // Rate limit: 500ms between batches
-  if (i + 10 < steamGames.length) await new Promise((r) => setTimeout(r, 500));
+  if (i + 10 < steamGroups.length) await new Promise((r) => setTimeout(r, 500));
 }
 
 if (pendingPlayerUpdates.length > 0) {
@@ -472,6 +478,10 @@ const uniqueIds = [...new Set(trendingIds)].slice(0, 20);
 await sql`
   UPDATE games
   SET trending = CASE
+    WHEN id = ANY(${uniqueIds.length > 0 ? uniqueIds : ["00000000-0000-0000-0000-000000000000"]}) THEN true
+    ELSE false
+  END
+  WHERE trending IS DISTINCT FROM CASE
     WHEN id = ANY(${uniqueIds.length > 0 ? uniqueIds : ["00000000-0000-0000-0000-000000000000"]}) THEN true
     ELSE false
   END

@@ -1,5 +1,6 @@
 "use client";
 
+import { preferredScrollBehavior } from '@/lib/utils/motion';
 import { useRef } from "react";
 import { cn } from "@/lib/utils";
 
@@ -21,7 +22,7 @@ export default function HorizontalScroll({
     const amount = scrollRef.current.clientWidth * 0.6;
     scrollRef.current.scrollBy({
       left: dir === "left" ? -amount : amount,
-      behavior: "smooth",
+      behavior: preferredScrollBehavior(),
     });
   }
 

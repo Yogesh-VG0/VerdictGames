@@ -303,7 +303,7 @@ export default function SettingsPage() {
         <button
           onClick={() => saveMutation.mutate()}
           disabled={saveMutation.isPending}
-          className="px-6 py-2.5 rounded-xl bg-accent text-white font-medium text-sm hover:bg-accent-hover transition-colors disabled:opacity-50 shadow-lg shadow-accent/20"
+          className="px-6 py-2.5 rounded-xl bg-action text-action-foreground font-medium text-sm hover:bg-action-hover transition-colors disabled:opacity-50"
         >
           {saveMutation.isPending ? "Saving..." : "Save Changes"}
         </button>
@@ -323,20 +323,16 @@ export default function SettingsPage() {
 
       {/* Danger Zone */}
       <div className="rounded-2xl border border-danger/20 bg-danger/5 p-5 sm:p-6 space-y-3">
-        <h2 className="text-sm font-bold text-danger uppercase tracking-wider">Danger Zone</h2>
+        <h2 className="text-sm font-bold text-danger uppercase tracking-wider">Account deletion</h2>
         <p className="text-xs text-secondary leading-relaxed">
-          Permanently delete your account and all associated data including reviews, library, and profile information. This action cannot be undone.
+          To request removal of your account and associated data, email support@verdict.games from your account email. We will verify ownership before processing the request. Opening an email does not delete your account.
         </p>
-        <button
-          onClick={() => {
-            if (window.confirm("Are you sure you want to delete your account? This action is permanent and cannot be undone.")) {
-              addToast("Please contact support@verdict.games to complete account deletion.", "info", 8000);
-            }
-          }}
+        <a
+          href="mailto:support@verdict.games?subject=Verdict%20Games%20account%20deletion%20request"
           className="px-4 py-2 rounded-xl border border-danger/30 text-danger text-sm font-medium hover:bg-danger/10 transition-colors"
         >
-          Delete Account
-        </button>
+          Request account deletion by email
+        </a>
       </div>
     </div>
   );

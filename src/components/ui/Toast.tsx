@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, createContext, useContext } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { CheckCircle2, AlertCircle, Info, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -55,6 +55,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 }
 
 function ToastItem({ toast, onRemove }: { toast: Toast; onRemove: (id: string) => void }) {
+  const reducedMotion = useReducedMotion();
   useEffect(() => {
     const timer = setTimeout(() => onRemove(toast.id), toast.duration ?? 4000);
     return () => clearTimeout(timer);
@@ -75,10 +76,10 @@ function ToastItem({ toast, onRemove }: { toast: Toast; onRemove: (id: string) =
   return (
     <motion.div
       layout
-      initial={{ opacity: 0, y: 20, scale: 0.95 }}
+      initial={reducedMotion ? false : { opacity: 0, y: 8, scale: 0.97 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, x: 80, scale: 0.95 }}
-      transition={{ duration: 0.2 }}
+      transition={{ duration: reducedMotion ? 0 : 0.18 }}
       className={cn(
         "pointer-events-auto flex items-center gap-2.5 px-4 py-3 rounded-xl border bg-surface shadow-2xl backdrop-blur-xl max-w-sm",
         borderColors[toast.type]

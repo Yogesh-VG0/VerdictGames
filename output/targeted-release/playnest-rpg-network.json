@@ -1,0 +1,331 @@
+{
+  "measuredAt": "2026-11-16T07:08:38.713Z",
+  "interaction": "RPG genre selected through visible control",
+  "url": "https://playnest.dev/games?genres=12",
+  "cards": 24,
+  "headings": [
+    "Browse Games"
+  ],
+  "requests": [
+    {
+      "url": "https://playnest.dev/games?genres=12",
+      "type": "fetch",
+      "start": 416474,
+      "ms": 12257,
+      "transfer": 25774,
+      "encoded": 25474,
+      "decoded": 109701
+    },
+    {
+      "url": "https://playnest.dev/",
+      "type": "fetch",
+      "start": 417120,
+      "ms": 411,
+      "transfer": 478,
+      "encoded": 178,
+      "decoded": 268
+    },
+    {
+      "url": "https://playnest.dev/games",
+      "type": "fetch",
+      "start": 417120,
+      "ms": 454,
+      "transfer": 491,
+      "encoded": 191,
+      "decoded": 309
+    },
+    {
+      "url": "https://playnest.dev/premium",
+      "type": "fetch",
+      "start": 417120,
+      "ms": 431,
+      "transfer": 492,
+      "encoded": 192,
+      "decoded": 311
+    },
+    {
+      "url": "https://playnest.dev/events",
+      "type": "fetch",
+      "start": 417120,
+      "ms": 442,
+      "transfer": 491,
+      "encoded": 191,
+      "decoded": 310
+    },
+    {
+      "url": "https://playnest.dev/games/hot-new-releases",
+      "type": "fetch",
+      "start": 417533,
+      "ms": 226,
+      "transfer": 507,
+      "encoded": 207,
+      "decoded": 361
+    },
+    {
+      "url": "https://playnest.dev/games/best-of-the-year",
+      "type": "fetch",
+      "start": 417553,
+      "ms": 254,
+      "transfer": 510,
+      "encoded": 210,
+      "decoded": 361
+    },
+    {
+      "url": "https://playnest.dev/games/most-anticipated",
+      "type": "fetch",
+      "start": 417563,
+      "ms": 295,
+      "transfer": 509,
+      "encoded": 209,
+      "decoded": 361
+    },
+    {
+      "url": "https://playnest.dev/games/most-wishlisted",
+      "type": "fetch",
+      "start": 417575,
+      "ms": 284,
+      "transfer": 509,
+      "encoded": 209,
+      "decoded": 360
+    },
+    {
+      "url": "https://playnest.dev/games/trending",
+      "type": "fetch",
+      "start": 417761,
+      "ms": 233,
+      "transfer": 504,
+      "encoded": 204,
+      "decoded": 353
+    },
+    {
+      "url": "https://playnest.dev/auth/login",
+      "type": "fetch",
+      "start": 417809,
+      "ms": 312,
+      "transfer": 499,
+      "encoded": 199,
+      "decoded": 349
+    },
+    {
+      "url": "https://playnest.dev/",
+      "type": "fetch",
+      "start": 417861,
+      "ms": 258,
+      "transfer": 1599,
+      "encoded": 1299,
+      "decoded": 4034
+    },
+    {
+      "url": "https://playnest.dev/games",
+      "type": "fetch",
+      "start": 417862,
+      "ms": 392,
+      "transfer": 1600,
+      "encoded": 1300,
+      "decoded": 4111
+    },
+    {
+      "url": "https://playnest.dev/events",
+      "type": "fetch",
+      "start": 417995,
+      "ms": 233,
+      "transfer": 1532,
+      "encoded": 1232,
+      "decoded": 3746
+    },
+    {
+      "url": "https://playnest.dev/premium",
+      "type": "fetch",
+      "start": 418121,
+      "ms": 214,
+      "transfer": 1545,
+      "encoded": 1245,
+      "decoded": 3816
+    },
+    {
+      "url": "https://playnest.dev/games/hot-new-releases",
+      "type": "fetch",
+      "start": 418122,
+      "ms": 217,
+      "transfer": 1655,
+      "encoded": 1355,
+      "decoded": 4358
+    },
+    {
+      "url": "https://playnest.dev/games/best-of-the-year",
+      "type": "fetch",
+      "start": 418230,
+      "ms": 212,
+      "transfer": 1640,
+      "encoded": 1340,
+      "decoded": 4343
+    },
+    {
+      "url": "https://playnest.dev/games/most-anticipated",
+      "type": "fetch",
+      "start": 418257,
+      "ms": 346,
+      "transfer": 1637,
+      "encoded": 1337,
+      "decoded": 4286
+    },
+    {
+      "url": "https://playnest.dev/games/most-wishlisted",
+      "type": "fetch",
+      "start": 418336,
+      "ms": 353,
+      "transfer": 1615,
+      "encoded": 1315,
+      "decoded": 4237
+    },
+    {
+      "url": "https://playnest.dev/games/trending",
+      "type": "fetch",
+      "start": 418341,
+      "ms": 228,
+      "transfer": 1626,
+      "encoded": 1326,
+      "decoded": 4179
+    },
+    {
+      "url": "https://playnest.dev/auth/login",
+      "type": "fetch",
+      "start": 418444,
+      "ms": 216,
+      "transfer": 1596,
+      "encoded": 1296,
+      "decoded": 4166
+    },
+    {
+      "url": "https://wsrv.nl/?url=https%3A%2F%2Fimages.igdb.com%2Figdb%2Fimage%2Fupload%2Ft_1080p%2Fco20ac.webp&w=480&q=70&output=webp",
+      "type": "img",
+      "start": 429493,
+      "ms": 1117,
+      "transfer": 38472,
+      "encoded": 38172,
+      "decoded": 38172
+    },
+    {
+      "url": "https://wsrv.nl/?url=https%3A%2F%2Fimages.igdb.com%2Figdb%2Fimage%2Fupload%2Ft_1080p%2Fco2lcv.webp&w=480&q=70&output=webp",
+      "type": "img",
+      "start": 429493,
+      "ms": 1923,
+      "transfer": 36762,
+      "encoded": 36462,
+      "decoded": 36462
+    },
+    {
+      "url": "https://wsrv.nl/?url=https%3A%2F%2Fimages.igdb.com%2Figdb%2Fimage%2Fupload%2Ft_1080p%2Fco1x7o.webp&w=480&q=70&output=webp",
+      "type": "img",
+      "start": 429493,
+      "ms": 1917,
+      "transfer": 35192,
+      "encoded": 34892,
+      "decoded": 34892
+    },
+    {
+      "url": "https://wsrv.nl/?url=https%3A%2F%2Fimages.igdb.com%2Figdb%2Fimage%2Fupload%2Ft_1080p%2Fco1u60.webp&w=480&q=70&output=webp",
+      "type": "img",
+      "start": 429493,
+      "ms": 1984,
+      "transfer": 38250,
+      "encoded": 37950,
+      "decoded": 37950
+    },
+    {
+      "url": "https://wsrv.nl/?url=https%3A%2F%2Fimages.igdb.com%2Figdb%2Fimage%2Fupload%2Ft_1080p%2Fco2una.webp&w=480&q=70&output=webp",
+      "type": "img",
+      "start": 429493,
+      "ms": 1992,
+      "transfer": 49082,
+      "encoded": 48782,
+      "decoded": 48782
+    },
+    {
+      "url": "https://wsrv.nl/?url=https%3A%2F%2Fimages.igdb.com%2Figdb%2Fimage%2Fupload%2Ft_1080p%2Fco4jni.webp&w=480&q=70&output=webp",
+      "type": "img",
+      "start": 429493,
+      "ms": 1995,
+      "transfer": 23396,
+      "encoded": 23096,
+      "decoded": 23096
+    },
+    {
+      "url": "https://wsrv.nl/?url=https%3A%2F%2Fimages.igdb.com%2Figdb%2Fimage%2Fupload%2Ft_1080p%2Fcob9ed.webp&w=480&q=70&output=webp",
+      "type": "img",
+      "start": 429493,
+      "ms": 2197,
+      "transfer": 32986,
+      "encoded": 32686,
+      "decoded": 32686
+    },
+    {
+      "url": "https://playnest.dev/games/the-witcher-3-wild-hunt",
+      "type": "fetch",
+      "start": 429494,
+      "ms": 1040,
+      "transfer": 615,
+      "encoded": 315,
+      "decoded": 550
+    },
+    {
+      "url": "https://playnest.dev/games/the-elder-scrolls-v-skyrim",
+      "type": "fetch",
+      "start": 429494,
+      "ms": 1053,
+      "transfer": 621,
+      "encoded": 321,
+      "decoded": 553
+    },
+    {
+      "url": "https://playnest.dev/games/red-dead-redemption-2",
+      "type": "fetch",
+      "start": 429494,
+      "ms": 1054,
+      "transfer": 626,
+      "encoded": 326,
+      "decoded": 548
+    },
+    {
+      "url": "https://playnest.dev/games/the-witcher-3-wild-hunt",
+      "type": "fetch",
+      "start": 430537,
+      "ms": 845,
+      "transfer": 2070,
+      "encoded": 1770,
+      "decoded": 5712
+    },
+    {
+      "url": "https://playnest.dev/games/the-elder-scrolls-v-skyrim",
+      "type": "fetch",
+      "start": 430551,
+      "ms": 1023,
+      "transfer": 1918,
+      "encoded": 1618,
+      "decoded": 5135
+    },
+    {
+      "url": "https://playnest.dev/games/red-dead-redemption-2",
+      "type": "fetch",
+      "start": 430552,
+      "ms": 969,
+      "transfer": 1781,
+      "encoded": 1481,
+      "decoded": 4525
+    }
+  ],
+  "visiblePosters": [
+    {
+      "w": 82,
+      "h": 109
+    },
+    {
+      "w": 72,
+      "h": 96
+    },
+    {
+      "w": 78,
+      "h": 104
+    }
+  ]
+}

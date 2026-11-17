@@ -17,6 +17,7 @@ type HeroImageProps = {
   priority?: boolean;
   className?: string;
   sizes?: string;
+  fit?: 'cover' | 'contain';
   fallback?: ReactNode;
   fallbackClassName?: string;
 };
@@ -27,6 +28,7 @@ function HeroImageContent({
   priority = false,
   className,
   sizes = "100vw",
+  fit = 'cover',
   fallback,
   fallbackClassName,
 }: HeroImageProps) {
@@ -49,6 +51,7 @@ function HeroImageContent({
       alt={alt}
       fill
       className={cn("object-cover", className)}
+      style={{ objectFit: fit }}
       sizes={sizes}
       priority={priority}
       quality={85}

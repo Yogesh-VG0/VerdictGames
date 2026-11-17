@@ -1,0 +1,258 @@
+{
+  "measuredAt": "2026-11-17T13:59:04.824Z",
+  "scope": "Actual read-only anonymous homepage query plans, unchanged3s diagnostic cap. No data/configuration/index changes; storage-cache state unknown.",
+  "samples": [
+    {
+      "name": "trending",
+      "estimatedPlan": [
+        {
+          "Plan": {
+            "Node Type": "Limit",
+            "Parallel Aware": false,
+            "Async Capable": false,
+            "Startup Cost": 5131.53,
+            "Total Cost": 5131.83,
+            "Plan Rows": 120,
+            "Plan Width": 900,
+            "Plans": [
+              {
+                "Node Type": "Sort",
+                "Parent Relationship": "Outer",
+                "Parallel Aware": false,
+                "Async Capable": false,
+                "Startup Cost": 5131.53,
+                "Total Cost": 5141.64,
+                "Plan Rows": 4044,
+                "Plan Width": 900,
+                "Sort Key": [
+                  "is_trending_manual DESC NULLS LAST",
+                  "trending DESC NULLS LAST",
+                  "current_players DESC NULLS LAST",
+                  "momentum DESC NULLS LAST",
+                  "verdict_score DESC NULLS LAST",
+                  "review_count DESC NULLS LAST",
+                  "score DESC"
+                ],
+                "Plans": [
+                  {
+                    "Node Type": "Seq Scan",
+                    "Parent Relationship": "Outer",
+                    "Parallel Aware": false,
+                    "Async Capable": false,
+                    "Relation Name": "games",
+                    "Alias": "games",
+                    "Startup Cost": 0,
+                    "Total Cost": 4971.65,
+                    "Plan Rows": 4044,
+                    "Plan Width": 900,
+                    "Filter": "((score > 0) AND (cover_image <> ''::text) AND (release_date <= CURRENT_DATE) AND (release_date >= ((CURRENT_DATE - '10 years'::interval))::date))"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "failed": true,
+      "code": "57014"
+    },
+    {
+      "name": "top-rated",
+      "estimatedPlan": [
+        {
+          "Plan": {
+            "Node Type": "Limit",
+            "Parallel Aware": false,
+            "Async Capable": false,
+            "Startup Cost": 831.59,
+            "Total Cost": 832.04,
+            "Plan Rows": 180,
+            "Plan Width": 900,
+            "Plans": [
+              {
+                "Node Type": "Sort",
+                "Parent Relationship": "Outer",
+                "Parallel Aware": false,
+                "Async Capable": false,
+                "Startup Cost": 831.59,
+                "Total Cost": 832.05,
+                "Plan Rows": 184,
+                "Plan Width": 900,
+                "Sort Key": [
+                  "verdict_score DESC NULLS LAST",
+                  "confidence DESC NULLS LAST",
+                  "score DESC"
+                ],
+                "Plans": [
+                  {
+                    "Node Type": "Bitmap Heap Scan",
+                    "Parent Relationship": "Outer",
+                    "Parallel Aware": false,
+                    "Async Capable": false,
+                    "Relation Name": "games",
+                    "Alias": "games",
+                    "Startup Cost": 200.55,
+                    "Total Cost": 824.67,
+                    "Plan Rows": 184,
+                    "Plan Width": 900,
+                    "Recheck Cond": "((release_date >= ((CURRENT_DATE - '2 years'::interval))::date) AND (release_date <= CURRENT_DATE) AND (cover_image IS NOT NULL) AND (cover_image <> ''::text) AND (score >= 70) AND (review_count >= 75) AND (confidence >= '0.3'::double precision))",
+                    "Plans": [
+                      {
+                        "Node Type": "Bitmap Index Scan",
+                        "Parent Relationship": "Outer",
+                        "Parallel Aware": false,
+                        "Async Capable": false,
+                        "Index Name": "idx_games_homepage_top_rated_pool",
+                        "Startup Cost": 0,
+                        "Total Cost": 200.5,
+                        "Plan Rows": 184,
+                        "Plan Width": 0,
+                        "Index Cond": "((release_date >= ((CURRENT_DATE - '2 years'::interval))::date) AND (release_date <= CURRENT_DATE))"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "actualPlan": [
+        {
+          "Plan": {
+            "Node Type": "Limit",
+            "Parallel Aware": false,
+            "Async Capable": false,
+            "Startup Cost": 831.59,
+            "Total Cost": 832.04,
+            "Plan Rows": 180,
+            "Plan Width": 900,
+            "Actual Startup Time": 93.874,
+            "Actual Total Time": 93.903,
+            "Actual Rows": 180,
+            "Actual Loops": 1,
+            "Shared Hit Blocks": 359,
+            "Shared Read Blocks": 0,
+            "Shared Dirtied Blocks": 0,
+            "Shared Written Blocks": 0,
+            "Local Hit Blocks": 0,
+            "Local Read Blocks": 0,
+            "Local Dirtied Blocks": 0,
+            "Local Written Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0,
+            "Plans": [
+              {
+                "Node Type": "Sort",
+                "Parent Relationship": "Outer",
+                "Parallel Aware": false,
+                "Async Capable": false,
+                "Startup Cost": 831.59,
+                "Total Cost": 832.05,
+                "Plan Rows": 184,
+                "Plan Width": 900,
+                "Actual Startup Time": 93.872,
+                "Actual Total Time": 93.884,
+                "Actual Rows": 180,
+                "Actual Loops": 1,
+                "Sort Key": [
+                  "verdict_score DESC NULLS LAST",
+                  "confidence DESC NULLS LAST",
+                  "score DESC"
+                ],
+                "Sort Method": "quicksort",
+                "Sort Space Used": 378,
+                "Sort Space Type": "Memory",
+                "Shared Hit Blocks": 359,
+                "Shared Read Blocks": 0,
+                "Shared Dirtied Blocks": 0,
+                "Shared Written Blocks": 0,
+                "Local Hit Blocks": 0,
+                "Local Read Blocks": 0,
+                "Local Dirtied Blocks": 0,
+                "Local Written Blocks": 0,
+                "Temp Read Blocks": 0,
+                "Temp Written Blocks": 0,
+                "Plans": [
+                  {
+                    "Node Type": "Bitmap Heap Scan",
+                    "Parent Relationship": "Outer",
+                    "Parallel Aware": false,
+                    "Async Capable": false,
+                    "Relation Name": "games",
+                    "Alias": "games",
+                    "Startup Cost": 200.55,
+                    "Total Cost": 824.67,
+                    "Plan Rows": 184,
+                    "Plan Width": 900,
+                    "Actual Startup Time": 66.581,
+                    "Actual Total Time": 93.153,
+                    "Actual Rows": 299,
+                    "Actual Loops": 1,
+                    "Recheck Cond": "((release_date >= ((CURRENT_DATE - '2 years'::interval))::date) AND (release_date <= CURRENT_DATE) AND (cover_image IS NOT NULL) AND (cover_image <> ''::text) AND (score >= 70) AND (review_count >= 75) AND (confidence >= '0.3'::double precision))",
+                    "Rows Removed by Index Recheck": 0,
+                    "Exact Heap Blocks": 291,
+                    "Lossy Heap Blocks": 0,
+                    "Shared Hit Blocks": 359,
+                    "Shared Read Blocks": 0,
+                    "Shared Dirtied Blocks": 0,
+                    "Shared Written Blocks": 0,
+                    "Local Hit Blocks": 0,
+                    "Local Read Blocks": 0,
+                    "Local Dirtied Blocks": 0,
+                    "Local Written Blocks": 0,
+                    "Temp Read Blocks": 0,
+                    "Temp Written Blocks": 0,
+                    "Plans": [
+                      {
+                        "Node Type": "Bitmap Index Scan",
+                        "Parent Relationship": "Outer",
+                        "Parallel Aware": false,
+                        "Async Capable": false,
+                        "Index Name": "idx_games_homepage_top_rated_pool",
+                        "Startup Cost": 0,
+                        "Total Cost": 200.5,
+                        "Plan Rows": 184,
+                        "Plan Width": 0,
+                        "Actual Startup Time": 66.532,
+                        "Actual Total Time": 66.532,
+                        "Actual Rows": 299,
+                        "Actual Loops": 1,
+                        "Index Cond": "((release_date >= ((CURRENT_DATE - '2 years'::interval))::date) AND (release_date <= CURRENT_DATE))",
+                        "Shared Hit Blocks": 68,
+                        "Shared Read Blocks": 0,
+                        "Shared Dirtied Blocks": 0,
+                        "Shared Written Blocks": 0,
+                        "Local Hit Blocks": 0,
+                        "Local Read Blocks": 0,
+                        "Local Dirtied Blocks": 0,
+                        "Local Written Blocks": 0,
+                        "Temp Read Blocks": 0,
+                        "Temp Written Blocks": 0
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "Planning": {
+            "Shared Hit Blocks": 22,
+            "Shared Read Blocks": 0,
+            "Shared Dirtied Blocks": 0,
+            "Shared Written Blocks": 0,
+            "Local Hit Blocks": 0,
+            "Local Read Blocks": 0,
+            "Local Dirtied Blocks": 0,
+            "Local Written Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          "Planning Time": 0.436,
+          "Triggers": [],
+          "Execution Time": 93.966
+        }
+      ]
+    }
+  ]
+}

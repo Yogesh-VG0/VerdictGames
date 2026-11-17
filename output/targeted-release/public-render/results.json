@@ -1,0 +1,4890 @@
+{
+  "measuredAt": "2026-11-15T15:15:01.097Z",
+  "requests": [
+    {
+      "path": "/api/lists",
+      "sample": 1,
+      "status": 200,
+      "elapsedMs": 15,
+      "bytes": 26681
+    },
+    {
+      "path": "/api/lists",
+      "sample": 2,
+      "status": 200,
+      "elapsedMs": 4,
+      "bytes": 26681
+    },
+    {
+      "path": "/api/lists",
+      "sample": 3,
+      "status": 200,
+      "elapsedMs": 3,
+      "bytes": 26681
+    },
+    {
+      "path": "/api/rawg/lists?type=best-of-year",
+      "sample": 1,
+      "status": 200,
+      "elapsedMs": 9,
+      "bytes": 10831
+    },
+    {
+      "path": "/api/rawg/lists?type=best-of-year",
+      "sample": 2,
+      "status": 200,
+      "elapsedMs": 7,
+      "bytes": 10831
+    },
+    {
+      "path": "/api/rawg/lists?type=best-of-year",
+      "sample": 3,
+      "status": 200,
+      "elapsedMs": 6,
+      "bytes": 10831
+    },
+    {
+      "path": "/api/rawg/lists?type=all-time",
+      "sample": 1,
+      "status": 200,
+      "elapsedMs": 3,
+      "bytes": 11385
+    },
+    {
+      "path": "/api/rawg/lists?type=all-time",
+      "sample": 2,
+      "status": 200,
+      "elapsedMs": 2,
+      "bytes": 11385
+    },
+    {
+      "path": "/api/rawg/lists?type=all-time",
+      "sample": 3,
+      "status": 200,
+      "elapsedMs": 2,
+      "bytes": 11385
+    },
+    {
+      "path": "/api/rawg/lists?type=recent",
+      "sample": 1,
+      "status": 200,
+      "elapsedMs": 2,
+      "bytes": 2923
+    },
+    {
+      "path": "/api/rawg/lists?type=recent",
+      "sample": 2,
+      "status": 200,
+      "elapsedMs": 3,
+      "bytes": 2923
+    },
+    {
+      "path": "/api/rawg/lists?type=recent",
+      "sample": 3,
+      "status": 200,
+      "elapsedMs": 2,
+      "bytes": 2923
+    },
+    {
+      "path": "/api/rawg/lists?type=popular-in-year&year=2025",
+      "sample": 1,
+      "status": 200,
+      "elapsedMs": 2,
+      "bytes": 10911
+    },
+    {
+      "path": "/api/rawg/lists?type=popular-in-year&year=2025",
+      "sample": 2,
+      "status": 200,
+      "elapsedMs": 3,
+      "bytes": 10911
+    },
+    {
+      "path": "/api/rawg/lists?type=popular-in-year&year=2025",
+      "sample": 3,
+      "status": 200,
+      "elapsedMs": 2,
+      "bytes": 10911
+    }
+  ],
+  "pages": [
+    {
+      "path": "/explore",
+      "width": 1440,
+      "theme": "dark",
+      "overflow": false,
+      "visibleImages": [
+        {
+          "alt": "Rust",
+          "decoded": true,
+          "width": 256,
+          "height": 341,
+          "naturalWidth": 39,
+          "naturalHeight": 52,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/coajjj.webp"
+        },
+        {
+          "alt": "Phasmophobia",
+          "decoded": true,
+          "width": 256,
+          "height": 341,
+          "naturalWidth": 39,
+          "naturalHeight": 52,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/coamcz.webp"
+        },
+        {
+          "alt": "Valheim",
+          "decoded": true,
+          "width": 256,
+          "height": 341,
+          "naturalWidth": 396,
+          "naturalHeight": 528,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/cob24q.webp"
+        },
+        {
+          "alt": "DayZ",
+          "decoded": true,
+          "width": 256,
+          "height": 341,
+          "naturalWidth": 396,
+          "naturalHeight": 528,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/coaaqs.webp"
+        },
+        {
+          "alt": "BeamNG.drive",
+          "decoded": true,
+          "width": 256,
+          "height": 341,
+          "naturalWidth": 396,
+          "naturalHeight": 528,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/co1sym.webp"
+        },
+        {
+          "alt": "Raft",
+          "decoded": true,
+          "width": 256,
+          "height": 341,
+          "naturalWidth": 396,
+          "naturalHeight": 528,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/co1xdc.webp"
+        },
+        {
+          "alt": "Hades",
+          "decoded": true,
+          "width": 256,
+          "height": 341,
+          "naturalWidth": 396,
+          "naturalHeight": 528,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/cob9kr.webp"
+        },
+        {
+          "alt": "Hunt: Showdown",
+          "decoded": true,
+          "width": 256,
+          "height": 341,
+          "naturalWidth": 396,
+          "naturalHeight": 528,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/co8o7i.webp"
+        },
+        {
+          "alt": "VRChat",
+          "decoded": true,
+          "width": 256,
+          "height": 341,
+          "naturalWidth": 396,
+          "naturalHeight": 528,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/cobuhu.webp"
+        },
+        {
+          "alt": "Vampire Survivors",
+          "decoded": true,
+          "width": 256,
+          "height": 341,
+          "naturalWidth": 396,
+          "naturalHeight": 528,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/co4bzv.webp"
+        }
+      ],
+      "filters": [
+        {
+          "id": "explore-platform",
+          "height": 44,
+          "padding": "0px 40px 0px 16px",
+          "labelGap": 8
+        },
+        {
+          "id": "explore-sort",
+          "height": 44,
+          "padding": "0px 40px 0px 16px",
+          "labelGap": 8
+        }
+      ]
+    },
+    {
+      "path": "/lists",
+      "width": 1440,
+      "theme": "dark",
+      "overflow": false,
+      "visibleImages": [
+        {
+          "alt": "Creature Kitchen",
+          "decoded": true,
+          "width": 111,
+          "height": 166,
+          "naturalWidth": 133,
+          "naturalHeight": 178,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/cobf9h.webp"
+        },
+        {
+          "alt": "Katawa Shoujo",
+          "decoded": true,
+          "width": 111,
+          "height": 166,
+          "naturalWidth": 133,
+          "naturalHeight": 178,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co7k1l.webp"
+        },
+        {
+          "alt": "Is This Seat Taken?",
+          "decoded": true,
+          "width": 111,
+          "height": 166,
+          "naturalWidth": 133,
+          "naturalHeight": 178,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/coaapt.webp"
+        },
+        {
+          "alt": "Leaf it Alone",
+          "decoded": true,
+          "width": 111,
+          "height": 166,
+          "naturalWidth": 133,
+          "naturalHeight": 178,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/coatpx.webp"
+        },
+        {
+          "alt": "Sam & Max: Beyond Time and Space - Remastered",
+          "decoded": false,
+          "width": 111,
+          "height": 166,
+          "naturalWidth": 324,
+          "naturalHeight": 182,
+          "fit": "cover",
+          "src": "https://media.rawg.io/media/resize/640/-/games/ce9/ce93af2bc6139d79faab15305e97ec57.jpg"
+        },
+        {
+          "alt": "Descent (1996)",
+          "decoded": true,
+          "width": 111,
+          "height": 166,
+          "naturalWidth": 324,
+          "naturalHeight": 202,
+          "fit": "cover",
+          "src": "https://media.rawg.io/media/resize/640/-/screenshots/e9a/e9a432ccf67122208c3f0cbc14490e16.jpg"
+        },
+        {
+          "alt": "Fallen Hero: Rebirth",
+          "decoded": true,
+          "width": 111,
+          "height": 166,
+          "naturalWidth": 133,
+          "naturalHeight": 178,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co509z.webp"
+        },
+        {
+          "alt": "Micro Mages",
+          "decoded": true,
+          "width": 111,
+          "height": 166,
+          "naturalWidth": 133,
+          "naturalHeight": 178,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co3wsw.webp"
+        },
+        {
+          "alt": "Dawnfolk",
+          "decoded": true,
+          "width": 111,
+          "height": 166,
+          "naturalWidth": 133,
+          "naturalHeight": 178,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co94jk.webp"
+        },
+        {
+          "alt": "Platypus Reclayed",
+          "decoded": true,
+          "width": 111,
+          "height": 166,
+          "naturalWidth": 600,
+          "naturalHeight": 900,
+          "fit": "cover",
+          "src": "https://cdn.akamai.steamstatic.com/steam/apps/2912430/library_600x900_2x.jpg"
+        },
+        {
+          "alt": "Sektori",
+          "decoded": true,
+          "width": 111,
+          "height": 166,
+          "naturalWidth": 133,
+          "naturalHeight": 178,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co8ygz.webp"
+        },
+        {
+          "alt": "Wilmot Works It Out",
+          "decoded": true,
+          "width": 111,
+          "height": 166,
+          "naturalWidth": 133,
+          "naturalHeight": 178,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co8pqb.webp"
+        },
+        {
+          "alt": "StarVaders",
+          "decoded": true,
+          "width": 111,
+          "height": 166,
+          "naturalWidth": 133,
+          "naturalHeight": 178,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co8rla.webp"
+        },
+        {
+          "alt": "Balatro",
+          "decoded": true,
+          "width": 111,
+          "height": 166,
+          "naturalWidth": 133,
+          "naturalHeight": 178,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co9f4g.webp"
+        },
+        {
+          "alt": "I Was a Teenage Exocolonist",
+          "decoded": true,
+          "width": 111,
+          "height": 166,
+          "naturalWidth": 133,
+          "naturalHeight": 178,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/cob5iq.webp"
+        },
+        {
+          "alt": "Wandering Sword",
+          "decoded": true,
+          "width": 111,
+          "height": 166,
+          "naturalWidth": 133,
+          "naturalHeight": 178,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/coaaw0.webp"
+        },
+        {
+          "alt": "SaGa SCARLET GRACE AMBITIONS",
+          "decoded": false,
+          "width": 111,
+          "height": 166,
+          "naturalWidth": 324,
+          "naturalHeight": 182,
+          "fit": "cover",
+          "src": "https://media.rawg.io/media/resize/640/-/screenshots/091/0912f4a2c39a3a4962900d51b6a8996b.jpg"
+        },
+        {
+          "alt": "Disney Magical World 2: Enchanted Edition",
+          "decoded": false,
+          "width": 111,
+          "height": 166,
+          "naturalWidth": 324,
+          "naturalHeight": 182,
+          "fit": "cover",
+          "src": "https://media.rawg.io/media/resize/640/-/screenshots/901/9012342a607bcb72684808b17274b0ed.jpg"
+        },
+        {
+          "alt": "The Beatbox Soundpad",
+          "decoded": false,
+          "width": 111,
+          "height": 166,
+          "naturalWidth": 324,
+          "naturalHeight": 181,
+          "fit": "cover",
+          "src": "https://media.rawg.io/media/resize/640/-/screenshots/638/6384614369c0c21a1041d03cbbe57dd4.jpg"
+        },
+        {
+          "alt": "Buster Bros. Collection",
+          "decoded": false,
+          "width": 111,
+          "height": 166,
+          "naturalWidth": 324,
+          "naturalHeight": 243,
+          "fit": "cover",
+          "src": "https://media.rawg.io/media/resize/640/-/screenshots/12a/12a41249c0d07d54d951bc742fe3b015.jpg"
+        },
+        {
+          "alt": "Counter-Strike 2",
+          "decoded": true,
+          "width": 111,
+          "height": 166,
+          "naturalWidth": 133,
+          "naturalHeight": 178,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/coaczd.webp"
+        },
+        {
+          "alt": "Marvel Rivals",
+          "decoded": true,
+          "width": 111,
+          "height": 166,
+          "naturalWidth": 133,
+          "naturalHeight": 178,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/cobso9.webp"
+        },
+        {
+          "alt": "ARC Raiders",
+          "decoded": true,
+          "width": 111,
+          "height": 166,
+          "naturalWidth": 133,
+          "naturalHeight": 178,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co9rk1.webp"
+        },
+        {
+          "alt": "HELLDIVERS 2",
+          "decoded": true,
+          "width": 111,
+          "height": 166,
+          "naturalWidth": 133,
+          "naturalHeight": 178,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/coabbf.webp"
+        },
+        {
+          "alt": "HoloCure - Save the Fans!",
+          "decoded": true,
+          "width": 111,
+          "height": 166,
+          "naturalWidth": 133,
+          "naturalHeight": 178,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co9k5v.webp"
+        },
+        {
+          "alt": "The WereCleaner",
+          "decoded": true,
+          "width": 111,
+          "height": 166,
+          "naturalWidth": 133,
+          "naturalHeight": 178,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co878y.webp"
+        },
+        {
+          "alt": "Creature Kitchen",
+          "decoded": true,
+          "width": 111,
+          "height": 166,
+          "naturalWidth": 133,
+          "naturalHeight": 178,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/cobf9h.webp"
+        },
+        {
+          "alt": "Lethal Company",
+          "decoded": true,
+          "width": 111,
+          "height": 166,
+          "naturalWidth": 133,
+          "naturalHeight": 178,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co5ive.webp"
+        },
+        {
+          "alt": "MiSide",
+          "decoded": true,
+          "width": 111,
+          "height": 166,
+          "naturalWidth": 133,
+          "naturalHeight": 178,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co7e6i.webp"
+        },
+        {
+          "alt": "Resident Evil 4",
+          "decoded": true,
+          "width": 111,
+          "height": 166,
+          "naturalWidth": 133,
+          "naturalHeight": 178,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co6bnw.webp"
+        },
+        {
+          "alt": "Dave the Diver",
+          "decoded": true,
+          "width": 111,
+          "height": 166,
+          "naturalWidth": 17,
+          "naturalHeight": 23,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/coaav7.webp"
+        },
+        {
+          "alt": "Sanabi",
+          "decoded": true,
+          "width": 111,
+          "height": 166,
+          "naturalWidth": 133,
+          "naturalHeight": 178,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co56gu.webp"
+        },
+        {
+          "alt": "The WereCleaner",
+          "decoded": true,
+          "width": 111,
+          "height": 166,
+          "naturalWidth": 133,
+          "naturalHeight": 178,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co878y.webp"
+        },
+        {
+          "alt": "Patrick's Parabox",
+          "decoded": true,
+          "width": 111,
+          "height": 166,
+          "naturalWidth": 133,
+          "naturalHeight": 178,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2obc.webp"
+        },
+        {
+          "alt": "Schedule I",
+          "decoded": true,
+          "width": 111,
+          "height": 166,
+          "naturalWidth": 133,
+          "naturalHeight": 178,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co9adi.webp"
+        },
+        {
+          "alt": "Satisfactory",
+          "decoded": true,
+          "width": 111,
+          "height": 166,
+          "naturalWidth": 133,
+          "naturalHeight": 178,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co8tfy.webp"
+        }
+      ],
+      "filters": []
+    },
+    {
+      "path": "/search?q=Hades",
+      "width": 1440,
+      "theme": "dark",
+      "overflow": false,
+      "visibleImages": [
+        {
+          "alt": "Hades II",
+          "decoded": true,
+          "width": 259,
+          "height": 345,
+          "naturalWidth": 330,
+          "naturalHeight": 440,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/coaknx.webp"
+        },
+        {
+          "alt": "Hades",
+          "decoded": true,
+          "width": 259,
+          "height": 345,
+          "naturalWidth": 33,
+          "naturalHeight": 44,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/cob9kr.webp"
+        }
+      ],
+      "filters": [
+        {
+          "id": "search-genre-filter",
+          "height": 44,
+          "padding": "0px 40px 0px 16px",
+          "labelGap": 8
+        },
+        {
+          "id": "search-year-filter",
+          "height": 44,
+          "padding": "0px 40px 0px 16px",
+          "labelGap": 8
+        },
+        {
+          "id": "search-sort",
+          "height": 44,
+          "padding": "0px 40px 0px 16px",
+          "labelGap": 8
+        }
+      ]
+    },
+    {
+      "path": "/",
+      "width": 1440,
+      "theme": "dark",
+      "overflow": false,
+      "visibleImages": [
+        {
+          "alt": "ARC Raiders",
+          "decoded": true,
+          "width": 238,
+          "height": 317,
+          "naturalWidth": 330,
+          "naturalHeight": 440,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/co9rk1.webp"
+        },
+        {
+          "alt": "Schedule I",
+          "decoded": true,
+          "width": 238,
+          "height": 317,
+          "naturalWidth": 330,
+          "naturalHeight": 440,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/co9adi.webp"
+        },
+        {
+          "alt": "Kingdom Come: Deliverance II",
+          "decoded": true,
+          "width": 238,
+          "height": 317,
+          "naturalWidth": 330,
+          "naturalHeight": 440,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/co8qmv.webp"
+        },
+        {
+          "alt": "Counter-Strike 2",
+          "decoded": true,
+          "width": 238,
+          "height": 317,
+          "naturalWidth": 330,
+          "naturalHeight": 440,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/coaczd.webp"
+        },
+        {
+          "alt": "Europa Universalis V",
+          "decoded": true,
+          "width": 238,
+          "height": 317,
+          "naturalWidth": 330,
+          "naturalHeight": 440,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/co9s5c.webp"
+        },
+        {
+          "alt": "Clair Obscur: Expedition 33",
+          "decoded": true,
+          "width": 238,
+          "height": 317,
+          "naturalWidth": 330,
+          "naturalHeight": 440,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/co9gam.webp"
+        },
+        {
+          "alt": "Farming Simulator 25",
+          "decoded": false,
+          "width": 238,
+          "height": 317,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "Baldur's Gate III",
+          "decoded": false,
+          "width": 238,
+          "height": 317,
+          "naturalWidth": 330,
+          "naturalHeight": 440,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/co670h.webp"
+        },
+        {
+          "alt": "Manor Lords",
+          "decoded": false,
+          "width": 238,
+          "height": 317,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "Disney Dreamlight Valley",
+          "decoded": false,
+          "width": 238,
+          "height": 317,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "Balatro",
+          "decoded": false,
+          "width": 238,
+          "height": 317,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "S.T.A.L.K.E.R. 2: Heart of Chornobyl",
+          "decoded": false,
+          "width": 238,
+          "height": 317,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "Satisfactory",
+          "decoded": false,
+          "width": 238,
+          "height": 317,
+          "naturalWidth": 330,
+          "naturalHeight": 440,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/co8tfy.webp"
+        },
+        {
+          "alt": "Hollow Knight: Silksong",
+          "decoded": false,
+          "width": 238,
+          "height": 317,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "Sons of the Forest",
+          "decoded": false,
+          "width": 238,
+          "height": 317,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "Enshrouded (2024)",
+          "decoded": false,
+          "width": 238,
+          "height": 317,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "RV There Yet?",
+          "decoded": false,
+          "width": 238,
+          "height": 317,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "Valheim",
+          "decoded": true,
+          "width": 238,
+          "height": 317,
+          "naturalWidth": 33,
+          "naturalHeight": 44,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/cob24q.webp"
+        },
+        {
+          "alt": "The Finals",
+          "decoded": false,
+          "width": 238,
+          "height": 317,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "RuneScape: Dragonwilds",
+          "decoded": false,
+          "width": 238,
+          "height": 317,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "Rust",
+          "decoded": true,
+          "width": 222,
+          "height": 297,
+          "naturalWidth": 30,
+          "naturalHeight": 41,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/coajjj.webp"
+        },
+        {
+          "alt": "Phasmophobia",
+          "decoded": true,
+          "width": 222,
+          "height": 297,
+          "naturalWidth": 30,
+          "naturalHeight": 41,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/coamcz.webp"
+        },
+        {
+          "alt": "Valheim",
+          "decoded": true,
+          "width": 222,
+          "height": 297,
+          "naturalWidth": 30,
+          "naturalHeight": 41,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/cob24q.webp"
+        },
+        {
+          "alt": "DayZ",
+          "decoded": true,
+          "width": 222,
+          "height": 297,
+          "naturalWidth": 30,
+          "naturalHeight": 41,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/coaaqs.webp"
+        },
+        {
+          "alt": "BeamNG.drive",
+          "decoded": true,
+          "width": 222,
+          "height": 297,
+          "naturalWidth": 30,
+          "naturalHeight": 41,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/co1sym.webp"
+        },
+        {
+          "alt": "Raft",
+          "decoded": true,
+          "width": 222,
+          "height": 297,
+          "naturalWidth": 30,
+          "naturalHeight": 41,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/co1xdc.webp"
+        },
+        {
+          "alt": "Hades",
+          "decoded": true,
+          "width": 222,
+          "height": 297,
+          "naturalWidth": 30,
+          "naturalHeight": 41,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/cob9kr.webp"
+        },
+        {
+          "alt": "Hunt: Showdown",
+          "decoded": true,
+          "width": 222,
+          "height": 297,
+          "naturalWidth": 30,
+          "naturalHeight": 41,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/co8o7i.webp"
+        },
+        {
+          "alt": "VRChat",
+          "decoded": true,
+          "width": 222,
+          "height": 297,
+          "naturalWidth": 30,
+          "naturalHeight": 41,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/cobuhu.webp"
+        },
+        {
+          "alt": "Vampire Survivors",
+          "decoded": true,
+          "width": 222,
+          "height": 297,
+          "naturalWidth": 30,
+          "naturalHeight": 41,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/co4bzv.webp"
+        },
+        {
+          "alt": "RimWorld",
+          "decoded": true,
+          "width": 222,
+          "height": 297,
+          "naturalWidth": 30,
+          "naturalHeight": 41,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/coaaqj.webp"
+        },
+        {
+          "alt": "Path of Exile 2",
+          "decoded": true,
+          "width": 222,
+          "height": 297,
+          "naturalWidth": 30,
+          "naturalHeight": 41,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/co8ae0.webp"
+        },
+        {
+          "alt": "Ultrakill",
+          "decoded": true,
+          "width": 222,
+          "height": 297,
+          "naturalWidth": 30,
+          "naturalHeight": 41,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/co46s3.webp"
+        },
+        {
+          "alt": "Slay the Spire",
+          "decoded": true,
+          "width": 222,
+          "height": 297,
+          "naturalWidth": 30,
+          "naturalHeight": 41,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/co1iyf.webp"
+        },
+        {
+          "alt": "Dead Cells",
+          "decoded": true,
+          "width": 222,
+          "height": 297,
+          "naturalWidth": 30,
+          "naturalHeight": 41,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/co7jfv.webp"
+        },
+        {
+          "alt": "Dave the Diver",
+          "decoded": true,
+          "width": 222,
+          "height": 297,
+          "naturalWidth": 30,
+          "naturalHeight": 41,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/coaav7.webp"
+        },
+        {
+          "alt": "Oxygen Not Included",
+          "decoded": true,
+          "width": 222,
+          "height": 297,
+          "naturalWidth": 30,
+          "naturalHeight": 41,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/co7ugt.webp"
+        },
+        {
+          "alt": "Space Engineers",
+          "decoded": true,
+          "width": 222,
+          "height": 297,
+          "naturalWidth": 30,
+          "naturalHeight": 41,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/coaaw8.webp"
+        },
+        {
+          "alt": "V Rising",
+          "decoded": true,
+          "width": 222,
+          "height": 297,
+          "naturalWidth": 30,
+          "naturalHeight": 41,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/coaavz.webp"
+        },
+        {
+          "alt": "The Isle",
+          "decoded": true,
+          "width": 222,
+          "height": 297,
+          "naturalWidth": 30,
+          "naturalHeight": 41,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/coaat6.webp"
+        }
+      ],
+      "filters": []
+    },
+    {
+      "path": "/explore",
+      "width": 1440,
+      "theme": "light",
+      "overflow": false,
+      "visibleImages": [
+        {
+          "alt": "Rust",
+          "decoded": true,
+          "width": 256,
+          "height": 341,
+          "naturalWidth": 39,
+          "naturalHeight": 52,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/coajjj.webp"
+        },
+        {
+          "alt": "Phasmophobia",
+          "decoded": true,
+          "width": 256,
+          "height": 341,
+          "naturalWidth": 39,
+          "naturalHeight": 52,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/coamcz.webp"
+        },
+        {
+          "alt": "Valheim",
+          "decoded": true,
+          "width": 256,
+          "height": 341,
+          "naturalWidth": 39,
+          "naturalHeight": 52,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/cob24q.webp"
+        },
+        {
+          "alt": "DayZ",
+          "decoded": true,
+          "width": 256,
+          "height": 341,
+          "naturalWidth": 39,
+          "naturalHeight": 52,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/coaaqs.webp"
+        },
+        {
+          "alt": "BeamNG.drive",
+          "decoded": true,
+          "width": 256,
+          "height": 341,
+          "naturalWidth": 39,
+          "naturalHeight": 52,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/co1sym.webp"
+        },
+        {
+          "alt": "Raft",
+          "decoded": true,
+          "width": 256,
+          "height": 341,
+          "naturalWidth": 396,
+          "naturalHeight": 528,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/co1xdc.webp"
+        },
+        {
+          "alt": "Hades",
+          "decoded": true,
+          "width": 256,
+          "height": 341,
+          "naturalWidth": 396,
+          "naturalHeight": 528,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/cob9kr.webp"
+        },
+        {
+          "alt": "Hunt: Showdown",
+          "decoded": true,
+          "width": 256,
+          "height": 341,
+          "naturalWidth": 396,
+          "naturalHeight": 528,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/co8o7i.webp"
+        },
+        {
+          "alt": "VRChat",
+          "decoded": true,
+          "width": 256,
+          "height": 341,
+          "naturalWidth": 39,
+          "naturalHeight": 52,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/cobuhu.webp"
+        },
+        {
+          "alt": "Vampire Survivors",
+          "decoded": true,
+          "width": 256,
+          "height": 341,
+          "naturalWidth": 396,
+          "naturalHeight": 528,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/co4bzv.webp"
+        }
+      ],
+      "filters": [
+        {
+          "id": "explore-platform",
+          "height": 44,
+          "padding": "0px 40px 0px 16px",
+          "labelGap": 8
+        },
+        {
+          "id": "explore-sort",
+          "height": 44,
+          "padding": "0px 40px 0px 16px",
+          "labelGap": 8
+        }
+      ]
+    },
+    {
+      "path": "/lists",
+      "width": 1440,
+      "theme": "light",
+      "overflow": false,
+      "visibleImages": [
+        {
+          "alt": "Creature Kitchen",
+          "decoded": true,
+          "width": 111,
+          "height": 166,
+          "naturalWidth": 133,
+          "naturalHeight": 178,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/cobf9h.webp"
+        },
+        {
+          "alt": "Katawa Shoujo",
+          "decoded": true,
+          "width": 111,
+          "height": 166,
+          "naturalWidth": 133,
+          "naturalHeight": 178,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co7k1l.webp"
+        },
+        {
+          "alt": "Is This Seat Taken?",
+          "decoded": true,
+          "width": 111,
+          "height": 166,
+          "naturalWidth": 133,
+          "naturalHeight": 178,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/coaapt.webp"
+        },
+        {
+          "alt": "Leaf it Alone",
+          "decoded": true,
+          "width": 111,
+          "height": 166,
+          "naturalWidth": 133,
+          "naturalHeight": 178,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/coatpx.webp"
+        },
+        {
+          "alt": "Sam & Max: Beyond Time and Space - Remastered",
+          "decoded": true,
+          "width": 111,
+          "height": 166,
+          "naturalWidth": 324,
+          "naturalHeight": 182,
+          "fit": "cover",
+          "src": "https://media.rawg.io/media/resize/640/-/games/ce9/ce93af2bc6139d79faab15305e97ec57.jpg"
+        },
+        {
+          "alt": "Descent (1996)",
+          "decoded": false,
+          "width": 111,
+          "height": 166,
+          "naturalWidth": 324,
+          "naturalHeight": 202,
+          "fit": "cover",
+          "src": "https://media.rawg.io/media/resize/640/-/screenshots/e9a/e9a432ccf67122208c3f0cbc14490e16.jpg"
+        },
+        {
+          "alt": "Fallen Hero: Rebirth",
+          "decoded": true,
+          "width": 111,
+          "height": 166,
+          "naturalWidth": 133,
+          "naturalHeight": 178,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co509z.webp"
+        },
+        {
+          "alt": "Micro Mages",
+          "decoded": true,
+          "width": 111,
+          "height": 166,
+          "naturalWidth": 133,
+          "naturalHeight": 178,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co3wsw.webp"
+        },
+        {
+          "alt": "Dawnfolk",
+          "decoded": true,
+          "width": 111,
+          "height": 166,
+          "naturalWidth": 133,
+          "naturalHeight": 178,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co94jk.webp"
+        },
+        {
+          "alt": "Platypus Reclayed",
+          "decoded": true,
+          "width": 111,
+          "height": 166,
+          "naturalWidth": 600,
+          "naturalHeight": 900,
+          "fit": "cover",
+          "src": "https://cdn.akamai.steamstatic.com/steam/apps/2912430/library_600x900_2x.jpg"
+        },
+        {
+          "alt": "Sektori",
+          "decoded": true,
+          "width": 111,
+          "height": 166,
+          "naturalWidth": 133,
+          "naturalHeight": 178,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co8ygz.webp"
+        },
+        {
+          "alt": "Wilmot Works It Out",
+          "decoded": true,
+          "width": 111,
+          "height": 166,
+          "naturalWidth": 133,
+          "naturalHeight": 178,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co8pqb.webp"
+        },
+        {
+          "alt": "StarVaders",
+          "decoded": true,
+          "width": 111,
+          "height": 166,
+          "naturalWidth": 133,
+          "naturalHeight": 178,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co8rla.webp"
+        },
+        {
+          "alt": "Balatro",
+          "decoded": true,
+          "width": 111,
+          "height": 166,
+          "naturalWidth": 133,
+          "naturalHeight": 178,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co9f4g.webp"
+        },
+        {
+          "alt": "I Was a Teenage Exocolonist",
+          "decoded": true,
+          "width": 111,
+          "height": 166,
+          "naturalWidth": 133,
+          "naturalHeight": 178,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/cob5iq.webp"
+        },
+        {
+          "alt": "Wandering Sword",
+          "decoded": true,
+          "width": 111,
+          "height": 166,
+          "naturalWidth": 133,
+          "naturalHeight": 178,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/coaaw0.webp"
+        },
+        {
+          "alt": "SaGa SCARLET GRACE AMBITIONS",
+          "decoded": true,
+          "width": 111,
+          "height": 166,
+          "naturalWidth": 324,
+          "naturalHeight": 182,
+          "fit": "cover",
+          "src": "https://media.rawg.io/media/resize/640/-/screenshots/091/0912f4a2c39a3a4962900d51b6a8996b.jpg"
+        },
+        {
+          "alt": "Disney Magical World 2: Enchanted Edition",
+          "decoded": false,
+          "width": 111,
+          "height": 166,
+          "naturalWidth": 324,
+          "naturalHeight": 182,
+          "fit": "cover",
+          "src": "https://media.rawg.io/media/resize/640/-/screenshots/901/9012342a607bcb72684808b17274b0ed.jpg"
+        },
+        {
+          "alt": "The Beatbox Soundpad",
+          "decoded": true,
+          "width": 111,
+          "height": 166,
+          "naturalWidth": 324,
+          "naturalHeight": 181,
+          "fit": "cover",
+          "src": "https://media.rawg.io/media/resize/640/-/screenshots/638/6384614369c0c21a1041d03cbbe57dd4.jpg"
+        },
+        {
+          "alt": "Buster Bros. Collection",
+          "decoded": true,
+          "width": 111,
+          "height": 166,
+          "naturalWidth": 324,
+          "naturalHeight": 243,
+          "fit": "cover",
+          "src": "https://media.rawg.io/media/resize/640/-/screenshots/12a/12a41249c0d07d54d951bc742fe3b015.jpg"
+        },
+        {
+          "alt": "Counter-Strike 2",
+          "decoded": true,
+          "width": 111,
+          "height": 166,
+          "naturalWidth": 133,
+          "naturalHeight": 178,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/coaczd.webp"
+        },
+        {
+          "alt": "Marvel Rivals",
+          "decoded": true,
+          "width": 111,
+          "height": 166,
+          "naturalWidth": 133,
+          "naturalHeight": 178,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/cobso9.webp"
+        },
+        {
+          "alt": "ARC Raiders",
+          "decoded": true,
+          "width": 111,
+          "height": 166,
+          "naturalWidth": 133,
+          "naturalHeight": 178,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co9rk1.webp"
+        },
+        {
+          "alt": "HELLDIVERS 2",
+          "decoded": true,
+          "width": 111,
+          "height": 166,
+          "naturalWidth": 133,
+          "naturalHeight": 178,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/coabbf.webp"
+        },
+        {
+          "alt": "HoloCure - Save the Fans!",
+          "decoded": true,
+          "width": 111,
+          "height": 166,
+          "naturalWidth": 133,
+          "naturalHeight": 178,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co9k5v.webp"
+        },
+        {
+          "alt": "The WereCleaner",
+          "decoded": true,
+          "width": 111,
+          "height": 166,
+          "naturalWidth": 133,
+          "naturalHeight": 178,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co878y.webp"
+        },
+        {
+          "alt": "Creature Kitchen",
+          "decoded": true,
+          "width": 111,
+          "height": 166,
+          "naturalWidth": 133,
+          "naturalHeight": 178,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/cobf9h.webp"
+        },
+        {
+          "alt": "Lethal Company",
+          "decoded": true,
+          "width": 111,
+          "height": 166,
+          "naturalWidth": 133,
+          "naturalHeight": 178,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co5ive.webp"
+        },
+        {
+          "alt": "MiSide",
+          "decoded": true,
+          "width": 111,
+          "height": 166,
+          "naturalWidth": 133,
+          "naturalHeight": 178,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co7e6i.webp"
+        },
+        {
+          "alt": "Resident Evil 4",
+          "decoded": true,
+          "width": 111,
+          "height": 166,
+          "naturalWidth": 133,
+          "naturalHeight": 178,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co6bnw.webp"
+        },
+        {
+          "alt": "Dave the Diver",
+          "decoded": true,
+          "width": 111,
+          "height": 166,
+          "naturalWidth": 17,
+          "naturalHeight": 23,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/coaav7.webp"
+        },
+        {
+          "alt": "Sanabi",
+          "decoded": true,
+          "width": 111,
+          "height": 166,
+          "naturalWidth": 133,
+          "naturalHeight": 178,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co56gu.webp"
+        },
+        {
+          "alt": "The WereCleaner",
+          "decoded": true,
+          "width": 111,
+          "height": 166,
+          "naturalWidth": 133,
+          "naturalHeight": 178,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co878y.webp"
+        },
+        {
+          "alt": "Patrick's Parabox",
+          "decoded": true,
+          "width": 111,
+          "height": 166,
+          "naturalWidth": 133,
+          "naturalHeight": 178,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2obc.webp"
+        },
+        {
+          "alt": "Schedule I",
+          "decoded": true,
+          "width": 111,
+          "height": 166,
+          "naturalWidth": 133,
+          "naturalHeight": 178,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co9adi.webp"
+        },
+        {
+          "alt": "Satisfactory",
+          "decoded": true,
+          "width": 111,
+          "height": 166,
+          "naturalWidth": 133,
+          "naturalHeight": 178,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co8tfy.webp"
+        }
+      ],
+      "filters": []
+    },
+    {
+      "path": "/search?q=Hades",
+      "width": 1440,
+      "theme": "light",
+      "overflow": false,
+      "visibleImages": [
+        {
+          "alt": "Hades II",
+          "decoded": true,
+          "width": 259,
+          "height": 345,
+          "naturalWidth": 33,
+          "naturalHeight": 44,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/coaknx.webp"
+        },
+        {
+          "alt": "Hades",
+          "decoded": true,
+          "width": 259,
+          "height": 345,
+          "naturalWidth": 33,
+          "naturalHeight": 44,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/cob9kr.webp"
+        }
+      ],
+      "filters": [
+        {
+          "id": "search-genre-filter",
+          "height": 44,
+          "padding": "0px 40px 0px 16px",
+          "labelGap": 8
+        },
+        {
+          "id": "search-year-filter",
+          "height": 44,
+          "padding": "0px 40px 0px 16px",
+          "labelGap": 8
+        },
+        {
+          "id": "search-sort",
+          "height": 44,
+          "padding": "0px 40px 0px 16px",
+          "labelGap": 8
+        }
+      ]
+    },
+    {
+      "path": "/",
+      "width": 1440,
+      "theme": "light",
+      "overflow": false,
+      "visibleImages": [
+        {
+          "alt": "ARC Raiders",
+          "decoded": true,
+          "width": 238,
+          "height": 317,
+          "naturalWidth": 330,
+          "naturalHeight": 440,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/co9rk1.webp"
+        },
+        {
+          "alt": "Schedule I",
+          "decoded": true,
+          "width": 238,
+          "height": 317,
+          "naturalWidth": 33,
+          "naturalHeight": 44,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/co9adi.webp"
+        },
+        {
+          "alt": "Kingdom Come: Deliverance II",
+          "decoded": true,
+          "width": 238,
+          "height": 317,
+          "naturalWidth": 33,
+          "naturalHeight": 44,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/co8qmv.webp"
+        },
+        {
+          "alt": "Counter-Strike 2",
+          "decoded": true,
+          "width": 238,
+          "height": 317,
+          "naturalWidth": 330,
+          "naturalHeight": 440,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/coaczd.webp"
+        },
+        {
+          "alt": "Europa Universalis V",
+          "decoded": true,
+          "width": 238,
+          "height": 317,
+          "naturalWidth": 330,
+          "naturalHeight": 440,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/co9s5c.webp"
+        },
+        {
+          "alt": "Clair Obscur: Expedition 33",
+          "decoded": true,
+          "width": 238,
+          "height": 317,
+          "naturalWidth": 330,
+          "naturalHeight": 440,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/co9gam.webp"
+        },
+        {
+          "alt": "Farming Simulator 25",
+          "decoded": false,
+          "width": 238,
+          "height": 317,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "Baldur's Gate III",
+          "decoded": false,
+          "width": 238,
+          "height": 317,
+          "naturalWidth": 330,
+          "naturalHeight": 440,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/co670h.webp"
+        },
+        {
+          "alt": "Manor Lords",
+          "decoded": false,
+          "width": 238,
+          "height": 317,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "Disney Dreamlight Valley",
+          "decoded": false,
+          "width": 238,
+          "height": 317,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "Balatro",
+          "decoded": false,
+          "width": 238,
+          "height": 317,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "S.T.A.L.K.E.R. 2: Heart of Chornobyl",
+          "decoded": false,
+          "width": 238,
+          "height": 317,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "Satisfactory",
+          "decoded": false,
+          "width": 238,
+          "height": 317,
+          "naturalWidth": 330,
+          "naturalHeight": 440,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/co8tfy.webp"
+        },
+        {
+          "alt": "Hollow Knight: Silksong",
+          "decoded": false,
+          "width": 238,
+          "height": 317,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "Sons of the Forest",
+          "decoded": false,
+          "width": 238,
+          "height": 317,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "Enshrouded (2024)",
+          "decoded": false,
+          "width": 238,
+          "height": 317,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "RV There Yet?",
+          "decoded": false,
+          "width": 238,
+          "height": 317,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "Valheim",
+          "decoded": true,
+          "width": 238,
+          "height": 317,
+          "naturalWidth": 33,
+          "naturalHeight": 44,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/cob24q.webp"
+        },
+        {
+          "alt": "The Finals",
+          "decoded": false,
+          "width": 238,
+          "height": 317,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "RuneScape: Dragonwilds",
+          "decoded": false,
+          "width": 238,
+          "height": 317,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "Rust",
+          "decoded": true,
+          "width": 222,
+          "height": 297,
+          "naturalWidth": 30,
+          "naturalHeight": 41,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/coajjj.webp"
+        },
+        {
+          "alt": "Phasmophobia",
+          "decoded": true,
+          "width": 222,
+          "height": 297,
+          "naturalWidth": 30,
+          "naturalHeight": 41,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/coamcz.webp"
+        },
+        {
+          "alt": "Valheim",
+          "decoded": true,
+          "width": 222,
+          "height": 297,
+          "naturalWidth": 30,
+          "naturalHeight": 41,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/cob24q.webp"
+        },
+        {
+          "alt": "DayZ",
+          "decoded": true,
+          "width": 222,
+          "height": 297,
+          "naturalWidth": 30,
+          "naturalHeight": 41,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/coaaqs.webp"
+        },
+        {
+          "alt": "BeamNG.drive",
+          "decoded": true,
+          "width": 222,
+          "height": 297,
+          "naturalWidth": 30,
+          "naturalHeight": 41,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/co1sym.webp"
+        },
+        {
+          "alt": "Raft",
+          "decoded": true,
+          "width": 222,
+          "height": 297,
+          "naturalWidth": 30,
+          "naturalHeight": 41,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/co1xdc.webp"
+        },
+        {
+          "alt": "Hades",
+          "decoded": true,
+          "width": 222,
+          "height": 297,
+          "naturalWidth": 30,
+          "naturalHeight": 41,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/cob9kr.webp"
+        },
+        {
+          "alt": "Hunt: Showdown",
+          "decoded": true,
+          "width": 222,
+          "height": 297,
+          "naturalWidth": 30,
+          "naturalHeight": 41,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/co8o7i.webp"
+        },
+        {
+          "alt": "VRChat",
+          "decoded": true,
+          "width": 222,
+          "height": 297,
+          "naturalWidth": 30,
+          "naturalHeight": 41,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/cobuhu.webp"
+        },
+        {
+          "alt": "Vampire Survivors",
+          "decoded": true,
+          "width": 222,
+          "height": 297,
+          "naturalWidth": 30,
+          "naturalHeight": 41,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/co4bzv.webp"
+        },
+        {
+          "alt": "RimWorld",
+          "decoded": true,
+          "width": 222,
+          "height": 297,
+          "naturalWidth": 30,
+          "naturalHeight": 41,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/coaaqj.webp"
+        },
+        {
+          "alt": "Path of Exile 2",
+          "decoded": true,
+          "width": 222,
+          "height": 297,
+          "naturalWidth": 30,
+          "naturalHeight": 41,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/co8ae0.webp"
+        },
+        {
+          "alt": "Ultrakill",
+          "decoded": true,
+          "width": 222,
+          "height": 297,
+          "naturalWidth": 30,
+          "naturalHeight": 41,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/co46s3.webp"
+        },
+        {
+          "alt": "Slay the Spire",
+          "decoded": true,
+          "width": 222,
+          "height": 297,
+          "naturalWidth": 30,
+          "naturalHeight": 41,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/co1iyf.webp"
+        },
+        {
+          "alt": "Dead Cells",
+          "decoded": true,
+          "width": 222,
+          "height": 297,
+          "naturalWidth": 30,
+          "naturalHeight": 41,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/co7jfv.webp"
+        },
+        {
+          "alt": "Dave the Diver",
+          "decoded": true,
+          "width": 222,
+          "height": 297,
+          "naturalWidth": 30,
+          "naturalHeight": 41,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/coaav7.webp"
+        },
+        {
+          "alt": "Oxygen Not Included",
+          "decoded": true,
+          "width": 222,
+          "height": 297,
+          "naturalWidth": 30,
+          "naturalHeight": 41,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/co7ugt.webp"
+        },
+        {
+          "alt": "Space Engineers",
+          "decoded": true,
+          "width": 222,
+          "height": 297,
+          "naturalWidth": 30,
+          "naturalHeight": 41,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/coaaw8.webp"
+        },
+        {
+          "alt": "V Rising",
+          "decoded": true,
+          "width": 222,
+          "height": 297,
+          "naturalWidth": 30,
+          "naturalHeight": 41,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/coaavz.webp"
+        },
+        {
+          "alt": "The Isle",
+          "decoded": true,
+          "width": 222,
+          "height": 297,
+          "naturalWidth": 30,
+          "naturalHeight": 41,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/coaat6.webp"
+        }
+      ],
+      "filters": []
+    },
+    {
+      "path": "/explore",
+      "width": 768,
+      "theme": "dark",
+      "overflow": false,
+      "visibleImages": [
+        {
+          "alt": "Rust",
+          "decoded": true,
+          "width": 166,
+          "height": 221,
+          "naturalWidth": 261,
+          "naturalHeight": 348,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/coajjj.webp"
+        },
+        {
+          "alt": "Phasmophobia",
+          "decoded": true,
+          "width": 166,
+          "height": 221,
+          "naturalWidth": 261,
+          "naturalHeight": 348,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/coamcz.webp"
+        },
+        {
+          "alt": "Valheim",
+          "decoded": true,
+          "width": 166,
+          "height": 221,
+          "naturalWidth": 261,
+          "naturalHeight": 348,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/cob24q.webp"
+        },
+        {
+          "alt": "DayZ",
+          "decoded": true,
+          "width": 166,
+          "height": 221,
+          "naturalWidth": 261,
+          "naturalHeight": 348,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/coaaqs.webp"
+        },
+        {
+          "alt": "BeamNG.drive",
+          "decoded": true,
+          "width": 166,
+          "height": 221,
+          "naturalWidth": 261,
+          "naturalHeight": 348,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1sym.webp"
+        },
+        {
+          "alt": "Raft",
+          "decoded": true,
+          "width": 166,
+          "height": 221,
+          "naturalWidth": 261,
+          "naturalHeight": 348,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1xdc.webp"
+        },
+        {
+          "alt": "Hades",
+          "decoded": true,
+          "width": 166,
+          "height": 221,
+          "naturalWidth": 261,
+          "naturalHeight": 348,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/cob9kr.webp"
+        },
+        {
+          "alt": "Hunt: Showdown",
+          "decoded": true,
+          "width": 166,
+          "height": 221,
+          "naturalWidth": 261,
+          "naturalHeight": 348,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co8o7i.webp"
+        }
+      ],
+      "filters": [
+        {
+          "id": "explore-platform",
+          "height": 44,
+          "padding": "0px 40px 0px 16px",
+          "labelGap": 8
+        },
+        {
+          "id": "explore-sort",
+          "height": 44,
+          "padding": "0px 40px 0px 16px",
+          "labelGap": 8
+        }
+      ]
+    },
+    {
+      "path": "/lists",
+      "width": 768,
+      "theme": "dark",
+      "overflow": false,
+      "visibleImages": [
+        {
+          "alt": "Creature Kitchen",
+          "decoded": true,
+          "width": 90,
+          "height": 134,
+          "naturalWidth": 253,
+          "naturalHeight": 337,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/cobf9h.webp"
+        },
+        {
+          "alt": "Katawa Shoujo",
+          "decoded": true,
+          "width": 90,
+          "height": 134,
+          "naturalWidth": 253,
+          "naturalHeight": 337,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co7k1l.webp"
+        },
+        {
+          "alt": "Is This Seat Taken?",
+          "decoded": true,
+          "width": 90,
+          "height": 134,
+          "naturalWidth": 253,
+          "naturalHeight": 337,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/coaapt.webp"
+        },
+        {
+          "alt": "Leaf it Alone",
+          "decoded": true,
+          "width": 90,
+          "height": 134,
+          "naturalWidth": 253,
+          "naturalHeight": 337,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/coatpx.webp"
+        },
+        {
+          "alt": "Sam & Max: Beyond Time and Space - Remastered",
+          "decoded": true,
+          "width": 90,
+          "height": 134,
+          "naturalWidth": 614,
+          "naturalHeight": 345,
+          "fit": "cover",
+          "src": "https://media.rawg.io/media/resize/640/-/games/ce9/ce93af2bc6139d79faab15305e97ec57.jpg"
+        },
+        {
+          "alt": "Descent (1996)",
+          "decoded": true,
+          "width": 90,
+          "height": 134,
+          "naturalWidth": 614,
+          "naturalHeight": 384,
+          "fit": "cover",
+          "src": "https://media.rawg.io/media/resize/640/-/screenshots/e9a/e9a432ccf67122208c3f0cbc14490e16.jpg"
+        },
+        {
+          "alt": "Fallen Hero: Rebirth",
+          "decoded": true,
+          "width": 90,
+          "height": 134,
+          "naturalWidth": 253,
+          "naturalHeight": 337,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co509z.webp"
+        },
+        {
+          "alt": "Micro Mages",
+          "decoded": true,
+          "width": 90,
+          "height": 134,
+          "naturalWidth": 253,
+          "naturalHeight": 337,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co3wsw.webp"
+        },
+        {
+          "alt": "Dawnfolk",
+          "decoded": true,
+          "width": 90,
+          "height": 134,
+          "naturalWidth": 253,
+          "naturalHeight": 337,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co94jk.webp"
+        },
+        {
+          "alt": "Platypus Reclayed",
+          "decoded": true,
+          "width": 90,
+          "height": 134,
+          "naturalWidth": 600,
+          "naturalHeight": 900,
+          "fit": "cover",
+          "src": "https://cdn.akamai.steamstatic.com/steam/apps/2912430/library_600x900_2x.jpg"
+        },
+        {
+          "alt": "Sektori",
+          "decoded": true,
+          "width": 90,
+          "height": 134,
+          "naturalWidth": 253,
+          "naturalHeight": 337,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co8ygz.webp"
+        },
+        {
+          "alt": "Wilmot Works It Out",
+          "decoded": true,
+          "width": 90,
+          "height": 134,
+          "naturalWidth": 253,
+          "naturalHeight": 337,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co8pqb.webp"
+        },
+        {
+          "alt": "StarVaders",
+          "decoded": true,
+          "width": 90,
+          "height": 134,
+          "naturalWidth": 253,
+          "naturalHeight": 337,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co8rla.webp"
+        },
+        {
+          "alt": "Balatro",
+          "decoded": true,
+          "width": 90,
+          "height": 134,
+          "naturalWidth": 253,
+          "naturalHeight": 337,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co9f4g.webp"
+        },
+        {
+          "alt": "I Was a Teenage Exocolonist",
+          "decoded": true,
+          "width": 90,
+          "height": 134,
+          "naturalWidth": 253,
+          "naturalHeight": 337,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/cob5iq.webp"
+        },
+        {
+          "alt": "Wandering Sword",
+          "decoded": true,
+          "width": 90,
+          "height": 134,
+          "naturalWidth": 253,
+          "naturalHeight": 337,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/coaaw0.webp"
+        },
+        {
+          "alt": "SaGa SCARLET GRACE AMBITIONS",
+          "decoded": true,
+          "width": 90,
+          "height": 134,
+          "naturalWidth": 614,
+          "naturalHeight": 345,
+          "fit": "cover",
+          "src": "https://media.rawg.io/media/resize/640/-/screenshots/091/0912f4a2c39a3a4962900d51b6a8996b.jpg"
+        },
+        {
+          "alt": "Disney Magical World 2: Enchanted Edition",
+          "decoded": true,
+          "width": 90,
+          "height": 134,
+          "naturalWidth": 614,
+          "naturalHeight": 345,
+          "fit": "cover",
+          "src": "https://media.rawg.io/media/resize/640/-/screenshots/901/9012342a607bcb72684808b17274b0ed.jpg"
+        },
+        {
+          "alt": "The Beatbox Soundpad",
+          "decoded": true,
+          "width": 90,
+          "height": 134,
+          "naturalWidth": 614,
+          "naturalHeight": 344,
+          "fit": "cover",
+          "src": "https://media.rawg.io/media/resize/640/-/screenshots/638/6384614369c0c21a1041d03cbbe57dd4.jpg"
+        },
+        {
+          "alt": "Buster Bros. Collection",
+          "decoded": true,
+          "width": 90,
+          "height": 134,
+          "naturalWidth": 614,
+          "naturalHeight": 460,
+          "fit": "cover",
+          "src": "https://media.rawg.io/media/resize/640/-/screenshots/12a/12a41249c0d07d54d951bc742fe3b015.jpg"
+        },
+        {
+          "alt": "Counter-Strike 2",
+          "decoded": true,
+          "width": 90,
+          "height": 134,
+          "naturalWidth": 253,
+          "naturalHeight": 337,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/coaczd.webp"
+        },
+        {
+          "alt": "Marvel Rivals",
+          "decoded": true,
+          "width": 90,
+          "height": 134,
+          "naturalWidth": 253,
+          "naturalHeight": 337,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/cobso9.webp"
+        },
+        {
+          "alt": "ARC Raiders",
+          "decoded": true,
+          "width": 90,
+          "height": 134,
+          "naturalWidth": 253,
+          "naturalHeight": 337,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co9rk1.webp"
+        },
+        {
+          "alt": "HELLDIVERS 2",
+          "decoded": true,
+          "width": 90,
+          "height": 134,
+          "naturalWidth": 253,
+          "naturalHeight": 337,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/coabbf.webp"
+        }
+      ],
+      "filters": []
+    },
+    {
+      "path": "/search?q=Hades",
+      "width": 768,
+      "theme": "dark",
+      "overflow": false,
+      "visibleImages": [
+        {
+          "alt": "Hades II",
+          "decoded": true,
+          "width": 170,
+          "height": 227,
+          "naturalWidth": 286,
+          "naturalHeight": 381,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/coaknx.webp"
+        },
+        {
+          "alt": "Hades",
+          "decoded": true,
+          "width": 170,
+          "height": 227,
+          "naturalWidth": 286,
+          "naturalHeight": 381,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/cob9kr.webp"
+        }
+      ],
+      "filters": [
+        {
+          "id": "search-genre-filter",
+          "height": 44,
+          "padding": "0px 40px 0px 16px",
+          "labelGap": 8
+        },
+        {
+          "id": "search-year-filter",
+          "height": 44,
+          "padding": "0px 40px 0px 16px",
+          "labelGap": 8
+        },
+        {
+          "id": "search-sort",
+          "height": 44,
+          "padding": "0px 40px 0px 16px",
+          "labelGap": 8
+        }
+      ]
+    },
+    {
+      "path": "/",
+      "width": 768,
+      "theme": "dark",
+      "overflow": false,
+      "visibleImages": [
+        {
+          "alt": "ARC Raiders",
+          "decoded": true,
+          "width": 222,
+          "height": 296,
+          "naturalWidth": 28,
+          "naturalHeight": 38,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/co9rk1.webp"
+        },
+        {
+          "alt": "Schedule I",
+          "decoded": true,
+          "width": 222,
+          "height": 296,
+          "naturalWidth": 28,
+          "naturalHeight": 38,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/co9adi.webp"
+        },
+        {
+          "alt": "Kingdom Come: Deliverance II",
+          "decoded": true,
+          "width": 222,
+          "height": 296,
+          "naturalWidth": 286,
+          "naturalHeight": 381,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/co8qmv.webp"
+        },
+        {
+          "alt": "Counter-Strike 2",
+          "decoded": true,
+          "width": 222,
+          "height": 296,
+          "naturalWidth": 286,
+          "naturalHeight": 381,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/coaczd.webp"
+        },
+        {
+          "alt": "Europa Universalis V",
+          "decoded": false,
+          "width": 222,
+          "height": 296,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "Clair Obscur: Expedition 33",
+          "decoded": false,
+          "width": 222,
+          "height": 296,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "Farming Simulator 25",
+          "decoded": false,
+          "width": 222,
+          "height": 296,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "Baldur's Gate III",
+          "decoded": false,
+          "width": 222,
+          "height": 296,
+          "naturalWidth": 286,
+          "naturalHeight": 381,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/co670h.webp"
+        },
+        {
+          "alt": "Manor Lords",
+          "decoded": false,
+          "width": 222,
+          "height": 296,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "Disney Dreamlight Valley",
+          "decoded": false,
+          "width": 222,
+          "height": 296,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "Balatro",
+          "decoded": false,
+          "width": 222,
+          "height": 296,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "S.T.A.L.K.E.R. 2: Heart of Chornobyl",
+          "decoded": false,
+          "width": 222,
+          "height": 296,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "Satisfactory",
+          "decoded": false,
+          "width": 222,
+          "height": 296,
+          "naturalWidth": 286,
+          "naturalHeight": 381,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/co8tfy.webp"
+        },
+        {
+          "alt": "Hollow Knight: Silksong",
+          "decoded": false,
+          "width": 222,
+          "height": 296,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "Sons of the Forest",
+          "decoded": false,
+          "width": 222,
+          "height": 296,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "Enshrouded (2024)",
+          "decoded": false,
+          "width": 222,
+          "height": 296,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "RV There Yet?",
+          "decoded": false,
+          "width": 222,
+          "height": 296,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "Valheim",
+          "decoded": false,
+          "width": 222,
+          "height": 296,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "The Finals",
+          "decoded": false,
+          "width": 222,
+          "height": 296,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "RuneScape: Dragonwilds",
+          "decoded": false,
+          "width": 222,
+          "height": 296,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "Rust",
+          "decoded": true,
+          "width": 222,
+          "height": 297,
+          "naturalWidth": 230,
+          "naturalHeight": 307,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/coajjj.webp"
+        },
+        {
+          "alt": "Phasmophobia",
+          "decoded": true,
+          "width": 222,
+          "height": 297,
+          "naturalWidth": 230,
+          "naturalHeight": 307,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/coamcz.webp"
+        },
+        {
+          "alt": "Valheim",
+          "decoded": true,
+          "width": 222,
+          "height": 297,
+          "naturalWidth": 230,
+          "naturalHeight": 307,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/cob24q.webp"
+        },
+        {
+          "alt": "DayZ",
+          "decoded": true,
+          "width": 222,
+          "height": 297,
+          "naturalWidth": 230,
+          "naturalHeight": 307,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/coaaqs.webp"
+        },
+        {
+          "alt": "BeamNG.drive",
+          "decoded": true,
+          "width": 222,
+          "height": 297,
+          "naturalWidth": 230,
+          "naturalHeight": 307,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1sym.webp"
+        },
+        {
+          "alt": "Raft",
+          "decoded": true,
+          "width": 222,
+          "height": 297,
+          "naturalWidth": 230,
+          "naturalHeight": 307,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1xdc.webp"
+        },
+        {
+          "alt": "Hades",
+          "decoded": true,
+          "width": 222,
+          "height": 297,
+          "naturalWidth": 30,
+          "naturalHeight": 41,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/cob9kr.webp"
+        },
+        {
+          "alt": "Hunt: Showdown",
+          "decoded": true,
+          "width": 222,
+          "height": 297,
+          "naturalWidth": 230,
+          "naturalHeight": 307,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co8o7i.webp"
+        },
+        {
+          "alt": "VRChat",
+          "decoded": true,
+          "width": 222,
+          "height": 297,
+          "naturalWidth": 230,
+          "naturalHeight": 307,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/cobuhu.webp"
+        },
+        {
+          "alt": "Vampire Survivors",
+          "decoded": true,
+          "width": 222,
+          "height": 297,
+          "naturalWidth": 230,
+          "naturalHeight": 307,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co4bzv.webp"
+        },
+        {
+          "alt": "RimWorld",
+          "decoded": true,
+          "width": 222,
+          "height": 297,
+          "naturalWidth": 230,
+          "naturalHeight": 307,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/coaaqj.webp"
+        },
+        {
+          "alt": "Path of Exile 2",
+          "decoded": true,
+          "width": 222,
+          "height": 297,
+          "naturalWidth": 230,
+          "naturalHeight": 307,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co8ae0.webp"
+        },
+        {
+          "alt": "Ultrakill",
+          "decoded": true,
+          "width": 222,
+          "height": 297,
+          "naturalWidth": 230,
+          "naturalHeight": 307,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co46s3.webp"
+        },
+        {
+          "alt": "Slay the Spire",
+          "decoded": true,
+          "width": 222,
+          "height": 297,
+          "naturalWidth": 230,
+          "naturalHeight": 307,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1iyf.webp"
+        },
+        {
+          "alt": "Dead Cells",
+          "decoded": true,
+          "width": 222,
+          "height": 297,
+          "naturalWidth": 230,
+          "naturalHeight": 307,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co7jfv.webp"
+        },
+        {
+          "alt": "Dave the Diver",
+          "decoded": true,
+          "width": 222,
+          "height": 297,
+          "naturalWidth": 230,
+          "naturalHeight": 307,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/coaav7.webp"
+        },
+        {
+          "alt": "Oxygen Not Included",
+          "decoded": true,
+          "width": 222,
+          "height": 297,
+          "naturalWidth": 230,
+          "naturalHeight": 307,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co7ugt.webp"
+        },
+        {
+          "alt": "Space Engineers",
+          "decoded": true,
+          "width": 222,
+          "height": 297,
+          "naturalWidth": 230,
+          "naturalHeight": 307,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/coaaw8.webp"
+        },
+        {
+          "alt": "V Rising",
+          "decoded": true,
+          "width": 222,
+          "height": 297,
+          "naturalWidth": 230,
+          "naturalHeight": 307,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/coaavz.webp"
+        },
+        {
+          "alt": "The Isle",
+          "decoded": true,
+          "width": 222,
+          "height": 297,
+          "naturalWidth": 230,
+          "naturalHeight": 307,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/coaat6.webp"
+        }
+      ],
+      "filters": []
+    },
+    {
+      "path": "/explore",
+      "width": 768,
+      "theme": "light",
+      "overflow": false,
+      "visibleImages": [
+        {
+          "alt": "Rust",
+          "decoded": true,
+          "width": 166,
+          "height": 221,
+          "naturalWidth": 261,
+          "naturalHeight": 348,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/coajjj.webp"
+        },
+        {
+          "alt": "Phasmophobia",
+          "decoded": true,
+          "width": 166,
+          "height": 221,
+          "naturalWidth": 261,
+          "naturalHeight": 348,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/coamcz.webp"
+        },
+        {
+          "alt": "Valheim",
+          "decoded": true,
+          "width": 166,
+          "height": 221,
+          "naturalWidth": 261,
+          "naturalHeight": 348,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/cob24q.webp"
+        },
+        {
+          "alt": "DayZ",
+          "decoded": true,
+          "width": 166,
+          "height": 221,
+          "naturalWidth": 261,
+          "naturalHeight": 348,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/coaaqs.webp"
+        },
+        {
+          "alt": "BeamNG.drive",
+          "decoded": true,
+          "width": 166,
+          "height": 221,
+          "naturalWidth": 261,
+          "naturalHeight": 348,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1sym.webp"
+        },
+        {
+          "alt": "Raft",
+          "decoded": true,
+          "width": 166,
+          "height": 221,
+          "naturalWidth": 261,
+          "naturalHeight": 348,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1xdc.webp"
+        },
+        {
+          "alt": "Hades",
+          "decoded": true,
+          "width": 166,
+          "height": 221,
+          "naturalWidth": 261,
+          "naturalHeight": 348,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/cob9kr.webp"
+        },
+        {
+          "alt": "Hunt: Showdown",
+          "decoded": true,
+          "width": 166,
+          "height": 221,
+          "naturalWidth": 261,
+          "naturalHeight": 348,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co8o7i.webp"
+        }
+      ],
+      "filters": [
+        {
+          "id": "explore-platform",
+          "height": 44,
+          "padding": "0px 40px 0px 16px",
+          "labelGap": 8
+        },
+        {
+          "id": "explore-sort",
+          "height": 44,
+          "padding": "0px 40px 0px 16px",
+          "labelGap": 8
+        }
+      ]
+    },
+    {
+      "path": "/lists",
+      "width": 768,
+      "theme": "light",
+      "overflow": false,
+      "visibleImages": [
+        {
+          "alt": "Creature Kitchen",
+          "decoded": true,
+          "width": 90,
+          "height": 134,
+          "naturalWidth": 253,
+          "naturalHeight": 337,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/cobf9h.webp"
+        },
+        {
+          "alt": "Katawa Shoujo",
+          "decoded": true,
+          "width": 90,
+          "height": 134,
+          "naturalWidth": 253,
+          "naturalHeight": 337,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co7k1l.webp"
+        },
+        {
+          "alt": "Is This Seat Taken?",
+          "decoded": true,
+          "width": 90,
+          "height": 134,
+          "naturalWidth": 253,
+          "naturalHeight": 337,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/coaapt.webp"
+        },
+        {
+          "alt": "Leaf it Alone",
+          "decoded": true,
+          "width": 90,
+          "height": 134,
+          "naturalWidth": 253,
+          "naturalHeight": 337,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/coatpx.webp"
+        },
+        {
+          "alt": "Sam & Max: Beyond Time and Space - Remastered",
+          "decoded": false,
+          "width": 90,
+          "height": 134,
+          "naturalWidth": 614,
+          "naturalHeight": 345,
+          "fit": "cover",
+          "src": "https://media.rawg.io/media/resize/640/-/games/ce9/ce93af2bc6139d79faab15305e97ec57.jpg"
+        },
+        {
+          "alt": "Descent (1996)",
+          "decoded": false,
+          "width": 90,
+          "height": 134,
+          "naturalWidth": 614,
+          "naturalHeight": 384,
+          "fit": "cover",
+          "src": "https://media.rawg.io/media/resize/640/-/screenshots/e9a/e9a432ccf67122208c3f0cbc14490e16.jpg"
+        },
+        {
+          "alt": "Fallen Hero: Rebirth",
+          "decoded": true,
+          "width": 90,
+          "height": 134,
+          "naturalWidth": 253,
+          "naturalHeight": 337,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co509z.webp"
+        },
+        {
+          "alt": "Micro Mages",
+          "decoded": true,
+          "width": 90,
+          "height": 134,
+          "naturalWidth": 253,
+          "naturalHeight": 337,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co3wsw.webp"
+        },
+        {
+          "alt": "Dawnfolk",
+          "decoded": true,
+          "width": 90,
+          "height": 134,
+          "naturalWidth": 253,
+          "naturalHeight": 337,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co94jk.webp"
+        },
+        {
+          "alt": "Platypus Reclayed",
+          "decoded": true,
+          "width": 90,
+          "height": 134,
+          "naturalWidth": 600,
+          "naturalHeight": 900,
+          "fit": "cover",
+          "src": "https://cdn.akamai.steamstatic.com/steam/apps/2912430/library_600x900_2x.jpg"
+        },
+        {
+          "alt": "Sektori",
+          "decoded": true,
+          "width": 90,
+          "height": 134,
+          "naturalWidth": 253,
+          "naturalHeight": 337,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co8ygz.webp"
+        },
+        {
+          "alt": "Wilmot Works It Out",
+          "decoded": true,
+          "width": 90,
+          "height": 134,
+          "naturalWidth": 253,
+          "naturalHeight": 337,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co8pqb.webp"
+        },
+        {
+          "alt": "StarVaders",
+          "decoded": true,
+          "width": 90,
+          "height": 134,
+          "naturalWidth": 253,
+          "naturalHeight": 337,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co8rla.webp"
+        },
+        {
+          "alt": "Balatro",
+          "decoded": true,
+          "width": 90,
+          "height": 134,
+          "naturalWidth": 253,
+          "naturalHeight": 337,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co9f4g.webp"
+        },
+        {
+          "alt": "I Was a Teenage Exocolonist",
+          "decoded": true,
+          "width": 90,
+          "height": 134,
+          "naturalWidth": 253,
+          "naturalHeight": 337,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/cob5iq.webp"
+        },
+        {
+          "alt": "Wandering Sword",
+          "decoded": true,
+          "width": 90,
+          "height": 134,
+          "naturalWidth": 253,
+          "naturalHeight": 337,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/coaaw0.webp"
+        },
+        {
+          "alt": "SaGa SCARLET GRACE AMBITIONS",
+          "decoded": false,
+          "width": 90,
+          "height": 134,
+          "naturalWidth": 614,
+          "naturalHeight": 345,
+          "fit": "cover",
+          "src": "https://media.rawg.io/media/resize/640/-/screenshots/091/0912f4a2c39a3a4962900d51b6a8996b.jpg"
+        },
+        {
+          "alt": "Disney Magical World 2: Enchanted Edition",
+          "decoded": false,
+          "width": 90,
+          "height": 134,
+          "naturalWidth": 614,
+          "naturalHeight": 345,
+          "fit": "cover",
+          "src": "https://media.rawg.io/media/resize/640/-/screenshots/901/9012342a607bcb72684808b17274b0ed.jpg"
+        },
+        {
+          "alt": "The Beatbox Soundpad",
+          "decoded": false,
+          "width": 90,
+          "height": 134,
+          "naturalWidth": 614,
+          "naturalHeight": 344,
+          "fit": "cover",
+          "src": "https://media.rawg.io/media/resize/640/-/screenshots/638/6384614369c0c21a1041d03cbbe57dd4.jpg"
+        },
+        {
+          "alt": "Buster Bros. Collection",
+          "decoded": false,
+          "width": 90,
+          "height": 134,
+          "naturalWidth": 614,
+          "naturalHeight": 460,
+          "fit": "cover",
+          "src": "https://media.rawg.io/media/resize/640/-/screenshots/12a/12a41249c0d07d54d951bc742fe3b015.jpg"
+        },
+        {
+          "alt": "Counter-Strike 2",
+          "decoded": true,
+          "width": 90,
+          "height": 134,
+          "naturalWidth": 253,
+          "naturalHeight": 337,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/coaczd.webp"
+        },
+        {
+          "alt": "Marvel Rivals",
+          "decoded": true,
+          "width": 90,
+          "height": 134,
+          "naturalWidth": 253,
+          "naturalHeight": 337,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/cobso9.webp"
+        },
+        {
+          "alt": "ARC Raiders",
+          "decoded": true,
+          "width": 90,
+          "height": 134,
+          "naturalWidth": 253,
+          "naturalHeight": 337,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co9rk1.webp"
+        },
+        {
+          "alt": "HELLDIVERS 2",
+          "decoded": true,
+          "width": 90,
+          "height": 134,
+          "naturalWidth": 253,
+          "naturalHeight": 337,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/coabbf.webp"
+        }
+      ],
+      "filters": []
+    },
+    {
+      "path": "/search?q=Hades",
+      "width": 768,
+      "theme": "light",
+      "overflow": false,
+      "visibleImages": [
+        {
+          "alt": "Hades II",
+          "decoded": true,
+          "width": 170,
+          "height": 227,
+          "naturalWidth": 286,
+          "naturalHeight": 381,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/coaknx.webp"
+        },
+        {
+          "alt": "Hades",
+          "decoded": true,
+          "width": 170,
+          "height": 227,
+          "naturalWidth": 286,
+          "naturalHeight": 381,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/cob9kr.webp"
+        }
+      ],
+      "filters": [
+        {
+          "id": "search-genre-filter",
+          "height": 44,
+          "padding": "0px 40px 0px 16px",
+          "labelGap": 8
+        },
+        {
+          "id": "search-year-filter",
+          "height": 44,
+          "padding": "0px 40px 0px 16px",
+          "labelGap": 8
+        },
+        {
+          "id": "search-sort",
+          "height": 44,
+          "padding": "0px 40px 0px 16px",
+          "labelGap": 8
+        }
+      ]
+    },
+    {
+      "path": "/",
+      "width": 768,
+      "theme": "light",
+      "overflow": false,
+      "visibleImages": [
+        {
+          "alt": "ARC Raiders",
+          "decoded": true,
+          "width": 222,
+          "height": 296,
+          "naturalWidth": 28,
+          "naturalHeight": 38,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/co9rk1.webp"
+        },
+        {
+          "alt": "Schedule I",
+          "decoded": true,
+          "width": 222,
+          "height": 296,
+          "naturalWidth": 28,
+          "naturalHeight": 38,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/co9adi.webp"
+        },
+        {
+          "alt": "Kingdom Come: Deliverance II",
+          "decoded": true,
+          "width": 222,
+          "height": 296,
+          "naturalWidth": 28,
+          "naturalHeight": 38,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/co8qmv.webp"
+        },
+        {
+          "alt": "Counter-Strike 2",
+          "decoded": true,
+          "width": 222,
+          "height": 296,
+          "naturalWidth": 28,
+          "naturalHeight": 38,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/coaczd.webp"
+        },
+        {
+          "alt": "Europa Universalis V",
+          "decoded": false,
+          "width": 222,
+          "height": 296,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "Clair Obscur: Expedition 33",
+          "decoded": false,
+          "width": 222,
+          "height": 296,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "Farming Simulator 25",
+          "decoded": false,
+          "width": 222,
+          "height": 296,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "Baldur's Gate III",
+          "decoded": true,
+          "width": 222,
+          "height": 296,
+          "naturalWidth": 28,
+          "naturalHeight": 38,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/co670h.webp"
+        },
+        {
+          "alt": "Manor Lords",
+          "decoded": false,
+          "width": 222,
+          "height": 296,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "Disney Dreamlight Valley",
+          "decoded": false,
+          "width": 222,
+          "height": 296,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "Balatro",
+          "decoded": false,
+          "width": 222,
+          "height": 296,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "S.T.A.L.K.E.R. 2: Heart of Chornobyl",
+          "decoded": false,
+          "width": 222,
+          "height": 296,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "Satisfactory",
+          "decoded": true,
+          "width": 222,
+          "height": 296,
+          "naturalWidth": 28,
+          "naturalHeight": 38,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/co8tfy.webp"
+        },
+        {
+          "alt": "Hollow Knight: Silksong",
+          "decoded": false,
+          "width": 222,
+          "height": 296,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "Sons of the Forest",
+          "decoded": false,
+          "width": 222,
+          "height": 296,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "Enshrouded (2024)",
+          "decoded": false,
+          "width": 222,
+          "height": 296,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "RV There Yet?",
+          "decoded": false,
+          "width": 222,
+          "height": 296,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "Valheim",
+          "decoded": false,
+          "width": 222,
+          "height": 296,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "The Finals",
+          "decoded": false,
+          "width": 222,
+          "height": 296,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "RuneScape: Dragonwilds",
+          "decoded": false,
+          "width": 222,
+          "height": 296,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "Rust",
+          "decoded": true,
+          "width": 222,
+          "height": 297,
+          "naturalWidth": 230,
+          "naturalHeight": 307,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/coajjj.webp"
+        },
+        {
+          "alt": "Phasmophobia",
+          "decoded": true,
+          "width": 222,
+          "height": 297,
+          "naturalWidth": 230,
+          "naturalHeight": 307,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/coamcz.webp"
+        },
+        {
+          "alt": "Valheim",
+          "decoded": true,
+          "width": 222,
+          "height": 297,
+          "naturalWidth": 230,
+          "naturalHeight": 307,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/cob24q.webp"
+        },
+        {
+          "alt": "DayZ",
+          "decoded": true,
+          "width": 222,
+          "height": 297,
+          "naturalWidth": 230,
+          "naturalHeight": 307,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/coaaqs.webp"
+        },
+        {
+          "alt": "BeamNG.drive",
+          "decoded": true,
+          "width": 222,
+          "height": 297,
+          "naturalWidth": 230,
+          "naturalHeight": 307,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1sym.webp"
+        },
+        {
+          "alt": "Raft",
+          "decoded": true,
+          "width": 222,
+          "height": 297,
+          "naturalWidth": 230,
+          "naturalHeight": 307,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1xdc.webp"
+        },
+        {
+          "alt": "Hades",
+          "decoded": true,
+          "width": 222,
+          "height": 297,
+          "naturalWidth": 30,
+          "naturalHeight": 41,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/cob9kr.webp"
+        },
+        {
+          "alt": "Hunt: Showdown",
+          "decoded": true,
+          "width": 222,
+          "height": 297,
+          "naturalWidth": 230,
+          "naturalHeight": 307,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co8o7i.webp"
+        },
+        {
+          "alt": "VRChat",
+          "decoded": true,
+          "width": 222,
+          "height": 297,
+          "naturalWidth": 230,
+          "naturalHeight": 307,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/cobuhu.webp"
+        },
+        {
+          "alt": "Vampire Survivors",
+          "decoded": true,
+          "width": 222,
+          "height": 297,
+          "naturalWidth": 230,
+          "naturalHeight": 307,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co4bzv.webp"
+        },
+        {
+          "alt": "RimWorld",
+          "decoded": true,
+          "width": 222,
+          "height": 297,
+          "naturalWidth": 230,
+          "naturalHeight": 307,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/coaaqj.webp"
+        },
+        {
+          "alt": "Path of Exile 2",
+          "decoded": true,
+          "width": 222,
+          "height": 297,
+          "naturalWidth": 230,
+          "naturalHeight": 307,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co8ae0.webp"
+        },
+        {
+          "alt": "Ultrakill",
+          "decoded": true,
+          "width": 222,
+          "height": 297,
+          "naturalWidth": 230,
+          "naturalHeight": 307,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co46s3.webp"
+        },
+        {
+          "alt": "Slay the Spire",
+          "decoded": true,
+          "width": 222,
+          "height": 297,
+          "naturalWidth": 230,
+          "naturalHeight": 307,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1iyf.webp"
+        },
+        {
+          "alt": "Dead Cells",
+          "decoded": true,
+          "width": 222,
+          "height": 297,
+          "naturalWidth": 230,
+          "naturalHeight": 307,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co7jfv.webp"
+        },
+        {
+          "alt": "Dave the Diver",
+          "decoded": true,
+          "width": 222,
+          "height": 297,
+          "naturalWidth": 230,
+          "naturalHeight": 307,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/coaav7.webp"
+        },
+        {
+          "alt": "Oxygen Not Included",
+          "decoded": true,
+          "width": 222,
+          "height": 297,
+          "naturalWidth": 230,
+          "naturalHeight": 307,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co7ugt.webp"
+        },
+        {
+          "alt": "Space Engineers",
+          "decoded": true,
+          "width": 222,
+          "height": 297,
+          "naturalWidth": 230,
+          "naturalHeight": 307,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/coaaw8.webp"
+        },
+        {
+          "alt": "V Rising",
+          "decoded": true,
+          "width": 222,
+          "height": 297,
+          "naturalWidth": 230,
+          "naturalHeight": 307,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/coaavz.webp"
+        },
+        {
+          "alt": "The Isle",
+          "decoded": true,
+          "width": 222,
+          "height": 297,
+          "naturalWidth": 230,
+          "naturalHeight": 307,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/coaat6.webp"
+        }
+      ],
+      "filters": []
+    },
+    {
+      "path": "/explore",
+      "width": 390,
+      "theme": "dark",
+      "overflow": false,
+      "visibleImages": [
+        {
+          "alt": "Rust",
+          "decoded": true,
+          "width": 169,
+          "height": 225,
+          "naturalWidth": 201,
+          "naturalHeight": 268,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/coajjj.webp"
+        },
+        {
+          "alt": "Phasmophobia",
+          "decoded": true,
+          "width": 169,
+          "height": 225,
+          "naturalWidth": 201,
+          "naturalHeight": 268,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/coamcz.webp"
+        }
+      ],
+      "filters": [
+        {
+          "id": "explore-platform",
+          "height": 44,
+          "padding": "0px 40px 0px 16px",
+          "labelGap": 8
+        },
+        {
+          "id": "explore-sort",
+          "height": 44,
+          "padding": "0px 40px 0px 16px",
+          "labelGap": 8
+        }
+      ]
+    },
+    {
+      "path": "/lists",
+      "width": 390,
+      "theme": "dark",
+      "overflow": false,
+      "visibleImages": [
+        {
+          "alt": "Creature Kitchen",
+          "decoded": true,
+          "width": 89,
+          "height": 134,
+          "naturalWidth": 201,
+          "naturalHeight": 268,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/cobf9h.webp"
+        },
+        {
+          "alt": "Katawa Shoujo",
+          "decoded": true,
+          "width": 89,
+          "height": 134,
+          "naturalWidth": 201,
+          "naturalHeight": 268,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co7k1l.webp"
+        },
+        {
+          "alt": "Is This Seat Taken?",
+          "decoded": true,
+          "width": 89,
+          "height": 134,
+          "naturalWidth": 201,
+          "naturalHeight": 268,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/coaapt.webp"
+        },
+        {
+          "alt": "Leaf it Alone",
+          "decoded": true,
+          "width": 89,
+          "height": 134,
+          "naturalWidth": 201,
+          "naturalHeight": 268,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/coatpx.webp"
+        },
+        {
+          "alt": "Sam & Max: Beyond Time and Space - Remastered",
+          "decoded": true,
+          "width": 89,
+          "height": 134,
+          "naturalWidth": 487,
+          "naturalHeight": 274,
+          "fit": "cover",
+          "src": "https://media.rawg.io/media/resize/640/-/games/ce9/ce93af2bc6139d79faab15305e97ec57.jpg"
+        },
+        {
+          "alt": "Descent (1996)",
+          "decoded": true,
+          "width": 89,
+          "height": 134,
+          "naturalWidth": 487,
+          "naturalHeight": 304,
+          "fit": "cover",
+          "src": "https://media.rawg.io/media/resize/640/-/screenshots/e9a/e9a432ccf67122208c3f0cbc14490e16.jpg"
+        },
+        {
+          "alt": "Fallen Hero: Rebirth",
+          "decoded": true,
+          "width": 89,
+          "height": 134,
+          "naturalWidth": 201,
+          "naturalHeight": 268,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co509z.webp"
+        },
+        {
+          "alt": "Micro Mages",
+          "decoded": true,
+          "width": 89,
+          "height": 134,
+          "naturalWidth": 201,
+          "naturalHeight": 268,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co3wsw.webp"
+        },
+        {
+          "alt": "Dawnfolk",
+          "decoded": true,
+          "width": 89,
+          "height": 134,
+          "naturalWidth": 201,
+          "naturalHeight": 268,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co94jk.webp"
+        },
+        {
+          "alt": "Platypus Reclayed",
+          "decoded": true,
+          "width": 89,
+          "height": 134,
+          "naturalWidth": 600,
+          "naturalHeight": 900,
+          "fit": "cover",
+          "src": "https://cdn.akamai.steamstatic.com/steam/apps/2912430/library_600x900_2x.jpg"
+        },
+        {
+          "alt": "Sektori",
+          "decoded": true,
+          "width": 89,
+          "height": 134,
+          "naturalWidth": 201,
+          "naturalHeight": 268,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co8ygz.webp"
+        },
+        {
+          "alt": "Wilmot Works It Out",
+          "decoded": true,
+          "width": 89,
+          "height": 134,
+          "naturalWidth": 201,
+          "naturalHeight": 268,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co8pqb.webp"
+        }
+      ],
+      "filters": []
+    },
+    {
+      "path": "/search?q=Hades",
+      "width": 390,
+      "theme": "dark",
+      "overflow": false,
+      "visibleImages": [
+        {
+          "alt": "Hades II",
+          "decoded": true,
+          "width": 169,
+          "height": 225,
+          "naturalWidth": 235,
+          "naturalHeight": 314,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/coaknx.webp"
+        },
+        {
+          "alt": "Hades",
+          "decoded": true,
+          "width": 169,
+          "height": 225,
+          "naturalWidth": 235,
+          "naturalHeight": 314,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/cob9kr.webp"
+        }
+      ],
+      "filters": [
+        {
+          "id": "search-genre-filter",
+          "height": 44,
+          "padding": "0px 40px 0px 16px",
+          "labelGap": 8
+        },
+        {
+          "id": "search-year-filter",
+          "height": 44,
+          "padding": "0px 40px 0px 16px",
+          "labelGap": 8
+        },
+        {
+          "id": "search-sort",
+          "height": 44,
+          "padding": "0px 40px 0px 16px",
+          "labelGap": 8
+        }
+      ]
+    },
+    {
+      "path": "/",
+      "width": 390,
+      "theme": "dark",
+      "overflow": false,
+      "visibleImages": [
+        {
+          "alt": "ARC Raiders",
+          "decoded": true,
+          "width": 174,
+          "height": 232,
+          "naturalWidth": 23,
+          "naturalHeight": 31,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/co9rk1.webp"
+        },
+        {
+          "alt": "Schedule I",
+          "decoded": true,
+          "width": 174,
+          "height": 232,
+          "naturalWidth": 23,
+          "naturalHeight": 31,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/co9adi.webp"
+        },
+        {
+          "alt": "Kingdom Come: Deliverance II",
+          "decoded": false,
+          "width": 174,
+          "height": 232,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "Counter-Strike 2",
+          "decoded": false,
+          "width": 174,
+          "height": 232,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "Europa Universalis V",
+          "decoded": false,
+          "width": 174,
+          "height": 232,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "Clair Obscur: Expedition 33",
+          "decoded": false,
+          "width": 174,
+          "height": 232,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "Farming Simulator 25",
+          "decoded": false,
+          "width": 174,
+          "height": 232,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "Baldur's Gate III",
+          "decoded": true,
+          "width": 174,
+          "height": 232,
+          "naturalWidth": 23,
+          "naturalHeight": 31,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/co670h.webp"
+        },
+        {
+          "alt": "Manor Lords",
+          "decoded": false,
+          "width": 174,
+          "height": 232,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "Disney Dreamlight Valley",
+          "decoded": false,
+          "width": 174,
+          "height": 232,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "Balatro",
+          "decoded": false,
+          "width": 174,
+          "height": 232,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "S.T.A.L.K.E.R. 2: Heart of Chornobyl",
+          "decoded": false,
+          "width": 174,
+          "height": 232,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "Satisfactory",
+          "decoded": false,
+          "width": 174,
+          "height": 232,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "Hollow Knight: Silksong",
+          "decoded": false,
+          "width": 174,
+          "height": 232,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "Sons of the Forest",
+          "decoded": false,
+          "width": 174,
+          "height": 232,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "Enshrouded (2024)",
+          "decoded": false,
+          "width": 174,
+          "height": 232,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "RV There Yet?",
+          "decoded": false,
+          "width": 174,
+          "height": 232,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "Valheim",
+          "decoded": false,
+          "width": 174,
+          "height": 232,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "The Finals",
+          "decoded": false,
+          "width": 174,
+          "height": 232,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "RuneScape: Dragonwilds",
+          "decoded": false,
+          "width": 174,
+          "height": 232,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "Rust",
+          "decoded": true,
+          "width": 174,
+          "height": 233,
+          "naturalWidth": 181,
+          "naturalHeight": 242,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/coajjj.webp"
+        },
+        {
+          "alt": "Phasmophobia",
+          "decoded": true,
+          "width": 174,
+          "height": 233,
+          "naturalWidth": 181,
+          "naturalHeight": 242,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/coamcz.webp"
+        },
+        {
+          "alt": "Valheim",
+          "decoded": true,
+          "width": 174,
+          "height": 233,
+          "naturalWidth": 181,
+          "naturalHeight": 242,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/cob24q.webp"
+        },
+        {
+          "alt": "DayZ",
+          "decoded": true,
+          "width": 174,
+          "height": 233,
+          "naturalWidth": 181,
+          "naturalHeight": 242,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/coaaqs.webp"
+        },
+        {
+          "alt": "BeamNG.drive",
+          "decoded": true,
+          "width": 174,
+          "height": 233,
+          "naturalWidth": 181,
+          "naturalHeight": 242,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1sym.webp"
+        },
+        {
+          "alt": "Raft",
+          "decoded": true,
+          "width": 174,
+          "height": 233,
+          "naturalWidth": 181,
+          "naturalHeight": 242,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1xdc.webp"
+        },
+        {
+          "alt": "Hades",
+          "decoded": true,
+          "width": 174,
+          "height": 233,
+          "naturalWidth": 24,
+          "naturalHeight": 32,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/cob9kr.webp"
+        },
+        {
+          "alt": "Hunt: Showdown",
+          "decoded": true,
+          "width": 174,
+          "height": 233,
+          "naturalWidth": 181,
+          "naturalHeight": 242,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co8o7i.webp"
+        },
+        {
+          "alt": "VRChat",
+          "decoded": true,
+          "width": 174,
+          "height": 233,
+          "naturalWidth": 181,
+          "naturalHeight": 242,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/cobuhu.webp"
+        },
+        {
+          "alt": "Vampire Survivors",
+          "decoded": true,
+          "width": 174,
+          "height": 233,
+          "naturalWidth": 181,
+          "naturalHeight": 242,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co4bzv.webp"
+        },
+        {
+          "alt": "RimWorld",
+          "decoded": false,
+          "width": 174,
+          "height": 233,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "Path of Exile 2",
+          "decoded": false,
+          "width": 174,
+          "height": 233,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "Ultrakill",
+          "decoded": false,
+          "width": 174,
+          "height": 233,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "Slay the Spire",
+          "decoded": false,
+          "width": 174,
+          "height": 233,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "Dead Cells",
+          "decoded": false,
+          "width": 174,
+          "height": 233,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "Dave the Diver",
+          "decoded": false,
+          "width": 174,
+          "height": 233,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "Oxygen Not Included",
+          "decoded": false,
+          "width": 174,
+          "height": 233,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "Space Engineers",
+          "decoded": false,
+          "width": 174,
+          "height": 233,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "V Rising",
+          "decoded": false,
+          "width": 174,
+          "height": 233,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "The Isle",
+          "decoded": false,
+          "width": 174,
+          "height": 233,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        }
+      ],
+      "filters": []
+    },
+    {
+      "path": "/explore",
+      "width": 390,
+      "theme": "light",
+      "overflow": false,
+      "visibleImages": [
+        {
+          "alt": "Rust",
+          "decoded": true,
+          "width": 169,
+          "height": 225,
+          "naturalWidth": 201,
+          "naturalHeight": 268,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/coajjj.webp"
+        },
+        {
+          "alt": "Phasmophobia",
+          "decoded": true,
+          "width": 169,
+          "height": 225,
+          "naturalWidth": 201,
+          "naturalHeight": 268,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/coamcz.webp"
+        }
+      ],
+      "filters": [
+        {
+          "id": "explore-platform",
+          "height": 44,
+          "padding": "0px 40px 0px 16px",
+          "labelGap": 8
+        },
+        {
+          "id": "explore-sort",
+          "height": 44,
+          "padding": "0px 40px 0px 16px",
+          "labelGap": 8
+        }
+      ]
+    },
+    {
+      "path": "/lists",
+      "width": 390,
+      "theme": "light",
+      "overflow": false,
+      "visibleImages": [
+        {
+          "alt": "Creature Kitchen",
+          "decoded": true,
+          "width": 89,
+          "height": 134,
+          "naturalWidth": 201,
+          "naturalHeight": 268,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/cobf9h.webp"
+        },
+        {
+          "alt": "Katawa Shoujo",
+          "decoded": true,
+          "width": 89,
+          "height": 134,
+          "naturalWidth": 201,
+          "naturalHeight": 268,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co7k1l.webp"
+        },
+        {
+          "alt": "Is This Seat Taken?",
+          "decoded": true,
+          "width": 89,
+          "height": 134,
+          "naturalWidth": 201,
+          "naturalHeight": 268,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/coaapt.webp"
+        },
+        {
+          "alt": "Leaf it Alone",
+          "decoded": true,
+          "width": 89,
+          "height": 134,
+          "naturalWidth": 201,
+          "naturalHeight": 268,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/coatpx.webp"
+        },
+        {
+          "alt": "Sam & Max: Beyond Time and Space - Remastered",
+          "decoded": true,
+          "width": 89,
+          "height": 134,
+          "naturalWidth": 487,
+          "naturalHeight": 274,
+          "fit": "cover",
+          "src": "https://media.rawg.io/media/resize/640/-/games/ce9/ce93af2bc6139d79faab15305e97ec57.jpg"
+        },
+        {
+          "alt": "Descent (1996)",
+          "decoded": true,
+          "width": 89,
+          "height": 134,
+          "naturalWidth": 487,
+          "naturalHeight": 304,
+          "fit": "cover",
+          "src": "https://media.rawg.io/media/resize/640/-/screenshots/e9a/e9a432ccf67122208c3f0cbc14490e16.jpg"
+        },
+        {
+          "alt": "Fallen Hero: Rebirth",
+          "decoded": true,
+          "width": 89,
+          "height": 134,
+          "naturalWidth": 201,
+          "naturalHeight": 268,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co509z.webp"
+        },
+        {
+          "alt": "Micro Mages",
+          "decoded": true,
+          "width": 89,
+          "height": 134,
+          "naturalWidth": 201,
+          "naturalHeight": 268,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co3wsw.webp"
+        },
+        {
+          "alt": "Dawnfolk",
+          "decoded": true,
+          "width": 89,
+          "height": 134,
+          "naturalWidth": 201,
+          "naturalHeight": 268,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co94jk.webp"
+        },
+        {
+          "alt": "Platypus Reclayed",
+          "decoded": true,
+          "width": 89,
+          "height": 134,
+          "naturalWidth": 600,
+          "naturalHeight": 900,
+          "fit": "cover",
+          "src": "https://cdn.akamai.steamstatic.com/steam/apps/2912430/library_600x900_2x.jpg"
+        },
+        {
+          "alt": "Sektori",
+          "decoded": true,
+          "width": 89,
+          "height": 134,
+          "naturalWidth": 201,
+          "naturalHeight": 268,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co8ygz.webp"
+        },
+        {
+          "alt": "Wilmot Works It Out",
+          "decoded": true,
+          "width": 89,
+          "height": 134,
+          "naturalWidth": 201,
+          "naturalHeight": 268,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co8pqb.webp"
+        }
+      ],
+      "filters": []
+    },
+    {
+      "path": "/search?q=Hades",
+      "width": 390,
+      "theme": "light",
+      "overflow": false,
+      "visibleImages": [
+        {
+          "alt": "Hades II",
+          "decoded": true,
+          "width": 169,
+          "height": 225,
+          "naturalWidth": 235,
+          "naturalHeight": 314,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/coaknx.webp"
+        },
+        {
+          "alt": "Hades",
+          "decoded": true,
+          "width": 169,
+          "height": 225,
+          "naturalWidth": 235,
+          "naturalHeight": 314,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/cob9kr.webp"
+        }
+      ],
+      "filters": [
+        {
+          "id": "search-genre-filter",
+          "height": 44,
+          "padding": "0px 40px 0px 16px",
+          "labelGap": 8
+        },
+        {
+          "id": "search-year-filter",
+          "height": 44,
+          "padding": "0px 40px 0px 16px",
+          "labelGap": 8
+        },
+        {
+          "id": "search-sort",
+          "height": 44,
+          "padding": "0px 40px 0px 16px",
+          "labelGap": 8
+        }
+      ]
+    },
+    {
+      "path": "/",
+      "width": 390,
+      "theme": "light",
+      "overflow": false,
+      "visibleImages": [
+        {
+          "alt": "ARC Raiders",
+          "decoded": true,
+          "width": 174,
+          "height": 232,
+          "naturalWidth": 235,
+          "naturalHeight": 314,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/co9rk1.webp"
+        },
+        {
+          "alt": "Schedule I",
+          "decoded": true,
+          "width": 174,
+          "height": 232,
+          "naturalWidth": 235,
+          "naturalHeight": 314,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/co9adi.webp"
+        },
+        {
+          "alt": "Kingdom Come: Deliverance II",
+          "decoded": false,
+          "width": 174,
+          "height": 232,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "Counter-Strike 2",
+          "decoded": false,
+          "width": 174,
+          "height": 232,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "Europa Universalis V",
+          "decoded": false,
+          "width": 174,
+          "height": 232,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "Clair Obscur: Expedition 33",
+          "decoded": false,
+          "width": 174,
+          "height": 232,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "Farming Simulator 25",
+          "decoded": false,
+          "width": 174,
+          "height": 232,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "Baldur's Gate III",
+          "decoded": false,
+          "width": 174,
+          "height": 232,
+          "naturalWidth": 235,
+          "naturalHeight": 314,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/co670h.webp"
+        },
+        {
+          "alt": "Manor Lords",
+          "decoded": false,
+          "width": 174,
+          "height": 232,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "Disney Dreamlight Valley",
+          "decoded": false,
+          "width": 174,
+          "height": 232,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "Balatro",
+          "decoded": false,
+          "width": 174,
+          "height": 232,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "S.T.A.L.K.E.R. 2: Heart of Chornobyl",
+          "decoded": false,
+          "width": 174,
+          "height": 232,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "Satisfactory",
+          "decoded": false,
+          "width": 174,
+          "height": 232,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "Hollow Knight: Silksong",
+          "decoded": false,
+          "width": 174,
+          "height": 232,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "Sons of the Forest",
+          "decoded": false,
+          "width": 174,
+          "height": 232,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "Enshrouded (2024)",
+          "decoded": false,
+          "width": 174,
+          "height": 232,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "RV There Yet?",
+          "decoded": false,
+          "width": 174,
+          "height": 232,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "Valheim",
+          "decoded": false,
+          "width": 174,
+          "height": 232,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "The Finals",
+          "decoded": false,
+          "width": 174,
+          "height": 232,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "RuneScape: Dragonwilds",
+          "decoded": false,
+          "width": 174,
+          "height": 232,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "Rust",
+          "decoded": true,
+          "width": 174,
+          "height": 233,
+          "naturalWidth": 181,
+          "naturalHeight": 242,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/coajjj.webp"
+        },
+        {
+          "alt": "Phasmophobia",
+          "decoded": true,
+          "width": 174,
+          "height": 233,
+          "naturalWidth": 181,
+          "naturalHeight": 242,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/coamcz.webp"
+        },
+        {
+          "alt": "Valheim",
+          "decoded": true,
+          "width": 174,
+          "height": 233,
+          "naturalWidth": 181,
+          "naturalHeight": 242,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/cob24q.webp"
+        },
+        {
+          "alt": "DayZ",
+          "decoded": true,
+          "width": 174,
+          "height": 233,
+          "naturalWidth": 181,
+          "naturalHeight": 242,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/coaaqs.webp"
+        },
+        {
+          "alt": "BeamNG.drive",
+          "decoded": true,
+          "width": 174,
+          "height": 233,
+          "naturalWidth": 181,
+          "naturalHeight": 242,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1sym.webp"
+        },
+        {
+          "alt": "Raft",
+          "decoded": true,
+          "width": 174,
+          "height": 233,
+          "naturalWidth": 181,
+          "naturalHeight": 242,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1xdc.webp"
+        },
+        {
+          "alt": "Hades",
+          "decoded": true,
+          "width": 174,
+          "height": 233,
+          "naturalWidth": 24,
+          "naturalHeight": 32,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big_2x/cob9kr.webp"
+        },
+        {
+          "alt": "Hunt: Showdown",
+          "decoded": true,
+          "width": 174,
+          "height": 233,
+          "naturalWidth": 181,
+          "naturalHeight": 242,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co8o7i.webp"
+        },
+        {
+          "alt": "VRChat",
+          "decoded": true,
+          "width": 174,
+          "height": 233,
+          "naturalWidth": 181,
+          "naturalHeight": 242,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/cobuhu.webp"
+        },
+        {
+          "alt": "Vampire Survivors",
+          "decoded": true,
+          "width": 174,
+          "height": 233,
+          "naturalWidth": 181,
+          "naturalHeight": 242,
+          "fit": "cover",
+          "src": "https://images.igdb.com/igdb/image/upload/t_cover_big/co4bzv.webp"
+        },
+        {
+          "alt": "RimWorld",
+          "decoded": false,
+          "width": 174,
+          "height": 233,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "Path of Exile 2",
+          "decoded": false,
+          "width": 174,
+          "height": 233,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "Ultrakill",
+          "decoded": false,
+          "width": 174,
+          "height": 233,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "Slay the Spire",
+          "decoded": false,
+          "width": 174,
+          "height": 233,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "Dead Cells",
+          "decoded": false,
+          "width": 174,
+          "height": 233,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "Dave the Diver",
+          "decoded": false,
+          "width": 174,
+          "height": 233,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "Oxygen Not Included",
+          "decoded": false,
+          "width": 174,
+          "height": 233,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "Space Engineers",
+          "decoded": false,
+          "width": 174,
+          "height": 233,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "V Rising",
+          "decoded": false,
+          "width": 174,
+          "height": 233,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        },
+        {
+          "alt": "The Isle",
+          "decoded": false,
+          "width": 174,
+          "height": 233,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "fit": "cover",
+          "src": ""
+        }
+      ],
+      "filters": []
+    }
+  ],
+  "interactions": [
+    "Explore genre/sort URLs survive refresh and browser back",
+    "Heading pause persists across navigation and refresh"
+  ],
+  "rankings": {
+    "total": 250,
+    "uniqueSlugs": 250,
+    "consecutiveRanks": true,
+    "platformRanksPreserved": true
+  }
+}

@@ -4,6 +4,8 @@ import {
   checkMinInterval,
   isInfrastructureDbError,
   retryInfrastructureDbOperation,
+  finishRun,
+  startRun,
 } from "../../scripts/lib/scheduler-logger.mjs";
 
 describe("isInfrastructureDbError", () => {
@@ -26,6 +28,19 @@ describe("isInfrastructureDbError", () => {
 
   it("does not classify SQL errors as infrastructure failures", () => {
     expect(isInfrastructureDbError({ code: "42P01", message: "relation does not exist" })).toBe(false);
+  });
+});
+
+describe('maintenance outcome logging', () => {
+  it('records deferral separately from successful maintenance', async () => {
+    const sql = vi.fn().mockResolvedValue([]);
+    await finishRun(sql, 'local-run', { outcome: 'deferred', error_message: 'Provider down', strict: true });
+    expect(sql.mock.calls[0][1]).toBe('deferred');
+  });
+  it('does not silently pass when required deferral logging fails', async () => {
+    const failure = Object.assign(new Error('permission denied'), { code: '42501' });
+    await expect(startRun(vi.fn().mockRejectedValue(failure), 'job', {}, { strict: true })).rejects.toBe(failure);
+    await expect(finishRun(vi.fn().mockRejectedValue(failure), 'id', { outcome: 'deferred', strict: true })).rejects.toBe(failure);
   });
 });
 
@@ -72,6 +87,14 @@ describe("retryInfrastructureDbOperation", () => {
 });
 
 describe("scheduler skip guards", () => {
+  it("aborts unexpected lock errors without running unlocked", async () => {
+    const logged = vi.spyOn(console, "error").mockImplementation(() => {});
+    const failure = Object.assign(new Error("permission denied for advisory lock"), { code: "42501" });
+    const sql = { reserve: vi.fn().mockRejectedValue(failure) };
+    await expect(acquireLock(sql, "test-job")).rejects.toBe(failure);
+    expect(sql.reserve).toHaveBeenCalledTimes(1);
+    logged.mockRestore();
+  });
   it("returns false for genuine advisory-lock contention", async () => {
     const log = vi.spyOn(console, "log").mockImplementation(() => {});
     const reserved = vi.fn().mockResolvedValue([{ acquired: false }]) as ReturnType<typeof vi.fn> & { release: ReturnType<typeof vi.fn> };

@@ -1,0 +1,46 @@
+{
+  "candidate": "516bc021d46a1acc2b93c89e712335bfdf00fb3e",
+  "scope": "Actual protected preview; public browser reads and isolated local preferences only. No signup/email submission, hosted fixture or data write.",
+  "startedAt": "2026-11-17T13:31:14.296Z",
+  "cases": [
+    {
+      "width": 390,
+      "theme": "light",
+      "checks": [],
+      "failed": true,
+      "error": "TimeoutError",
+      "stage": "year",
+      "url": "https://verdict-games-git-remediation-valid-556752-yogesh-vg0s-projects.vercel.app/explore?type=popular-in-year&page=2",
+      "visibleState": "Explore Games\n\nDiscover the most popular, anticipated, and highest-rated games.\n\nMost Anticipated\nBest of 2025\nAll-Time Top 250\nNew Releases\nBrowse by Genre\nRelease year\n2026\n2025\n2024\n2023\n2022\n2021\n2020\n2019\n2018\n2017\n2016\n2015\n2014\n2013\n2012\n2011\n2010\n2009\n2008\n2007\n2006\n2005\n2004\n2003\n2002\n2001\n2000\n1999\n1998\n1997\n1996\n1995\n1994\n1993\n1992\n1991\n1990\n1989\n1988\n1987\n1986\n1985\n1984\n1983\n1982\n1981\n1980\n1979\n1978\n1977\n1976\n1975\n1974\n1973\n1972\n1971\n1970\nPlatform\nAll platforms\nPC\nPlayStation 5\nXbox Series X|S\nNintendo Switch\nAndroid\niOS\nSort\nCategory ranking\nPopularity (reviews)\nHighest rated\nName A–Z\nName Z–A\nRelease newest\nRelease oldest\nAdded to catalogue\nReset filters\nBest of 2025\n\nVerdictGames best of the selected release year: confidence-weighted Verdict ranking, at least 100 reviews. Popularity sort uses review volume.\n\nCatalogue snapshot: 11/17/2026\n\n264 games\nRift of the NecroDancer\nAction\n·RPG\n2025\n5.3K reviews\n93 / 100\nSpilled!\nAdventure\n·Simulation\n2025\n4.4K reviews\n93 / 100\nDuck Detective: The Ghost of Glamping\nAdventure\n·Casual\n2025\n2.5K reviews\n95 / 100\nPlatypus Reclayed\nAction\n·Indie\n2025\n633 reviews\n96 / 100\nTrails in the Sky 1st Chapter\nAction\n·Adventure\n2025\n3.7K rev"
+    },
+    {
+      "width": 1440,
+      "theme": "dark",
+      "checks": [
+        "year/platform/sort controls update the shareable URL and reset page",
+        "refresh preserves selected controls and rendered order",
+        "expanded Browse/Search filters fit the viewport",
+        "normal visible gradient headings move",
+        "pause stops headings and persists across reload",
+        "system reduced motion keeps the visible heading static"
+      ],
+      "filterOverflow": false,
+      "passed": true
+    },
+    {
+      "width": 1440,
+      "theme": "light",
+      "checks": [
+        "year/platform/sort controls update the shareable URL and reset page",
+        "refresh preserves selected controls and rendered order",
+        "expanded Browse/Search filters fit the viewport",
+        "normal visible gradient headings move",
+        "pause stops headings and persists across reload",
+        "system reduced motion keeps the visible heading static"
+      ],
+      "filterOverflow": false,
+      "passed": true
+    }
+  ],
+  "completedAt": "2026-11-17T13:32:24.735Z"
+}

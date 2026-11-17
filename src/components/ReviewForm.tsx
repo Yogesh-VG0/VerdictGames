@@ -97,9 +97,9 @@ export default function ReviewForm({ gameId, gameSlug, onAuthRequired, onSuccess
       <AnimatePresence>
         {isOpen && (
           <motion.form
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
+            initial={false}
+            animate={undefined}
+            exit={undefined}
             transition={{ duration: 0.3 }}
             onSubmit={handleSubmit}
             className="overflow-hidden rounded-2xl border border-border bg-surface p-5 space-y-4"

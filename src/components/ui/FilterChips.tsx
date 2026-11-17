@@ -10,6 +10,7 @@ interface FilterChipsProps<T extends string> {
   labelFn?: (value: T) => string;
   iconFn?: (value: T) => React.ReactNode | null;
   className?: string;
+  label?: string;
 }
 
 export default function FilterChips<T extends string>({
@@ -19,6 +20,7 @@ export default function FilterChips<T extends string>({
   labelFn,
   iconFn,
   className,
+  label = 'Filter options',
 }: FilterChipsProps<T>) {
   return (
     <div
@@ -27,6 +29,7 @@ export default function FilterChips<T extends string>({
         className
       )}
       role="radiogroup"
+      aria-label={label}
       style={{ WebkitOverflowScrolling: "touch" }}
     >
       {options.map((option) => {
@@ -38,12 +41,24 @@ export default function FilterChips<T extends string>({
             whileTap={{ scale: 0.95 }}
             onClick={() => onChange(option)}
             role="radio"
+            onFocus={event => event.currentTarget.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'instant' })}
             aria-checked={isActive}
+            tabIndex={isActive ? 0 : -1}
+            onKeyDown={event => {
+              const index = options.indexOf(option);
+              const key = event.key;
+              if (!['ArrowRight', 'ArrowLeft', 'ArrowDown', 'ArrowUp', 'Home', 'End'].includes(key)) return;
+              event.preventDefault();
+              const next = key === 'Home' ? 0 : key === 'End' ? options.length - 1
+                : (index + (key === 'ArrowRight' || key === 'ArrowDown' ? 1 : -1) + options.length) % options.length;
+              onChange(options[next]);
+              event.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>('button[role="radio"]')[next]?.focus();
+            }}
             className={cn(
-              "relative shrink-0 px-3 py-1.5 text-xs font-medium rounded-full border transition-all duration-200 flex items-center gap-1.5 whitespace-nowrap",
+              "relative shrink-0 px-3 py-1.5 text-xs font-medium min-h-9 rounded-xl border transition-colors duration-150 flex items-center gap-1.5 whitespace-nowrap",
               isActive
-                ? "bg-accent text-white border-accent shadow-[0_0_12px_-3px_rgba(168,85,247,0.4)]"
-                : "bg-surface-2 text-secondary border-border hover:border-border-hover hover:text-foreground hover:bg-elevated"
+                ? "bg-action text-action-foreground border-action"
+                : "bg-surface-2 text-secondary border-control-border hover:border-control-border hover:text-foreground hover:bg-elevated"
             )}
           >
             {icon && <span className="shrink-0">{icon}</span>}

@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { scoreColorVar, cn } from "@/lib/utils";
 
 interface ScoreRingProps {
@@ -17,14 +16,11 @@ export default function ScoreRing({
   strokeWidth = 4,
   className,
 }: ScoreRingProps) {
-  const [mounted, setMounted] = useState(false);
+  const reducedMotion = useReducedMotion();
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (score / 100) * circumference;
   const color = scoreColorVar(score);
-
-  // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => setMounted(true), []);
 
   return (
     <div className={cn("relative", className)} style={{ width: size, height: size }}>
@@ -35,7 +31,7 @@ export default function ScoreRing({
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke="rgba(255,255,255,0.08)"
+          stroke="var(--vg-border-hover)"
           strokeWidth={strokeWidth}
         />
         {/* Score arc */}
@@ -48,11 +44,11 @@ export default function ScoreRing({
           strokeWidth={strokeWidth}
           strokeLinecap="round"
           strokeDasharray={circumference}
-          initial={{ strokeDashoffset: circumference }}
+          initial={reducedMotion ? false : { strokeDashoffset: circumference }}
           animate={{
-            strokeDashoffset: mounted ? offset : circumference,
+            strokeDashoffset: offset,
           }}
-          transition={{ duration: 1, ease: "easeOut", delay: 0.2 }}
+          transition={{ duration: reducedMotion ? 0 : 0.4, ease: [0.23, 1, 0.32, 1] }}
         />
       </svg>
       {/* Score label */}

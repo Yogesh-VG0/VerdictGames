@@ -6,9 +6,8 @@ import { useState } from "react";
 import { AlertCircle, ArrowLeft, CheckCircle2, Eye, EyeOff, Loader2, Lock, Mail, ShieldCheck } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
+import { getPasswordValidationError } from '@/lib/auth/password';
 
-const PASSWORD_RE_LETTER = /[a-zA-Z]/;
-const PASSWORD_RE_NUMBER = /[0-9]/;
 const inputCls = "w-full h-11 pl-10 pr-4 text-sm rounded-2xl bg-surface-2 border border-border text-foreground placeholder:text-tertiary focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/20 transition-all";
 
 interface ResetPasswordClientPageProps {
@@ -28,11 +27,8 @@ export default function ResetPasswordClientPage({ initialError }: ResetPasswordC
   const [error, setError] = useState(initialError ?? "");
   const [successMsg, setSuccessMsg] = useState("");
 
-  const pwLen = password.length >= 8;
-  const pwLetter = PASSWORD_RE_LETTER.test(password);
-  const pwNumber = PASSWORD_RE_NUMBER.test(password);
-  const pwValid = pwLen && pwLetter && pwNumber;
-  const passwordsMatch = confirmPassword.length === 0 || password === confirmPassword;
+  const passwordError = getPasswordValidationError(password);
+  const passwordsMatch = password === confirmPassword;
 
   async function handleUpdatePassword(e: React.FormEvent) {
     e.preventDefault();
@@ -44,8 +40,8 @@ export default function ResetPasswordClientPage({ initialError }: ResetPasswordC
       return;
     }
 
-    if (!pwValid) {
-      setError("Password must be at least 8 characters with at least one letter and one number.");
+    if (passwordError) {
+      setError(passwordError);
       return;
     }
 
@@ -181,6 +177,7 @@ export default function ResetPasswordClientPage({ initialError }: ResetPasswordC
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="New password"
+                        aria-label="New password"
                         autoComplete="new-password"
                         className={cn(inputCls, "pr-10")}
                         required
@@ -194,13 +191,7 @@ export default function ResetPasswordClientPage({ initialError }: ResetPasswordC
                         {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </button>
                     </div>
-                    {password.length > 0 && (
-                      <div className="flex flex-wrap items-center gap-3 px-1 pt-0.5">
-                        <span className={cn("text-[11px]", pwLen ? "text-success" : "text-tertiary")}>{pwLen ? "✓" : "•"} 8+ chars</span>
-                        <span className={cn("text-[11px]", pwLetter ? "text-success" : "text-tertiary")}>{pwLetter ? "✓" : "•"} Letter</span>
-                        <span className={cn("text-[11px]", pwNumber ? "text-success" : "text-tertiary")}>{pwNumber ? "✓" : "•"} Number</span>
-                      </div>
-                    )}
+                    <p role="status" className="px-1 pt-1 text-xs text-secondary">{password.length > 0 ? passwordError || 'Length requirement met. Choose a unique password.' : 'Use at least 15 characters. A unique passphrase works well.'}</p>
                   </div>
 
                   <div className="space-y-1">
@@ -213,6 +204,7 @@ export default function ResetPasswordClientPage({ initialError }: ResetPasswordC
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         placeholder="Confirm new password"
+                        aria-label="Confirm new password"
                         autoComplete="new-password"
                         className={cn(inputCls, "pr-10")}
                         required
