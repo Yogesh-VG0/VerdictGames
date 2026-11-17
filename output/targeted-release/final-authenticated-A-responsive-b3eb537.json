@@ -1,0 +1,68 @@
+{
+  "candidate": "b3eb53754e2f89e7b2606f393e0b2e7832da8008",
+  "actor": "A",
+  "scope": "Actual signed-in disposable library across six viewport/theme states. Rendered DOM/geometry checks; screenshot export denied by the browser tool's workspace configuration. No fixture mutation or private contents persisted; original theme restored and emulation cleared.",
+  "cases": [
+    {
+      "width": 390,
+      "theme": "dark",
+      "mainPresent": true,
+      "heading": "My Library",
+      "emptyLibraryVisible": true,
+      "hasSignInPrompt": false,
+      "overflow": false,
+      "fixtureAbsent": true
+    },
+    {
+      "width": 390,
+      "theme": "light",
+      "mainPresent": true,
+      "heading": "My Library",
+      "emptyLibraryVisible": true,
+      "hasSignInPrompt": false,
+      "overflow": false,
+      "fixtureAbsent": true
+    },
+    {
+      "width": 768,
+      "theme": "dark",
+      "mainPresent": true,
+      "heading": "My Library",
+      "emptyLibraryVisible": true,
+      "hasSignInPrompt": false,
+      "overflow": false,
+      "fixtureAbsent": true
+    },
+    {
+      "width": 768,
+      "theme": "light",
+      "mainPresent": true,
+      "heading": "My Library",
+      "emptyLibraryVisible": true,
+      "hasSignInPrompt": false,
+      "overflow": false,
+      "fixtureAbsent": true
+    },
+    {
+      "width": 1440,
+      "theme": "dark",
+      "mainPresent": true,
+      "heading": "My Library",
+      "emptyLibraryVisible": true,
+      "hasSignInPrompt": false,
+      "overflow": false,
+      "fixtureAbsent": true
+    },
+    {
+      "width": 1440,
+      "theme": "light",
+      "mainPresent": true,
+      "heading": "My Library",
+      "emptyLibraryVisible": true,
+      "hasSignInPrompt": false,
+      "overflow": false,
+      "fixtureAbsent": true
+    }
+  ],
+  "passed": true
+}

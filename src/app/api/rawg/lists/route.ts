@@ -24,7 +24,9 @@ export async function GET(request: NextRequest) {
     const data = await loadExplore(type as RawgListType, page, pageSize, year, genre, sort as ExploreSort, platform, (phase, milliseconds) => {
       if (timings.length < 8 && /^[a-z_]{1,24}$/.test(phase) && Number.isFinite(milliseconds)) timings.push(`${phase};dur=${Math.max(0,Math.round(milliseconds))}`);
     });
-    return timed(jsonOk(data, 200, { cacheControl: 'public, s-maxage=3600, stale-while-revalidate=86400' }));
+    return timed(jsonOk(data, 200, { cacheControl: data.degraded
+      ? 'public, s-maxage=60, stale-while-revalidate=300'
+      : 'public, s-maxage=3600, stale-while-revalidate=86400' }));
   } catch (error) {
     console.warn('[Explore] Catalogue read failed', { code: error && typeof error === 'object' && 'code' in error ? error.code : error instanceof Error ? error.name : 'unknown' });
     return timed(jsonError('The game catalogue is temporarily unavailable. Please retry shortly.', 503));

@@ -12,7 +12,7 @@ import GradientText from "@/components/ui/GradientText";
 import {
   HOMEPAGE_REVALIDATE_SECONDS,
   loadHomepageDataWithStatus,
-  loadHomepageMostAnticipated,
+  loadHomepageMostAnticipatedWithStatus,
 } from "@/lib/services/homepage";
 
 const CARD_WIDTH = "shrink-0 w-44 sm:w-52 md:w-56 lg:w-60 h-full";
@@ -54,11 +54,13 @@ export const metadata: Metadata = {
 };
 
 export default async function HomePage() {
-  const [homepageResult, mostAnticipatedGames] = await Promise.all([
+  const [homepageResult, anticipatedResult] = await Promise.all([
     loadHomepageDataWithStatus(),
-    loadHomepageMostAnticipated(),
+    loadHomepageMostAnticipatedWithStatus(),
   ]);
-  const { data: homepage, degraded } = homepageResult;
+  const { data: homepage } = homepageResult;
+  const mostAnticipatedGames = anticipatedResult.data;
+  const degraded = homepageResult.degraded || anticipatedResult.degraded;
   const featured = homepage.hero.filter((game) => game.headerImage || game.coverImage).slice(0, 6);
   const trendingGames = homepage.trending
     .filter((game) => game.coverImage)

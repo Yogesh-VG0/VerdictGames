@@ -1539,9 +1539,12 @@ const getCachedHomepageMostAnticipated = unstable_cache(
   coalesceCatalogueRead(async () => {
     const { loadExplore } = await import('@/lib/services/explore');
     const data = await loadExplore('best-of-year', 1, HOMEPAGE_MOST_ANTICIPATED_TARGET);
-    return data.items.map(item => ({ rawgId: item.rawgId, slug: item.slug, name: item.name, released: item.released, tba: item.tba, earlyAccess: item.earlyAccess, image: item.image, imageKind: item.imageKind, added: item.added, toplay: item.toplay, genres: item.genres }));
+    const items = data.items.map(item => ({ rawgId: item.rawgId, slug: item.slug, name: item.name, released: item.released, tba: item.tba, earlyAccess: item.earlyAccess, image: item.image, imageKind: item.imageKind, added: item.added, toplay: item.toplay, genres: item.genres }));
+    return admitCataloguePayload(items, { discovery: data.degraded
+      ? { status: 'rejected', reason: 'Discovery snapshot temporarily unavailable' }
+      : { status: 'fulfilled', value: true } });
   }),
-  ["homepage-most-anticipated-v5"],
+  ["homepage-most-anticipated-v6"],
   { revalidate: 3600 }
 );
 
@@ -1558,15 +1561,14 @@ export async function loadHomepageDataWithStatus(): Promise<{ data: HomepageData
 }
 
 export async function loadHomepageMostAnticipated(): Promise<HomepageAnticipatedGame[]> {
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
-    return [];
-  }
+  return (await loadHomepageMostAnticipatedWithStatus()).data;
+}
 
-  try {
-    return await getCachedHomepageMostAnticipated();
-  } catch {
-    return [];
+export async function loadHomepageMostAnticipatedWithStatus(): Promise<{ data: HomepageAnticipatedGame[]; degraded: boolean }> {
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
+    return { data: [], degraded: true };
   }
+  return readCachedCatalogue(getCachedHomepageMostAnticipated, []);
 }
 
 function resolveHomepageSection<T>(result: PromiseSettledResult<T>, label: string, fallback: T): T {

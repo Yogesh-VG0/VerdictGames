@@ -1,0 +1,70 @@
+{
+  "candidate": "b3eb53754e2f89e7b2606f393e0b2e7832da8008",
+  "scope": "Actual signed-in disposable B library pixels, inspected in both themes at native mobile/tablet/desktop window sizes. Original window/theme restored. Native Windows Chrome minimum width and DPI rounding recorded; A additionally passed exact390/768/1440 DOM checks. Private account screenshots remain ignored outside Git.",
+  "shots": [
+    {
+      "file": ".verification/final-browser-b3/library-B-mobile-dark.jpg",
+      "width": 502,
+      "height": 781,
+      "theme": "dark",
+      "dpr": 1.75,
+      "inspected": true
+    },
+    {
+      "file": ".verification/final-browser-b3/library-B-502-light.jpg",
+      "width": 502,
+      "height": 781,
+      "dpr": 1.75,
+      "theme": "light",
+      "heading": "My Library",
+      "empty": true,
+      "overflow": false,
+      "inspected": true
+    },
+    {
+      "file": ".verification/final-browser-b3/library-B-768-dark.jpg",
+      "width": 770,
+      "height": 781,
+      "dpr": 1.75,
+      "theme": "dark",
+      "heading": "My Library",
+      "empty": true,
+      "overflow": false,
+      "inspected": true
+    },
+    {
+      "file": ".verification/final-browser-b3/library-B-768-light.jpg",
+      "width": 770,
+      "height": 781,
+      "dpr": 1.75,
+      "theme": "light",
+      "heading": "My Library",
+      "empty": true,
+      "overflow": false,
+      "inspected": true
+    },
+    {
+      "file": ".verification/final-browser-b3/library-B-1440-dark.jpg",
+      "width": 1442,
+      "height": 781,
+      "dpr": 1.75,
+      "theme": "dark",
+      "heading": "My Library",
+      "empty": true,
+      "overflow": false,
+      "inspected": true
+    },
+    {
+      "file": ".verification/final-browser-b3/library-B-1440-light.jpg",
+      "width": 1442,
+      "height": 781,
+      "dpr": 1.75,
+      "theme": "light",
+      "heading": "My Library",
+      "empty": true,
+      "overflow": false,
+      "inspected": true
+    }
+  ],
+  "passed": true
+}
