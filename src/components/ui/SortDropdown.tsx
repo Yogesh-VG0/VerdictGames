@@ -1,6 +1,11 @@
 "use client";
 
 import { cn } from "@/lib/utils";
+import { useSyncExternalStore } from "react";
+
+const subscribeToHydration = () => () => {};
+const clientReady = () => true;
+const serverReady = () => false;
 
 interface SortDropdownProps<T extends string> {
   options: { label: string; value: T }[];
@@ -19,11 +24,16 @@ export default function SortDropdown<T extends string>({
   id,
   name,
 }: SortDropdownProps<T>) {
+  // Native changes made before React attaches onChange are not replayed.
+  // Keep the server-rendered selection intact until the control can navigate.
+  const interactive = useSyncExternalStore(subscribeToHydration, clientReady, serverReady);
+
   return (
     <select
       id={id}
       name={name}
       value={selected}
+      disabled={!interactive}
       onChange={(e) => onChange(e.target.value as T)}
       className={cn(
         "vg-select text-sm font-medium",

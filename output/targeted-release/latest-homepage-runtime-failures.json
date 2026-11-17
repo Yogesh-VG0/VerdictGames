@@ -1,0 +1,16 @@
+{
+  "candidate": "516bc021d46a1acc2b93c89e712335bfdf00fb3e",
+  "deploymentId": "dpl_FpxgzF8RChs4UgrhkHCZ311PQK1b",
+  "retrievedAt": "2026-11-17T13:36:19.440Z",
+  "scope": "Read-only Vercel error logs for the exact protected preview; sanitized fields only.",
+  "failures": [
+    {"at":"2026-11-17T13:23:27.277Z","path":"/","error":"Runtime task timed out after 30 seconds"},
+    {"at":"2026-11-17T13:23:30.693Z","path":"/","error":"Runtime task timed out after 30 seconds"},
+    {"at":"2026-11-17T13:23:32.985Z","path":"/","error":"Runtime task timed out after 30 seconds"}
+  ],
+  "region": "bom1",
+  "runtime": "nodejs24.x",
+  "traceLookup": "404 trace not found",
+  "attribution": "Unresolved. Temporal overlap with browser acceptance is not proof of a specific slow query or provider.",
+  "releaseGate": "open"
+}
