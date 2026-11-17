@@ -1,0 +1,638 @@
+{
+  "measuredAt": "2026-11-17T13:49:45.785Z",
+  "scope": "One bounded read of documented existing project Metrics API; scalar resource metrics only; no configuration change",
+  "status": 200,
+  "metrics": [
+    {
+      "name": "node_memory_CmaFree_bytes",
+      "value": 397312
+    },
+    {
+      "name": "node_memory_WritebackTmp_bytes",
+      "value": 0
+    },
+    {
+      "name": "node_disk_io_now",
+      "value": 0,
+      "device": "nvme0n1"
+    },
+    {
+      "name": "node_disk_io_now",
+      "value": 0,
+      "device": "nvme1n1"
+    },
+    {
+      "name": "node_disk_reads_completed_total",
+      "value": 95995122,
+      "device": "nvme0n1"
+    },
+    {
+      "name": "node_disk_reads_completed_total",
+      "value": 345807,
+      "device": "nvme1n1"
+    },
+    {
+      "name": "node_memory_Active_file_bytes",
+      "value": 108666880
+    },
+    {
+      "name": "node_memory_Hugepagesize_bytes",
+      "value": 2097152
+    },
+    {
+      "name": "node_memory_Inactive_anon_bytes",
+      "value": 56651776
+    },
+    {
+      "name": "node_load15",
+      "value": 0.62
+    },
+    {
+      "name": "node_memory_HardwareCorrupted_bytes",
+      "value": 0
+    },
+    {
+      "name": "node_vmstat_pgmajfault",
+      "value": 49463488
+    },
+    {
+      "name": "node_load1",
+      "value": 0.53
+    },
+    {
+      "name": "node_memory_SwapFree_bytes",
+      "value": 554930176
+    },
+    {
+      "name": "node_memory_Active_bytes",
+      "value": 151539712
+    },
+    {
+      "name": "node_memory_NFS_Unstable_bytes",
+      "value": 0
+    },
+    {
+      "name": "node_memory_HugePages_Surp",
+      "value": 0
+    },
+    {
+      "name": "node_vmstat_pswpout",
+      "value": 69734109
+    },
+    {
+      "name": "node_memory_ShmemPmdMapped_bytes",
+      "value": 0
+    },
+    {
+      "name": "node_memory_Unevictable_bytes",
+      "value": 8192
+    },
+    {
+      "name": "node_memory_Active_anon_bytes",
+      "value": 42872832
+    },
+    {
+      "name": "node_memory_VmallocTotal_bytes",
+      "value": 138535235485696
+    },
+    {
+      "name": "node_memory_Cached_bytes",
+      "value": 197169152
+    },
+    {
+      "name": "node_memory_CmaTotal_bytes",
+      "value": 0
+    },
+    {
+      "name": "node_memory_AnonPages_bytes",
+      "value": 88264704
+    },
+    {
+      "name": "node_memory_Shmem_bytes",
+      "value": 4829184
+    },
+    {
+      "name": "node_vmstat_pgfault",
+      "value": 230005339
+    },
+    {
+      "name": "node_memory_KernelStack_bytes",
+      "value": 4161536
+    },
+    {
+      "name": "node_memory_SwapCached_bytes",
+      "value": 35348480
+    },
+    {
+      "name": "node_memory_HugePages_Free",
+      "value": 0
+    },
+    {
+      "name": "node_memory_HugePages_Total",
+      "value": 0
+    },
+    {
+      "name": "node_memory_SwapTotal_bytes",
+      "value": 1073737728
+    },
+    {
+      "name": "node_memory_Buffers_bytes",
+      "value": 737280
+    },
+    {
+      "name": "node_memory_Inactive_bytes",
+      "value": 140947456
+    },
+    {
+      "name": "node_memory_PageTables_bytes",
+      "value": 12206080
+    },
+    {
+      "name": "node_memory_Bounce_bytes",
+      "value": 0
+    },
+    {
+      "name": "node_memory_VmallocChunk_bytes",
+      "value": 0
+    },
+    {
+      "name": "node_memory_Inactive_file_bytes",
+      "value": 84295680
+    },
+    {
+      "name": "node_memory_Percpu_bytes",
+      "value": 835584
+    },
+    {
+      "name": "node_memory_SUnreclaim_bytes",
+      "value": 50438144
+    },
+    {
+      "name": "node_memory_Mlocked_bytes",
+      "value": 8192
+    },
+    {
+      "name": "node_memory_Writeback_bytes",
+      "value": 0
+    },
+    {
+      "name": "node_vmstat_pswpin",
+      "value": 74107759
+    },
+    {
+      "name": "node_memory_SReclaimable_bytes",
+      "value": 25247744
+    },
+    {
+      "name": "node_disk_read_time_seconds_total",
+      "value": 382591.578,
+      "device": "nvme0n1"
+    },
+    {
+      "name": "node_disk_read_time_seconds_total",
+      "value": 432.906,
+      "device": "nvme1n1"
+    },
+    {
+      "name": "node_memory_AnonHugePages_bytes",
+      "value": 0
+    },
+    {
+      "name": "node_memory_Mapped_bytes",
+      "value": 79118336
+    },
+    {
+      "name": "node_memory_Committed_AS_bytes",
+      "value": 1472909312
+    },
+    {
+      "name": "node_memory_MemTotal_bytes",
+      "value": 426258432
+    },
+    {
+      "name": "node_memory_VmallocUsed_bytes",
+      "value": 14397440
+    },
+    {
+      "name": "node_disk_io_time_seconds_total",
+      "value": 47437.258,
+      "device": "nvme0n1"
+    },
+    {
+      "name": "node_disk_io_time_seconds_total",
+      "value": 293.052,
+      "device": "nvme1n1"
+    },
+    {
+      "name": "node_memory_MemFree_bytes",
+      "value": 8613888
+    },
+    {
+      "name": "node_memory_ShmemHugePages_bytes",
+      "value": 0
+    },
+    {
+      "name": "node_cpu_seconds_total",
+      "value": 281084.49,
+      "mode": "idle"
+    },
+    {
+      "name": "node_cpu_seconds_total",
+      "value": 38822.68,
+      "mode": "iowait"
+    },
+    {
+      "name": "node_cpu_seconds_total",
+      "value": 0,
+      "mode": "irq"
+    },
+    {
+      "name": "node_cpu_seconds_total",
+      "value": 5.61,
+      "mode": "nice"
+    },
+    {
+      "name": "node_cpu_seconds_total",
+      "value": 114.35,
+      "mode": "softirq"
+    },
+    {
+      "name": "node_cpu_seconds_total",
+      "value": 8.41,
+      "mode": "steal"
+    },
+    {
+      "name": "node_cpu_seconds_total",
+      "value": 2879.39,
+      "mode": "system"
+    },
+    {
+      "name": "node_cpu_seconds_total",
+      "value": 2884.92,
+      "mode": "user"
+    },
+    {
+      "name": "node_cpu_seconds_total",
+      "value": 281037.43,
+      "mode": "idle"
+    },
+    {
+      "name": "node_cpu_seconds_total",
+      "value": 38879.89,
+      "mode": "iowait"
+    },
+    {
+      "name": "node_cpu_seconds_total",
+      "value": 0,
+      "mode": "irq"
+    },
+    {
+      "name": "node_cpu_seconds_total",
+      "value": 5.56,
+      "mode": "nice"
+    },
+    {
+      "name": "node_cpu_seconds_total",
+      "value": 120.6,
+      "mode": "softirq"
+    },
+    {
+      "name": "node_cpu_seconds_total",
+      "value": 8.78,
+      "mode": "steal"
+    },
+    {
+      "name": "node_cpu_seconds_total",
+      "value": 2887.17,
+      "mode": "system"
+    },
+    {
+      "name": "node_cpu_seconds_total",
+      "value": 2851.87,
+      "mode": "user"
+    },
+    {
+      "name": "node_load5",
+      "value": 0.87
+    },
+    {
+      "name": "node_memory_CommitLimit_bytes",
+      "value": 1286864896
+    },
+    {
+      "name": "node_memory_Dirty_bytes",
+      "value": 0
+    },
+    {
+      "name": "node_memory_HugePages_Rsvd",
+      "value": 0
+    },
+    {
+      "name": "node_memory_MemAvailable_bytes",
+      "value": 217493504
+    },
+    {
+      "name": "node_memory_Slab_bytes",
+      "value": 75685888
+    }
+  ],
+  "availableNames": [
+    "node_cpu_guest_seconds_total",
+    "node_memory_CmaFree_bytes",
+    "node_memory_WritebackTmp_bytes",
+    "node_disk_discarded_sectors_total",
+    "node_disk_io_now",
+    "node_disk_reads_completed_total",
+    "node_disk_writes_merged_total",
+    "pgbouncer_config_max_client_connections",
+    "node_filesystem_mount_info",
+    "node_network_transmit_errs_total",
+    "pgbouncer_stats_client_wait_seconds_total",
+    "pgbouncer_stats_sql_transactions_pooled_total",
+    "node_memory_Active_file_bytes",
+    "node_memory_Hugepagesize_bytes",
+    "node_memory_Inactive_anon_bytes",
+    "pgbouncer_pools_server_testing_connections",
+    "node_filesystem_readonly",
+    "node_load15",
+    "node_memory_HardwareCorrupted_bytes",
+    "node_vmstat_pgmajfault",
+    "node_vmstat_pgpgout",
+    "pgbouncer_pools_server_active_connections",
+    "pgbouncer_pools_server_being_canceled_connections",
+    "node_load1",
+    "node_memory_SwapFree_bytes",
+    "pgbouncer_pools_server_used_connections",
+    "node_memory_Active_bytes",
+    "node_memory_NFS_Unstable_bytes",
+    "node_disk_discards_merged_total",
+    "node_filesystem_avail_bytes",
+    "node_memory_HugePages_Surp",
+    "node_network_receive_frame_total",
+    "node_network_receive_nohandler_total",
+    "node_vmstat_pswpout",
+    "node_memory_ShmemPmdMapped_bytes",
+    "node_memory_Unevictable_bytes",
+    "pgbouncer_config_max_user_connections",
+    "pgbouncer_databases_disabled",
+    "pgbouncer_databases_max_connections",
+    "pgbouncer_pools_client_waiting_cancel_connections",
+    "node_disk_flush_requests_total",
+    "node_disk_io_time_weighted_seconds_total",
+    "node_memory_Active_anon_bytes",
+    "node_memory_VmallocTotal_bytes",
+    "node_memory_Cached_bytes",
+    "pgbouncer_free_servers",
+    "node_filesystem_free_bytes",
+    "node_memory_CmaTotal_bytes",
+    "node_network_transmit_fifo_total",
+    "node_vmstat_pgpgin",
+    "pgbouncer_databases",
+    "pgbouncer_in_flight_dns_queries",
+    "pgbouncer_pools",
+    "node_filesystem_files_free",
+    "node_memory_AnonPages_bytes",
+    "pgbouncer_databases_current_connections",
+    "node_memory_Shmem_bytes",
+    "node_network_receive_drop_total",
+    "node_network_transmit_carrier_total",
+    "node_vmstat_pgfault",
+    "node_disk_written_bytes_total",
+    "node_filesystem_size_bytes",
+    "db_transmit_bytes",
+    "node_disk_reads_merged_total",
+    "node_memory_KernelStack_bytes",
+    "pgbouncer_cached_dns_zones",
+    "pgbouncer_stats_server_in_transaction_seconds_total",
+    "node_disk_filesystem_info",
+    "pgbouncer_databases_paused",
+    "node_disk_discard_time_seconds_total",
+    "node_filesystem_files",
+    "node_memory_SwapCached_bytes",
+    "pgbouncer_stats_queries_duration_seconds_total",
+    "pgbouncer_used_clients",
+    "pgbouncer_version_info",
+    "node_disk_discards_completed_total",
+    "node_memory_HugePages_Free",
+    "node_memory_HugePages_Total",
+    "node_memory_SwapTotal_bytes",
+    "pgbouncer_free_clients",
+    "node_memory_Buffers_bytes",
+    "node_memory_Inactive_bytes",
+    "node_memory_PageTables_bytes",
+    "node_network_receive_multicast_total",
+    "node_network_transmit_colls_total",
+    "node_network_transmit_compressed_total",
+    "pgbouncer_stats_received_bytes_total",
+    "node_memory_Bounce_bytes",
+    "node_memory_VmallocChunk_bytes",
+    "pgbouncer_pools_client_waiting_connections",
+    "node_memory_Inactive_file_bytes",
+    "node_memory_Percpu_bytes",
+    "node_memory_SUnreclaim_bytes",
+    "node_network_receive_compressed_total",
+    "node_vmstat_oom_kill",
+    "pgbouncer_cached_dns_names",
+    "node_memory_Mlocked_bytes",
+    "node_memory_Writeback_bytes",
+    "node_vmstat_pswpin",
+    "node_cpu_online",
+    "node_memory_SReclaimable_bytes",
+    "node_scrape_collector_duration_seconds",
+    "pgbouncer_pools_server_active_cancel_connections",
+    "pgbouncer_pools_server_login_connections",
+    "node_disk_read_bytes_total",
+    "node_disk_read_time_seconds_total",
+    "node_filesystem_device_error",
+    "node_memory_AnonHugePages_bytes",
+    "pgbouncer_up",
+    "node_disk_info",
+    "node_memory_Mapped_bytes",
+    "node_network_receive_bytes_total",
+    "node_network_receive_fifo_total",
+    "node_network_transmit_drop_total",
+    "node_scrape_collector_success",
+    "pgbouncer_pools_client_active_connections",
+    "node_disk_write_time_seconds_total",
+    "node_memory_Committed_AS_bytes",
+    "node_memory_MemTotal_bytes",
+    "node_memory_VmallocUsed_bytes",
+    "node_network_receive_packets_total",
+    "node_network_transmit_packets_total",
+    "pgbouncer_pools_client_maxwait_seconds",
+    "postgresql_restarts_total",
+    "node_disk_io_time_seconds_total",
+    "node_memory_MemFree_bytes",
+    "pgbouncer_stats_sent_bytes_total",
+    "node_disk_flush_requests_time_seconds_total",
+    "node_disk_writes_completed_total",
+    "node_memory_ShmemHugePages_bytes",
+    "pgbouncer_pools_client_active_cancel_connections",
+    "pgbouncer_stats_queries_pooled_total",
+    "node_cpu_seconds_total",
+    "node_load5",
+    "node_memory_CommitLimit_bytes",
+    "node_memory_Dirty_bytes",
+    "node_memory_HugePages_Rsvd",
+    "node_memory_MemAvailable_bytes",
+    "node_network_receive_errs_total",
+    "pgbouncer_databases_pool_size",
+    "node_memory_Slab_bytes",
+    "node_network_transmit_bytes_total",
+    "pgbouncer_login_clients",
+    "pgbouncer_pools_server_idle_connections",
+    "pgbouncer_used_servers",
+    "pgbouncer_users",
+    "process_cpu_seconds_total",
+    "process_start_time_seconds",
+    "pg_database_wraparound_age_datfrozenxid_seconds",
+    "pg_settings_default_transaction_read_only",
+    "pg_stat_activity_xact_runtime",
+    "pg_stat_bgwriter_checkpoints_req_total",
+    "pg_stat_bgwriter_maxwritten_clean_total",
+    "pg_stat_statements_total_queries",
+    "process_virtual_memory_bytes",
+    "go_memstats_stack_inuse_bytes",
+    "direct_connection_stats_connection_count",
+    "pg_database_size_mb",
+    "pg_stat_database_xact_rollback_total",
+    "pg_status_in_recovery",
+    "physical_replication_lag_is_connected_to_primary",
+    "pg_scrape_collector_duration_seconds",
+    "pg_stat_bgwriter_buffers_alloc_total",
+    "pg_stat_bgwriter_checkpoint_sync_time_total",
+    "pg_stat_bgwriter_checkpoint_write_time_total",
+    "connection_stats_connection_count",
+    "go_gc_duration_seconds",
+    "go_gc_duration_seconds_sum",
+    "go_gc_duration_seconds_count",
+    "go_memstats_buck_hash_sys_bytes",
+    "go_memstats_heap_released_bytes",
+    "go_memstats_heap_idle_bytes",
+    "go_memstats_mspan_inuse_bytes",
+    "go_memstats_mcache_inuse_bytes",
+    "pg_database_wraparound_age_datminmxid_seconds",
+    "pg_stat_database_tup_updated_total",
+    "pg_stat_database_xact_commit_total",
+    "pg_stat_statements_total_time_seconds",
+    "pg_stat_bgwriter_buffers_checkpoint_total",
+    "pg_stat_bgwriter_stats_reset",
+    "pg_stat_database_conflicts_total",
+    "pg_stat_database_temp_files_total",
+    "physical_replication_lag_physical_replication_lag_seconds",
+    "postgres_exporter_build_info",
+    "go_memstats_alloc_bytes",
+    "go_memstats_last_gc_time_seconds",
+    "go_memstats_lookups_total",
+    "pg_scrape_collector_success",
+    "postgres_exporter_config_last_reload_success_timestamp_seconds",
+    "process_open_fds",
+    "realtime_postgres_changes_client_subscriptions",
+    "go_memstats_alloc_bytes_total",
+    "go_memstats_mallocs_total",
+    "go_memstats_mspan_sys_bytes",
+    "pg_database_size_bytes",
+    "pg_stat_database_temp_bytes_total",
+    "pg_wal_size_mb",
+    "physical_replication_lag_is_wal_replay_paused",
+    "go_memstats_frees_total",
+    "go_memstats_heap_alloc_bytes",
+    "pg_stat_database_blks_hit_total",
+    "pg_stat_database_num_backends",
+    "pg_up",
+    "process_max_fds",
+    "go_memstats_heap_sys_bytes",
+    "realtime_postgres_changes_total_subscriptions",
+    "go_goroutines",
+    "go_memstats_mcache_sys_bytes",
+    "max_connections_connection_count",
+    "pg_ls_archive_statusdir_wal_pending_count",
+    "process_virtual_memory_max_bytes",
+    "pg_exporter_scrapes_total",
+    "go_memstats_sys_bytes",
+    "pg_exporter_last_scrape_error",
+    "pg_stat_database_tup_inserted_total",
+    "supabase_usage_metrics_user_queries_total",
+    "go_memstats_gc_sys_bytes",
+    "go_memstats_heap_objects",
+    "pg_stat_database_conflicts_confl_bufferpin_total",
+    "pg_stat_database_tup_deleted_total",
+    "pg_stat_database_tup_returned_total",
+    "pg_stat_bgwriter_checkpoints_timed_total",
+    "pg_stat_database_blks_read_total",
+    "pg_stat_database_conflicts_confl_deadlock_total",
+    "postgres_exporter_config_last_reload_successful",
+    "process_resident_memory_bytes",
+    "promhttp_metric_handler_requests_total",
+    "go_memstats_other_sys_bytes",
+    "go_memstats_heap_inuse_bytes",
+    "go_memstats_next_gc_bytes",
+    "pg_exporter_user_queries_load_error",
+    "pg_stat_bgwriter_buffers_clean_total",
+    "pg_stat_database_conflicts_confl_tablespace_total",
+    "pg_stat_database_tup_fetched_total",
+    "go_threads",
+    "pg_stat_database_conflicts_confl_snapshot_total",
+    "promhttp_metric_handler_requests_in_flight",
+    "auth_users_user_count",
+    "go_info",
+    "go_memstats_stack_sys_bytes",
+    "pg_exporter_last_scrape_duration_seconds",
+    "pg_stat_database_conflicts_confl_lock_total",
+    "pg_stat_database_deadlocks_total",
+    "pgrst_jwt_cache_hits_total",
+    "pgrst_jwt_cache_requests_total",
+    "pgrst_schema_cache_query_time_seconds",
+    "pgrst_schema_cache_loads_total",
+    "pgrst_db_pool_timeouts_total",
+    "pgrst_jwt_cache_evictions_total",
+    "pgrst_db_pool_max",
+    "pgrst_db_pool_waiting",
+    "pgrst_db_pool_available",
+    "db_sql_connection_open",
+    "gotrue_compare_hash_and_password_submitted_total",
+    "gotrue_running",
+    "process_runtime_go_cgo_calls",
+    "process_runtime_go_mem_heap_released_bytes",
+    "process_runtime_go_mem_live_objects",
+    "process_runtime_go_mem_heap_sys_bytes",
+    "http_server_response_body_size_bytes_bucket",
+    "http_server_response_body_size_bytes_sum",
+    "http_server_response_body_size_bytes_count",
+    "process_runtime_go_gc_count_total",
+    "db_sql_connection_wait_duration_milliseconds_total",
+    "db_sql_connection_wait_total",
+    "global_auth_version_minor",
+    "process_runtime_go_gc_pause_ns_bucket",
+    "process_runtime_go_gc_pause_ns_sum",
+    "process_runtime_go_gc_pause_ns_count",
+    "db_sql_connection_closed_max_lifetime_total",
+    "db_sql_connection_max_open",
+    "process_runtime_go_mem_heap_idle_bytes",
+    "db_sql_latency_milliseconds_bucket",
+    "db_sql_latency_milliseconds_sum",
+    "db_sql_latency_milliseconds_count",
+    "http_server_request_body_size_bytes_bucket",
+    "http_server_request_body_size_bytes_sum",
+    "http_server_request_body_size_bytes_count",
+    "otel_scope_info",
+    "global_auth_version_patch",
+    "http_status_codes_total",
+    "process_runtime_go_gc_pause_total_ns_total",
+    "process_runtime_go_goroutines",
+    "gotrue_compare_hash_and_password_completed_total",
+    "http_server_request_duration_seconds_bucket",
+    "http_server_request_duration_seconds_sum",
+    "http_server_request_duration_seconds_count",
+    "process_runtime_go_mem_heap_inuse_bytes",
+    "global_auth_version_rc",
+    "process_runtime_go_mem_heap_alloc_bytes",
+    "process_runtime_go_mem_heap_objects",
+    "process_runtime_go_mem_lookups_total",
+    "target_info",
+    "db_sql_connection_closed_max_idle_time_total",
+    "global_auth_version_major",
+    "runtime_uptime_milliseconds_total",
+    "db_sql_connection_closed_max_idle_total"
+  ]
+}

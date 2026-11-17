@@ -6,6 +6,15 @@ export class IncompleteCatalogueRead<T> extends Error {
   }
 }
 
+/** Coalesce pending work for one fixed public snapshot; retain no settled data. */
+export function coalesceCatalogueRead<T>(read: () => Promise<T>): () => Promise<T> {
+  let pending: Promise<T> | undefined;
+  return () => {
+    pending ??= Promise.resolve().then(read).finally(() => { pending = undefined; });
+    return pending;
+  };
+}
+
 export function admitCataloguePayload<T>(data: T, sections: Record<string, PromiseSettledResult<unknown>>): T {
   const failed = Object.entries(sections).filter(([, result]) => result.status === 'rejected').map(([name]) => name);
   if (failed.length) throw new IncompleteCatalogueRead(data, failed);

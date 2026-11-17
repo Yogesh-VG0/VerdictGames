@@ -26,7 +26,7 @@ import { getPublicSupabase } from "@/lib/supabase/public";
 import { mapGameRow } from "@/lib/db/mappers";
 import { GAME_CARD_COLUMNS_WITH_DESC } from "@/lib/db/columns";
 import { retryCatalogRead } from '@/lib/db/catalog-read';
-import { admitCataloguePayload, readCachedCatalogue } from '@/lib/db/cached-catalogue';
+import { admitCataloguePayload, coalesceCatalogueRead, readCachedCatalogue } from '@/lib/db/cached-catalogue';
 import { isFutureDate } from "@/lib/utils";
 import {
   filterQualityGames,
@@ -704,7 +704,7 @@ export async function fetchTrendingGames(limit = 20, homepageOnly = true): Promi
   const cutoff4yr = monthsAgoISO(120);
   const today = new Date().toISOString().slice(0, 10);
 
-  const { data: pool } = await supabase
+  const { data: pool, error: poolError } = await supabase
     .from("games")
     .select(GAME_CARD_COLUMNS_WITH_DESC)
     .not("release_date", "is", null)
@@ -720,7 +720,9 @@ export async function fetchTrendingGames(limit = 20, homepageOnly = true): Promi
     .order("verdict_score", { ascending: false, nullsFirst: false })
     .order("review_count", { ascending: false, nullsFirst: false })
     .order("score", { ascending: false })
-    .limit(getHomepageQueryFetchLimit(limit)) as { data: GameRow[] | null };
+    .limit(getHomepageQueryFetchLimit(limit)) as { data: GameRow[] | null; error: unknown };
+
+  if (poolError) throw poolError;
 
   // Step 3: Build combined candidate set — flagged first, then scored pool
   const flaggedIds = new Set((flagged ?? []).map((g) => g.id));
@@ -1528,17 +1530,17 @@ const cachedTopRated = unstable_cache(() => retryCatalogRead(() => fetchHomepage
 const cachedRecommendations = unstable_cache(() => retryCatalogRead(() => fetchHomepageRecommendations(HOMEPAGE_SECTION_FETCH_TARGET)), ['homepage-recommendations-v1'], sectionCacheOptions);
 
 const getCachedHomepageData = unstable_cache(
-  fetchHomepageData,
+  coalesceCatalogueRead(fetchHomepageData),
   ["homepage-data-v24"],
   { revalidate: HOMEPAGE_REVALIDATE_SECONDS }
 );
 
 const getCachedHomepageMostAnticipated = unstable_cache(
-  async () => {
+  coalesceCatalogueRead(async () => {
     const { loadExplore } = await import('@/lib/services/explore');
     const data = await loadExplore('best-of-year', 1, HOMEPAGE_MOST_ANTICIPATED_TARGET);
     return data.items.map(item => ({ rawgId: item.rawgId, slug: item.slug, name: item.name, released: item.released, tba: item.tba, earlyAccess: item.earlyAccess, image: item.image, imageKind: item.imageKind, added: item.added, toplay: item.toplay, genres: item.genres }));
-  },
+  }),
   ["homepage-most-anticipated-v5"],
   { revalidate: 3600 }
 );
@@ -1774,17 +1776,9 @@ export async function fetchHomepageData(): Promise<HomepageData> {
     topRated: topRatedResult, recommendations: recsResult, deals: dealsResult,
   };
 
-  if (trendingRaw.length < HOMEPAGE_RAIL_TARGET) {
-    try {
-      const expandedTrending = await fetchTrendingGames(HOMEPAGE_RAIL_TARGET * 2, true);
-      if (expandedTrending.length > 0) {
-        trendingRaw = prioritizeById(trendingRaw, expandedTrending, HOMEPAGE_RAIL_TARGET * 2);
-      }
-    } catch (error) {
-      console.error("[homepage] Failed to load trending rail fallback:", error);
-      sectionResults.expandedTrending = { status: 'rejected', reason: error };
-    }
-  }
+  // The primary already requests100 results from the capped120-row pool.
+  // A second40-result request reads that same pool and cannot expand it.
+  // Recover a thin/failed rail from the available sections below instead.
 
   if (trendingRaw.length < HOMEPAGE_RAIL_TARGET) {
     const fallbackTrending = buildHomepageTrendingFallback([

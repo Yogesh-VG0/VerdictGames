@@ -1,0 +1,46 @@
+{
+  "candidate": "ce0b1359d68a87be9ac698e41c44686092615181",
+  "scope": "Actual protected preview; public browser reads and isolated local preferences only. No signup/email submission, hosted fixture or data write.",
+  "startedAt": "2026-11-17T13:46:45.202Z",
+  "cases": [
+    {
+      "width": 390,
+      "theme": "light",
+      "checks": [
+        "year/platform/sort controls update the shareable URL and reset page",
+        "refresh preserves selected controls and rendered order",
+        "expanded Browse/Search filters fit the viewport",
+        "normal visible gradient headings move",
+        "pause stops headings and persists across reload",
+        "system reduced motion keeps the visible heading static"
+      ],
+      "filterOverflow": false,
+      "motionSample": {
+        "first": "67.0667%",
+        "second": "94.4%",
+        "headingTop": 407.796875
+      },
+      "passed": true
+    },
+    {
+      "width": 1440,
+      "theme": "dark",
+      "checks": [
+        "year/platform/sort controls update the shareable URL and reset page",
+        "refresh preserves selected controls and rendered order",
+        "expanded Browse/Search filters fit the viewport",
+        "normal visible gradient headings move",
+        "pause stops headings and persists across reload",
+        "system reduced motion keeps the visible heading static"
+      ],
+      "filterOverflow": false,
+      "motionSample": {
+        "first": "71.1333%",
+        "second": "99.6667%",
+        "headingTop": 484.328125
+      },
+      "passed": true
+    }
+  ],
+  "completedAt": "2026-11-17T13:47:21.343Z"
+}
