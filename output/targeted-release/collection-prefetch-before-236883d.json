@@ -1,0 +1,381 @@
+{
+  "label": "before-236883d",
+  "startedAt": "2026-11-17T09:54:04.651Z",
+  "scope": "One real protected-preview public Lists visit, three bounded scrolls. Installed Chrome; normal Next prefetch behavior; no clicks on collection links. Only read requests permitted; authentication header restricted to preview origin.",
+  "details": [
+    {
+      "path": "/lists/cozy-games-to-unwind",
+      "status": 200,
+      "prefetch": "1",
+      "segmentPrefetch": "/_tree"
+    },
+    {
+      "path": "/lists/hidden-indie-gems",
+      "status": 200,
+      "prefetch": "1",
+      "segmentPrefetch": "/_tree"
+    },
+    {
+      "path": "/lists/best-deckbuilders-turn-based",
+      "status": 200,
+      "prefetch": "1",
+      "segmentPrefetch": "/_tree"
+    },
+    {
+      "path": "/lists/hidden-gems-since-2024",
+      "status": 200,
+      "prefetch": "1",
+      "segmentPrefetch": "/_tree"
+    },
+    {
+      "path": "/lists/cozy-games-to-unwind",
+      "status": 200,
+      "prefetch": "1",
+      "segmentPrefetch": null
+    },
+    {
+      "path": "/lists/hidden-indie-gems",
+      "status": 200,
+      "prefetch": "1",
+      "segmentPrefetch": null
+    },
+    {
+      "path": "/lists/best-deckbuilders-turn-based",
+      "status": 200,
+      "prefetch": "1",
+      "segmentPrefetch": null
+    },
+    {
+      "path": "/lists/hidden-gems-since-2024",
+      "status": 200,
+      "prefetch": "1",
+      "segmentPrefetch": null
+    },
+    {
+      "path": "/lists/best-indie-under-20-hours",
+      "status": 200,
+      "prefetch": "1",
+      "segmentPrefetch": null
+    },
+    {
+      "path": "/lists/most-wanted-2026",
+      "status": 200,
+      "prefetch": "1",
+      "segmentPrefetch": null
+    },
+    {
+      "path": "/lists/best-story-driven-adventures",
+      "status": 200,
+      "prefetch": "1",
+      "segmentPrefetch": null
+    },
+    {
+      "path": "/lists/best-horror-games",
+      "status": 200,
+      "prefetch": "1",
+      "segmentPrefetch": null
+    },
+    {
+      "path": "/lists/best-strategy-builder-games",
+      "status": 200,
+      "prefetch": "1",
+      "segmentPrefetch": null
+    },
+    {
+      "path": "/lists/best-single-player-rpgs",
+      "status": 200,
+      "prefetch": "1",
+      "segmentPrefetch": null
+    },
+    {
+      "path": "/lists/best-co-op-games",
+      "status": 200,
+      "prefetch": "1",
+      "segmentPrefetch": null
+    },
+    {
+      "path": "/lists/best-competitive-multiplayer",
+      "status": 200,
+      "prefetch": "1",
+      "segmentPrefetch": null
+    },
+    {
+      "path": "/lists/critically-acclaimed-2024",
+      "status": 200,
+      "prefetch": "1",
+      "segmentPrefetch": null
+    },
+    {
+      "path": "/lists/best-platformers",
+      "status": 200,
+      "prefetch": "1",
+      "segmentPrefetch": null
+    },
+    {
+      "path": "/lists/best-roguelikes-roguelites",
+      "status": 200,
+      "prefetch": "1",
+      "segmentPrefetch": null
+    },
+    {
+      "path": "/lists/sci-fi-epics",
+      "status": 200,
+      "prefetch": "1",
+      "segmentPrefetch": null
+    },
+    {
+      "path": "/lists/top-open-world-adventures",
+      "status": 200,
+      "prefetch": "1",
+      "segmentPrefetch": null
+    },
+    {
+      "path": "/lists/survival-horror-essentials",
+      "status": 200,
+      "prefetch": "1",
+      "segmentPrefetch": null
+    },
+    {
+      "path": "/lists/best-multiplayer-experiences",
+      "status": 200,
+      "prefetch": "1",
+      "segmentPrefetch": null
+    },
+    {
+      "path": "/lists/best-strategy-games",
+      "status": 200,
+      "prefetch": "1",
+      "segmentPrefetch": null
+    },
+    {
+      "path": "/lists/essential-metroidvanias",
+      "status": 200,
+      "prefetch": "1",
+      "segmentPrefetch": null
+    },
+    {
+      "path": "/lists/best-action-rpgs",
+      "status": 200,
+      "prefetch": "1",
+      "segmentPrefetch": null
+    }
+  ],
+  "overviewStatus": 200,
+  "resources": [
+    {
+      "path": "/lists/cozy-games-to-unwind",
+      "transferBytes": 11074,
+      "encodedBytes": 10774,
+      "decodedBytes": 51837,
+      "durationMs": 220
+    },
+    {
+      "path": "/lists/hidden-indie-gems",
+      "transferBytes": 11030,
+      "encodedBytes": 10730,
+      "decodedBytes": 49458,
+      "durationMs": 220
+    },
+    {
+      "path": "/lists/hidden-gems-since-2024",
+      "transferBytes": 11470,
+      "encodedBytes": 11170,
+      "decodedBytes": 52229,
+      "durationMs": 242
+    },
+    {
+      "path": "/lists/best-deckbuilders-turn-based",
+      "transferBytes": 11367,
+      "encodedBytes": 11067,
+      "decodedBytes": 51449,
+      "durationMs": 241
+    },
+    {
+      "path": "/lists/cozy-games-to-unwind",
+      "transferBytes": 11074,
+      "encodedBytes": 10774,
+      "decodedBytes": 51837,
+      "durationMs": 53
+    },
+    {
+      "path": "/lists/hidden-indie-gems",
+      "transferBytes": 11030,
+      "encodedBytes": 10730,
+      "decodedBytes": 49458,
+      "durationMs": 58
+    },
+    {
+      "path": "/lists/best-deckbuilders-turn-based",
+      "transferBytes": 11367,
+      "encodedBytes": 11067,
+      "decodedBytes": 51449,
+      "durationMs": 52
+    },
+    {
+      "path": "/lists/hidden-gems-since-2024",
+      "transferBytes": 11470,
+      "encodedBytes": 11170,
+      "decodedBytes": 52229,
+      "durationMs": 53
+    },
+    {
+      "path": "/lists/most-wanted-2026",
+      "transferBytes": 10409,
+      "encodedBytes": 10109,
+      "decodedBytes": 47622,
+      "durationMs": 68
+    },
+    {
+      "path": "/lists/best-competitive-multiplayer",
+      "transferBytes": 10641,
+      "encodedBytes": 10341,
+      "decodedBytes": 51073,
+      "durationMs": 3205
+    },
+    {
+      "path": "/lists/best-indie-under-20-hours",
+      "transferBytes": 11445,
+      "encodedBytes": 11145,
+      "decodedBytes": 52669,
+      "durationMs": 55
+    },
+    {
+      "path": "/lists/best-story-driven-adventures",
+      "transferBytes": 11483,
+      "encodedBytes": 11183,
+      "decodedBytes": 53319,
+      "durationMs": 78
+    },
+    {
+      "path": "/lists/best-strategy-builder-games",
+      "transferBytes": 11352,
+      "encodedBytes": 11052,
+      "decodedBytes": 52755,
+      "durationMs": 57
+    },
+    {
+      "path": "/lists/best-horror-games",
+      "transferBytes": 10474,
+      "encodedBytes": 10174,
+      "decodedBytes": 46342,
+      "durationMs": 50
+    },
+    {
+      "path": "/lists/best-co-op-games",
+      "transferBytes": 11131,
+      "encodedBytes": 10831,
+      "decodedBytes": 50850,
+      "durationMs": 79
+    },
+    {
+      "path": "/lists/best-single-player-rpgs",
+      "transferBytes": 12041,
+      "encodedBytes": 11741,
+      "decodedBytes": 54224,
+      "durationMs": 50
+    },
+    {
+      "path": "/lists/best-platformers",
+      "transferBytes": 11105,
+      "encodedBytes": 10805,
+      "decodedBytes": 50987,
+      "durationMs": 1736
+    },
+    {
+      "path": "/lists/sci-fi-epics",
+      "transferBytes": 11580,
+      "encodedBytes": 11280,
+      "decodedBytes": 53247,
+      "durationMs": 1939
+    },
+    {
+      "path": "/lists/best-roguelikes-roguelites",
+      "transferBytes": 12510,
+      "encodedBytes": 12210,
+      "decodedBytes": 55192,
+      "durationMs": 1788
+    },
+    {
+      "path": "/lists/critically-acclaimed-2024",
+      "transferBytes": 10804,
+      "encodedBytes": 10504,
+      "decodedBytes": 49683,
+      "durationMs": 1396
+    },
+    {
+      "path": "/lists/best-multiplayer-experiences",
+      "transferBytes": 11553,
+      "encodedBytes": 11253,
+      "decodedBytes": 53092,
+      "durationMs": 2465
+    },
+    {
+      "path": "/lists/survival-horror-essentials",
+      "transferBytes": 11495,
+      "encodedBytes": 11195,
+      "decodedBytes": 51717,
+      "durationMs": 2146
+    },
+    {
+      "path": "/lists/best-strategy-games",
+      "transferBytes": 11638,
+      "encodedBytes": 11338,
+      "decodedBytes": 53117,
+      "durationMs": 2254
+    },
+    {
+      "path": "/lists/top-open-world-adventures",
+      "transferBytes": 11201,
+      "encodedBytes": 10901,
+      "decodedBytes": 49426,
+      "durationMs": 1764
+    },
+    {
+      "path": "/lists/best-action-rpgs",
+      "transferBytes": 12564,
+      "encodedBytes": 12264,
+      "decodedBytes": 54008,
+      "durationMs": 1748
+    },
+    {
+      "path": "/lists/essential-metroidvanias",
+      "transferBytes": 12491,
+      "encodedBytes": 12191,
+      "decodedBytes": 54879,
+      "durationMs": 1568
+    }
+  ],
+  "uniqueDetails": [
+    "/lists/cozy-games-to-unwind",
+    "/lists/hidden-indie-gems",
+    "/lists/best-deckbuilders-turn-based",
+    "/lists/hidden-gems-since-2024",
+    "/lists/best-indie-under-20-hours",
+    "/lists/most-wanted-2026",
+    "/lists/best-story-driven-adventures",
+    "/lists/best-horror-games",
+    "/lists/best-strategy-builder-games",
+    "/lists/best-single-player-rpgs",
+    "/lists/best-co-op-games",
+    "/lists/best-competitive-multiplayer",
+    "/lists/critically-acclaimed-2024",
+    "/lists/best-platformers",
+    "/lists/best-roguelikes-roguelites",
+    "/lists/sci-fi-epics",
+    "/lists/top-open-world-adventures",
+    "/lists/survival-horror-essentials",
+    "/lists/best-multiplayer-experiences",
+    "/lists/best-strategy-games",
+    "/lists/essential-metroidvanias",
+    "/lists/best-action-rpgs"
+  ],
+  "peakBrowserDetailRequests": 4,
+  "detailRequests": 26,
+  "totalEncodedBytes": 287999,
+  "totalDecodedBytes": 1344148,
+  "network": {
+    "blockedNonReads": 0,
+    "originReads": 52
+  },
+  "completedAt": "2026-11-17T09:54:19.783Z"
+}

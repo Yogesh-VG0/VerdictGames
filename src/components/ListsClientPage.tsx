@@ -114,6 +114,7 @@ export default function ListsPage({ initialData }: { initialData?: ListSummaries
             <motion.div key={list.id} variants={gridItem}>
               <Link
                 href={list.isPublic===false?`/library/lists/${list.slug}`:`/lists/${list.slug}`}
+                prefetch={false}
                 className="group rounded-2xl border border-border bg-surface overflow-hidden hover:border-border-hover hover:shadow-lg hover:shadow-accent/5 transition-all duration-300 block"
               >
                 <div className="relative aspect-[8/3] overflow-hidden">

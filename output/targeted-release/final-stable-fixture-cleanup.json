@@ -1,0 +1,35 @@
+{
+  "commit": "236883d3ef9c5b2c61a34d54f9100da7bb36a52b",
+  "verifiedAt": "2026-11-17T08:58:11.903880Z",
+  "project": "vjzsvnaswronkctazarn",
+  "cleanupSha256": "26b5b7db76f2ddf7ff09db08b192f8c03d22b85ca24bda8a6feb999a24e04447",
+  "exactApprovedSqlExecuted": true,
+  "guardedTransactionSucceeded": true,
+  "remaining": {
+    "fixtureLibrary": 0,
+    "fixtureList": 0,
+    "fixtureMembership": 0,
+    "accountALibrary": 0,
+    "accountAOwnedLists": 0
+  },
+  "realUserRecordsChanged": false,
+  "reviewVotesChanged": false,
+  "sourceGamesChanged": false,
+  "renderedIsolation": {
+    "b": {
+      "notFoundHeading": true,
+      "aMarkerAbsent": true,
+      "aMembershipGameAbsent": true,
+      "noindex": true,
+      "genericPrivateTitle": true
+    },
+    "anonymous": {
+      "notFoundHeading": true,
+      "aMarkerAbsent": true,
+      "aMembershipGameAbsent": true,
+      "noindex": true,
+      "signInVisible": true
+    }
+  },
+  "scope": "Only the three previously approved fixture rows were deleted. Cleanup guards verified exact values, owner, membership and inbound FK inventory. No source game, identity, grants, Auth setting, vote or scheduler write."
+}

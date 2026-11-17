@@ -1,0 +1,140 @@
+{
+  "commit": "236883d3ef9c5b2c61a34d54f9100da7bb36a52b",
+  "actor": "approved-disposable-B",
+  "identity": {
+    "authenticated": true,
+    "differentFromA": true,
+    "ordinaryUser": true,
+    "profileDifferentFromA": true
+  },
+  "renderedSwitch": {
+    "aUsernameAbsent": true,
+    "aPrivateMarkerAbsent": true
+  },
+  "librarySamples": [
+    {
+      "label": "library",
+      "status": 200,
+      "ms": 3556,
+      "bytes": 26,
+      "count": 0,
+      "aFixtureAbsent": true,
+      "aPrivateMarkerAbsent": true,
+      "headers": {
+        "cache-control": "private, no-store, max-age=0",
+        "cdn-cache-control": "private, no-store",
+        "vary": "Cookie",
+        "x-vercel-cache": "MISS",
+        "age": "0"
+      }
+    },
+    {
+      "label": "library-repeat",
+      "status": 200,
+      "ms": 2953,
+      "bytes": 26,
+      "count": 0,
+      "aFixtureAbsent": true,
+      "aPrivateMarkerAbsent": true,
+      "headers": {
+        "cache-control": "private, no-store, max-age=0",
+        "cdn-cache-control": "private, no-store",
+        "vary": "Cookie",
+        "x-vercel-cache": "MISS",
+        "age": "0"
+      }
+    },
+    {
+      "label": "statistics",
+      "status": 200,
+      "ms": 2198,
+      "bytes": 150,
+      "count": 0,
+      "aFixtureAbsent": true,
+      "aPrivateMarkerAbsent": true,
+      "headers": {
+        "cache-control": "private, no-store, max-age=0",
+        "cdn-cache-control": "private, no-store",
+        "vary": "Cookie",
+        "x-vercel-cache": "MISS",
+        "age": "0"
+      }
+    },
+    {
+      "label": "owned-summary",
+      "status": 200,
+      "ms": 3277,
+      "bytes": 61,
+      "count": 0,
+      "aFixtureAbsent": true,
+      "aPrivateMarkerAbsent": true,
+      "headers": {
+        "cache-control": "private, no-store, max-age=0",
+        "cdn-cache-control": "private, no-store",
+        "vary": "Cookie",
+        "x-vercel-cache": "MISS",
+        "age": "0"
+      }
+    }
+  ],
+  "detailChecks": {
+    "measuredAt": "2026-11-17T08:54:28.981Z",
+    "samples": [
+      {
+        "label": "owned-detail",
+        "path": "/api/lists/[approved-private-slug]?scope=mine",
+        "status": 404,
+        "ms": 1780,
+        "bytes": 43,
+        "aFixtureMarkerAbsent": true,
+        "aMembershipIdAbsent": true,
+        "headers": {
+          "cache-control": "private, no-store, max-age=0",
+          "cdn-cache-control": "private, no-store",
+          "vercel-cdn-cache-control": null,
+          "vary": "Cookie",
+          "x-vercel-cache": "MISS",
+          "age": "0",
+          "content-type": "application/json"
+        }
+      },
+      {
+        "label": "spoofed-owner",
+        "path": "/api/lists/[approved-private-slug]?scope=mine&owner=[account-A]",
+        "status": 404,
+        "ms": 3938,
+        "bytes": 43,
+        "aFixtureMarkerAbsent": true,
+        "aMembershipIdAbsent": true,
+        "headers": {
+          "cache-control": "private, no-store, max-age=0",
+          "cdn-cache-control": "private, no-store",
+          "vercel-cdn-cache-control": null,
+          "vary": "Cookie",
+          "x-vercel-cache": "MISS",
+          "age": "0",
+          "content-type": "application/json"
+        }
+      },
+      {
+        "label": "owner-document",
+        "path": "/library/lists/[approved-private-slug]",
+        "status": 200,
+        "ms": 5049,
+        "bytes": 44575,
+        "aFixtureMarkerAbsent": true,
+        "aMembershipIdAbsent": true,
+        "noindex": true,
+        "headers": {
+          "cache-control": "private, no-cache, no-store, max-age=0, must-revalidate",
+          "cdn-cache-control": "private, no-store",
+          "vercel-cdn-cache-control": null,
+          "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+          "x-vercel-cache": "MISS",
+          "age": "0",
+          "content-type": "text/html; charset=utf-8"
+        }
+      }
+    ]
+  }
+}

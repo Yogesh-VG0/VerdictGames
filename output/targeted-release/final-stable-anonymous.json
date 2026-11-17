@@ -1,0 +1,111 @@
+{
+  "commit": "236883d3ef9c5b2c61a34d54f9100da7bb36a52b",
+  "scope": "Same browser after normal application Sign Out and its confirmation. Vercel SSO preserved; actual app JSON401 guard. Normal cookie requests, no auth-header/cache-busting/no-cache.",
+  "measuredAt": "2026-11-17T08:56:54.083Z",
+  "confirmedApplicationAnonymous": true,
+  "protectionIntact": true,
+  "samples": [
+    {
+      "label": "auth",
+      "status": 401,
+      "ms": 493,
+      "bytes": 45,
+      "aMarkerAbsent": true,
+      "aFixtureAbsent": true,
+      "headers": {
+        "cache-control": "private, no-store, max-age=0",
+        "cdn-cache-control": "private, no-store",
+        "vercel-cdn-cache-control": null,
+        "vary": "Cookie",
+        "x-vercel-cache": "MISS",
+        "age": "0",
+        "content-type": "application/json"
+      }
+    },
+    {
+      "label": "library",
+      "status": 401,
+      "ms": 473,
+      "bytes": 45,
+      "aMarkerAbsent": true,
+      "aFixtureAbsent": true,
+      "headers": {
+        "cache-control": "private, no-store, max-age=0",
+        "cdn-cache-control": "private, no-store",
+        "vercel-cdn-cache-control": null,
+        "vary": "Cookie",
+        "x-vercel-cache": "MISS",
+        "age": "0",
+        "content-type": "application/json"
+      }
+    },
+    {
+      "label": "statistics",
+      "status": 401,
+      "ms": 465,
+      "bytes": 45,
+      "aMarkerAbsent": true,
+      "aFixtureAbsent": true,
+      "headers": {
+        "cache-control": "private, no-store, max-age=0",
+        "cdn-cache-control": "private, no-store",
+        "vercel-cdn-cache-control": null,
+        "vary": "Cookie",
+        "x-vercel-cache": "MISS",
+        "age": "0",
+        "content-type": "application/json"
+      }
+    },
+    {
+      "label": "owned-summary",
+      "status": 401,
+      "ms": 525,
+      "bytes": 46,
+      "aMarkerAbsent": true,
+      "aFixtureAbsent": true,
+      "headers": {
+        "cache-control": "private, no-store, max-age=0",
+        "cdn-cache-control": "private, no-store",
+        "vercel-cdn-cache-control": null,
+        "vary": "Cookie",
+        "x-vercel-cache": "MISS",
+        "age": "0",
+        "content-type": "application/json"
+      }
+    },
+    {
+      "label": "owned-detail",
+      "status": 401,
+      "ms": 453,
+      "bytes": 46,
+      "aMarkerAbsent": true,
+      "aFixtureAbsent": true,
+      "headers": {
+        "cache-control": "private, no-store, max-age=0",
+        "cdn-cache-control": "private, no-store",
+        "vercel-cdn-cache-control": null,
+        "vary": "Cookie",
+        "x-vercel-cache": "MISS",
+        "age": "0",
+        "content-type": "application/json"
+      }
+    },
+    {
+      "label": "public-private-detail",
+      "status": 404,
+      "ms": 501,
+      "bytes": 43,
+      "aMarkerAbsent": true,
+      "aFixtureAbsent": true,
+      "headers": {
+        "cache-control": "private, no-store, max-age=0",
+        "cdn-cache-control": "private, no-store",
+        "vercel-cdn-cache-control": null,
+        "vary": "Cookie",
+        "x-vercel-cache": "MISS",
+        "age": "0",
+        "content-type": "application/json"
+      }
+    }
+  ]
+}
