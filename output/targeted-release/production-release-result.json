@@ -1,6 +1,6 @@
 {
   "recordedAt": "2026-11-18T09:08:22.248Z",
-  "state": "Released; final owner Auth acceptance and encrypted configuration readback pending",
+  "state": "Released; Auth readback and encrypted supplement creation complete; final email/OAuth results and supplement upload confirmation pending",
   "productionUrl": "https://www.verdict.games",
   "productionCommit": "322f47609a7e2735085894f6f86a633147c9cd54",
   "deployment": "dpl_5pnipueaTKRychtaAWqD9WUUrYgv",
@@ -14,13 +14,13 @@
     {"version":"20261115094938","sha256":"27dd8ecd7dd6458c9460c39175ff2e846a566178db6a6ae7bb868f1bacbb8a09"},
     {"version":"20261118080200","sha256":"da85513fdbb88e45760d2bfd1f7cd96b8762866c7f9c86cecfde5aec5104a6d5"}
   ],
-  "auth": {"passwordMinimum":15,"approvedTemplatePairs":4,"freshUiReadback":"passed all nine fields","fullManagementComparison":"pending owner GET-only helper","actualDeliveryAndOAuth":"pending owner results"},
+  "auth": {"passwordMinimum":15,"approvedTemplatePairs":4,"freshUiReadback":"passed all nine fields","fullManagementComparison":"passed: exact nine fields and every unrelated saved setting unchanged","verifiedAt":"2026-11-18T09:27:17.8667381Z","encryptedSupplement":{"archive":"production-2026-11-18-auth-config.7z","bytes":7519,"sha256":"33001b4fb89eb3e4b43acbe8764fa11bbceb8aec3982b7846874ff160f11222c","integrity":"passed","folderCopy":"hash matched","remoteUpload":"pending owner confirmation"},"actualDeliveryAndOAuth":"pending owner results"},
   "ci": {"acceptedSecurityRun":44168834486,"acceptedSecurityResult":"success","mainQualityRun":44170769761,"mainQualityResult":"failure only at unchanged dependency audit; tests/types/lint pass","auditDisabled":false,"oneReleaseRiskAccepted":"GHSA-fc5q-39xc-vjpf","officialFix":"none at last registry/advisory check"},
   "githubProtection": {"requiredChecks":["check","security-regression"],"strict":true,"enforceAdmins":true,"forcePush":false,"deletion":false,"dependabotAlertsAndSecurityUpdates":"enabled","picomatchAlert1":"reopened after GitHub auto-dismissal; state open"},
   "scheduledActions": {"enabledWorkflows":4,"requiredSecretNamesPresent":6,"manualDispatch":false,"successfulMainRuns":[44175279417,44184619201,44260437271],"failedSteamReviewRuns":[44178460318,44262569172],"latestFailure":"3 invalid Steam responses; scanned3/refreshed0/failed3"},
   "trendingIndex": {"bytes":507904,"hostedFullJsonMs":924.401,"firstMeasuredCdnMissMs":3528,"httpBodyBytes":36924,"warmHitMs":79,"storageColdClaim":false,"unchangedResultVerified":true},
   "visual": {"productionPixels":"homepage, Search, Explore/platform absolute ranks, collection detail, game detail and Library inspected across representative phone/tablet/desktop themes","priorUnchangedSourceAcceptance":"reused","headingPauseReloadAndResume":"passed","reducedMotionOnLoad":"passed","dynamicReducedMotionChange":"running gradient continued until reload"},
   "health": {"supabase":"ACTIVE_HEALTHY","seo":"canonical www, robots200, sitemap200/11404 locations","pageSpeed":"unavailable: official API429 RESOURCE_EXHAUSTED"},
-  "remaining": ["picomatch supported fix and unchanged required audit failure","no infrastructure/provider credential rotation reported","intermittent HTTP/cache-revalidation timeouts","Steam review provider errors","Auth full readback/encrypted supplement and actual email/OAuth results","post-release corrective SQL/source record must not bypass required checks"],
+  "remaining": ["picomatch supported fix and unchanged required audit failure","no infrastructure/provider credential rotation reported","intermittent HTTP/cache-revalidation timeouts","Steam review provider errors","new encrypted Auth supplement upload confirmation and actual email/OAuth results","post-release corrective SQL/source record must not bypass required checks"],
   "rollback": "Keep privacy-compatible application live; reviewed roll-forward. Never restore insecure grants or publicly expose an unreconciled recovery restore."
 }
