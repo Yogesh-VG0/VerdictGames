@@ -1,0 +1,976 @@
+{
+  "head": "a34d57d84d05c8d59e9cfda5f4b02b0a2d83033f",
+  "origin": "https://verdict-games-14fd9jobp-yogesh-vg0s-projects.vercel.app",
+  "scope": "Exact protected preview, anonymous session, GET/HEAD only; no hosted fixtures or settings writes",
+  "http": [
+    {
+      "path": "/api/search?sort=relevance&page=1",
+      "status": 200,
+      "ms": 313,
+      "bytes": 44012,
+      "cache": "HIT",
+      "cacheControl": "public, max-age=0, must-revalidate",
+      "timing": null,
+      "count": 139,
+      "items": [
+        "Rhythm Doctor",
+        "Servant of the Lake",
+        "MiSide",
+        "Dave the Diver",
+        "Sanabi",
+        "Schedule I",
+        "Baldur's Gate III",
+        "Slay the Spire"
+      ]
+    },
+    {
+      "path": "/api/search?sort=relevance&page=2",
+      "status": 200,
+      "ms": 318,
+      "bytes": 44183,
+      "cache": "HIT",
+      "cacheControl": "public, max-age=0, must-revalidate",
+      "timing": null,
+      "count": 139,
+      "items": [
+        "Patrick's Parabox",
+        "Resident Evil 4",
+        "Vampire Survivors",
+        "Persona 5 Royal",
+        "Hades",
+        "Your Turn To Die : Death game by Majority",
+        "The Roottrees are Dead",
+        "Finding Paradise"
+      ]
+    },
+    {
+      "path": "/api/search?sort=top-rated&page=1",
+      "status": 200,
+      "ms": 5552,
+      "bytes": 47387,
+      "cache": "MISS",
+      "cacheControl": "public, max-age=0, must-revalidate",
+      "timing": null,
+      "count": 90,
+      "items": [
+        "Baldur's Gate III",
+        "Black Myth: Wukong",
+        "Slay the Spire",
+        "Elden Ring",
+        "Left 4 Dead 2",
+        "Resident Evil 9: Requiem",
+        "Dave the Diver",
+        "Hollow Knight"
+      ]
+    },
+    {
+      "path": "/api/search?sort=trending&page=1",
+      "status": 200,
+      "ms": 4567,
+      "bytes": 36924,
+      "cache": "MISS",
+      "cacheControl": "public, max-age=0, must-revalidate",
+      "timing": null,
+      "count": 21,
+      "items": [
+        "Limbus Company",
+        "Black Myth: Wukong",
+        "Street Fighter 6",
+        "Elden Ring Nightreign",
+        "Black Survival: Eternal Return",
+        "Dave the Diver",
+        "Slay the Spire 2",
+        "Escape From Duckov"
+      ]
+    },
+    {
+      "path": "/api/search?sort=newest&page=1",
+      "status": 200,
+      "ms": 3599,
+      "bytes": 38978,
+      "cache": "MISS",
+      "cacheControl": "public, max-age=0, must-revalidate",
+      "timing": null,
+      "count": 187,
+      "items": [
+        "Valor Mortis",
+        "Ace Combat 8: Wings of Theve",
+        "The Blood Of Dawnwalker",
+        "Resonance: A Plague Tale Legacy",
+        "Servant of the Lake",
+        "Gothic 1 Remake",
+        "007 First Light",
+        "Paralives"
+      ]
+    },
+    {
+      "path": "/api/search?sort=upcoming&page=1",
+      "status": 200,
+      "ms": 1961,
+      "bytes": 3091,
+      "cache": "MISS",
+      "cacheControl": "public, max-age=0, must-revalidate",
+      "timing": null,
+      "count": 2,
+      "items": [
+        "Grand Theft Auto VI",
+        "Titan Quest 2"
+      ]
+    },
+    {
+      "path": "/api/search?sort=recently-added&page=1",
+      "status": 200,
+      "ms": 3980,
+      "bytes": 41378,
+      "cache": "MISS",
+      "cacheControl": "public, max-age=0, must-revalidate",
+      "timing": null,
+      "count": 480,
+      "items": [
+        "Servant of the Lake",
+        "Ace Combat 8: Wings of Theve",
+        "Librarian: Tidy Up the Arcane Library!",
+        "Paralives",
+        "Resonance: A Plague Tale Legacy",
+        "Schedule I",
+        "Brotato",
+        "The Blood Of Dawnwalker"
+      ]
+    },
+    {
+      "path": "/api/rawg/lists?type=all-time",
+      "status": 200,
+      "ms": 277,
+      "bytes": 9854,
+      "cache": "HIT",
+      "cacheControl": "public",
+      "timing": "snapshot;dur=1300, catalogue_total;dur=1301",
+      "count": 215,
+      "source": "rawg",
+      "degraded": false,
+      "items": [
+        "The Witcher 3: Wild Hunt",
+        "Red Dead Redemption 2",
+        "Portal 2",
+        "The Last Of Us",
+        "God of War (2018)",
+        "The Legend of Zelda: Breath of the Wild",
+        "Grand Theft Auto: San Andreas",
+        "Half-Life 2"
+      ]
+    },
+    {
+      "path": "/api/rawg/lists?type=all-time",
+      "status": 200,
+      "ms": 287,
+      "bytes": 9854,
+      "cache": "HIT",
+      "cacheControl": "public",
+      "timing": "snapshot;dur=1300, catalogue_total;dur=1301",
+      "count": 215,
+      "source": "rawg",
+      "degraded": false,
+      "items": [
+        "The Witcher 3: Wild Hunt",
+        "Red Dead Redemption 2",
+        "Portal 2",
+        "The Last Of Us",
+        "God of War (2018)",
+        "The Legend of Zelda: Breath of the Wild",
+        "Grand Theft Auto: San Andreas",
+        "Half-Life 2"
+      ]
+    },
+    {
+      "path": "/api/rawg/lists?type=popular-in-year&year=2025",
+      "status": 200,
+      "ms": 287,
+      "bytes": 9419,
+      "cache": "HIT",
+      "cacheControl": "public",
+      "timing": "snapshot;dur=1074, catalogue_total;dur=1074",
+      "count": 131,
+      "source": "rawg",
+      "degraded": false,
+      "items": [
+        "Vampire: The Masquerade – Bloodlines 2",
+        "Hollow Knight: Silksong",
+        "Clair Obscur: Expedition 33",
+        "Hades II",
+        "Split Fiction",
+        "Kingdom Come: Deliverance II",
+        "Death Stranding 2: On The Beach",
+        "Tiny Bunny"
+      ]
+    },
+    {
+      "path": "/api/rawg/lists?type=best-of-year",
+      "status": 200,
+      "ms": 263,
+      "bytes": 9380,
+      "cache": "HIT",
+      "cacheControl": "public",
+      "timing": "snapshot;dur=7, matches;dur=293, portraits;dur=5, catalogue_total;dur=309",
+      "count": 46,
+      "source": "rawg",
+      "degraded": false,
+      "items": [
+        "Grand Theft Auto VI",
+        "Path of Exile 2",
+        "No Rest for the Wicked",
+        "Tomb Raider: Legacy of Atlantis",
+        "Titan Quest 2",
+        "Tomb Raider: Catalyst",
+        "Clockwork Revolution",
+        "The Expanse: Osiris Reborn"
+      ]
+    },
+    {
+      "path": "/api/search?genre=Horror&platform=PC",
+      "status": 200,
+      "ms": 250,
+      "bytes": 45858,
+      "cache": "HIT",
+      "cacheControl": "public, max-age=0, must-revalidate",
+      "timing": null,
+      "count": 143,
+      "items": [
+        "MiSide",
+        "Look Outside",
+        "Cube Escape: Paradox",
+        "Patrick's Parabox",
+        "Resident Evil 4",
+        "STEINS;GATE",
+        "Dispatch",
+        "Finding Paradise"
+      ]
+    },
+    {
+      "path": "/api/search?genre=Roguelike&platform=PlayStation+5&sort=newest",
+      "status": 200,
+      "ms": 1482,
+      "bytes": 37022,
+      "cache": "MISS",
+      "cacheControl": "public, max-age=0, must-revalidate",
+      "timing": null,
+      "count": 21,
+      "items": [
+        "The Rogue Prince of Persia",
+        "Balatro",
+        "Inscryption",
+        "Black Book",
+        "Curse of the Dead Gods",
+        "Crown Trick",
+        "BPM: BULLETS PER MINUTE",
+        "UnderMine"
+      ]
+    },
+    {
+      "path": "/api/search?year=2025&sort=top-rated",
+      "status": 200,
+      "ms": 1533,
+      "bytes": 44132,
+      "cache": "MISS",
+      "cacheControl": "public, max-age=0, must-revalidate",
+      "timing": null,
+      "count": 31,
+      "items": [
+        "Schedule I",
+        "Kingdom Come: Deliverance II",
+        "Split Fiction",
+        "Hades II",
+        "Clair Obscur: Expedition 33",
+        "Abiotic Factor",
+        "Hollow Knight: Silksong",
+        "ARC Raiders"
+      ]
+    },
+    {
+      "path": "/api/lists?view=summary",
+      "status": 200,
+      "ms": 312,
+      "bytes": 26727,
+      "cache": "HIT",
+      "cacheControl": "public",
+      "timing": null,
+      "count": 22,
+      "items": [
+        "Cozy Games to Unwind With",
+        "Hidden Indie Gems",
+        "Hidden Gems Since 2024",
+        "Best Deckbuilders & Turn-Based Games",
+        "Most Wanted Upcoming 2026 Games",
+        "Best Competitive Multiplayer Games",
+        "Best Indie Games Under 20 Hours",
+        "Best Story-Driven Adventures"
+      ]
+    }
+  ],
+  "views": [
+    {
+      "path": "/",
+      "width": 390,
+      "theme": "dark",
+      "status": 200,
+      "heading": "Grand Theft Auto VI",
+      "overflow": false,
+      "cards": 101,
+      "decodedImages": 20
+    },
+    {
+      "path": "/",
+      "width": 390,
+      "theme": "light",
+      "status": 200,
+      "heading": "Grand Theft Auto VI",
+      "overflow": false,
+      "cards": 101,
+      "decodedImages": 20
+    },
+    {
+      "path": "/",
+      "width": 768,
+      "theme": "dark",
+      "status": 200,
+      "heading": "Grand Theft Auto VI",
+      "overflow": false,
+      "cards": 101,
+      "decodedImages": 20
+    },
+    {
+      "path": "/",
+      "width": 768,
+      "theme": "light",
+      "status": 200,
+      "heading": "Grand Theft Auto VI",
+      "overflow": false,
+      "cards": 101,
+      "decodedImages": 20
+    },
+    {
+      "path": "/",
+      "width": 1440,
+      "theme": "dark",
+      "status": 200,
+      "heading": "Grand Theft Auto VI",
+      "overflow": false,
+      "cards": 101,
+      "decodedImages": 20
+    },
+    {
+      "path": "/",
+      "width": 1440,
+      "theme": "light",
+      "status": 200,
+      "heading": "Grand Theft Auto VI",
+      "overflow": false,
+      "cards": 101,
+      "decodedImages": 20
+    },
+    {
+      "path": "/explore?type=all-time",
+      "width": 390,
+      "theme": "dark",
+      "status": 200,
+      "heading": "Explore Games",
+      "overflow": false,
+      "cards": 20,
+      "decodedImages": 1
+    },
+    {
+      "path": "/explore?type=all-time",
+      "width": 390,
+      "theme": "light",
+      "status": 200,
+      "heading": "Explore Games",
+      "overflow": false,
+      "cards": 20,
+      "decodedImages": 8
+    },
+    {
+      "path": "/explore?type=all-time",
+      "width": 768,
+      "theme": "dark",
+      "status": 200,
+      "heading": "Explore Games",
+      "overflow": false,
+      "cards": 20,
+      "decodedImages": 20
+    },
+    {
+      "path": "/explore?type=all-time",
+      "width": 768,
+      "theme": "light",
+      "status": 200,
+      "heading": "Explore Games",
+      "overflow": false,
+      "cards": 20,
+      "decodedImages": 20
+    },
+    {
+      "path": "/explore?type=all-time",
+      "width": 1440,
+      "theme": "dark",
+      "status": 200,
+      "heading": "Explore Games",
+      "overflow": false,
+      "cards": 20,
+      "decodedImages": 20
+    },
+    {
+      "path": "/explore?type=all-time",
+      "width": 1440,
+      "theme": "light",
+      "status": 200,
+      "heading": "Explore Games",
+      "overflow": false,
+      "cards": 20,
+      "decodedImages": 20
+    },
+    {
+      "path": "/explore?type=popular-in-year&year=2025",
+      "width": 390,
+      "theme": "dark",
+      "status": 200,
+      "heading": "Explore Games",
+      "overflow": false,
+      "cards": 20,
+      "decodedImages": 20
+    },
+    {
+      "path": "/explore?type=popular-in-year&year=2025",
+      "width": 390,
+      "theme": "light",
+      "status": 200,
+      "heading": "Explore Games",
+      "overflow": false,
+      "cards": 20,
+      "decodedImages": 20
+    },
+    {
+      "path": "/explore?type=popular-in-year&year=2025",
+      "width": 768,
+      "theme": "dark",
+      "status": 200,
+      "heading": "Explore Games",
+      "overflow": false,
+      "cards": 20,
+      "decodedImages": 20
+    },
+    {
+      "path": "/explore?type=popular-in-year&year=2025",
+      "width": 768,
+      "theme": "light",
+      "status": 200,
+      "heading": "Explore Games",
+      "overflow": false,
+      "cards": 20,
+      "decodedImages": 20
+    },
+    {
+      "path": "/explore?type=popular-in-year&year=2025",
+      "width": 1440,
+      "theme": "dark",
+      "status": 200,
+      "heading": "Explore Games",
+      "overflow": false,
+      "cards": 20,
+      "decodedImages": 20
+    },
+    {
+      "path": "/explore?type=popular-in-year&year=2025",
+      "width": 1440,
+      "theme": "light",
+      "status": 200,
+      "heading": "Explore Games",
+      "overflow": false,
+      "cards": 20,
+      "decodedImages": 20
+    },
+    {
+      "path": "/explore",
+      "width": 390,
+      "theme": "dark",
+      "status": 200,
+      "heading": "Explore Games",
+      "overflow": false,
+      "cards": 20,
+      "decodedImages": 20
+    },
+    {
+      "path": "/explore",
+      "width": 390,
+      "theme": "light",
+      "status": 200,
+      "heading": "Explore Games",
+      "overflow": false,
+      "cards": 20,
+      "decodedImages": 20
+    },
+    {
+      "path": "/explore",
+      "width": 768,
+      "theme": "dark",
+      "status": 200,
+      "heading": "Explore Games",
+      "overflow": false,
+      "cards": 20,
+      "decodedImages": 20
+    },
+    {
+      "path": "/explore",
+      "width": 768,
+      "theme": "light",
+      "status": 200,
+      "heading": "Explore Games",
+      "overflow": false,
+      "cards": 20,
+      "decodedImages": 20
+    },
+    {
+      "path": "/explore",
+      "width": 1440,
+      "theme": "dark",
+      "status": 200,
+      "heading": "Explore Games",
+      "overflow": false,
+      "cards": 20,
+      "decodedImages": 20
+    },
+    {
+      "path": "/explore",
+      "width": 1440,
+      "theme": "light",
+      "status": 200,
+      "heading": "Explore Games",
+      "overflow": false,
+      "cards": 20,
+      "decodedImages": 20
+    },
+    {
+      "path": "/explore?type=recent",
+      "width": 390,
+      "theme": "dark",
+      "status": 200,
+      "heading": "Explore Games",
+      "overflow": false,
+      "cards": 5,
+      "decodedImages": 5
+    },
+    {
+      "path": "/explore?type=recent",
+      "width": 390,
+      "theme": "light",
+      "status": 200,
+      "heading": "Explore Games",
+      "overflow": false,
+      "cards": 5,
+      "decodedImages": 5
+    },
+    {
+      "path": "/explore?type=recent",
+      "width": 768,
+      "theme": "dark",
+      "status": 200,
+      "heading": "Explore Games",
+      "overflow": false,
+      "cards": 5,
+      "decodedImages": 5
+    },
+    {
+      "path": "/explore?type=recent",
+      "width": 768,
+      "theme": "light",
+      "status": 200,
+      "heading": "Explore Games",
+      "overflow": false,
+      "cards": 5,
+      "decodedImages": 5
+    },
+    {
+      "path": "/explore?type=recent",
+      "width": 1440,
+      "theme": "dark",
+      "status": 200,
+      "heading": "Explore Games",
+      "overflow": false,
+      "cards": 5,
+      "decodedImages": 5
+    },
+    {
+      "path": "/explore?type=recent",
+      "width": 1440,
+      "theme": "light",
+      "status": 200,
+      "heading": "Explore Games",
+      "overflow": false,
+      "cards": 5,
+      "decodedImages": 5
+    },
+    {
+      "path": "/explore?type=genre&genre=role-playing-games-rpg",
+      "width": 390,
+      "theme": "dark",
+      "status": 200,
+      "heading": "Explore Games",
+      "overflow": false,
+      "cards": 20,
+      "decodedImages": 20
+    },
+    {
+      "path": "/explore?type=genre&genre=role-playing-games-rpg",
+      "width": 390,
+      "theme": "light",
+      "status": 200,
+      "heading": "Explore Games",
+      "overflow": false,
+      "cards": 20,
+      "decodedImages": 20
+    },
+    {
+      "path": "/explore?type=genre&genre=role-playing-games-rpg",
+      "width": 768,
+      "theme": "dark",
+      "status": 200,
+      "heading": "Explore Games",
+      "overflow": false,
+      "cards": 20,
+      "decodedImages": 20
+    },
+    {
+      "path": "/explore?type=genre&genre=role-playing-games-rpg",
+      "width": 768,
+      "theme": "light",
+      "status": 200,
+      "heading": "Explore Games",
+      "overflow": false,
+      "cards": 20,
+      "decodedImages": 20
+    },
+    {
+      "path": "/explore?type=genre&genre=role-playing-games-rpg",
+      "width": 1440,
+      "theme": "dark",
+      "status": 200,
+      "heading": "Explore Games",
+      "overflow": false,
+      "cards": 20,
+      "decodedImages": 20
+    },
+    {
+      "path": "/explore?type=genre&genre=role-playing-games-rpg",
+      "width": 1440,
+      "theme": "light",
+      "status": 200,
+      "heading": "Explore Games",
+      "overflow": false,
+      "cards": 20,
+      "decodedImages": 20
+    },
+    {
+      "path": "/search?genre=Horror",
+      "width": 390,
+      "theme": "dark",
+      "status": 200,
+      "heading": "Browse Games",
+      "overflow": false,
+      "cards": 25,
+      "decodedImages": 20
+    },
+    {
+      "path": "/search?genre=Horror",
+      "width": 390,
+      "theme": "light",
+      "status": 200,
+      "heading": "Browse Games",
+      "overflow": false,
+      "cards": 25,
+      "decodedImages": 20
+    },
+    {
+      "path": "/search?genre=Horror",
+      "width": 768,
+      "theme": "dark",
+      "status": 200,
+      "heading": "Browse Games",
+      "overflow": false,
+      "cards": 25,
+      "decodedImages": 20
+    },
+    {
+      "path": "/search?genre=Horror",
+      "width": 768,
+      "theme": "light",
+      "status": 200,
+      "heading": "Browse Games",
+      "overflow": false,
+      "cards": 25,
+      "decodedImages": 20
+    },
+    {
+      "path": "/search?genre=Horror",
+      "width": 1440,
+      "theme": "dark",
+      "status": 200,
+      "heading": "Browse Games",
+      "overflow": false,
+      "cards": 25,
+      "decodedImages": 20
+    },
+    {
+      "path": "/search?genre=Horror",
+      "width": 1440,
+      "theme": "light",
+      "status": 200,
+      "heading": "Browse Games",
+      "overflow": false,
+      "cards": 25,
+      "decodedImages": 20
+    },
+    {
+      "path": "/lists",
+      "width": 390,
+      "theme": "dark",
+      "status": 200,
+      "heading": "Curated Lists",
+      "overflow": false,
+      "cards": 0,
+      "decodedImages": 81
+    },
+    {
+      "path": "/lists",
+      "width": 390,
+      "theme": "light",
+      "status": 200,
+      "heading": "Curated Lists",
+      "overflow": false,
+      "cards": 0,
+      "decodedImages": 81
+    },
+    {
+      "path": "/lists",
+      "width": 768,
+      "theme": "dark",
+      "status": 200,
+      "heading": "Curated Lists",
+      "overflow": false,
+      "cards": 0,
+      "decodedImages": 84
+    },
+    {
+      "path": "/lists",
+      "width": 768,
+      "theme": "light",
+      "status": 200,
+      "heading": "Curated Lists",
+      "overflow": false,
+      "cards": 0,
+      "decodedImages": 84
+    },
+    {
+      "path": "/lists",
+      "width": 1440,
+      "theme": "dark",
+      "status": 200,
+      "heading": "Curated Lists",
+      "overflow": false,
+      "cards": 0,
+      "decodedImages": 84
+    },
+    {
+      "path": "/lists",
+      "width": 1440,
+      "theme": "light",
+      "status": 200,
+      "heading": "Curated Lists",
+      "overflow": false,
+      "cards": 0,
+      "decodedImages": 84
+    },
+    {
+      "path": "/reset-password",
+      "width": 390,
+      "theme": "dark",
+      "status": 200,
+      "heading": "Reset your password",
+      "overflow": false,
+      "cards": 0,
+      "decodedImages": 0
+    },
+    {
+      "path": "/reset-password",
+      "width": 390,
+      "theme": "light",
+      "status": 200,
+      "heading": "Reset your password",
+      "overflow": false,
+      "cards": 0,
+      "decodedImages": 0
+    },
+    {
+      "path": "/reset-password",
+      "width": 768,
+      "theme": "dark",
+      "status": 200,
+      "heading": "Reset your password",
+      "overflow": false,
+      "cards": 0,
+      "decodedImages": 0
+    },
+    {
+      "path": "/reset-password",
+      "width": 768,
+      "theme": "light",
+      "status": 200,
+      "heading": "Reset your password",
+      "overflow": false,
+      "cards": 0,
+      "decodedImages": 0
+    },
+    {
+      "path": "/reset-password",
+      "width": 1440,
+      "theme": "dark",
+      "status": 200,
+      "heading": "Reset your password",
+      "overflow": false,
+      "cards": 0,
+      "decodedImages": 0
+    },
+    {
+      "path": "/reset-password",
+      "width": 1440,
+      "theme": "light",
+      "status": 200,
+      "heading": "Reset your password",
+      "overflow": false,
+      "cards": 0,
+      "decodedImages": 0
+    },
+    {
+      "path": "/auth/confirm",
+      "width": 390,
+      "theme": "dark",
+      "status": 200,
+      "heading": "Confirm your email",
+      "overflow": false,
+      "cards": 0,
+      "decodedImages": 0
+    },
+    {
+      "path": "/auth/confirm",
+      "width": 390,
+      "theme": "light",
+      "status": 200,
+      "heading": "Confirm your email",
+      "overflow": false,
+      "cards": 0,
+      "decodedImages": 0
+    },
+    {
+      "path": "/auth/confirm",
+      "width": 768,
+      "theme": "dark",
+      "status": 200,
+      "heading": "Confirm your email",
+      "overflow": false,
+      "cards": 0,
+      "decodedImages": 0
+    },
+    {
+      "path": "/auth/confirm",
+      "width": 768,
+      "theme": "light",
+      "status": 200,
+      "heading": "Confirm your email",
+      "overflow": false,
+      "cards": 0,
+      "decodedImages": 0
+    },
+    {
+      "path": "/auth/confirm",
+      "width": 1440,
+      "theme": "dark",
+      "status": 200,
+      "heading": "Confirm your email",
+      "overflow": false,
+      "cards": 0,
+      "decodedImages": 0
+    },
+    {
+      "path": "/auth/confirm",
+      "width": 1440,
+      "theme": "light",
+      "status": 200,
+      "heading": "Confirm your email",
+      "overflow": false,
+      "cards": 0,
+      "decodedImages": 0
+    }
+  ],
+  "blockedWrites": 0,
+  "headersOrTokensStored": false,
+  "firstObservedRequests": {
+    "scope": "First observed deployment requests retained from the preceding browser tool output; the rendering run later reused their public CDN entries. These are CDN MISS samples, not proof of database-storage-cold state.",
+    "requests": [
+      {
+        "path": "/api/search?sort=relevance&page=1",
+        "status": 200,
+        "ms": 4192,
+        "bytes": 44012,
+        "cache": "MISS",
+        "count": 139
+      },
+      {
+        "path": "/api/search?sort=relevance&page=2",
+        "status": 200,
+        "ms": 2045,
+        "bytes": 44183,
+        "cache": "MISS",
+        "count": 139
+      },
+      {
+        "path": "/api/rawg/lists?type=all-time",
+        "status": 200,
+        "ms": 1833,
+        "bytes": 9854,
+        "cache": "MISS",
+        "count": 215,
+        "source": "rawg"
+      },
+      {
+        "path": "/api/rawg/lists?type=popular-in-year&year=2025",
+        "status": 200,
+        "ms": 1579,
+        "bytes": 9419,
+        "cache": "MISS",
+        "count": 131,
+        "source": "rawg"
+      },
+      {
+        "path": "/api/rawg/lists?type=best-of-year",
+        "status": 200,
+        "ms": 793,
+        "bytes": 9380,
+        "cache": "MISS",
+        "count": 46,
+        "source": "rawg"
+      },
+      {
+        "path": "/api/search?genre=Horror&platform=PC",
+        "status": 200,
+        "ms": 2691,
+        "bytes": 45858,
+        "cache": "MISS"
+      },
+      {
+        "path": "/api/lists?view=summary",
+        "status": 200,
+        "ms": 3134,
+        "bytes": 26727,
+        "cache": "MISS",
+        "count": 22
+      }
+    ]
+  }
+}
