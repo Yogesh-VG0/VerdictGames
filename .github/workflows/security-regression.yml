@@ -54,6 +54,12 @@ jobs:
         run: node scripts/with-local-supabase.mjs browser-security
         env:
           PLAYWRIGHT_MODULE_PATH: ${{ runner.temp }}/security-tools/node_modules/playwright/index.mjs
+      - name: Test responsive pages keyboard flows themes and reduced motion
+        # Seed/render the public catalogue before Auth recovery can navigate to
+        # an empty homepage and populate its five-minute framework cache.
+        run: node scripts/with-local-supabase.mjs browser-ux after
+        env:
+          PLAYWRIGHT_MODULE_PATH: ${{ runner.temp }}/security-tools/node_modules/playwright/index.mjs
       - name: Test signup email recovery usernames and private collection summaries
         run: node scripts/with-local-supabase.mjs refinement
         env:
@@ -65,10 +71,6 @@ jobs:
         env:
           PLAYWRIGHT_MODULE_PATH: ${{ runner.temp }}/security-tools/node_modules/playwright/index.mjs
           PLAYWRIGHT_CHROMIUM_CHANNEL: chrome
-      - name: Test responsive pages keyboard flows themes and reduced motion
-        run: node scripts/with-local-supabase.mjs browser-ux after
-        env:
-          PLAYWRIGHT_MODULE_PATH: ${{ runner.temp }}/security-tools/node_modules/playwright/index.mjs
       - name: Stop disposable local test services
         if: always()
         run: supabase stop --no-backup
