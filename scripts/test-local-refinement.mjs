@@ -30,10 +30,15 @@ async function messageFor(subject, recipient = email) {
   throw new Error('Expected local Mailpit message was not delivered');
 }
 function verificationLink(html) {
-  const link = html.match(/href="([^"]*\/auth\/v1\/verify[^"]*)"/i)?.[1]?.replaceAll('&amp;','&');
+  const link = html.match(/href="([^"]*#token_hash=[^"]*)"/i)?.[1]?.replaceAll('&amp;','&');
   assert.ok(link, 'Email contains a secure verification link');
   assert.equal(new URL(link).hostname, '127.0.0.1');
   return link;
+}
+function emailCode(html) {
+  const code=html.match(/>\s*(\d{6,10})\s*</)?.[1];
+  assert.ok(code, 'Email contains a numeric verification code');
+  return code;
 }
 let browser;
 try {
@@ -92,14 +97,19 @@ try {
   await dialog.getByLabel('Confirm password',{exact:true}).fill(password);
   await page.screenshot({path:`${output}/signup-390.png`});
   await dialog.getByRole('button',{name:'Create Account',exact:true}).click();
-  await dialog.getByText('Account created! Check your email to verify your account before signing in.',{exact:true}).waitFor();
+  await dialog.getByRole('heading',{name:'Check your email',exact:true}).waitFor();
   check(await dialog.getByRole('button',{name:/Resend in/}).isDisabled(), 'confirmation resend has an accessible cooldown');
   const confirmation = await messageFor('Confirm your VerdictGames account');
   check(confirmation.includes('Welcome to VerdictGames') && !confirmation.includes('<img'), 'local signup sends the branded tracking-free confirmation template');
   evidence.mail.confirmation = 'received in local Mailpit';
   const identity = await admin.from('profiles').select('auth_id,id').eq('username',username).single(); assert.ifError(identity.error);
   userIds.push(identity.data.auth_id);
-  await page.goto(verificationLink(confirmation));
+  const confirmationTab=await context.newPage();
+  await confirmationTab.goto(verificationLink(confirmation));
+  await confirmationTab.getByRole('button',{name:'Confirm email and sign in',exact:true}).click();
+  await confirmationTab.getByRole('heading',{name:'Email confirmed. You’re signed in.',exact:true}).waitFor();
+  await dialog.waitFor({state:'hidden'});
+  await confirmationTab.close();
   await page.waitForURL(`${base}/library`);
   await page.waitForFunction(async () => (await fetch('/api/auth/me')).status === 200);
   check(true, 'signup verification establishes a session and preserves the library destination');
@@ -165,31 +175,34 @@ try {
   await sql`UPDATE auth.users SET recovery_sent_at=now()-interval '2 hours' WHERE id=${other.data.user.id}`;
   const expiredContext=await browser.newContext();
   const expiredPage=await expiredContext.newPage();
-  await expiredPage.goto(verificationLink(expiredMessage));
-  await expiredPage.waitForURL(/reset-password/);
-  await expiredPage.getByRole('heading',{name:'Your link may have expired',exact:true}).waitFor({state:'visible',timeout:10000});
-  check(await expiredPage.getByRole('heading',{name:'Your link may have expired',exact:true}).isVisible()
-    && await expiredPage.getByRole('button',{name:'Send New Reset Link',exact:true}).isVisible(),'actually expired recovery link renders a recoverable request-new-link state');
+  await expiredPage.goto(base+'/reset-password');
+  await expiredPage.getByPlaceholder('Email',{exact:true}).fill(expiredRecipient);
+  await expiredPage.getByRole('button',{name:'I already have a code',exact:true}).click();
+  await expiredPage.getByLabel('Email verification code',{exact:true}).fill(emailCode(expiredMessage));
+  await expiredPage.getByRole('button',{name:'Verify code and continue',exact:true}).click();
+  await expiredPage.getByRole('alert').filter({hasText:'invalid or expired'}).waitFor();
+  check(!await expiredPage.getByLabel('New password',{exact:true}).count()
+    && await expiredPage.getByRole('button',{name:/Resend in/}).count(),'actually expired recovery code leaves a recoverable resend state');
   await expiredContext.close();
   await page.goto(`${base}/reset-password`);
-  // Request recovery through the UI in the same PKCE browser context.
+  // Request recovery through the UI; the emailed OTP needs no PKCE verifier.
   await page.locator('#desktop-profile-button').count();
   const recoveryClient = createClient(url,process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,{auth:{persistSession:false,autoRefreshToken:false}});
   // Actual UI sign out clears its session; then use the public recovery form.
   await context.clearCookies();
   await page.goto(`${base}/reset-password`);
   await page.getByPlaceholder('Email',{exact:true}).fill(email);
-  await page.getByRole('button',{name:'Send New Reset Link',exact:true}).click();
+  await page.getByRole('button',{name:'Send recovery code',exact:true}).click();
   const recovery = await messageFor('Reset your VerdictGames password');
   check(recovery.includes('Choose a new password'), 'password recovery sends the branded template');
   evidence.mail.recovery = 'received in local Mailpit';
-  await page.goto(verificationLink(recovery));
-  await page.waitForURL(/\/reset-password/);
+  await page.getByLabel('Email verification code',{exact:true}).fill(emailCode(recovery));
+  await page.getByRole('button',{name:'Verify code and continue',exact:true}).click();
   await page.getByLabel('New password',{exact:true}).fill(`copper foxes ${run} watch the stars`);
   await page.getByLabel('Confirm new password',{exact:true}).fill(`copper foxes ${run} watch the stars`);
   await page.getByRole('button',{name:'Update Password',exact:true}).click();
   await page.getByText("Password updated. You're signed in and ready to continue.",{exact:true}).waitFor();
-  check(true, 'recovery link verifies and a long passphrase updates successfully');
+  check(true, 'recovery code verifies and a long passphrase updates successfully');
   assert.ifError((await recoveryClient.auth.signInWithPassword({email,password:`copper foxes ${run} watch the stars`})).error);
   check(true, 'updated password signs in through Supabase Auth');
   check(pageErrors.length===0,'authentication browser flow has no JavaScript errors');

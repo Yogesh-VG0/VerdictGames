@@ -1,0 +1,53 @@
+{
+  "target": "loopback only",
+  "mode": "production",
+  "result": "passed",
+  "checks": [
+    "signup waiting step removes password fields",
+    "signup-code-phone fits viewport",
+    "confirmation template supplies the landing marker for old and new signup clients",
+    "opening/scanning confirmation page does not consume token",
+    "confirmation secret removed from visible URL/history",
+    "confirmation result forbids browser/shared caching and sends no-referrer",
+    "confirmation tab signs in and automatically closes matching original signup modal",
+    "confirmation-success-phone fits viewport",
+    "confirmation-success-desktop fits viewport",
+    "confirmation success remains understandable across theme/layout changes",
+    "replayed confirmation cannot create a session in another browser",
+    "signup waiting step removes password fields",
+    "confirmation code verifies original signup without clicking a link",
+    "signup waiting step removes password fields",
+    "confirmation on a separate device/browser does not silently authenticate the original device",
+    "recovery-code-phone fits viewport",
+    "recovery-code-tablet fits viewport",
+    "recovery email uses a code rather than a consumable reset URL",
+    "opening recovery form on a separate browser does not sign in",
+    "another browser can enter an existing code without sending a new email",
+    "wrong recovery code cannot unlock password update",
+    "valid recovery code alone does not change password",
+    "password changes only after explicit update submission",
+    "new password successfully logs in",
+    "old password no longer logs in",
+    "recovery code is single-use",
+    "expired recovery code is rejected by actual local Auth",
+    "signup waiting step removes password fields",
+    "already-issued old confirmation URLs still exchange PKCE and preserve the destination",
+    "unknown-account recovery gives the same safe waiting state without creating an account"
+  ],
+  "screenshots": [
+    "output/playwright/email-flows/signup-code-phone.png",
+    "output/playwright/email-flows/confirmation-success-phone.png",
+    "output/playwright/email-flows/confirmation-success-desktop.png",
+    "output/playwright/email-flows/recovery-code-phone.png",
+    "output/playwright/email-flows/recovery-code-tablet.png"
+  ],
+  "hostedWrites": 0,
+  "cleaned": true,
+  "confirmationHeaders": {
+    "cache": "private, no-store, max-age=0",
+    "cdn": "private, no-store",
+    "vercel": "private, no-store",
+    "referrer": "no-referrer"
+  },
+  "recordedAt": "2026-11-18T10:33:13.263Z"
+}

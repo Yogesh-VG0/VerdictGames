@@ -15,6 +15,7 @@ import type { Database } from "@/lib/supabase/types";
 import { loadOwnProfile } from '@/lib/auth/own-profile';
 import { getPasswordValidationError } from '@/lib/auth/password';
 import { getUsernameValidationError, normalizeUsername } from '@/lib/auth/username';
+import { isEmailCode, normalizeEmailCode, type EmailCodePurpose } from '@/lib/auth/email-code';
 
 interface AuthContextType {
   user: AuthUser | null;
@@ -27,6 +28,8 @@ interface AuthContextType {
   signInWithOAuth: (provider: "google" | "discord", options?: { nextPath?: string }) => Promise<{ error?: string }>;
   sendPasswordResetEmail: (email: string) => Promise<{ error?: string }>;
   resendConfirmationEmail: (email: string, options?: { nextPath?: string }) => Promise<{ error?: string }>;
+  verifyEmailCode: (email: string, code: string, purpose: EmailCodePurpose) => Promise<{ error?: string }>;
+  verifyConfirmationLink: (tokenHash: string) => Promise<{ error?: string }>;
   updatePassword: (password: string) => Promise<{ error?: string }>;
   clearPasswordRecovery: () => void;
   signOut: () => Promise<void>;
@@ -288,6 +291,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return {};
   };
 
+  const verifyEmailCode = async (email: string, code: string, purpose: EmailCodePurpose) => {
+    if (!supabase) return { error: 'Auth not configured' };
+    if (!isEmailCode(code)) return { error: 'Enter the complete numeric code from your email.' };
+    const { data, error } = await supabase.auth.verifyOtp({
+      email: normalizeEmail(email), token: normalizeEmailCode(code), type: purpose,
+    });
+    if (error?.status === 429) return { error: 'Too many attempts. Please wait a minute before trying again.' };
+    if (error || !data.session) return { error: 'This code is invalid or expired. Check the latest email or request a new code.' };
+    setIsPasswordRecovery(purpose === 'recovery');
+    return {};
+  };
+
+  const verifyConfirmationLink = async (tokenHash: string) => {
+    if (!supabase) return { error: 'Auth not configured' };
+    // Only email confirmation is accepted here; never trust a type/redirect
+    // supplied by the link. The provider owns expiry and single-use checks.
+    const { data, error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: 'email' });
+    if (error?.status === 429) return { error: 'Too many attempts. Please wait a minute before trying again.' };
+    if (error || !data.session) return { error: 'This confirmation link is invalid, expired or already used. Use the code from your latest email or request another confirmation.' };
+    return {};
+  };
+
   const signOut = async () => {
     if (!supabase) return;
     await supabase.auth.signOut();
@@ -327,6 +352,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signInWithOAuth,
         sendPasswordResetEmail,
         resendConfirmationEmail,
+        verifyEmailCode,
+        verifyConfirmationLink,
         updatePassword,
         clearPasswordRecovery,
         signOut,

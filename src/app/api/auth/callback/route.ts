@@ -42,6 +42,16 @@ export async function GET(request: NextRequest) {
   // Validate next is a safe relative path (prevent open redirect)
   const safeNext = normalizeNextPath(next, flow);
 
+  // New confirmation emails carry their secret in the fragment, which is not
+  // sent to this server. Land on an explicit confirmation page without
+  // consuming anything on GET. Existing code/OAuth links still use PKCE below.
+  if (flow === 'confirmation' && !code) {
+    const response = NextResponse.redirect(buildRedirectUrl(origin, '/auth/confirm'));
+    response.headers.set('Cache-Control', 'private, no-store, max-age=0');
+    response.headers.set('Referrer-Policy', 'no-referrer');
+    return response;
+  }
+
   if (code) {
     const cookieStore = await cookies();
     const supabase = createServerClient<Database>(

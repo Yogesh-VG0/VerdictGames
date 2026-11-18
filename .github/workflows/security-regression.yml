@@ -58,6 +58,13 @@ jobs:
         run: node scripts/with-local-supabase.mjs refinement
         env:
           PLAYWRIGHT_MODULE_PATH: ${{ runner.temp }}/security-tools/node_modules/playwright/index.mjs
+      - name: Test email confirmation codes and cross-tab sessions
+        # Includes explicit email confirmation, cross-tab updates, OTP recovery,
+        # token replay/expiry and no hosted/network fixture access.
+        run: node scripts/with-local-supabase.mjs email-flows
+        env:
+          PLAYWRIGHT_MODULE_PATH: ${{ runner.temp }}/security-tools/node_modules/playwright/index.mjs
+          PLAYWRIGHT_CHROMIUM_CHANNEL: chrome
       - name: Test responsive pages keyboard flows themes and reduced motion
         run: node scripts/with-local-supabase.mjs browser-ux after
         env:

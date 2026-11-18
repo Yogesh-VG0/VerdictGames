@@ -1,0 +1,68 @@
+{
+  "state": "Prepared for review only; no production/template changes approved or applied",
+  "branch": "remediation/email-confirmation-and-recovery",
+  "baselineProductionCommit": "322f47609a7e2735085894f6f86a633147c9cd54",
+  "supabaseProject": "vjzsvnaswronkctazarn",
+  "payloadPath": "docs/audits/2026-11-15/auth-email-flow-proposal.json",
+  "payloadSHA256": "f173f77058caefd9e95b2f1fcbc7c649d3ab784dc5398b3944a380bad0a2f0db",
+  "exactFields": [
+    "mailer_templates_confirmation_content",
+    "mailer_templates_recovery_content"
+  ],
+  "newTemplateSHA256": {
+    "confirmation": "0c826c78d02f9850ea9f70933917b578a1096f13368f20d55e9ffe5a71e1785e",
+    "recovery": "0a5af0047cab7ef144b5e852dc391283d0ca32f72ab0cba51875b7a7ba81125e"
+  },
+  "expectedCurrentTemplateSHA256": {
+    "confirmation": "aa39244f7ee6b1ad71786ca7a4dc23ba774eb5fede991fd35e964f93a4236acd",
+    "recovery": "140744a465d65552723e1d9b9698e8d83686e26fdba85f807835869286631b68"
+  },
+  "unchanged": {
+    "passwordMinimum": 15,
+    "hostedEmailOtpDigits": 8,
+    "otpExpirySeconds": 3600,
+    "subjects": true,
+    "smtp": true,
+    "oauth": true,
+    "redirects": true,
+    "confirmationRequirement": true,
+    "databasePermissions": true,
+    "billing": true,
+    "dependencies": true
+  },
+  "changes": [
+    "Provider-owned recovery code entry and explicit password update",
+    "Confirmation landing with explicit Verify action, result page, same-browser matching-account modal close",
+    "Confirmation code fallback for reading mail on another device",
+    "No background password polling or cross-device session relay"
+  ],
+  "sequence": [
+    "Review exact source and CI; no standing dependency-risk exception or protection bypass is assumed",
+    "Separately approve any exact production release actions",
+    "Deploy compatible application first; verify previous email URLs still work",
+    "Apply only the two exact template bodies after checking current values and all unrelated settings",
+    "Verify new actual disposable emails, one-use/expiry, same-browser tab update and cross-device boundary",
+    "GET-compare all settings and encrypt a new small configuration supplement using the existing recovery arrangement"
+  ],
+  "rollback": "Keep the privacy-compatible new application live. Restore only the two reviewed previous template bodies if necessary; it supports old URLs. Do not roll back application while new code-only emails remain in flight without an explicit compatibility plan. Never restore insecure grants.",
+  "releaseBlockers": [
+    "No final release approval for this new candidate",
+    "Required dependency audit remains enforced; earlier one-release risk acceptance is not a standing bypass"
+  ],
+  "sources": [
+    "https://supabase.com/docs/guides/auth/auth-email-templates",
+    "https://supabase.com/docs/reference/javascript/auth-verifyotp",
+    "https://clerk.com/docs/guides/development/custom-flows/authentication/forgot-password",
+    "https://support.auth0.com/center/s/article/passwordless-magic-link-error-The-link-must-be-opened-on-the-same-device-and-browser-from-which-you-submitted-your-email-address"
+  ],
+  "validation": {
+    "productionModeLocalBuild": "passed; loopback-only build is not deployable",
+    "unitTests": "317 passed; one existing skipped",
+    "changedFileLint": "passed",
+    "emailFlowChecks": 30,
+    "existingRefinementChecks": 25,
+    "hostedWrites": 0,
+    "fixtures": "fresh local identities cleaned; no hosted fixtures",
+    "ci": "pending draft PR checks"
+  }
+}
