@@ -26,7 +26,14 @@ import {searchGenrePredicate} from '@/lib/utils/searchGenre';
 export const SEARCH_REVALIDATE_SECONDS = 300;
 export const SEARCH_API_CACHE_CONTROL = `s-maxage=${SEARCH_REVALIDATE_SECONDS}, stale-while-revalidate=300`;
 export const SEARCH_PAGE_SIZE = 25;
-const SEARCH_RESULTS_CACHE_NAMESPACE = "search-results-v6";
+const SEARCH_RESULTS_CACHE_NAMESPACE = "search-results-v7";
+// Ranking and eligibility need evidence and safety metadata, not display copy,
+// prices or hero flags. Hydrate full card fields only for the visible page.
+const BROWSE_POOL_COLUMNS = GAME_CARD_COLUMNS_WITH_DESC.split(',').filter(column => ![
+  'subtitle', 'header_image', 'verdict_summary', 'price_current', 'price_currency',
+  'price_deal_url', 'price_lowest', 'featured', 'is_featured_manual',
+  'steam_rating_label', 'updated_at',
+].includes(column)).join(',');
 
 export function createEmptySearchResult(page: number): PaginatedResponse<Game> {
   return {
@@ -322,7 +329,7 @@ async function fetchSearchResults(state: SearchGamesState,poolOnly=false): Promi
     return {items:ids.flatMap(id=>games.has(id)?[games.get(id)!]:[]),total:pool.ids.length,page,pageSize:SEARCH_PAGE_SIZE,
       hasMore:page*SEARCH_PAGE_SIZE<pool.ids.length,totalIsExact:pool.totalIsExact};
   }
-  let query = supabase.from("games").select(GAME_CARD_COLUMNS_WITH_DESC);
+  let query = supabase.from("games").select(poolOnly ? BROWSE_POOL_COLUMNS : GAME_CARD_COLUMNS_WITH_DESC);
 
   if (q) {
     query = query.or(`title.ilike.%${q}%,developer.ilike.%${q}%,publisher.ilike.%${q}%`);
@@ -470,7 +477,11 @@ async function fetchSearchResults(state: SearchGamesState,poolOnly=false): Promi
   const start = (page - 1) * SEARCH_PAGE_SIZE;
   // Rank a stable finite cohort before pagination. Growing the pool with page
   // number promoted later candidates into earlier pages and repeated games.
-  const requestedLimit=isRelevanceWithQuery?150:1000;
+  // Preserve the original first-page query budgets instead of widening every
+  // cold sort to 1,000 rows. The same cohort is reused for every page.
+  const requestedLimit = isRelevanceWithQuery ? 150
+    : isRecentlyAdded ? 1000 : isTrendingSort ? 750
+      : isTopRated || isNewest || isUpcoming ? 500 : 150;
   query=query.range(0,requestedLimit-1);
 
   const { data, error } = await query.abortSignal(AbortSignal.timeout(10_000)) as unknown as { data: GameRow[] | null; error: unknown };
@@ -713,7 +724,7 @@ async function fetchSearchResults(state: SearchGamesState,poolOnly=false): Promi
 const readRankedBrowsePool=unstable_cache(async(sort:SearchGamesState['sort'])=>{
   if(!['relevance','newest','upcoming','recently-added','top-rated','trending'].includes(sort))throw new Error('Invalid public browse sort');
   return fetchSearchResults({query:'',platform:'All',genre:'',year:'',monetization:'All',sort,page:1},true);
-},['public-browse-ranked-ids-v1'],{revalidate:SEARCH_REVALIDATE_SECONDS,tags:['public-search']});
+},['public-browse-ranked-ids-v2'],{revalidate:SEARCH_REVALIDATE_SECONDS,tags:['public-search']});
 
 async function readBrowseCards(ids:string[]):Promise<Game[]> {
   const {data,error}=await getPublicSupabase().from('games').select(GAME_CARD_COLUMNS_WITH_DESC).in('id',ids).abortSignal(AbortSignal.timeout(5000));

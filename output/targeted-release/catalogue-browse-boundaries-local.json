@@ -1,0 +1,314 @@
+[
+  {
+    "sort": "relevance",
+    "pages": [
+      {
+        "page": 1,
+        "rows": 25,
+        "total": 141,
+        "exact": false
+      },
+      {
+        "page": 2,
+        "rows": 25,
+        "total": 141,
+        "exact": false
+      },
+      {
+        "page": 3,
+        "rows": 25,
+        "total": 141,
+        "exact": false
+      },
+      {
+        "page": 4,
+        "rows": 25,
+        "total": 141,
+        "exact": false
+      },
+      {
+        "page": 5,
+        "rows": 25,
+        "total": 141,
+        "exact": false
+      },
+      {
+        "page": 6,
+        "rows": 16,
+        "total": 141,
+        "exact": false
+      }
+    ],
+    "duplicates": []
+  },
+  {
+    "sort": "newest",
+    "pages": [
+      {
+        "page": 1,
+        "rows": 25,
+        "total": 188,
+        "exact": false
+      },
+      {
+        "page": 2,
+        "rows": 25,
+        "total": 188,
+        "exact": false
+      },
+      {
+        "page": 3,
+        "rows": 25,
+        "total": 188,
+        "exact": false
+      },
+      {
+        "page": 4,
+        "rows": 25,
+        "total": 188,
+        "exact": false
+      },
+      {
+        "page": 5,
+        "rows": 25,
+        "total": 188,
+        "exact": false
+      },
+      {
+        "page": 6,
+        "rows": 25,
+        "total": 188,
+        "exact": false
+      },
+      {
+        "page": 7,
+        "rows": 25,
+        "total": 188,
+        "exact": false
+      },
+      {
+        "page": 8,
+        "rows": 13,
+        "total": 188,
+        "exact": false
+      }
+    ],
+    "duplicates": []
+  },
+  {
+    "sort": "upcoming",
+    "pages": [
+      {
+        "page": 1,
+        "rows": 2,
+        "total": 2,
+        "exact": true
+      }
+    ],
+    "duplicates": []
+  },
+  {
+    "sort": "recently-added",
+    "pages": [
+      {
+        "page": 1,
+        "rows": 25,
+        "total": 480,
+        "exact": false
+      },
+      {
+        "page": 2,
+        "rows": 25,
+        "total": 480,
+        "exact": false
+      },
+      {
+        "page": 3,
+        "rows": 25,
+        "total": 480,
+        "exact": false
+      },
+      {
+        "page": 4,
+        "rows": 25,
+        "total": 480,
+        "exact": false
+      },
+      {
+        "page": 5,
+        "rows": 25,
+        "total": 480,
+        "exact": false
+      },
+      {
+        "page": 6,
+        "rows": 25,
+        "total": 480,
+        "exact": false
+      },
+      {
+        "page": 7,
+        "rows": 25,
+        "total": 480,
+        "exact": false
+      },
+      {
+        "page": 8,
+        "rows": 25,
+        "total": 480,
+        "exact": false
+      },
+      {
+        "page": 9,
+        "rows": 25,
+        "total": 480,
+        "exact": false
+      },
+      {
+        "page": 10,
+        "rows": 25,
+        "total": 480,
+        "exact": false
+      },
+      {
+        "page": 11,
+        "rows": 25,
+        "total": 480,
+        "exact": false
+      },
+      {
+        "page": 12,
+        "rows": 25,
+        "total": 480,
+        "exact": false
+      },
+      {
+        "page": 13,
+        "rows": 25,
+        "total": 480,
+        "exact": false
+      },
+      {
+        "page": 14,
+        "rows": 25,
+        "total": 480,
+        "exact": false
+      },
+      {
+        "page": 15,
+        "rows": 25,
+        "total": 480,
+        "exact": false
+      },
+      {
+        "page": 16,
+        "rows": 25,
+        "total": 480,
+        "exact": false
+      },
+      {
+        "page": 17,
+        "rows": 25,
+        "total": 480,
+        "exact": false
+      },
+      {
+        "page": 18,
+        "rows": 25,
+        "total": 480,
+        "exact": false
+      },
+      {
+        "page": 19,
+        "rows": 25,
+        "total": 480,
+        "exact": false
+      },
+      {
+        "page": 20,
+        "rows": 5,
+        "total": 480,
+        "exact": false
+      }
+    ],
+    "duplicates": []
+  },
+  {
+    "sort": "top-rated",
+    "pages": [
+      {
+        "page": 1,
+        "rows": 25,
+        "total": 118,
+        "exact": false
+      },
+      {
+        "page": 2,
+        "rows": 25,
+        "total": 118,
+        "exact": false
+      },
+      {
+        "page": 3,
+        "rows": 25,
+        "total": 118,
+        "exact": false
+      },
+      {
+        "page": 4,
+        "rows": 25,
+        "total": 118,
+        "exact": false
+      },
+      {
+        "page": 5,
+        "rows": 18,
+        "total": 118,
+        "exact": false
+      }
+    ],
+    "duplicates": []
+  },
+  {
+    "sort": "trending",
+    "pages": [
+      {
+        "page": 1,
+        "rows": 25,
+        "total": 139,
+        "exact": false
+      },
+      {
+        "page": 2,
+        "rows": 25,
+        "total": 139,
+        "exact": false
+      },
+      {
+        "page": 3,
+        "rows": 25,
+        "total": 139,
+        "exact": false
+      },
+      {
+        "page": 4,
+        "rows": 25,
+        "total": 139,
+        "exact": false
+      },
+      {
+        "page": 5,
+        "rows": 25,
+        "total": 139,
+        "exact": false
+      },
+      {
+        "page": 6,
+        "rows": 14,
+        "total": 139,
+        "exact": false
+      }
+    ],
+    "duplicates": []
+  }
+]

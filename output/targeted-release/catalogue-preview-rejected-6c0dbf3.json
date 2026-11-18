@@ -1,0 +1,112 @@
+{
+  "head": "6c0dbf36191e1b5b88da840881195cd75e22cecb",
+  "origin": "https://verdict-games-l6tvjyxpp-yogesh-vg0s-projects.vercel.app",
+  "scope": "Exact protected preview, anonymous session, GET/HEAD only; no hosted fixtures or settings writes",
+  "http": [
+    {
+      "path": "/api/rawg/lists?type=all-time",
+      "status": 200,
+      "ms": 7439,
+      "bytes": 9854,
+      "cache": "MISS",
+      "cacheControl": "public",
+      "timing": "snapshot;dur=6738, catalogue_total;dur=6741",
+      "count": 215,
+      "source": "rawg",
+      "degraded": false,
+      "items": [
+        "The Witcher 3: Wild Hunt",
+        "Red Dead Redemption 2",
+        "Portal 2",
+        "The Last Of Us",
+        "God of War (2018)",
+        "The Legend of Zelda: Breath of the Wild",
+        "Grand Theft Auto: San Andreas",
+        "Half-Life 2"
+      ]
+    },
+    {
+      "path": "/api/rawg/lists?type=all-time",
+      "status": 200,
+      "ms": 271,
+      "bytes": 9854,
+      "cache": "HIT",
+      "cacheControl": "public",
+      "timing": "snapshot;dur=6738, catalogue_total;dur=6741",
+      "count": 215,
+      "source": "rawg",
+      "degraded": false,
+      "items": [
+        "The Witcher 3: Wild Hunt",
+        "Red Dead Redemption 2",
+        "Portal 2",
+        "The Last Of Us",
+        "God of War (2018)",
+        "The Legend of Zelda: Breath of the Wild",
+        "Grand Theft Auto: San Andreas",
+        "Half-Life 2"
+      ]
+    },
+    {
+      "path": "/api/rawg/lists?type=popular-in-year&year=2025",
+      "status": 200,
+      "ms": 6806,
+      "bytes": 9419,
+      "cache": "MISS",
+      "cacheControl": "public",
+      "timing": "snapshot;dur=6147, catalogue_total;dur=6148",
+      "count": 131,
+      "source": "rawg",
+      "degraded": false,
+      "items": [
+        "Vampire: The Masquerade – Bloodlines 2",
+        "Hollow Knight: Silksong",
+        "Clair Obscur: Expedition 33",
+        "Hades II",
+        "Split Fiction",
+        "Kingdom Come: Deliverance II",
+        "Death Stranding 2: On The Beach",
+        "Tiny Bunny"
+      ]
+    },
+    {
+      "path": "/api/rawg/lists?type=best-of-year",
+      "status": 200,
+      "ms": 4109,
+      "bytes": 9380,
+      "cache": "MISS",
+      "cacheControl": "public",
+      "timing": "snapshot;dur=2130, matches;dur=697, portraits;dur=584, catalogue_total;dur=3415",
+      "count": 46,
+      "source": "rawg",
+      "degraded": false,
+      "items": [
+        "Grand Theft Auto VI",
+        "Path of Exile 2",
+        "No Rest for the Wicked",
+        "Tomb Raider: Legacy of Atlantis",
+        "Titan Quest 2",
+        "Tomb Raider: Catalyst",
+        "Clockwork Revolution",
+        "The Expanse: Osiris Reborn"
+      ]
+    },
+    {
+      "path": "/api/search?sort=relevance&page=1",
+      "status": 500,
+      "ms": 5107,
+      "bytes": 58,
+      "cache": "MISS",
+      "cacheControl": "public, max-age=0, must-revalidate",
+      "timing": null,
+      "error": "Failed to load search results."
+    }
+  ],
+  "views": [],
+  "blockedWrites": 0,
+  "headersOrTokensStored": false,
+  "error": {
+    "name": "AssertionError",
+    "message": "/api/search?sort=relevance&page=1\n\n500 !== 200\n"
+  }
+}
