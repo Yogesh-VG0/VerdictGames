@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { LoaderCircle } from 'lucide-react';
 
 /** Immediate feedback even when links deliberately disable costly prefetch. */
 export default function NavigationProgress() {
@@ -35,8 +34,6 @@ export default function NavigationProgress() {
   if (!pending) return null;
   return <div role="status" aria-live="polite" className="pointer-events-none fixed inset-x-0 top-0 z-[100]">
     <div className="h-1 bg-accent motion-safe:animate-pulse" />
-    <div className="absolute right-4 top-4 flex items-center gap-2 rounded-full border border-border bg-surface px-4 py-2 text-sm text-foreground shadow-lg">
-      <LoaderCircle aria-hidden="true" className="h-4 w-4 motion-safe:animate-spin" /> Loading page…
-    </div>
+    <span className="sr-only">Loading page…</span>
   </div>;
 }

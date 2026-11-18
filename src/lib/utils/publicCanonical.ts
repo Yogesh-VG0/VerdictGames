@@ -172,6 +172,7 @@ export function pickPreferredPublicRepresentative<T extends PublicCanonicalRow>(
   b: T,
   preference: PublicCanonicalPreference = "default"
 ): T {
+  const now=Date.now();
   const score = (row: T) => {
     let value = 0;
 
@@ -190,14 +191,19 @@ export function pickPreferredPublicRepresentative<T extends PublicCanonicalRow>(
     value += (row.confidence ?? 0) * 150;
 
     if (row.release_date) {
-      const ageDays = Math.max(0, (Date.now() - new Date(row.release_date).getTime()) / 86400000);
+      const ageDays = Math.max(0, (now - new Date(row.release_date).getTime()) / 86400000);
       value += Math.max(0, 60 - Math.min(ageDays / 30, 60));
     }
 
     return value;
   };
 
-  return score(b) > score(a) ? b : a;
+  const difference=score(b)-score(a);
+  if(difference!==0)return difference>0?b:a;
+  // Match PostgreSQL's representative_score DESC, id tie-breaker. Input order
+  // varies between search sorts and must not change a canonical game URL.
+  if('id' in a && 'id' in b)return String(a.id).localeCompare(String(b.id))<=0?a:b;
+  return a.title.localeCompare(b.title)<=0?a:b;
 }
 
 export function dedupePublicCanonicalRows<T extends PublicCanonicalRow>(

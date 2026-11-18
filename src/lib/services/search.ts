@@ -18,14 +18,15 @@ import {
   isSurfaceReady,
 } from "@/lib/utils/quality";
 import { dedupePublicCanonicalRows } from "@/lib/utils/publicCanonical";
-import { isPublicSafeGame } from "@/lib/utils/publicSafety";
+import { isPublicSafeGame, isPublicSafeRawgGame } from "@/lib/utils/publicSafety";
 import { normalizeTitle } from "@/lib/utils/slugify";
 import { isFutureDate } from "@/lib/utils";
+import {searchGenrePredicate} from '@/lib/utils/searchGenre';
 
 export const SEARCH_REVALIDATE_SECONDS = 300;
 export const SEARCH_API_CACHE_CONTROL = `s-maxage=${SEARCH_REVALIDATE_SECONDS}, stale-while-revalidate=300`;
 export const SEARCH_PAGE_SIZE = 25;
-const SEARCH_RESULTS_CACHE_NAMESPACE = "search-results-v4";
+const SEARCH_RESULTS_CACHE_NAMESPACE = "search-results-v6";
 
 export function createEmptySearchResult(page: number): PaginatedResponse<Game> {
   return {
@@ -302,14 +303,25 @@ function isUpcomingDiscoveryReady(row: GameRow): boolean {
     && (hasCredits || hasPlatforms);
 }
 
-async function fetchSearchResults(state: SearchGamesState): Promise<PaginatedResponse<Game>> {
+interface RankedBrowsePool { ids:string[]; totalIsExact:boolean }
+async function fetchSearchResults(state:SearchGamesState,poolOnly:true):Promise<RankedBrowsePool>;
+async function fetchSearchResults(state:SearchGamesState,poolOnly?:false):Promise<PaginatedResponse<Game>>;
+async function fetchSearchResults(state: SearchGamesState,poolOnly=false): Promise<PaginatedResponse<Game>|RankedBrowsePool> {
   const { query: q, platform, genre, year, monetization, sort, page } = state;
 
   if (!hasPublicSupabaseEnv()) {
-    return createEmptySearchResult(page);
+    return poolOnly?{ids:[],totalIsExact:true}:createEmptySearchResult(page);
   }
 
   const supabase = getPublicSupabase();
+  if(!poolOnly && !q && platform==='All' && !genre && !year && monetization==='All') {
+    const pool=await readRankedBrowsePool(sort);
+    const ids=pool.ids.slice((page-1)*SEARCH_PAGE_SIZE,page*SEARCH_PAGE_SIZE);
+    const cards=ids.length?await (page<=3?readCachedBrowseCards:readBrowseCards)(ids):[];
+    const games=new Map(cards.map(game=>[game.id,game]));
+    return {items:ids.flatMap(id=>games.has(id)?[games.get(id)!]:[]),total:pool.ids.length,page,pageSize:SEARCH_PAGE_SIZE,
+      hasMore:page*SEARCH_PAGE_SIZE<pool.ids.length,totalIsExact:pool.totalIsExact};
+  }
   let query = supabase.from("games").select(GAME_CARD_COLUMNS_WITH_DESC);
 
   if (q) {
@@ -361,7 +373,7 @@ async function fetchSearchResults(state: SearchGamesState): Promise<PaginatedRes
   }
 
   if (genre) {
-    query = query.contains("genres", [genre]);
+    query = query.or(searchGenrePredicate(genre));
   }
 
   if (year) {
@@ -456,28 +468,10 @@ async function fetchSearchResults(state: SearchGamesState): Promise<PaginatedRes
   const isUpcoming = sort === "upcoming";
   const isRecentlyAdded = sort === "recently-added";
   const start = (page - 1) * SEARCH_PAGE_SIZE;
-  const overfetchMultiplier = 5;
-
-  let requestedLimit = 0;
-  if (isRelevanceWithQuery) {
-    requestedLimit = 150;
-    query = query.range(0, requestedLimit - 1);
-  } else if (isTopRated) {
-    requestedLimit = Math.min(1000, Math.max(start + (SEARCH_PAGE_SIZE * overfetchMultiplier * 4), 400));
-    query = query.range(0, requestedLimit - 1);
-  } else if (isTrendingSort) {
-    requestedLimit = Math.min(1000, Math.max(start + (SEARCH_PAGE_SIZE * overfetchMultiplier * 6), 750));
-    query = query.range(0, requestedLimit - 1);
-  } else if (isRecentlyAdded) {
-    requestedLimit = Math.min(1000, Math.max(start + (SEARCH_PAGE_SIZE * overfetchMultiplier * 12), 1000));
-    query = query.range(0, requestedLimit - 1);
-  } else if (isNewest || isUpcoming || isRecentlyAdded) {
-    requestedLimit = Math.min(1000, Math.max(start + (SEARCH_PAGE_SIZE * overfetchMultiplier * 4), 300));
-    query = query.range(0, requestedLimit - 1);
-  } else {
-    requestedLimit = Math.min(1000, Math.max(start + (SEARCH_PAGE_SIZE * overfetchMultiplier), 150));
-    query = query.range(0, requestedLimit - 1);
-  }
+  // Rank a stable finite cohort before pagination. Growing the pool with page
+  // number promoted later candidates into earlier pages and repeated games.
+  const requestedLimit=isRelevanceWithQuery?150:1000;
+  query=query.range(0,requestedLimit-1);
 
   const { data, error } = await query.abortSignal(AbortSignal.timeout(10_000)) as unknown as { data: GameRow[] | null; error: unknown };
   if (error) {
@@ -619,7 +613,7 @@ async function fetchSearchResults(state: SearchGamesState): Promise<PaginatedRes
 
     scored.sort((left, right) => right.relevance - left.relevance);
     filteredTotal = scored.length;
-    rows = scored.slice(start, start + SEARCH_PAGE_SIZE).map((entry) => entry.row);
+    rows = scored.map((entry) => entry.row);
   }
 
   if (isTopRated && rows.length > 0) {
@@ -634,12 +628,10 @@ async function fetchSearchResults(state: SearchGamesState): Promise<PaginatedRes
       if (criticDiff !== 0) return criticDiff;
       return (right.release_date ?? "").localeCompare(left.release_date ?? "");
     });
-    rows = rows.slice(start, start + SEARCH_PAGE_SIZE);
   }
 
-  if (!isRelevanceWithQuery && !isTopRated) {
-    rows = rows.slice(start, start + SEARCH_PAGE_SIZE);
-  }
+  if(poolOnly)return {ids:rows.map(row=>row.id),totalIsExact};
+  rows=rows.slice(start,start+SEARCH_PAGE_SIZE);
 
   const games = rows.map(mapGameRow);
   let total = filteredTotal;
@@ -654,10 +646,12 @@ async function fetchSearchResults(state: SearchGamesState): Promise<PaginatedRes
 
       if (rawgResults.results.length > 0) {
         for (const rawgGame of rawgResults.results) {
+          if (!isPublicSafeRawgGame(rawgGame) || !isPrimaryDiscoveryGame({title:rawgGame.name,description:''})) continue;
           if (existingSlugs.has(normalizeTitle(rawgGame.name))) {
             continue;
           }
 
+          const upcoming=!rawgGame.released || isFutureDate(rawgGame.released);
           games.push({
             id: `rawg-${rawgGame.id}`,
             slug: rawgGame.slug,
@@ -672,8 +666,8 @@ async function fetchSearchResults(state: SearchGamesState): Promise<PaginatedRes
             publisher: "",
             releaseDate: rawgGame.released ?? "",
             description: "",
-            score: rawgGame.metacritic ?? Math.round((rawgGame.rating || 3) * 20),
-            verdictLabel:
+            score: upcoming ? 0 : rawgGame.metacritic ?? Math.round((rawgGame.rating || 0) * 20),
+            verdictLabel: upcoming ? 'COMING SOON' :
               rawgGame.metacritic && rawgGame.metacritic >= 80
                 ? "MUST PLAY"
                 : rawgGame.metacritic && rawgGame.metacritic >= 65
@@ -688,6 +682,8 @@ async function fetchSearchResults(state: SearchGamesState): Promise<PaginatedRes
             reviewCount: rawgGame.ratings_count ?? 0,
             rawgRating: rawgGame.rating,
             rawgMetacritic: rawgGame.metacritic ?? undefined,
+            scoreSource:'rawg',isPreview:true,previewSource:'rawg',isProvisional:upcoming,
+            releaseStatus:upcoming?'upcoming':undefined,
             subtitle: "",
           });
           existingSlugs.add(normalizeTitle(rawgGame.name));
@@ -711,7 +707,25 @@ async function fetchSearchResults(state: SearchGamesState): Promise<PaginatedRes
   };
 }
 
+// Only six unfiltered public discovery cohorts enter this shared cache.
+// Store IDs (~40KB maximum), never the 1,000 wide source rows. Warm pages read
+// only their 25 card records; personalized data never enters this path.
+const readRankedBrowsePool=unstable_cache(async(sort:SearchGamesState['sort'])=>{
+  if(!['relevance','newest','upcoming','recently-added','top-rated','trending'].includes(sort))throw new Error('Invalid public browse sort');
+  return fetchSearchResults({query:'',platform:'All',genre:'',year:'',monetization:'All',sort,page:1},true);
+},['public-browse-ranked-ids-v1'],{revalidate:SEARCH_REVALIDATE_SECONDS,tags:['public-search']});
+
+async function readBrowseCards(ids:string[]):Promise<Game[]> {
+  const {data,error}=await getPublicSupabase().from('games').select(GAME_CARD_COLUMNS_WITH_DESC).in('id',ids).abortSignal(AbortSignal.timeout(5000));
+  if(error)throw error;
+  return ((data || []) as unknown as GameRow[]).filter(isPublicSafeGame).map(mapGameRow);
+}
+const readCachedBrowseCards=unstable_cache(readBrowseCards,['public-browse-cards-v1'],{revalidate:SEARCH_REVALIDATE_SECONDS,tags:['public-search']});
+
 export async function loadSearchResults(state: SearchGamesState): Promise<PaginatedResponse<Game>> {
+  // Next bypasses nested unstable_cache reads. Keep the cohort and small-card
+  // caches outside the per-filter response cache, or every page rescans1,000 rows.
+  if(!state.query && state.platform==='All' && !state.genre && !state.year && state.monetization==='All')return fetchSearchResults(state);
   const cacheKey = JSON.stringify(searchGamesStateToFilters(state));
   return unstable_cache(
     () => fetchSearchResults(state),

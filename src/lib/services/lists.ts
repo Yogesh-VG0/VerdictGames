@@ -63,7 +63,7 @@ const readCachedPublicListSummaries = unstable_cache((page: number, ownerId: str
   page === 1 && !ownerId && kind === 'all'
     ? readPublicOverview()
     : readListSummaries(getPublicSupabase(), page, ownerId ?? undefined, false, kind),
-['public-list-summaries-v2'], { revalidate: 300, tags: ['public-lists'] });
+['public-list-summaries-v3'], { revalidate: 300, tags: ['public-lists'] });
 
 // Normalize defaults before building the key: SSR(1) and API(1,undefined,'all')
 // must not create independent entries and duplicate catalogue refreshes.

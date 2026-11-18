@@ -16,14 +16,14 @@ describe('durable upcoming snapshot', () => {
   });
   afterEach(() => vi.unstubAllEnvs());
   it('serves a fresh snapshot without contacting RAWG', async () => {
-    state.stored = { payload: { results }, fetched_at: new Date().toISOString() };
+    state.stored = { payload: { results, complete: true, count:results.length }, fetched_at: new Date().toISOString() };
     expect((await readUpcomingSnapshot()).results).toEqual(results);
     expect(state.live).not.toHaveBeenCalled();
   });
   it('preserves original freshness during indefinite downtime', async () => {
     state.stored = { payload: { results }, fetched_at:'2020-01-01T00:00:00Z' };
     state.live.mockRejectedValue(new Error('timeout'));
-    expect(await readUpcomingSnapshot()).toEqual({ results, fetchedAt:'2020-01-01T00:00:00Z' });
+    expect(await readUpcomingSnapshot()).toEqual({ results, fetchedAt:'2020-01-01T00:00:00Z', complete:false });
   });
   it('does not replace a successful snapshot with an empty or malformed response', async () => {
     state.stored = { payload: { results }, fetched_at:'2020-01-01T00:00:00Z' };

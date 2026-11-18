@@ -9,6 +9,7 @@
 
 import { recordProviderUsage } from "@/lib/utils/providerUsage";
 import { isUpcomingSnapshot } from './rawg-snapshot.mjs';
+import { collectRawgPages } from './rawg-discovery.mjs';
 
 const RAWG_BASE = "https://api.rawg.io/api";
 let rawgRetryAt = 0;
@@ -246,17 +247,39 @@ export interface RawgListResponse {
 export async function getRawgUpcoming(signal?: AbortSignal): Promise<RawgListResponse> {
   const today = new Date();
   const end = new Date(today); end.setFullYear(end.getFullYear() + 3);
-  const params = new URLSearchParams({ key: getApiKey(), dates: `${today.toISOString().slice(0,10)},${end.toISOString().slice(0,10)}`, ordering: '-added', page_size: '100', exclude_additions: 'true' });
+  const params = new URLSearchParams({ key: getApiKey(), dates: `${today.toISOString().slice(0,10)},${end.toISOString().slice(0,10)}`, ordering: '-added', page_size: '40', exclude_additions: 'true' });
   // Successful snapshots are cached by the service, after schema admission.
   // Do not cache malformed/empty HTTP-200 provider responses for six hours.
-  const res = await trackedFetch('games/upcoming', `${RAWG_BASE}/games?${params}`, { cache: 'no-store', signal });
-  if (!res.ok) throw new Error(`Upcoming catalogue unavailable: ${res.status}`);
-  const payload = await res.json();
+  const payload = await collectRawgPages(async page => {
+    params.set('page',String(page));
+    const res = await trackedFetch('games/upcoming', `${RAWG_BASE}/games?${params}`, { cache: 'no-store', signal });
+    if (!res.ok) throw new Error(`Upcoming catalogue unavailable: ${res.status}`);
+    const value=await res.json();
+    if(!Number.isSafeInteger(value?.count) || !isUpcomingSnapshot(value)) {
+      rawgRetryAt=Date.now()+60_000;
+      throw new Error('Invalid upcoming catalogue; using stored data');
+    }
+    return value as RawgListResponse;
+  },1000);
+  if (!payload.complete) throw new Error('Upcoming catalogue exceeds snapshot budget');
   if (!isUpcomingSnapshot(payload)) {
     rawgRetryAt = Date.now() + 60_000;
     throw new Error('Invalid upcoming catalogue; using stored data');
   }
-  return payload as RawgListResponse;
+  return {...payload,next:null,previous:null};
+}
+
+/** RAWG's published discovery order, not a replacement score formula. */
+export async function getRawgCommunityRanking(type: 'all-time' | 'popular-in-year', year: number) {
+  const signal=AbortSignal.timeout(8000);
+  return collectRawgPages(async page => {
+    const params=new URLSearchParams({key:getApiKey(),discover:'true',page:String(page),page_size:'40'});
+    if(type==='popular-in-year') {params.set('year',String(year));params.set('ordering','-added');}
+    const path=type==='all-time'?'popular':'greatest';
+    const response=await trackedFetch(`lists/${path}`,`${RAWG_BASE}/games/lists/${path}?${params}`,{cache:'no-store',signal});
+    if(!response.ok)throw new Error('RAWG ranking unavailable');
+    return response.json();
+  },250);
 }
 
 /**

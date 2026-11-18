@@ -62,7 +62,7 @@ async function query(type:RawgListType, year:number, genre:string, platform:stri
 // Cache only the small, common first three pages. Filter/sort/page-size
 // permutations use the bounded SQL read and existing public CDN cache instead
 // of multiplying framework cache entries or retaining whole catalogues.
-const cached = unstable_cache(query,['public-explore-sql-v2'],{revalidate:300,tags:['public-explore']});
+const cached = unstable_cache(query,['public-explore-sql-v3'],{revalidate:300,tags:['public-explore']});
 export async function readCataloguePage(type:RawgListType, year:number, genre:string, platform:string, sort:ExploreSort, page:number, pageSize:number, day:string):Promise<CataloguePage|null> {
   if (Date.now()<missingUntil) return null;
   try {

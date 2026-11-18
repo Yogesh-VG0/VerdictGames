@@ -146,7 +146,7 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
   // Context-aware reason label per slide
   const getReasonLabel = (g: Game): string => {
     if (g.isFeaturedManual) return "Editor's Pick";
-    if (g.isProvisional || g.verdictLabel === "COMING SOON") return "Coming Soon";
+    if (g.isProvisional || g.verdictLabel === "COMING SOON" || g.verdictLabel === 'JUST RELEASED') return "Featured";
     if (g.isTrendingManual || g.trending) return "Trending Now";
     if (g.score >= 90) return "Top Rated";
     if (g.priceCurrent === 0 || g.isFree) return "Free to Play";
@@ -229,7 +229,7 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
 
             {/* Score + Verdict + Platforms */}
             <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-              <div className="flex flex-col items-center gap-0.5">
+              {!game.isProvisional && <div className="flex flex-col items-center gap-0.5">
                 <ScoreRing score={game.score} size={40} strokeWidth={3} className="sm:hidden" />
                 <ScoreRing score={game.score} size={56} strokeWidth={3} className="hidden sm:block" />
                 {sourceLabel(game.scoreSource) && (
@@ -237,7 +237,7 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
                     {sourceLabel(game.scoreSource)}
                   </span>
                 )}
-              </div>
+              </div>}
               <VerdictBadge label={game.verdictLabel} size="lg" />
               <div className="hidden sm:flex items-center gap-2.5 flex-wrap">
                 {(() => {
@@ -255,7 +255,7 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
                 })()}
                 {game.releaseDate && (
                   <span className="text-xs hero-overlay-text-muted font-medium">
-                    {getStableYear(game.releaseDate)}
+                    {game.isProvisional ? new Date(`${game.releaseDate.slice(0,10)}T12:00:00Z`).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric',timeZone:'UTC'}) : getStableYear(game.releaseDate)}
                   </span>
                 )}
               </div>
@@ -293,7 +293,7 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
             {/* CTAs */}
             <div className="flex gap-3 pt-0.5 sm:pt-1 flex-wrap" data-interactive>
               <Link href={`/game/${game.slug}`} prefetch={false} onClick={(e) => { if (isSwiping.current) e.preventDefault(); }}>
-                <PixelButton as="span" size="md">Read Verdict</PixelButton>
+                <PixelButton as="span" size="md">{game.isProvisional ? 'View game' : 'Read Verdict'}</PixelButton>
               </Link>
               {game.trailerUrl && (
                 <a
@@ -380,23 +380,9 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
         </div>
       )}
 
-      {/* Accent line on pause + pause/play indicator */}
-      {slideCount > 1 && paused ? (
-        <>
-          <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-accent to-transparent opacity-50 z-[3]" />
-          <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-[4] flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/40 backdrop-blur-sm border border-white/15 text-white/60 text-[10px] font-medium pointer-events-none">
-            <svg width="8" height="8" viewBox="0 0 12 12" fill="currentColor"><rect x="1" y="1" width="3.5" height="10" rx="0.5" /><rect x="7.5" y="1" width="3.5" height="10" rx="0.5" /></svg>
-            {reducedMotion ? 'Autoplay off · reduced motion' : hovered || focused ? 'Paused while browsing' : 'Paused — click to resume'}
-          </div>
-        </>
-      ) : slideCount > 1 ? (
-        <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-[4] opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/40 backdrop-blur-sm border border-white/15 text-white/40 text-[10px] font-medium">
-            <svg width="8" height="8" viewBox="0 0 12 12" fill="currentColor"><rect x="1" y="1" width="3.5" height="10" rx="0.5" /><rect x="7.5" y="1" width="3.5" height="10" rx="0.5" /></svg>
-            Click to pause
-          </div>
-        </div>
-      ) : null}
+      {slideCount > 1 && paused && <div className="absolute bottom-0 inset-x-0 h-[2px] bg-accent/50 z-[3]" aria-hidden="true" />}
+      {reducedMotion && <span className="sr-only">Autoplay off · reduced motion</span>}
+
     </section>
   );
 }

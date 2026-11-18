@@ -1,6 +1,7 @@
 import type { GameRow, ListRow } from "@/lib/supabase/types";
 import { isPrimaryDiscoveryGame } from "@/lib/utils/discovery";
 import { isQualityGame, isSurfaceReady } from "@/lib/utils/quality";
+import {hasEarlyAccessSignal,hasKnownFullRelease} from './release-status';
 
 type CuratedListDescriptor = Pick<ListRow, "is_system_managed" | "slug" | "tags">;
 
@@ -14,6 +15,8 @@ export function isUpcomingSystemManagedList(list: CuratedListDescriptor): boolea
 }
 
 export function isUpcomingCuratedListGame(row: GameRow): boolean {
+  if(hasKnownFullRelease(row))return false;
+  if(hasEarlyAccessSignal(row))return true;
   const today = new Date().toISOString().slice(0, 10);
   const releaseStatus = String(row.release_status ?? "").toLowerCase();
 

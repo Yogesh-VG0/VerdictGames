@@ -1,0 +1,35 @@
+{
+  "source": "actual historical public catalogue in loopback database; not hosted latency",
+  "games": 8350,
+  "partitions": 6204,
+  "allOfflinePages": 34877,
+  "sqlCases": 1670,
+  "passing": true,
+  "groups": {
+    "all-time": {
+      "checks": 10,
+      "maxMs": 35.43,
+      "maxResponseBytes": 30236
+    },
+    "recent": {
+      "checks": 64,
+      "maxMs": 4.9,
+      "maxResponseBytes": 2961
+    },
+    "best-of-year": {
+      "checks": 30,
+      "maxMs": 10.2,
+      "maxResponseBytes": 30531
+    },
+    "popular-in-year": {
+      "checks": 512,
+      "maxMs": 11.51,
+      "maxResponseBytes": 32542
+    },
+    "genre": {
+      "checks": 1054,
+      "maxMs": 27.63,
+      "maxResponseBytes": 33352
+    }
+  }
+}

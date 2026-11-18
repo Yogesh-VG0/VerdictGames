@@ -1,0 +1,202 @@
+[
+  {
+    "sort": "relevance",
+    "pages": [
+      {
+        "page": 1,
+        "rows": 25,
+        "total": 141,
+        "exact": false
+      },
+      {
+        "page": 2,
+        "rows": 25,
+        "total": 141,
+        "exact": false
+      },
+      {
+        "page": 3,
+        "rows": 25,
+        "total": 163,
+        "exact": false
+      },
+      {
+        "page": 4,
+        "rows": 25,
+        "total": 187,
+        "exact": false
+      }
+    ],
+    "duplicates": [
+      "R.E.P.O.",
+      "Phasmophobia",
+      "The Forest",
+      "Turbo Overkill",
+      "Until Then",
+      "Spin Rhythm XD",
+      "Lethal Company",
+      "God of War (2018)",
+      "Valheim",
+      "Resident Evil 2",
+      "ARC Raiders",
+      "MiSide",
+      "Sally Face"
+    ]
+  },
+  {
+    "sort": "newest",
+    "pages": [
+      {
+        "page": 1,
+        "rows": 25,
+        "total": 188,
+        "exact": false
+      },
+      {
+        "page": 2,
+        "rows": 25,
+        "total": 199,
+        "exact": false
+      },
+      {
+        "page": 3,
+        "rows": 25,
+        "total": 209,
+        "exact": false
+      },
+      {
+        "page": 4,
+        "rows": 25,
+        "total": 217,
+        "exact": false
+      }
+    ],
+    "duplicates": []
+  },
+  {
+    "sort": "upcoming",
+    "pages": [
+      {
+        "page": 1,
+        "rows": 2,
+        "total": 2,
+        "exact": true
+      },
+      {
+        "page": 2,
+        "rows": 0,
+        "total": 2,
+        "exact": true
+      },
+      {
+        "page": 3,
+        "rows": 0,
+        "total": 2,
+        "exact": true
+      },
+      {
+        "page": 4,
+        "rows": 0,
+        "total": 2,
+        "exact": true
+      }
+    ],
+    "duplicates": []
+  },
+  {
+    "sort": "recently-added",
+    "pages": [
+      {
+        "page": 1,
+        "rows": 25,
+        "total": 480,
+        "exact": false
+      },
+      {
+        "page": 2,
+        "rows": 25,
+        "total": 480,
+        "exact": false
+      },
+      {
+        "page": 3,
+        "rows": 25,
+        "total": 480,
+        "exact": false
+      },
+      {
+        "page": 4,
+        "rows": 25,
+        "total": 480,
+        "exact": false
+      }
+    ],
+    "duplicates": []
+  },
+  {
+    "sort": "top-rated",
+    "pages": [
+      {
+        "page": 1,
+        "rows": 25,
+        "total": 118,
+        "exact": false
+      },
+      {
+        "page": 2,
+        "rows": 25,
+        "total": 124,
+        "exact": false
+      },
+      {
+        "page": 3,
+        "rows": 25,
+        "total": 129,
+        "exact": false
+      },
+      {
+        "page": 4,
+        "rows": 25,
+        "total": 131,
+        "exact": false
+      }
+    ],
+    "duplicates": [
+      "Valheim",
+      "Lethal Company",
+      "Subnautica",
+      "Pragmata",
+      "Brotato"
+    ]
+  },
+  {
+    "sort": "trending",
+    "pages": [
+      {
+        "page": 1,
+        "rows": 25,
+        "total": 139,
+        "exact": false
+      },
+      {
+        "page": 2,
+        "rows": 25,
+        "total": 144,
+        "exact": false
+      },
+      {
+        "page": 3,
+        "rows": 25,
+        "total": 145,
+        "exact": false
+      },
+      {
+        "page": 4,
+        "rows": 25,
+        "total": 145,
+        "exact": false
+      }
+    ],
+    "duplicates": []
+  }
+]

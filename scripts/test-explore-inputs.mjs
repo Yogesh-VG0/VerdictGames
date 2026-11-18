@@ -3,6 +3,7 @@
 import assert from 'node:assert/strict';
 import {execFileSync,spawnSync,spawn} from 'node:child_process';
 import {readFileSync,writeFileSync} from 'node:fs';
+import {createHash} from 'node:crypto';
 import {exploreInputFields as fields} from './lib/explore-input-fields.mjs';
 assert.ok(/^(npipe:|unix:)/.test(execFileSync('docker',['context','inspect','--format','{{.Endpoints.docker.Host}}'],{encoding:'utf8'}).trim()));
 const db=process.argv.find(x=>x.startsWith('--database='))?.slice('--database='.length);assert.match(db||'',/^verdict_replay_[a-f0-9]{12}$/);
@@ -16,7 +17,8 @@ const checks=[];
  checks.push('read-only publication and conflicting hosted flags are rejected before configuration or connection');
  {
   const malformed='invalid-test-dsn-with-private-marker';
-  const rejected=spawnSync(process.execPath,['scripts/finalize-explore-inputs.mjs','--hosted-readonly','--sql-sha=3205a44a254ea1145033b849afa205d441397664eb1893dc86c722e9da83ae48'],{env:{...process.env,DATABASE_URL:malformed},encoding:'utf8',timeout:10000});
+  const exactLocalHash=createHash('sha256').update(readFileSync('supabase/migrations/20261116101802_maintain_live_explore_inputs.sql')).digest('hex');
+  const rejected=spawnSync(process.execPath,['scripts/finalize-explore-inputs.mjs','--hosted-readonly','--sql-sha='+exactLocalHash],{env:{...process.env,DATABASE_URL:malformed},encoding:'utf8',timeout:10000});
   assert.equal(rejected.status,1);assert.match(rejected.stderr,/Invalid database connection configuration/);assert.equal((rejected.stderr+rejected.stdout).includes(malformed),false);
  }
  checks.push('malformed connection configuration is rejected without printing its value');

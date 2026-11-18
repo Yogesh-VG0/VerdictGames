@@ -31,7 +31,7 @@ describe('public RAWG read resilience', () => {
     await expect(getRawgUpcoming()).rejects.toThrow();
     expect(fetcher).toHaveBeenCalledTimes(1);
     vi.advanceTimersByTime(60_001);
-    fetcher.mockResolvedValue(Response.json({ results: [{ id: 1, name:'Game',slug:'game',released:null,tba:true,added:0,ratings_count:0,rating:0,tags:[],genres:[],platforms:[] }] }));
+    fetcher.mockResolvedValue(Response.json({ count:1, results: [{ id: 1, name:'Game',slug:'game',released:null,tba:true,added:0,ratings_count:0,rating:0,tags:[],genres:[],platforms:[] }] }));
     expect((await getRawgUpcoming()).results).toHaveLength(1);
   });
   it('treats malformed JSON and network timeouts as failed reads', async () => {
