@@ -1,0 +1,22 @@
+{
+  "id": "44262569172",
+  "status": "completed",
+  "conclusion": "failure",
+  "failedSteps": [
+    {
+      "job": "Scheduled job",
+      "step": "Run maintenance job"
+    }
+  ],
+  "lines": [
+    "Scheduled job\tUNKNOWN STEP\t2026-11-18T08:02:04.9400380Z \u001b[36;1m    *) echo \"::error::Unknown schedule: $SCHEDULE\"; exit 1 ;;\u001b[0m",
+    "Scheduled job\tUNKNOWN STEP\t2026-11-18T08:02:20.4690794Z \u001b[36;1m  *) echo \"::error::Unknown job: $JOB\"; exit 1 ;;\u001b[0m",
+    "Scheduled job\tUNKNOWN STEP\t2026-11-18T08:02:20.4715163Z   SCHEDULER_DB_CONNECT_TIMEOUT_SECONDS: 30",
+    "Scheduled job\tUNKNOWN STEP\t2026-11-18T08:02:20.4715585Z   SCHEDULER_DB_IDLE_TIMEOUT_SECONDS: 30",
+    "Scheduled job\tUNKNOWN STEP\t2026-11-18T08:02:25.7584302Z Steam review refresh failed (1): Steam reviews returned an invalid response",
+    "Scheduled job\tUNKNOWN STEP\t2026-11-18T08:02:26.9503899Z Steam review refresh failed (2): Steam reviews returned an invalid response",
+    "Scheduled job\tUNKNOWN STEP\t2026-11-18T08:02:28.2222886Z Steam review refresh failed (3): Steam reviews returned an invalid response",
+    "Scheduled job\tUNKNOWN STEP\t2026-11-18T08:02:29.7270153Z {\"scanned\":3,\"refreshed\":0,\"failed\":3}",
+    "Scheduled job\tUNKNOWN STEP\t2026-11-18T08:02:30.4344140Z ##[error]Process completed with exit code 1."
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "Archive": "production-2026-11-18-catalogue-state-supplement.7z",
+  "Scope": "SQL/derived-policy/cache state supplement plus preserved encrypted Auth archive; not a full R5 backup",
+  "RemoteSync": "owner confirmation pending",
+  "ArchiveIntegrity": "passed",
+  "OffsiteStagingChecksum": "passed",
+  "HostedWrites": 0,
+  "SHA256": "172cc46a49d8d86ba25f8d7bb64310b669eedca7785b40f417155d631614e368",
+  "Bytes": 13023,
+  "ExistingRecoveryKey": true,
+  "R3R4Preserved": true
+}

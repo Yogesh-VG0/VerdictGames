@@ -81,7 +81,7 @@ const getCachedDynamicSitemapPages = unstable_cache(
       .map(profile => ({ url: `${SITE_URL}/profile/${encodeURIComponent(profile.username)}`, lastModified: new Date(profile.updated_at), changeFrequency: 'weekly', priority: 0.4 }));
     return [...gamePages, ...listPages, ...developerPages, ...profilePages];
   },
-  ["sitemap-pages-v4"],
+  ["sitemap-pages-v5"],
   { revalidate: SITEMAP_REVALIDATE_SECONDS }
 );
 

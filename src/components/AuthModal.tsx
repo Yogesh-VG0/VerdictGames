@@ -9,12 +9,14 @@
 "use client";
 
 import { Suspense, useState, useRef, useEffect, useCallback, useMemo } from "react";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import { getUsernameValidationError, normalizeUsername, sanitizeUsername } from "@/lib/auth/username";
 import { createUsernameChecker } from '@/lib/auth/username-check';
 import { getPasswordValidationError } from '@/lib/auth/password';
+import EmailCodeForm from './EmailCodeForm';
+import type { EmailCodePurpose } from '@/lib/auth/email-code';
 import { cn } from "@/lib/utils";
 import { Eye, EyeOff, X, CheckCircle2, AlertCircle, Loader2, User, Mail, Lock, ArrowLeft, ShieldCheck } from "lucide-react";
 
@@ -33,6 +35,7 @@ const secondaryButtonCls = "inline-flex h-11 items-center justify-center gap-2 r
 
 function AuthModalContent({ isOpen, onClose, defaultTab = "login", message }: AuthModalProps) {
   const reducedMotion = useReducedMotion();
+  const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const currentPath = useMemo(() => {
@@ -53,14 +56,24 @@ function AuthModalContent({ isOpen, onClose, defaultTab = "login", message }: Au
   const [loading, setLoading] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
   const [verificationEmail, setVerificationEmail] = useState("");
+  const [codePurpose, setCodePurpose] = useState<EmailCodePurpose | null>(null);
   const [resendUntil, setResendUntil] = useState(0);
   const [resendSeconds, setResendSeconds] = useState(0);
   const submitting = useRef(false);
   const resendPending = useRef(false);
-  const { signInWithEmail, signUpWithEmail, signInWithOAuth, sendPasswordResetEmail, resendConfirmationEmail } = useAuth();
+  const { user, sessionEmail, signInWithEmail, signUpWithEmail, signInWithOAuth, sendPasswordResetEmail, resendConfirmationEmail } = useAuth();
   const [oauthLoading, setOauthLoading] = useState<"google" | "discord" | null>(null);
   const modalRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
+
+  // Supabase broadcasts verified sessions across tabs in this browser. A
+  // message alone is never treated as proof: wait for the actual own profile.
+  useEffect(() => {
+    if (isOpen && codePurpose === 'email' && user && sessionEmail?.toLowerCase() === verificationEmail) {
+      onClose();
+      router.refresh();
+    }
+  }, [isOpen, codePurpose, user, sessionEmail, verificationEmail, onClose, router]);
 
   // Username availability check
   const [usernameStatus, setUsernameStatus] = useState<"idle" | "checking" | "available" | "taken" | "invalid" | "error">("idle");
@@ -109,7 +122,7 @@ function AuthModalContent({ isOpen, onClose, defaultTab = "login", message }: Au
   // Password strength
   const passwordError = getPasswordValidationError(password);
   const passwordsMatch = password === confirmPassword;
-  const heading = view === "login" ? (message?.toLowerCase().includes('track') || message?.toLowerCase().includes('library') ? 'Sign in to save your library' : 'Sign in to Verdict Games') : view === "signup" ? "Join Verdict.games" : "Reset your password";
+  const heading = codePurpose ? (codePurpose === 'email' ? 'Check your email' : 'Enter your recovery code') : view === "login" ? (message?.toLowerCase().includes('track') || message?.toLowerCase().includes('library') ? 'Sign in to save your library' : 'Sign in to Verdict Games') : view === "signup" ? "Join Verdict.games" : "Reset your password";
   const subtitle = view === "login"
     ? "Sign in to your account"
     : view === "signup"
@@ -146,6 +159,7 @@ function AuthModalContent({ isOpen, onClose, defaultTab = "login", message }: Au
       setOauthLoading(null);
       setResendLoading(false);
       setVerificationEmail("");
+      setCodePurpose(null);
     }
   }, [defaultTab, isOpen]);
 
@@ -241,7 +255,9 @@ function AuthModalContent({ isOpen, onClose, defaultTab = "login", message }: Au
       if (result.error) {
         setError(result.error);
       } else {
-        setSuccessMsg("If an account exists for that email, a password reset link is on its way.");
+        setSuccessMsg("If an account exists for that email, a recovery code is on its way.");
+        setVerificationEmail(email.trim().toLowerCase());
+        setCodePurpose('recovery');
       }
       setLoading(false);
       return;
@@ -287,8 +303,9 @@ function AuthModalContent({ isOpen, onClose, defaultTab = "login", message }: Au
         setError(result.error);
       } else {
         const normalizedEmail = email.trim().toLowerCase();
-        setSuccessMsg("Account created! Check your email to verify your account before signing in.");
+        setSuccessMsg("Check your email. Open the confirmation link in this browser or enter its code below.");
         setVerificationEmail(normalizedEmail);
+        setCodePurpose('email');
         setResendUntil(Date.now() + 60_000);
         setEmail(normalizedEmail);
         setPassword("");
@@ -358,7 +375,7 @@ function AuthModalContent({ isOpen, onClose, defaultTab = "login", message }: Au
             </div>
 
             {/* OAuth buttons */}
-            {view !== "forgot-password" && (
+            {view !== "forgot-password" && !codePurpose && (
               <>
                 <div className="space-y-2.5 mb-4">
                   <button
@@ -415,7 +432,7 @@ function AuthModalContent({ isOpen, onClose, defaultTab = "login", message }: Au
               </>
             )}
 
-            {view === "forgot-password" && (
+            {view === "forgot-password" && !codePurpose && (
               <button
                 type="button"
                 onClick={() => setView("login")}
@@ -433,7 +450,7 @@ function AuthModalContent({ isOpen, onClose, defaultTab = "login", message }: Au
                   <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
                   <span>{successMsg}</span>
                 </div>
-                {view === "signup" && verificationEmail && (
+                {view === "signup" && verificationEmail && !codePurpose && (
                   <button
                     type="button"
                     onClick={handleResendConfirmation}
@@ -444,7 +461,7 @@ function AuthModalContent({ isOpen, onClose, defaultTab = "login", message }: Au
                     <span>{resendLoading ? "Sending..." : resendSeconds > 0 ? `Resend in ${resendSeconds}s` : "Resend verification email"}</span>
                   </button>
                 )}
-                {view === "forgot-password" && (
+                {view === "forgot-password" && !codePurpose && (
                   <button type="button" onClick={() => setView("login")} className={secondaryButtonCls}>
                     Back to login
                   </button>
@@ -453,6 +470,13 @@ function AuthModalContent({ isOpen, onClose, defaultTab = "login", message }: Au
             )}
 
             {/* Form */}
+            {codePurpose ? <EmailCodeForm key={`${codePurpose}:${verificationEmail}`} email={verificationEmail} purpose={codePurpose}
+              onVerified={() => {
+                onClose();
+                if (codePurpose === 'recovery') router.push('/reset-password');
+                router.refresh();
+              }}
+              onBack={() => { setCodePurpose(null); setVerificationEmail(''); setSuccessMsg(''); setError(''); }} /> : (
             <form onSubmit={handleSubmit} className="space-y-3.5">
               {view === "signup" && (
                 <div className="space-y-1">
@@ -635,6 +659,7 @@ function AuthModalContent({ isOpen, onClose, defaultTab = "login", message }: Au
                 )}
               </button>
             </form>
+            )}
           </motion.div>
         </motion.div>
       )}

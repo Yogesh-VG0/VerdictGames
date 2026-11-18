@@ -1,6 +1,18 @@
 import type { GameRow } from "@/lib/supabase/types";
 import { getEvidenceReviewCount, hasStrongCriticEvidence } from "@/lib/utils/quality";
 import { hasBrowseTrendingSignal } from "@/lib/utils/trending";
+import {isPublicSafeRawgGame} from './publicSafety';
+import type {RawgListItem} from '@/lib/external/rawg';
+
+export function selectHeroDiscoveryCandidates(items:RawgListItem[],day:string) {
+  const midnight=Date.parse(`${day}T00:00:00Z`);const seen=new Set<number>();
+  return items.filter(item=>{
+    const release=Date.parse(`${item.released}T00:00:00Z`);
+    if(!isPublicSafeRawgGame(item) || item.added<100 || !item.background_image
+      || !Number.isFinite(release) || release<midnight-14*86400000 || release>midnight+90*86400000 || seen.has(item.id))return false;
+    seen.add(item.id);return true;
+  }).sort((a,b)=>b.added-a.added || a.slug.localeCompare(b.slug)).slice(0,4);
+}
 
 function getHomepageHeroAgeDays(row: Pick<GameRow, "release_date">): number {
   if (!row.release_date) return Number.POSITIVE_INFINITY;
@@ -18,7 +30,7 @@ function isHomepageHeroManualCandidate(row: GameRow): boolean {
     return false;
   }
 
-  if (currentPlayers < 2000) {
+  if (currentPlayers < 2000 && !(ageDays <= 120 && verdictScore >= 85 && hasStrongCriticEvidence(row) && evidenceReviewCount >= 1000)) {
     return false;
   }
 
@@ -56,6 +68,7 @@ export function isHomepageHeroAutoCandidate(row: GameRow): boolean {
     return false;
   }
 
+  if (ageDays >= 0 && ageDays <= 120 && row.header_image && verdictScore >= 85 && hasStrongCriticEvidence(row) && evidenceReviewCount >= 1000) return true;
   if (currentPlayers < 2000) {
     return false;
   }

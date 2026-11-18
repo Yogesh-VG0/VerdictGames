@@ -1,0 +1,171 @@
+{
+  "readOnly": true,
+  "manualDispatch": false,
+  "workflows": [
+    {
+      "name": "Keep scheduled workflows active",
+      "state": "active",
+      "path": ".github/workflows/keep-scheduled-workflows-active.yml",
+      "runs": [
+        {
+          "event": "schedule",
+          "status": "completed",
+          "conclusion": "success",
+          "head": "54651019776651fe0d707742d60ba326c7b28857",
+          "created": "2026-11-01T06:08:34Z",
+          "url": "https://github.com/Yogesh-VG0/VerdictGames/actions/runs/41279609174"
+        },
+        {
+          "event": "schedule",
+          "status": "completed",
+          "conclusion": "success",
+          "head": "54651019776651fe0d707742d60ba326c7b28857",
+          "created": "2026-10-01T05:57:52Z",
+          "url": "https://github.com/Yogesh-VG0/VerdictGames/actions/runs/36822312968"
+        },
+        {
+          "event": "schedule",
+          "status": "completed",
+          "conclusion": "success",
+          "head": "e09604d7ca12b85edd1aad4e05470d332ddcd2d6",
+          "created": "2026-09-01T05:11:48Z",
+          "url": "https://github.com/Yogesh-VG0/VerdictGames/actions/runs/33472657313"
+        },
+        {
+          "event": "schedule",
+          "status": "completed",
+          "conclusion": "success",
+          "head": "2cc5658538158eeb7cdd35836c9fcfdb4ed6638a",
+          "created": "2026-08-01T03:51:29Z",
+          "url": "https://github.com/Yogesh-VG0/VerdictGames/actions/runs/30682800107"
+        },
+        {
+          "event": "workflow_dispatch",
+          "status": "completed",
+          "conclusion": "success",
+          "head": "e6ed10caefc644df9587b6de89d1709ddfcc2b7c",
+          "created": "2026-07-21T22:20:36Z",
+          "url": "https://github.com/Yogesh-VG0/VerdictGames/actions/runs/29873420151"
+        },
+        {
+          "event": "workflow_dispatch",
+          "status": "completed",
+          "conclusion": "success",
+          "head": "3f63fb91c9d414000b4e1e1a51ca789b590cd691",
+          "created": "2026-07-21T22:02:00Z",
+          "url": "https://github.com/Yogesh-VG0/VerdictGames/actions/runs/29872262436"
+        }
+      ]
+    },
+    {
+      "name": "Quality and dependency checks",
+      "state": "active",
+      "path": ".github/workflows/quality-checks.yml",
+      "runs": [
+        {
+          "event": "pull_request",
+          "status": "completed",
+          "conclusion": "success",
+          "head": "a34d57d84d05c8d59e9cfda5f4b02b0a2d83033f",
+          "created": "2026-11-18T18:07:27Z",
+          "url": "https://github.com/Yogesh-VG0/VerdictGames/actions/runs/44366219098"
+        },
+        {
+          "event": "pull_request",
+          "status": "completed",
+          "conclusion": "success",
+          "head": "6c0dbf36191e1b5b88da840881195cd75e22cecb",
+          "created": "2026-11-18T17:53:24Z",
+          "url": "https://github.com/Yogesh-VG0/VerdictGames/actions/runs/44363633091"
+        },
+        {
+          "event": "pull_request",
+          "status": "completed",
+          "conclusion": "failure",
+          "head": "15102970c276c0743a5e5f5b38ac4db7a7613722",
+          "created": "2026-11-18T13:21:32Z",
+          "url": "https://github.com/Yogesh-VG0/VerdictGames/actions/runs/44312894701"
+        },
+        {
+          "event": "pull_request",
+          "status": "completed",
+          "conclusion": "failure",
+          "head": "9ada0f24ff9a52283944919fca58d70e8dfa0b50",
+          "created": "2026-11-18T10:35:59Z",
+          "url": "https://github.com/Yogesh-VG0/VerdictGames/actions/runs/44286927260"
+        },
+        {
+          "event": "pull_request",
+          "status": "completed",
+          "conclusion": "failure",
+          "head": "95fd8785696aca37123d6b2ac0f78bd99fe60599",
+          "created": "2026-11-17T20:36:21Z",
+          "url": "https://github.com/Yogesh-VG0/VerdictGames/actions/runs/44171059344"
+        },
+        {
+          "event": "pull_request",
+          "status": "completed",
+          "conclusion": "failure",
+          "head": "68c4cfb6ba46f8c3029a454f5eb1a36baf605a68",
+          "created": "2026-11-17T20:36:10Z",
+          "url": "https://github.com/Yogesh-VG0/VerdictGames/actions/runs/44171028150"
+        }
+      ]
+    },
+    {
+      "name": "Scheduled maintenance",
+      "state": "active",
+      "path": ".github/workflows/scheduled-maintenance.yml",
+      "runs": [
+        {
+          "event": "schedule",
+          "status": "completed",
+          "conclusion": "success",
+          "head": "322f47609a7e2735085894f6f86a633147c9cd54",
+          "created": "2026-11-18T13:29:51Z",
+          "url": "https://github.com/Yogesh-VG0/VerdictGames/actions/runs/44314289090"
+        },
+        {
+          "event": "schedule",
+          "status": "completed",
+          "conclusion": "success",
+          "head": "322f47609a7e2735085894f6f86a633147c9cd54",
+          "created": "2026-11-18T12:07:46Z",
+          "url": "https://github.com/Yogesh-VG0/VerdictGames/actions/runs/44300971279"
+        },
+        {
+          "event": "schedule",
+          "status": "completed",
+          "conclusion": "success",
+          "head": "322f47609a7e2735085894f6f86a633147c9cd54",
+          "created": "2026-11-18T10:23:55Z",
+          "url": "https://github.com/Yogesh-VG0/VerdictGames/actions/runs/44285021058"
+        },
+        {
+          "event": "schedule",
+          "status": "completed",
+          "conclusion": "success",
+          "head": "322f47609a7e2735085894f6f86a633147c9cd54",
+          "created": "2026-11-18T09:11:13Z",
+          "url": "https://github.com/Yogesh-VG0/VerdictGames/actions/runs/44273553793"
+        },
+        {
+          "event": "schedule",
+          "status": "completed",
+          "conclusion": "failure",
+          "head": "322f47609a7e2735085894f6f86a633147c9cd54",
+          "created": "2026-11-18T07:54:43Z",
+          "url": "https://github.com/Yogesh-VG0/VerdictGames/actions/runs/44262569172"
+        },
+        {
+          "event": "schedule",
+          "status": "completed",
+          "conclusion": "success",
+          "head": "322f47609a7e2735085894f6f86a633147c9cd54",
+          "created": "2026-11-18T07:38:14Z",
+          "url": "https://github.com/Yogesh-VG0/VerdictGames/actions/runs/44260437271"
+        }
+      ]
+    }
+  ]
+}

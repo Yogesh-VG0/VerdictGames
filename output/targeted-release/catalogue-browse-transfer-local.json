@@ -1,0 +1,56 @@
+{
+  "scope": "Framework-cold process/cache then warm loopback requests; database storage already warm, no CDN. Production credentials/provider keys absent.",
+  "http": [
+    {
+      "page": 1,
+      "ms": 218,
+      "bytes": 45277,
+      "count": 141,
+      "rows": 25
+    },
+    {
+      "page": 2,
+      "ms": 28,
+      "bytes": 43009,
+      "count": 141,
+      "rows": 25
+    },
+    {
+      "page": 3,
+      "ms": 25,
+      "bytes": 43304,
+      "count": 141,
+      "rows": 25
+    },
+    {
+      "page": 1,
+      "ms": 5,
+      "bytes": 45277,
+      "count": 141,
+      "rows": 25
+    }
+  ],
+  "databaseReads": [
+    {
+      "rows": 150,
+      "bytes": 221621,
+      "ms": 70
+    },
+    {
+      "rows": 25,
+      "bytes": 49152,
+      "ms": 18
+    },
+    {
+      "rows": 25,
+      "bytes": 48749,
+      "ms": 19
+    },
+    {
+      "rows": 25,
+      "bytes": 48897,
+      "ms": 17
+    }
+  ],
+  "passed": true
+}

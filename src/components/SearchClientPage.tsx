@@ -643,7 +643,7 @@ function SearchClientPageContent({
               )}
               <div className="flex items-center gap-2 mb-4">
                 <p className="text-xs text-tertiary">
-                  Showing {(page - 1) * (data?.pageSize ?? 25) + 1}–{Math.min(page * (data?.pageSize ?? 25), totalCount)} of {totalCount} game{totalCount !== 1 ? "s" : ""}
+                  Showing {(page - 1) * (data?.pageSize ?? 25) + 1}–{Math.min(page * (data?.pageSize ?? 25), totalCount)} of {totalCount}{data?.totalIsExact === false ? '+' : ''} game{totalCount !== 1 ? "s" : ""}
                 </p>
                 {isResultsRefreshing && (
                   <div className="w-3.5 h-3.5 border-2 border-accent border-t-transparent rounded-full animate-spin" />

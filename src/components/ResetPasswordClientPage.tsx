@@ -7,6 +7,7 @@ import { AlertCircle, ArrowLeft, CheckCircle2, Eye, EyeOff, Loader2, Lock, Mail,
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { getPasswordValidationError } from '@/lib/auth/password';
+import EmailCodeForm from './EmailCodeForm';
 
 const inputCls = "w-full h-11 pl-10 pr-4 text-sm rounded-2xl bg-surface-2 border border-border text-foreground placeholder:text-tertiary focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/20 transition-all";
 
@@ -26,6 +27,7 @@ export default function ResetPasswordClientPage({ initialError }: ResetPasswordC
   const [resending, setResending] = useState(false);
   const [error, setError] = useState(initialError ?? "");
   const [successMsg, setSuccessMsg] = useState("");
+  const [codeEmail, setCodeEmail] = useState('');
 
   const passwordError = getPasswordValidationError(password);
   const passwordsMatch = password === confirmPassword;
@@ -83,7 +85,8 @@ export default function ResetPasswordClientPage({ initialError }: ResetPasswordC
     if (result.error) {
       setError(result.error);
     } else {
-      setSuccessMsg("If an account exists for that email, a password reset link is on its way.");
+      setSuccessMsg("If an account exists for that email, a recovery code is on its way.");
+      setCodeEmail(targetEmail.trim().toLowerCase());
     }
     setResending(false);
   }
@@ -97,15 +100,15 @@ export default function ResetPasswordClientPage({ initialError }: ResetPasswordC
             Secure account recovery
           </div>
           <h1 className="mt-4 text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-            Reset your password without the friction
+            Reset your password
           </h1>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-secondary sm:text-base">
-            Choose a strong new password and get back to your profile fast. The recovery link is short-lived, your password only changes after you confirm it, and you&apos;ll stay signed in once it&apos;s updated.
+            Choose a strong new password and get back to your profile fast. Recovery codes are short-lived, your password only changes after you confirm it, and you&apos;ll stay signed in once it&apos;s updated.
           </p>
           <div className="mt-6 grid gap-3 sm:grid-cols-3">
             <div className="rounded-3xl border border-border bg-surface-2/70 p-4">
               <p className="text-sm font-semibold text-foreground">Fast recovery</p>
-              <p className="mt-1 text-sm text-secondary">Use the link from your email to unlock this page instantly.</p>
+              <p className="mt-1 text-sm text-secondary">Read your email on any device, then enter its code here.</p>
             </div>
             <div className="rounded-3xl border border-border bg-surface-2/70 p-4">
               <p className="text-sm font-semibold text-foreground">Safer passwords</p>
@@ -113,7 +116,7 @@ export default function ResetPasswordClientPage({ initialError }: ResetPasswordC
             </div>
             <div className="rounded-3xl border border-border bg-surface-2/70 p-4">
               <p className="text-sm font-semibold text-foreground">No dead ends</p>
-              <p className="mt-1 text-sm text-secondary">If a link expires, you can request another one right here.</p>
+              <p className="mt-1 text-sm text-secondary">If a code expires, you can request another one right here.</p>
             </div>
           </div>
           <div className="mt-6 flex flex-wrap items-center gap-3 text-sm text-secondary">
@@ -126,7 +129,7 @@ export default function ResetPasswordClientPage({ initialError }: ResetPasswordC
           </div>
         </section>
 
-        <section className="rounded-[32px] border border-border bg-surface p-6 shadow-xl sm:p-8">
+        <section className={cn('rounded-[32px] border border-border bg-surface p-6 shadow-xl sm:p-8', (codeEmail || hasSession) && 'order-first lg:order-none')}>
           {loading ? (
             <div className="flex min-h-[360px] flex-col items-center justify-center gap-3 text-center">
               <Loader2 className="h-6 w-6 animate-spin text-accent" />
@@ -139,15 +142,15 @@ export default function ResetPasswordClientPage({ initialError }: ResetPasswordC
             <>
               <div className="mb-5">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-accent/80">
-                  {hasSession ? "Choose a new password" : "Request a fresh link"}
+                  {hasSession ? "Choose a new password" : codeEmail ? "Check your email" : "Account recovery"}
                 </p>
                 <h2 className="mt-1 text-2xl font-bold text-foreground">
-                  {hasSession ? "Finish resetting your password" : "Your link may have expired"}
+                  {hasSession ? "Finish resetting your password" : codeEmail ? "Enter your recovery code" : initialError ? "Your link may have expired" : "Get a recovery code"}
                 </h2>
                 <p className="mt-2 text-sm text-secondary">
                   {hasSession
                     ? `Set a new password${sessionEmail ? ` for ${sessionEmail}` : ""} to secure your account.`
-                    : "If the reset email is old or already used, send yourself another secure link below."}
+                    : codeEmail ? "Verify the code before choosing a new password." : "Enter your email to receive a one-time recovery code."}
                 </p>
               </div>
 
@@ -240,6 +243,10 @@ export default function ResetPasswordClientPage({ initialError }: ResetPasswordC
                     )}
                   </button>
                 </form>
+              ) : codeEmail ? (
+                <EmailCodeForm key={codeEmail} email={codeEmail} purpose="recovery"
+                  onVerified={() => { setCodeEmail(''); setError(''); setSuccessMsg(''); }}
+                  onBack={() => { setCodeEmail(''); setError(''); setSuccessMsg(''); }} />
               ) : (
                 <form onSubmit={handleSendAnotherLink} className="space-y-3.5">
                   <div className="relative">
@@ -264,12 +271,19 @@ export default function ResetPasswordClientPage({ initialError }: ResetPasswordC
                     {resending ? (
                       <>
                         <Loader2 className="h-4 w-4 animate-spin" />
-                        Sending new link...
+                        Sending code...
                       </>
                     ) : (
-                      "Send New Reset Link"
+                      "Send recovery code"
                     )}
                   </button>
+                  <button type="button" className="w-full text-sm font-medium text-accent"
+                    onClick={event => {
+                      if (event.currentTarget.form?.reportValidity()) {
+                        setCodeEmail((email || sessionEmail || '').trim().toLowerCase());
+                        setError(''); setSuccessMsg('');
+                      }
+                    }}>I already have a code</button>
                 </form>
               )}
             </>

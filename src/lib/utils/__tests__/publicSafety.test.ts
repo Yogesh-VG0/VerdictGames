@@ -17,9 +17,16 @@ describe("isPublicSafeGame", () => {
     expect(isPublicSafeGame(game)).toBe(false);
   });
 
-  it("blocks games with sexual content tag", () => {
-    const game = { tags: ["sexual content"], genres: [], description: "" };
-    expect(isPublicSafeGame(game)).toBe(false);
+  it("includes mainstream mature content warnings without admitting adult-only titles", () => {
+    const game = { title: 'Grand Theft Auto VI', tags: ["sexual content", "Nudity", "Mature", "18+"], genres: ['Action'], description: "" };
+    expect(isPublicSafeGame(game)).toBe(true);
+    expect(isPublicSafeGame({...game,title:'Hentai Clicker'})).toBe(false);
+    expect(isPublicSafeGame({...game,tags:['Adults Only']})).toBe(false);
+    expect(isPublicSafeRawgGame({name:'The Witcher 3',tags:[{name:'Nudity'}],esrb_rating:{slug:'mature'}})).toBe(true);
+    expect(isPublicSafeRawgGame({name:'A game',esrb_rating:{slug:'adults-only'}})).toBe(false);
+    expect(isPublicSafeRawgGame({id:980502,name:'Kingdom Come: Deliverance II',esrb_rating:{slug:'adults-only'}})).toBe(true);
+    expect(isPublicSafeRawgGame({id:980502,name:'Kingdom Come: Deliverance II',esrb_rating:{slug:'adults-only'},tags:[{name:'Hentai'}]})).toBe(false);
+    expect(isPublicSafeRawgGame({id:980502,name:'Another identity',esrb_rating:{slug:'adults-only'}})).toBe(false);
   });
 
   it("blocks games with adult-related tag substrings", () => {

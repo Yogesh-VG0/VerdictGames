@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
   const genre = sp.get('genre') ?? 'action';
   const sort = sp.get('sort') ?? 'default';
   const platform = sp.get('platform') ?? '';
-  if (!EXPLORE_SORTS.has(sort) || platform && !EXPLORE_PLATFORMS.has(platform) || type === 'genre' && !EXPLORE_GENRES[genre] || type === 'all-time' && sort !== 'default' || type === 'best-of-year' && ['rating', 'added'].includes(sort)) return jsonError('Invalid category sorting or filters.', 400);
+  if (!EXPLORE_SORTS.has(sort) || platform && !EXPLORE_PLATFORMS.has(platform) || type === 'genre' && !EXPLORE_GENRES[genre] || type === 'all-time' && !['default','rating'].includes(sort) || type === 'best-of-year' && ['rating', 'added'].includes(sort)) return jsonError('Invalid category sorting or filters.', 400);
   if (!EXPLORE_TYPES.has(type) || !Number.isInteger(page) || page < 1 || page > 250 || !Number.isInteger(pageSize) || pageSize < 1 || pageSize > 40 || !Number.isInteger(year) || year < 1970 || year > new Date().getFullYear() + 1 || !/^[a-z-]{1,40}$/.test(genre)) return jsonError('Invalid browse filters.', 400);
   const started = performance.now();
   const timings: string[] = [];

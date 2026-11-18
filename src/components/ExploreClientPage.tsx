@@ -1,6 +1,7 @@
 "use client";
 
 import { preferredScrollBehavior } from '@/lib/utils/motion';
+import { useOptimistic, useTransition } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
@@ -19,7 +20,7 @@ const LAST_YEAR = CURRENT_YEAR - 1;
 const TABS = [
   { id: "best-of-year" as RawgListType, label: "Most Anticipated", icon: Flame, desc: "Upcoming releases ranked by community interest" },
   { id: "popular-in-year" as RawgListType, label: `Best of ${LAST_YEAR}`, icon: Trophy, desc: `Top games from ${LAST_YEAR}` },
-  { id: "all-time" as RawgListType, label: "All-Time Top 250", icon: Star, desc: "VerdictGames confidence-weighted ranking" },
+  { id: "all-time" as RawgListType, label: "All-Time Top 250", icon: Star, desc: "Community favourites through the years" },
   { id: "recent" as RawgListType, label: "New Releases", icon: Clock, desc: "Released in the last 30 days" },
   { id: "genre" as RawgListType, label: "Browse by Genre", icon: Gamepad2, desc: "Explore games by genre" },
 ] as const;
@@ -60,7 +61,7 @@ function mapPlatform(name: string): string | null {
   return null;
 }
 
-function GameCard({ game, rank, priority = false }: { game: RawgListGameItem; rank?: number; priority?: boolean }) {
+function GameCard({ game, rank, priority = false, showRating = true }: { game: RawgListGameItem; rank?: number; priority?: boolean; showRating?: boolean }) {
   const platforms = game.platforms.map(mapPlatform).filter(Boolean) as string[];
   // Dedupe
   const uniquePlatforms = [...new Set(platforms)].slice(0, 4);
@@ -121,9 +122,9 @@ function GameCard({ game, rank, priority = false }: { game: RawgListGameItem; ra
       </div>
 
       {/* Stats + Platforms bar */}
-      <div className="px-3 py-2 flex items-center justify-between">
-        <div className="flex items-center gap-2.5 text-[10px] text-secondary">
-          {game.added > 0 && (
+      <div className="px-3 py-2 space-y-2">
+        <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-[10px] text-secondary">
+          {!showRating && game.added > 0 && (
             <span className="flex items-center gap-1" title="RAWG library additions, not wishlists">
               <Users className="w-3 h-3 text-tertiary" />
               {formatNumber(game.added)}
@@ -131,16 +132,11 @@ function GameCard({ game, rank, priority = false }: { game: RawgListGameItem; ra
           )}
           {game.metricSource === 'catalogue' && game.ratingsCount > 0 && <span title="Catalogue review count">{formatNumber(game.ratingsCount)} reviews</span>}
           {game.metricSource === 'catalogue' && Boolean(game.verdictScore) && <span className="font-semibold text-accent" title="Stored Verdict Score">{Math.round(game.verdictScore!)} / 100</span>}
-          {game.toplay > 0 && (
+          {showRating && game.metricSource === 'rawg' && game.ratingsCount > 0 && <><span className="whitespace-nowrap font-semibold text-accent" title="RAWG community rating">{game.rating.toFixed(2)} / 5</span><span className="whitespace-nowrap">{formatNumber(game.ratingsCount)} ratings</span></>}
+          {!showRating && game.toplay > 0 && (
             <span className="flex items-center gap-1" title="RAWG want-to-play status">
               <Clock className="w-3 h-3 text-tertiary" />
               {formatNumber(game.toplay)}
-            </span>
-          )}
-          {game.playing > 0 && (
-            <span className="flex items-center gap-1 text-accent">
-              <Gamepad2 className="w-3 h-3" />
-              {formatNumber(game.playing)}
             </span>
           )}
         </div>
@@ -159,10 +155,10 @@ function GameCard({ game, rank, priority = false }: { game: RawgListGameItem; ra
 function GameCardSkeleton() {
   return (
     <div className="rounded-2xl border border-border bg-surface overflow-hidden">
-      <div className="aspect-[3/4] bg-surface-2 animate-pulse" />
+      <div className="aspect-[3/4] bg-surface-2 motion-safe:animate-pulse" />
       <div className="px-3 py-2 flex gap-3">
-        <div className="h-3 w-16 bg-surface-2 rounded animate-pulse" />
-        <div className="h-3 w-12 bg-surface-2 rounded animate-pulse" />
+        <div className="h-3 w-16 bg-surface-2 rounded motion-safe:animate-pulse" />
+        <div className="h-3 w-12 bg-surface-2 rounded motion-safe:animate-pulse" />
       </div>
     </div>
   );
@@ -170,14 +166,17 @@ function GameCardSkeleton() {
 
 export default function ExplorePage({ initialData, initialKey = '' }: { initialData?: RawgListResponse; initialKey?: string }) {
   const router = useRouter();
-  const params = useSearchParams();
+  const routeParams = useSearchParams();
+  const [isPending, startTransition] = useTransition();
+  const [optimisticSearch, setOptimisticSearch] = useOptimistic(routeParams.toString());
+  const params = new URLSearchParams(optimisticSearch);
   const activeTab = (TABS.some(tab => tab.id === params.get('type')) ? params.get('type') : 'best-of-year') as RawgListType;
   const page = Math.max(1, Math.min(250, Math.floor(Number(params.get('page')) || 1)));
   const selectedGenre = GENRES.some(genre => genre.slug === params.get('genre')) ? params.get('genre')! : 'action';
   const year = Math.max(1970, Math.min(CURRENT_YEAR, Math.floor(Number(params.get('year')) || LAST_YEAR)));
   const requestedSort = params.get('sort') || 'default';
-  const validSort = ['default','popular','name-asc','name-desc','newest','oldest',...(activeTab === 'best-of-year' ? [] : ['rating','added'])].includes(requestedSort);
-  const sort = (activeTab === 'all-time' || !validSort ? 'default' : requestedSort) as ExploreSort;
+  const validSort = (activeTab === 'all-time' ? ['default','rating'] : ['default','popular','name-asc','name-desc','newest','oldest',...(activeTab === 'best-of-year' ? [] : ['rating','added'])]).includes(requestedSort);
+  const sort = (!validSort ? 'default' : requestedSort) as ExploreSort;
   const platform = ['PC','PlayStation 5','PlayStation 4','Xbox Series X|S','Xbox One','Nintendo Switch','Android','iOS','Linux','macOS'].includes(params.get('platform') || '') ? params.get('platform')! : '';
   function updateFilters(changes: Record<string, string | number>) {
     const next = new URLSearchParams(params.toString());
@@ -185,7 +184,10 @@ export default function ExplorePage({ initialData, initialKey = '' }: { initialD
     for (const [key, value] of Object.entries(changes)) {
       if (value === '' || value === 'default' || value === 1) next.delete(key); else next.set(key, String(value));
     }
-    router.push(`/explore${next.size ? `?${next}` : ''}`, { scroll: false });
+    startTransition(() => {
+      setOptimisticSearch(next.toString());
+      router.push(`/explore${next.size ? `?${next}` : ''}`, { scroll: false });
+    });
   }
   const queryKey = [activeTab, page, year, selectedGenre, sort, platform].join('|');
 
@@ -204,6 +206,7 @@ export default function ExplorePage({ initialData, initialKey = '' }: { initialD
     initialData: queryKey === initialKey ? initialData : undefined,
     retry: false,
     refetchOnWindowFocus: false,
+    enabled: !isPending && !(queryKey === initialKey && initialData),
   });
 
   const handleTabChange = (tab: RawgListType) => {
@@ -283,40 +286,40 @@ export default function ExplorePage({ initialData, initialKey = '' }: { initialD
       {/* Section header */}
       <div className="flex flex-wrap items-end gap-4 rounded-2xl border border-border bg-surface p-4">
         {activeTab === 'popular-in-year' && <div className="grid gap-2"><label htmlFor="explore-year" className="text-xs text-secondary">Release year</label><SortDropdown id="explore-year" selected={String(year)} onChange={value => updateFilters({ year: value })} options={Array.from({ length: CURRENT_YEAR - 1970 + 1 }, (_, index) => ({ label: String(CURRENT_YEAR - index), value: String(CURRENT_YEAR - index) }))} /></div>}
-        <div className="grid gap-2"><label htmlFor="explore-platform" className="text-xs text-secondary">Platform</label><SortDropdown id="explore-platform" selected={platform} onChange={value => updateFilters({ platform: value })} options={['', 'PC', 'PlayStation 5', 'Xbox Series X|S', 'Nintendo Switch', 'Android', 'iOS'].map(value => ({ label: value || 'All platforms', value }))} /></div>
-        {activeTab !== 'all-time' && <div className="grid gap-2"><label htmlFor="explore-sort" className="text-xs text-secondary">Sort</label><SortDropdown id="explore-sort" selected={sort} onChange={value => updateFilters({ sort: value })} options={[
-          { label: 'Category ranking', value: 'default' as ExploreSort },
-          { label: activeTab === 'best-of-year' ? 'Community interest' : 'Popularity (reviews)', value: 'popular' as ExploreSort },
-          ...(activeTab === 'best-of-year' ? [] : [{ label: 'Highest rated', value: 'rating' as ExploreSort }]),
-          { label: 'Name A–Z', value: 'name-asc' as ExploreSort }, { label: 'Name Z–A', value: 'name-desc' as ExploreSort },
+        <div className="grid gap-2"><label htmlFor="explore-platform" className="text-xs text-secondary">Platform</label><SortDropdown id="explore-platform" selected={platform} onChange={value => updateFilters({ platform: value })} options={['', 'PC', 'PlayStation 5', 'PlayStation 4', 'Xbox Series X|S', 'Xbox One', 'Nintendo Switch', 'Android', 'iOS', 'Linux', 'macOS'].map(value => ({ label: value || 'All platforms', value }))} /></div>
+        <div className="grid gap-2"><label htmlFor="explore-sort" className="text-xs text-secondary">Sort</label><SortDropdown id="explore-sort" selected={sort} onChange={value => updateFilters({ sort: value })} options={[
+          { label: ['all-time','popular-in-year'].includes(activeTab) ? 'RAWG community ranking' : activeTab === 'best-of-year' ? 'Community interest' : activeTab === 'recent' ? 'Newest releases' : 'Catalogue popularity', value: 'default' as ExploreSort },
+          ...(activeTab === 'all-time' ? [] : [{ label: activeTab === 'best-of-year' ? 'Community interest' : 'Popularity (reviews)', value: 'popular' as ExploreSort }]),
+          ...(activeTab === 'best-of-year' ? [] : [{ label: 'Verdict ranking', value: 'rating' as ExploreSort }]),
+          ...(activeTab === 'all-time' ? [] : [{ label: 'Name A–Z', value: 'name-asc' as ExploreSort }, { label: 'Name Z–A', value: 'name-desc' as ExploreSort },
           { label: 'Release newest', value: 'newest' as ExploreSort }, { label: 'Release oldest', value: 'oldest' as ExploreSort },
-          ...(activeTab === 'best-of-year' ? [] : [{ label: 'Added to catalogue', value: 'added' as ExploreSort }]),
-        ]} /></div>}
-        {params.size > 0 && <button className="h-11 px-3 text-sm text-accent underline" onClick={() => router.push('/explore', { scroll: false })}>Reset filters</button>}
+          ...(activeTab === 'best-of-year' ? [] : [{ label: 'Added to catalogue', value: 'added' as ExploreSort }])]),
+        ]} /></div>
+        {params.size > 0 && <button className="h-11 px-3 text-sm text-accent underline" onClick={() => startTransition(() => { setOptimisticSearch(''); router.push('/explore', { scroll: false }); })}>Reset filters</button>}
       </div>
       <div className="flex items-center justify-between gap-4">
         <div className="min-w-0">
           <h2 className="text-lg font-bold text-foreground">{activeTab === 'popular-in-year' ? `Best of ${year}` : activeTabInfo?.label}</h2>
-          <p className="max-w-3xl text-xs text-secondary leading-relaxed">{query.data?.definition || activeTabInfo?.desc}</p>
-          {query.data?.fetchedAt && <p className="mt-1 text-xs text-tertiary">Catalogue snapshot: {new Date(query.data.fetchedAt).toLocaleDateString()}</p>}
+          <p className="max-w-3xl text-sm text-secondary leading-relaxed">{activeTabInfo?.desc}</p>
         </div>
-        {query.data && (
+        {query.data && !isPending && (
           <span className="shrink-0 whitespace-nowrap text-xs text-tertiary">
             {query.data.count.toLocaleString()} {query.data.count === 1 ? 'game' : 'games'}
           </span>
         )}
       </div>
-      {query.data?.degraded && <p role="status" className="text-sm text-secondary">{query.data.source === 'rawg' ? 'Showing the last verified RAWG interest snapshot. Counts may be out of date.' : 'Community interest is temporarily unavailable. Showing stored upcoming games; RAWG counts have not been substituted.'}</p>}
+      {query.data?.degraded && !isPending && <p role="status" className="text-sm text-secondary">{query.data.source === 'rawg' ? 'Showing saved RAWG rankings while we check for updates.' : activeTab === 'best-of-year' ? 'Showing saved upcoming games. Community counts are temporarily unavailable.' : 'RAWG rankings are temporarily unavailable. Showing Verdict rankings instead.'}</p>}
 
-      {/* Game grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-4">
-        {query.isError ? (
+      {(isPending || query.isLoading) && <p role="status" className="flex items-center gap-2 text-sm text-secondary"><span className="h-2 w-2 rounded-full bg-accent motion-safe:animate-pulse" aria-hidden="true" />Updating games…</p>}
+      {/* Feedback belongs beside the results being replaced, not in a distant toast. */}
+      <div aria-busy={isPending || query.isLoading} className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-4">
+        {isPending || query.isLoading ? (
+          <>{Array.from({ length: 20 }).map((_, i) => <GameCardSkeleton key={i} />)}</>
+        ) : query.isError ? (
           <div className="col-span-full py-12 text-center space-y-3" role="alert">
             <p>The game catalogue is temporarily unavailable.</p>
             <button onClick={() => query.refetch()} className="text-accent underline">Try again</button>
           </div>
-        ) : query.isLoading ? (
-          <><p role="status" className="sr-only">Loading games…</p>{Array.from({ length: 20 }).map((_, i) => <GameCardSkeleton key={i} />)}</>
         ) : query.data?.items.length === 0 ? (
           <div className="col-span-full py-16 text-center">
             <Gamepad2 className="w-12 h-12 text-tertiary mx-auto mb-3" />
@@ -329,13 +332,14 @@ export default function ExplorePage({ initialData, initialKey = '' }: { initialD
               game={game}
               rank={activeTab === "all-time" ? game.rank : undefined}
               priority={i < 5}
+              showRating={activeTab !== 'best-of-year'}
             />
           ))
         )}
       </div>
 
       {/* Pagination — RAWG API caps at ~500 pages (10,000 results) */}
-      {query.data && query.data.count > 0 && (
+      {query.data && !isPending && query.data.count > 0 && (
         <Pagination
           currentPage={page}
           totalPages={Math.min(Math.ceil(query.data.count / PAGE_SIZE), 400)}
@@ -343,9 +347,11 @@ export default function ExplorePage({ initialData, initialKey = '' }: { initialD
         />
       )}
 
+      {query.data && !isPending && <details className="text-xs text-secondary"><summary className="cursor-pointer py-2">How these games are ranked</summary><p className="max-w-3xl leading-relaxed">{query.data.definition}</p>{query.data.fetchedAt && <p className="mt-2">Updated {new Date(query.data.fetchedAt).toLocaleDateString()}</p>}</details>}
+
       {/* Attribution */}
       <p className="text-center text-[10px] text-tertiary pt-4">
-        Rankings from the Verdict Games catalogue, with metadata from RAWG, IGDB and Steam.
+        Game data from <a href="https://rawg.io" target="_blank" rel="noreferrer" className="underline">RAWG</a>, IGDB and Steam.
       </p>
     </div>
   );

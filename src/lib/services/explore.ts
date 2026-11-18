@@ -1,7 +1,7 @@
 import { unstable_cache } from 'next/cache';
 import { getPublicSupabase } from '@/lib/supabase/public';
 import { isPublicSafeGame, isPublicSafeRawgGame } from '@/lib/utils/publicSafety';
-import { readUpcomingSnapshot } from '@/lib/services/upcoming-snapshot';
+import { readCachedUpcomingSnapshot as readUpcoming } from '@/lib/services/upcoming-snapshot';
 import { getIgdbPortraits } from '@/lib/external/igdb';
 import { matchPortrait, isPortraitArtwork } from '@/lib/utils/artwork';
 import { isPrimaryDiscoveryGame } from '@/lib/utils/discovery';
@@ -9,6 +9,7 @@ import { dedupePublicCanonicalRows } from '@/lib/utils/publicCanonical';
 import { confidenceWeightedScore } from '@/lib/utils/quality';
 import { hasEarlyAccessSignal, hasKnownFullRelease } from '@/lib/utils/release-status';
 import { readCataloguePage } from '@/lib/services/explore-query';
+import { loadProviderRanking } from '@/lib/services/provider-explore';
 import type { GameRow } from '@/lib/supabase/types';
 import type { RawgListResponse, RawgListType, RawgListGameItem, ExploreSort } from '@/lib/api';
 
@@ -56,7 +57,6 @@ async function repairVisibleArtwork(items: RawgListGameItem[], rowFor: (item: Ra
 }
 
 // A failure throws so Next retains its last good snapshot on revalidation.
-const readUpcoming = unstable_cache(readUpcomingSnapshot, ['explore-upcoming-snapshot-v2'], { revalidate: 21600 });
 
 // Small independently cached chunks stay below Next's 2MB cache-entry limit.
 // Descriptions are used for safety/edition checks, then excluded from the cache.
@@ -95,9 +95,9 @@ async function readCataloguePool(type: RawgListType, year: number, genre: string
 
 const definitions: Record<RawgListType, string> = {
   'best-of-year': 'Upcoming or awaiting full release; RAWG library additions measure interest, not wishlists. Release dates are provider-reported.',
-  'popular-in-year': 'VerdictGames best of the selected release year: confidence-weighted Verdict ranking, at least 100 reviews. Popularity sort uses review volume.',
+  'popular-in-year': 'Released games from the selected year with at least 100 reviews. Verdict ranking balances scores with review confidence; popularity uses review volume. Alphabetical and date options use the selected order.',
   'all-time': 'VerdictGames Top 250: released primary games with at least 100 reviews, ordered by confidence-weighted Verdict ranking. Editions are deduplicated.',
-  recent: 'Games released in the last 30 days, newest first. Dates reflect the catalogue release date, not when records were added.',
+  recent: 'Games released in the last 30 days. Release-date sorting uses the catalogue release date; added-to-catalogue sorting uses when the record was added.',
   genre: 'Primary games classified in the selected catalogue genre, ordered by review volume. Highest-rated sorting requires at least 100 reviews.',
 };
 
@@ -124,8 +124,16 @@ export async function loadExplore(type: RawgListType, page = 1, pageSize = 20, y
     try { return await operation(); } finally { onTiming?.(phase, performance.now() - start); }
   }
   const today = new Date().toISOString().slice(0, 10);
+  const communityDefault = (type === 'all-time' || type === 'popular-in-year') && sort === 'default';
+  if (communityDefault) {
+    try { return await measure('snapshot', () => loadProviderRanking(type,year,page,pageSize,platform,today)); }
+    catch (error) {
+      if(error && typeof error === 'object' && 'code' in error) throw error;
+      console.warn('[Explore] RAWG ranking unavailable; using labelled Verdict ranking');
+    }
+  }
   let items: RawgListGameItem[] | undefined;
-  let source: 'rawg' | 'catalogue' = 'catalogue';
+  const source = 'catalogue' as const;
   let fetchedAt = new Date().toISOString();
   const artworkRows = new Map<string, Pick<GameRow, 'cover_image' | 'header_image' | 'steam_app_id'>>();
   if (type === 'best-of-year') {
@@ -137,26 +145,44 @@ export async function loadExplore(type: RawgListType, page = 1, pageSize = 20, y
       if (error) throw error;
       const byId = new Map((matches || []).map(item => [item.rawg_id, item]));
       const eligibleUpcoming = upcoming.filter(item => !hasKnownFullRelease(byId.get(item.id) || {}));
-      const missing = eligibleUpcoming.filter(item => !isPortraitArtwork(byId.get(item.id)?.cover_image));
+      const normalizedPlatform = (name: string) => name === 'Xbox Series S/X' ? 'Xbox Series X|S' : name;
+      const safeUpcoming = eligibleUpcoming.filter(item => isPrimaryDiscoveryGame({title:item.name,description:''})
+        && !['cancelled','canceled','delisted'].includes(byId.get(item.id)?.release_status || '')
+        && (!platform || item.platforms?.some(p => normalizedPlatform(p.platform.name) === platform)));
+      const ordered = [...safeUpcoming].sort((a,b) => {
+        const result = sort === 'name-asc' ? a.name.localeCompare(b.name)
+          : sort === 'name-desc' ? b.name.localeCompare(a.name)
+          : sort === 'newest' ? (b.released || '').localeCompare(a.released || '')
+          : sort === 'oldest' ? (a.released || '9999').localeCompare(b.released || '9999')
+          : b.added-a.added;
+        return result || a.slug.localeCompare(b.slug);
+      });
+      const visible = ordered.slice((page-1)*pageSize,page*pageSize);
+      const missing = visible.filter(item => !isPortraitArtwork(byId.get(item.id)?.cover_image));
       const portraits = missing.length ? await measure('portraits', () => readPortraits(missing.map(item => item.name))).catch(() => []) : [];
-      items = await measure('provider_artwork', () => Promise.all(eligibleUpcoming.map(async item => {
-        const local = byId.get(item.id);
-        const image = (local && isPortraitArtwork(local.cover_image) ? local.cover_image : matchPortrait(item, portraits))
-          || (local ? await titleArtwork(local) : null) || item.background_image;
-        return {
-          rawgId: item.id, slug: local?.slug || (item.slug === 'grand-theft-aito-vi' ? 'grand-theft-auto-vi' : item.slug), name: item.name,
-          released: item.released, tba: item.tba, image, imageKind: isPortraitArtwork(image) ? 'cover' as const : 'artwork' as const,
-          rating: item.rating, ratingsCount: item.ratings_count, metacritic: item.metacritic, metricSource: 'rawg' as const,
-          earlyAccess: Boolean(local && hasEarlyAccessSignal(local)),
-          added: item.added, toplay: item.added_by_status?.toplay || 0, playing: item.added_by_status?.playing || 0, owned: item.added_by_status?.owned || 0,
-          platforms: (item.platforms || []).map(p => p.platform.name), genres: (item.genres || []).map(g => g.name), screenshots: [], clip: null,
-        };
-      })));
-      source = 'rawg'; fetchedAt = response.fetchedAt;
-    } catch (error) { console.warn('[Explore] Stored catalogue fallback', { type: error instanceof Error ? error.name : 'provider' }); }
+      const mapped:RawgListGameItem[] = visible.map(item => {
+        const local=byId.get(item.id);
+        const image=(local && isPortraitArtwork(local.cover_image) ? local.cover_image : matchPortrait(item,portraits))
+          || local?.cover_image || item.background_image;
+        return {rawgId:item.id,slug:local?.slug || (item.slug==='grand-theft-aito-vi'?'grand-theft-auto-vi':item.slug),name:item.name,
+          released:item.released,tba:item.tba,image,imageKind:isPortraitArtwork(image)?'cover':'artwork',
+          rating:item.rating,ratingsCount:item.ratings_count,metacritic:item.metacritic,metricSource:'rawg',
+          earlyAccess:Boolean(local && hasEarlyAccessSignal(local)),added:item.added,
+          toplay:item.added_by_status?.toplay || 0,playing:item.added_by_status?.playing || 0,owned:item.added_by_status?.owned || 0,
+          platforms:(item.platforms||[]).map(p=>p.platform.name),genres:(item.genres||[]).map(g=>g.name),screenshots:[],clip:null};
+      });
+      await repairVisibleArtwork(mapped,item=>byId.get(item.rawgId));
+      return {items:mapped,count:ordered.length,page,pageSize,hasNext:page*pageSize<ordered.length,source:'rawg',
+        fetchedAt:response.fetchedAt,degraded:!response.complete || Date.now()-Date.parse(response.fetchedAt)>43200_000,
+        definition:'Upcoming games and Early Access releases, ordered by interest on RAWG. Library additions and want-to-play counts are shown separately. Dates can change.'};
+
+    } catch (error) {
+      if(error && typeof error === 'object' && 'code' in error) throw error;
+      console.warn('[Explore] Stored catalogue fallback', { type: error instanceof Error ? error.name : 'provider' });
+    }
   }
   if (!items) {
-    const compact = await measure('catalogue_query', () => readCataloguePage(type,year,EXPLORE_GENRES[genre] || '',platform,sort,page,pageSize,today));
+    const compact = await measure('catalogue_query', () => readCataloguePage(type,year,EXPLORE_GENRES[genre] || '',platform,type === 'all-time' ? 'default' : sort,page,pageSize,today));
     if (compact) {
       const visible:RawgListGameItem[]=compact.rows.map(row=>({
         rawgId:row.rawg_id || 0,slug:row.slug,name:row.title,image:row.cover_image || row.header_image,
@@ -170,7 +196,7 @@ export async function loadExplore(type: RawgListType, page = 1, pageSize = 20, y
       }));
       await measure('catalogue_artwork', () => repairVisibleArtwork(visible,(_item,index)=>compact.rows[index]));
       return {count:compact.count,page,pageSize,hasNext:page*pageSize<compact.count,items:visible,source:'catalogue',
-        fetchedAt:compact.fetchedAt,degraded:type==='best-of-year',definition:definitions[type]};
+        fetchedAt:compact.fetchedAt,degraded:type==='best-of-year' || communityDefault,definition:definitions[type]};
     }
     const pool = await measure('legacy_pool', () => readCataloguePool(type, type === 'popular-in-year' ? year : 0, type === 'genre' ? genre : '', today));
     fetchedAt = pool.fetchedAt;
@@ -193,5 +219,5 @@ export async function loadExplore(type: RawgListType, page = 1, pageSize = 20, y
   // At most four concurrent poster probes, and only for visible cards.
   await repairVisibleArtwork(visible,item=>artworkRows.get(item.slug));
   return { count: items.length, page, pageSize, hasNext: offset + pageSize < items.length, items: visible, source, fetchedAt,
-    degraded: type === 'best-of-year' && (source !== 'rawg' || Date.now() - Date.parse(fetchedAt) > 43200_000), definition: definitions[type] };
+    degraded: type === 'best-of-year' || communityDefault, definition: definitions[type] };
 }

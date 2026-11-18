@@ -23,6 +23,10 @@
 
 import { unstable_cache } from "next/cache";
 import { getPublicSupabase } from "@/lib/supabase/public";
+import { readCachedUpcomingSnapshot } from '@/lib/services/upcoming-snapshot';
+import { readHomepageReleaseRanking } from '@/lib/services/community-ranking';
+import {hasEarlyAccessSignal} from '@/lib/utils/release-status';
+import { isPrimaryDiscoveryGame } from '@/lib/utils/discovery';
 import { mapGameRow } from "@/lib/db/mappers";
 import { GAME_CARD_COLUMNS_WITH_DESC } from "@/lib/db/columns";
 import { retryCatalogRead } from '@/lib/db/catalog-read';
@@ -41,7 +45,7 @@ import {
 import { isPublicSafeGame } from "@/lib/utils/publicSafety";
 import { hasUsableCardImage } from "@/lib/utils/mediaReadiness";
 import { dedupePublicCanonicalRows } from "@/lib/utils/publicCanonical";
-import { getHomepageHeroScore, isHomepageHeroAutoCandidate } from "@/lib/utils/homepageHero";
+import { getHomepageHeroScore, isHomepageHeroAutoCandidate, selectHeroDiscoveryCandidates } from "@/lib/utils/homepageHero";
 import {
   getPublicTrendingScore,
   hasBrowseTrendingSignal,
@@ -655,7 +659,9 @@ export async function fetchHeroCandidates(limit = 12): Promise<Game[]> {
 
   const freshIds = new Set(((freshReleases ?? []) as unknown as GameRow[]).map(row => row.id));
   const freshSpotlights = ready.filter(row => freshIds.has(row.id) && !row.is_provisional && row.verdict_label !== 'COMING SOON')
-    .sort((a,b) => b.release_date!.localeCompare(a.release_date!) || getHomepageHeroScore(b)-getHomepageHeroScore(a))
+    .filter(row => ((row.verdict_score ?? row.score ?? 0) >= 85 && getEvidenceReviewCount(row) >= 25000)
+      || ((row.verdict_score ?? row.score ?? 0) >= 88 && hasStrongCriticEvidence(row) && getEvidenceReviewCount(row) >= 5000))
+    .sort((a,b) => getHomepageHeroScore(b)-getHomepageHeroScore(a) || b.release_date!.localeCompare(a.release_date!))
     .slice(0, 4);
   ranked = prioritizeById(freshSpotlights, ranked, limit);
 
@@ -674,7 +680,30 @@ export async function fetchHeroCandidates(limit = 12): Promise<Game[]> {
   // half empty when the catalogue has enough otherwise-qualified games.
   const diversified = prioritizeById(applyGenreDiversity(ranked, limit, 2), ranked, limit);
 
-  return diversified.map(mapGameRow);
+  const released = diversified.map(mapGameRow);
+  try {
+    const [discovery,releaseRanking] = await Promise.allSettled([readCachedUpcomingSnapshot(),readHomepageReleaseRanking()]);
+    const snapshot=[...(discovery.status==='fulfilled'?discovery.value.results:[]),...(releaseRanking.status==='fulfilled'?releaseRanking.value?.results || []:[])];
+    const upcoming = selectHeroDiscoveryCandidates(snapshot,today);
+    if(!upcoming.length)return released;
+    const {data,error}=await supabase.from('games').select(GAME_CARD_COLUMNS_WITH_DESC+',rawg_id')
+      .in('rawg_id',upcoming.map(item=>item.id)).abortSignal(AbortSignal.timeout(3000));
+    if(error)return released;
+    const rows=(data || []) as unknown as GameRow[];
+    const spotlights=upcoming.flatMap(item=>{
+      const row=rows.find(row=>row.rawg_id===item.id);
+      if(!row || !isPublicSafeGame(row) || !isPrimaryDiscoveryGame(row)
+        || ['cancelled','canceled','delisted'].includes(row.release_status || '')
+        || item.released!<=today && hasEarlyAccessSignal(row)
+        || item.released!>today && ['released','full release'].includes(row.release_status || ''))return [];
+      const game=mapGameRow(row);
+      return [{...game,headerImage:row.header_image || item.background_image!,
+        releaseDate:item.released!,score:0,verdictScore:undefined,isProvisional:true,
+        verdictLabel:item.released!>today?'COMING SOON' as const:'JUST RELEASED' as const,releaseStatus:item.released!>today?'upcoming':'released',
+        platforms:(item.platforms || []).map(p=>p.platform.name==='Xbox Series S/X'?'Xbox Series X|S':p.platform.name) as Game['platforms']}];
+    }).slice(0,1);
+    return [...spotlights,...released.filter(game=>!spotlights.some(spot=>spot.id===game.id))].slice(0,limit);
+  } catch { return released; }
 }
 
 /* ═══════════════════════════════════════════════════
@@ -1523,7 +1552,7 @@ export const EMPTY_HOMEPAGE_DATA: HomepageData = {
 // admitted only when every requested section resolved; cold partial results
 // remain displayable but never replace a shared successful value.
 const sectionCacheOptions = { revalidate: HOMEPAGE_REVALIDATE_SECONDS };
-const cachedHero = unstable_cache(() => retryCatalogRead(() => fetchHeroCandidates(HOMEPAGE_HERO_FETCH_TARGET)), ['homepage-hero-v1'], sectionCacheOptions);
+const cachedHero = unstable_cache(() => retryCatalogRead(() => fetchHeroCandidates(HOMEPAGE_HERO_FETCH_TARGET)), ['homepage-hero-v2'], sectionCacheOptions);
 const cachedTrending = unstable_cache(() => retryCatalogRead(() => fetchTrendingGames(HOMEPAGE_SECTION_FETCH_TARGET, true)), ['homepage-trending-v1'], sectionCacheOptions);
 const cachedNewReleases = unstable_cache(() => retryCatalogRead(() => fetchNewReleases(HOMEPAGE_SECTION_FETCH_TARGET)), ['homepage-new-v1'], sectionCacheOptions);
 const cachedTopRated = unstable_cache(() => retryCatalogRead(() => fetchHomepageTopRated(HOMEPAGE_SECTION_FETCH_TARGET)), ['homepage-top-v1'], sectionCacheOptions);
@@ -1531,7 +1560,7 @@ const cachedRecommendations = unstable_cache(() => retryCatalogRead(() => fetchH
 
 const getCachedHomepageData = unstable_cache(
   coalesceCatalogueRead(fetchHomepageData),
-  ["homepage-data-v24"],
+  ["homepage-data-v25"],
   { revalidate: HOMEPAGE_REVALIDATE_SECONDS }
 );
 
@@ -1544,7 +1573,7 @@ const getCachedHomepageMostAnticipated = unstable_cache(
       ? { status: 'rejected', reason: 'Discovery snapshot temporarily unavailable' }
       : { status: 'fulfilled', value: true } });
   }),
-  ["homepage-most-anticipated-v6"],
+  ["homepage-most-anticipated-v7"],
   { revalidate: 3600 }
 );
 

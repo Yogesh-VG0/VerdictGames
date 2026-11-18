@@ -16,6 +16,7 @@ import {
 } from "@/lib/external/rawg";
 import { getPublicSupabase, hasPublicSupabaseEnv } from "@/lib/supabase/public";
 import type { GameRow } from "@/lib/supabase/types";
+import {isPublicSafeGame,isPublicSafeRawgGame} from '@/lib/utils/publicSafety';
 import type { Game } from "@/lib/types";
 
 export const GAME_DETAIL_REVALIDATE_SECONDS = 900;
@@ -175,7 +176,7 @@ function mapRawgPreviewGame(args: {
 async function fetchRawgPreviewRecordByRawgId(rawgId: number): Promise<PreviewGameRecord | null> {
   try {
     const detail = await getRawgGame(rawgId);
-    if (!detail.slug) {
+    if (!detail.slug || !isPublicSafeRawgGame(detail) || !isPublicSafeGame({title:detail.name,description:detail.description_raw})) {
       return null;
     }
 
@@ -196,7 +197,7 @@ async function fetchRawgPreviewRecordByRawgId(rawgId: number): Promise<PreviewGa
 async function getCachedRawgPreviewRecordByRawgId(rawgId: number): Promise<PreviewGameRecord | null> {
   return unstable_cache(
     async () => fetchRawgPreviewRecordByRawgId(rawgId),
-    ["game-detail-preview-v1", `rawg:${rawgId}`],
+    ["game-detail-preview-v2", `rawg:${rawgId}`],
     { revalidate: 3600 }
   )();
 }
@@ -223,7 +224,7 @@ async function fetchRawgPreviewRecordBySlug(slug: string): Promise<PreviewGameRe
 async function getCachedRawgPreviewRecordBySlug(slug: string): Promise<PreviewGameRecord | null> {
   return unstable_cache(
     async () => fetchRawgPreviewRecordBySlug(slug),
-    ["game-detail-preview-v1", `slug:${slug}`],
+    ["game-detail-preview-v2", `slug:${slug}`],
     { revalidate: 3600 }
   )();
 }
@@ -265,7 +266,7 @@ async function fetchGameRecord(args: {
     row = data;
   }
 
-  if (!row) {
+  if (!row || !isPublicSafeGame(row)) {
     return null;
   }
 
@@ -292,7 +293,7 @@ async function getCachedGameRecord(args: {
   rawgId?: number | null;
 }): Promise<CachedGameRecord | null> {
   const key = [
-    "game-detail-v1",
+    "game-detail-v2",
     args.slug ?? "slug:null",
     args.rawgId != null ? `rawg:${args.rawgId}` : "rawg:null",
   ];

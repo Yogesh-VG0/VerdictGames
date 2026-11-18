@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { GameRow } from "../../supabase/types";
-import { getHomepageHeroScore, isHomepageHeroAutoCandidate } from "../homepageHero";
+import { getHomepageHeroScore, isHomepageHeroAutoCandidate, selectHeroDiscoveryCandidates } from "../homepageHero";
+import type {RawgListItem} from '@/lib/external/rawg';
 
 function isoDaysAgo(days: number): string {
   return new Date(Date.now() - days * 86400000).toISOString().slice(0, 10);
@@ -89,6 +90,21 @@ function makeGameRow(overrides: Partial<GameRow> = {}): GameRow {
 }
 
 describe("homepage hero auto candidates", () => {
+  it('retains a major console launch on its release day and after launch without inventing a reviewed score',()=>{
+    const row:RawgListItem={id:972995,name:'Grand Theft Auto VI',slug:'grand-theft-auto-vi',released:'2026-11-19',added:966,background_image:'https://media.rawg.io/gta.jpg',tags:[{id:1,name:'Nudity',slug:'nudity'}],genres:[],tba:false,rating:0,rating_top:5,ratings_count:0,added_by_status:{},metacritic:null,playtime:0,platforms:null,short_screenshots:null,clip:null,esrb_rating:null};
+    for(const day of ['2026-11-18','2026-11-19','2026-11-20'])expect(selectHeroDiscoveryCandidates([row,row],day)).toEqual([row]);
+    expect(selectHeroDiscoveryCandidates([row],'2026-12-04')).toEqual([]);
+    expect(selectHeroDiscoveryCandidates([{...row,added:0}],'2026-11-18')).toEqual([]);
+    expect(selectHeroDiscoveryCandidates([{...row,name:'Hentai Clicker'}],'2026-11-18')).toEqual([]);
+  });
+  it('allows a recent, well-supported console release without Steam concurrent players',()=>{
+    const row=makeGameRow({platforms:['PlayStation 5'],release_date:isoDaysAgo(30),current_players:0,
+      review_count:6000,critic_score:92,critic_source_count:2,igdb_rating:92,rawg_metacritic:91,
+      score:91,verdict_score:91,confidence:0.85});
+    expect(isHomepageHeroAutoCandidate(row)).toBe(true);
+    expect(isHomepageHeroAutoCandidate({...row,header_image:''})).toBe(false);
+    expect(isHomepageHeroAutoCandidate({...row,release_date:isoDaysAgo(300)})).toBe(false);
+  });
   it("rejects a mid-scale recent hit that is good enough for rails but not flagship hero", () => {
     const candidate = makeGameRow({
       title: "Ball x Pit",

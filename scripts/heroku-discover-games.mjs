@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { isPublicRawgContentAllowed } from '../src/lib/utils/public-safety.mjs';
 
 /**
  * VERDICT.GAMES — Scheduler: Discover New Games
@@ -35,7 +36,7 @@ import { startRun, finishRun, acquireLock, releaseLock, checkMinInterval, isInfr
 import { connectDb, closeDb } from './lib/db-connect.mjs';
 import { ingestGameDirect, discoverIgdbDirect } from './lib/ingest-pipeline.mjs';
 import { rawgFetchJson } from './lib/rawg-client.mjs';
-import { refreshDiscoverySnapshot } from './lib/discovery-snapshot.mjs';
+import { refreshDiscoverySnapshot, refreshCommunitySnapshots } from './lib/discovery-snapshot.mjs';
 
 const RAWG_KEY     = process.env.RAWG_API_KEY;
 const DEEP         = process.argv.includes("--deep");
@@ -116,6 +117,7 @@ try {
   try {
     if(process.env.DISCOVERY_PROVIDER==='igdb') throw new Error('RAWG health gate selected independent discovery');
     snapshotCount=await refreshDiscoverySnapshot(sql);
+    console.log('Community ranking snapshot refresh:',await refreshCommunitySnapshots(sql));
   }
   catch (error) {
     if(isInfrastructureDbError(error)) throw error;
@@ -229,7 +231,6 @@ try {
     /\b(dlc|expansion|season pass|starter pack|upgrade|bundle)\b/i,
     /\s-\s+(the\s+)?\w+\s+(dlc|pack|edition)$/i,
   ];
-  const ADULT_TAGS = new Set(["sexual content","nsfw","hentai","adult","erotic","nudity"]);
   const JUNK_TAGS = new Set(["mod","mods","fan-made","fan game"]);
   const MIN_RATING = 2.5;       // RAWG rating 1-5
   const MIN_RATINGS_COUNT = 5;  // at least 5 ratings on RAWG
@@ -245,7 +246,7 @@ try {
 
   function hasAdultOrJunkTags(game) {
     const tags = (game.tags ?? []).map(t => (t.name || t.slug || "").toLowerCase());
-    return tags.some(t => ADULT_TAGS.has(t) || JUNK_TAGS.has(t));
+    return !isPublicRawgContentAllowed(game) || tags.some(t => JUNK_TAGS.has(t));
   }
 
   const allGames = rawGames.filter(game => {

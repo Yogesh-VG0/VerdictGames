@@ -1,0 +1,386 @@
+{
+  "scope": "Actual production-mode loopback rendering with historical public catalogue and current saved RAWG snapshots",
+  "views": [
+    {
+      "route": "/",
+      "width": 390,
+      "theme": "dark",
+      "title": "Grand Theft Auto VI",
+      "cards": 101
+    },
+    {
+      "route": "/explore?type=all-time",
+      "width": 390,
+      "theme": "dark",
+      "title": "Explore Games",
+      "cards": 20
+    },
+    {
+      "route": "/explore?type=popular-in-year&year=2025",
+      "width": 390,
+      "theme": "dark",
+      "title": "Explore Games",
+      "cards": 20
+    },
+    {
+      "route": "/explore",
+      "width": 390,
+      "theme": "dark",
+      "title": "Explore Games",
+      "cards": 20
+    },
+    {
+      "route": "/explore?type=recent",
+      "width": 390,
+      "theme": "dark",
+      "title": "Explore Games",
+      "cards": 5
+    },
+    {
+      "route": "/explore?type=genre&genre=role-playing-games-rpg",
+      "width": 390,
+      "theme": "dark",
+      "title": "Explore Games",
+      "cards": 20
+    },
+    {
+      "route": "/search?sort=top-rated",
+      "width": 390,
+      "theme": "dark",
+      "title": "Top Rated Games",
+      "cards": 25
+    },
+    {
+      "route": "/lists",
+      "width": 390,
+      "theme": "dark",
+      "title": "Curated Lists",
+      "cards": 0
+    },
+    {
+      "route": "/",
+      "width": 390,
+      "theme": "light",
+      "title": "Grand Theft Auto VI",
+      "cards": 101
+    },
+    {
+      "route": "/explore?type=all-time",
+      "width": 390,
+      "theme": "light",
+      "title": "Explore Games",
+      "cards": 20
+    },
+    {
+      "route": "/explore?type=popular-in-year&year=2025",
+      "width": 390,
+      "theme": "light",
+      "title": "Explore Games",
+      "cards": 20
+    },
+    {
+      "route": "/explore",
+      "width": 390,
+      "theme": "light",
+      "title": "Explore Games",
+      "cards": 20
+    },
+    {
+      "route": "/explore?type=recent",
+      "width": 390,
+      "theme": "light",
+      "title": "Explore Games",
+      "cards": 5
+    },
+    {
+      "route": "/explore?type=genre&genre=role-playing-games-rpg",
+      "width": 390,
+      "theme": "light",
+      "title": "Explore Games",
+      "cards": 20
+    },
+    {
+      "route": "/search?sort=top-rated",
+      "width": 390,
+      "theme": "light",
+      "title": "Top Rated Games",
+      "cards": 25
+    },
+    {
+      "route": "/lists",
+      "width": 390,
+      "theme": "light",
+      "title": "Curated Lists",
+      "cards": 0
+    },
+    {
+      "route": "/",
+      "width": 768,
+      "theme": "dark",
+      "title": "Grand Theft Auto VI",
+      "cards": 101
+    },
+    {
+      "route": "/explore?type=all-time",
+      "width": 768,
+      "theme": "dark",
+      "title": "Explore Games",
+      "cards": 20
+    },
+    {
+      "route": "/explore?type=popular-in-year&year=2025",
+      "width": 768,
+      "theme": "dark",
+      "title": "Explore Games",
+      "cards": 20
+    },
+    {
+      "route": "/explore",
+      "width": 768,
+      "theme": "dark",
+      "title": "Explore Games",
+      "cards": 20
+    },
+    {
+      "route": "/explore?type=recent",
+      "width": 768,
+      "theme": "dark",
+      "title": "Explore Games",
+      "cards": 5
+    },
+    {
+      "route": "/explore?type=genre&genre=role-playing-games-rpg",
+      "width": 768,
+      "theme": "dark",
+      "title": "Explore Games",
+      "cards": 20
+    },
+    {
+      "route": "/search?sort=top-rated",
+      "width": 768,
+      "theme": "dark",
+      "title": "Top Rated Games",
+      "cards": 25
+    },
+    {
+      "route": "/lists",
+      "width": 768,
+      "theme": "dark",
+      "title": "Curated Lists",
+      "cards": 0
+    },
+    {
+      "route": "/",
+      "width": 768,
+      "theme": "light",
+      "title": "Grand Theft Auto VI",
+      "cards": 101
+    },
+    {
+      "route": "/explore?type=all-time",
+      "width": 768,
+      "theme": "light",
+      "title": "Explore Games",
+      "cards": 20
+    },
+    {
+      "route": "/explore?type=popular-in-year&year=2025",
+      "width": 768,
+      "theme": "light",
+      "title": "Explore Games",
+      "cards": 20
+    },
+    {
+      "route": "/explore",
+      "width": 768,
+      "theme": "light",
+      "title": "Explore Games",
+      "cards": 20
+    },
+    {
+      "route": "/explore?type=recent",
+      "width": 768,
+      "theme": "light",
+      "title": "Explore Games",
+      "cards": 5
+    },
+    {
+      "route": "/explore?type=genre&genre=role-playing-games-rpg",
+      "width": 768,
+      "theme": "light",
+      "title": "Explore Games",
+      "cards": 20
+    },
+    {
+      "route": "/search?sort=top-rated",
+      "width": 768,
+      "theme": "light",
+      "title": "Top Rated Games",
+      "cards": 25
+    },
+    {
+      "route": "/lists",
+      "width": 768,
+      "theme": "light",
+      "title": "Curated Lists",
+      "cards": 0
+    },
+    {
+      "route": "/",
+      "width": 1440,
+      "theme": "dark",
+      "title": "Grand Theft Auto VI",
+      "cards": 101
+    },
+    {
+      "route": "/explore?type=all-time",
+      "width": 1440,
+      "theme": "dark",
+      "title": "Explore Games",
+      "cards": 20
+    },
+    {
+      "route": "/explore?type=popular-in-year&year=2025",
+      "width": 1440,
+      "theme": "dark",
+      "title": "Explore Games",
+      "cards": 20
+    },
+    {
+      "route": "/explore",
+      "width": 1440,
+      "theme": "dark",
+      "title": "Explore Games",
+      "cards": 20
+    },
+    {
+      "route": "/explore?type=recent",
+      "width": 1440,
+      "theme": "dark",
+      "title": "Explore Games",
+      "cards": 5
+    },
+    {
+      "route": "/explore?type=genre&genre=role-playing-games-rpg",
+      "width": 1440,
+      "theme": "dark",
+      "title": "Explore Games",
+      "cards": 20
+    },
+    {
+      "route": "/search?sort=top-rated",
+      "width": 1440,
+      "theme": "dark",
+      "title": "Top Rated Games",
+      "cards": 25
+    },
+    {
+      "route": "/lists",
+      "width": 1440,
+      "theme": "dark",
+      "title": "Curated Lists",
+      "cards": 0
+    },
+    {
+      "route": "/",
+      "width": 1440,
+      "theme": "light",
+      "title": "Grand Theft Auto VI",
+      "cards": 101
+    },
+    {
+      "route": "/explore?type=all-time",
+      "width": 1440,
+      "theme": "light",
+      "title": "Explore Games",
+      "cards": 20
+    },
+    {
+      "route": "/explore?type=popular-in-year&year=2025",
+      "width": 1440,
+      "theme": "light",
+      "title": "Explore Games",
+      "cards": 20
+    },
+    {
+      "route": "/explore",
+      "width": 1440,
+      "theme": "light",
+      "title": "Explore Games",
+      "cards": 20
+    },
+    {
+      "route": "/explore?type=recent",
+      "width": 1440,
+      "theme": "light",
+      "title": "Explore Games",
+      "cards": 5
+    },
+    {
+      "route": "/explore?type=genre&genre=role-playing-games-rpg",
+      "width": 1440,
+      "theme": "light",
+      "title": "Explore Games",
+      "cards": 20
+    },
+    {
+      "route": "/search?sort=top-rated",
+      "width": 1440,
+      "theme": "light",
+      "title": "Top Rated Games",
+      "cards": 25
+    },
+    {
+      "route": "/lists",
+      "width": 1440,
+      "theme": "light",
+      "title": "Curated Lists",
+      "cards": 0
+    }
+  ],
+  "checks": [
+    {
+      "width": 390,
+      "theme": "dark",
+      "pendingSelection": true,
+      "inlineSkeleton": true,
+      "loaded": true
+    },
+    {
+      "width": 390,
+      "theme": "light",
+      "pendingSelection": true,
+      "inlineSkeleton": true,
+      "loaded": true
+    },
+    {
+      "width": 768,
+      "theme": "dark",
+      "pendingSelection": true,
+      "inlineSkeleton": true,
+      "loaded": true
+    },
+    {
+      "width": 768,
+      "theme": "light",
+      "pendingSelection": true,
+      "inlineSkeleton": true,
+      "loaded": true
+    },
+    {
+      "width": 1440,
+      "theme": "dark",
+      "pendingSelection": true,
+      "inlineSkeleton": true,
+      "loaded": true
+    },
+    {
+      "width": 1440,
+      "theme": "light",
+      "pendingSelection": true,
+      "inlineSkeleton": true,
+      "loaded": true
+    }
+  ],
+  "consoleErrors": []
+}

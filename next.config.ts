@@ -32,6 +32,15 @@ const nextConfig: NextConfig = {
           { key: "Content-Security-Policy", value: `default-src 'self'; script-src 'self' 'unsafe-inline'${evalSource} https://va.vercel-scripts.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self'${productionConnectSrc}${localConnectSrc} https://vitals.vercel-insights.com https://va.vercel-scripts.com; frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com; frame-ancestors 'none'; media-src 'self' https:; object-src 'none'; base-uri 'self'; form-action 'self';` },
         ],
       },
+      ...['/auth/confirm', '/reset-password'].map(source => ({
+        source,
+        headers: [
+          { key: 'Cache-Control', value: 'private, no-store, max-age=0' },
+          { key: 'CDN-Cache-Control', value: 'private, no-store' },
+          { key: 'Vercel-CDN-Cache-Control', value: 'private, no-store' },
+          { key: 'Referrer-Policy', value: 'no-referrer' },
+        ],
+      })),
     ];
   },
   images: {

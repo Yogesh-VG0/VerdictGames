@@ -1,0 +1,72 @@
+{
+  "scope": "Production-mode loopback; RAWG key absent, durable snapshots removed, framework cache moved before restart. This is not database-storage-cold or a CDN measurement.",
+  "databaseFailure": false,
+  "samples": [
+    {
+      "type": "all-time",
+      "pass": 0,
+      "status": 200,
+      "ms": 173,
+      "bytes": 11384,
+      "source": "catalogue",
+      "degraded": true,
+      "cache": "public, s-maxage=60, stale-while-revalidate=300",
+      "cdnCache": null
+    },
+    {
+      "type": "all-time",
+      "pass": 1,
+      "status": 200,
+      "ms": 17,
+      "bytes": 11384,
+      "source": "catalogue",
+      "degraded": true,
+      "cache": "public, s-maxage=60, stale-while-revalidate=300",
+      "cdnCache": null
+    },
+    {
+      "type": "popular-in-year",
+      "pass": 0,
+      "status": 200,
+      "ms": 35,
+      "bytes": 10910,
+      "source": "catalogue",
+      "degraded": true,
+      "cache": "public, s-maxage=60, stale-while-revalidate=300",
+      "cdnCache": null
+    },
+    {
+      "type": "popular-in-year",
+      "pass": 1,
+      "status": 200,
+      "ms": 11,
+      "bytes": 10910,
+      "source": "catalogue",
+      "degraded": true,
+      "cache": "public, s-maxage=60, stale-while-revalidate=300",
+      "cdnCache": null
+    },
+    {
+      "type": "best-of-year",
+      "pass": 0,
+      "status": 200,
+      "ms": 27,
+      "bytes": 10805,
+      "source": "catalogue",
+      "degraded": true,
+      "cache": "public, s-maxage=60, stale-while-revalidate=300",
+      "cdnCache": null
+    },
+    {
+      "type": "best-of-year",
+      "pass": 1,
+      "status": 200,
+      "ms": 8,
+      "bytes": 10805,
+      "source": "catalogue",
+      "degraded": true,
+      "cache": "public, s-maxage=60, stale-while-revalidate=300",
+      "cdnCache": null
+    }
+  ]
+}

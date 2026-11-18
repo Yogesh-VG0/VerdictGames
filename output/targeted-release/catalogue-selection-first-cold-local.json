@@ -1,0 +1,512 @@
+{
+  "scope": "Production-mode loopback app, 8,350 historical public games, saved current RAWG snapshots, no RAWG key; framework-cold is not storage-cold or CDN MISS",
+  "samples": [
+    {
+      "path": "/api/rawg/lists?type=all-time&year=2025&pageSize=20",
+      "status": 200,
+      "ms": 158,
+      "bytes": 9783,
+      "timing": "snapshot;dur=60, catalogue_total;dur=61"
+    },
+    {
+      "path": "/api/rawg/lists?type=all-time&year=2025&pageSize=20",
+      "status": 200,
+      "ms": 15,
+      "bytes": 9783,
+      "timing": "snapshot;dur=9, catalogue_total;dur=9"
+    },
+    {
+      "path": "/api/rawg/lists?type=popular-in-year&year=2025&pageSize=20",
+      "status": 200,
+      "ms": 28,
+      "bytes": 9243,
+      "timing": "snapshot;dur=23, catalogue_total;dur=23"
+    },
+    {
+      "path": "/api/rawg/lists?type=popular-in-year&year=2025&pageSize=20",
+      "status": 200,
+      "ms": 13,
+      "bytes": 9243,
+      "timing": "snapshot;dur=9, catalogue_total;dur=9"
+    },
+    {
+      "path": "/api/rawg/lists?type=best-of-year&year=2025&pageSize=20",
+      "status": 200,
+      "ms": 17,
+      "bytes": 9577,
+      "timing": "snapshot;dur=5, matches;dur=6, portraits;dur=1, catalogue_total;dur=12"
+    },
+    {
+      "path": "/api/rawg/lists?type=best-of-year&year=2025&pageSize=20",
+      "status": 200,
+      "ms": 9,
+      "bytes": 9577,
+      "timing": "snapshot;dur=0, matches;dur=5, portraits;dur=0, catalogue_total;dur=6"
+    },
+    {
+      "path": "/api/rawg/lists?type=recent&year=2025&pageSize=20",
+      "status": 200,
+      "ms": 20,
+      "bytes": 2923,
+      "timing": "catalogue_query;dur=16, catalogue_artwork;dur=0, catalogue_total;dur=16"
+    },
+    {
+      "path": "/api/rawg/lists?type=recent&year=2025&pageSize=20",
+      "status": 200,
+      "ms": 5,
+      "bytes": 2923,
+      "timing": "catalogue_query;dur=0, catalogue_artwork;dur=0, catalogue_total;dur=0"
+    },
+    {
+      "path": "/api/rawg/lists?type=genre&year=2025&pageSize=20",
+      "status": 200,
+      "ms": 31,
+      "bytes": 11166,
+      "timing": "catalogue_query;dur=27, catalogue_artwork;dur=0, catalogue_total;dur=27"
+    },
+    {
+      "path": "/api/rawg/lists?type=genre&year=2025&pageSize=20",
+      "status": 200,
+      "ms": 5,
+      "bytes": 11166,
+      "timing": "catalogue_query;dur=0, catalogue_artwork;dur=0, catalogue_total;dur=0"
+    },
+    {
+      "path": "/api/rawg/lists?type=all-time&year=2025&pageSize=40",
+      "status": 200,
+      "ms": 12,
+      "bytes": 19347,
+      "timing": "snapshot;dur=9, catalogue_total;dur=9"
+    },
+    {
+      "path": "/api/rawg/lists?type=all-time&year=2025&pageSize=40&page=2",
+      "status": 200,
+      "ms": 11,
+      "bytes": 18999,
+      "timing": "snapshot;dur=8, catalogue_total;dur=8"
+    },
+    {
+      "path": "/api/rawg/lists?type=all-time&year=2025&pageSize=40&page=3",
+      "status": 200,
+      "ms": 10,
+      "bytes": 18566,
+      "timing": "snapshot;dur=7, catalogue_total;dur=7"
+    },
+    {
+      "path": "/api/rawg/lists?type=all-time&year=2025&pageSize=40&page=4",
+      "status": 200,
+      "ms": 10,
+      "bytes": 18644,
+      "timing": "snapshot;dur=7, catalogue_total;dur=7"
+    },
+    {
+      "path": "/api/rawg/lists?type=all-time&year=2025&pageSize=40&page=5",
+      "status": 200,
+      "ms": 10,
+      "bytes": 18303,
+      "timing": "snapshot;dur=7, catalogue_total;dur=7"
+    },
+    {
+      "path": "/api/rawg/lists?type=all-time&year=2025&pageSize=40&page=6",
+      "status": 200,
+      "ms": 10,
+      "bytes": 16900,
+      "timing": "snapshot;dur=7, catalogue_total;dur=7"
+    },
+    {
+      "path": "/api/rawg/lists?type=all-time&year=2025&platform=PC&pageSize=40",
+      "status": 200,
+      "ms": 10,
+      "bytes": 19423,
+      "timing": "snapshot;dur=7, catalogue_total;dur=7"
+    },
+    {
+      "path": "/api/rawg/lists?type=all-time&year=2025&platform=PlayStation%205&pageSize=40",
+      "status": 200,
+      "ms": 9,
+      "bytes": 14274,
+      "timing": "snapshot;dur=7, catalogue_total;dur=7"
+    },
+    {
+      "path": "/api/rawg/lists?type=all-time&year=2025&platform=PlayStation%204&pageSize=40",
+      "status": 200,
+      "ms": 10,
+      "bytes": 19749,
+      "timing": "snapshot;dur=7, catalogue_total;dur=7"
+    },
+    {
+      "path": "/api/rawg/lists?type=all-time&year=2025&platform=Xbox%20Series%20X%7CS&pageSize=40",
+      "status": 200,
+      "ms": 9,
+      "bytes": 10692,
+      "timing": "snapshot;dur=7, catalogue_total;dur=7"
+    },
+    {
+      "path": "/api/rawg/lists?type=all-time&year=2025&platform=Xbox%20One&pageSize=40",
+      "status": 200,
+      "ms": 10,
+      "bytes": 19831,
+      "timing": "snapshot;dur=7, catalogue_total;dur=7"
+    },
+    {
+      "path": "/api/rawg/lists?type=all-time&year=2025&platform=Nintendo%20Switch&pageSize=40",
+      "status": 200,
+      "ms": 12,
+      "bytes": 19985,
+      "timing": "snapshot;dur=9, catalogue_total;dur=9"
+    },
+    {
+      "path": "/api/rawg/lists?type=all-time&year=2025&platform=Android&pageSize=40",
+      "status": 200,
+      "ms": 11,
+      "bytes": 13581,
+      "timing": "snapshot;dur=8, catalogue_total;dur=8"
+    },
+    {
+      "path": "/api/rawg/lists?type=all-time&year=2025&platform=iOS&pageSize=40",
+      "status": 200,
+      "ms": 12,
+      "bytes": 14936,
+      "timing": "snapshot;dur=9, catalogue_total;dur=9"
+    },
+    {
+      "path": "/api/rawg/lists?type=all-time&year=2025&platform=Linux&pageSize=40",
+      "status": 200,
+      "ms": 11,
+      "bytes": 12632,
+      "timing": "snapshot;dur=8, catalogue_total;dur=8"
+    },
+    {
+      "path": "/api/rawg/lists?type=all-time&year=2025&platform=macOS&pageSize=40",
+      "status": 200,
+      "ms": 12,
+      "bytes": 19474,
+      "timing": "snapshot;dur=8, catalogue_total;dur=9"
+    },
+    {
+      "path": "/api/rawg/lists?type=popular-in-year&year=2025&pageSize=40",
+      "status": 200,
+      "ms": 11,
+      "bytes": 18085,
+      "timing": "snapshot;dur=8, catalogue_total;dur=8"
+    },
+    {
+      "path": "/api/rawg/lists?type=popular-in-year&year=2025&pageSize=40&page=2",
+      "status": 200,
+      "ms": 10,
+      "bytes": 17852,
+      "timing": "snapshot;dur=7, catalogue_total;dur=7"
+    },
+    {
+      "path": "/api/rawg/lists?type=popular-in-year&year=2025&pageSize=40&page=3",
+      "status": 200,
+      "ms": 9,
+      "bytes": 17845,
+      "timing": "snapshot;dur=6, catalogue_total;dur=6"
+    },
+    {
+      "path": "/api/rawg/lists?type=popular-in-year&year=2025&pageSize=40&page=4",
+      "status": 200,
+      "ms": 9,
+      "bytes": 17510,
+      "timing": "snapshot;dur=6, catalogue_total;dur=7"
+    },
+    {
+      "path": "/api/rawg/lists?type=popular-in-year&year=2025&pageSize=40&page=5",
+      "status": 200,
+      "ms": 10,
+      "bytes": 17618,
+      "timing": "snapshot;dur=8, catalogue_total;dur=8"
+    },
+    {
+      "path": "/api/rawg/lists?type=popular-in-year&year=2025&pageSize=40&page=6",
+      "status": 200,
+      "ms": 11,
+      "bytes": 11272,
+      "timing": "snapshot;dur=9, catalogue_total;dur=9"
+    },
+    {
+      "path": "/api/rawg/lists?type=popular-in-year&year=2025&platform=PC&pageSize=40",
+      "status": 200,
+      "ms": 12,
+      "bytes": 18085,
+      "timing": "snapshot;dur=9, catalogue_total;dur=9"
+    },
+    {
+      "path": "/api/rawg/lists?type=popular-in-year&year=2025&platform=PlayStation%205&pageSize=40",
+      "status": 200,
+      "ms": 9,
+      "bytes": 18350,
+      "timing": "snapshot;dur=6, catalogue_total;dur=7"
+    },
+    {
+      "path": "/api/rawg/lists?type=popular-in-year&year=2025&platform=PlayStation%204&pageSize=40",
+      "status": 200,
+      "ms": 9,
+      "bytes": 14957,
+      "timing": "snapshot;dur=7, catalogue_total;dur=7"
+    },
+    {
+      "path": "/api/rawg/lists?type=popular-in-year&year=2025&platform=Xbox%20Series%20X%7CS&pageSize=40",
+      "status": 200,
+      "ms": 9,
+      "bytes": 18651,
+      "timing": "snapshot;dur=7, catalogue_total;dur=7"
+    },
+    {
+      "path": "/api/rawg/lists?type=popular-in-year&year=2025&platform=Xbox%20One&pageSize=40",
+      "status": 200,
+      "ms": 9,
+      "bytes": 10763,
+      "timing": "snapshot;dur=7, catalogue_total;dur=7"
+    },
+    {
+      "path": "/api/rawg/lists?type=popular-in-year&year=2025&platform=Nintendo%20Switch&pageSize=40",
+      "status": 200,
+      "ms": 11,
+      "bytes": 19265,
+      "timing": "snapshot;dur=9, catalogue_total;dur=9"
+    },
+    {
+      "path": "/api/rawg/lists?type=popular-in-year&year=2025&platform=Android&pageSize=40",
+      "status": 200,
+      "ms": 10,
+      "bytes": 761,
+      "timing": "snapshot;dur=7, catalogue_total;dur=7"
+    },
+    {
+      "path": "/api/rawg/lists?type=popular-in-year&year=2025&platform=iOS&pageSize=40",
+      "status": 200,
+      "ms": 10,
+      "bytes": 834,
+      "timing": "snapshot;dur=8, catalogue_total;dur=8"
+    },
+    {
+      "path": "/api/rawg/lists?type=popular-in-year&year=2025&platform=Linux&pageSize=40",
+      "status": 200,
+      "ms": 10,
+      "bytes": 7174,
+      "timing": "snapshot;dur=7, catalogue_total;dur=7"
+    },
+    {
+      "path": "/api/rawg/lists?type=popular-in-year&year=2025&platform=macOS&pageSize=40",
+      "status": 200,
+      "ms": 10,
+      "bytes": 14441,
+      "timing": "snapshot;dur=7, catalogue_total;dur=8"
+    },
+    {
+      "path": "/api/rawg/lists?type=best-of-year&year=2025&pageSize=40",
+      "status": 200,
+      "ms": 7,
+      "bytes": 18031,
+      "timing": "snapshot;dur=0, matches;dur=3, portraits;dur=0, catalogue_total;dur=4"
+    },
+    {
+      "path": "/api/rawg/lists?type=best-of-year&year=2025&pageSize=40&page=2",
+      "status": 200,
+      "ms": 6,
+      "bytes": 2743,
+      "timing": "snapshot;dur=0, matches;dur=3, portraits;dur=0, catalogue_total;dur=4"
+    },
+    {
+      "path": "/api/rawg/lists?type=best-of-year&year=2025&platform=PC&pageSize=40",
+      "status": 200,
+      "ms": 6,
+      "bytes": 15961,
+      "timing": "snapshot;dur=0, matches;dur=3, portraits;dur=0, catalogue_total;dur=4"
+    },
+    {
+      "path": "/api/rawg/lists?type=best-of-year&year=2025&platform=PlayStation%205&pageSize=40",
+      "status": 200,
+      "ms": 7,
+      "bytes": 11342,
+      "timing": "snapshot;dur=0, matches;dur=3, portraits;dur=0, catalogue_total;dur=4"
+    },
+    {
+      "path": "/api/rawg/lists?type=best-of-year&year=2025&platform=PlayStation%204&pageSize=40",
+      "status": 200,
+      "ms": 6,
+      "bytes": 333,
+      "timing": "snapshot;dur=0, matches;dur=3, catalogue_total;dur=3"
+    },
+    {
+      "path": "/api/rawg/lists?type=best-of-year&year=2025&platform=Xbox%20Series%20X%7CS&pageSize=40",
+      "status": 200,
+      "ms": 5,
+      "bytes": 9161,
+      "timing": "snapshot;dur=0, matches;dur=2, portraits;dur=0, catalogue_total;dur=3"
+    },
+    {
+      "path": "/api/rawg/lists?type=best-of-year&year=2025&platform=Xbox%20One&pageSize=40",
+      "status": 200,
+      "ms": 5,
+      "bytes": 757,
+      "timing": "snapshot;dur=0, matches;dur=2, portraits;dur=0, catalogue_total;dur=3"
+    },
+    {
+      "path": "/api/rawg/lists?type=best-of-year&year=2025&platform=Nintendo%20Switch&pageSize=40",
+      "status": 200,
+      "ms": 6,
+      "bytes": 1740,
+      "timing": "snapshot;dur=0, matches;dur=3, portraits;dur=0, catalogue_total;dur=4"
+    },
+    {
+      "path": "/api/rawg/lists?type=best-of-year&year=2025&platform=Android&pageSize=40",
+      "status": 200,
+      "ms": 5,
+      "bytes": 1109,
+      "timing": "snapshot;dur=0, matches;dur=3, portraits;dur=0, catalogue_total;dur=3"
+    },
+    {
+      "path": "/api/rawg/lists?type=best-of-year&year=2025&platform=iOS&pageSize=40",
+      "status": 200,
+      "ms": 6,
+      "bytes": 1109,
+      "timing": "snapshot;dur=0, matches;dur=3, portraits;dur=0, catalogue_total;dur=3"
+    },
+    {
+      "path": "/api/rawg/lists?type=best-of-year&year=2025&platform=Linux&pageSize=40",
+      "status": 200,
+      "ms": 5,
+      "bytes": 759,
+      "timing": "snapshot;dur=0, matches;dur=2, portraits;dur=0, catalogue_total;dur=3"
+    },
+    {
+      "path": "/api/rawg/lists?type=best-of-year&year=2025&platform=macOS&pageSize=40",
+      "status": 200,
+      "ms": 5,
+      "bytes": 759,
+      "timing": "snapshot;dur=0, matches;dur=2, portraits;dur=0, catalogue_total;dur=3"
+    },
+    {
+      "path": "/api/rawg/lists?type=genre&genre=action&pageSize=20",
+      "status": 200,
+      "ms": 2,
+      "bytes": 11166,
+      "timing": "catalogue_query;dur=0, catalogue_artwork;dur=0, catalogue_total;dur=0"
+    },
+    {
+      "path": "/api/rawg/lists?type=genre&genre=adventure&pageSize=20",
+      "status": 200,
+      "ms": 25,
+      "bytes": 11119,
+      "timing": "catalogue_query;dur=22, catalogue_artwork;dur=0, catalogue_total;dur=23"
+    },
+    {
+      "path": "/api/rawg/lists?type=genre&genre=role-playing-games-rpg&pageSize=20",
+      "status": 200,
+      "ms": 19,
+      "bytes": 11299,
+      "timing": "catalogue_query;dur=16, catalogue_artwork;dur=0, catalogue_total;dur=16"
+    },
+    {
+      "path": "/api/rawg/lists?type=genre&genre=shooter&pageSize=20",
+      "status": 200,
+      "ms": 14,
+      "bytes": 11140,
+      "timing": "catalogue_query;dur=11, catalogue_artwork;dur=0, catalogue_total;dur=11"
+    },
+    {
+      "path": "/api/rawg/lists?type=genre&genre=strategy&pageSize=20",
+      "status": 200,
+      "ms": 18,
+      "bytes": 11266,
+      "timing": "catalogue_query;dur=15, catalogue_artwork;dur=0, catalogue_total;dur=15"
+    },
+    {
+      "path": "/api/rawg/lists?type=genre&genre=simulation&pageSize=20",
+      "status": 200,
+      "ms": 15,
+      "bytes": 11200,
+      "timing": "catalogue_query;dur=12, catalogue_artwork;dur=0, catalogue_total;dur=13"
+    },
+    {
+      "path": "/api/rawg/lists?type=genre&genre=puzzle&pageSize=20",
+      "status": 429,
+      "ms": 2,
+      "bytes": 54,
+      "timing": null
+    }
+  ],
+  "cohorts": [
+    {
+      "type": "all-time",
+      "count": 236,
+      "source": "rawg",
+      "degraded": false,
+      "first": [
+        "The Witcher 3: Wild Hunt",
+        "Red Dead Redemption 2",
+        "Portal 2",
+        "The Last Of Us",
+        "God of War (2018)",
+        "The Legend of Zelda: Breath of the Wild",
+        "Grand Theft Auto: San Andreas",
+        "Half-Life 2"
+      ]
+    },
+    {
+      "type": "popular-in-year",
+      "count": 226,
+      "source": "rawg",
+      "degraded": false,
+      "first": [
+        "Vampire: The Masquerade – Bloodlines 2",
+        "Hollow Knight: Silksong",
+        "Clair Obscur: Expedition 33",
+        "Split Fiction",
+        "Death Stranding 2: On The Beach",
+        "Tiny Bunny",
+        "The Wolf Among Us 2",
+        "Avowed"
+      ]
+    },
+    {
+      "type": "best-of-year",
+      "count": 46,
+      "source": "rawg",
+      "degraded": false,
+      "first": [
+        "Grand Theft Auto VI",
+        "Path of Exile 2",
+        "No Rest for the Wicked",
+        "Tomb Raider: Legacy of Atlantis",
+        "Titan Quest 2",
+        "Tomb Raider: Catalyst",
+        "Clockwork Revolution",
+        "The Expanse: Osiris Reborn"
+      ]
+    },
+    {
+      "type": "recent",
+      "count": 5,
+      "source": "catalogue",
+      "degraded": false,
+      "first": [
+        "Fable",
+        "Phantom Blade Zero",
+        "Probably Stolen",
+        "Call of Duty: Modern Warfare 4",
+        "Final Fantasy Resonance"
+      ]
+    },
+    {
+      "type": "genre",
+      "count": 3909,
+      "source": "catalogue",
+      "degraded": false,
+      "first": [
+        "PlayerUnknown’s Battlegrounds",
+        "Dota 2",
+        "Terraria",
+        "Tom Clancy's Rainbow Six Siege",
+        "Rust",
+        "Garry's Mod",
+        "Team Fortress 2",
+        "Black Myth: Wukong"
+      ]
+    }
+  ],
+  "issues": []
+}

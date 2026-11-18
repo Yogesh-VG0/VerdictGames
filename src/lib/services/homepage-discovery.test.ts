@@ -1,6 +1,6 @@
 import {afterEach,beforeEach,describe,expect,it,vi} from 'vitest';
 const state=vi.hoisted(()=>({load:vi.fn(),cached:undefined as {value:unknown}|undefined}));
-vi.mock('next/cache',()=>({unstable_cache:(read:()=>Promise<unknown>,keys:string[])=>keys.includes('homepage-most-anticipated-v6')?async()=>{
+vi.mock('next/cache',()=>({unstable_cache:(read:()=>Promise<unknown>,keys:string[])=>keys.some(key=>key.startsWith('homepage-most-anticipated-'))?async()=>{
  if(state.cached)return state.cached.value;
  const value=await read();state.cached={value};return value;
 }:read}));

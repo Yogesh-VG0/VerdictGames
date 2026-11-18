@@ -1,0 +1,2 @@
+export function isPublicContentAllowed(row: { title?: string; name?: string; tags?: (string | { name?: string; slug?: string })[] | null; genres?: (string | { name?: string; slug?: string })[] | null; description?: string | null }): boolean;
+export function isPublicRawgContentAllowed(row: { id?:number; name?:string;tags?:Array<{name?:string;slug?:string}>|null;genres?:Array<{name?:string;slug?:string}>|null;esrb_rating?:{name?:string;slug?:string}|null }):boolean;

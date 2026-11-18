@@ -1,0 +1,61 @@
+{
+  "scope": "Production-mode loopback; RAWG key absent, durable snapshots removed, framework cache moved before restart. This is not database-storage-cold or a CDN measurement.",
+  "databaseFailure": true,
+  "samples": [
+    {
+      "type": "all-time",
+      "pass": 0,
+      "status": 503,
+      "ms": 129,
+      "bytes": 96,
+      "cache": "private, no-store, max-age=0",
+      "cdnCache": "private, no-store"
+    },
+    {
+      "type": "all-time",
+      "pass": 1,
+      "status": 503,
+      "ms": 18,
+      "bytes": 96,
+      "cache": "private, no-store, max-age=0",
+      "cdnCache": "private, no-store"
+    },
+    {
+      "type": "popular-in-year",
+      "pass": 0,
+      "status": 503,
+      "ms": 16,
+      "bytes": 96,
+      "cache": "private, no-store, max-age=0",
+      "cdnCache": "private, no-store"
+    },
+    {
+      "type": "popular-in-year",
+      "pass": 1,
+      "status": 503,
+      "ms": 15,
+      "bytes": 96,
+      "cache": "private, no-store, max-age=0",
+      "cdnCache": "private, no-store"
+    },
+    {
+      "type": "best-of-year",
+      "pass": 0,
+      "status": 503,
+      "ms": 16,
+      "bytes": 96,
+      "cache": "private, no-store, max-age=0",
+      "cdnCache": "private, no-store"
+    },
+    {
+      "type": "best-of-year",
+      "pass": 1,
+      "status": 503,
+      "ms": 9,
+      "bytes": 96,
+      "cache": "private, no-store, max-age=0",
+      "cdnCache": "private, no-store"
+    }
+  ],
+  "rpcRequests": 6
+}

@@ -1,0 +1,20 @@
+{
+  "checkedAt": "2026-11-18T17:48:07.097Z",
+  "command": "npm audit --json --audit-level=high",
+  "exitCode": 0,
+  "vulnerabilities": {
+    "info": 0,
+    "low": 0,
+    "moderate": 0,
+    "high": 0,
+    "critical": 0,
+    "total": 0
+  },
+  "error": null,
+  "productionDependencyGraphUnchanged": true,
+  "lockSha256": "a8ce25df56df81c7a6ca2802161531caa77f04e874944b0554e557b5cbe0b916",
+  "advisory": "GHSA-fc5q-39xc-vjpf",
+  "githubStatus": "withdrawn 2026-11-18",
+  "officialPatchedVersion": "none listed",
+  "note": "Withdrawal is not a code patch. Do not accept untrusted glob patterns; audit configuration and required checks remain unchanged."
+}

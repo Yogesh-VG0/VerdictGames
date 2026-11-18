@@ -1,3 +1,4 @@
+import { isPublicContentAllowed } from '../utils/public-safety.mjs';
 // Essential metadata only. Provider ratings/hypes are never relabeled as RAWG
 // interest, Steam reviews or a computed Verdict Score.
 const genres={'Role-playing (RPG)':'RPG',Platform:'Platformer',Simulator:'Simulation',Sport:'Sports',
@@ -14,8 +15,7 @@ export function igdbEssentialRecord(game,now=new Date()) {
   if(game.game_type!=null&&game.game_type!==0&&game.game_type?.id!==0) return null;
   const description=(game.storyline||game.summary||'').slice(0,8000);
   const tags=(game.themes||[]).map(item=>item.name).filter(value=>typeof value==='string');
-  if(tags.some(value=>/sexual content|nsfw|hentai|adult|erotic|nudity|mature|sex|porn|18\+/i.test(value))
-    ||/sexual content|nsfw|hentai|erotic|adult-only|explicit sex/i.test(description)
+  if(!isPublicContentAllowed({ title: game.name, tags, description })
     ||/\b(season pass|expansion pass|soundtrack|artbook|starter pack|bonus content|cosmetic pack)\b/i.test(game.name)) return null;
   const cover=image(game.cover?.image_id);
   const release=Number.isFinite(game.first_release_date)?new Date(game.first_release_date*1000):null;

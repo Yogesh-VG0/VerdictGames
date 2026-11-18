@@ -49,6 +49,9 @@ try {
   const files = readdirSync('supabase/migrations').filter(file => file.endsWith('.sql')).sort();
   const migrations = [];
   for (const file of files) {
+    if(file.endsWith('_distinguish_mature_from_adult_only.sql')) query(replay,`INSERT INTO public.games(slug,title,release_date,review_count,score,tags,updated_at) VALUES
+      ('policy-mature','Mainstream Mature Game','2020-01-01',1000,90,ARRAY['Nudity','Sexual Content','18+'],'2001-01-01'),
+      ('policy-explicit','Hentai Clicker','2020-01-01',1000,99,ARRAY['Action'],'2001-01-01');`);
     if(file.endsWith('_cache_explore_classification.sql')) query(replay, `INSERT INTO public.games(slug,title,release_date,review_count,score,updated_at) VALUES
       ('preclass-a','Preclassification A','2020-01-01',1000,90,'2001-01-01'),
       ('preclass-b','Preclassification B','2020-01-01',1000,91,'2001-01-01');`);
@@ -56,6 +59,14 @@ try {
     try { query(replay, `SET search_path=public,extensions;\n${source}`); }
     catch (error) { throw new Error(`Migration ${file}: ${error.message}`); }
     migrations.push({ file, sha256: createHash('sha256').update(source).digest('hex') });
+    if(file.endsWith('_distinguish_mature_from_adult_only.sql')) {
+      execFileSync(process.execPath,['scripts/refresh-public-safety.mjs','--database='+replay,'--evidence-path=.verification/replay-safety-policy.json'],{stdio:['ignore','pipe','pipe']});
+      const policy=JSON.parse(readFileSync('.verification/replay-safety-policy.json','utf8'));
+      assert.equal(policy.updated,2);assert.equal(policy.remaining,0);assert.equal(policy.sourceValuesPreserved,true);
+      assert.equal(query(replay,"SELECT string_agg(slug || ':' || explore_primary_safe::text,',' ORDER BY slug) FROM public.games WHERE slug LIKE 'policy-%';").trim(),'policy-explicit:false,policy-mature:true');
+      query(replay,"DELETE FROM public.games WHERE slug LIKE 'policy-%';");
+      console.log('PASS changed-row-only mature/adult policy refresh preserves all source fields and projection maintenance');
+    }
     if(file.endsWith('_cache_explore_classification.sql')) {
       assert.equal(query(replay,"SELECT count(*) FROM public.games WHERE explore_primary_safe IS NULL;").trim(),'2');
       const unfilled=query(replay,"SET ROLE anon; SELECT public.explore_catalogue_page('all-time',0,'','','default',1,40,'2026-11-15'); RESET ROLE;").split('\n').find(line=>line.startsWith('{'));

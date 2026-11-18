@@ -12,7 +12,7 @@ function getSingleValue(value: string | string[] | undefined) {
 
 function getResetErrorMessage(errorCode?: string, errorDescription?: string) {
   if (errorCode === "otp_expired") {
-    return "This reset link has expired. Request a fresh reset link below.";
+    return "This reset link has expired. Request a fresh recovery code below.";
   }
 
   if (errorDescription) {
@@ -20,7 +20,7 @@ function getResetErrorMessage(errorCode?: string, errorDescription?: string) {
   }
 
   if (errorCode) {
-    return "This reset link is invalid or could not be verified. Request a fresh reset link below.";
+    return "This reset link is invalid or could not be verified. Request a fresh recovery code below.";
   }
 
   return undefined;

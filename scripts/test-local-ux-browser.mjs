@@ -186,9 +186,8 @@ try {
     assert.equal(sitemap.status, 200, 'Local sitemap loads with restricted profile privileges');
     const xml = await sitemap.text();
     for (const game of games.slice(0, 7)) assert.ok(xml.includes(`/game/${game.slug}</loc>`), `Eligible fixture ${game.slug} is in sitemap`);
-    // This unchanged public-safety fixture has a Nudity tag. Preserve the
-    // existing filter rather than weakening it to make a sitemap assertion pass.
-    assert.ok(!xml.includes('/game/ux-fixture-grand-theft-auto-vi</loc>'), 'Safety-excluded fixture stays out of sitemap');
+    // The owner approved mainstream mature games; Nudity alone is not adult-only.
+    assert.ok(xml.includes('/game/ux-fixture-grand-theft-auto-vi</loc>'), 'Mainstream mature fixture stays discoverable');
     assert.ok(!xml.includes('/library</loc>') && !xml.includes('/settings</loc>'), 'Private account routes stay out of sitemap');
     for (const theme of ['dark', 'light']) {
       const context = await browser.newContext({ reducedMotion: 'reduce', viewport: { width: 390, height: 844 }, extraHTTPHeaders: { 'x-forwarded-for': `127.6.${theme === 'dark' ? 1 : 2}.1` } });
@@ -196,7 +195,8 @@ try {
       const page = await context.newPage();
       await stubProviderWidgets(page);
       await page.goto(base, { waitUntil: 'domcontentloaded' });
-      await page.getByText('Autoplay off · reduced motion', { exact: true }).waitFor();
+      await page.getByText('Autoplay off · reduced motion', { exact: true }).waitFor({state:'attached'});
+      assert.equal(await page.getByRole('button',{name:'Pause slideshow',exact:true}).count(),0,'Reduced motion disables slideshow autoplay without a duplicate visible indicator');
       const title = await page.locator('h1').textContent();
       const heading = page.locator('[data-slot="gradient-text"] > span').first();
       await heading.scrollIntoViewIfNeeded();

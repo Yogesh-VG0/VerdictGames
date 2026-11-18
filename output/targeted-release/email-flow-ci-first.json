@@ -1,0 +1,12 @@
+{
+  "head": "9ada0f24ff9a52283944919fca58d70e8dfa0b50",
+  "qualityRun": 44286927260,
+  "quality": "Tests, types and lint passed; failed only at unchanged full dependency audit",
+  "securityRun": 44286927281,
+  "security": "Migration replay/build, identity isolation, providers, password compatibility, existing Auth refinement and new email flows passed; responsive/motion step failed",
+  "failure": "Reduced-motion homepage could not find its hero status after the new Auth suite ran",
+  "localCacheObservation": {"hero":0,"trending":0,"newReleases":0,"revalidateSeconds":300},
+  "explanation": "Recovery's homepage navigation can cache an empty local catalogue before the later UX suite seeds its own games. HeroCarousel returns no hero/status for an empty games array.",
+  "correction": "Run the existing public fixture/render/motion suite before both email/signup recovery suites. Retain every step and assertion; no application motion, cache policy, timeout, audit threshold or protection changes.",
+  "state": "Successor exact-head CI required; no production change"
+}

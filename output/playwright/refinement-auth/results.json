@@ -8,21 +8,39 @@
     "confirmation resend has an accessible cooldown",
     "local signup sends the branded tracking-free confirmation template",
     "signup verification establishes a session and preserves the library destination",
+    "unavailable library and statistics render errors instead of successful emptiness",
+    "library retry recovers to the genuine empty state after the local outage clears",
     "owner private-list summaries are uncached and visible only to the owner",
+    "owner private detail is readable and excluded from shared caches",
+    "private detail document is dynamic and private",
+    "anonymous owned-detail API requests remain private and unauthenticated",
+    "private collection never enters the public detail cache",
     "private collection is absent from the public summary",
     "second identity cannot directly read the private collection",
+    "second authenticated identity cannot read the owner-only detail API",
+    "second identity receives private noindex not-found HTML without owner content (HTTP200)",
+    "direct recovery resend respects the local provider rate limit",
+    "actually expired recovery code leaves a recoverable resend state",
     "password recovery sends the branded template",
-    "recovery link verifies and a long passphrase updates successfully",
+    "recovery code verifies and a long passphrase updates successfully",
     "updated password signs in through Supabase Auth",
     "authentication browser flow has no JavaScript errors"
   ],
   "latencyMs": {
-    "normal": 810,
-    "slowObsolete": 802
+    "normal": 811,
+    "slowObsolete": 812
   },
   "mail": {
     "confirmation": "received in local Mailpit",
     "recovery": "received in local Mailpit"
+  },
+  "privateListBoundary": {
+    "ownerDocumentStatus": 200,
+    "otherDocumentStatus": 200,
+    "otherDocumentCache": "private, no-store, max-age=0",
+    "otherApiStatus": 404,
+    "anonymousApiStatus": 401,
+    "ownerContentAbsent": true
   },
   "usernameRequestsDuringSimulations": 3
 }

@@ -1,0 +1,108 @@
+{
+  "status": "prepared; no hosted approval or execution",
+  "project": "vjzsvnaswronkctazarn",
+  "application": {
+    "branch": "remediation/email-confirmation-and-recovery",
+    "pullRequest": 11,
+    "productionProject": "prj_vg8APVv7HRncrYJCkiti95FyfaqD",
+    "productionTeam": "team_IZjGDcej6BUnVM4IHK165gfb",
+    "domain": "https://www.verdict.games",
+    "verifiedImplementationHead": "a34d57d84d05c8d59e9cfda5f4b02b0a2d83033f",
+    "verifiedSourceTree": "7f91c111aa3a8094f6ef8e5299315c5e515fe5b2"
+  },
+  "sql": {
+    "path": "supabase/migrations/20261118140247_distinguish_mature_from_adult_only.sql",
+    "sha256": "198fc99b54c1e350211b194be07d7e7e654e5dccb2d08416652b36647175d7c9",
+    "lockTimeout": "2s",
+    "statementTimeout": "5s"
+  },
+  "changedRowRefresh": {
+    "path": "scripts/refresh-public-safety.mjs",
+    "sha256": "90bf14f4704b9d7bb7d41ab11d8158ee4b0772d8621aeb01d9f222b3ac99c778",
+    "sourceWrites": "only derived explore_primary_safe; all other fields including updated_at verified unchanged; existing trigger maintains compact input",
+    "batchSize": 100,
+    "lockTimeout": "500ms",
+    "statementTimeout": "3s"
+  },
+  "newRankingSnapshots": {
+    "helper": "scripts/publish-community-ranking-snapshots.mjs",
+    "helperSha256": "588368054add4f91776a7120550c2581aef7e1be03151608517b87bd083c692f",
+    "worker": "scripts/lib/discovery-snapshot.mjs",
+    "workerSha256": "e35fb58151ef3e9aaa1c6e9092be9c3cc8edcae2b208f5f1426d015e89ed3a02",
+    "keys": [
+      "discovery:rawg:all-time:0:v1",
+      "discovery:rawg:popular-in-year:2026:v1",
+      "discovery:rawg:popular-in-year:2025:v1",
+      "discovery:rawg:popular-in-year:2024:v1"
+    ],
+    "maxRowsPerSnapshot": 250,
+    "gameIngestion": false,
+    "fullSchedulerRun": false,
+    "lockTimeout": "500ms",
+    "statementTimeout": "3s"
+  },
+  "email": {
+    "proposal": "docs/audits/2026-11-15/auth-email-flow-proposal.json",
+    "payloadSha256": "f173f77058caefd9e95b2f1fcbc7c649d3ab784dc5398b3944a380bad0a2f0db",
+    "fields": [
+      "mailer_templates_confirmation_content",
+      "mailer_templates_recovery_content"
+    ],
+    "passwordMinimum": 15,
+    "otherAuthSettings": "unchanged"
+  },
+  "cacheCutover": {
+    "project": "prj_vg8APVv7HRncrYJCkiti95FyfaqD",
+    "environment": "Production only",
+    "action": "reviewed Cache Tag * hard delete after the new policy/snapshots are verified; affected public discovery/list/search/sitemap responses must not retain old selection",
+    "otherEnvironments": false
+  },
+  "excluded": [
+    "completed privacy and username migrations",
+    "completed indexes/data repairs/backfills",
+    "R3/R4 recovery re-investigation",
+    "old first-upcoming-snapshot operation",
+    "user fixtures",
+    "credential changes",
+    "infrastructure or billing"
+  ],
+  "sequence": [
+    "Verify exact-head CI/protected preview and refreshed recovery requirement",
+    "Merge the approved PR and verify correct-project production deployment",
+    "Apply only new safety SQL and changed-row-only refresh with source preservation",
+    "Publish/read back only four new community ranking snapshot keys; do not invoke full scheduler",
+    "Invalidate affected same-project Production public cache and verify source labels, rankings, privacy and failures",
+    "Apply only the two reviewed email bodies after compatible application checks; verify delivery and encrypt fresh configuration supplement"
+  ],
+  "rollback": "Keep the database-compatible Auth implementation, private/no-store responses and restricted privileges. A catalogue-only rollback can retain Auth source from 1510297; leave additive pure SQL in place if safer. Never restore insecure grants or strand in-flight code emails with the old Auth application.",
+  "recovery": {
+    "checkpoint": "R3 portable/offsite and R4 Drive readback complete; encrypted Auth supplement uploaded",
+    "beforeRelease": "Confirm upload/sync of the already encrypted targeted supplement in the existing private Drive folder, verify exact-head CI and source parity, then proceed only under the consolidated approval. No R3/R4 repeat.",
+    "afterTemplateWrite": "Encrypt the fresh configuration and sync the small supplement through the existing private arrangement",
+    "preChangeSupplement": {
+      "receipt": "output/targeted-release/catalogue-recovery-supplement.json",
+      "archive": "production-2026-11-18-catalogue-state-supplement.7z",
+      "sha256": "172cc46a49d8d86ba25f8d7bb64310b669eedca7785b40f417155d631614e368",
+      "bytes": 13023,
+      "localIntegrity": "passed",
+      "offsiteStagingChecksum": "passed",
+      "remoteSync": "owner confirmation pending",
+      "hostedWrites": 0
+    }
+  },
+  "acceptance": {
+    "report": "docs/audits/2026-11-15/PRODUCT_REFINEMENT.md",
+    "previewEvidence": "output/targeted-release/catalogue-preview-acceptance.json",
+    "quality": "https://github.com/Yogesh-VG0/VerdictGames/actions/runs/44366219098",
+    "security": "https://github.com/Yogesh-VG0/VerdictGames/actions/runs/44366219028",
+    "finalGate": "Documentation-only successor must pass both required workflows and retain identical application/worker/migration/dependency content"
+  },
+  "limitations": [
+    "Provider metadata contains known questionable genre tags; no new hosted game repair is authorized",
+    "Browse uses disclosed finite discovery cohorts, not a complete catalogue export",
+    "Top250 retains the review floor and may contain fewer than250 admitted games",
+    "Steam-review scheduled provider failures remain visible",
+    "No database-storage-cold or production-capacity claim",
+    "Credential remediation: none reported"
+  ]
+}

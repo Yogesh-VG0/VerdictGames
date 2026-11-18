@@ -1,0 +1,26 @@
+[
+  {
+    "keys": [
+      "id",
+      "timestamp",
+      "deploymentId",
+      "projectId",
+      "level",
+      "message",
+      "source",
+      "domain",
+      "requestMethod",
+      "requestPath",
+      "responseStatusCode",
+      "environment",
+      "branch",
+      "cache",
+      "cacheReason",
+      "pprState",
+      "traceId",
+      "logs"
+    ],
+    "path": "/api/search",
+    "message": "\"[API] /search error: {\\n  code: '57014',\\n  details: null,\\n  hint: null,\\n  message: 'canceling statement due to statement timeout'\\n}\""
+  }
+]

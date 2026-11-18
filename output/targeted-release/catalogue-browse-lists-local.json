@@ -1,0 +1,762 @@
+{
+  "scope": "Real historical public catalogue through production-mode loopback HTTP",
+  "browse": [
+    {
+      "genre": "Action RPG",
+      "platform": "",
+      "count": 142,
+      "first": [
+        "Hades II",
+        "Clair Obscur: Expedition 33",
+        "Vampire Survivors"
+      ]
+    },
+    {
+      "genre": "Action RPG",
+      "platform": "PC",
+      "count": 142,
+      "first": [
+        "Hades II",
+        "Clair Obscur: Expedition 33",
+        "Vampire Survivors"
+      ]
+    },
+    {
+      "genre": "Horror",
+      "platform": "",
+      "count": 143,
+      "first": [
+        "Look Outside",
+        "Dispatch",
+        "Undertale"
+      ]
+    },
+    {
+      "genre": "Horror",
+      "platform": "PC",
+      "count": 143,
+      "first": [
+        "Look Outside",
+        "Dispatch",
+        "Undertale"
+      ]
+    },
+    {
+      "genre": "Roguelike",
+      "platform": "",
+      "count": 113,
+      "first": [
+        "Balatro",
+        "Vampire Survivors",
+        "Ball x Pit"
+      ]
+    },
+    {
+      "genre": "Roguelike",
+      "platform": "PC",
+      "count": 113,
+      "first": [
+        "Balatro",
+        "Vampire Survivors",
+        "Ball x Pit"
+      ]
+    },
+    {
+      "genre": "Open World",
+      "platform": "",
+      "count": 134,
+      "first": [
+        "Schedule I",
+        "Kingdom Come: Deliverance II",
+        "Satisfactory"
+      ]
+    },
+    {
+      "genre": "Open World",
+      "platform": "PC",
+      "count": 134,
+      "first": [
+        "Schedule I",
+        "Kingdom Come: Deliverance II",
+        "Satisfactory"
+      ]
+    },
+    {
+      "genre": "Metroidvania",
+      "platform": "",
+      "count": 52,
+      "first": [
+        "Hollow Knight: Silksong",
+        "Rogue Legacy 2",
+        "SteamWorld Dig 2"
+      ]
+    },
+    {
+      "genre": "Metroidvania",
+      "platform": "PC",
+      "count": 51,
+      "first": [
+        "Hollow Knight: Silksong",
+        "Rogue Legacy 2",
+        "SteamWorld Dig 2"
+      ]
+    },
+    {
+      "genre": "Detective",
+      "platform": "",
+      "count": 43,
+      "first": [
+        "MОUSE",
+        "Disco Elysium: Final Cut",
+        "The Roottrees are Dead"
+      ]
+    },
+    {
+      "genre": "Detective",
+      "platform": "PC",
+      "count": 43,
+      "first": [
+        "MОUSE",
+        "Disco Elysium: Final Cut",
+        "The Roottrees are Dead"
+      ]
+    },
+    {
+      "genre": "Card Game",
+      "platform": "",
+      "count": 17,
+      "first": [
+        "Monster Train",
+        "Thronebreaker: The Witcher Tales",
+        "Marvel's Midnight Suns"
+      ]
+    },
+    {
+      "genre": "Card Game",
+      "platform": "PC",
+      "count": 17,
+      "first": [
+        "Monster Train",
+        "Thronebreaker: The Witcher Tales",
+        "Marvel's Midnight Suns"
+      ]
+    },
+    {
+      "genre": "Social Deduction",
+      "platform": "",
+      "count": 1,
+      "first": [
+        "Gnosia"
+      ]
+    },
+    {
+      "genre": "Social Deduction",
+      "platform": "PC",
+      "count": 1,
+      "first": [
+        "Gnosia"
+      ]
+    },
+    {
+      "genre": "Survival",
+      "platform": "",
+      "count": 143,
+      "first": [
+        "Abiotic Factor",
+        "The Planet Crafter",
+        "Factorio"
+      ]
+    },
+    {
+      "genre": "Survival",
+      "platform": "PC",
+      "count": 143,
+      "first": [
+        "Abiotic Factor",
+        "The Planet Crafter",
+        "Factorio"
+      ]
+    },
+    {
+      "genre": "Turn-Based Strategy",
+      "platform": "",
+      "count": 64,
+      "first": [
+        "Balatro",
+        "Sid Meier's Civilization IV",
+        "Into the Breach"
+      ]
+    },
+    {
+      "genre": "Turn-Based Strategy",
+      "platform": "PC",
+      "count": 64,
+      "first": [
+        "Balatro",
+        "Sid Meier's Civilization IV",
+        "Into the Breach"
+      ]
+    },
+    {
+      "sort": "relevance",
+      "page": 1,
+      "rows": 25,
+      "total": 940,
+      "totalIsExact": false
+    },
+    {
+      "sort": "relevance",
+      "page": 2,
+      "rows": 25,
+      "total": 940,
+      "totalIsExact": false
+    },
+    {
+      "sort": "newest",
+      "page": 1,
+      "rows": 25,
+      "total": 188,
+      "totalIsExact": false
+    },
+    {
+      "sort": "newest",
+      "page": 2,
+      "rows": 25,
+      "total": 199,
+      "totalIsExact": false
+    },
+    {
+      "sort": "upcoming",
+      "page": 1,
+      "rows": 2,
+      "total": 2,
+      "totalIsExact": true
+    },
+    {
+      "sort": "upcoming",
+      "page": 2,
+      "rows": 0,
+      "total": 2,
+      "totalIsExact": true
+    },
+    {
+      "sort": "recently-added",
+      "page": 1,
+      "rows": 25,
+      "total": 480,
+      "totalIsExact": false
+    },
+    {
+      "sort": "recently-added",
+      "page": 2,
+      "rows": 25,
+      "total": 480,
+      "totalIsExact": false
+    },
+    {
+      "sort": "top-rated",
+      "page": 1,
+      "rows": 25,
+      "total": 118,
+      "totalIsExact": false
+    },
+    {
+      "sort": "top-rated",
+      "page": 2,
+      "rows": 25,
+      "total": 124,
+      "totalIsExact": false
+    },
+    {
+      "sort": "trending",
+      "page": 1,
+      "rows": 25,
+      "total": 139,
+      "totalIsExact": false
+    },
+    {
+      "sort": "trending",
+      "page": 2,
+      "rows": 25,
+      "total": 144,
+      "totalIsExact": false
+    }
+  ],
+  "lists": [
+    {
+      "slug": "cozy-games-to-unwind",
+      "count": 12
+    },
+    {
+      "slug": "hidden-indie-gems",
+      "count": 12
+    },
+    {
+      "slug": "hidden-gems-since-2024",
+      "count": 12
+    },
+    {
+      "slug": "best-deckbuilders-turn-based",
+      "count": 12
+    },
+    {
+      "slug": "most-wanted-2026",
+      "count": 12
+    },
+    {
+      "slug": "best-competitive-multiplayer",
+      "count": 12
+    },
+    {
+      "slug": "best-indie-under-20-hours",
+      "count": 12
+    },
+    {
+      "slug": "best-story-driven-adventures",
+      "count": 12
+    },
+    {
+      "slug": "best-strategy-builder-games",
+      "count": 12
+    },
+    {
+      "slug": "best-horror-games",
+      "count": 10
+    },
+    {
+      "slug": "best-co-op-games",
+      "count": 11
+    },
+    {
+      "slug": "best-single-player-rpgs",
+      "count": 12
+    },
+    {
+      "slug": "sci-fi-epics",
+      "count": 12
+    },
+    {
+      "slug": "best-platformers",
+      "count": 11
+    },
+    {
+      "slug": "best-roguelikes-roguelites",
+      "count": 12
+    },
+    {
+      "slug": "critically-acclaimed-2024",
+      "count": 11
+    },
+    {
+      "slug": "best-multiplayer-experiences",
+      "count": 12
+    },
+    {
+      "slug": "survival-horror-essentials",
+      "count": 11
+    },
+    {
+      "slug": "best-strategy-games",
+      "count": 12
+    },
+    {
+      "slug": "top-open-world-adventures",
+      "count": 10
+    },
+    {
+      "slug": "essential-metroidvanias",
+      "count": 12
+    },
+    {
+      "slug": "best-action-rpgs",
+      "count": 11
+    }
+  ],
+  "samples": [
+    {
+      "path": "/api/search?genre=Action+RPG&sort=relevance",
+      "status": 200,
+      "ms": 27,
+      "bytes": 48464,
+      "cache": "s-maxage=300, stale-while-revalidate=300"
+    },
+    {
+      "path": "/api/search?genre=Action+RPG&sort=relevance&platform=PC",
+      "status": 200,
+      "ms": 6,
+      "bytes": 48464,
+      "cache": "s-maxage=300, stale-while-revalidate=300"
+    },
+    {
+      "path": "/api/search?genre=Horror&sort=relevance",
+      "status": 200,
+      "ms": 6,
+      "bytes": 46265,
+      "cache": "s-maxage=300, stale-while-revalidate=300"
+    },
+    {
+      "path": "/api/search?genre=Horror&sort=relevance&platform=PC",
+      "status": 200,
+      "ms": 13,
+      "bytes": 46265,
+      "cache": "s-maxage=300, stale-while-revalidate=300"
+    },
+    {
+      "path": "/api/search?genre=Roguelike&sort=relevance",
+      "status": 200,
+      "ms": 10,
+      "bytes": 46971,
+      "cache": "s-maxage=300, stale-while-revalidate=300"
+    },
+    {
+      "path": "/api/search?genre=Roguelike&sort=relevance&platform=PC",
+      "status": 200,
+      "ms": 5,
+      "bytes": 46971,
+      "cache": "s-maxage=300, stale-while-revalidate=300"
+    },
+    {
+      "path": "/api/search?genre=Open+World&sort=relevance",
+      "status": 200,
+      "ms": 58,
+      "bytes": 47557,
+      "cache": "s-maxage=300, stale-while-revalidate=300"
+    },
+    {
+      "path": "/api/search?genre=Open+World&sort=relevance&platform=PC",
+      "status": 200,
+      "ms": 22,
+      "bytes": 47557,
+      "cache": "s-maxage=300, stale-while-revalidate=300"
+    },
+    {
+      "path": "/api/search?genre=Metroidvania&sort=relevance",
+      "status": 200,
+      "ms": 4,
+      "bytes": 46772,
+      "cache": "s-maxage=300, stale-while-revalidate=300"
+    },
+    {
+      "path": "/api/search?genre=Metroidvania&sort=relevance&platform=PC",
+      "status": 200,
+      "ms": 4,
+      "bytes": 46772,
+      "cache": "s-maxage=300, stale-while-revalidate=300"
+    },
+    {
+      "path": "/api/search?genre=Detective&sort=relevance",
+      "status": 200,
+      "ms": 4,
+      "bytes": 42929,
+      "cache": "s-maxage=300, stale-while-revalidate=300"
+    },
+    {
+      "path": "/api/search?genre=Detective&sort=relevance&platform=PC",
+      "status": 200,
+      "ms": 8,
+      "bytes": 42929,
+      "cache": "s-maxage=300, stale-while-revalidate=300"
+    },
+    {
+      "path": "/api/search?genre=Card+Game&sort=relevance",
+      "status": 200,
+      "ms": 14,
+      "bytes": 29459,
+      "cache": "s-maxage=300, stale-while-revalidate=300"
+    },
+    {
+      "path": "/api/search?genre=Card+Game&sort=relevance&platform=PC",
+      "status": 200,
+      "ms": 22,
+      "bytes": 29459,
+      "cache": "s-maxage=300, stale-while-revalidate=300"
+    },
+    {
+      "path": "/api/search?genre=Social+Deduction&sort=relevance",
+      "status": 200,
+      "ms": 3,
+      "bytes": 2013,
+      "cache": "s-maxage=300, stale-while-revalidate=300"
+    },
+    {
+      "path": "/api/search?genre=Social+Deduction&sort=relevance&platform=PC",
+      "status": 200,
+      "ms": 3,
+      "bytes": 2013,
+      "cache": "s-maxage=300, stale-while-revalidate=300"
+    },
+    {
+      "path": "/api/search?genre=Survival&sort=relevance",
+      "status": 200,
+      "ms": 4,
+      "bytes": 43003,
+      "cache": "s-maxage=300, stale-while-revalidate=300"
+    },
+    {
+      "path": "/api/search?genre=Survival&sort=relevance&platform=PC",
+      "status": 200,
+      "ms": 6,
+      "bytes": 43003,
+      "cache": "s-maxage=300, stale-while-revalidate=300"
+    },
+    {
+      "path": "/api/search?genre=Turn-Based+Strategy&sort=relevance",
+      "status": 200,
+      "ms": 5,
+      "bytes": 44025,
+      "cache": "s-maxage=300, stale-while-revalidate=300"
+    },
+    {
+      "path": "/api/search?genre=Turn-Based+Strategy&sort=relevance&platform=PC",
+      "status": 200,
+      "ms": 4,
+      "bytes": 44025,
+      "cache": "s-maxage=300, stale-while-revalidate=300"
+    },
+    {
+      "path": "/api/search?sort=relevance&page=1",
+      "status": 200,
+      "ms": 26,
+      "bytes": 45621,
+      "cache": "s-maxage=300, stale-while-revalidate=300"
+    },
+    {
+      "path": "/api/search?sort=relevance&page=2",
+      "status": 200,
+      "ms": 4,
+      "bytes": 45477,
+      "cache": "s-maxage=300, stale-while-revalidate=300"
+    },
+    {
+      "path": "/api/search?sort=newest&page=1",
+      "status": 200,
+      "ms": 4,
+      "bytes": 39196,
+      "cache": "s-maxage=300, stale-while-revalidate=300"
+    },
+    {
+      "path": "/api/search?sort=newest&page=2",
+      "status": 200,
+      "ms": 4,
+      "bytes": 39615,
+      "cache": "s-maxage=300, stale-while-revalidate=300"
+    },
+    {
+      "path": "/api/search?sort=upcoming&page=1",
+      "status": 200,
+      "ms": 3,
+      "bytes": 3090,
+      "cache": "s-maxage=300, stale-while-revalidate=300"
+    },
+    {
+      "path": "/api/search?sort=upcoming&page=2",
+      "status": 200,
+      "ms": 3,
+      "bytes": 105,
+      "cache": "s-maxage=300, stale-while-revalidate=300"
+    },
+    {
+      "path": "/api/search?sort=recently-added&page=1",
+      "status": 200,
+      "ms": 5,
+      "bytes": 41858,
+      "cache": "s-maxage=300, stale-while-revalidate=300"
+    },
+    {
+      "path": "/api/search?sort=recently-added&page=2",
+      "status": 200,
+      "ms": 5,
+      "bytes": 43985,
+      "cache": "s-maxage=300, stale-while-revalidate=300"
+    },
+    {
+      "path": "/api/search?sort=top-rated&page=1",
+      "status": 200,
+      "ms": 5,
+      "bytes": 48769,
+      "cache": "s-maxage=300, stale-while-revalidate=300"
+    },
+    {
+      "path": "/api/search?sort=top-rated&page=2",
+      "status": 200,
+      "ms": 6,
+      "bytes": 44960,
+      "cache": "s-maxage=300, stale-while-revalidate=300"
+    },
+    {
+      "path": "/api/search?sort=trending&page=1",
+      "status": 200,
+      "ms": 160,
+      "bytes": 44902,
+      "cache": "s-maxage=300, stale-while-revalidate=300"
+    },
+    {
+      "path": "/api/search?sort=trending&page=2",
+      "status": 200,
+      "ms": 39,
+      "bytes": 41803,
+      "cache": "s-maxage=300, stale-while-revalidate=300"
+    },
+    {
+      "path": "/api/lists?view=summary",
+      "status": 200,
+      "ms": 8,
+      "bytes": 26697,
+      "cache": "public, s-maxage=300, stale-while-revalidate=300"
+    },
+    {
+      "path": "/api/lists/cozy-games-to-unwind",
+      "status": 200,
+      "ms": 9,
+      "bytes": 20925,
+      "cache": "s-maxage=300, stale-while-revalidate=300"
+    },
+    {
+      "path": "/api/lists/hidden-indie-gems",
+      "status": 200,
+      "ms": 6,
+      "bytes": 21075,
+      "cache": "s-maxage=300, stale-while-revalidate=300"
+    },
+    {
+      "path": "/api/lists/hidden-gems-since-2024",
+      "status": 200,
+      "ms": 14,
+      "bytes": 21535,
+      "cache": "s-maxage=300, stale-while-revalidate=300"
+    },
+    {
+      "path": "/api/lists/best-deckbuilders-turn-based",
+      "status": 200,
+      "ms": 7,
+      "bytes": 22792,
+      "cache": "s-maxage=300, stale-while-revalidate=300"
+    },
+    {
+      "path": "/api/lists/most-wanted-2026",
+      "status": 200,
+      "ms": 9,
+      "bytes": 19156,
+      "cache": "s-maxage=300, stale-while-revalidate=300"
+    },
+    {
+      "path": "/api/lists/best-competitive-multiplayer",
+      "status": 200,
+      "ms": 6,
+      "bytes": 20046,
+      "cache": "s-maxage=300, stale-while-revalidate=300"
+    },
+    {
+      "path": "/api/lists/best-indie-under-20-hours",
+      "status": 200,
+      "ms": 25,
+      "bytes": 21552,
+      "cache": "s-maxage=300, stale-while-revalidate=300"
+    },
+    {
+      "path": "/api/lists/best-story-driven-adventures",
+      "status": 200,
+      "ms": 7,
+      "bytes": 22300,
+      "cache": "s-maxage=300, stale-while-revalidate=300"
+    },
+    {
+      "path": "/api/lists/best-strategy-builder-games",
+      "status": 200,
+      "ms": 7,
+      "bytes": 21846,
+      "cache": "s-maxage=300, stale-while-revalidate=300"
+    },
+    {
+      "path": "/api/lists/best-horror-games",
+      "status": 200,
+      "ms": 7,
+      "bytes": 18999,
+      "cache": "s-maxage=300, stale-while-revalidate=300"
+    },
+    {
+      "path": "/api/lists/best-co-op-games",
+      "status": 200,
+      "ms": 6,
+      "bytes": 20495,
+      "cache": "s-maxage=300, stale-while-revalidate=300"
+    },
+    {
+      "path": "/api/lists/best-single-player-rpgs",
+      "status": 200,
+      "ms": 6,
+      "bytes": 23304,
+      "cache": "s-maxage=300, stale-while-revalidate=300"
+    },
+    {
+      "path": "/api/lists/sci-fi-epics",
+      "status": 200,
+      "ms": 5,
+      "bytes": 22488,
+      "cache": "s-maxage=300, stale-while-revalidate=300"
+    },
+    {
+      "path": "/api/lists/best-platformers",
+      "status": 200,
+      "ms": 6,
+      "bytes": 21141,
+      "cache": "s-maxage=300, stale-while-revalidate=300"
+    },
+    {
+      "path": "/api/lists/best-roguelikes-roguelites",
+      "status": 200,
+      "ms": 9,
+      "bytes": 24515,
+      "cache": "s-maxage=300, stale-while-revalidate=300"
+    },
+    {
+      "path": "/api/lists/critically-acclaimed-2024",
+      "status": 200,
+      "ms": 9,
+      "bytes": 19412,
+      "cache": "s-maxage=300, stale-while-revalidate=300"
+    },
+    {
+      "path": "/api/lists/best-multiplayer-experiences",
+      "status": 200,
+      "ms": 10,
+      "bytes": 22107,
+      "cache": "s-maxage=300, stale-while-revalidate=300"
+    },
+    {
+      "path": "/api/lists/survival-horror-essentials",
+      "status": 200,
+      "ms": 9,
+      "bytes": 21390,
+      "cache": "s-maxage=300, stale-while-revalidate=300"
+    },
+    {
+      "path": "/api/lists/best-strategy-games",
+      "status": 200,
+      "ms": 6,
+      "bytes": 22259,
+      "cache": "s-maxage=300, stale-while-revalidate=300"
+    },
+    {
+      "path": "/api/lists/top-open-world-adventures",
+      "status": 200,
+      "ms": 7,
+      "bytes": 20030,
+      "cache": "s-maxage=300, stale-while-revalidate=300"
+    },
+    {
+      "path": "/api/lists/essential-metroidvanias",
+      "status": 200,
+      "ms": 7,
+      "bytes": 24102,
+      "cache": "s-maxage=300, stale-while-revalidate=300"
+    },
+    {
+      "path": "/api/lists/best-action-rpgs",
+      "status": 200,
+      "ms": 5,
+      "bytes": 24042,
+      "cache": "s-maxage=300, stale-while-revalidate=300"
+    }
+  ]
+}
