@@ -1,0 +1,37 @@
+{
+  "state": "Approval required; not applied",
+  "productionCommit": "322f47609a7e2735085894f6f86a633147c9cd54",
+  "project": "vjzsvnaswronkctazarn",
+  "path": "supabase/migrations/20261118080200_index_browse_trending_pool.sql",
+  "sha256": "da85513fdbb88e45760d2bfd1f7cd96b8762866c7f9c86cecfde5aec5104a6d5",
+  "demonstratedFailure": "Production /api/search?sort=trending&page=1 repeatedly returned HTTP500 in 3596/3644ms. Matching runtime logs contain PostgreSQL57014, existing statement timeout. Default Browse and Hades text search passed.",
+  "rootCause": "The Trending sort's cover-only predicate does not imply the existing homepage index's release-date and positive-score predicates. Its final id tie key also differs. PostgreSQL therefore scans 8329 eligible wide rows and sorts all of them for a750-row pool. Existing approved indexes are correct for their own queries and must not be replayed or replaced.",
+  "actualHostedPlan": {
+    "estimated": "Sequential scan -> top-N sort -> limit; width900, 8329 estimated rows",
+    "boundedFirstSelection": "Cancelled by the unchanged three-second statement bound, code57014",
+    "laterWarmJson": {"executionMs":1549.057,"scanMs":855.472,"sortTotalMs":898.113,"sharedHitBlocks":6818,"sharedReadBlocks":0,"tempBlocks":0},
+    "caveat": "Later warm success does not resolve the repeated cold/uncached failures. Plans are in production-trending-diagnostic.json."
+  },
+  "isolatedR4Measurement": {
+    "catalogueRows":8355,
+    "selectedRows":750,
+    "fullDatabaseJsonBytes":1517059,
+    "beforeSelectionMs":21.516,
+    "beforeJsonMs":30.503,
+    "afterPostgresProcessRestartJsonMs":14.945,
+    "afterWarmJsonMs":10.481,
+    "genericPlanSelectionMs":1.061,
+    "customPlanSelectionMs":1.101,
+    "indexBytes":507904,
+    "indexBuildMs":116,
+    "exactOrderedFullJsonPreserved":true,
+    "network":"none; no published ports",
+    "productionEnvironmentLoaded":false,
+    "localIndexRemovedAfterward":true,
+    "caveat":"PostgreSQL process restart is not proof of database-storage coldness; the OS page cache may be warm. No hosted improvement is claimed yet."
+  },
+  "exactAction": "Apply only this additive ordering index with its original2s lock/5s statement bounds and atomic matching-version ledger registration. It changes no source rows, queries, predicates, ranking/ties, filtering, grants, RLS, application/database timeout, Auth settings, infrastructure or billing. It adds roughly0.5MB locally and maintenance on updates to indexed values. Index creation may briefly block writers; failure rolls back atomically.",
+  "verificationAfterApproval": "Check actual index definition and query plan, then ordinary first post-index CDN-MISS and warm Trending requests and a bounded second page/filter sample. Record actual bytes, latency and cache state; do not claim storage-cold or framework-cold without evidence. No extra wildcard purge, scheduler dispatch, fixture or completed migration replay.",
+  "sourceAndCi": "Application remains the accepted release source. No new application deployment, audit suppression or branch-protection change is included. Preserve the exact migration source/receipt for ledger alignment; any repository follow-up must respect required checks, and the accepted picomatch advisory remains visible.",
+  "reasonForNewApproval": "This is a newly demonstrated production verification failure. Earlier exact approvals cover the two completed indexes, not this different index."
+}
