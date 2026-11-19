@@ -21,7 +21,11 @@ describe('Newest release-date eligibility',()=>{
  it('includes a mainstream console launch with limited evidence without changing its Verdict',async()=>{
   state.rows=[launch];const result=await loadSearchResults(request);
   expect(result.items).toHaveLength(1);expect(result.items[0]).toMatchObject({score:77,criticScore:98});
-  expect(state.filters).not.toContainEqual(['neq','verdict_label','COMING SOON']);
+  expect(state.filters).toContainEqual(['neq','verdict_label','COMING SOON']);
+ });
+ it('does not call a provisional past-date record a released game',async()=>{
+  state.rows=[{...launch,release_date:'2026-10-22',id:'pending-enrichment',review_count:0,verdict_label:'COMING SOON',is_provisional:true}];
+  expect((await loadSearchResults(request)).items).toEqual([]);
  });
  it('rejects future, explicitly unreleased, cancelled and adult-only records',async()=>{
   state.rows=[{...launch,release_date:'2027-01-01'},{...launch,id:'unreleased',release_status:'upcoming'},
