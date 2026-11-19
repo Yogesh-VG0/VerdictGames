@@ -480,8 +480,12 @@ async function hydrateBrowseCohort(
       signal.throwIfAborted();
       const batch = ids.slice(cursor, cursor += 200);
       const {query} = await createQuery(columns, signal, batch);
+      const started = performance.now();
       const {data, error} = await query.abortSignal(signal) as unknown as {data:GameRow[]|null; error:unknown};
-      if (error) throw error;
+      if (error) {
+        console.warn('[Search] cohort hydration failed', {rows:batch.length, ms:Math.round(performance.now()-started), deadlineExpired:signal.aborted});
+        throw error;
+      }
       for (const row of data ?? []) rows.set(row.id, row);
     }
   };
@@ -529,6 +533,8 @@ async function fetchSearchResults(state: SearchGamesState,poolOnly=false): Promi
   const columns = poolOnly ? BROWSE_POOL_COLUMNS : GAME_CARD_COLUMNS_WITH_DESC;
   let data: GameRow[] | null;
   let returnedCount: number;
+  let phase = 'initial-query';
+  const started = performance.now();
   try {
     const {query} = await createQuery(boundedCohort ? 'id' : columns, signal);
     const result = await query.range(0, requestedLimit - 1).abortSignal(signal) as unknown as {data:GameRow[]|null; error:unknown};
@@ -536,10 +542,12 @@ async function fetchSearchResults(state: SearchGamesState,poolOnly=false): Promi
     returnedCount = result.data?.length ?? 0;
     // Keep exactly the original candidate boundary and initial ordering.
     // No partial response is cached when a chunk fails or the shared deadline expires.
+    phase = 'hydrate';
     data = boundedCohort
       ? await hydrateBrowseCohort(createQuery, (result.data ?? []).map(row => row.id), columns, signal)
       : result.data;
   } catch (error) {
+    console.warn('[Search] catalogue read failed', {sort, phase, ms:Math.round(performance.now()-started), deadlineExpired:signal.aborted});
     controller.abort();
     throw error;
   }
