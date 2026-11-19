@@ -1,0 +1,22 @@
+﻿{
+    "ArchiveIntegrity":  "passed",
+    "ArchiveSHA256":  "cdd05c3418934bbdfef3c3f84a9dd2c2d71d8f489bc43f20a5576c168cdb46da",
+    "ProposalSHA256":  "f173f77058caefd9e95b2f1fcbc7c649d3ab784dc5398b3944a380bad0a2f0db",
+    "RemoteUpload":  "pending",
+    "Verified":  true,
+    "CredentialsExposed":  false,
+    "Archive":  "production-2026-11-19-email-flow-config.7z",
+    "OffsiteStagingChecksum":  "passed",
+    "ManagementRequests":  "GET only; no PATCH retry",
+    "At":  "2026-11-19T09:36:47.7242136Z",
+    "ApprovedHtmlAndVariablesMatch":  true,
+    "ByteExact":  {
+                      "mailer_templates_recovery_content":  false,
+                      "mailer_templates_confirmation_content":  false
+                  },
+    "UnrelatedSettingsUnchanged":  true,
+    "OnlyFields":  [
+                       "mailer_templates_confirmation_content",
+                       "mailer_templates_recovery_content"
+                   ]
+}

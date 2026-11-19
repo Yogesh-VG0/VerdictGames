@@ -1,0 +1,53 @@
+{
+  "scope": "Explicit read-only hosted prototype using only the public anon key; DB/service credentials are not loaded; no mutations",
+  "calls": [
+    {
+      "ms": 3654,
+      "bytes": 48998,
+      "status": 200,
+      "rows": 1000,
+      "shape": "ids"
+    },
+    {
+      "ms": 2059,
+      "bytes": 290810,
+      "status": 200,
+      "rows": 200,
+      "shape": "pool100"
+    },
+    {
+      "ms": 2067,
+      "bytes": 278157,
+      "status": 200,
+      "rows": 200,
+      "shape": "pool100"
+    },
+    {
+      "ms": 866,
+      "bytes": 285707,
+      "status": 200,
+      "rows": 200,
+      "shape": "pool100"
+    },
+    {
+      "ms": 1123,
+      "bytes": 288817,
+      "status": 200,
+      "rows": 200,
+      "shape": "pool100"
+    },
+    {
+      "ms": 1018,
+      "bytes": 287654,
+      "status": 200,
+      "rows": 200,
+      "shape": "pool100"
+    }
+  ],
+  "passed": true,
+  "ms": 7618,
+  "maxConcurrent": 2,
+  "sourceRows": 1000,
+  "totalBytes": 1480143,
+  "orderedIdSha256": "a202561849e72f1682ae84737f5c7fd302ce2bb33f638d66a8e5a3dc57c0d238"
+}

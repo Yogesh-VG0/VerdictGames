@@ -1,0 +1,1220 @@
+{
+  "commit": "63ccf193dbaf8927765d02fee6bbd7f9684703e1",
+  "deployment": "dpl_BEma1BAEAAJC54tugJk99EAWfGzf",
+  "scope": "Actual anonymous production browser after approved policy/snapshot/cache cutover; GET/HEAD only; no fixtures",
+  "http": [
+    {
+      "path": "/api/rawg/lists?type=all-time",
+      "status": 200,
+      "ms": 699,
+      "bytes": 9862,
+      "cache": "HIT",
+      "cacheControl": "public",
+      "vary": null,
+      "timing": "snapshot;dur=1860, catalogue_total;dur=1861",
+      "count": 215,
+      "source": "rawg",
+      "degraded": false,
+      "items": [
+        {
+          "title": "The Witcher 3: Wild Hunt",
+          "slug": "the-witcher-3-wild-hunt",
+          "rank": 1,
+          "platforms": [
+            "PlayStation 5",
+            "Xbox Series S/X",
+            "macOS",
+            "PlayStation 4",
+            "Nintendo Switch",
+            "PC",
+            "Xbox One"
+          ],
+          "genres": [
+            "Action",
+            "RPG"
+          ]
+        },
+        {
+          "title": "Red Dead Redemption 2",
+          "slug": "red-dead-redemption-2",
+          "rank": 2,
+          "platforms": [
+            "PC",
+            "PlayStation 4",
+            "Xbox One"
+          ],
+          "genres": [
+            "Action"
+          ]
+        },
+        {
+          "title": "Portal 2",
+          "slug": "portal-2",
+          "rank": 3,
+          "platforms": [
+            "PlayStation 3",
+            "PC",
+            "Xbox 360",
+            "Linux",
+            "macOS",
+            "Xbox One"
+          ],
+          "genres": [
+            "Shooter",
+            "Puzzle"
+          ]
+        },
+        {
+          "title": "The Last Of Us",
+          "slug": "the-last-of-us",
+          "rank": 4,
+          "platforms": [
+            "PlayStation 3",
+            "PlayStation 4"
+          ],
+          "genres": [
+            "Action",
+            "Adventure"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "/api/rawg/lists?type=all-time",
+      "status": 200,
+      "ms": 76,
+      "bytes": 9862,
+      "cache": "HIT",
+      "cacheControl": "public",
+      "vary": null,
+      "timing": "snapshot;dur=1860, catalogue_total;dur=1861",
+      "count": 215,
+      "source": "rawg",
+      "degraded": false,
+      "items": [
+        {
+          "title": "The Witcher 3: Wild Hunt",
+          "slug": "the-witcher-3-wild-hunt",
+          "rank": 1,
+          "platforms": [
+            "PlayStation 5",
+            "Xbox Series S/X",
+            "macOS",
+            "PlayStation 4",
+            "Nintendo Switch",
+            "PC",
+            "Xbox One"
+          ],
+          "genres": [
+            "Action",
+            "RPG"
+          ]
+        },
+        {
+          "title": "Red Dead Redemption 2",
+          "slug": "red-dead-redemption-2",
+          "rank": 2,
+          "platforms": [
+            "PC",
+            "PlayStation 4",
+            "Xbox One"
+          ],
+          "genres": [
+            "Action"
+          ]
+        },
+        {
+          "title": "Portal 2",
+          "slug": "portal-2",
+          "rank": 3,
+          "platforms": [
+            "PlayStation 3",
+            "PC",
+            "Xbox 360",
+            "Linux",
+            "macOS",
+            "Xbox One"
+          ],
+          "genres": [
+            "Shooter",
+            "Puzzle"
+          ]
+        },
+        {
+          "title": "The Last Of Us",
+          "slug": "the-last-of-us",
+          "rank": 4,
+          "platforms": [
+            "PlayStation 3",
+            "PlayStation 4"
+          ],
+          "genres": [
+            "Action",
+            "Adventure"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "/api/lists?view=summary",
+      "status": 200,
+      "ms": 4762,
+      "bytes": 26783,
+      "cache": "MISS",
+      "cacheControl": "public",
+      "vary": null,
+      "timing": null,
+      "items": [
+        {
+          "id": "67ff98f0-2185-4ba4-978c-fe60f965090a",
+          "title": "Cozy Games to Unwind With",
+          "slug": "cozy-games-to-unwind",
+          "tags": [
+            "editorial",
+            "cozy",
+            "relaxing",
+            "casual"
+          ]
+        },
+        {
+          "id": "8a664f9c-0e45-454a-b1bf-891ba79059f1",
+          "title": "Hidden Indie Gems",
+          "slug": "hidden-indie-gems",
+          "tags": [
+            "editorial",
+            "indie",
+            "hidden-gems",
+            "underrated"
+          ]
+        },
+        {
+          "id": "1a3fd4bc-128d-45d9-bdd6-b59bba875967",
+          "title": "Hidden Gems Since 2024",
+          "slug": "hidden-gems-since-2024",
+          "tags": [
+            "editorial",
+            "hidden-gems",
+            "underrated",
+            "2024"
+          ]
+        },
+        {
+          "id": "c1d1c984-d344-4327-b7b7-43f86181bca7",
+          "title": "Best Deckbuilders & Turn-Based Games",
+          "slug": "best-deckbuilders-turn-based",
+          "tags": [
+            "editorial",
+            "deckbuilder",
+            "turn-based"
+          ]
+        }
+      ]
+    }
+  ],
+  "views": [
+    {
+      "path": "/",
+      "width": 390,
+      "theme": "dark",
+      "title": "Grand Theft Auto VI",
+      "overflow": false,
+      "cards": 101,
+      "decodedImages": 20,
+      "canonical": "https://www.verdict.games/",
+      "robots": "index, follow"
+    },
+    {
+      "path": "/",
+      "width": 390,
+      "theme": "light",
+      "title": "Grand Theft Auto VI",
+      "overflow": false,
+      "cards": 101,
+      "decodedImages": 20,
+      "canonical": "https://www.verdict.games/",
+      "robots": "index, follow"
+    },
+    {
+      "path": "/",
+      "width": 768,
+      "theme": "dark",
+      "title": "Grand Theft Auto VI",
+      "overflow": false,
+      "cards": 101,
+      "decodedImages": 20,
+      "canonical": "https://www.verdict.games/",
+      "robots": "index, follow"
+    },
+    {
+      "path": "/",
+      "width": 768,
+      "theme": "light",
+      "title": "Grand Theft Auto VI",
+      "overflow": false,
+      "cards": 101,
+      "decodedImages": 20,
+      "canonical": "https://www.verdict.games/",
+      "robots": "index, follow"
+    },
+    {
+      "path": "/",
+      "width": 1440,
+      "theme": "dark",
+      "title": "Grand Theft Auto VI",
+      "overflow": false,
+      "cards": 101,
+      "decodedImages": 20,
+      "canonical": "https://www.verdict.games/",
+      "robots": "index, follow"
+    },
+    {
+      "path": "/",
+      "width": 1440,
+      "theme": "light",
+      "title": "Grand Theft Auto VI",
+      "overflow": false,
+      "cards": 101,
+      "decodedImages": 20,
+      "canonical": "https://www.verdict.games/",
+      "robots": "index, follow"
+    },
+    {
+      "path": "/explore?type=all-time",
+      "width": 390,
+      "theme": "dark",
+      "title": "Explore Games",
+      "overflow": false,
+      "cards": 0,
+      "decodedImages": 0,
+      "canonical": "https://www.verdict.games/explore",
+      "robots": "index, follow"
+    },
+    {
+      "path": "/explore?type=all-time",
+      "width": 390,
+      "theme": "light",
+      "title": "Explore Games",
+      "overflow": false,
+      "cards": 0,
+      "decodedImages": 0,
+      "canonical": "https://www.verdict.games/explore",
+      "robots": "index, follow"
+    },
+    {
+      "path": "/explore?type=all-time",
+      "width": 768,
+      "theme": "dark",
+      "title": "Explore Games",
+      "overflow": false,
+      "cards": 0,
+      "decodedImages": 0,
+      "canonical": "https://www.verdict.games/explore",
+      "robots": "index, follow"
+    },
+    {
+      "path": "/explore?type=all-time",
+      "width": 768,
+      "theme": "light",
+      "title": "Explore Games",
+      "overflow": false,
+      "cards": 0,
+      "decodedImages": 0,
+      "canonical": "https://www.verdict.games/explore",
+      "robots": "index, follow"
+    },
+    {
+      "path": "/explore?type=all-time",
+      "width": 1440,
+      "theme": "dark",
+      "title": "Explore Games",
+      "overflow": false,
+      "cards": 0,
+      "decodedImages": 0,
+      "canonical": "https://www.verdict.games/explore",
+      "robots": "index, follow"
+    },
+    {
+      "path": "/explore?type=all-time",
+      "width": 1440,
+      "theme": "light",
+      "title": "Explore Games",
+      "overflow": false,
+      "cards": 0,
+      "decodedImages": 0,
+      "canonical": "https://www.verdict.games/explore",
+      "robots": "index, follow"
+    },
+    {
+      "path": "/explore?type=popular-in-year&year=2025",
+      "width": 390,
+      "theme": "dark",
+      "title": "Explore Games",
+      "overflow": false,
+      "cards": 20,
+      "decodedImages": 14,
+      "canonical": "https://www.verdict.games/explore",
+      "robots": "index, follow"
+    },
+    {
+      "path": "/explore?type=popular-in-year&year=2025",
+      "width": 390,
+      "theme": "light",
+      "title": "Explore Games",
+      "overflow": false,
+      "cards": 20,
+      "decodedImages": 17,
+      "canonical": "https://www.verdict.games/explore",
+      "robots": "index, follow"
+    },
+    {
+      "path": "/explore?type=popular-in-year&year=2025",
+      "width": 768,
+      "theme": "dark",
+      "title": "Explore Games",
+      "overflow": false,
+      "cards": 20,
+      "decodedImages": 20,
+      "canonical": "https://www.verdict.games/explore",
+      "robots": "index, follow"
+    },
+    {
+      "path": "/explore?type=popular-in-year&year=2025",
+      "width": 768,
+      "theme": "light",
+      "title": "Explore Games",
+      "overflow": false,
+      "cards": 20,
+      "decodedImages": 20,
+      "canonical": "https://www.verdict.games/explore",
+      "robots": "index, follow"
+    },
+    {
+      "path": "/explore?type=popular-in-year&year=2025",
+      "width": 1440,
+      "theme": "dark",
+      "title": "Explore Games",
+      "overflow": false,
+      "cards": 20,
+      "decodedImages": 20,
+      "canonical": "https://www.verdict.games/explore",
+      "robots": "index, follow"
+    },
+    {
+      "path": "/explore?type=popular-in-year&year=2025",
+      "width": 1440,
+      "theme": "light",
+      "title": "Explore Games",
+      "overflow": false,
+      "cards": 20,
+      "decodedImages": 20,
+      "canonical": "https://www.verdict.games/explore",
+      "robots": "index, follow"
+    },
+    {
+      "path": "/explore",
+      "width": 390,
+      "theme": "dark",
+      "title": "Explore Games",
+      "overflow": false,
+      "cards": 20,
+      "decodedImages": 13,
+      "canonical": "https://www.verdict.games/explore",
+      "robots": "index, follow"
+    },
+    {
+      "path": "/explore",
+      "width": 390,
+      "theme": "light",
+      "title": "Explore Games",
+      "overflow": false,
+      "cards": 20,
+      "decodedImages": 13,
+      "canonical": "https://www.verdict.games/explore",
+      "robots": "index, follow"
+    },
+    {
+      "path": "/explore",
+      "width": 768,
+      "theme": "dark",
+      "title": "Explore Games",
+      "overflow": false,
+      "cards": 20,
+      "decodedImages": 17,
+      "canonical": "https://www.verdict.games/explore",
+      "robots": "index, follow"
+    },
+    {
+      "path": "/explore",
+      "width": 768,
+      "theme": "light",
+      "title": "Explore Games",
+      "overflow": false,
+      "cards": 20,
+      "decodedImages": 18,
+      "canonical": "https://www.verdict.games/explore",
+      "robots": "index, follow"
+    },
+    {
+      "path": "/explore",
+      "width": 1440,
+      "theme": "dark",
+      "title": "Explore Games",
+      "overflow": false,
+      "cards": 20,
+      "decodedImages": 18,
+      "canonical": "https://www.verdict.games/explore",
+      "robots": "index, follow"
+    },
+    {
+      "path": "/explore",
+      "width": 1440,
+      "theme": "light",
+      "title": "Explore Games",
+      "overflow": false,
+      "cards": 20,
+      "decodedImages": 19,
+      "canonical": "https://www.verdict.games/explore",
+      "robots": "index, follow"
+    },
+    {
+      "path": "/explore?type=recent",
+      "width": 390,
+      "theme": "dark",
+      "title": "Explore Games",
+      "overflow": false,
+      "cards": 6,
+      "decodedImages": 6,
+      "canonical": "https://www.verdict.games/explore",
+      "robots": "index, follow"
+    },
+    {
+      "path": "/explore?type=recent",
+      "width": 390,
+      "theme": "light",
+      "title": "Explore Games",
+      "overflow": false,
+      "cards": 6,
+      "decodedImages": 6,
+      "canonical": "https://www.verdict.games/explore",
+      "robots": "index, follow"
+    },
+    {
+      "path": "/explore?type=recent",
+      "width": 768,
+      "theme": "dark",
+      "title": "Explore Games",
+      "overflow": false,
+      "cards": 6,
+      "decodedImages": 6,
+      "canonical": "https://www.verdict.games/explore",
+      "robots": "index, follow"
+    },
+    {
+      "path": "/explore?type=recent",
+      "width": 768,
+      "theme": "light",
+      "title": "Explore Games",
+      "overflow": false,
+      "cards": 6,
+      "decodedImages": 6,
+      "canonical": "https://www.verdict.games/explore",
+      "robots": "index, follow"
+    },
+    {
+      "path": "/explore?type=recent",
+      "width": 1440,
+      "theme": "dark",
+      "title": "Explore Games",
+      "overflow": false,
+      "cards": 6,
+      "decodedImages": 6,
+      "canonical": "https://www.verdict.games/explore",
+      "robots": "index, follow"
+    },
+    {
+      "path": "/explore?type=recent",
+      "width": 1440,
+      "theme": "light",
+      "title": "Explore Games",
+      "overflow": false,
+      "cards": 6,
+      "decodedImages": 6,
+      "canonical": "https://www.verdict.games/explore",
+      "robots": "index, follow"
+    },
+    {
+      "path": "/explore?type=genre&genre=role-playing-games-rpg",
+      "width": 390,
+      "theme": "dark",
+      "title": "Explore Games",
+      "overflow": false,
+      "cards": 20,
+      "decodedImages": 20,
+      "canonical": "https://www.verdict.games/explore",
+      "robots": "index, follow"
+    },
+    {
+      "path": "/explore?type=genre&genre=role-playing-games-rpg",
+      "width": 390,
+      "theme": "light",
+      "title": "Explore Games",
+      "overflow": false,
+      "cards": 20,
+      "decodedImages": 20,
+      "canonical": "https://www.verdict.games/explore",
+      "robots": "index, follow"
+    },
+    {
+      "path": "/explore?type=genre&genre=role-playing-games-rpg",
+      "width": 768,
+      "theme": "dark",
+      "title": "Explore Games",
+      "overflow": false,
+      "cards": 20,
+      "decodedImages": 20,
+      "canonical": "https://www.verdict.games/explore",
+      "robots": "index, follow"
+    },
+    {
+      "path": "/explore?type=genre&genre=role-playing-games-rpg",
+      "width": 768,
+      "theme": "light",
+      "title": "Explore Games",
+      "overflow": false,
+      "cards": 20,
+      "decodedImages": 20,
+      "canonical": "https://www.verdict.games/explore",
+      "robots": "index, follow"
+    },
+    {
+      "path": "/explore?type=genre&genre=role-playing-games-rpg",
+      "width": 1440,
+      "theme": "dark",
+      "title": "Explore Games",
+      "overflow": false,
+      "cards": 20,
+      "decodedImages": 20,
+      "canonical": "https://www.verdict.games/explore",
+      "robots": "index, follow"
+    },
+    {
+      "path": "/explore?type=genre&genre=role-playing-games-rpg",
+      "width": 1440,
+      "theme": "light",
+      "title": "Explore Games",
+      "overflow": false,
+      "cards": 20,
+      "decodedImages": 20,
+      "canonical": "https://www.verdict.games/explore",
+      "robots": "index, follow"
+    },
+    {
+      "path": "/search",
+      "width": 390,
+      "theme": "dark",
+      "title": "Browse Games",
+      "overflow": false,
+      "cards": 25,
+      "decodedImages": 18,
+      "canonical": "https://www.verdict.games/search",
+      "robots": "index, follow"
+    },
+    {
+      "path": "/search",
+      "width": 390,
+      "theme": "light",
+      "title": "Browse Games",
+      "overflow": false,
+      "cards": 25,
+      "decodedImages": 18,
+      "canonical": "https://www.verdict.games/search",
+      "robots": "index, follow"
+    },
+    {
+      "path": "/search",
+      "width": 768,
+      "theme": "dark",
+      "title": "Browse Games",
+      "overflow": false,
+      "cards": 25,
+      "decodedImages": 19,
+      "canonical": "https://www.verdict.games/search",
+      "robots": "index, follow"
+    },
+    {
+      "path": "/search",
+      "width": 768,
+      "theme": "light",
+      "title": "Browse Games",
+      "overflow": false,
+      "cards": 25,
+      "decodedImages": 20,
+      "canonical": "https://www.verdict.games/search",
+      "robots": "index, follow"
+    },
+    {
+      "path": "/search",
+      "width": 1440,
+      "theme": "dark",
+      "title": "Browse Games",
+      "overflow": false,
+      "cards": 25,
+      "decodedImages": 20,
+      "canonical": "https://www.verdict.games/search",
+      "robots": "index, follow"
+    },
+    {
+      "path": "/search",
+      "width": 1440,
+      "theme": "light",
+      "title": "Browse Games",
+      "overflow": false,
+      "cards": 25,
+      "decodedImages": 20,
+      "canonical": "https://www.verdict.games/search",
+      "robots": "index, follow"
+    },
+    {
+      "path": "/search?genre=Horror",
+      "width": 390,
+      "theme": "dark",
+      "title": "Browse Games",
+      "overflow": false,
+      "cards": 25,
+      "decodedImages": 14,
+      "canonical": "https://www.verdict.games/search?genre=Horror",
+      "robots": "noindex, follow"
+    },
+    {
+      "path": "/search?genre=Horror",
+      "width": 390,
+      "theme": "light",
+      "title": "Browse Games",
+      "overflow": false,
+      "cards": 25,
+      "decodedImages": 20,
+      "canonical": "https://www.verdict.games/search?genre=Horror",
+      "robots": "noindex, follow"
+    },
+    {
+      "path": "/search?genre=Horror",
+      "width": 768,
+      "theme": "dark",
+      "title": "Browse Games",
+      "overflow": false,
+      "cards": 25,
+      "decodedImages": 20,
+      "canonical": "https://www.verdict.games/search?genre=Horror",
+      "robots": "noindex, follow"
+    },
+    {
+      "path": "/search?genre=Horror",
+      "width": 768,
+      "theme": "light",
+      "title": "Browse Games",
+      "overflow": false,
+      "cards": 25,
+      "decodedImages": 20,
+      "canonical": "https://www.verdict.games/search?genre=Horror",
+      "robots": "noindex, follow"
+    },
+    {
+      "path": "/search?genre=Horror",
+      "width": 1440,
+      "theme": "dark",
+      "title": "Browse Games",
+      "overflow": false,
+      "cards": 25,
+      "decodedImages": 20,
+      "canonical": "https://www.verdict.games/search?genre=Horror",
+      "robots": "noindex, follow"
+    },
+    {
+      "path": "/search?genre=Horror",
+      "width": 1440,
+      "theme": "light",
+      "title": "Browse Games",
+      "overflow": false,
+      "cards": 25,
+      "decodedImages": 20,
+      "canonical": "https://www.verdict.games/search?genre=Horror",
+      "robots": "noindex, follow"
+    },
+    {
+      "path": "/calendar",
+      "width": 390,
+      "theme": "dark",
+      "title": "Release Calendar",
+      "overflow": false,
+      "cards": 15,
+      "decodedImages": 6,
+      "canonical": "https://www.verdict.games/calendar",
+      "robots": "index, follow"
+    },
+    {
+      "path": "/calendar",
+      "width": 390,
+      "theme": "light",
+      "title": "Release Calendar",
+      "overflow": false,
+      "cards": 15,
+      "decodedImages": 6,
+      "canonical": "https://www.verdict.games/calendar",
+      "robots": "index, follow"
+    },
+    {
+      "path": "/calendar",
+      "width": 768,
+      "theme": "dark",
+      "title": "Release Calendar",
+      "overflow": false,
+      "cards": 15,
+      "decodedImages": 10,
+      "canonical": "https://www.verdict.games/calendar",
+      "robots": "index, follow"
+    },
+    {
+      "path": "/calendar",
+      "width": 768,
+      "theme": "light",
+      "title": "Release Calendar",
+      "overflow": false,
+      "cards": 15,
+      "decodedImages": 10,
+      "canonical": "https://www.verdict.games/calendar",
+      "robots": "index, follow"
+    },
+    {
+      "path": "/calendar",
+      "width": 1440,
+      "theme": "dark",
+      "title": "Release Calendar",
+      "overflow": false,
+      "cards": 15,
+      "decodedImages": 11,
+      "canonical": "https://www.verdict.games/calendar",
+      "robots": "index, follow"
+    },
+    {
+      "path": "/calendar",
+      "width": 1440,
+      "theme": "light",
+      "title": "Release Calendar",
+      "overflow": false,
+      "cards": 15,
+      "decodedImages": 12,
+      "canonical": "https://www.verdict.games/calendar",
+      "robots": "index, follow"
+    },
+    {
+      "path": "/reviews",
+      "width": 390,
+      "theme": "dark",
+      "title": "Reviews",
+      "overflow": false,
+      "cards": 0,
+      "decodedImages": 0,
+      "canonical": "https://www.verdict.games/reviews",
+      "robots": "index, follow"
+    },
+    {
+      "path": "/reviews",
+      "width": 390,
+      "theme": "light",
+      "title": "Reviews",
+      "overflow": false,
+      "cards": 0,
+      "decodedImages": 0,
+      "canonical": "https://www.verdict.games/reviews",
+      "robots": "index, follow"
+    },
+    {
+      "path": "/reviews",
+      "width": 768,
+      "theme": "dark",
+      "title": "Reviews",
+      "overflow": false,
+      "cards": 0,
+      "decodedImages": 0,
+      "canonical": "https://www.verdict.games/reviews",
+      "robots": "index, follow"
+    },
+    {
+      "path": "/reviews",
+      "width": 768,
+      "theme": "light",
+      "title": "Reviews",
+      "overflow": false,
+      "cards": 0,
+      "decodedImages": 0,
+      "canonical": "https://www.verdict.games/reviews",
+      "robots": "index, follow"
+    },
+    {
+      "path": "/reviews",
+      "width": 1440,
+      "theme": "dark",
+      "title": "Reviews",
+      "overflow": false,
+      "cards": 0,
+      "decodedImages": 0,
+      "canonical": "https://www.verdict.games/reviews",
+      "robots": "index, follow"
+    },
+    {
+      "path": "/reviews",
+      "width": 1440,
+      "theme": "light",
+      "title": "Reviews",
+      "overflow": false,
+      "cards": 0,
+      "decodedImages": 0,
+      "canonical": "https://www.verdict.games/reviews",
+      "robots": "index, follow"
+    },
+    {
+      "path": "/lists",
+      "width": 390,
+      "theme": "dark",
+      "title": "Curated Lists",
+      "overflow": false,
+      "cards": 0,
+      "decodedImages": 79,
+      "canonical": "https://www.verdict.games/lists",
+      "robots": "index, follow"
+    },
+    {
+      "path": "/lists",
+      "width": 390,
+      "theme": "light",
+      "title": "Curated Lists",
+      "overflow": false,
+      "cards": 0,
+      "decodedImages": 79,
+      "canonical": "https://www.verdict.games/lists",
+      "robots": "index, follow"
+    },
+    {
+      "path": "/lists",
+      "width": 768,
+      "theme": "dark",
+      "title": "Curated Lists",
+      "overflow": false,
+      "cards": 0,
+      "decodedImages": 84,
+      "canonical": "https://www.verdict.games/lists",
+      "robots": "index, follow"
+    },
+    {
+      "path": "/lists",
+      "width": 768,
+      "theme": "light",
+      "title": "Curated Lists",
+      "overflow": false,
+      "cards": 0,
+      "decodedImages": 84,
+      "canonical": "https://www.verdict.games/lists",
+      "robots": "index, follow"
+    },
+    {
+      "path": "/lists",
+      "width": 1440,
+      "theme": "dark",
+      "title": "Curated Lists",
+      "overflow": false,
+      "cards": 0,
+      "decodedImages": 84,
+      "canonical": "https://www.verdict.games/lists",
+      "robots": "index, follow"
+    },
+    {
+      "path": "/lists",
+      "width": 1440,
+      "theme": "light",
+      "title": "Curated Lists",
+      "overflow": false,
+      "cards": 0,
+      "decodedImages": 84,
+      "canonical": "https://www.verdict.games/lists",
+      "robots": "index, follow"
+    },
+    {
+      "path": "/game/hades",
+      "width": 390,
+      "theme": "dark",
+      "title": "Hades",
+      "overflow": false,
+      "cards": 0,
+      "decodedImages": 2,
+      "canonical": "https://www.verdict.games/game/hades"
+    },
+    {
+      "path": "/game/hades",
+      "width": 390,
+      "theme": "light",
+      "title": "Hades",
+      "overflow": false,
+      "cards": 0,
+      "decodedImages": 2,
+      "canonical": "https://www.verdict.games/game/hades"
+    },
+    {
+      "path": "/game/hades",
+      "width": 768,
+      "theme": "dark",
+      "title": "Hades",
+      "overflow": false,
+      "cards": 0,
+      "decodedImages": 3,
+      "canonical": "https://www.verdict.games/game/hades"
+    },
+    {
+      "path": "/game/hades",
+      "width": 768,
+      "theme": "light",
+      "title": "Hades",
+      "overflow": false,
+      "cards": 0,
+      "decodedImages": 3,
+      "canonical": "https://www.verdict.games/game/hades"
+    },
+    {
+      "path": "/game/hades",
+      "width": 1440,
+      "theme": "dark",
+      "title": "Hades",
+      "overflow": false,
+      "cards": 0,
+      "decodedImages": 3,
+      "canonical": "https://www.verdict.games/game/hades"
+    },
+    {
+      "path": "/game/hades",
+      "width": 1440,
+      "theme": "light",
+      "title": "Hades",
+      "overflow": false,
+      "cards": 0,
+      "decodedImages": 7,
+      "canonical": "https://www.verdict.games/game/hades"
+    },
+    {
+      "path": "/lists/cozy-games-to-unwind",
+      "width": 390,
+      "theme": "dark",
+      "title": "Cozy Games to Unwind With",
+      "overflow": false,
+      "cards": 12,
+      "decodedImages": 10,
+      "canonical": "https://www.verdict.games/lists/cozy-games-to-unwind",
+      "robots": "index, follow"
+    },
+    {
+      "path": "/lists/cozy-games-to-unwind",
+      "width": 390,
+      "theme": "light",
+      "title": "Cozy Games to Unwind With",
+      "overflow": false,
+      "cards": 12,
+      "decodedImages": 10,
+      "canonical": "https://www.verdict.games/lists/cozy-games-to-unwind",
+      "robots": "index, follow"
+    },
+    {
+      "path": "/lists/cozy-games-to-unwind",
+      "width": 768,
+      "theme": "dark",
+      "title": "Cozy Games to Unwind With",
+      "overflow": false,
+      "cards": 12,
+      "decodedImages": 12,
+      "canonical": "https://www.verdict.games/lists/cozy-games-to-unwind",
+      "robots": "index, follow"
+    },
+    {
+      "path": "/lists/cozy-games-to-unwind",
+      "width": 768,
+      "theme": "light",
+      "title": "Cozy Games to Unwind With",
+      "overflow": false,
+      "cards": 12,
+      "decodedImages": 12,
+      "canonical": "https://www.verdict.games/lists/cozy-games-to-unwind",
+      "robots": "index, follow"
+    },
+    {
+      "path": "/lists/cozy-games-to-unwind",
+      "width": 1440,
+      "theme": "dark",
+      "title": "Cozy Games to Unwind With",
+      "overflow": false,
+      "cards": 12,
+      "decodedImages": 12,
+      "canonical": "https://www.verdict.games/lists/cozy-games-to-unwind",
+      "robots": "index, follow"
+    },
+    {
+      "path": "/lists/cozy-games-to-unwind",
+      "width": 1440,
+      "theme": "light",
+      "title": "Cozy Games to Unwind With",
+      "overflow": false,
+      "cards": 12,
+      "decodedImages": 12,
+      "canonical": "https://www.verdict.games/lists/cozy-games-to-unwind",
+      "robots": "index, follow"
+    },
+    {
+      "path": "/reset-password",
+      "width": 390,
+      "theme": "dark",
+      "title": "Reset your password",
+      "overflow": false,
+      "cards": 0,
+      "decodedImages": 0,
+      "canonical": "https://www.verdict.games/",
+      "robots": "noindex, nofollow"
+    },
+    {
+      "path": "/reset-password",
+      "width": 390,
+      "theme": "light",
+      "title": "Reset your password",
+      "overflow": false,
+      "cards": 0,
+      "decodedImages": 0,
+      "canonical": "https://www.verdict.games/",
+      "robots": "noindex, nofollow"
+    },
+    {
+      "path": "/reset-password",
+      "width": 768,
+      "theme": "dark",
+      "title": "Reset your password",
+      "overflow": false,
+      "cards": 0,
+      "decodedImages": 0,
+      "canonical": "https://www.verdict.games/",
+      "robots": "noindex, nofollow"
+    },
+    {
+      "path": "/reset-password",
+      "width": 768,
+      "theme": "light",
+      "title": "Reset your password",
+      "overflow": false,
+      "cards": 0,
+      "decodedImages": 0,
+      "canonical": "https://www.verdict.games/",
+      "robots": "noindex, nofollow"
+    },
+    {
+      "path": "/reset-password",
+      "width": 1440,
+      "theme": "dark",
+      "title": "Reset your password",
+      "overflow": false,
+      "cards": 0,
+      "decodedImages": 0,
+      "canonical": "https://www.verdict.games/",
+      "robots": "noindex, nofollow"
+    },
+    {
+      "path": "/reset-password",
+      "width": 1440,
+      "theme": "light",
+      "title": "Reset your password",
+      "overflow": false,
+      "cards": 0,
+      "decodedImages": 0,
+      "canonical": "https://www.verdict.games/",
+      "robots": "noindex, nofollow"
+    },
+    {
+      "path": "/auth/confirm",
+      "width": 390,
+      "theme": "dark",
+      "title": "Confirm your email",
+      "overflow": false,
+      "cards": 0,
+      "decodedImages": 0,
+      "canonical": "https://www.verdict.games/",
+      "robots": "noindex, nofollow"
+    },
+    {
+      "path": "/auth/confirm",
+      "width": 390,
+      "theme": "light",
+      "title": "Confirm your email",
+      "overflow": false,
+      "cards": 0,
+      "decodedImages": 0,
+      "canonical": "https://www.verdict.games/",
+      "robots": "noindex, nofollow"
+    },
+    {
+      "path": "/auth/confirm",
+      "width": 768,
+      "theme": "dark",
+      "title": "Confirm your email",
+      "overflow": false,
+      "cards": 0,
+      "decodedImages": 0,
+      "canonical": "https://www.verdict.games/",
+      "robots": "noindex, nofollow"
+    },
+    {
+      "path": "/auth/confirm",
+      "width": 768,
+      "theme": "light",
+      "title": "Confirm your email",
+      "overflow": false,
+      "cards": 0,
+      "decodedImages": 0,
+      "canonical": "https://www.verdict.games/",
+      "robots": "noindex, nofollow"
+    },
+    {
+      "path": "/auth/confirm",
+      "width": 1440,
+      "theme": "dark",
+      "title": "Confirm your email",
+      "overflow": false,
+      "cards": 0,
+      "decodedImages": 0,
+      "canonical": "https://www.verdict.games/",
+      "robots": "noindex, nofollow"
+    },
+    {
+      "path": "/auth/confirm",
+      "width": 1440,
+      "theme": "light",
+      "title": "Confirm your email",
+      "overflow": false,
+      "cards": 0,
+      "decodedImages": 0,
+      "canonical": "https://www.verdict.games/",
+      "robots": "noindex, nofollow"
+    }
+  ],
+  "errors": [],
+  "checks": [
+    {
+      "heroSingleControl": true
+    },
+    {
+      "productionFilterFeedback": true
+    },
+    {
+      "seo": {
+        "robotsStatus": 200,
+        "sitemapStatus": 200,
+        "sitemapBytes": 1975693,
+        "canonicalHost": true,
+        "robotsHost": true,
+        "privateRouteInSitemap": false
+      }
+    }
+  ],
+  "blockedWrites": 0
+}

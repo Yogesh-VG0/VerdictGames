@@ -1,0 +1,96 @@
+import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
+
+const state = vi.hoisted(() => ({
+  cache: new Map<string, Promise<unknown>>(), calls: [] as {columns:string; ids?:string[]; filters:unknown[][]; range:number[]}[],
+  active: 0, peak: 0, failChunk: false,
+}));
+vi.mock('next/cache', () => ({unstable_cache: (fn:(...args:unknown[])=>Promise<unknown>, keys:string[]) => (...args:unknown[]) => {
+  const key = JSON.stringify([keys, args]);
+  if (!state.cache.has(key)) {
+    const pending = fn(...args).catch(error => {state.cache.delete(key); throw error;});
+    state.cache.set(key, pending);
+  }
+  return state.cache.get(key);
+}}));
+const rows = Array.from({length:1000}, (_, index) => ({
+  id:`game-${index}`, slug:`game-${index}`, title:`Game ${index}`, steam_app_id:1000+index,
+  release_date:'2025-01-01', created_at:new Date(Date.UTC(2026, 0, 1, 0, 0, 1000-index)).toISOString(),
+  platforms:['PC'], genres:['Action'], tags:['Singleplayer'], developer:'Studio', publisher:'Studio',
+  cover_image:'https://images.igdb.com/co123.jpg', header_image:'https://images.igdb.com/co123.jpg',
+  description:'A complete standalone action adventure with a substantial story.',
+  score:90, verdict_score:90, confidence:0.9, review_count:1000000, steam_total_count:1000000,
+  steam_positive_count:950000, current_players:1000, is_provisional:false, verdict_label:'MUST PLAY',
+}));
+vi.mock('@/lib/supabase/public', () => ({hasPublicSupabaseEnv:()=>true, getPublicSupabase:()=>({from:()=>{
+  const query:Record<string,unknown> = {};
+  let ids:string[]|undefined, columns='', range=[0,999];
+  let signal:AbortSignal;
+  const filters:unknown[][]=[];
+  for (const method of ['or','gte','gt','lte','not','neq','order','contains','eq']) {
+    query[method]=(...args:unknown[])=>{filters.push([method,...args]);return query;};
+  }
+  query.abortSignal=(value:AbortSignal)=>{signal=value;return query;};
+  query.select=(value:string)=>{columns=value;return query;};
+  query.in=(_field:string,values:string[])=>{ids=values;return query;};
+  query.range=(a:number,b:number)=>{range=[a,b];return query;};
+  query.then=(resolve:(value:unknown)=>unknown, reject:(error:unknown)=>unknown)=>{
+    state.calls.push({columns,ids,filters,range});
+    return (async()=>{
+      const hydration=Boolean(ids && ids.length>25);
+      if(hydration){state.active++;state.peak=Math.max(state.peak,state.active);}
+      try {
+        await new Promise(done=>setTimeout(done,2));
+        signal.throwIfAborted();
+        if(state.failChunk && ids?.includes('game-200'))return {data:null,error:{code:'57014'}};
+        // Hydration is deliberately unordered: the loader must restore the ID cohort.
+        const selected=ids?rows.filter(row=>ids!.includes(row.id)).reverse():rows.slice(range[0],range[1]+1);
+        return {data:selected.map(row=>Object.fromEntries(Object.entries(row).filter(([key])=>columns.split(',').includes(key)))),error:null};
+      } finally {if(hydration)state.active--;}
+    })().then(resolve,reject);
+  };
+  return query;
+}})}));
+import {loadSearchResults} from './search';
+
+const request = {query:'',platform:'All',genre:'',year:'',monetization:'All',sort:'recently-added',page:1} as const;
+describe('bounded Recently Added cohort',()=>{
+  beforeEach(()=>{
+    state.cache.clear();state.calls=[];state.active=0;state.peak=0;state.failChunk=false;
+    vi.useFakeTimers({toFake:['Date']});vi.setSystemTime(new Date('2026-11-19T12:00:00Z'));
+  });
+  afterEach(()=>vi.useRealTimers());
+  it('keeps all 1,000 candidates, restores their order and shares the cohort across pages',async()=>{
+    const first=await loadSearchResults(request);
+    const second=await loadSearchResults({...request,page:2});
+    expect(first.total).toBe(1000);expect(first.totalIsExact).toBe(false);
+    expect(first.items.map(row=>row.id)).toEqual(rows.slice(0,25).map(row=>row.id));
+    expect(second.items.map(row=>row.id)).toEqual(rows.slice(25,50).map(row=>row.id));
+    const initial=state.calls.filter(call=>!call.ids);
+    expect(initial).toHaveLength(1);expect(initial[0].columns).toBe('id');expect(initial[0].range).toEqual([0,999]);
+    const chunks=state.calls.filter(call=>call.ids && call.ids.length>25);
+    expect(chunks.map(call=>call.ids!.length)).toEqual([200,200,200,200,200]);
+    expect(state.peak).toBe(2);
+    expect(chunks.every(call=>call.columns.includes('description'))).toBe(true);
+  });
+  it('reapplies platform and release-year filters to every bounded read',async()=>{
+    const result=await loadSearchResults({...request,platform:'PC',year:'2025'});
+    expect(result.items).toHaveLength(25);
+    expect(state.calls).toHaveLength(6);
+    for(const call of state.calls){
+      expect(call.filters).toContainEqual(['contains','platforms',['PC']]);
+      expect(call.filters).toContainEqual(['gte','release_date','2025-01-01']);
+      expect(call.filters).toContainEqual(['lte','release_date','2025-12-31']);
+      expect(call.filters).toContainEqual(['order','created_at',{ascending:false}]);
+    }
+  });
+  it('fails the entire read on a chunk error and does not retain a partial success',async()=>{
+    state.failChunk=true;
+    await expect(loadSearchResults(request)).rejects.toEqual({code:'57014'});
+    await new Promise(done=>setTimeout(done,5));
+    expect(state.active).toBe(0);
+    expect(state.cache.size).toBe(0);
+    state.failChunk=false;
+    expect((await loadSearchResults(request)).total).toBe(1000);
+  });
+});
+
