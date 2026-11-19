@@ -26,7 +26,7 @@ import {searchGenrePredicate} from '@/lib/utils/searchGenre';
 export const SEARCH_REVALIDATE_SECONDS = 300;
 export const SEARCH_API_CACHE_CONTROL = `s-maxage=${SEARCH_REVALIDATE_SECONDS}, stale-while-revalidate=300`;
 export const SEARCH_PAGE_SIZE = 25;
-const SEARCH_RESULTS_CACHE_NAMESPACE = "search-results-v9";
+const SEARCH_RESULTS_CACHE_NAMESPACE = "search-results-v10";
 // Ranking and eligibility need evidence and safety metadata, not display copy,
 // prices or hero flags. Hydrate full card fields only for the visible page.
 const BROWSE_POOL_COLUMNS = GAME_CARD_COLUMNS_WITH_DESC.split(',').filter(column => ![
@@ -526,7 +526,7 @@ async function fetchSearchResults(state: SearchGamesState,poolOnly=false): Promi
   const requestedLimit = isRelevanceWithQuery ? 150
     : isRecentlyAdded ? 1000 : isTrendingSort ? 750
       : isTopRated || isNewest || isUpcoming ? 500 : 150;
-  const boundedCohort = requestedLimit > 500;
+  const boundedCohort = requestedLimit > 200;
   const createQuery = createSearchQueryFactory(state);
   const controller = new AbortController();
   const signal = AbortSignal.any([AbortSignal.timeout(10_000), controller.signal]);
@@ -797,7 +797,7 @@ function readSharedBrowsePool(sort: SearchGamesState['sort']): Promise<RankedBro
 const readRankedBrowsePool=unstable_cache(async(sort:SearchGamesState['sort'])=>{
   if(!['relevance','newest','upcoming','recently-added','top-rated','trending'].includes(sort))throw new Error('Invalid public browse sort');
   return readSharedBrowsePool(sort);
-},['public-browse-ranked-ids-v5'],{revalidate:SEARCH_REVALIDATE_SECONDS,tags:['public-search']});
+},['public-browse-ranked-ids-v6'],{revalidate:SEARCH_REVALIDATE_SECONDS,tags:['public-search']});
 
 async function readBrowseCards(ids:string[]):Promise<Game[]> {
   const {data,error}=await getPublicSupabase().from('games').select(GAME_CARD_COLUMNS_WITH_DESC).in('id',ids).abortSignal(AbortSignal.timeout(5000));

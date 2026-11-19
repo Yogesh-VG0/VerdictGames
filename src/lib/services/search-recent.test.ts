@@ -105,6 +105,14 @@ describe('bounded Recently Added cohort',()=>{
     expect(state.calls.filter(call=>call.ids && call.ids.length>25)).toHaveLength(5);
     expect(state.peak).toBe(2);
   });
+  it('bounds 500-row sorts after the same wide-read failure was observed in Top Rated',async()=>{
+    const result=await loadSearchResults({...request,sort:'top-rated'});
+    expect(result.total).toBe(500);expect(result.totalIsExact).toBe(false);
+    expect(result.items.map(row=>row.id)).toEqual(rows.slice(0,25).map(row=>row.id));
+    expect(state.calls[0].columns).toBe('id');expect(state.calls[0].range).toEqual([0,499]);
+    expect(state.calls.filter(call=>call.ids && call.ids.length>25).map(call=>call.ids!.length)).toEqual([200,200,100]);
+    expect(state.peak).toBe(2);
+  });
   it('fails the entire read on a chunk error and does not retain a partial success',async()=>{
     state.failChunk=true;
     await expect(loadSearchResults(request)).rejects.toEqual({code:'57014'});

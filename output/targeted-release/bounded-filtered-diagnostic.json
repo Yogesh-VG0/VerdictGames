@@ -1,0 +1,57 @@
+{
+  "head": "cc7175b113f89ac4ad0e570979ca6da57f7cfbaa",
+  "origin": "https://verdict-games-7vgeratw1-yogesh-vg0s-projects.vercel.app",
+  "deployment": "dpl_EzfP9krtVSTzp6pHLC8Fzv8RUD3q",
+  "scope": "Exact protected preview; anonymous read-only; first Recently Added request uses new framework cache namespace; storage coldness is not controlled",
+  "http": [
+    {
+      "path": "/api/search?sort=recently-added&platform=PC&year=2025",
+      "status": 200,
+      "ms": 5162,
+      "bytes": 44457,
+      "cache": "MISS",
+      "cacheControl": "public, max-age=0, must-revalidate",
+      "vary": null,
+      "total": 239,
+      "totalIsExact": true,
+      "page": 1,
+      "ids": [
+        "2df30ec7-028a-4f7f-b8ee-ea80917ddaa8",
+        "d729a1de-0783-4896-84e5-a411f762de2d",
+        "917f1910-7f5d-4d14-b2df-93121789118a",
+        "e019cbe8-25e1-447f-8fbe-d51b6abcefba",
+        "29e8388a-1664-42e2-b81a-cd0bbcffce73",
+        "6eebbf38-6128-4613-b6d3-8918a565396c",
+        "77f8fd50-f942-4f17-96be-53c15282f4e4",
+        "133c5982-9b24-49ec-ab98-676012a62dd2",
+        "5c894db7-168f-42e9-b542-c3a4ae3f5c40",
+        "e568afca-59e5-45d6-99a9-75ce5abc8271",
+        "fb4b03df-5af0-48f5-b383-b04104f37c39",
+        "63f39440-f58c-4ef9-b4c6-d5ca88f79006",
+        "4b441586-be3a-49fe-9d46-ff8e8adc6db7",
+        "c97fac48-b08c-4325-8fed-b57c81a2f88b",
+        "5bd8d6c6-c43c-4a0b-aaa9-cf601b2daac3",
+        "cbe5d8ae-7f0e-4f68-9c20-b1c6c816b1f9",
+        "46309aa7-b811-4769-b284-9822d681c93a",
+        "cfe32e8d-ce80-4a42-ab24-d3f99d478818",
+        "627666d5-0c56-4ee6-9975-c9dcaaf306f4",
+        "2aa4e805-67c2-4328-9adc-1af78c2e337e",
+        "43fef232-4882-4b8c-b4f3-e9e1878af69b",
+        "de6c400a-8f20-4f7f-bf09-5f4ea192698a",
+        "06f5d4ed-3f9b-4512-b3bb-b965b22e9d57",
+        "4c925e81-a87a-44c8-bad5-294134393cc2",
+        "91583e22-8b67-4a0a-a842-dd5424e4a81f"
+      ],
+      "titles": [
+        "Schedule I",
+        "RV There Yet?",
+        "Rhythm Doctor"
+      ],
+      "phase": "first previously failing filtered combination; error phase diagnostic"
+    }
+  ],
+  "views": [],
+  "errors": [],
+  "blockedWrites": 0,
+  "passed": true
+}

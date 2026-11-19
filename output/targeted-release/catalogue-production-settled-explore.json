@@ -1,0 +1,56 @@
+{
+  "scope": "Settled production All-Time grid, replacing skeleton-only capture as visual evidence; GET/HEAD only",
+  "views": [
+    {
+      "width": 390,
+      "theme": "dark",
+      "overflow": false,
+      "cards": 20,
+      "decodedImages": 18,
+      "updating": false
+    },
+    {
+      "width": 390,
+      "theme": "light",
+      "overflow": false,
+      "cards": 20,
+      "decodedImages": 19,
+      "updating": false
+    },
+    {
+      "width": 768,
+      "theme": "dark",
+      "overflow": false,
+      "cards": 20,
+      "decodedImages": 20,
+      "updating": false
+    },
+    {
+      "width": 768,
+      "theme": "light",
+      "overflow": false,
+      "cards": 20,
+      "decodedImages": 20,
+      "updating": false
+    },
+    {
+      "width": 1440,
+      "theme": "dark",
+      "overflow": false,
+      "cards": 20,
+      "decodedImages": 20,
+      "updating": false
+    },
+    {
+      "width": 1440,
+      "theme": "light",
+      "overflow": false,
+      "cards": 20,
+      "decodedImages": 20,
+      "updating": false
+    }
+  ],
+  "errors": [],
+  "http": [],
+  "passed": true
+}
