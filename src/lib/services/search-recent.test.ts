@@ -2,9 +2,10 @@ import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 
 const state = vi.hoisted(() => ({
   cache: new Map<string, Promise<unknown>>(), calls: [] as {columns:string; ids?:string[]; filters:unknown[][]; range:number[]}[],
-  active: 0, peak: 0, failChunk: false,
+  active: 0, peak: 0, failChunk: false, bypassCache:false,
 }));
 vi.mock('next/cache', () => ({unstable_cache: (fn:(...args:unknown[])=>Promise<unknown>, keys:string[]) => (...args:unknown[]) => {
+  if (state.bypassCache) return fn(...args);
   const key = JSON.stringify([keys, args]);
   if (!state.cache.has(key)) {
     const pending = fn(...args).catch(error => {state.cache.delete(key); throw error;});
@@ -55,7 +56,7 @@ import {loadSearchResults} from './search';
 const request = {query:'',platform:'All',genre:'',year:'',monetization:'All',sort:'recently-added',page:1} as const;
 describe('bounded Recently Added cohort',()=>{
   beforeEach(()=>{
-    state.cache.clear();state.calls=[];state.active=0;state.peak=0;state.failChunk=false;
+    state.cache.clear();state.calls=[];state.active=0;state.peak=0;state.failChunk=false;state.bypassCache=false;
     vi.useFakeTimers({toFake:['Date']});vi.setSystemTime(new Date('2026-11-19T12:00:00Z'));
   });
   afterEach(()=>vi.useRealTimers());
@@ -94,6 +95,15 @@ describe('bounded Recently Added cohort',()=>{
     for(const call of state.calls.slice(0,-1)){
       expect(call.filters).toContainEqual(['order','is_trending_manual',{ascending:false,nullsFirst:false}]);
     }
+  });
+  it('coalesces simultaneous cohort refreshes even when the framework starts each callback',async()=>{
+    state.bypassCache=true;
+    const results=await Promise.all([1,2,3].map(page=>loadSearchResults({...request,page})));
+    expect(results.every(result=>result.total===1000)).toBe(true);
+    expect(new Set(results.flatMap(result=>result.items.map(row=>row.id))).size).toBe(75);
+    expect(state.calls.filter(call=>!call.ids)).toHaveLength(1);
+    expect(state.calls.filter(call=>call.ids && call.ids.length>25)).toHaveLength(5);
+    expect(state.peak).toBe(2);
   });
   it('fails the entire read on a chunk error and does not retain a partial success',async()=>{
     state.failChunk=true;

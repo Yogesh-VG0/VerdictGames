@@ -782,10 +782,22 @@ async function fetchSearchResults(state: SearchGamesState,poolOnly=false): Promi
 // Only six unfiltered public discovery cohorts enter this shared cache.
 // Store IDs (~40KB maximum), never the 1,000 wide source rows. Warm pages read
 // only their 25 card records; personalized data never enters this path.
+// Next can start multiple background revalidations of the same stale entry.
+// Share their work within a function worker; retain only the six allowed sorts
+// while a read is pending, and always remove failed or completed reads.
+const pendingBrowsePools = new Map<SearchGamesState['sort'], Promise<RankedBrowsePool>>();
+function readSharedBrowsePool(sort: SearchGamesState['sort']): Promise<RankedBrowsePool> {
+  const pending = pendingBrowsePools.get(sort);
+  if (pending) return pending;
+  const read = fetchSearchResults({query:'',platform:'All',genre:'',year:'',monetization:'All',sort,page:1},true)
+    .finally(() => {pendingBrowsePools.delete(sort);});
+  pendingBrowsePools.set(sort, read);
+  return read;
+}
 const readRankedBrowsePool=unstable_cache(async(sort:SearchGamesState['sort'])=>{
   if(!['relevance','newest','upcoming','recently-added','top-rated','trending'].includes(sort))throw new Error('Invalid public browse sort');
-  return fetchSearchResults({query:'',platform:'All',genre:'',year:'',monetization:'All',sort,page:1},true);
-},['public-browse-ranked-ids-v4'],{revalidate:SEARCH_REVALIDATE_SECONDS,tags:['public-search']});
+  return readSharedBrowsePool(sort);
+},['public-browse-ranked-ids-v5'],{revalidate:SEARCH_REVALIDATE_SECONDS,tags:['public-search']});
 
 async function readBrowseCards(ids:string[]):Promise<Game[]> {
   const {data,error}=await getPublicSupabase().from('games').select(GAME_CARD_COLUMNS_WITH_DESC).in('id',ids).abortSignal(AbortSignal.timeout(5000));
