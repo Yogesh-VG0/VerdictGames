@@ -1,0 +1,27 @@
+{
+  "startedAt": "2026-11-19T15:21:36.706Z",
+  "head": "b97a4a3b7fa9be6b19d0256d8184309abc3febe6",
+  "origin": "https://verdict-games-amqgrp2i6-yogesh-vg0s-projects.vercel.app",
+  "deployment": "dpl_CcHK7NcXXFMaMef2rLWED59ePUiG",
+  "scope": "Exact protected preview; anonymous read-only; new v6 cohort namespace; simultaneous cold Recently Added pages; database storage state uncontrolled; storage coldness is not controlled",
+  "http": [
+    {
+      "path": "/api/search?sort=trending",
+      "status": 500,
+      "ms": 10827,
+      "bytes": 58,
+      "cache": "MISS",
+      "cacheControl": "private, no-store, max-age=0",
+      "vary": "Cookie",
+      "error": "Failed to load search results.",
+      "phase": "framework-cold Trending; new v6 cohort namespace"
+    }
+  ],
+  "views": [],
+  "errors": [],
+  "blockedWrites": 0,
+  "error": {
+    "name": "AssertionError",
+    "message": "/api/search?sort=trending\n\n500 !== 200\n"
+  }
+}
