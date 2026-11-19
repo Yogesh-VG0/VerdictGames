@@ -93,4 +93,3 @@ describe('bounded Recently Added cohort',()=>{
     expect((await loadSearchResults(request)).total).toBe(1000);
   });
 });
-

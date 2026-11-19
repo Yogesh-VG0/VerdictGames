@@ -24,4 +24,3 @@ describe('public search cache boundary',()=>{
     expect(response.headers.get('cache-control')).toBe('s-maxage=300, stale-while-revalidate=300');
   });
 });
-
