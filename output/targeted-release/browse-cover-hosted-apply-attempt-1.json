@@ -1,0 +1,8 @@
+{
+  "project": "vjzsvnaswronkctazarn",
+  "migrationSha256": "8d00cb80c1b21e44b37ccb8f99c76567cd4e96ff32e80acdecee1339fe997722",
+  "rollbackSha256": "1b1d867270460a5c3b6e7d2d7e58b9caa87f3d423497ac8eb63e9d4bdd0f0f93",
+  "mode": "new covering index only",
+  "committed": false,
+  "errorCode": "57014"
+}

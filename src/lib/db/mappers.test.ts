@@ -78,6 +78,18 @@ function makeGameRow(overrides: Partial<GameRow> = {}): GameRow {
 }
 
 describe("mapGameRow", () => {
+  it('distinguishes a just-launched game awaiting reviews from an explicitly unreleased game',()=>{
+    const today=new Date().toISOString().slice(0,10);
+    const fresh=makeGameRow({release_date:today,review_count:0,is_provisional:true,verdict_label:'COMING SOON'});
+    expect(mapGameRow(fresh)).toMatchObject({verdictLabel:'JUST RELEASED',score:0,isProvisional:false});
+    expect(mapGameRow({...fresh,release_status:'upcoming'})).toMatchObject({verdictLabel:'COMING SOON',score:0,isProvisional:true});
+  });
+  it('preserves the adjusted Verdict separately from an IGDB critic average',()=>{
+    const game=mapGameRow(makeGameRow({release_date:new Date().toISOString().slice(0,10),
+      review_count:104,steam_app_id:null,verdict_score:77,confidence:0.245543,
+      score_source:'igdb',igdb_rating:98,critic_score:98,critic_source_count:1}));
+    expect(game.score).toBe(77);expect(game.criticScore).toBe(98);expect(game.verdictLabel).toBe('WORTH IT');
+  });
   // ── Confidence-weighted scoring ──
 
   it("a 2-review 100% game must not outrank a 50K-review 95% game", () => {

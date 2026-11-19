@@ -32,9 +32,16 @@ async function message(subject, recipient) {
   throw new Error('Expected local test email not received');
 }
 function otp(html) { const value = html.match(/>\s*(\d{6,10})\s*</)?.[1]; assert.ok(value, 'Email includes a numeric OTP'); return value; }
-function confirmationLink(html) {
-  const value = html.match(/href="([^"]*#token_hash=[^"]+)"/)?.[1]?.replaceAll('&amp;', '&');
-  assert.ok(value); assert.equal(new URL(value).hostname, '127.0.0.1'); return value;
+async function legacyConfirmationLink(id) {
+  const [row] = await sql`select confirmation_token from auth.users where id=${id}`;
+  assert.ok(row.confirmation_token);
+  return base + '/auth/confirm#token_hash=' + encodeURIComponent(row.confirmation_token);
+}
+async function enterConfirmation(page, email, code) {
+  await page.getByLabel('Email address', {exact:true}).fill(email);
+  await page.getByRole('button', {name:'Enter confirmation code',exact:true}).click();
+  await page.getByLabel('Email verification code', {exact:true}).fill(code);
+  await page.getByRole('button', {name:'Verify email and sign in',exact:true}).click();
 }
 let browser;
 async function context(options = {}) {
@@ -77,26 +84,27 @@ try {
   const a = await signup(ctx, 'emaila');
   await capture(a.page, 'signup-code-phone', 390, 'dark');
   await a.page.setViewportSize({width:1440,height:950});
-  const link = confirmationLink(a.html);
-  check(new URL(link).searchParams.getAll('flow').join(',') === 'confirmation', 'confirmation template supplies the landing marker for old and new signup clients');
-  const confirmation = await ctx.newPage(); await confirmation.goto(link);
-  await confirmation.getByRole('button', { name: 'Confirm email and sign in', exact: true }).waitFor();
-  await confirmation.waitForFunction(() => !location.hash && !location.search);
+  check(!a.html.includes('token_hash=') && !a.html.includes('/auth/v1/verify'), 'new confirmation email contains only a code and a non-consuming form address');
+  check(otp(a.html).length === 6, 'local Auth issues the proposed six-digit confirmation code');
+  const link = await legacyConfirmationLink(a.id);
+  const confirmation = await ctx.newPage(); await confirmation.goto(base + '/auth/confirm');
+  await confirmation.getByRole('button', { name: 'Enter confirmation code', exact: true }).waitFor();
   const before = await admin.auth.admin.getUserById(a.id); assert.ifError(before.error);
-  check(!before.data.user.email_confirmed_at, 'opening/scanning confirmation page does not consume token');
-  check(!new URL(confirmation.url()).hash && !new URL(confirmation.url()).search, 'confirmation secret removed from visible URL/history');
+  check(!before.data.user.email_confirmed_at, 'opening/scanning the generic confirmation form does not confirm an account');
   const headers = (await confirmation.request.get(base + '/auth/confirm')).headers();
   check(headers['cache-control'].includes('no-store') && headers['cdn-cache-control'].includes('private, no-store') && headers['vercel-cdn-cache-control'].includes('private, no-store') && headers['referrer-policy'] === 'no-referrer', 'confirmation result forbids browser/shared caching and sends no-referrer');
   evidence.confirmationHeaders = { cache: headers['cache-control'], cdn: headers['cdn-cache-control'], vercel: headers['vercel-cdn-cache-control'], referrer: headers['referrer-policy'] };
-  await confirmation.getByRole('button', { name: 'Confirm email and sign in', exact: true }).click();
+  await enterConfirmation(confirmation,a.email,otp(a.html));
   await confirmation.getByRole('heading', { name: 'Email confirmed. You’re signed in.', exact: true }).waitFor();
   await a.dialog.waitFor({ state: 'hidden' });
   await a.page.locator('#desktop-profile-button').waitFor();
-  check(true, 'confirmation tab signs in and automatically closes matching original signup modal');
+  check(true, 'confirmation code in another tab signs in and automatically closes matching original signup modal');
   await capture(confirmation, 'confirmation-success-phone', 390, 'light');
   await capture(confirmation, 'confirmation-success-desktop', 1440, 'dark');
   check(await confirmation.getByRole('heading', {name:/signed in/}).isVisible(), 'confirmation success remains understandable across theme/layout changes');
   const replayContext = await context(); const replay = await replayContext.newPage(); await replay.goto(link);
+  await replay.waitForFunction(() => !location.hash && !location.search);
+  check(!new URL(replay.url()).hash && !new URL(replay.url()).search, 'legacy confirmation secret is removed from visible URL/history');
   await replay.getByRole('button', { name: 'Confirm email and sign in', exact: true }).click();
   await replay.getByRole('alert').filter({ hasText: 'already used' }).waitFor();
   const denied = await replay.evaluate(async () => (await fetch('/api/auth/me')).status);
@@ -108,10 +116,21 @@ try {
   await b.dialog.waitFor({ state: 'hidden' });
   check((await publicClient().auth.signInWithPassword({ email: b.email, password })).error === null, 'confirmation code verifies original signup without clicking a link');
 
+  const raceContext=await context();const race=await signup(raceContext,'coderace');
+  const confirmations=await Promise.all([publicClient(),publicClient()].map(client=>client.auth.verifyOtp({email:race.email,token:otp(race.html),type:'email'})));
+  evidence.concurrentConfirmation=confirmations.map(result=>({success:!result.error,code:result.error?.code,status:result.error?.status}));
+  console.log(JSON.stringify({concurrentConfirmation:evidence.concurrentConfirmation}));
+  const successes=confirmations.filter(result=>!result.error);
+  check(successes.length>=1 && successes.every(result=>result.data.user?.id===race.id), 'concurrent confirmations authenticate only the code owner');
+  // GoTrue may admit both in-flight verifications before either clears the
+  // token. Record that provider limitation; do not promise an atomic global
+  // one-browser lock that this application does not implement.
+  check(Boolean((await publicClient().auth.verifyOtp({email:race.email,token:otp(race.html),type:'email'})).error), 'confirmation replay is rejected after concurrent requests finish');
+
   const phoneSignupContext = await context(); const phoneSignup = await signup(phoneSignupContext, 'phone');
   const phoneContext = await context(); const phonePage = await phoneContext.newPage();
-  await phonePage.goto(confirmationLink(phoneSignup.html));
-  await phonePage.getByRole('button', {name:'Confirm email and sign in',exact:true}).click();
+  await phonePage.goto(base + '/auth/confirm');
+  await enterConfirmation(phonePage,phoneSignup.email,otp(phoneSignup.html));
   await phonePage.getByRole('heading', {name:'Email confirmed. You’re signed in.',exact:true}).waitFor();
   check(await phoneSignup.dialog.isVisible() && await phoneSignup.page.evaluate(async () => (await fetch('/api/auth/me')).status) === 401, 'confirmation on a separate device/browser does not silently authenticate the original device');
 
@@ -152,15 +171,15 @@ try {
   check(Boolean((await publicClient().auth.verifyOtp({ email: a.email, token: code, type: 'recovery' })).error), 'recovery code is single-use');
 
   const expired = await admin.auth.admin.generateLink({ type: 'recovery', email: a.email }); assert.ifError(expired.error);
-  await sql`update auth.users set recovery_sent_at=now()-interval '2 hours' where id=${a.id}`;
+  await sql`update auth.users set recovery_sent_at=now()-interval '11 minutes' where id=${a.id}`;
   check(Boolean((await publicClient().auth.verifyOtp({ email: a.email, token: expired.data.properties.email_otp, type: 'recovery' })).error), 'expired recovery code is rejected by actual local Auth');
 
   // An old-style link already in an inbox must still work after app-first
   // rollout. Build it solely from this fresh local signup's own token.
   const legacyContext = await context(); const legacy = await signup(legacyContext, 'legacy');
-  const parsed = new URL(confirmationLink(legacy.html));
+  const parsed = new URL(await legacyConfirmationLink(legacy.id));
   const hash = new URLSearchParams(parsed.hash.slice(1)).get('token_hash');
-  const redirect = new URL(parsed); redirect.hash = ''; redirect.searchParams.delete('flow');
+  const redirect = new URL(base + '/api/auth/callback?next=%2Flibrary');
   const oldUrl = new URL(api + '/auth/v1/verify');
   oldUrl.searchParams.set('token', hash); oldUrl.searchParams.set('type', 'signup');
   oldUrl.searchParams.set('redirect_to', redirect.toString());

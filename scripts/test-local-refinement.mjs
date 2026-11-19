@@ -29,12 +29,6 @@ async function messageFor(subject, recipient = email) {
   }
   throw new Error('Expected local Mailpit message was not delivered');
 }
-function verificationLink(html) {
-  const link = html.match(/href="([^"]*#token_hash=[^"]*)"/i)?.[1]?.replaceAll('&amp;','&');
-  assert.ok(link, 'Email contains a secure verification link');
-  assert.equal(new URL(link).hostname, '127.0.0.1');
-  return link;
-}
 function emailCode(html) {
   const code=html.match(/>\s*(\d{6,10})\s*</)?.[1];
   assert.ok(code, 'Email contains a numeric verification code');
@@ -105,8 +99,11 @@ try {
   const identity = await admin.from('profiles').select('auth_id,id').eq('username',username).single(); assert.ifError(identity.error);
   userIds.push(identity.data.auth_id);
   const confirmationTab=await context.newPage();
-  await confirmationTab.goto(verificationLink(confirmation));
-  await confirmationTab.getByRole('button',{name:'Confirm email and sign in',exact:true}).click();
+  await confirmationTab.goto(base+'/auth/confirm');
+  await confirmationTab.getByLabel('Email address',{exact:true}).fill(email);
+  await confirmationTab.getByRole('button',{name:'Enter confirmation code',exact:true}).click();
+  await confirmationTab.getByLabel('Email verification code',{exact:true}).fill(emailCode(confirmation));
+  await confirmationTab.getByRole('button',{name:'Verify email and sign in',exact:true}).click();
   await confirmationTab.getByRole('heading',{name:'Email confirmed. You’re signed in.',exact:true}).waitFor();
   await dialog.waitFor({state:'hidden'});
   await confirmationTab.close();

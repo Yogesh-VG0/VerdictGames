@@ -19,10 +19,8 @@ import { buildSearchApiPath, buildSearchPagePath, normalizeSearchGamesState, SEA
 import type { Game, GXDeal, GXFreeGame, GXTopGame, MonetizationType, Platform, SortOption, PaginatedResponse } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-const allYears: string[] = [
-  "2026", "2025", "2024", "2023", "2022", "2021", "2020",
-  "2019", "2018", "2017", "2016", "2015", "2014", "2013", "2012", "2011",
-];
+const latestFilterYear = new Date().getUTCFullYear() + 5;
+const allYears = Array.from({length:latestFilterYear - 1970 + 1}, (_, index) => String(latestFilterYear - index));
 
 type FreeSubTab = "free" | "subscriptions";
 type DealsSortMode = "discount" | "price-low" | "price-high" | "name";
@@ -641,6 +639,7 @@ function SearchClientPageContent({
                   Browse results could not be refreshed just now. Showing the last successful results.
                 </div>
               )}
+              {data?.notice && <p role="status" className="mb-4 text-sm text-secondary">{data.notice}</p>}
               <div className="flex items-center gap-2 mb-4">
                 <p className="text-xs text-tertiary">
                   Showing {(page - 1) * (data?.pageSize ?? 25) + 1}–{Math.min(page * (data?.pageSize ?? 25), totalCount)} of {totalCount}{data?.totalIsExact === false ? '+' : ''} game{totalCount !== 1 ? "s" : ""}

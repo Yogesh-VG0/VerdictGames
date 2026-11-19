@@ -1,0 +1,39 @@
+{
+  "status": "Prepared only; no hosted Auth changes or successor merge authorized",
+  "project": "vjzsvnaswronkctazarn",
+  "payload": "docs/audits/2026-11-15/auth-code-only-proposal.json",
+  "payloadSha256": "6e4097e735662ee6fd7981e1744d716552ffde3449a393df8904cd5aa861c23c",
+  "fields": [
+    "mailer_otp_length",
+    "mailer_otp_exp",
+    "mailer_templates_confirmation_content"
+  ],
+  "previous": {
+    "mailer_otp_length": 8,
+    "mailer_otp_exp": 3600,
+    "confirmation": "link and code"
+  },
+  "proposed": {
+    "mailer_otp_length": 6,
+    "mailer_otp_exp": 600,
+    "confirmation": "code only; generic /auth/confirm address cannot consume a token"
+  },
+  "globalExpiryScope": "The single email OTP expiration setting also shortens confirmation, recovery, email-change and invitation token validity. It is not independently scoped to the two new forms.",
+  "unchanged": [
+    "SMTP/Resend",
+    "Google and Discord",
+    "password minimum 15 and password rules",
+    "subjects",
+    "recovery HTML",
+    "other templates",
+    "redirect URLs",
+    "confirmation requirements",
+    "rate limits"
+  ],
+  "migration": "Application first. Verify the deployed /auth/confirm code form and legacy link support, then apply only the three payload fields. GET-only comparison must verify every unrelated setting, and encrypt the new configuration using the existing recovery arrangement.",
+  "security": "Six-digit codes have lower entropy than eight-digit codes. Shorter expiry and unchanged provider verification/resend rate limits mitigate online guessing; no rate-limit or validation bypass. Accept previously issued eight-digit codes during transition.",
+  "verification": "Local Auth with six digits/600-second expiry; code-only signup, cross-tab and separate-browser confirmation, wrong/single-use/11-minute-expired recovery, explicit password update, old confirmation URL compatibility, and private cache headers all passed.",
+  "recovery": "Preserve R3/R4 and uploaded supplements. Refresh only the changed encrypted Auth configuration after approved hosted change; no repeated portable-key/offsite drill.",
+  "rollback": "Keep the compatible application and restore only the exact previous three Auth values if an approved rollback is needed. Do not restore insecure grants or overwrite unrelated settings.",
+  "providerConcurrency": "Actual local GoTrue admitted two simultaneous confirmation verifications for the same code/account; sequential replay was rejected. Per-tab duplicate submissions are blocked. Do not promise globally atomic single-browser consumption. No hosted reproduction or server modification performed."
+}

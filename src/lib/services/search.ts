@@ -22,11 +22,12 @@ import { isPublicSafeGame, isPublicSafeRawgGame } from "@/lib/utils/publicSafety
 import { normalizeTitle } from "@/lib/utils/slugify";
 import { isFutureDate } from "@/lib/utils";
 import {searchGenrePredicate} from '@/lib/utils/searchGenre';
+import {hasKnownFullRelease,hasUnreleasedStatus} from '@/lib/utils/release-status';
 
 export const SEARCH_REVALIDATE_SECONDS = 300;
 export const SEARCH_API_CACHE_CONTROL = `s-maxage=${SEARCH_REVALIDATE_SECONDS}, stale-while-revalidate=300`;
 export const SEARCH_PAGE_SIZE = 25;
-const SEARCH_RESULTS_CACHE_NAMESPACE = "search-results-v10";
+const SEARCH_RESULTS_CACHE_NAMESPACE = "search-results-v11";
 // Ranking and eligibility need evidence and safety metadata, not display copy,
 // prices or hero flags. Hydrate full card fields only for the visible page.
 const BROWSE_POOL_COLUMNS = GAME_CARD_COLUMNS_WITH_DESC.split(',').filter(column => ![
@@ -305,6 +306,8 @@ function isUpcomingDiscoveryReady(row: GameRow): boolean {
   const hasPlatforms = (row.platforms?.length ?? 0) > 0;
 
   return Boolean(row.release_date && isFutureDate(row.release_date))
+    && !hasKnownFullRelease(row)
+    && !['cancelled','canceled','delisted'].includes((row.release_status || '').toLowerCase())
     && isPrimaryDiscoveryGame(row)
     && getUpcomingMetadataScore(row) >= 2
     && (hasCredits || hasPlatforms);
@@ -397,8 +400,6 @@ function createSearchQueryFactory(state: SearchGamesState) {
           .lte("release_date", today)
           .not("cover_image", "is", null)
           .neq("cover_image", "")
-          .or("is_provisional.is.null,is_provisional.eq.false")
-          .neq("verdict_label", "COMING SOON")
           .order("release_date", { ascending: false })
           .order("id", { ascending: true });
         break;
@@ -493,7 +494,7 @@ async function hydrateBrowseCohort(
   return ids.flatMap(id => rows.has(id) ? [rows.get(id)!] : []);
 }
 
-interface RankedBrowsePool { ids:string[]; totalIsExact:boolean }
+interface RankedBrowsePool { ids:string[]; totalIsExact:boolean; cards?:Game[] }
 async function fetchSearchResults(state:SearchGamesState,poolOnly:true):Promise<RankedBrowsePool>;
 async function fetchSearchResults(state:SearchGamesState,poolOnly?:false):Promise<PaginatedResponse<Game>>;
 async function fetchSearchResults(state: SearchGamesState,poolOnly=false): Promise<PaginatedResponse<Game>|RankedBrowsePool> {
@@ -572,6 +573,13 @@ async function fetchSearchResults(state: SearchGamesState,poolOnly=false): Promi
       return isUpcomingDiscoveryReady(row);
     }
 
+    // Newest is a release-date view, not a confidence/popularity ranking.
+    // Fresh console releases must not require Steam activity or old reviews.
+    if (isNewest) {
+      return Boolean(row.release_date && !isFutureDate(row.release_date))
+        && !hasUnreleasedStatus(row);
+    }
+
     if ((row as GameRow & { is_provisional?: boolean }).is_provisional) {
       return false;
     }
@@ -613,9 +621,6 @@ async function fetchSearchResults(state: SearchGamesState,poolOnly=false): Promi
       return false;
     }
 
-    if (isNewest && !isQualityGame(row, "newReleases")) {
-      return false;
-    }
 
     if (isRecentlyAdded && !passesRecentlyAddedDiscoveryFloor(row)) {
       return false;
@@ -702,7 +707,7 @@ async function fetchSearchResults(state: SearchGamesState,poolOnly=false): Promi
     });
   }
 
-  if(poolOnly)return {ids:rows.map(row=>row.id),totalIsExact};
+  if(poolOnly)return {ids:rows.map(row=>row.id),totalIsExact,...(isUpcoming?{cards:rows.map(mapGameRow).map(game=>({...game,description:''}))}:{})};
   rows=rows.slice(start,start+SEARCH_PAGE_SIZE);
 
   const games = rows.map(mapGameRow);
@@ -797,7 +802,7 @@ function readSharedBrowsePool(sort: SearchGamesState['sort']): Promise<RankedBro
 const readRankedBrowsePool=unstable_cache(async(sort:SearchGamesState['sort'])=>{
   if(!['relevance','newest','upcoming','recently-added','top-rated','trending'].includes(sort))throw new Error('Invalid public browse sort');
   return readSharedBrowsePool(sort);
-},['public-browse-ranked-ids-v6'],{revalidate:SEARCH_REVALIDATE_SECONDS,tags:['public-search']});
+},['public-browse-ranked-ids-v7'],{revalidate:SEARCH_REVALIDATE_SECONDS,tags:['public-search']});
 
 async function readBrowseCards(ids:string[]):Promise<Game[]> {
   const {data,error}=await getPublicSupabase().from('games').select(GAME_CARD_COLUMNS_WITH_DESC).in('id',ids).abortSignal(AbortSignal.timeout(5000));
@@ -807,6 +812,10 @@ async function readBrowseCards(ids:string[]):Promise<Game[]> {
 const readCachedBrowseCards=unstable_cache(readBrowseCards,['public-browse-cards-v1'],{revalidate:SEARCH_REVALIDATE_SECONDS,tags:['public-search']});
 
 export async function loadSearchResults(state: SearchGamesState): Promise<PaginatedResponse<Game>> {
+  if(state.sort==='upcoming'){
+    const {loadUpcomingSearch}=await import('./upcoming-search');
+    return loadUpcomingSearch(state,readRankedBrowsePool('upcoming'));
+  }
   // Next bypasses nested unstable_cache reads. Keep the cohort and small-card
   // caches outside the per-filter response cache, or every page rescans1,000 rows.
   if(!state.query && state.platform==='All' && !state.genre && !state.year && state.monetization==='All')return fetchSearchResults(state);

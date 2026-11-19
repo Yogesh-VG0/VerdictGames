@@ -183,7 +183,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Use getSession() for instant local check (reads from storage, no network call).
     // Then await fetchProfile before clearing loading so user is populated first.
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+    let active = true;
+    let receivedAuthEvent = false;
+    supabase.auth.getSession().then(async ({ data: { session }, error }) => {
+      if (!active || receivedAuthEvent) return;
+      // Do not let a delayed initial refresh overwrite a newer sign-in/out.
+      // The SDK owns token-refresh retries; avoid a second application loop.
+      if (error) {setLoading(false);return;}
       if (session?.user) {
         activateIdentity(session.user.id);
         setHasSession(true);
@@ -195,11 +201,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSessionEmail(null);
         setUser(null);
       }
-      setLoading(false);
-    });
+      if (active) setLoading(false);
+    }).catch(() => {if (active) setLoading(false);});
 
     // Listen for auth changes (sign in, sign out, token refresh)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!active) return;
+      receivedAuthEvent = true;
+      setLoading(false);
       if (event === "PASSWORD_RECOVERY") {
         setIsPasswordRecovery(true);
       } else if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED") {
@@ -219,7 +228,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {active = false;subscription.unsubscribe();};
   }, [supabase, fetchProfile, activateIdentity]);
 
   const signInWithEmail = async (email: string, password: string) => {

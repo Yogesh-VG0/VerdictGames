@@ -27,8 +27,8 @@
     "authentication browser flow has no JavaScript errors"
   ],
   "latencyMs": {
-    "normal": 811,
-    "slowObsolete": 812
+    "normal": 825,
+    "slowObsolete": 811
   },
   "mail": {
     "confirmation": "received in local Mailpit",

@@ -3,6 +3,21 @@ import { getEvidenceReviewCount, hasStrongCriticEvidence } from "@/lib/utils/qua
 import { hasBrowseTrendingSignal } from "@/lib/utils/trending";
 import {isPublicSafeRawgGame} from './publicSafety';
 import type {RawgListItem} from '@/lib/external/rawg';
+import type {Game} from '@/lib/types';
+
+export function getHeroSummary(game:Game):string {
+  const description=game.description?.trim();
+  if(description && description.length>20 && !/is an exceptional|is a solid|has moments of brilliance|struggles to deliver/i.test(description)) {
+    return description.slice(0,200)+(description.length>200?'…':'');
+  }
+  if(game.isProvisional || game.verdictLabel==='COMING SOON') {
+    return game.releaseStatus==='early-access'
+      ? 'Available in Early Access. The full release is still ahead.'
+      : 'Explore the announced platforms, trailers and release details.';
+  }
+  if(game.verdictLabel==='JUST RELEASED')return 'Just released. A Verdict will appear when enough review data is available.';
+  return game.verdictSummary;
+}
 
 export function selectHeroDiscoveryCandidates(items:RawgListItem[],day:string) {
   const midnight=Date.parse(`${day}T00:00:00Z`);const seen=new Set<number>();

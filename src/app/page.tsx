@@ -95,11 +95,11 @@ export default async function HomePage() {
             <div className="max-w-[1400px] mx-auto px-4 relative">
               <FadeInSection>
                 <SectionHeader
-                  title="Trending Right Now"
+                  title="Popular & Trending"
                   href="/search?sort=trending"
-                  linkLabel="View all"
+                  linkLabel="See trending games"
                   icon={<Flame className="w-5 h-5" />}
-                  subtitle="Based on recent player activity & community signals"
+                  subtitle="Rising games and popular picks with an active community"
                   gradient="linear-gradient(90deg, #f97316 0%, #ef4444 25%, #f97316 50%, #eab308 75%, #f97316 100%)"
                 />
                 <HorizontalScroll>

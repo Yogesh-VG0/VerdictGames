@@ -10,7 +10,8 @@ import PixelButton from "@/components/ui/PixelButton";
 import PlatformIcon from "@/components/ui/PlatformIcon";
 import HeroImage from "@/components/ui/HeroImage";
 import { collapsePlatforms } from "@/lib/utils/platform";
-import { cn, sourceLabel, getStableYear } from "@/lib/utils";
+import { cn, getStableYear } from "@/lib/utils";
+import {getHeroSummary} from '@/lib/utils/homepageHero';
 
 interface HeroCarouselProps {
   games: Game[];
@@ -232,9 +233,9 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
               {!game.isProvisional && <div className="flex flex-col items-center gap-0.5">
                 <ScoreRing score={game.score} size={40} strokeWidth={3} className="sm:hidden" />
                 <ScoreRing score={game.score} size={56} strokeWidth={3} className="hidden sm:block" />
-                {sourceLabel(game.scoreSource) && (
+                  {game.score > 0 && (
                   <span className="text-[9px] font-medium hero-overlay-text-muted uppercase tracking-wider opacity-70">
-                    {sourceLabel(game.scoreSource)}
+                      Verdict
                   </span>
                 )}
               </div>}
@@ -263,9 +264,7 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
 
             {/* Summary - prefer actual description over template verdict summary */}
             <p className="hidden sm:block text-sm md:text-base hero-overlay-text-secondary max-w-2xl line-clamp-2">
-              {(game.description && game.description.length > 20 && !game.description.includes("is an exceptional") && !game.description.includes("is a solid") && !game.description.includes("has moments of brilliance") && !game.description.includes("struggles to deliver"))
-                ? game.description.slice(0, 200) + (game.description.length > 200 ? "…" : "")
-                : game.verdictSummary}
+              {getHeroSummary(game)}
             </p>
 
             {/* Metadata row */}

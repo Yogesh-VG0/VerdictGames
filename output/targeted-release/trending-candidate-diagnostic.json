@@ -1,0 +1,80 @@
+{
+  "scope": "one public-anonymous keyset read of possible Trending candidates; no hosted writes",
+  "calls": [
+    {
+      "status": 200,
+      "ms": 2405,
+      "bytes": 154835
+    },
+    {
+      "status": 200,
+      "ms": 1932,
+      "bytes": 151515
+    },
+    {
+      "status": 200,
+      "ms": 1457,
+      "bytes": 149904
+    },
+    {
+      "status": 200,
+      "ms": 1661,
+      "bytes": 151977
+    },
+    {
+      "status": 200,
+      "ms": 1258,
+      "bytes": 150716
+    },
+    {
+      "status": 200,
+      "ms": 1156,
+      "bytes": 153321
+    },
+    {
+      "status": 200,
+      "ms": 934,
+      "bytes": 157364
+    },
+    {
+      "status": 200,
+      "ms": 1270,
+      "bytes": 151033
+    },
+    {
+      "status": 200,
+      "ms": 1039,
+      "bytes": 156267
+    },
+    {
+      "status": 200,
+      "ms": 955,
+      "bytes": 157021
+    },
+    {
+      "status": 200,
+      "ms": 646,
+      "bytes": 154119
+    },
+    {
+      "status": 200,
+      "ms": 907,
+      "bytes": 149581
+    },
+    {
+      "status": 200,
+      "ms": 586,
+      "bytes": 153373
+    },
+    {
+      "status": 200,
+      "ms": 537,
+      "bytes": 29937
+    }
+  ],
+  "complete": true,
+  "rows": 1319,
+  "ms": 16778,
+  "bytes": 2020963,
+  "hostedWrites": 0
+}

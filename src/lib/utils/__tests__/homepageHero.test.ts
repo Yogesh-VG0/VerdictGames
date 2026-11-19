@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { GameRow } from "../../supabase/types";
-import { getHomepageHeroScore, isHomepageHeroAutoCandidate, selectHeroDiscoveryCandidates } from "../homepageHero";
+import { getHomepageHeroScore, getHeroSummary, isHomepageHeroAutoCandidate, selectHeroDiscoveryCandidates } from "../homepageHero";
+import {mapGameRow} from '@/lib/db/mappers';
 import type {RawgListItem} from '@/lib/external/rawg';
 
 function isoDaysAgo(days: number): string {
@@ -90,6 +91,12 @@ function makeGameRow(overrides: Partial<GameRow> = {}): GameRow {
 }
 
 describe("homepage hero auto candidates", () => {
+  it('never uses a generic quality verdict to describe an unreleased spotlight',()=>{
+    const game=mapGameRow(makeGameRow({release_date:'2099-12-31',description:'',verdict_summary:'This game is worth playing.'}));
+    expect(getHeroSummary(game)).toBe('Explore the announced platforms, trailers and release details.');
+    expect(getHeroSummary({...game,releaseStatus:'early-access'})).toMatch(/Early Access/);
+    expect(getHeroSummary({...game,isProvisional:false,verdictLabel:'JUST RELEASED'})).toMatch(/enough review data/);
+  });
   it('retains a major console launch on its release day and after launch without inventing a reviewed score',()=>{
     const row:RawgListItem={id:972995,name:'Grand Theft Auto VI',slug:'grand-theft-auto-vi',released:'2026-11-19',added:966,background_image:'https://media.rawg.io/gta.jpg',tags:[{id:1,name:'Nudity',slug:'nudity'}],genres:[],tba:false,rating:0,rating_top:5,ratings_count:0,added_by_status:{},metacritic:null,playtime:0,platforms:null,short_screenshots:null,clip:null,esrb_rating:null};
     for(const day of ['2026-11-18','2026-11-19','2026-11-20'])expect(selectHeroDiscoveryCandidates([row,row],day)).toEqual([row]);
