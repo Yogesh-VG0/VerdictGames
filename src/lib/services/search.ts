@@ -26,7 +26,7 @@ import {searchGenrePredicate} from '@/lib/utils/searchGenre';
 export const SEARCH_REVALIDATE_SECONDS = 300;
 export const SEARCH_API_CACHE_CONTROL = `s-maxage=${SEARCH_REVALIDATE_SECONDS}, stale-while-revalidate=300`;
 export const SEARCH_PAGE_SIZE = 25;
-const SEARCH_RESULTS_CACHE_NAMESPACE = "search-results-v8";
+const SEARCH_RESULTS_CACHE_NAMESPACE = "search-results-v9";
 // Ranking and eligibility need evidence and safety metadata, not display copy,
 // prices or hero flags. Hydrate full card fields only for the visible page.
 const BROWSE_POOL_COLUMNS = GAME_CARD_COLUMNS_WITH_DESC.split(',').filter(column => ![
@@ -469,7 +469,7 @@ function createSearchQueryFactory(state: SearchGamesState) {
   };
 }
 
-async function hydrateRecentCohort(
+async function hydrateBrowseCohort(
   createQuery: ReturnType<typeof createSearchQueryFactory>,
   ids: string[], columns: string, signal: AbortSignal,
 ): Promise<GameRow[]> {
@@ -522,6 +522,7 @@ async function fetchSearchResults(state: SearchGamesState,poolOnly=false): Promi
   const requestedLimit = isRelevanceWithQuery ? 150
     : isRecentlyAdded ? 1000 : isTrendingSort ? 750
       : isTopRated || isNewest || isUpcoming ? 500 : 150;
+  const boundedCohort = requestedLimit > 500;
   const createQuery = createSearchQueryFactory(state);
   const controller = new AbortController();
   const signal = AbortSignal.any([AbortSignal.timeout(10_000), controller.signal]);
@@ -529,14 +530,14 @@ async function fetchSearchResults(state: SearchGamesState,poolOnly=false): Promi
   let data: GameRow[] | null;
   let returnedCount: number;
   try {
-    const {query} = await createQuery(isRecentlyAdded ? 'id' : columns, signal);
+    const {query} = await createQuery(boundedCohort ? 'id' : columns, signal);
     const result = await query.range(0, requestedLimit - 1).abortSignal(signal) as unknown as {data:GameRow[]|null; error:unknown};
     if (result.error) throw result.error;
     returnedCount = result.data?.length ?? 0;
-    // Keep exactly the original 1,000-candidate boundary and initial ordering.
+    // Keep exactly the original candidate boundary and initial ordering.
     // No partial response is cached when a chunk fails or the shared deadline expires.
-    data = isRecentlyAdded
-      ? await hydrateRecentCohort(createQuery, (result.data ?? []).map(row => row.id), columns, signal)
+    data = boundedCohort
+      ? await hydrateBrowseCohort(createQuery, (result.data ?? []).map(row => row.id), columns, signal)
       : result.data;
   } catch (error) {
     controller.abort();
@@ -776,7 +777,7 @@ async function fetchSearchResults(state: SearchGamesState,poolOnly=false): Promi
 const readRankedBrowsePool=unstable_cache(async(sort:SearchGamesState['sort'])=>{
   if(!['relevance','newest','upcoming','recently-added','top-rated','trending'].includes(sort))throw new Error('Invalid public browse sort');
   return fetchSearchResults({query:'',platform:'All',genre:'',year:'',monetization:'All',sort,page:1},true);
-},['public-browse-ranked-ids-v3'],{revalidate:SEARCH_REVALIDATE_SECONDS,tags:['public-search']});
+},['public-browse-ranked-ids-v4'],{revalidate:SEARCH_REVALIDATE_SECONDS,tags:['public-search']});
 
 async function readBrowseCards(ids:string[]):Promise<Game[]> {
   const {data,error}=await getPublicSupabase().from('games').select(GAME_CARD_COLUMNS_WITH_DESC).in('id',ids).abortSignal(AbortSignal.timeout(5000));

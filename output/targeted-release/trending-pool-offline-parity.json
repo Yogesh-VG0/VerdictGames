@@ -1,0 +1,10 @@
+{
+  "passed": true,
+  "scope": "Offline released versus bounded Trending within the captured 1,000-row public fixture; no network or credentials; not a hosted Trending cohort measurement",
+  "sourceRows": 1000,
+  "eligible": 3,
+  "pages": 1,
+  "allResponseFieldsEqual": true,
+  "uniqueIds": 3,
+  "orderedIdSha256": "b2da6095fa1fa684cbd53d544debc6b7f582a5f2e447c9a1c5db12782b8f398c"
+}

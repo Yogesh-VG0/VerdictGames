@@ -19,7 +19,7 @@ const rows = Array.from({length:1000}, (_, index) => ({
   cover_image:'https://images.igdb.com/co123.jpg', header_image:'https://images.igdb.com/co123.jpg',
   description:'A complete standalone action adventure with a substantial story.',
   score:90, verdict_score:90, confidence:0.9, review_count:1000000, steam_total_count:1000000,
-  steam_positive_count:950000, current_players:1000, is_provisional:false, verdict_label:'MUST PLAY',
+  steam_positive_count:950000, current_players:1000, momentum:0.2, is_provisional:false, verdict_label:'MUST PLAY',
 }));
 vi.mock('@/lib/supabase/public', () => ({hasPublicSupabaseEnv:()=>true, getPublicSupabase:()=>({from:()=>{
   const query:Record<string,unknown> = {};
@@ -81,6 +81,18 @@ describe('bounded Recently Added cohort',()=>{
       expect(call.filters).toContainEqual(['gte','release_date','2025-01-01']);
       expect(call.filters).toContainEqual(['lte','release_date','2025-12-31']);
       expect(call.filters).toContainEqual(['order','created_at',{ascending:false}]);
+    }
+  });
+  it('also bounds the demonstrated 750-row Trending cohort without changing its size',async()=>{
+    const result=await loadSearchResults({...request,sort:'trending'});
+    expect(result.total).toBe(750);expect(result.totalIsExact).toBe(false);
+    expect(result.items.map(row=>row.id)).toEqual(rows.slice(0,25).map(row=>row.id));
+    expect(state.calls[0].columns).toBe('id');expect(state.calls[0].range).toEqual([0,749]);
+    const chunks=state.calls.filter(call=>call.ids && call.ids.length>25);
+    expect(chunks.map(call=>call.ids!.length)).toEqual([200,200,200,150]);
+    expect(state.peak).toBe(2);
+    for(const call of state.calls.slice(0,-1)){
+      expect(call.filters).toContainEqual(['order','is_trending_manual',{ascending:false,nullsFirst:false}]);
     }
   });
   it('fails the entire read on a chunk error and does not retain a partial success',async()=>{
