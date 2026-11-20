@@ -1,0 +1,55 @@
+{
+  "capturedAt": "2026-11-20T02:38:25.947Z",
+  "project": "vjzsvnaswronkctazarn",
+  "source": "Owner dashboard report; no credentials or user records",
+  "dashboardWindow": "November 19 07:55 to November 20 07:55 Asia/Calcutta",
+  "selectedPoint": "November 20 00:55 Asia/Calcutta; historical, not latest live values",
+  "warning": "Your project is about to deplete its Disk IO Budget; exhausted throughput returns to baseline 5 MB/s",
+  "selectedMetrics": {
+    "memoryTotalMB": 403.18,
+    "memoryPercent": 99.2,
+    "memoryCommitmentGB": 1.43,
+    "commitmentSeverity": "Severe",
+    "swapMB": 515,
+    "cpuPercent": 8.42,
+    "diskIOPS": 2,
+    "throughputKBPerSecond": 236.4,
+    "connections": 15,
+    "diskUsedMB": 459.97,
+    "diskProvisionedGB": 7.78,
+    "diskUsedPercent": 5.8
+  },
+  "interpretation": [
+    "Disk capacity is not exhausted. IO burst budget is a separate resource.",
+    "Memory commitment/swap and budget warning are consistent with resource pressure, not proof of an OOM crash or a particular query cause.",
+    "Historical low throughput/IOPS does not describe current load or total-day burst consumption.",
+    "Current Disk IO Balance is not supplied; do not claim it reached zero.",
+    "No active SQL/query statistics could be collected because both connector and direct native read-only connection failed before SQL execution."
+  ],
+  "directConnectionReceipt": "output/targeted-release/resource-pressure-readonly.json",
+  "workflow": {
+    "id": 317757346,
+    "name": "Scheduled maintenance",
+    "state": "active",
+    "mainFileGitBlob": "306664fa90595b0d693af9ac7c7098aff9c31c75",
+    "activeRuns": [],
+    "staleQueuedRun": {
+      "id": 43097684922,
+      "createdAt": "2026-11-11T20:43:03Z",
+      "head": "d2101ef470d30ad452cc6d3b3e99d4a8acd39fa6",
+      "jobs": []
+    },
+    "latestFailures": [
+      44622553702,
+      44613777512,
+      44611690380
+    ],
+    "caveat": "The old queued run is not proof that it currently consumes database resources."
+  },
+  "hostedMutations": 0,
+  "sources": [
+    "https://supabase.com/kb/troubleshooting/exhaust-disk-io",
+    "https://supabase.com/kb/troubleshooting/memory-and-swap-usage-explained-aPNgm0",
+    "https://supabase.com/kb/troubleshooting/failed-to-retrieve-tables"
+  ]
+}

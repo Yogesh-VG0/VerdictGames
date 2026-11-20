@@ -44,7 +44,17 @@ function isSchedulerRunsTableMissing(error) {
   return code === "42P01" || /relation\s+['\"]?scheduler_runs['\"]?\s+does not exist/i.test(message);
 }
 
+// Resource exhaustion needs backpressure, not retries or a permissive guard.
+// 57014 is query cancellation (including the existing statement timeout): a
+// maintenance worker must stop instead of continuing thousands of row writes.
+export function isResourcePressureDbError(error) {
+  const code = String(error?.code ?? "").toUpperCase();
+  if (["ECHECKOUTTIMEOUT", "53300", "53200", "53100", "57014"].includes(code)) return true;
+  return /maxclientsinsessionmode|max clients reached|too many clients|unable to check out connection from the pool|remaining connection slots|out of memory|canceling statement due to statement timeout/i.test(getErrorMessage(error));
+}
+
 export function isInfrastructureDbError(error) {
+  if (isResourcePressureDbError(error)) return true;
   const code = String(error?.code ?? "").toUpperCase();
   const message = getErrorMessage(error);
 
@@ -65,8 +75,8 @@ export function isInfrastructureDbError(error) {
 }
 
 /**
- * Retry transient database infrastructure failures with exponential backoff.
- * SQL and application errors are never retried.
+ * Retry transient connection failures with exponential backoff.
+ * Capacity errors, statement timeouts and other SQL errors never retry.
  */
 export async function retryInfrastructureDbOperation(operationName, operation, {
   attempts = 3,
@@ -79,7 +89,7 @@ export async function retryInfrastructureDbOperation(operationName, operation, {
     try {
       return await operation();
     } catch (err) {
-      if (!isInfrastructureDbError(err) || attempt === maxAttempts) throw err;
+      if (isResourcePressureDbError(err) || !isInfrastructureDbError(err) || attempt === maxAttempts) throw err;
 
       const delayMs = baseDelayMs * (2 ** (attempt - 1));
       console.warn(`⚠ ${operationName} failed: ${getErrorMessage(err)}. Retrying in ${delayMs}ms (${attempt + 1}/${maxAttempts}).`);
@@ -118,7 +128,7 @@ export async function acquireLock(sql, jobName) {
   } catch (err) {
     const message = getErrorMessage(err);
     if (isInfrastructureDbError(err)) {
-      console.error(`❌ Advisory lock check failed after retries: ${message}. Aborting this run.`);
+      console.error(`❌ Advisory lock check failed: ${message}. Aborting this run.`);
       throw err;
     }
     console.error(`❌ Advisory lock check failed: ${message}. Aborting this run.`);
@@ -183,7 +193,7 @@ export async function checkMinInterval(sql, jobName, minIntervalHours) {
       return true;
     }
     if (isInfrastructureDbError(err)) {
-      console.error(`❌ Interval check failed after retries: ${message}. Aborting this run.`);
+      console.error(`❌ Interval check failed: ${message}. Aborting this run.`);
       throw err;
     }
     console.warn(`⚠ Interval check failed: ${message}. Proceeding anyway.`);

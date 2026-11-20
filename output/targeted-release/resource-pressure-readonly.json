@@ -1,0 +1,9 @@
+{
+  "sampledAt": "2026-11-20T02:28:00.424Z",
+  "scope": "one direct read-only statistics connection; 1.5s statements; no catalogue queries, resets, cancellations, writes or configuration changes",
+  "reads": [],
+  "error": {
+    "code": "CONNECT_TIMEOUT"
+  },
+  "passed": false
+}
