@@ -3,14 +3,15 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { getPublicSupabase } from '@/lib/supabase/public';
 import type { Database, GameRow, ListRow } from '@/lib/supabase/types';
 import type { GameListSummary } from '@/lib/types';
-import { passesCuratedListSelection } from '@/lib/utils/curatedLists';
+import { editorialListTitle, passesCuratedListSelection } from '@/lib/utils/curatedLists';
 import { dedupePublicCanonicalRows } from '@/lib/utils/publicCanonical';
 import { isPublicSafeGame } from '@/lib/utils/publicSafety';
 import { coalesceCatalogueRead } from '@/lib/db/cached-catalogue';
+import { hasUsableCardImage } from '@/lib/utils/mediaReadiness';
 
 export const LIST_PAGE_SIZE = 24;
 export interface ListSummaries { items: GameListSummary[]; hasNext: boolean; page: number }
-const gameColumns = 'id,slug,title,cover_image,header_image,description,genres,tags,platforms,score,verdict_score,review_count,confidence,steam_total_count,critic_source_count,critic_score,community_score,release_date,release_status,is_provisional,verdict_label,steam_app_id,franchise,developer,publisher';
+const gameColumns = 'id,slug,title,cover_image,header_image,description,genres,tags,platforms,score,verdict_score,review_count,confidence,steam_total_count,critic_source_count,critic_score,community_score,release_date,release_status,is_provisional,verdict_label,steam_app_id,franchise,developer,publisher,hltb_main,rawg_id';
 
 export async function readListSummaries(client: SupabaseClient<Database>, page: number, ownerId?: string, privateScope = false, kind = 'all'): Promise<ListSummaries> {
   let query = client.from('lists').select('id,slug,title,description,preview_text,cover_image,curated_by,created_at,tags,owner_id,is_public,is_system_managed,last_seeded_at');
@@ -39,7 +40,7 @@ export async function readListSummaries(client: SupabaseClient<Database>, page: 
       client.from('games').select(gameColumns).in('id',gameIds.slice(start,start+100)).abortSignal(AbortSignal.timeout(5000))));
     for(const result of results) {
       if (result.error) throw result.error;
-      for (const row of result.data || []) if (isPublicSafeGame(row)) games.set(row.id, row as unknown as GameRow);
+      for (const row of result.data || []) if (isPublicSafeGame(row) && hasUsableCardImage(row)) games.set(row.id, row as unknown as GameRow);
     }
   }
   return { page, hasNext: (data?.length || 0) > LIST_PAGE_SIZE, items: lists.map(list => {
@@ -47,8 +48,8 @@ export async function readListSummaries(client: SupabaseClient<Database>, page: 
       .filter((row): row is GameRow => Boolean(row && passesCuratedListSelection(list as ListRow, row)));
     const visible = dedupePublicCanonicalRows(rows);
     return {
-      id: list.id, slug: list.slug, title: list.title, description: list.preview_text || list.description,
-      coverImage: list.cover_image || '', gameCount: visible.length,
+      id: list.id, slug: list.slug, title: editorialListTitle(list), description: list.preview_text || list.description,
+      coverImage: list.is_system_managed ? visible[0]?.cover_image || '' : list.cover_image || '', gameCount: visible.length,
       games: visible.filter(row => row.cover_image).slice(0, 4).map(row => ({ id: row.id, slug: row.slug, title: row.title, coverImage: row.cover_image })),
       curatedBy: list.curated_by, createdAt: list.created_at, tags: list.tags || [], ownerId: list.owner_id || undefined,
       isPublic: list.is_public, isSystemManaged: list.is_system_managed,
@@ -63,7 +64,7 @@ const readCachedPublicListSummaries = unstable_cache((page: number, ownerId: str
   page === 1 && !ownerId && kind === 'all'
     ? readPublicOverview()
     : readListSummaries(getPublicSupabase(), page, ownerId ?? undefined, false, kind),
-['public-list-summaries-v3'], { revalidate: 300, tags: ['public-lists'] });
+['public-list-summaries-v4'], { revalidate: 300, tags: ['public-lists'] });
 
 // Normalize defaults before building the key: SSR(1) and API(1,undefined,'all')
 // must not create independent entries and duplicate catalogue refreshes.

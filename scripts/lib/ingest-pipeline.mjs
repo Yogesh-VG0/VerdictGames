@@ -10,6 +10,7 @@
  *   slugify(text)                         — URL-safe slug
  */
 
+import { withVerifiedEditorialModes } from '../../src/lib/utils/editorial-eligibility.mjs';
 import { rawgFetchJson } from "./rawg-client.mjs";
 import { isInfrastructureDbError } from "./scheduler-logger.mjs";
 import { fetchSteamReviews } from "../../src/lib/external/steam-reviews-api.mjs";
@@ -544,7 +545,7 @@ export async function ingestGameDirect(sql, query, options = {}) {
   const ssUrls = screenshots.map(s => s.image);
   const platforms = mapPlatforms(fullGame.platforms);
   const genres = (fullGame.genres ?? []).map(g => g.name);
-  const tags = (fullGame.tags ?? []).slice(0, 12).map(t => t.name);
+  const tags = withVerifiedEditorialModes((fullGame.tags ?? []).slice(0, 12).map(t => t.name), igdbData?.game_modes);
   const dev = fullGame.developers?.[0]?.name ?? "";
   const pub = fullGame.publishers?.[0]?.name ?? "";
   // ══════════════════════════════════════════════════

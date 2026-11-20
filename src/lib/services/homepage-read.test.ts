@@ -29,13 +29,15 @@ describe('homepage trending read failures',()=>{
      release_date: new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10),
      is_provisional: false,
    });
-   const launch={...base,id:'launch',rawg_id:972995,slug:'console-launch',title:'Console Launch',steam_app_id:null,
+   const launch={...base,id:'launch',rawg_id:972995,igdb_id:52189,slug:'grand-theft-auto-vi',title:'Grand Theft Auto VI',steam_app_id:null,
     steam_total_count:null,user_score:null,score:77,verdict_score:77,confidence:0.245543,review_count:104};
-   state.discovery=[{id:972995,name:'Console Launch',slug:'console-launch',released:today,tba:false,added:1000,
+   state.discovery=[{id:972995,name:'Grand Theft Auto VI',slug:'grand-theft-auto-vi',released:today,tba:false,added:1000,
     background_image:base.header_image,tags:[],genres:[],platforms:[]}];
    state.responses=[{data:rows,error:null},{data:[],error:null},{data:rows,error:null},{data:[launch],error:null}];
    const result=await fetchHeroCandidates(6);
    expect(result).toHaveLength(6);expect(result[0]).toMatchObject({id:'launch',score:77,verdictScore:77,verdictLabel:'WORTH IT',isProvisional:false});
+   expect(result[0].headerImage).toContain('/ar6i4p.jpg');
+   expect(result[0].description).toContain('Vice City');
    const spotlight = result.find(game => game.id === 'hero-0');
    expect(spotlight).toMatchObject({ description: '' });
    const markup = renderToStaticMarkup(createElement(HeroCarousel, { games: [spotlight!] }));

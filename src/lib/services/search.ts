@@ -7,7 +7,7 @@ import type { Game, PaginatedResponse, Platform } from "@/lib/types";
 import type { GameRow } from "@/lib/supabase/types";
 import { hasUsableCardImage } from "@/lib/utils/mediaReadiness";
 import { isPrimaryDiscoveryGame } from "@/lib/utils/discovery";
-import { getPublicTrendingScore, hasBrowseTrendingSignal } from "@/lib/utils/trending";
+import { getPlayerGrowthEvidence, getPlayerGrowthRank } from "@/lib/utils/trending";
 import {
   confidenceWeightedScore,
   getCriticSourceCount,
@@ -87,9 +87,6 @@ function titleSimilarity(query: string, title: string): number {
   return 0;
 }
 
-function hasTrendingSearchSignal(row: GameRow): boolean {
-  return hasBrowseTrendingSignal(row);
-}
 
 function passesBrowseDiscoveryFloor(row: GameRow): boolean {
   const reviewCount = getEvidenceReviewCount(row);
@@ -417,6 +414,9 @@ function createSearchQueryFactory(state: SearchGamesState) {
         query = query
           .not("cover_image", "is", null)
           .neq("cover_image", "")
+          .not("players_updated_at", "is", null)
+          .gte("current_players", 100)
+          .gte("momentum", 0.0399)
           .order("is_trending_manual", { ascending: false, nullsFirst: false })
           .order("trending", { ascending: false, nullsFirst: false })
           .order("current_players", { ascending: false, nullsFirst: false })
@@ -548,6 +548,7 @@ async function fetchSearchResults(state: SearchGamesState,poolOnly=false): Promi
   const justReleasedDays = 14;
   const todayStr = new Date().toISOString().slice(0, 10);
   const todayMs = new Date(`${todayStr}T00:00:00`).getTime();
+  const observedNow = Date.now();
   const isTrending = isTrendingSort;
   const isBroadDiscovery = !q && (isTopRated || isTrending || sort === "relevance" || isNewest || isUpcoming || isRecentlyAdded);
 
@@ -592,7 +593,7 @@ async function fetchSearchResults(state: SearchGamesState,poolOnly=false): Promi
     }
 
     const reviewCount = row.review_count ?? 0;
-    if (reviewCount === 0 && row.release_date) {
+    if (!isTrending && reviewCount === 0 && row.release_date) {
       const normalizedReleaseDate = /^\d{4}-\d{2}-\d{2}$/.test(row.release_date)
         ? `${row.release_date}T00:00:00Z`
         : /^\d{4}$/.test(row.release_date)
@@ -612,11 +613,7 @@ async function fetchSearchResults(state: SearchGamesState,poolOnly=false): Promi
       return false;
     }
 
-    if (isTrending && !isQualityGame(row, "trending")) {
-      return false;
-    }
-
-    if (isTrending && !hasTrendingSearchSignal(row)) {
+    if (isTrending && (!row.release_date || hasUnreleasedStatus(row) || !hasUsableCardImage(row) || !getPlayerGrowthEvidence(row, observedNow))) {
       return false;
     }
 
@@ -640,7 +637,8 @@ async function fetchSearchResults(state: SearchGamesState,poolOnly=false): Promi
   }
 
   if (isTrending && rows.length > 0) {
-    rows.sort((left, right) => getPublicTrendingScore(right) - getPublicTrendingScore(left));
+    rows.sort((left, right) => Number(getPlayerGrowthEvidence(right, observedNow) === 'fresh') - Number(getPlayerGrowthEvidence(left, observedNow) === 'fresh')
+      || getPlayerGrowthRank(right) - getPlayerGrowthRank(left) || left.id.localeCompare(right.id));
   } else if (isNewest && rows.length > 0) {
     rows.sort((left, right) => {
       const releaseDiff = (right.release_date ?? "").localeCompare(left.release_date ?? "");
@@ -707,7 +705,9 @@ async function fetchSearchResults(state: SearchGamesState,poolOnly=false): Promi
   if(poolOnly)return {ids:rows.map(row=>row.id),totalIsExact,...(isUpcoming?{cards:rows.map(mapGameRow).map(game=>({...game,description:''}))}:{})};
   rows=rows.slice(start,start+SEARCH_PAGE_SIZE);
 
-  const games = rows.map(mapGameRow);
+  const games = rows.map(row => isTrending
+    ? { ...mapGameRow(row), trendingReason: getPlayerGrowthEvidence(row, observedNow) === 'fresh' ? 'Trending Up' : 'Past Momentum' }
+    : mapGameRow(row));
   let total = filteredTotal;
 
   const noFilters = platform === "All" && !genre && !year && monetization === "All";
@@ -778,6 +778,8 @@ async function fetchSearchResults(state: SearchGamesState,poolOnly=false): Promi
     pageSize: SEARCH_PAGE_SIZE,
     hasMore: start + SEARCH_PAGE_SIZE < total,
     totalIsExact,
+    ...(isTrending && games.some(game => game.trendingReason === 'Past Momentum')
+      ? { notice: 'Some games show the last recorded growth. Their player counts are more than 24 hours old.' } : {}),
   };
 }
 

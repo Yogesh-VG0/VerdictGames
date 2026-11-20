@@ -182,6 +182,28 @@ export function hasBrowseTrendingSignal(row: GameRow): boolean {
     || hasStrongFlaggedSignal;
 }
 
+export function getPlayerGrowthEvidence(
+  row: Pick<GameRow, 'players_updated_at' | 'current_players' | 'momentum'>,
+  now = Date.now(),
+): 'fresh' | 'stale' | null {
+  const observed = Date.parse(row.players_updated_at ?? '');
+  const current = row.current_players ?? 0;
+  const growth = Math.expm1(row.momentum ?? 0);
+  if (!Number.isFinite(observed) || observed > now || now - observed > 7 * 86400000
+    || !Number.isFinite(growth) || current < 100 || growth < 0.0399) return null;
+  // The worker stores ln(current + 1) minus ln(previous + 1), rounded to four places.
+  const previous = (current + 1) / (1 + growth) - 1;
+  const delta = current - previous;
+  if (previous < 1 || (growth < 0.0999 || delta < 25) && (current < 750 || delta < 50)) return null;
+  return now - observed <= 24 * 3600000 ? 'fresh' : 'stale';
+}
+
+export function getPlayerGrowthRank(row: Pick<GameRow, 'momentum' | 'current_players'>): number {
+  const momentum = row.momentum ?? 0;
+  const addedPlayers = ((row.current_players ?? 0) + 1) * (1 - Math.exp(-momentum));
+  return Math.min(1, momentum) * 100 + Math.log2(1 + Math.max(0, addedPlayers)) * 3;
+}
+
 export function preferTrendingMomentumPool(rows: GameRow[], desiredCount: number): GameRow[] {
   const risingMomentum = rows.filter((row) => {
     const qualityScore = confidenceWeightedScore(row);
