@@ -8,10 +8,11 @@ import type { GameRow } from '@/lib/supabase/types';
 import { collectSitemapRows } from '@/lib/seo/sitemap';
 import { slugify } from '@/lib/utils/slugify';
 import { isPublicSafeGame } from '@/lib/utils/publicSafety';
+import { coalesceCatalogueRead } from '@/lib/db/cached-catalogue';
 
 const PUBLIC_DATABASE_READ_TIMEOUT_MS = 10_000;
 
-const loadDeveloperNames = unstable_cache(async () => {
+const loadDeveloperNames = unstable_cache(coalesceCatalogueRead(async () => {
   const db = getPublicSupabase();
   const names = new Set<string>();
   let after: string | undefined;
@@ -27,12 +28,9 @@ const loadDeveloperNames = unstable_cache(async () => {
     if (!last || last === after) throw new Error('Developer directory cursor did not advance');
     after = last;
   }
-}, ['developer-names-v1'], { revalidate: 3600 });
+}), ['developer-names-v1'], { revalidate: 3600 });
 
-const cachedDeveloperHub = unstable_cache(async (slug: string): Promise<DeveloperHub | null> => {
-  if (!/^[a-z0-9_-]{1,150}$/.test(slug)) return null;
-  const names = (await loadDeveloperNames()).filter(name => slugify(name) === slug);
-  if (!names.length) return null;
+const cachedDeveloperHub = unstable_cache(async (slug: string, names: string[]): Promise<DeveloperHub | null> => {
   const rows = await collectSitemapRows(async (after, size) => {
     let query = getPublicSupabase().from('games').select(GAME_CARD_COLUMNS_WITH_DESC)
       .in('developer', names).order('id', { ascending: true }).limit(size);
@@ -46,6 +44,11 @@ const cachedDeveloperHub = unstable_cache(async (slug: string): Promise<Develope
   if (!games.length) return null;
   return { name: names[0], slug, gameCount: games.length,
     averageScore: Math.round(games.reduce((sum, game) => sum + game.score, 0) / games.length), games };
-}, ['developer-hub-v1'], { revalidate: 900 });
+}, ['developer-hub-v2'], { revalidate: 900 });
 
-export const loadDeveloperHub = cache(cachedDeveloperHub);
+export const loadDeveloperHub = cache(async (slug: string): Promise<DeveloperHub | null> => {
+  if (!/^[a-z0-9_-]{1,150}$/.test(slug)) return null;
+  // Resolve aliases outside the hub cache so Next.js can reuse the directory.
+  const names = (await loadDeveloperNames()).filter(name => slugify(name) === slug);
+  return names.length ? cachedDeveloperHub(slug, names) : null;
+});

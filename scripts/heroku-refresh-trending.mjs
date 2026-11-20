@@ -168,21 +168,23 @@ async function applyPlayerCountUpdates(updates, timestamp) {
   return applied;
 }
 
-async function refreshMomentumFromLatestSnapshots() {
+async function refreshMomentumFromLatestSnapshots(observedAt) {
   const result = await sql`
     WITH latest_snapshots AS (
       SELECT DISTINCT ON (game_id) game_id, player_count
       FROM player_snapshots
       WHERE player_count > 0
+        AND recorded_at >= ${observedAt}::timestamptz - interval '36 hours'
+        AND recorded_at < ${observedAt}::timestamptz - interval '5 minutes'
       ORDER BY game_id, recorded_at DESC
     ), calculated_momentum AS (
-      SELECT g.id, ROUND(
+      SELECT g.id, COALESCE(ROUND(
         LN((g.current_players + 1)::numeric) - LN((latest_snapshots.player_count + 1)::numeric),
         4
-      )::real AS momentum
+      )::real, 0) AS momentum
       FROM games AS g
-      JOIN latest_snapshots ON g.id = latest_snapshots.game_id
-      WHERE g.current_players > 0
+      LEFT JOIN latest_snapshots ON g.id = latest_snapshots.game_id AND g.current_players > 0
+      WHERE g.players_updated_at = ${observedAt}
     )
     UPDATE games AS g
     SET momentum = calculated_momentum.momentum
@@ -344,13 +346,13 @@ console.log("\n📸 Step 2b: Computing momentum + snapshotting player counts..."
 try {
   const gamesWithPlayers = await sql`
     SELECT id, current_players FROM games
-    WHERE current_players IS NOT NULL AND current_players > 0
+    WHERE players_updated_at = ${now} AND current_players IS NOT NULL AND current_players > 0
   `;
 
   if (gamesWithPlayers.length > 0) {
     // 1) FIRST: compute momentum by comparing fresh current_players against LATEST existing snapshot
     //    This works even if the snapshot was from a previous run hours ago
-    const momentumUpdated = await refreshMomentumFromLatestSnapshots();
+    const momentumUpdated = await refreshMomentumFromLatestSnapshots(now);
     console.log(`  📈 Updated momentum for ${momentumUpdated} games`);
 
     // 2) THEN: insert new snapshot (throttled to avoid duplicates from retries)
@@ -362,7 +364,7 @@ try {
     if (!recentSnap) {
       for (let i = 0; i < gamesWithPlayers.length; i += 100) {
         const batch = gamesWithPlayers.slice(i, i + 100);
-        const values = batch.map(g => ({ game_id: g.id, player_count: g.current_players }));
+        const values = batch.map(g => ({ game_id: g.id, player_count: g.current_players, recorded_at: now }));
         await sql`INSERT INTO player_snapshots ${sql(values)}`;
       }
       console.log(`  📸 Snapshotted ${gamesWithPlayers.length} player counts`);

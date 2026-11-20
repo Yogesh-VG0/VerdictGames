@@ -10,10 +10,11 @@
  *   slugify(text)                         — URL-safe slug
  */
 
+import { withVerifiedEditorialModes } from '../../src/lib/utils/editorial-eligibility.mjs';
 import { rawgFetchJson } from "./rawg-client.mjs";
 import { isInfrastructureDbError } from "./scheduler-logger.mjs";
 import { fetchSteamReviews } from "../../src/lib/external/steam-reviews-api.mjs";
-import { preferExistingCover,igdbLandscapeArtwork } from '../../src/lib/utils/artwork-policy.mjs';
+import { matchedIgdbArtwork, preferExistingCover, reviewedHeroArtwork, selectLandscapeArtwork, steamLibraryHeroAsset, verifiedSteamLibraryHero } from '../../src/lib/utils/artwork-policy.mjs';
 import { refreshIgdbCatalogue } from './igdb-fallback.mjs';
 import {igdbVerifiedReleaseFields} from '../../src/lib/external/igdb-record.mjs';
 
@@ -78,7 +79,7 @@ async function fetchSteamCoverViaGetItems(steamAppId) {
     const coverUrl = `${baseUrl}/${asset_url_format.replace("${FILENAME}", library_capsule_2x)}`;
     const headerUrl = header ? `${baseUrl}/${asset_url_format.replace("${FILENAME}", header)}` : null;
     
-    return { coverUrl, headerUrl };
+    return { coverUrl, headerUrl, libraryHeroUrl: steamLibraryHeroAsset(item, steamAppId) };
   } catch {
     return null;
   }
@@ -279,7 +280,7 @@ function pickTrailer(vids, name) {
 const IGDB_WEB = { OFFICIAL: 1, WIKIPEDIA: 3, REDDIT: 14 };
 
 async function findIgdb(title, year) {
-  const q = `search "${esc(title)}"; fields name,slug,summary,storyline,aggregated_rating,rating,total_rating,first_release_date,url,cover.image_id,screenshots.image_id,artworks.image_id,artworks.width,artworks.height,genres.name,platforms.name,videos.video_id,videos.name,websites.url,websites.category; where game_type = 0; limit 10;`;
+  const q = `search "${esc(title)}"; fields name,slug,summary,storyline,aggregated_rating,rating,total_rating,first_release_date,url,cover.image_id,screenshots.image_id,screenshots.width,screenshots.height,artworks.image_id,artworks.width,artworks.height,artworks.alpha_channel,artworks.animated,artworks.image_type.name,genres.name,platforms.name,videos.video_id,videos.name,websites.url,websites.category; where game_type = 0; limit 10;`;
   const res = await igdbQ("games", q); if (!res?.length) return null;
   const nt = title.toLowerCase().trim(); let bm = res[0], bs = -Infinity;
   for (const g of res) { let s = 0; const gn = g.name.toLowerCase().trim();
@@ -289,7 +290,7 @@ async function findIgdb(title, year) {
     if (g.cover?.image_id) s += 10; if (g.screenshots?.length) s += 5;
     if (s > bs) { bs = s; bm = g; } }
   // Follow-up full query for properly expanded nested fields
-  const full = await igdbQ("games", `where id = ${bm.id}; fields name,slug,summary,storyline,aggregated_rating,aggregated_rating_count,rating,rating_count,total_rating,total_rating_count,first_release_date,game_status.status,release_dates.date,release_dates.date_format.format,release_dates.status.name,url,cover.image_id,screenshots.image_id,artworks.image_id,artworks.width,artworks.height,genres.name,themes.name,platforms.name,platforms.abbreviation,involved_companies.company.name,involved_companies.developer,involved_companies.publisher,videos.video_id,videos.name,websites.url,websites.category,similar_games.name,similar_games.slug,similar_games.cover.image_id,game_modes.name,player_perspectives.name; limit 1;`);
+  const full = await igdbQ("games", `where id = ${bm.id}; fields name,slug,summary,storyline,aggregated_rating,aggregated_rating_count,rating,rating_count,total_rating,total_rating_count,first_release_date,game_status.status,release_dates.date,release_dates.date_format.format,release_dates.status.name,url,cover.image_id,screenshots.image_id,screenshots.width,screenshots.height,artworks.image_id,artworks.width,artworks.height,artworks.alpha_channel,artworks.animated,artworks.image_type.name,genres.name,themes.name,platforms.name,platforms.abbreviation,involved_companies.company.name,involved_companies.developer,involved_companies.publisher,videos.video_id,videos.name,websites.url,websites.category,similar_games.name,similar_games.slug,similar_games.cover.image_id,game_modes.name,player_perspectives.name; limit 1;`);
   return full?.[0] ?? bm;
 }
 function igdbEnrich(g) {
@@ -467,7 +468,8 @@ export async function ingestGameDirect(sql, query, options = {}) {
   if (BLOCKED.has(slug)) return { success: false, gameId: null, slug: null, title: best.name, rawgId: best.id, message: `"${slug}" is blocklisted.`, alreadyExisted: false };
 
   // ── 3. Check existence ──
-  const [existing] = await sql`SELECT id, slug, release_status FROM games WHERE slug = ${slug} OR rawg_id = ${best.id} LIMIT 1`;
+  const [existing] = await sql`SELECT id, slug, release_status, header_image, igdb_id, rawg_id, steam_app_id, is_featured_manual
+    FROM games WHERE slug = ${slug} OR rawg_id = ${best.id} LIMIT 1`;
   if (existing && !forceRefresh) return { success: true, gameId: existing.id, slug: existing.slug, title: best.name, rawgId: best.id, message: "Already exists.", alreadyExisted: true };
 
   // ── 4. Fetch full details ──
@@ -544,7 +546,7 @@ export async function ingestGameDirect(sql, query, options = {}) {
   const ssUrls = screenshots.map(s => s.image);
   const platforms = mapPlatforms(fullGame.platforms);
   const genres = (fullGame.genres ?? []).map(g => g.name);
-  const tags = (fullGame.tags ?? []).slice(0, 12).map(t => t.name);
+  const tags = withVerifiedEditorialModes((fullGame.tags ?? []).slice(0, 12).map(t => t.name), igdbData?.game_modes);
   const dev = fullGame.developers?.[0]?.name ?? "";
   const pub = fullGame.publishers?.[0]?.name ?? "";
   // ══════════════════════════════════════════════════
@@ -561,6 +563,7 @@ export async function ingestGameDirect(sql, query, options = {}) {
   let cover = "";
   let mediaSource = null;
   let coverDebug = "";
+  let listedSteamHero = null;
   
   // Priority 1: IGDB cover (preferred)
   if (igdbCover) {
@@ -571,6 +574,7 @@ export async function ingestGameDirect(sql, query, options = {}) {
   // Prefer a verified Steam portrait before the landscape fallback.
   else if (steamAppId) {
     const steamResult = await validateAndGetSteamCover(steamAppId);
+    listedSteamHero = steamResult?.libraryHeroUrl ?? null;
     if (steamResult?.coverUrl) {
       cover = steamResult.coverUrl;
       mediaSource = "steam";
@@ -588,9 +592,19 @@ export async function ingestGameDirect(sql, query, options = {}) {
   // Log cover source for debugging (can be disabled in production)
   if (process.env.DEBUG_MEDIA) console.log(`  ${fullGame.name}: ${coverDebug}`);
   
-  // Header image: prefer IGDB screenshots, then RAWG additional/background
-  // Header is separate from cover - don't use Steam for headers
-  const header = igdbLandscapeArtwork(igdbData) || (igdbSS.length ? igdbSS[0] : (fullGame.background_image_additional ?? fullGame.background_image ?? ""));
+  const artworkRawg = fullGame.id === best.id && (existing?.rawg_id == null || existing.rawg_id === fullGame.id) ? fullGame : null;
+  const artworkSteamId = existing?.steam_app_id != null && existing.steam_app_id !== steamAppId ? null : steamAppId;
+  const artworkIgdb = matchedIgdbArtwork(igdbData, {
+    igdbId: existing?.igdb_id, steamAppId: artworkSteamId, title: fullGame.name, releaseDate: fullGame.released,
+  });
+  const artwork = {
+    igdb: artworkIgdb, rawg: artworkRawg, rawgScreenshots: artworkRawg ? ssUrls : [],
+    steam: steamDet, steamAppId: artworkSteamId, steamHeroUrl: listedSteamHero, existing: existing?.header_image, cover,
+    reviewed: reviewedHeroArtwork({ slug: existing?.slug ?? slug, igdbId: existing?.igdb_id ?? artworkIgdb?.id, rawgId: artworkRawg?.id }),
+  };
+  const steamHeroUrl = existing?.is_featured_manual || (finalScore >= 80 && ((curPlayers ?? 0) >= 2000 || (critN >= 2 && revCount >= 1000)))
+    ? await verifiedSteamLibraryHero(artwork) : null;
+  const header = selectLandscapeArtwork({ ...artwork, steamHeroUrl });
   const finalSS = igdbSS.length ? igdbSS : ssUrls;
   const freeTags = ["free-to-play","free to play","f2p"];
   const monetization = isFree ? "Free" : allTags.some(t => freeTags.includes(t)) ? "Free" : "Paid";
@@ -614,7 +628,7 @@ export async function ingestGameDirect(sql, query, options = {}) {
     is_free: isFree, current_players: curPlayers,
     players_updated_at: curPlayers !== null ? now : null, peak_players_24h: null,
     trailer_url: ie?.trailerUrl ?? null, trailer_thumbnail: ie?.trailerThumbnail ?? null,
-    igdb_id: ie?.igdbId ?? null, igdb_url: ie?.igdbUrl ?? null,
+    igdb_id: existing?.igdb_id ?? artworkIgdb?.id ?? null, igdb_url: ie?.igdbUrl ?? null,
     igdb_rating: ie?.igdbRating ?? null, igdb_summary: ie?.igdbSummary ?? null,
     wikipedia_url: wikiUrl, wikipedia_excerpt: wikiExcerpt,
     metacritic_url: fullGame.metacritic_url ?? null,
@@ -635,17 +649,17 @@ export async function ingestGameDirect(sql, query, options = {}) {
   if (existing) {
     // UPDATE — preserve editorial fields that may have been manually edited
     // These fields are NEVER overwritten during re-enrichment:
-    const ALWAYS_PRESERVE = new Set(["slug", "featured", "trending"]);
+    const ALWAYS_PRESERVE = new Set(["slug", "featured", "trending", "header_image"]);
     // These fields are only overwritten if the existing value is empty/null:
     const EDITORIAL_FIELDS = new Set([
-      "title", "subtitle", "description", "cover_image", "header_image",
+      "title", "subtitle", "description", "cover_image",
       "screenshots", "pros", "cons", "verdict_summary",
       "performance_notes", "monetization_notes", "monetization",
       "developer", "publisher",
     ]);
 
     // Fetch current editorial values to check which ones are already set
-    const [cur] = await sql`SELECT ${sql(["title","subtitle","description","cover_image","header_image",
+    const [cur] = await sql`SELECT ${sql(["title","subtitle","description","cover_image",
       "screenshots","pros","cons","verdict_summary","performance_notes","monetization_notes",
       "monetization","developer","publisher","media_source"])} FROM games WHERE id = ${existing.id}`;
 
@@ -687,7 +701,10 @@ export async function ingestGameDirect(sql, query, options = {}) {
     }
     if (cur?.cover_image && !Object.hasOwn(upd, 'cover_image')) upd.media_source = cur.media_source;
 
-    if (Object.keys(upd).length > 0) {
+    if (header && header !== existing.header_image) {
+      await sql`UPDATE games SET ${sql(upd)}, header_image = CASE WHEN header_image IS NOT DISTINCT FROM ${existing.header_image}
+        THEN ${header} ELSE header_image END WHERE id = ${existing.id}`;
+    } else if (Object.keys(upd).length > 0) {
       await sql`UPDATE games SET ${sql(upd)} WHERE id = ${existing.id}`;
     }
     gameId = existing.id;
@@ -711,7 +728,7 @@ export async function ingestGameDirect(sql, query, options = {}) {
     ON CONFLICT (source_name, source_game_id) DO UPDATE SET game_id = ${gameId}`.catch((error) => {
       if (isInfrastructureDbError(error)) throw error;
     });
-  if (ie?.igdbId) await sql`INSERT INTO game_sources (game_id, source_name, source_game_id, source_url)
+  if (artworkIgdb && ie?.igdbId) await sql`INSERT INTO game_sources (game_id, source_name, source_game_id, source_url)
     VALUES (${gameId}, 'igdb', ${String(ie.igdbId)}, ${ie.igdbUrl})
     ON CONFLICT (source_name, source_game_id) DO UPDATE SET game_id = ${gameId}`.catch((error) => {
       if (isInfrastructureDbError(error)) throw error;

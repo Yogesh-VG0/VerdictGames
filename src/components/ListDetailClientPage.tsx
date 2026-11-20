@@ -86,7 +86,7 @@ export default function ListDetailClientPage({ slug, initialList, privateOwner }
             </Link>
           </span>
           <span className="hidden sm:inline">·</span>
-          <span className="shrink-0">{list.gameCount} games</span>
+          <span className="shrink-0">{list.gameCount} {list.gameCount === 1 ? "game" : "games"}</span>
           <div className="flex gap-1 flex-wrap basis-full sm:basis-auto">
             {list.tags.slice(0, 3).map((tag) => (
               <PixelBadge key={tag} variant="muted" size="sm">

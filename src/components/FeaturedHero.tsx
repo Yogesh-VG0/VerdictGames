@@ -9,6 +9,7 @@ import ScoreRing from "@/components/ui/ScoreRing";
 import PixelButton from "@/components/ui/PixelButton";
 import PlatformIcon from "@/components/ui/PlatformIcon";
 import HeroImage from "@/components/ui/HeroImage";
+import { getHeroSummary } from '@/lib/utils/homepageHero';
 
 interface FeaturedHeroProps {
   game: Game;
@@ -90,7 +91,7 @@ export default function FeaturedHero({ game }: FeaturedHeroProps) {
           transition={{ delay: 0.4 }}
           className="text-sm md:text-base hero-overlay-text-secondary max-w-2xl line-clamp-2"
         >
-          {game.verdictSummary}
+          {getHeroSummary(game)}
         </motion.p>
 
         {/* CTA */}

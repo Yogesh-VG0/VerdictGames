@@ -17,15 +17,21 @@ import { isQualityGame } from "@/lib/utils/quality";
 import { dedupePublicCanonicalRows } from "@/lib/utils/publicCanonical";
 import { isPublicSafeGame } from "@/lib/utils/publicSafety";
 import { hasUsableCardImage } from "@/lib/utils/mediaReadiness";
+import { hasUnreleasedStatus } from "@/lib/utils/release-status";
 import type { GameRow } from "@/lib/supabase/types";
 
 export async function GET(request: NextRequest) {
   const rawLimit = parseInt(request.nextUrl.searchParams.get("limit") ?? "8", 10);
   const limit = Number.isFinite(rawLimit) && rawLimit > 0 ? Math.min(rawLimit, 50) : 8;
+  const homepage = request.nextUrl.searchParams.get("context") === "homepage";
+  const exclusion = (request.nextUrl.searchParams.get("exclude") ?? "").slice(0, 6000);
+  const shown = new Set(homepage ? exclusion.split(",").slice(0, 96).filter(slug => /^[a-z0-9_-]{1,100}$/i.test(slug)) : []);
+  const respond = (games: ReturnType<typeof mapGameRow>[], personalized = false) =>
+    jsonOk(homepage ? { games, personalized } : games);
 
   try {
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-      return jsonOk([]);
+      return respond([]);
     }
 
     const { getAuthSupabase } = await import("@/lib/supabase/auth");
@@ -41,10 +47,12 @@ export async function GET(request: NextRequest) {
 
       if (user) {
         // Get user's library to find preferred genres
-        const { data: userGames } = await supabase
+        const { data: userGames, error: libraryError } = await supabase
           .from("user_games")
           .select("game_id, game:games!inner(genres)")
-          .eq("user_id", user.profileId) as { data: { game_id: string; game: { genres: string[] } | null }[] | null };
+          .eq("user_id", user.profileId) as { data: { game_id: string; game: { genres: string[] } | null }[] | null; error: unknown };
+
+        if (libraryError && homepage) return respond([]);
 
         if (userGames && userGames.length > 0) {
           userGameIds = userGames.map((ug) => ug.game_id);
@@ -68,7 +76,7 @@ export async function GET(request: NextRequest) {
         }
       }
     } catch {
-      // Not authenticated — that's ok, fall through to generic recommendations
+      if (homepage) return respond([]);
     }
 
     // Recency gate: only recommend games from the last 3 years on homepage
@@ -97,7 +105,7 @@ export async function GET(request: NextRequest) {
       .limit(fetchLimit);
 
     // If user has preferred genres, filter by them
-    if (userGenres.length > 0) {
+    if (!homepage && userGenres.length > 0) {
       query = query.overlaps("genres", userGenres);
     }
 
@@ -112,6 +120,7 @@ export async function GET(request: NextRequest) {
       // Exclude provisional / coming soon
       if ((r as GameRow & { is_provisional?: boolean }).is_provisional) return false;
       if (r.verdict_label === "COMING SOON") return false;
+      if (hasUnreleasedStatus(r) || shown.has(r.slug)) return false;
       return isQualityGame(r, "recommendations");
     });
 
@@ -128,7 +137,10 @@ export async function GET(request: NextRequest) {
       rows = homepageEligible;
     }
 
-    rows.sort((a, b) => getHomepageRecommendationScore(b) - getHomepageRecommendationScore(a));
+    const matchesLibrary = (row: GameRow) => userGenres.some(genre => row.genres?.includes(genre));
+    rows.sort((a, b) => (homepage ? Number(matchesLibrary(b)) - Number(matchesLibrary(a)) : 0)
+      || getHomepageRecommendationScore(b) - getHomepageRecommendationScore(a)
+      || a.id.localeCompare(b.id));
 
     // Ensure genre diversity: pick one per primary genre first
     const seen = new Set<string>();
@@ -151,9 +163,9 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    return jsonOk(picks.map(mapGameRow));
+    return respond(picks.map(mapGameRow), picks.some(matchesLibrary));
   } catch (err) {
     console.error("[API] /recommendations error:", err);
-    return jsonOk([]);
+    return respond([]);
   }
 }

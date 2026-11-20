@@ -2,7 +2,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/lib/supabase/types';
 vi.mock('next/cache', () => ({ unstable_cache: (fn: unknown) => fn }));
-vi.mock('@/lib/utils/curatedLists', () => ({ passesCuratedListSelection: () => true }));
+vi.mock('@/lib/utils/curatedLists', async (importOriginal) => ({
+  ...await importOriginal<typeof import('@/lib/utils/curatedLists')>(),
+  passesCuratedListSelection: () => true,
+}));
 import { readListSummaries } from './lists';
 function client(errorTable = '') {
   const calls: string[] = [];

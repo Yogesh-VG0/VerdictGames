@@ -3,6 +3,7 @@ import { writeAuditLog } from "@/lib/auditLog";
 import { getServerSupabase } from "@/lib/supabase/server";
 import type { GameRow, ListRow } from "@/lib/supabase/types";
 import { dedupePublicCanonicalRows } from "@/lib/utils/publicCanonical";
+import { compareEditorialGames, editorialAnticipation, editorialExclusion, EDITORIAL_UPCOMING_SNAPSHOT_KEY, matchesEditorialAnticipation, selectEditorialIds } from '@/lib/utils/editorial-eligibility.mjs';
 
 export const SYSTEM_LIST_MANAGER = "system-curated-lists";
 export const SYSTEM_LIST_SEED_VERSION = 3;
@@ -22,10 +23,9 @@ type SeedListDefinition = {
   description: string;
   tags: string[];
   matches: (game: GameRow) => boolean;
-  compare?: (left: GameRow, right: GameRow) => number;
 };
 
-type ExistingSystemList = Pick<ListRow, "id" | "slug" | "title" | "seed_version" | "is_system_managed">;
+type ExistingSystemList = Pick<ListRow, "id" | "slug" | "title" | "seed_version" | "is_system_managed" | "is_public">;
 
 function yearsAgoISO(years: number): string {
   const d = new Date();
@@ -43,47 +43,6 @@ function hasNone(values: string[] | null | undefined, blocked: string[]): boolea
 
 function hasCover(game: GameRow): boolean {
   return Boolean(game.cover_image && game.cover_image.length > 0);
-}
-
-function getSeedScore(game: GameRow): number {
-  const score = game.score ?? 0;
-  const reviewCount = Math.max(game.review_count ?? 0, 0);
-  return (score * reviewCount + 75 * 200) / (reviewCount + 200);
-}
-
-function compareByScore(left: GameRow, right: GameRow): number {
-  const scoreDiff = getSeedScore(right) - getSeedScore(left);
-  if (scoreDiff !== 0) return scoreDiff;
-  const reviewDiff = (right.review_count ?? 0) - (left.review_count ?? 0);
-  if (reviewDiff !== 0) return reviewDiff;
-  return (right.current_players ?? 0) - (left.current_players ?? 0);
-}
-
-function compareByScoreThenPlayers(left: GameRow, right: GameRow): number {
-  const scoreDiff = getSeedScore(right) - getSeedScore(left);
-  if (scoreDiff !== 0) return scoreDiff;
-  const playerDiff = (right.current_players ?? 0) - (left.current_players ?? 0);
-  if (playerDiff !== 0) return playerDiff;
-  return (right.review_count ?? 0) - (left.review_count ?? 0);
-}
-
-function compareByPlayersThenScore(left: GameRow, right: GameRow): number {
-  const playerDiff = (right.current_players ?? 0) - (left.current_players ?? 0);
-  if (playerDiff !== 0) return playerDiff;
-  return compareByScore(left, right);
-}
-
-function compareUpcoming(left: GameRow, right: GameRow): number {
-  const leftDate = left.release_date ? new Date(`${left.release_date}T00:00:00`).getTime() : Number.POSITIVE_INFINITY;
-  const rightDate = right.release_date ? new Date(`${right.release_date}T00:00:00`).getTime() : Number.POSITIVE_INFINITY;
-  if (leftDate !== rightDate) return leftDate - rightDate;
-  return compareByScore(left, right);
-}
-
-function compareHiddenGems(left: GameRow, right: GameRow): number {
-  const scoreDiff = getSeedScore(right) - getSeedScore(left);
-  if (scoreDiff !== 0) return scoreDiff;
-  return (left.review_count ?? 0) - (right.review_count ?? 0);
 }
 
 function passesReleasedListFloor(
@@ -224,7 +183,7 @@ function getEditorialSeedBlueprints(): SeedListDefinition[] {
       tags: ["editorial", "co-op", "multiplayer"],
       matches: (game) => passesReleasedListFloor(game, today, 74, MIN_LIST_REVIEWS, { minDate: fourYearsAgo })
         && hasAny(game.tags, ["Co-op", "Online Co-Op", "Local Co-Op", "Co-op Campaign"]),
-      compare: compareByScoreThenPlayers,
+
     },
     {
       slug: "best-horror-games",
@@ -273,7 +232,7 @@ function getEditorialSeedBlueprints(): SeedListDefinition[] {
         && (hasAny(game.genres, ["Shooter", "Fighting", "Sports"]) || hasAny(game.tags, ["Fighting", "FPS", "Third-Person Shooter"]))
         && hasNone(game.genres, ["RPG", "Adventure", "Simulation", "Puzzle"])
         && hasNone(game.tags, ["Relaxing", "Casual", "Singleplayer", "Story Rich"]),
-      compare: compareByPlayersThenScore,
+
     },
     {
       slug: `most-wanted-${currentYear}`,
@@ -281,7 +240,7 @@ function getEditorialSeedBlueprints(): SeedListDefinition[] {
       description: `The most anticipated games releasing in ${currentYear}. Add them to your watchlist now.`,
       tags: ["editorial", "upcoming", String(currentYear), "wishlist"],
       matches: (game) => isUpcomingCandidate(game, today, currentYear),
-      compare: compareUpcoming,
+
     },
     {
       slug: "best-deckbuilders-turn-based",
@@ -298,7 +257,7 @@ function getEditorialSeedBlueprints(): SeedListDefinition[] {
       description: "Critically acclaimed games since 2024 that didn't get the spotlight they deserved. High scores, low hype.",
       tags: ["editorial", "hidden-gems", "underrated", "2024"],
       matches: (game) => passesReleasedListFloor(game, today, 82, MIN_LIST_REVIEWS, { minDate: "2024-01-01", maxReviews: 1000 }),
-      compare: compareHiddenGems,
+
     },
     {
       slug: "sci-fi-epics",
@@ -343,7 +302,7 @@ function getEditorialSeedBlueprints(): SeedListDefinition[] {
       matches: (game) => passesReleasedListFloor(game, today, 76, MIN_ALLTIME_REVIEWS)
         && (hasAny(game.tags, ["Multiplayer", "Online Co-Op", "Local Multiplayer", "Local Co-Op", "Party Game"])
           || hasAny(game.genres, ["Massively Multiplayer"])),
-      compare: compareByScoreThenPlayers,
+
     },
     {
       slug: "survival-horror-essentials",
@@ -459,20 +418,22 @@ export async function seedEditorialLists(editedBy: string): Promise<string[]> {
   const results: string[] = [];
   const usedCoverImages = new Set<string>();
   const gameAppearanceCount = new Map<string, number>();
-  const seededListSets = new Map<string, Set<string>>();
 
-  const [games, existingListsRes, staleListsRes] = await Promise.all([
+  const [games, existingListsRes, staleListsRes, snapshot] = await Promise.all([
     fetchAllGames(),
     supabase
       .from("lists")
-      .select("id, slug, title, seed_version, is_system_managed")
+      .select("id, slug, title, seed_version, is_system_managed, is_public")
       .in("slug", seedSlugs),
     supabase
       .from("lists")
       .select("id, slug")
       .eq("is_system_managed", true)
+      .eq("is_public", true)
       .eq("managed_by", SYSTEM_LIST_MANAGER),
+    supabase.from("gx_cache").select("payload").eq("feed_key", EDITORIAL_UPCOMING_SNAPSHOT_KEY).maybeSingle(),
   ]);
+  const anticipation = editorialAnticipation(snapshot.data?.payload);
 
   if (existingListsRes.error) {
     throw new Error(existingListsRes.error.message);
@@ -486,73 +447,28 @@ export async function seedEditorialLists(editedBy: string): Promise<string[]> {
   const existingListsBySlug = new Map(existingLists.map((list) => [list.slug, list]));
   const rowsById = new Map(games.map((game) => [game.id, game]));
 
-  function enforceOverlapConstraints(ids: string[], maxPerGame = 3): string[] {
-    return ids.filter((id) => (gameAppearanceCount.get(id) ?? 0) < maxPerGame);
-  }
-
-  function recordAppearances(slug: string, ids: string[]) {
-    seededListSets.set(slug, new Set(ids));
-    for (const id of ids) {
-      gameAppearanceCount.set(id, (gameAppearanceCount.get(id) ?? 0) + 1);
-    }
-  }
-
-  function passesPairwiseOverlap(proposedIds: string[]) {
-    const proposed = new Set(proposedIds);
-    for (const [otherSlug, otherSet] of seededListSets.entries()) {
-      const intersection = Array.from(proposed).filter((id) => otherSet.has(id)).length;
-      const union = new Set([...proposed, ...otherSet]).size;
-      const similarity = union > 0 ? intersection / union : 0;
-      if (similarity >= 0.5) {
-        return { ok: false as const, conflictSlug: otherSlug, similarity: (similarity * 100).toFixed(0) };
-      }
-    }
-
-    return { ok: true as const };
-  }
-
   for (const seed of blueprints) {
     const previewText = seed.description;
     const bodyText = seed.description;
-    const compare = seed.compare ?? compareByScore;
+    const isAnnual = /^most-wanted-\d{4}$/.test(seed.slug);
+    const compare = (a: GameRow, b: GameRow) => compareEditorialGames(seed.slug, a, b, anticipation);
     const rankedPool = dedupeCanonicalGames(
       dedupePublicCanonicalRows(
         [...games]
-          .filter(seed.matches)
+          .filter(game => seed.matches(game) && !editorialExclusion(seed.slug, game)
+            && (!isAnnual || matchesEditorialAnticipation(game, anticipation)))
           .sort(compare)
           .slice(0, 24)
       )
     ).sort(compare);
 
-    if (rankedPool.length < 4) {
-      results.push(`⚠️ Skipped "${seed.title}" because only ${rankedPool.length} strong matches passed the editorial rules.`);
-      continue;
-    }
-
-    const allIds = rankedPool.map((game) => game.id);
-    let constrainedIds = enforceOverlapConstraints(allIds, 3).slice(0, 12);
-
-    if (constrainedIds.length < 4) {
-      results.push(`⚠️ Skipped "${seed.title}" because only ${constrainedIds.length} games remained after overlap enforcement.`);
-      continue;
-    }
-
-    const pairwiseCheck = passesPairwiseOverlap(constrainedIds);
-    if (!pairwiseCheck.ok) {
-      const stricterIds = enforceOverlapConstraints(allIds, 2).slice(0, 12);
-      const recheck = passesPairwiseOverlap(stricterIds);
-      if (!recheck.ok || stricterIds.length < 4) {
-        results.push(`⚠️ Skipped "${seed.title}" because it overlapped too heavily with "${pairwiseCheck.conflictSlug}".`);
-        continue;
-      }
-      constrainedIds = stricterIds;
-    }
+    const constrainedIds = selectEditorialIds(rankedPool.map(game => game.id), gameAppearanceCount);
 
     const finalGames = constrainedIds
       .map((id) => rowsById.get(id))
       .filter(Boolean) as GameRow[];
 
-    if (finalGames.length < 4) {
+    if (finalGames.length === 0) {
       results.push(`⚠️ Skipped "${seed.title}" because only ${finalGames.length} canonical matches remained after dedupe.`);
       continue;
     }
@@ -576,7 +492,7 @@ export async function seedEditorialLists(editedBy: string): Promise<string[]> {
     const seededAt = new Date().toISOString();
     const existingList = existingListsBySlug.get(seed.slug);
 
-    if (existingList && !existingList.is_system_managed) {
+    if (existingList && (!existingList.is_system_managed || !existingList.is_public)) {
       results.push(`⚠️ Skipped "${seed.title}" because slug "${seed.slug}" is owned by a non-system list.`);
       continue;
     }
@@ -665,13 +581,14 @@ export async function seedEditorialLists(editedBy: string): Promise<string[]> {
       title: seed.title,
       seed_version: SYSTEM_LIST_SEED_VERSION,
       is_system_managed: true,
+      is_public: true,
     });
-    recordAppearances(seed.slug, finalGames.map((game) => game.id));
+    for (const game of finalGames) gameAppearanceCount.set(game.id, (gameAppearanceCount.get(game.id) ?? 0) + 1);
     results.push(`✅ ${existingList ? "Updated" : "Created"} "${seed.title}" with ${finalGames.length} games`);
   }
 
   for (const stale of (staleListsRes.data ?? []) as Array<Pick<ListRow, "id" | "slug">>) {
-    if (seedSlugs.includes(stale.slug)) {
+    if (seedSlugs.includes(stale.slug) || /^most-wanted-\d{4}$/.test(stale.slug)) {
       continue;
     }
 

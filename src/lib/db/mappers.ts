@@ -13,7 +13,7 @@ import { getVerdictLabel } from "../utils/scoring";
 import { sanitizeDiscoveryDescription } from "../utils/discovery";
 import { normalizePlatforms } from "../utils/platform";
 import {hasUnreleasedStatus,hasKnownFullRelease} from '../utils/release-status';
-import {hasBrowseTrendingSignal} from '../utils/trending';
+import {getPlayerGrowthEvidence} from '../utils/trending';
 
 /**
  * Regenerate verdict summary from display score + title + genres.
@@ -92,8 +92,7 @@ function computeTrendingReason(row: GameRow, label: VerdictLabel): string | unde
   if (ageDays <= 30) return "✨ Just Released";
 
   // 3. Momentum signals
-  if (momentum > 0.2 && (currentPlayers >= 50 || reviewCount >= 250)) return "Trending Up";
-  if (momentum > 0 && hasBrowseTrendingSignal(row)) return "Trending Up";
+  if (getPlayerGrowthEvidence(row) === 'fresh') return "Trending Up";
 
   // 4. Quality / popularity tiers
   if (currentPlayers > 10000) return "🎮 Popular Now";
@@ -105,7 +104,7 @@ function computeTrendingReason(row: GameRow, label: VerdictLabel): string | unde
   if (momentum < -0.35 && currentPlayers >= 2500 && score < 90) return "Falling";
 
   // 6. Generic fallback
-  if (row.trending || momentum > 0.08) return "🔥 Trending";
+  if (getPlayerGrowthEvidence(row) === 'stale') return "Past Momentum";
   return undefined;
 }
 

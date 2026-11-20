@@ -47,6 +47,7 @@ import { isPublicSafeGame } from "@/lib/utils/publicSafety";
 import { hasUsableCardImage } from "@/lib/utils/mediaReadiness";
 import { dedupePublicCanonicalRows } from "@/lib/utils/publicCanonical";
 import { getHomepageHeroScore, isHomepageHeroAutoCandidate, selectHeroDiscoveryCandidates } from "@/lib/utils/homepageHero";
+import { isProviderHeroArtwork, reviewedHeroArtwork } from '@/lib/utils/artwork-policy.mjs';
 import {
   getPublicTrendingScore,
   hasBrowseTrendingSignal,
@@ -551,13 +552,32 @@ function isHomepageHeroBackfillCandidate(row: GameRow): boolean {
    RULE:     NEVER derived from trending. Only from is_featured_manual + auto pool.
    ═══════════════════════════════════════════════════ */
 
+const HERO_GAME_COLUMNS = GAME_CARD_COLUMNS_WITH_DESC + ',rawg_id,igdb_id';
+
+function mapHeroGameRow(row: GameRow): Game {
+  const game = mapGameRow(row);
+  const reviewed = reviewedHeroArtwork({ slug: row.slug, igdbId: row.igdb_id, rawgId: row.rawg_id });
+  if (!reviewed) return game;
+  const alternate = [game.headerImage, reviewed.fallbackUrl].find(url =>
+    url !== reviewed.url && url !== game.coverImage && isProviderHeroArtwork(url));
+  return {
+    ...game,
+    headerImage: reviewed.url,
+    heroArtworkFallback: alternate,
+    heroArtworkMobileFocalPoint: reviewed.mobileFocalPoint,
+    ...(row.slug === 'grand-theft-auto-vi' ? {
+      description: 'A robbery gone wrong pulls Jason and Lucia into a criminal conspiracy that stretches from Vice City across Leonida.',
+    } : {}),
+  };
+}
+
 export async function fetchHeroCandidates(limit = 12): Promise<Game[]> {
   const supabase = getPublicSupabase();
 
   // Recent, well-supported releases must not require a multiplayer-scale
   // concurrent player count to earn a spotlight.
   const { data: freshReleases } = await measureHomepagePhase('database', () => supabase.from('games')
-    .select(GAME_CARD_COLUMNS_WITH_DESC).gte('release_date', monthsAgoISO(6))
+    .select(HERO_GAME_COLUMNS).gte('release_date', monthsAgoISO(6))
     .lte('release_date', new Date().toISOString().slice(0,10))
     .gte('score', 80).gte('confidence', 0.5).gte('review_count', 1000)
     .not('header_image', 'is', null).neq('header_image', '')
@@ -570,7 +590,7 @@ export async function fetchHeroCandidates(limit = 12): Promise<Game[]> {
   const today = new Date().toISOString().slice(0, 10);
   const { data: manualFeatured } = await measureHomepagePhase('database', () => supabase
     .from("games")
-    .select(GAME_CARD_COLUMNS_WITH_DESC)
+    .select(HERO_GAME_COLUMNS)
     .eq("is_featured_manual", true)
     .not("header_image", "is", null)
     .neq("header_image", "")
@@ -589,7 +609,7 @@ export async function fetchHeroCandidates(limit = 12): Promise<Game[]> {
 
   let { data: autoPool } = await measureHomepagePhase('database', () => supabase
     .from("games")
-    .select(GAME_CARD_COLUMNS_WITH_DESC)
+    .select(HERO_GAME_COLUMNS)
     .not("header_image", "is", null)
     .neq("header_image", "")
     .gte("score", 76)
@@ -606,7 +626,7 @@ export async function fetchHeroCandidates(limit = 12): Promise<Game[]> {
   if (!autoPool || autoPool.length < 6) {
     const wider = await measureHomepagePhase('database', () => supabase
       .from("games")
-      .select(GAME_CARD_COLUMNS_WITH_DESC)
+      .select(HERO_GAME_COLUMNS)
       .not("header_image", "is", null)
       .neq("header_image", "")
       .gte("score", 76)
@@ -626,7 +646,7 @@ export async function fetchHeroCandidates(limit = 12): Promise<Game[]> {
   if (!autoPool || autoPool.length < 4) {
     const widest = await measureHomepagePhase('database', () => supabase
       .from("games")
-      .select(GAME_CARD_COLUMNS_WITH_DESC)
+      .select(HERO_GAME_COLUMNS)
       .not("header_image", "is", null)
       .neq("header_image", "")
       .gte("score", 76)
@@ -652,6 +672,9 @@ export async function fetchHeroCandidates(limit = 12): Promise<Game[]> {
     isSurfaceReady(r, "homepageRail") &&
     isPublicSafeGame(r) &&
     hasUsableCardImage(r) &&
+    r.header_image && r.header_image !== r.cover_image &&
+    !hasUnreleasedStatus(r) &&
+    (!r.is_provisional || hasKnownFullRelease(r)) &&
     !isFutureDate(r.release_date)
   );
   const qualityFiltered = ready.filter((r) => isQualityGame(r, "hero"));
@@ -682,7 +705,7 @@ export async function fetchHeroCandidates(limit = 12): Promise<Game[]> {
   // half empty when the catalogue has enough otherwise-qualified games.
   const diversified = prioritizeById(applyGenreDiversity(ranked, limit, 2), ranked, limit);
 
-  const released = diversified.map(mapGameRow);
+  const released = diversified.map(mapHeroGameRow);
   finishSelection();
   try {
     const [discovery,releaseRanking] = await measureHomepagePhase('provider_snapshot', () =>
@@ -691,7 +714,7 @@ export async function fetchHeroCandidates(limit = 12): Promise<Game[]> {
     const upcoming = selectHeroDiscoveryCandidates(snapshot,today);
     if(!upcoming.length)return released;
     const {data,error} = await measureHomepagePhase('candidate_hydration', () =>
-      measureHomepagePhase('database', () => supabase.from('games').select(GAME_CARD_COLUMNS_WITH_DESC+',rawg_id')
+      measureHomepagePhase('database', () => supabase.from('games').select(HERO_GAME_COLUMNS+',igdb_summary,wikipedia_excerpt')
         .in('rawg_id',upcoming.map(item=>item.id)).abortSignal(AbortSignal.timeout(3000))));
     if(error)return released;
     const rows=(data || []) as unknown as GameRow[];
@@ -701,12 +724,20 @@ export async function fetchHeroCandidates(limit = 12): Promise<Game[]> {
         || ['cancelled','canceled','delisted'].includes(row.release_status || '')
         || item.released!<=today && hasEarlyAccessSignal(row)
         || item.released!>today && ['released','full release'].includes(row.release_status || ''))return [];
-      const game=mapGameRow(row);
+      const game=mapHeroGameRow(row);
       // Discovery chooses a spotlight, not a different score/status projection.
       // Preserve the same canonical mapping used by cards and game details.
-      return [{...game,headerImage:row.header_image || item.background_image!}];
-    }).slice(0,1);
-    return [...spotlights,...released.filter(game=>!spotlights.some(spot=>spot.id===game.id))].slice(0,limit);
+      return [{...game,headerImage:game.headerImage || item.background_image!}];
+    });
+    const recent = spotlights.find(game => game.releaseDate <= today && !game.isProvisional);
+    const forthcoming = spotlights.find(game => game.releaseDate > today && game.isProvisional);
+    const spotlightIds = new Set([recent?.id, forthcoming?.id]);
+    const otherReleased = released.filter(game => !spotlightIds.has(game.id));
+    return [
+      ...(recent ? [recent] : otherReleased.splice(0, 1)),
+      ...(forthcoming ? [forthcoming] : []),
+      ...otherReleased,
+    ].slice(0, limit);
   } catch { return released; }
 }
 
@@ -1550,7 +1581,7 @@ function cacheHomepageRail(
   return unstable_cache(refresh, [key], sectionCacheOptions);
 }
 
-const cachedHero = cacheHomepageRail('homepage-hero-v4', 'refresh_hero', () => fetchHeroCandidates(HOMEPAGE_HERO_FETCH_TARGET));
+const cachedHero = cacheHomepageRail('homepage-hero-v7', 'refresh_hero', () => fetchHeroCandidates(HOMEPAGE_HERO_FETCH_TARGET));
 const cachedTrending = cacheHomepageRail('homepage-trending-v3', 'refresh_trending', () => fetchTrendingGames(HOMEPAGE_SECTION_FETCH_TARGET, true));
 const cachedNewReleases = cacheHomepageRail('homepage-new-v4', 'refresh_new_releases', () => fetchNewReleases(HOMEPAGE_SECTION_FETCH_TARGET));
 const cachedTopRated = cacheHomepageRail('homepage-top-v3', 'refresh_top_rated', () => fetchHomepageTopRated(HOMEPAGE_SECTION_FETCH_TARGET));
