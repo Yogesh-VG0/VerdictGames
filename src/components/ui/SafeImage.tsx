@@ -34,6 +34,7 @@ function SafeImageContent({
   height,
   loading,
   priority,
+  preload,
   style,
   onLoad,
   onError,
@@ -67,8 +68,8 @@ function SafeImageContent({
         width={typeof width === "number" ? width : undefined}
         height={typeof height === "number" ? height : undefined}
         className={cn(fill ? "absolute inset-0 w-full h-full" : undefined, className)}
-        loading={priority ? "eager" : loading ?? "lazy"}
-        fetchPriority={priority ? "high" : "auto"}
+        loading={priority || preload ? "eager" : loading ?? "lazy"}
+        fetchPriority={priority || preload ? "high" : "auto"}
         decoding="async"
         style={style as CSSProperties | undefined}
         onLoad={(event) => onLoad?.(event)}
@@ -90,6 +91,7 @@ function SafeImageContent({
       height={height}
       loading={loading}
       priority={priority}
+      preload={preload}
       fetchPriority={priority ? 'high' : undefined}
       loader={loader ?? (providerSupported ? providerImageLoader : undefined)}
       unoptimized={resolvedUnoptimized}

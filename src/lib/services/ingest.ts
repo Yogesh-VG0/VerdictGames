@@ -17,6 +17,7 @@
  * Server-only. Called from POST /api/ingest/game.
  */
 
+import { withVerifiedEditorialModes } from '@/lib/utils/editorial-eligibility.mjs';
 import { getServerSupabase } from "../supabase/server";
 import {
   searchRawg,
@@ -376,7 +377,7 @@ export async function ingestGame(options: IngestOptions): Promise<IngestResult> 
   const screenshotUrls = screenshots.map((s) => s.image);
   const platforms = mapRawgPlatforms(fullGame.platforms);
   const genres = (fullGame.genres ?? []).map((g) => g.name);
-  const tags = (fullGame.tags ?? []).slice(0, 12).map((t) => t.name);
+  const tags = withVerifiedEditorialModes((fullGame.tags ?? []).slice(0, 12).map((t) => t.name), igdbData?.game_modes);
   const developer = fullGame.developers?.[0]?.name ?? "";
   const publisher = fullGame.publishers?.[0]?.name ?? "";
 

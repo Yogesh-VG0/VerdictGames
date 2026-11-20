@@ -162,6 +162,10 @@ export default async function HomePage() {
       ) : null}
 
       <HomepageClientSections
+        shownGameSlugs={[...new Set([
+          ...[...featured, ...trendingGames, ...topRatedGames, ...homepage.newReleases].map(game => game.slug),
+          ...mostAnticipatedGames.map(game => game.slug),
+        ])].join(",")}
         initialRecommendations={homepage.recommendations}
         initialNewReleases={homepage.newReleases}
         initialDeals={homepage.deals}

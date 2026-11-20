@@ -54,7 +54,7 @@ function HeroImageContent({
       className={cn("object-cover", className)}
       style={{ objectFit: fit }}
       sizes={sizes}
-      priority={priority}
+      preload={priority}
       quality={85}
       fallback={fallback ?? <Gamepad2 className="w-8 h-8 text-accent/35" />}
       fallbackClassName={cn(
