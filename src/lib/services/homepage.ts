@@ -47,6 +47,7 @@ import { isPublicSafeGame } from "@/lib/utils/publicSafety";
 import { hasUsableCardImage } from "@/lib/utils/mediaReadiness";
 import { dedupePublicCanonicalRows } from "@/lib/utils/publicCanonical";
 import { getHomepageHeroScore, isHomepageHeroAutoCandidate, selectHeroDiscoveryCandidates } from "@/lib/utils/homepageHero";
+import { isProviderHeroArtwork, reviewedHeroArtwork } from '@/lib/utils/artwork-policy.mjs';
 import {
   getPublicTrendingScore,
   hasBrowseTrendingSignal,
@@ -555,13 +556,17 @@ const HERO_GAME_COLUMNS = GAME_CARD_COLUMNS_WITH_DESC + ',rawg_id,igdb_id';
 
 function mapHeroGameRow(row: GameRow): Game {
   const game = mapGameRow(row);
-  // IGDB 52189 / RAWG 972995. The logo-free art is 3840 × 2160 at source.
-  if (row.slug !== 'grand-theft-auto-vi'
-    || (row.igdb_id !== 52189 && !(row.igdb_id == null && row.rawg_id === 972995))) return game;
+  const reviewed = reviewedHeroArtwork({ slug: row.slug, igdbId: row.igdb_id, rawgId: row.rawg_id });
+  if (!reviewed) return game;
+  const alternate = [game.headerImage, reviewed.fallbackUrl].find(url =>
+    url !== reviewed.url && url !== game.coverImage && isProviderHeroArtwork(url));
   return {
     ...game,
-    headerImage: 'https://images.igdb.com/igdb/image/upload/t_1080p/ar6i4p.jpg',
-    description: 'A robbery gone wrong pulls Jason and Lucia into a criminal conspiracy that stretches from Vice City across Leonida.',
+    headerImage: reviewed.url,
+    heroArtworkFallback: alternate,
+    ...(row.slug === 'grand-theft-auto-vi' ? {
+      description: 'A robbery gone wrong pulls Jason and Lucia into a criminal conspiracy that stretches from Vice City across Leonida.',
+    } : {}),
   };
 }
 
@@ -1575,7 +1580,7 @@ function cacheHomepageRail(
   return unstable_cache(refresh, [key], sectionCacheOptions);
 }
 
-const cachedHero = cacheHomepageRail('homepage-hero-v5', 'refresh_hero', () => fetchHeroCandidates(HOMEPAGE_HERO_FETCH_TARGET));
+const cachedHero = cacheHomepageRail('homepage-hero-v6', 'refresh_hero', () => fetchHeroCandidates(HOMEPAGE_HERO_FETCH_TARGET));
 const cachedTrending = cacheHomepageRail('homepage-trending-v3', 'refresh_trending', () => fetchTrendingGames(HOMEPAGE_SECTION_FETCH_TARGET, true));
 const cachedNewReleases = cacheHomepageRail('homepage-new-v4', 'refresh_new_releases', () => fetchNewReleases(HOMEPAGE_SECTION_FETCH_TARGET));
 const cachedTopRated = cacheHomepageRail('homepage-top-v3', 'refresh_top_rated', () => fetchHomepageTopRated(HOMEPAGE_SECTION_FETCH_TARGET));

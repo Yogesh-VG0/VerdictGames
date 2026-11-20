@@ -38,6 +38,7 @@ export interface Game {
   subtitle?: string;
   coverImage: string;
   headerImage: string;
+  heroArtworkFallback?: string;
   screenshots: string[];
   platforms: Platform[];
   genres: string[];

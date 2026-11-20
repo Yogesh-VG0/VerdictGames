@@ -40,7 +40,7 @@ import {
 import { findCheapSharkDeal } from "../external/cheapshark";
 import { findIgdbMatch, extractIgdbEnrichment, isIgdbConfigured } from "../external/igdb";
 import { validateAndGetSteamCover } from "../utils/mediaReadiness";
-import { preferExistingCover } from '../utils/artwork-policy.mjs';
+import { matchedIgdbArtwork, preferExistingCover, reviewedHeroArtwork, selectLandscapeArtwork, verifiedSteamLibraryHero } from '../utils/artwork-policy.mjs';
 import { findGameWikiSummary } from "../external/wikipedia";
 import {igdbVerifiedReleaseFields} from '../external/igdb-record.mjs';
 import { fetchHLTBData } from "../external/howlongtobeat";
@@ -186,9 +186,14 @@ export async function ingestGame(options: IngestOptions): Promise<IngestResult> 
   // ── Step 2: Check if game already exists ──
   const { data: existing } = await supabase
     .from("games")
-    .select("id, slug, cover_image, media_source, release_status")
+    .select("id, slug, cover_image, header_image, media_source, release_status, igdb_id, rawg_id, steam_app_id, is_featured_manual")
     .or(`slug.eq.${slug},rawg_id.eq.${bestMatch.id}`)
-    .maybeSingle() as { data: { id: string; slug: string; cover_image: string; media_source: string | null; release_status: string | null } | null };
+    .maybeSingle()
+    .overrideTypes<{
+      id: string; slug: string; cover_image: string; header_image: string | null;
+      media_source: string | null; release_status: string | null; igdb_id: number | null;
+      rawg_id: number | null; steam_app_id: number | null; is_featured_manual: boolean;
+    } | null, { merge: false }>();
 
   if (existing && !forceRefresh) {
     return {
@@ -394,6 +399,7 @@ export async function ingestGame(options: IngestOptions): Promise<IngestResult> 
 
   let finalCover: string = "";
   let mediaSource: string | null = null;
+  let listedSteamHero: string | null = null;
 
   // Priority 1: IGDB cover (preferred)
   if (igdbCover) {
@@ -404,6 +410,7 @@ export async function ingestGame(options: IngestOptions): Promise<IngestResult> 
   // Priority 2: validated official Steam portrait before a landscape fallback.
   else if (steamAppId) {
     const steamResult = await validateAndGetSteamCover(steamAppId);
+    listedSteamHero = steamResult?.libraryHeroUrl ?? null;
     if (steamResult?.coverUrl) {
       finalCover = steamResult.coverUrl;
       mediaSource = "steam";
@@ -424,9 +431,19 @@ export async function ingestGame(options: IngestOptions): Promise<IngestResult> 
   }
 
   const finalScreenshots = igdbScreenshots.length > 0 ? igdbScreenshots : screenshotUrls;
-  const finalHeader = igdbEnrichment?.headerImageUrl || (igdbScreenshots.length > 0
-    ? igdbScreenshots[0]
-    : (fullGame.background_image_additional ?? fullGame.background_image ?? ""));
+  const artworkRawg = fullGame.id === bestMatch.id && (existing?.rawg_id == null || existing.rawg_id === fullGame.id) ? fullGame : null;
+  const artworkSteamId = existing?.steam_app_id != null && existing.steam_app_id !== steamAppId ? null : steamAppId;
+  const artworkIgdb = matchedIgdbArtwork(igdbData, {
+    igdbId: existing?.igdb_id, steamAppId: artworkSteamId, title: fullGame.name, releaseDate: fullGame.released,
+  });
+  const artwork = {
+    igdb: artworkIgdb, rawg: artworkRawg, rawgScreenshots: artworkRawg ? screenshotUrls : [],
+    steam: steamAppData, steamAppId: artworkSteamId, steamHeroUrl: listedSteamHero, existing: existing?.header_image, cover: finalCover,
+    reviewed: reviewedHeroArtwork({ slug: existing?.slug ?? slug, igdbId: existing?.igdb_id ?? artworkIgdb?.id, rawgId: artworkRawg?.id }),
+  };
+  const steamHeroUrl = existing?.is_featured_manual || (score >= 80 && ((currentPlayers ?? 0) >= 2000 || (criticSourceCount >= 2 && reviewCount >= 1000)))
+    ? await verifiedSteamLibraryHero(artwork) : null;
+  const finalHeader = selectLandscapeArtwork({ ...artwork, steamHeroUrl });
 
   const gameRecord = {
     slug,
@@ -480,7 +497,7 @@ export async function ingestGame(options: IngestOptions): Promise<IngestResult> 
     peak_players_24h: null as number | null,    // would need historical tracking
     trailer_url: igdbEnrichment?.trailerUrl ?? null,
     trailer_thumbnail: igdbEnrichment?.trailerThumbnail ?? null,
-    igdb_id: igdbEnrichment?.igdbId ?? null,
+    igdb_id: existing?.igdb_id ?? artworkIgdb?.id ?? null,
     igdb_url: igdbEnrichment?.igdbUrl ?? null,
     igdb_rating: igdbEnrichment?.igdbRating ?? null,
     igdb_summary: igdbEnrichment?.igdbSummary ?? null,
@@ -507,12 +524,13 @@ export async function ingestGame(options: IngestOptions): Promise<IngestResult> 
   let gameId: string;
 
   if (existing && forceRefresh) {
+    const { header_image, ...metadata } = gameRecord;
     // Update existing record
      
     const { error: updateError } = await (supabase
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .from("games") as any)
-      .update(gameRecord)
+      .update(metadata)
       .eq("id", existing.id);
 
     if (updateError) {
@@ -523,6 +541,13 @@ export async function ingestGame(options: IngestOptions): Promise<IngestResult> 
         message: `Failed to update game: ${updateError.message}`,
         alreadyExisted: true,
       };
+    }
+    // A concurrent artwork edit wins over a refresh based on the older row.
+    if (header_image && header_image !== existing.header_image) {
+      const update = supabase.from('games').update({ header_image }).eq('id', existing.id);
+      const { error } = await (existing.header_image === null
+        ? update.is('header_image', null) : update.eq('header_image', existing.header_image));
+      if (error) console.warn('[ingest] Could not update landscape artwork', error.code);
     }
     gameId = existing.id;
   } else {
@@ -576,7 +601,7 @@ export async function ingestGame(options: IngestOptions): Promise<IngestResult> 
   }
 
   // IGDB source
-  if (igdbEnrichment?.igdbId) {
+  if (artworkIgdb && igdbEnrichment?.igdbId) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (supabase.from("game_sources") as any).upsert(
       {
