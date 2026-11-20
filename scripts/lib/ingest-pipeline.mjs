@@ -747,20 +747,21 @@ export async function reEnrichBatch(sql, { limit = 10 } = {}) {
     SELECT id, title, slug, last_enriched_at, review_count, release_date
     FROM games WHERE release_date >= ${recentCutoff} AND release_date <= ${today}
       AND review_count < 100
+      AND (last_enriched_at < ${cutoff} OR last_enriched_at IS NULL)
       AND (is_refreshing = false OR is_refreshing IS NULL OR refresh_started_at < ${lockCutoff} OR refresh_started_at IS NULL)
-    ORDER BY release_date DESC LIMIT ${Math.min(batchLimit, 10)}`;
-  const fpIds = new Set(fp.map(g => g.id));
+    ORDER BY release_date DESC, last_enriched_at ASC NULLS FIRST, id LIMIT ${Math.min(batchLimit, 10)}`;
   if (fp.length) { log.push(`Fast-path: ${fp.length} recent releases`); for (const g of fp) log.push(`  ${g.title} (${g.release_date}, ${g.review_count} reviews)`); }
 
   // Standard stale games
   const rem = batchLimit - fp.length;
   let stale = [];
   if (rem > 0) {
-    stale = (await sql`
+    stale = await sql`
       SELECT id, title, slug, last_enriched_at FROM games
       WHERE (last_enriched_at < ${cutoff} OR last_enriched_at IS NULL)
+        AND id <> ALL(${fp.map(game => game.id)}::uuid[])
         AND (is_refreshing = false OR is_refreshing IS NULL OR refresh_started_at < ${lockCutoff} OR refresh_started_at IS NULL)
-      ORDER BY last_enriched_at ASC NULLS FIRST LIMIT ${rem}`).filter(g => !fpIds.has(g.id));
+      ORDER BY last_enriched_at ASC NULLS FIRST, id LIMIT ${rem}`;
   }
 
   const all = [...fp, ...stale];
@@ -772,7 +773,8 @@ export async function reEnrichBatch(sql, { limit = 10 } = {}) {
     const now = new Date().toISOString();
     // Acquire lock
     try { const [lk] = await sql`UPDATE games SET is_refreshing = true, refresh_started_at = ${now}
-      WHERE id = ${game.id} AND (is_refreshing = false OR is_refreshing IS NULL OR refresh_started_at < ${lockCutoff} OR refresh_started_at IS NULL) RETURNING id`;
+      WHERE id = ${game.id} AND (last_enriched_at < ${cutoff} OR last_enriched_at IS NULL)
+        AND (is_refreshing = false OR is_refreshing IS NULL OR refresh_started_at < ${lockCutoff} OR refresh_started_at IS NULL) RETURNING id`;
       if (!lk) { log.push(`SKIP ${game.title} — locked`); continue; }
     } catch (error) {
       if (isInfrastructureDbError(error)) throw error;

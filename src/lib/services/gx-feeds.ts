@@ -10,6 +10,7 @@ import { gxFetchWithCache } from "@/lib/external/gx-cache";
 import { getServerSupabase } from "@/lib/supabase/server";
 import type { GXDeal, GXFreeGame, GXTopGame } from "@/lib/types";
 import { slugify, titlesMatch } from "@/lib/utils/slugify";
+import { measureHomepagePhase } from "@/lib/services/homepage-timing";
 
 export const GX_FEEDS_REVALIDATE_SECONDS = 300;
 export const GX_FEEDS_API_CACHE_CONTROL = "s-maxage=300, stale-while-revalidate=3600";
@@ -105,9 +106,8 @@ async function loadGXDealsUncached(): Promise<GXDeal[]> {
     "deals",
     getGXDeals
   );
-  const matchedGamesBySlug = await loadMatchedGamesBySlug(
-    raw.map((entry) => entry.game.slug ?? "")
-  );
+  const matchedGamesBySlug = await measureHomepagePhase('candidate_hydration', () =>
+    loadMatchedGamesBySlug(raw.map((entry) => entry.game.slug ?? "")));
 
   return raw.map((entry) => mapDealEntry(entry, matchedGamesBySlug));
 }

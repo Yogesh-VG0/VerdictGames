@@ -29,4 +29,15 @@ describe('consistent discovery content and release boundaries',()=>{
   expect(isUpcomingCuratedListGame(row)).toBe(false);
   expect(isUpcomingCuratedListGame({...row,release_status:'early_access',is_provisional:false,verdict_label:'WORTH IT'})).toBe(true);
  });
+ it('renders a matching provider overview from the canonical game record', async () => {
+  const description = 'Legacy Adventure follows an expedition across a lost city.';
+  state.row = {
+   id: 'legacy-1', slug: 'legacy-adventure', title: 'Legacy Adventure', release_status: null,
+   release_date: '2024-05-22', is_provisional: false, steam_app_id: 123, steam_total_count: 900,
+   platforms: ['PC'], genres: ['Adventure'], tags: [],
+   description: 'Legacy Adventure is an upcoming adventure game.', igdb_summary: description,
+  };
+  const detail = await loadGameDetail({ slug: 'legacy-adventure' });
+  expect(detail).toMatchObject({ status: 'ok', game: { description, releaseStatus: undefined } });
+ });
 });

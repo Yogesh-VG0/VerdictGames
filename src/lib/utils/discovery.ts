@@ -1,6 +1,6 @@
 import type { GameRow } from "@/lib/supabase/types";
 import { normalizeTitle } from "@/lib/utils/slugify";
-import {hasKnownFullRelease} from './release-status';
+import { hasEarlyAccessSignal, hasKnownFullRelease } from './release-status';
 
 const PACKAGING_SUFFIX_PATTERNS = [
   /(?:\s*[-–:]\s*)?game of the year edition$/i,
@@ -176,26 +176,35 @@ export function isPrimaryDiscoveryGame(row: Pick<GameRow, "title" | "description
 }
 
 export function sanitizeDiscoveryDescription(
-  row: Pick<GameRow, "title" | "description" | "igdb_summary" | "wikipedia_excerpt"> & Partial<Pick<GameRow,'release_status'>>
+  row: Pick<GameRow, "title" | "description" | "igdb_summary" | "wikipedia_excerpt">
+    & Partial<Pick<GameRow, "release_status" | "release_date" | "steam_app_id" | "steam_total_count"
+      | "is_provisional" | "verdict_label" | "tags" | "genres">>,
 ): string {
   const candidates = [row.description, row.igdb_summary, row.wikipedia_excerpt]
     .map((value) => value?.trim() || "")
-    .filter(Boolean);
+    .filter((candidate) => candidate && !hasSupplementalDescription(candidate)
+      && !hasMismatchedDescriptionTitle(row.title, candidate));
 
-  for (const candidate of candidates) {
-    // Do not rewrite stale provider prose into a new factual claim. Prefer a
-    // matching current source; otherwise leave the overview unavailable.
-    if (hasKnownFullRelease(row) && /\bis an upcoming\b/i.test(candidate.slice(0,200))) continue;
-    if (hasSupplementalDescription(candidate)) {
-      continue;
-    }
-
-    if (hasMismatchedDescriptionTitle(row.title, candidate)) {
-      continue;
-    }
-
-    return candidate;
+  const hasUpcomingLead = (candidate: string) => /^[^.!?]{1,100}\s+is (?:an upcoming|a forthcoming)\b/i.test(candidate);
+  if (hasKnownFullRelease(row)) {
+    return candidates.find((candidate) => !hasUpcomingLead(candidate)) ?? "";
   }
 
-  return "";
+  // Steam reviews show playability, which can include Early Access. Use that
+  // evidence only to avoid repeating stale overview copy on legacy rows.
+  const hasLegacyPlayabilityEvidence = !row.release_status && row.is_provisional === false
+    && row.verdict_label !== "COMING SOON"
+    && !!row.release_date && /^\d{4}-\d{2}-\d{2}$/.test(row.release_date)
+    && row.release_date < new Date().toISOString().slice(0, 10)
+    && (row.steam_app_id ?? 0) > 0 && (row.steam_total_count ?? 0) > 0
+    && !hasEarlyAccessSignal(row);
+  const preferred = candidates[0];
+  if (hasLegacyPlayabilityEvidence && preferred && hasUpcomingLead(preferred)) {
+    const subject = extractLeadingDescriptionSubject(preferred);
+    if (subject && getDescriptionMatchCanonicalTitle(subject) === getDescriptionMatchCanonicalTitle(row.title)) {
+      return candidates.find((candidate) => !hasUpcomingLead(candidate)) ?? "";
+    }
+  }
+
+  return preferred ?? "";
 }

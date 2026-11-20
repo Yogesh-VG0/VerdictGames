@@ -14,6 +14,7 @@
 import { getServerSupabase } from "@/lib/supabase/server";
 import type { GXCalendarEntry } from "@/lib/external/gxcorner";
 import type { GXCalendarGame, GXCalendarMonthResponse } from "@/lib/types";
+import { measureHomepagePhase, startHomepagePhase } from "@/lib/services/homepage-timing";
 import { dedupeGXCalendarGames, filterGXCalendarEntriesByMonth, getCalendarMonthKey, isPastCalendarMonth, shouldHideGXCalendarEntry } from "@/lib/utils/gx-calendar";
 
 type FeedKey =
@@ -132,8 +133,9 @@ export async function gxFetchWithCache<T>(
   // upstream latency (or trigger writes) on every cache miss at the CDN.
   let stored: { data: T; source: "cache" } | null = null;
   if (cacheTable) {
-    const { data } = await cacheTable.select('payload, fetched_at').eq('feed_key', feedKey)
-      .abortSignal(AbortSignal.timeout(3000)).maybeSingle();
+    const { data } = await measureHomepagePhase('provider_snapshot', () =>
+      cacheTable.select('payload, fetched_at').eq('feed_key', feedKey)
+        .abortSignal(AbortSignal.timeout(3000)).maybeSingle());
     const parsed = parsePayload<T>(data?.payload);
     if (parsed && (!Array.isArray(parsed) || parsed.length > 0)) {
       stored = { data: parsed, source: 'cache' };
@@ -143,7 +145,7 @@ export async function gxFetchWithCache<T>(
 
   // 1. Try live fetch
   try {
-    const liveData = await liveFetcher();
+    const liveData = await measureHomepagePhase('provider_fetch', liveFetcher);
 
     // An empty upstream response is treated as a failure so a good cached feed
     // is not replaced by a temporary provider outage.
@@ -170,35 +172,40 @@ export async function gxFetchWithCache<T>(
   }
 
   // 2. Fallback to cache
-  if (stored) return stored;
-  if (cacheTable) {
-    try {
-      const { data: cached } = await cacheTable
-        .select("payload, fetched_at")
-        .eq("feed_key", feedKey)
-        .abortSignal(AbortSignal.timeout(3000)).single() as { data: { payload: unknown; fetched_at: string } | null };
+  const finishFallback = startHomepagePhase('provider_fallback');
+  try {
+    if (stored) return stored;
+    if (cacheTable) {
+      try {
+        const { data: cached } = await cacheTable
+          .select("payload, fetched_at")
+          .eq("feed_key", feedKey)
+          .abortSignal(AbortSignal.timeout(3000)).single() as { data: { payload: unknown; fetched_at: string } | null };
 
-      if (cached?.payload) {
-        const age = Date.now() - new Date(cached.fetched_at).getTime();
-        const parsed = parsePayload<T>(cached.payload);
-        if (!parsed) {
-          throw new Error(`Invalid cached payload for ${feedKey}`);
+        if (cached?.payload) {
+          const age = Date.now() - new Date(cached.fetched_at).getTime();
+          const parsed = parsePayload<T>(cached.payload);
+          if (!parsed) {
+            throw new Error(`Invalid cached payload for ${feedKey}`);
+          }
+          const isStale = age > staleTtlMs;
+
+          if (isStale) {
+            console.warn(`[GX Cache] Serving stale cache for ${feedKey} (age: ${Math.round(age / 60000)}min)`);
+          }
+
+          return { data: parsed, source: "cache" };
         }
-        const isStale = age > staleTtlMs;
-
-        if (isStale) {
-          console.warn(`[GX Cache] Serving stale cache for ${feedKey} (age: ${Math.round(age / 60000)}min)`);
-        }
-
-        return { data: parsed, source: "cache" };
+      } catch (cacheErr) {
+        console.warn(`[GX Cache] Cache read failed for ${feedKey}:`, (cacheErr as Error).message);
       }
-    } catch (cacheErr) {
-      console.warn(`[GX Cache] Cache read failed for ${feedKey}:`, (cacheErr as Error).message);
     }
-  }
 
-  // 3. Both failed — return empty
-  return { data: ([] as unknown) as T, source: "empty" };
+    // 3. Both failed — return empty
+    return { data: ([] as unknown) as T, source: "empty" };
+  } finally {
+    finishFallback();
+  }
 }
 
 async function readCalendarMonthSnapshot(month: string): Promise<{ items: GXCalendarGame[]; fetchedAt: string; snapshotVersion: number } | null> {
