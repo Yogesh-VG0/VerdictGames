@@ -39,6 +39,7 @@ export interface Game {
   coverImage: string;
   headerImage: string;
   heroArtworkFallback?: string;
+  heroArtworkMobileFocalPoint?: 'right';
   screenshots: string[];
   platforms: Platform[];
   genres: string[];

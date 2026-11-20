@@ -1,6 +1,6 @@
 export function portraitPriority(url: string | null | undefined): number;
 type Identity = { slug: string; igdbId?: number | null; rawgId?: number | null };
-type ReviewedArtwork = Readonly<{ url: string; fallbackUrl?: string; credit: string; sourceUrl: string }>;
+type ReviewedArtwork = Readonly<{ url: string; fallbackUrl?: string; mobileFocalPoint?: 'right'; credit: string; sourceUrl: string }>;
 type SteamArtwork = { steam_appid: number; type: string; screenshots?: { path_full: string }[] };
 type ArtworkInput = {
   igdb?: unknown; steam?: SteamArtwork | null; steamAppId?: number | null;
