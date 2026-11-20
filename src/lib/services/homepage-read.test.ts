@@ -1,4 +1,7 @@
 import {beforeEach,describe,expect,it,vi} from 'vitest';
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import HeroCarousel from '@/components/HeroCarousel';
 const state=vi.hoisted(()=>({responses:[] as unknown[],discovery:[] as unknown[]}));
 vi.mock('@/lib/services/upcoming-snapshot',()=>({readCachedUpcomingSnapshot:async()=>({results:state.discovery})}));
 vi.mock('@/lib/services/community-ranking',()=>({readHomepageReleaseRanking:async()=>null}));
@@ -20,6 +23,12 @@ describe('homepage trending read failures',()=>{
     review_count:100000,steam_total_count:100000,steam_app_id:123,user_score:95,
     current_players:10000,developer:'Studio',publisher:'Studio',verdict_label:'MUST PLAY'};
    const rows=Array.from({length:6},(_,i)=>({...base,id:`hero-${i}`,slug:`hero-${i}`,title:`Hero ${i}`,steam_app_id:100+i}));
+   Object.assign(rows[0], {
+     title: 'Legacy Spotlight',
+     description: 'Legacy Spotlight is an upcoming action adventure with a substantial open world.',
+     release_date: new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10),
+     is_provisional: false,
+   });
    const launch={...base,id:'launch',rawg_id:972995,slug:'console-launch',title:'Console Launch',steam_app_id:null,
     steam_total_count:null,user_score:null,score:77,verdict_score:77,confidence:0.245543,review_count:104};
    state.discovery=[{id:972995,name:'Console Launch',slug:'console-launch',released:today,tba:false,added:1000,
@@ -27,6 +36,12 @@ describe('homepage trending read failures',()=>{
    state.responses=[{data:rows,error:null},{data:[],error:null},{data:rows,error:null},{data:[launch],error:null}];
    const result=await fetchHeroCandidates(6);
    expect(result).toHaveLength(6);expect(result[0]).toMatchObject({id:'launch',score:77,verdictScore:77,verdictLabel:'WORTH IT',isProvisional:false});
+   const spotlight = result.find(game => game.id === 'hero-0');
+   expect(spotlight).toMatchObject({ description: '' });
+   const markup = renderToStaticMarkup(createElement(HeroCarousel, { games: [spotlight!] }));
+   expect(markup).toContain('Legacy Spotlight');
+   expect(markup).toContain('based on the available rating evidence');
+   expect(markup).not.toContain('is an upcoming action adventure');
    expect(state.responses).toHaveLength(0);
  });
  it('never shows Coming Soon inside New Releases, while preserving a low-confidence console launch',async()=>{

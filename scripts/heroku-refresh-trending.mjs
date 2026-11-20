@@ -175,16 +175,20 @@ async function refreshMomentumFromLatestSnapshots() {
       FROM player_snapshots
       WHERE player_count > 0
       ORDER BY game_id, recorded_at DESC
+    ), calculated_momentum AS (
+      SELECT g.id, ROUND(
+        LN((g.current_players + 1)::numeric) - LN((latest_snapshots.player_count + 1)::numeric),
+        4
+      )::real AS momentum
+      FROM games AS g
+      JOIN latest_snapshots ON g.id = latest_snapshots.game_id
+      WHERE g.current_players > 0
     )
     UPDATE games AS g
-    SET momentum = ROUND(
-      LN((g.current_players + 1)::numeric) - LN((latest_snapshots.player_count + 1)::numeric),
-      4
-    )
-    FROM latest_snapshots
-    WHERE g.id = latest_snapshots.game_id
-      AND g.current_players IS NOT NULL
-      AND g.current_players > 0
+    SET momentum = calculated_momentum.momentum
+    FROM calculated_momentum
+    WHERE g.id = calculated_momentum.id
+      AND g.momentum IS DISTINCT FROM calculated_momentum.momentum
   `;
   return Number(result.count ?? 0);
 }

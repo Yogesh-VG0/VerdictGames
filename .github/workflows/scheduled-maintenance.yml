@@ -8,7 +8,7 @@ on:
     - cron: "47 1,13 * * *" # Re-enrich stale games, twice daily
     - cron: "23 2 * * *" # Curated lists, daily
     - cron: "37 3 * * *" # Standard discovery, daily
-    - cron: "53 4 * * *" # Historical backfill, daily
+    - cron: "53 4 * * 3" # Checkpointed historical backfill, weekly
     - cron: "29 5 * * 2" # Android listing verification, weekly
     - cron: "29 5 * * 5" # iOS listing verification, weekly
     - cron: "11 15 * * 0" # Deep discovery, weekly and >5h after standard can finish
@@ -64,7 +64,7 @@ jobs:
               "47 1,13 * * *") job="re-enrich" ;;
               "23 2 * * *") job="seed-curated-lists" ;;
               "37 3 * * *") job="discover-standard" ;;
-              "53 4 * * *") job="backfill-games" ;;
+              "53 4 * * 3") job="backfill-games" ;;
               "29 5 * * 2") job="backfill-mobile-android" ;;
               "29 5 * * 5") job="backfill-mobile-ios" ;;
               "11 15 * * 0") job="discover-deep" ;;

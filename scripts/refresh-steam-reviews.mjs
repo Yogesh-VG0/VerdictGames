@@ -5,6 +5,11 @@ import { pathToFileURL } from 'node:url';
 
 const integer = value => Math.max(0, Math.trunc(Number(value) || 0));
 const timestamp = value => Number.isFinite(value) ? new Date(value * 1000).toISOString() : null;
+const REVIEW_COLUMNS = [
+  'steam_app_id', 'language', 'voted_up', 'review_text', 'playtime_at_review', 'playtime_forever',
+  'author_steam_id', 'author_playtime_forever', 'authored_at', 'updated_at', 'votes_up', 'votes_funny',
+  'weighted_vote_score', 'steam_purchase', 'received_for_free', 'fetched_at',
+];
 
 export async function refreshReviewBatch(sql, { limit = 50, pauseMs = 1000 } = {}) {
   const games = await sql`
@@ -14,13 +19,21 @@ export async function refreshReviewBatch(sql, { limit = 50, pauseMs = 1000 } = {
     ORDER BY s.last_success_at ASC NULLS FIRST, g.trending DESC, g.review_count DESC
     LIMIT ${Math.max(1, Math.min(1000, limit))}
   `;
-  const stats = { scanned: 0, refreshed: 0, failed: 0 };
+  const stats = { scanned: 0, refreshed: 0, failed: 0, deletedReviews: 0, writtenReviews: 0 };
   for (const game of games) {
     stats.scanned++;
     try {
       const payload = await fetchSteamReviews(game.steam_app_id, { languages: ['english'], limit: 21 });
       const fetchedAt = new Date().toISOString();
-      const reviews = payload.reviews.filter(r => typeof r.recommendationid === 'string' && typeof r.review === 'string' && r.review.trim())
+      const seen = new Set();
+      const reviews = payload.reviews.filter(r => {
+        if (typeof r?.recommendationid !== 'string' || !r.recommendationid || typeof r.review !== 'string') {
+          throw new Error('Steam returned a review without a valid identity or text');
+        }
+        if (!r.review.trim() || seen.has(r.recommendationid)) return false;
+        seen.add(r.recommendationid);
+        return true;
+      })
         .map(r => ({ game_id: game.id, steam_app_id: game.steam_app_id, recommendation_id: r.recommendationid,
           language: r.language || 'english', voted_up: Boolean(r.voted_up), review_text: r.review.trim(),
           playtime_at_review: integer(r.author?.playtime_at_review), playtime_forever: integer(r.author?.playtime_forever),
@@ -28,15 +41,24 @@ export async function refreshReviewBatch(sql, { limit = 50, pauseMs = 1000 } = {
           authored_at: timestamp(r.timestamp_created), updated_at: timestamp(r.timestamp_updated),
           votes_up: integer(r.votes_up), votes_funny: integer(r.votes_funny), weighted_vote_score: Number(r.weighted_vote_score) || 0,
           steam_purchase: Boolean(r.steam_purchase), received_for_free: Boolean(r.received_for_free), fetched_at: fetchedAt }));
-      // Both statements and the refresh marker commit together. A failed insert
-      // rolls back deletion, preserving the last known good snapshot.
-      await sql.begin(async tx => {
-        await tx`DELETE FROM public.steam_reviews WHERE game_id = ${game.id}`;
-        if (reviews.length) await tx`INSERT INTO public.steam_reviews ${tx(reviews)}`;
+      if (!reviews.length && payload.query_summary?.total_reviews > 0) {
+        throw new Error('Steam returned an empty review set with a positive review count');
+      }
+      // Keep retained review IDs and creation times. fetched_at records the
+      // latest successful observation even when the retained text is unchanged.
+      const { deleted, written } = await sql.begin(async tx => {
+        const removed = await tx`DELETE FROM public.steam_reviews
+          WHERE game_id = ${game.id} AND recommendation_id <> ALL(${reviews.map(review => review.recommendation_id)}::text[])`;
+        const retained = reviews.length ? await tx`INSERT INTO public.steam_reviews ${tx(reviews, 'game_id', 'recommendation_id', ...REVIEW_COLUMNS)}
+          ON CONFLICT (game_id, recommendation_id) DO UPDATE
+          SET (${tx(REVIEW_COLUMNS)}) = (${tx(REVIEW_COLUMNS.map(column => `excluded.${column}`))})` : null;
         await tx`INSERT INTO public.steam_review_refresh_state (game_id, attempted_at, next_attempt_at, last_success_at, failures)
           VALUES (${game.id}, now(), now() + interval '72 hours', now(), 0)
           ON CONFLICT (game_id) DO UPDATE SET attempted_at = now(), next_attempt_at = now() + interval '72 hours', last_success_at = now(), failures = 0`;
+        return { deleted: removed.count, written: retained?.count ?? 0 };
       });
+      stats.deletedReviews += deleted;
+      stats.writtenReviews += written;
       stats.refreshed++;
     } catch (error) {
       // Do not issue another database write to record a capacity failure.

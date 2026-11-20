@@ -88,6 +88,52 @@ describe("mapGameRow", () => {
     expect(mapGameRow(makeGameRow({release_status:'released',description:'Test Game is an upcoming adventure game.',
       igdb_summary:'Test Game is an adventure about exploration.'})).description).toBe('Test Game is an adventure about exploration.');
   });
+
+  describe("legacy provider descriptions", () => {
+    const upcomingDescription = "Test Game is an upcoming adventure game. It is set to release on May 22, 2026.";
+    const providerSummary = "Explore the city and discover its secrets in a new adventure.";
+    const row = makeGameRow({
+      release_status: null,
+      release_date: "2026-05-22",
+      is_provisional: false,
+      steam_total_count: 6824,
+      description: upcomingDescription,
+      igdb_summary: providerSummary,
+    });
+
+    it("prefers the stored alternative for a playable legacy game without changing its release status", () => {
+      expect(mapGameRow(row)).toMatchObject({ description: providerSummary, releaseStatus: undefined });
+    });
+
+    it.each<Partial<GameRow>>([
+      { release_status: "upcoming" },
+      { release_status: "announced" },
+      { release_status: "cancelled" },
+      { release_status: "early_access" },
+      { tags: ["Early Access"] },
+      { is_provisional: true },
+      { verdict_label: "COMING SOON" },
+      { release_date: "2099-01-01" },
+      { steam_total_count: null },
+    ])("keeps the overview when playability evidence is missing or contradicted (%j)", (overrides) => {
+      expect(mapGameRow({ ...row, ...overrides }).description).toBe(upcomingDescription);
+    });
+
+    it("omits stale prose when a card only projects the primary overview", () => {
+      expect(mapGameRow({ ...row, igdb_summary: null }).description).toBe("");
+    });
+
+    it.each([null, "released"])("retains an authored overview mentioning an upcoming expansion (%s)", (release_status) => {
+      const description = "Test Game is an adventure. There is an upcoming expansion.";
+      expect(mapGameRow({ ...row, release_status, description }).description).toBe(description);
+    });
+
+    it("ignores a mismatched provider overview and uses the matching source", () => {
+      const overview = "Test Game is a 2026 adventure game.";
+      expect(mapGameRow({ ...row, igdb_summary: "Other Game is a strategy game.", wikipedia_excerpt: overview }).description).toBe(overview);
+    });
+  });
+
   it('honors verified full release over stale provisional and Coming Soon flags',()=>{
     expect(mapGameRow(makeGameRow({release_status:'released',is_provisional:true,verdict_label:'COMING SOON'})))
       .toMatchObject({score:85,isProvisional:false,verdictLabel:'WORTH IT'});

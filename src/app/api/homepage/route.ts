@@ -15,24 +15,35 @@ import {
   HOMEPAGE_API_CACHE_CONTROL,
   loadHomepageDataWithStatus,
 } from "@/lib/services/homepage";
-import { jsonPrivateOk, jsonError } from '@/lib/api/response';
+import { jsonError, PRIVATE_RESPONSE_HEADERS } from '@/lib/api/response';
+import { startHomepagePhase, withHomepageTimings } from '@/lib/services/homepage-timing';
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
 export async function GET() {
-  try {
-    const { data, degraded } = await loadHomepageDataWithStatus();
-    if (degraded) {
-      if (!Object.values(data).some(section => section.length > 0)) return jsonError('Game collections are temporarily unavailable. Please retry.', 503);
-      return jsonPrivateOk(data);
+  return withHomepageTimings(async (serverTiming) => {
+    try {
+      const { data, degraded } = await loadHomepageDataWithStatus();
+      if (degraded && !Object.values(data).some(section => section.length > 0)) {
+        const response = jsonError('Game collections are temporarily unavailable. Please retry.', 503);
+        response.headers.set('Server-Timing', serverTiming());
+        return response;
+      }
+      const endSerialization = startHomepagePhase('serialization');
+      const body = JSON.stringify({ success: true, data });
+      const bytes = Buffer.byteLength(body);
+      endSerialization();
+      return new NextResponse(body, {
+        headers: {
+          ...(degraded ? PRIVATE_RESPONSE_HEADERS : { 'Cache-Control': HOMEPAGE_API_CACHE_CONTROL }),
+          'Content-Type': 'application/json',
+          'Server-Timing': [serverTiming(), `response_bytes;desc="${bytes}"`].join(', '),
+        },
+      });
+    } catch (err) {
+      console.error("[API] /homepage error:", err);
+      return jsonError('Failed to load homepage data.', 503);
     }
-    return NextResponse.json(
-      { success: true, data },
-      { status: 200, headers: { "Cache-Control": HOMEPAGE_API_CACHE_CONTROL } }
-    );
-  } catch (err) {
-    console.error("[API] /homepage error:", err);
-    return jsonError('Failed to load homepage data.', 503);
-  }
+  });
 }

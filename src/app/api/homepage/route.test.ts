@@ -13,6 +13,9 @@ describe('homepage failure cache boundary', () => {
     const response = await GET();
     expect(response.status).toBe(200);
     expect(response.headers.get('Cache-Control')).toContain('s-maxage=300');
+    const body = await response.text();
+    expect(response.headers.get('Server-Timing')).toContain('serialization;dur=');
+    expect(response.headers.get('Server-Timing')).toContain(`response_bytes;desc="${Buffer.byteLength(body)}"`);
   });
   it('serves available cold-cache sections without caching failed sections', async () => {
     load.mockResolvedValue({ data: { hero: ['game'], topRated: [] }, degraded: true });

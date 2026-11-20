@@ -31,6 +31,7 @@ import { mapGameRow } from "@/lib/db/mappers";
 import { GAME_CARD_COLUMNS_WITH_DESC } from "@/lib/db/columns";
 import { retryCatalogRead } from '@/lib/db/catalog-read';
 import { admitCataloguePayload, coalesceCatalogueRead, readCachedCatalogue } from '@/lib/db/cached-catalogue';
+import { measureHomepagePhase, startHomepagePhase } from '@/lib/services/homepage-timing';
 import { isFutureDate } from "@/lib/utils";
 import {
   filterQualityGames,
@@ -555,19 +556,19 @@ export async function fetchHeroCandidates(limit = 12): Promise<Game[]> {
 
   // Recent, well-supported releases must not require a multiplayer-scale
   // concurrent player count to earn a spotlight.
-  const { data: freshReleases } = await supabase.from('games')
+  const { data: freshReleases } = await measureHomepagePhase('database', () => supabase.from('games')
     .select(GAME_CARD_COLUMNS_WITH_DESC).gte('release_date', monthsAgoISO(6))
     .lte('release_date', new Date().toISOString().slice(0,10))
     .gte('score', 80).gte('confidence', 0.5).gte('review_count', 1000)
     .not('header_image', 'is', null).neq('header_image', '')
-    .order('release_date', { ascending: false }).limit(60);
+    .order('release_date', { ascending: false }).limit(60));
 
   // Step 1: Manually featured games (editorial priority) — with 36mo recency cap
   // FIX: Old evergreen manual picks were dominating hero. Now capped at 3 years.
   // RULE: Hero sourced from is_featured_manual flag, NEVER from trending flag
   const manualCutoff = monthsAgoISO(36);
   const today = new Date().toISOString().slice(0, 10);
-  const { data: manualFeatured } = await supabase
+  const { data: manualFeatured } = await measureHomepagePhase('database', () => supabase
     .from("games")
     .select(GAME_CARD_COLUMNS_WITH_DESC)
     .eq("is_featured_manual", true)
@@ -579,14 +580,14 @@ export async function fetchHeroCandidates(limit = 12): Promise<Game[]> {
     .lte("release_date", today)
     .order("verdict_score", { ascending: false, nullsFirst: false })
     .order("score", { ascending: false })
-    .limit(4) as { data: GameRow[] | null }; // Reduced from 6 to 4 to allow more auto-selected games
+    .limit(4)) as { data: GameRow[] | null }; // Reduced from 6 to 4 to allow more auto-selected games
 
   // Step 2: Auto-selected recent high-quality games with header art
   const cutoff24 = monthsAgoISO(24);
   const cutoff36 = monthsAgoISO(36);
   const cutoff60 = monthsAgoISO(60);
 
-  let { data: autoPool } = await supabase
+  let { data: autoPool } = await measureHomepagePhase('database', () => supabase
     .from("games")
     .select(GAME_CARD_COLUMNS_WITH_DESC)
     .not("header_image", "is", null)
@@ -599,11 +600,11 @@ export async function fetchHeroCandidates(limit = 12): Promise<Game[]> {
     .lte("release_date", today)
     .order("verdict_score", { ascending: false, nullsFirst: false })
     .order("score", { ascending: false })
-    .limit(40) as { data: GameRow[] | null };
+    .limit(40)) as { data: GameRow[] | null };
 
   // Widen to 36mo if pool is thin
   if (!autoPool || autoPool.length < 6) {
-    const wider = await supabase
+    const wider = await measureHomepagePhase('database', () => supabase
       .from("games")
       .select(GAME_CARD_COLUMNS_WITH_DESC)
       .not("header_image", "is", null)
@@ -616,14 +617,14 @@ export async function fetchHeroCandidates(limit = 12): Promise<Game[]> {
       .lte("release_date", today)
       .order("verdict_score", { ascending: false, nullsFirst: false })
       .order("score", { ascending: false })
-      .limit(40) as { data: GameRow[] | null };
+      .limit(40)) as { data: GameRow[] | null };
 
     autoPool = wider.data;
   }
 
   // Last resort: widen to 60mo
   if (!autoPool || autoPool.length < 4) {
-    const widest = await supabase
+    const widest = await measureHomepagePhase('database', () => supabase
       .from("games")
       .select(GAME_CARD_COLUMNS_WITH_DESC)
       .not("header_image", "is", null)
@@ -636,11 +637,12 @@ export async function fetchHeroCandidates(limit = 12): Promise<Game[]> {
       .lte("release_date", today)
       .order("verdict_score", { ascending: false, nullsFirst: false })
       .order("score", { ascending: false })
-      .limit(40) as { data: GameRow[] | null };
+      .limit(40)) as { data: GameRow[] | null };
 
     autoPool = widest.data;
   }
 
+  const finishSelection = startHomepagePhase('candidate_selection');
   const manualIds = new Set((manualFeatured ?? []).map((g) => g.id));
   const autoDeduped = (autoPool ?? []).filter((g) => !manualIds.has(g.id));
   const combined = deduplicateBySteamAppId([...(freshReleases ?? []) as unknown as GameRow[], ...(manualFeatured ?? []), ...autoDeduped]);
@@ -681,13 +683,16 @@ export async function fetchHeroCandidates(limit = 12): Promise<Game[]> {
   const diversified = prioritizeById(applyGenreDiversity(ranked, limit, 2), ranked, limit);
 
   const released = diversified.map(mapGameRow);
+  finishSelection();
   try {
-    const [discovery,releaseRanking] = await Promise.allSettled([readCachedUpcomingSnapshot(),readHomepageReleaseRanking()]);
+    const [discovery,releaseRanking] = await measureHomepagePhase('provider_snapshot', () =>
+      Promise.allSettled([readCachedUpcomingSnapshot(),readHomepageReleaseRanking()]));
     const snapshot=[...(discovery.status==='fulfilled'?discovery.value.results:[]),...(releaseRanking.status==='fulfilled'?releaseRanking.value?.results || []:[])];
     const upcoming = selectHeroDiscoveryCandidates(snapshot,today);
     if(!upcoming.length)return released;
-    const {data,error}=await supabase.from('games').select(GAME_CARD_COLUMNS_WITH_DESC+',rawg_id')
-      .in('rawg_id',upcoming.map(item=>item.id)).abortSignal(AbortSignal.timeout(3000));
+    const {data,error} = await measureHomepagePhase('candidate_hydration', () =>
+      measureHomepagePhase('database', () => supabase.from('games').select(GAME_CARD_COLUMNS_WITH_DESC+',rawg_id')
+        .in('rawg_id',upcoming.map(item=>item.id)).abortSignal(AbortSignal.timeout(3000))));
     if(error)return released;
     const rows=(data || []) as unknown as GameRow[];
     const spotlights=upcoming.flatMap(item=>{
@@ -719,11 +724,11 @@ export async function fetchTrendingGames(limit = 20, homepageOnly = true): Promi
   const supabase = getPublicSupabase();
 
   // Step 1: Load manually-flagged trending seeds (these get priority slots in the rail)
-  const { data: flagged, error } = await supabase
+  const { data: flagged, error } = await measureHomepagePhase('database', () => supabase
     .from("games")
     .select(GAME_CARD_COLUMNS_WITH_DESC)
     .eq("is_trending_manual", true)
-    .limit(40) as { data: GameRow[] | null; error: unknown };
+    .limit(40)) as { data: GameRow[] | null; error: unknown };
 
   if (error) throw error;
 
@@ -732,7 +737,7 @@ export async function fetchTrendingGames(limit = 20, homepageOnly = true): Promi
   const cutoff4yr = monthsAgoISO(120);
   const today = new Date().toISOString().slice(0, 10);
 
-  const { data: pool, error: poolError } = await supabase
+  const { data: pool, error: poolError } = await measureHomepagePhase('database', () => supabase
     .from("games")
     .select(GAME_CARD_COLUMNS_WITH_DESC)
     .not("release_date", "is", null)
@@ -748,7 +753,7 @@ export async function fetchTrendingGames(limit = 20, homepageOnly = true): Promi
     .order("verdict_score", { ascending: false, nullsFirst: false })
     .order("review_count", { ascending: false, nullsFirst: false })
     .order("score", { ascending: false })
-    .limit(getHomepageQueryFetchLimit(limit)) as { data: GameRow[] | null; error: unknown };
+    .limit(getHomepageQueryFetchLimit(limit))) as { data: GameRow[] | null; error: unknown };
 
   if (poolError) throw poolError;
 
@@ -1026,7 +1031,7 @@ export async function fetchNewReleases(limit = 20): Promise<Game[]> {
   const fetchLimit = getHomepageQueryFetchLimit(limit);
 
   // New Releases is a 90-day release-date rail, not a quality ranking.
-  const { data, error } = await supabase
+  const { data, error } = await measureHomepagePhase('database', () => supabase
     .from("games")
     .select(GAME_CARD_COLUMNS_WITH_DESC)
     .not("release_date", "is", null)
@@ -1036,7 +1041,7 @@ export async function fetchNewReleases(limit = 20): Promise<Game[]> {
     .neq("cover_image", "")
     .neq("description", "")
     .order("release_date", { ascending: false })
-    .limit(fetchLimit) as { data: GameRow[] | null; error: unknown };
+    .limit(fetchLimit)) as { data: GameRow[] | null; error: unknown };
 
   if (error) throw error;
 
@@ -1109,7 +1114,7 @@ export async function fetchTopRated(limit = 10): Promise<Game[]> {
   const supabase = getPublicSupabase();
   const fetchLimit = limit * 8;
 
-  const { data, error } = await supabase
+  const { data, error } = await measureHomepagePhase('database', () => supabase
     .from("games")
     .select(GAME_CARD_COLUMNS_WITH_DESC)
     .not("cover_image", "is", null)
@@ -1117,7 +1122,7 @@ export async function fetchTopRated(limit = 10): Promise<Game[]> {
     .order("verdict_score", { ascending: false, nullsFirst: false })
     .order("confidence", { ascending: false, nullsFirst: false })
     .order("score", { ascending: false })
-    .limit(fetchLimit) as { data: GameRow[] | null; error: unknown };
+    .limit(fetchLimit)) as { data: GameRow[] | null; error: unknown };
 
   if (error) throw error;
 
@@ -1150,7 +1155,7 @@ export async function fetchHomepageTopRated(limit = 20): Promise<Game[]> {
   const fetchLimit = Math.max(getHomepageQueryFetchLimit(limit), HOMEPAGE_TOP_RATED_FETCH_TARGET);
   const cutoff = monthsAgoISO(HOMEPAGE_TOP_RATED_MONTHS);
 
-  const { data, error } = await supabase
+  const { data, error } = await measureHomepagePhase('database', () => supabase
     .from("games")
     .select(GAME_CARD_COLUMNS_WITH_DESC)
     .not("release_date", "is", null)
@@ -1164,7 +1169,7 @@ export async function fetchHomepageTopRated(limit = 20): Promise<Game[]> {
     .order("verdict_score", { ascending: false, nullsFirst: false })
     .order("confidence", { ascending: false, nullsFirst: false })
     .order("score", { ascending: false })
-    .limit(fetchLimit) as { data: GameRow[] | null; error: unknown };
+    .limit(fetchLimit)) as { data: GameRow[] | null; error: unknown };
 
   if (error) throw error;
 
@@ -1178,7 +1183,7 @@ export async function fetchHomepageTopRated(limit = 20): Promise<Game[]> {
   // Fallback: widen to 36 months if not enough
   if (filtered.length < limit) {
     const widerCutoff = monthsAgoISO(HOMEPAGE_TOP_RATED_FALLBACK_MONTHS);
-    const fallback = await supabase
+    const fallback = await measureHomepagePhase('database', () => supabase
       .from("games")
       .select(GAME_CARD_COLUMNS_WITH_DESC)
       .not("release_date", "is", null)
@@ -1192,7 +1197,7 @@ export async function fetchHomepageTopRated(limit = 20): Promise<Game[]> {
       .order("verdict_score", { ascending: false, nullsFirst: false })
       .order("confidence", { ascending: false, nullsFirst: false })
       .order("score", { ascending: false })
-      .limit(fetchLimit) as { data: GameRow[] | null; error: unknown };
+      .limit(fetchLimit)) as { data: GameRow[] | null; error: unknown };
 
     if (!fallback.error && fallback.data) {
       ready = deduplicateBySteamAppId(fallback.data.filter((r) =>
@@ -1207,7 +1212,7 @@ export async function fetchHomepageTopRated(limit = 20): Promise<Game[]> {
   // Last resort: widen to 72 months if still not enough
   if (filtered.length < limit) {
     const widestCutoff = monthsAgoISO(HOMEPAGE_TOP_RATED_FALLBACK_MONTHS + 36);
-    const widest = await supabase
+    const widest = await measureHomepagePhase('database', () => supabase
       .from("games")
       .select(GAME_CARD_COLUMNS_WITH_DESC)
       .not("release_date", "is", null)
@@ -1221,7 +1226,7 @@ export async function fetchHomepageTopRated(limit = 20): Promise<Game[]> {
       .order("verdict_score", { ascending: false, nullsFirst: false })
       .order("confidence", { ascending: false, nullsFirst: false })
       .order("score", { ascending: false })
-      .limit(Math.max(getHomepageQueryFetchLimit(limit, 5), HOMEPAGE_TOP_RATED_EVERGREEN_FETCH_TARGET)) as { data: GameRow[] | null; error: unknown };
+      .limit(Math.max(getHomepageQueryFetchLimit(limit, 5), HOMEPAGE_TOP_RATED_EVERGREEN_FETCH_TARGET))) as { data: GameRow[] | null; error: unknown };
 
     if (!widest.error && widest.data) {
       ready = deduplicateBySteamAppId(widest.data.filter((r) =>
@@ -1250,7 +1255,7 @@ export async function fetchHomepageTopRated(limit = 20): Promise<Game[]> {
 
   if (primaryPool.length < desiredCount) {
     const evergreenCutoff = monthsAgoISO(HOMEPAGE_TOP_RATED_EVERGREEN_MONTHS);
-    const evergreen = await supabase
+    const evergreen = await measureHomepagePhase('database', () => supabase
       .from("games")
       .select(GAME_CARD_COLUMNS_WITH_DESC)
       .not("release_date", "is", null)
@@ -1264,7 +1269,7 @@ export async function fetchHomepageTopRated(limit = 20): Promise<Game[]> {
       .order("verdict_score", { ascending: false, nullsFirst: false })
       .order("confidence", { ascending: false, nullsFirst: false })
       .order("score", { ascending: false })
-      .limit(Math.max(getHomepageQueryFetchLimit(limit, 5), HOMEPAGE_TOP_RATED_EVERGREEN_FETCH_TARGET)) as { data: GameRow[] | null; error: unknown };
+      .limit(Math.max(getHomepageQueryFetchLimit(limit, 5), HOMEPAGE_TOP_RATED_EVERGREEN_FETCH_TARGET))) as { data: GameRow[] | null; error: unknown };
 
     if (!evergreen.error && evergreen.data) {
       const evergreenReady = deduplicateBySteamAppId(evergreen.data.filter((r) =>
@@ -1319,7 +1324,7 @@ export async function fetchHomepageRecommendations(limit = 20): Promise<Game[]> 
   const fetchLimit = Math.max(getHomepageQueryFetchLimit(limit, 5), 160);
   const cutoff = monthsAgoISO(HOMEPAGE_REC_MONTHS);
  
-  const { data, error } = await supabase
+  const { data, error } = await measureHomepagePhase('database', () => supabase
     .from("games")
     .select(GAME_CARD_COLUMNS_WITH_DESC)
     .not("release_date", "is", null)
@@ -1332,7 +1337,7 @@ export async function fetchHomepageRecommendations(limit = 20): Promise<Game[]> 
     .neq("cover_image", "")
     .order("verdict_score", { ascending: false, nullsFirst: false })
     .order("score", { ascending: false })
-    .limit(fetchLimit) as { data: GameRow[] | null; error: unknown };
+    .limit(fetchLimit)) as { data: GameRow[] | null; error: unknown };
 
   if (error) throw error;
 
@@ -1357,7 +1362,7 @@ export async function fetchHomepageRecommendations(limit = 20): Promise<Game[]> 
 
   if (qualityFiltered.length < limit) {
     const fallbackCutoff = monthsAgoISO(HOMEPAGE_REC_FALLBACK_MONTHS);
-    const fallback = await supabase
+    const fallback = await measureHomepagePhase('database', () => supabase
       .from("games")
       .select(GAME_CARD_COLUMNS_WITH_DESC)
       .not("release_date", "is", null)
@@ -1370,7 +1375,7 @@ export async function fetchHomepageRecommendations(limit = 20): Promise<Game[]> 
       .neq("cover_image", "")
       .order("verdict_score", { ascending: false, nullsFirst: false })
       .order("score", { ascending: false })
-      .limit(fetchLimit) as { data: GameRow[] | null; error: unknown };
+      .limit(fetchLimit)) as { data: GameRow[] | null; error: unknown };
 
     if (!fallback.error && fallback.data) {
       ready = deduplicateBySteamAppId([
@@ -1397,7 +1402,7 @@ export async function fetchHomepageRecommendations(limit = 20): Promise<Game[]> 
 
   if (qualityFiltered.length < limit) {
     const lastResortCutoff = monthsAgoISO(HOMEPAGE_REC_LAST_RESORT_MONTHS);
-    const lastResort = await supabase
+    const lastResort = await measureHomepagePhase('database', () => supabase
       .from("games")
       .select(GAME_CARD_COLUMNS_WITH_DESC)
       .not("release_date", "is", null)
@@ -1410,7 +1415,7 @@ export async function fetchHomepageRecommendations(limit = 20): Promise<Game[]> 
       .neq("cover_image", "")
       .order("verdict_score", { ascending: false, nullsFirst: false })
       .order("score", { ascending: false })
-      .limit(fetchLimit) as { data: GameRow[] | null; error: unknown };
+      .limit(fetchLimit)) as { data: GameRow[] | null; error: unknown };
 
     if (!lastResort.error && lastResort.data) {
       ready = deduplicateBySteamAppId([
@@ -1517,21 +1522,41 @@ export const EMPTY_HOMEPAGE_DATA: HomepageData = {
   recommendations: [],
 };
 
-// Successful rail snapshots survive failures independently. The aggregate is
-// admitted only when every requested section resolved; cold partial results
-// remain displayable but never replace a shared successful value.
+// Next.js bypasses data-cache reads for nested unstable_cache calls. Keep each
+// rail at the request boundary and coalesce only the in-flight assembly.
 const sectionCacheOptions = { revalidate: HOMEPAGE_REVALIDATE_SECONDS };
-const cachedHero = unstable_cache(() => retryCatalogRead(() => fetchHeroCandidates(HOMEPAGE_HERO_FETCH_TARGET)), ['homepage-hero-v3'], sectionCacheOptions);
-const cachedTrending = unstable_cache(() => retryCatalogRead(() => fetchTrendingGames(HOMEPAGE_SECTION_FETCH_TARGET, true)), ['homepage-trending-v2'], sectionCacheOptions);
-const cachedNewReleases = unstable_cache(() => retryCatalogRead(() => fetchNewReleases(HOMEPAGE_SECTION_FETCH_TARGET)), ['homepage-new-v3'], sectionCacheOptions);
-const cachedTopRated = unstable_cache(() => retryCatalogRead(() => fetchHomepageTopRated(HOMEPAGE_SECTION_FETCH_TARGET)), ['homepage-top-v2'], sectionCacheOptions);
-const cachedRecommendations = unstable_cache(() => retryCatalogRead(() => fetchHomepageRecommendations(HOMEPAGE_SECTION_FETCH_TARGET)), ['homepage-recommendations-v2'], sectionCacheOptions);
+const MAX_HOMEPAGE_RAIL_REFRESHES = 3;
+let activeRailRefreshes = 0;
+const waitingRailRefreshes: (() => void)[] = [];
 
-const getCachedHomepageData = unstable_cache(
-  coalesceCatalogueRead(fetchHomepageData),
-  ["homepage-data-v27"],
-  { revalidate: HOMEPAGE_REVALIDATE_SECONDS }
-);
+function cacheHomepageRail(
+  key: string,
+  phase: 'refresh_hero' | 'refresh_trending' | 'refresh_new_releases' | 'refresh_top_rated' | 'refresh_recommendations',
+  read: () => Promise<Game[]>,
+) {
+  const refresh = coalesceCatalogueRead(() => measureHomepagePhase(phase, async () => {
+    // Independent stale reads can trigger background refreshes simultaneously.
+    // Transfer the slot to a waiting rail before admitting any new refresh.
+    if (activeRailRefreshes < MAX_HOMEPAGE_RAIL_REFRESHES) activeRailRefreshes++;
+    else await new Promise<void>(resolve => waitingRailRefreshes.push(resolve));
+    try {
+      return await retryCatalogRead(read);
+    } finally {
+      const next = waitingRailRefreshes.shift();
+      if (next) next();
+      else activeRailRefreshes--;
+    }
+  }));
+  return unstable_cache(refresh, [key], sectionCacheOptions);
+}
+
+const cachedHero = cacheHomepageRail('homepage-hero-v4', 'refresh_hero', () => fetchHeroCandidates(HOMEPAGE_HERO_FETCH_TARGET));
+const cachedTrending = cacheHomepageRail('homepage-trending-v3', 'refresh_trending', () => fetchTrendingGames(HOMEPAGE_SECTION_FETCH_TARGET, true));
+const cachedNewReleases = cacheHomepageRail('homepage-new-v4', 'refresh_new_releases', () => fetchNewReleases(HOMEPAGE_SECTION_FETCH_TARGET));
+const cachedTopRated = cacheHomepageRail('homepage-top-v3', 'refresh_top_rated', () => fetchHomepageTopRated(HOMEPAGE_SECTION_FETCH_TARGET));
+const cachedRecommendations = cacheHomepageRail('homepage-recommendations-v3', 'refresh_recommendations', () => fetchHomepageRecommendations(HOMEPAGE_SECTION_FETCH_TARGET));
+
+const readHomepageData = coalesceCatalogueRead(fetchHomepageData);
 
 const getCachedHomepageMostAnticipated = unstable_cache(
   coalesceCatalogueRead(async () => {
@@ -1555,7 +1580,7 @@ export async function loadHomepageDataWithStatus(): Promise<{ data: HomepageData
     return { data: EMPTY_HOMEPAGE_DATA, degraded: true };
   }
 
-  return readCachedCatalogue(getCachedHomepageData, EMPTY_HOMEPAGE_DATA);
+  return measureHomepagePhase('homepage_total', () => readCachedCatalogue(readHomepageData, EMPTY_HOMEPAGE_DATA));
 }
 
 export async function loadHomepageMostAnticipated(): Promise<HomepageAnticipatedGame[]> {
@@ -1686,20 +1711,18 @@ function isReservedHomepageTopRatedGame(game: Game): boolean {
 }
 
 export async function fetchHomepageData(): Promise<HomepageData> {
-  // Fetch the heaviest DB-backed rails with less concurrency to avoid build-time statement timeouts.
-  const [heroResult, trendingPrimaryResult, newReleasesResult, dealsResult] = await Promise.allSettled([
-    cachedHero(),
-    cachedTrending(),
-    cachedNewReleases(),
-    fetchDeals(),
-  ]);
-  const [topRatedResult] = await Promise.allSettled([
-    cachedTopRated(),
-  ]);
-  const [recsResult] = await Promise.allSettled([
-    cachedRecommendations(),
+  // Rail cache lookups can overlap. The queue above caps database refreshes
+  // even when stale lookups start background work together.
+  const [heroResult, trendingPrimaryResult, newReleasesResult, dealsResult, topRatedResult, recsResult] = await Promise.allSettled([
+    measureHomepagePhase('rail_hero', cachedHero),
+    measureHomepagePhase('rail_trending', cachedTrending),
+    measureHomepagePhase('rail_new_releases', cachedNewReleases),
+    measureHomepagePhase('rail_deals', fetchDeals),
+    measureHomepagePhase('rail_top_rated', cachedTopRated),
+    measureHomepagePhase('rail_recommendations', cachedRecommendations),
   ]);
 
+  const finishSelection = startHomepagePhase('candidate_selection');
   const heroRaw = resolveHomepageSection(heroResult, "hero rail", [] as Game[]);
   let trendingRaw = resolveHomepageSection(trendingPrimaryResult, "trending rail", [] as Game[]);
   const topRatedRaw = resolveHomepageSection(topRatedResult, "top rated rail", [] as Game[]);
@@ -1795,6 +1818,7 @@ export async function fetchHomepageData(): Promise<HomepageData> {
     : topRatedClaimed;
   const recommendations = claimSlots(recsRaw.filter(game => !appearanceCounts.has(game.id)), HOMEPAGE_RAIL_TARGET, HOMEPAGE_RECOMMENDATION_REPEAT_BUDGET);
 
+  finishSelection();
   return admitCataloguePayload({ hero, trending, topRated, newReleases, deals, recommendations }, sectionResults);
 }
 
