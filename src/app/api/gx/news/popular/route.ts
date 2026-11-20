@@ -5,6 +5,7 @@ import {
   GX_NEWS_API_CACHE_CONTROL,
 } from "@/lib/services/gx-feeds";
 import type { GXNewsItem } from "@/lib/types";
+import { isRelevantGamingHeadline } from '@/lib/utils/news-relevance';
 
 export const dynamic = "force-dynamic";
 
@@ -17,7 +18,7 @@ export async function GET() {
   if (source === "empty") {
     return jsonError("Gaming news is temporarily unavailable.", 503);
   }
-  const news: GXNewsItem[] = raw.map((a) => ({
+  const news: GXNewsItem[] = raw.filter(a => isRelevantGamingHeadline(a.title)).map((a) => ({
     id: a.article_id,
     title: a.title,
     image: a.image,

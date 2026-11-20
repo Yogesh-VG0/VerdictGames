@@ -16,6 +16,12 @@ const launch={id:'console-launch',slug:'console-launch',title:'Console Launch',r
  cover_image:'https://images.igdb.com/co123.jpg',header_image:'https://images.igdb.com/co123.jpg',
  score:77,verdict_score:77,confidence:0.245543,review_count:104,score_source:'igdb',critic_score:98,critic_source_count:1,release_status:null};
 describe('Newest release-date eligibility',()=>{
+ it('does not promote an old zero-review estimate just because its display state is now unrated',async()=>{
+  const unknown={...launch,release_date:'2026-10-22',review_count:0,score:60,verdict_score:0};
+  state.rows=[unknown];expect((await loadSearchResults(request)).items).toEqual([]);
+  state.rows=[{...unknown,release_status:'released'}];
+  expect((await loadSearchResults(request)).items).toMatchObject([{slug:'console-launch',verdictLabel:'NOT YET RATED'}]);
+ });
  afterEach(()=>vi.useRealTimers());
  beforeEach(()=>{state.rows=[];state.filters=[];vi.useFakeTimers({toFake:['Date']});vi.setSystemTime(new Date('2026-11-19T12:00:00Z'));});
  it('includes a mainstream console launch with limited evidence without changing its Verdict',async()=>{

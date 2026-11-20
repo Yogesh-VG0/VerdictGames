@@ -87,7 +87,7 @@ export default function HomepageClientSections({
               href={discoverTab === "deals" ? "/search?tab=deals" : discoverTab === "free" ? "/search?tab=free" : "/search?sort=newest"}
               linkLabel={discoverTab === "deals" ? "See all deals" : discoverTab === "free" ? "See all free games" : "See all new releases"}
               icon={<Gamepad2 className="w-5 h-5" />}
-              subtitle="Find your next obsession"
+              subtitle={discoverTab === 'new' ? 'Released in the last 90 days' : 'Find your next obsession'}
               gradient="linear-gradient(90deg, #06b6d4 0%, #3b82f6 25%, #8b5cf6 50%, #3b82f6 75%, #06b6d4 100%)"
             />
             <div className="flex items-center gap-2.5 mb-8 overflow-x-auto no-scrollbar pb-1">

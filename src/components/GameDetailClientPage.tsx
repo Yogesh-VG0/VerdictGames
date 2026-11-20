@@ -576,7 +576,7 @@ export default function GameDetailClientPage({
 
             {/* ── Verdict Card / Provisional Banner ── */}
             <FadeInSection>
-              {isProvisional || isPreviewGame ? (
+              {isProvisional || isPreviewGame || game.verdictLabel === 'NOT YET RATED' ? (
                 <motion.section
                   initial={false}
                   animate={{ opacity: 1, y: 0 }}
@@ -588,7 +588,7 @@ export default function GameDetailClientPage({
                     <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 border border-accent/20">
                       <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />
                       <span className="text-sm font-bold text-accent uppercase tracking-wider">
-                        {isPreviewGame
+                        {game.verdictLabel === 'CANCELLED' ? 'Cancelled' : game.releaseStatus?.replace('_','-') === 'early-access' ? 'Available in Early Access' : game.verdictLabel === 'NOT YET RATED' ? 'Not yet rated' : isPreviewGame
                           ? "Preview"
                           : game.releaseStatus === "tba"
                             ? "To Be Announced"
@@ -598,13 +598,13 @@ export default function GameDetailClientPage({
                       </span>
                     </div>
                     <p className="text-sm text-secondary max-w-md mx-auto leading-relaxed">
-                      {isPreviewGame
+                      {game.verdictLabel === 'CANCELLED' ? 'Development has been cancelled. Previous release estimates no longer apply.' : game.releaseStatus?.replace('_','-') === 'early-access' ? 'Playable now in Early Access. The full release is still pending; its date may change.' : game.verdictLabel === 'NOT YET RATED' ? 'There is not enough rating evidence for a Verdict yet.' : isPreviewGame
                         ? `This page uses external metadata while verdict.games prepares full tracking, reviews, and richer coverage for ${game.title}.`
                         : "This game page is awaiting full data enrichment. Scores, reviews, and detailed information will be populated automatically when source data becomes available."}
                     </p>
-                    {game.releaseDate && (
+                    {game.releaseDate && game.verdictLabel !== 'CANCELLED' && (
                       <p className="text-xs text-tertiary">
-                        {isPreviewGame && !isProvisional ? "Release date: " : "Expected release: "}
+                        {!isProvisional ? "Release date: " : "Expected release: "}
                         <span className="text-foreground font-medium">{formatDate(game.releaseDate)}</span>
                       </p>
                     )}
@@ -651,12 +651,14 @@ export default function GameDetailClientPage({
                         <p className={cn("text-xl font-bold", game.igdbRating ? scoreColor(game.igdbRating) : "text-tertiary")}>
                           {game.igdbRating ? Math.round(game.igdbRating) : "—"}
                         </p>
-                        <p className="text-[10px] text-tertiary uppercase tracking-wider">IGDB</p>
+                        <p className="text-[10px] text-tertiary uppercase tracking-wider">IGDB critics</p>
                       </div>
                     </div>
                     <ScoreChips game={game} variant="full" className="justify-center" />
                     <p className="text-[9px] text-tertiary text-center flex items-center justify-center gap-1">
-                      Verdict adjusts available ratings for review confidence. Provider scores are shown separately.
+                      {game.confidence != null && game.confidence < 0.3
+                        ? "Limited rating evidence. Verdict labels are capped until confidence improves."
+                        : "Verdict adjusts available ratings for review confidence. Provider scores are shown separately."}
                       <span
                         className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-surface-2 border border-border text-tertiary hover:text-accent hover:border-accent/30 cursor-help transition-colors"
                         title="A Verdict score can differ from an IGDB critic average or a Steam review percentage. It combines available evidence with confidence in the amount of rating data; the provider values remain visible above."
@@ -885,15 +887,7 @@ export default function GameDetailClientPage({
                   <Zap className="w-4 h-4 text-accent" /> Performance
                 </h3>
                 <p className="text-secondary text-sm leading-relaxed">
-                  {game.performanceNotes || (
-                    game.platforms.includes("PC")
-                      ? "Runs well on modern hardware."
-                      : game.platforms.some((p) => p.startsWith("PlayStation") || p.startsWith("Xbox") || p.startsWith("Nintendo"))
-                        ? "Optimized for console hardware. Performance may vary by model."
-                        : game.platforms.some((p) => p === "Android" || p === "iOS")
-                          ? "Optimized for mobile devices. Performance varies by device."
-                          : "Performance details not available yet."
-                  )}
+                  {game.performanceNotes || "Verified performance information is not available yet. Check the publisher's requirements and platform-specific reviews."}
                 </p>
                 {/* System requirements from Steam API — side-by-side on desktop */}
                 {sysReqData?.requirements?.pc && (

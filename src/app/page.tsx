@@ -180,7 +180,7 @@ export default async function HomePage() {
                 <span className="text-foreground">Game Intelligence</span>
               </h2>
               <p className="text-sm text-secondary max-w-2xl mx-auto">
-                Every game is enriched with data from 7 sources — giving you the most comprehensive verdict possible.
+                We combine available metadata, reviews, prices and playtime from these sources. Coverage varies by game.
               </p>
               <div className="flex items-center justify-center gap-4 sm:gap-8 flex-wrap pt-4">
                 {[

@@ -103,6 +103,8 @@ describe("homepage hero auto candidates", () => {
     expect(selectHeroDiscoveryCandidates([row],'2026-12-04')).toEqual([]);
     expect(selectHeroDiscoveryCandidates([{...row,added:0}],'2026-11-18')).toEqual([]);
     expect(selectHeroDiscoveryCandidates([{...row,name:'Hentai Clicker'}],'2026-11-18')).toEqual([]);
+    expect(selectHeroDiscoveryCandidates([{...row,tba:true}],'2026-11-18')).toEqual([]);
+    expect(selectHeroDiscoveryCandidates([{...row,released:'2026-12-31'}],'2026-11-18')).toEqual([]);
   });
   it('allows a recent, well-supported console release without Steam concurrent players',()=>{
     const row=makeGameRow({platforms:['PlayStation 5'],release_date:isoDaysAgo(30),current_players:0,

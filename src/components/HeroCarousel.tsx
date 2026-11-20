@@ -195,7 +195,7 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
               <HeroImage
                 src={game.headerImage || game.coverImage}
                 alt={game.title}
-                className="object-center"
+                className="object-[70%_center] sm:object-center"
                 priority={prioritizeHeroImage}
               />
             ) : (
@@ -230,7 +230,7 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
 
             {/* Score + Verdict + Platforms */}
             <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-              {!game.isProvisional && <div className="flex flex-col items-center gap-0.5">
+              {!game.isProvisional && game.score > 0 && <div className="flex flex-col items-center gap-0.5">
                 <ScoreRing score={game.score} size={40} strokeWidth={3} className="sm:hidden" />
                 <ScoreRing score={game.score} size={56} strokeWidth={3} className="hidden sm:block" />
                   {game.score > 0 && (
@@ -263,6 +263,9 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
             </div>
 
             {/* Summary - prefer actual description over template verdict summary */}
+            {game.score > 0 && game.confidence != null && game.confidence < 0.3 && (
+              <p className="text-xs hero-overlay-text-muted">Limited rating evidence</p>
+            )}
             <p className="hidden sm:block text-sm md:text-base hero-overlay-text-secondary max-w-2xl line-clamp-2">
               {getHeroSummary(game)}
             </p>

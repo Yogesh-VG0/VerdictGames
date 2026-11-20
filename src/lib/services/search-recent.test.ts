@@ -57,6 +57,15 @@ import {loadSearchResults} from './search';
 
 const request = {query:'',platform:'All',genre:'',year:'',monetization:'All',sort:'recently-added',page:1} as const;
 describe('bounded Recently Added cohort',()=>{
+  it('orders by catalogue addition time before quality, with stable ID ties',async()=>{
+    const original=rows.slice(0,3).map(row=>({...row}));
+    try{
+      rows[0].verdict_score=80;rows[0].score=80;
+      rows[1].verdict_score=99;rows[1].score=99;rows[2].created_at=rows[1].created_at;
+      const result=await loadSearchResults(request);
+      expect(result.items.slice(0,3).map(game=>game.id)).toEqual(['game-0','game-1','game-2']);
+    }finally{original.forEach((row,index)=>Object.assign(rows[index],row));}
+  });
   beforeEach(()=>{
     state.cache.clear();state.calls=[];state.active=0;state.peak=0;state.failChunk=false;state.failClassificationFallback=false;state.bypassCache=false;
     vi.useFakeTimers({toFake:['Date']});vi.setSystemTime(new Date('2026-11-19T12:00:00Z'));

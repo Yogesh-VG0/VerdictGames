@@ -1,9 +1,17 @@
 import {describe,it,expect} from 'vitest';
-import {igdbEssentialRecord} from './igdb-record.mjs';
+import {igdbEssentialRecord,igdbVerifiedReleaseFields} from './igdb-record.mjs';
 const epoch=Date.parse('2027-12-31T00:00:00Z')/1000;
 const game={id:123,slug:'verified-title',name:'Verified Title',game_type:0,summary:'An independently sourced game description.',
   first_release_date:epoch,cover:{image_id:'coaott'},platforms:[{name:'PC (Microsoft Windows)'}],genres:[{name:'Role-playing (RPG)'}]};
 describe('independent IGDB essential metadata',()=>{
+  it('shares only explicit lifecycle evidence with the regular ingestion paths',()=>{
+    const now=new Date('2026-11-20');
+    expect(igdbVerifiedReleaseFields({...game,first_release_date:Date.parse('2025-01-01')/1000},now)).toEqual({});
+    expect(igdbVerifiedReleaseFields({...game,game_status:{status:'Early Access'}},now)).toMatchObject({release_status:'early_access'});
+    expect(igdbVerifiedReleaseFields({...game,game_status:{status:'Canceled'}},now)).toMatchObject({release_status:'cancelled'});
+    expect(igdbVerifiedReleaseFields({...game,game_status:{status:'Early Access'}},now,'released')).toEqual({});
+    expect(igdbVerifiedReleaseFields({...game,game_status:{status:'Released'}},now,'cancelled')).toEqual({});
+  });
   it('normalizes metadata and does not manufacture external interest/review/score fields',()=>{
     const row=igdbEssentialRecord(game,new Date('2026-11-15'));
     expect(row).toMatchObject({igdb_id:123,platforms:['PC'],genres:['RPG'],release_status:'upcoming',release_date:null});

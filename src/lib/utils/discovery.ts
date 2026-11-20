@@ -1,5 +1,6 @@
 import type { GameRow } from "@/lib/supabase/types";
 import { normalizeTitle } from "@/lib/utils/slugify";
+import {hasKnownFullRelease} from './release-status';
 
 const PACKAGING_SUFFIX_PATTERNS = [
   /(?:\s*[-–:]\s*)?game of the year edition$/i,
@@ -175,13 +176,16 @@ export function isPrimaryDiscoveryGame(row: Pick<GameRow, "title" | "description
 }
 
 export function sanitizeDiscoveryDescription(
-  row: Pick<GameRow, "title" | "description" | "igdb_summary" | "wikipedia_excerpt">
+  row: Pick<GameRow, "title" | "description" | "igdb_summary" | "wikipedia_excerpt"> & Partial<Pick<GameRow,'release_status'>>
 ): string {
   const candidates = [row.description, row.igdb_summary, row.wikipedia_excerpt]
     .map((value) => value?.trim() || "")
     .filter(Boolean);
 
   for (const candidate of candidates) {
+    // Do not rewrite stale provider prose into a new factual claim. Prefer a
+    // matching current source; otherwise leave the overview unavailable.
+    if (hasKnownFullRelease(row) && /\bis an upcoming\b/i.test(candidate.slice(0,200))) continue;
     if (hasSupplementalDescription(candidate)) {
       continue;
     }

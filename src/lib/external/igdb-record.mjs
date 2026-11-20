@@ -1,4 +1,5 @@
 import { isPublicContentAllowed } from '../utils/public-safety.mjs';
+import {igdbLandscapeArtwork} from '../utils/artwork-policy.mjs';
 // Essential metadata only. Provider ratings/hypes are never relabeled as RAWG
 // interest, Steam reviews or a computed Verdict Score.
 const genres={'Role-playing (RPG)':'RPG',Platform:'Platformer',Simulator:'Simulation',Sport:'Sports',
@@ -7,10 +8,21 @@ const platforms={'PC (Microsoft Windows)':'PC',PC:'PC','PlayStation 5':'PlayStat
   'Xbox Series X|S':'Xbox Series X|S','Xbox One':'Xbox One','Nintendo Switch':'Nintendo Switch',
   'Nintendo Switch 2':'Nintendo Switch 2',Android:'Android',iOS:'iOS',Mac:'macOS',Linux:'Linux'};
 const image=id=>typeof id==='string'&&/^[a-zA-Z0-9_]{1,128}$/.test(id)?'https://images.igdb.com/igdb/image/upload/t_cover_big_2x/'+id+'.jpg':'';
+// Reuse explicit provider lifecycle evidence in both ingestion paths. Unknown
+// status must not erase a reviewed catalogue correction or become "released"
+// merely because an estimated date has passed.
+export function igdbVerifiedReleaseFields(game, now=new Date(), currentStatus) {
+  const record=igdbEssentialRecord(game,now);
+  if(!record || !['released','early_access','cancelled','delisted'].includes(record.release_status))return {};
+  const current=String(currentStatus||'').toLowerCase().replace(/[-_]/g,' ');
+  if(['cancelled','canceled'].includes(current) || ['released','full release'].includes(current) && record.release_status!=='released')return {};
+  return {release_status:record.release_status,
+    ...(typeof record.release_date==='string'?{release_date:record.release_date}:{})};
+}
 export function igdbEssentialRecord(game,now=new Date()) {
   if(!Number.isSafeInteger(game?.id)||game.id<=0||typeof game.name!=='string'||!game.name.trim()
     ||typeof game.slug!=='string'||game.slug.length>200||!/^[a-z0-9]+(?:-+[a-z0-9]+)*$/.test(game.slug)) return null;
-  if(['themes','platforms','genres','websites','screenshots','release_dates','involved_companies'].some(key=>game[key]!=null&&!Array.isArray(game[key]))
+  if(['themes','platforms','genres','websites','screenshots','artworks','release_dates','involved_companies'].some(key=>game[key]!=null&&!Array.isArray(game[key]))
     ||['summary','storyline'].some(key=>game[key]!=null&&typeof game[key]!=='string')) return null;
   if(game.game_type!=null&&game.game_type!==0&&game.game_type?.id!==0) return null;
   const description=(game.storyline||game.summary||'').slice(0,8000);
@@ -50,7 +62,7 @@ export function igdbEssentialRecord(game,now=new Date()) {
     } catch { /* Identity is never guessed from names or arbitrary hosts. */ }
   }
   const screenshots=(game.screenshots||[]).map(item=>image(item.image_id).replace('t_cover_big_2x','t_screenshot_big')).filter(Boolean).slice(0,8);
-  return {slug:game.slug,title:game.name.trim().slice(0,300),cover_image:cover,header_image:screenshots[0]||cover,screenshots,
+  return {slug:game.slug,title:game.name.trim().slice(0,300),cover_image:cover,header_image:igdbLandscapeArtwork(game)||screenshots[0]||cover,screenshots,
     platforms:[...new Set((game.platforms||[]).map(item=>platforms[item.name]).filter(Boolean))],
     genres:[...new Set((game.genres||[]).map(item=>genres[item.name]||item.name).filter(value=>typeof value==='string'))],
     tags,developer:game.involved_companies?.find(item=>item.developer)?.company?.name||'',

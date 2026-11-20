@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { Gamepad2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import SafeImage from "@/components/ui/SafeImage";
+import {heroArtworkUrl} from '@/lib/utils/artwork-policy.mjs';
 
 /**
  * Resilient hero image component.
@@ -47,7 +48,7 @@ function HeroImageContent({
 
   return (
     <SafeImage
-      src={src}
+      src={heroArtworkUrl(src)}
       alt={alt}
       fill
       className={cn("object-cover", className)}
