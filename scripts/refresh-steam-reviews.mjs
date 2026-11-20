@@ -6,7 +6,7 @@ import { pathToFileURL } from 'node:url';
 const integer = value => Math.max(0, Math.trunc(Number(value) || 0));
 const timestamp = value => Number.isFinite(value) ? new Date(value * 1000).toISOString() : null;
 
-export async function refreshReviewBatch(sql, { limit = 500, pauseMs = 1000 } = {}) {
+export async function refreshReviewBatch(sql, { limit = 50, pauseMs = 1000 } = {}) {
   const games = await sql`
     SELECT g.id, g.steam_app_id FROM public.games g
     LEFT JOIN public.steam_review_refresh_state s ON s.game_id = g.id
@@ -65,7 +65,7 @@ async function main() {
     if (!locked) return;
     run = await startRun(sql, 'refresh-steam-reviews');
     const limitArg = process.argv.find(arg => arg.startsWith('--limit='));
-    const stats = await refreshReviewBatch(sql, { limit: limitArg ? integer(limitArg.split('=')[1]) : integer(process.env.STEAM_REVIEW_LIMIT || 500) });
+    const stats = await refreshReviewBatch(sql, { limit: limitArg ? integer(limitArg.split('=')[1]) : integer(process.env.STEAM_REVIEW_LIMIT || 50) });
     const error = stats.failed ? `${stats.failed} Steam refreshes failed; remaining work deferred` : null;
     await finishRun(sql, run.id, { rows_scanned: stats.scanned, rows_updated: stats.refreshed, error_message: error, metadata: stats });
     console.log(JSON.stringify(stats));
