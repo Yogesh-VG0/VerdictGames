@@ -13,7 +13,6 @@
  */
 
 import { recordProviderUsage } from "@/lib/utils/providerUsage";
-import {igdbLandscapeArtwork} from '@/lib/utils/artwork-policy.mjs';
 
 const IGDB_BASE = "https://api.igdb.com/v4";
 const TWITCH_TOKEN_URL = "https://id.twitch.tv/oauth2/token";
@@ -94,8 +93,8 @@ export interface IgdbGame {
   first_release_date?: number;     // epoch
   url?: string;                    // IGDB page URL
   cover?: { id: number; image_id: string };
-  screenshots?: { id: number; image_id: string }[];
-  artworks?: {image_id:string;width:number;height:number}[];
+  screenshots?: { id: number; image_id: string; width?: number; height?: number }[];
+  artworks?: { image_id: string; width: number; height: number; alpha_channel?: boolean; animated?: boolean; image_type?: { name: string } }[];
   videos?: { id: number; video_id: string; name: string }[]; // YouTube video IDs
   websites?: { id: number; url: string; category: number }[];
   genres?: { id: number; name: string }[];
@@ -214,7 +213,7 @@ export async function getIgdbGameBySlug(slug: string): Promise<IgdbGame | null> 
             aggregated_rating, aggregated_rating_count,
             rating, rating_count, total_rating, total_rating_count,
             first_release_date, game_status.status, release_dates.date, release_dates.date_format.format, release_dates.status.name, url, cover.image_id,
-            screenshots.image_id,artworks.image_id,artworks.width,artworks.height,
+            screenshots.image_id,screenshots.width,screenshots.height,artworks.image_id,artworks.width,artworks.height,artworks.alpha_channel,artworks.animated,artworks.image_type.name,
             genres.name, platforms.name, platforms.abbreviation,
             involved_companies.company.name, involved_companies.developer, involved_companies.publisher,
             videos.video_id, videos.name,
@@ -308,7 +307,7 @@ export async function getIgdbGame(igdbId: number): Promise<IgdbGame | null> {
             aggregated_rating, aggregated_rating_count,
             rating, rating_count, total_rating, total_rating_count,
             first_release_date, game_status.status, release_dates.date, release_dates.date_format.format, release_dates.status.name, url, cover.image_id,
-            screenshots.image_id,artworks.image_id,artworks.width,artworks.height,
+            screenshots.image_id,screenshots.width,screenshots.height,artworks.image_id,artworks.width,artworks.height,artworks.alpha_channel,artworks.animated,artworks.image_type.name,
             genres.name, themes.name,
             platforms.name, platforms.abbreviation,
             involved_companies.company.name, involved_companies.developer, involved_companies.publisher,
@@ -336,7 +335,7 @@ export async function findIgdbMatch(
      fields name, slug, summary, storyline,
             aggregated_rating, rating, total_rating,
             first_release_date, game_status.status, release_dates.date, release_dates.date_format.format, release_dates.status.name, url, cover.image_id,
-            screenshots.image_id,artworks.image_id,artworks.width,artworks.height,
+            screenshots.image_id,screenshots.width,screenshots.height,artworks.image_id,artworks.width,artworks.height,artworks.alpha_channel,artworks.animated,artworks.image_type.name,
             genres.name, platforms.name,
             videos.video_id, videos.name,
             websites.url, websites.category;
@@ -420,7 +419,6 @@ export function extractIgdbEnrichment(game: IgdbGame): {
   redditUrl: string | null;
   coverImageUrl: string | null;
   screenshotUrls: string[];
-  headerImageUrl: string | null;
 } {
   // Extract YouTube trailer from videos — pick best by confidence
   let trailerUrl: string | null = null;
@@ -478,7 +476,6 @@ export function extractIgdbEnrichment(game: IgdbGame): {
     redditUrl,
     coverImageUrl,
     screenshotUrls,
-    headerImageUrl:igdbLandscapeArtwork(game),
   };
 }
 

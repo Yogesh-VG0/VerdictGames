@@ -29,3 +29,12 @@ export function providerImageLoader({ src, width }: ImageLoaderProps): string {
   url.pathname = url.pathname.replace(/\/t_[a-z0-9_]+\//i, `/t_${size}/`).replace(/\.(jpg|png|webp)$/i, '.webp');
   return url.toString();
 }
+
+// Fit retains the original landscape composition for the CSS focal crop.
+export function igdbHeroImageLoader({ src, width }: ImageLoaderProps): string {
+  const url = new URL(src);
+  const largeSource = /\/t_(1080p|screenshot_huge)\//.test(url.pathname);
+  const variant = largeSource && width > 1280 ? '1080p' : '720p';
+  url.pathname = url.pathname.replace(/\/t_[a-z0-9_]+\//i, `/t_${variant}/`).replace(/\.(jpg|png|webp)$/i, '.webp');
+  return url.href;
+}

@@ -1,5 +1,5 @@
 import { isPublicContentAllowed } from '../utils/public-safety.mjs';
-import {igdbLandscapeArtwork} from '../utils/artwork-policy.mjs';
+import { reviewedHeroArtwork, selectLandscapeArtwork } from '../utils/artwork-policy.mjs';
 // Essential metadata only. Provider ratings/hypes are never relabeled as RAWG
 // interest, Steam reviews or a computed Verdict Score.
 const genres={'Role-playing (RPG)':'RPG',Platform:'Platformer',Simulator:'Simulation',Sport:'Sports',
@@ -62,7 +62,8 @@ export function igdbEssentialRecord(game,now=new Date()) {
     } catch { /* Identity is never guessed from names or arbitrary hosts. */ }
   }
   const screenshots=(game.screenshots||[]).map(item=>image(item.image_id).replace('t_cover_big_2x','t_screenshot_big')).filter(Boolean).slice(0,8);
-  return {slug:game.slug,title:game.name.trim().slice(0,300),cover_image:cover,header_image:igdbLandscapeArtwork(game)||screenshots[0]||cover,screenshots,
+  const header = selectLandscapeArtwork({ igdb: game, cover, reviewed: reviewedHeroArtwork({ slug: game.slug, igdbId: game.id }) });
+  return {slug:game.slug,title:game.name.trim().slice(0,300),cover_image:cover,header_image:header,screenshots,
     platforms:[...new Set((game.platforms||[]).map(item=>platforms[item.name]).filter(Boolean))],
     genres:[...new Set((game.genres||[]).map(item=>genres[item.name]||item.name).filter(value=>typeof value==='string'))],
     tags,developer:game.involved_companies?.find(item=>item.developer)?.company?.name||'',

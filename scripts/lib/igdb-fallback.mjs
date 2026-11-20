@@ -1,6 +1,6 @@
 import { igdbEssentialRecord } from '../../src/lib/external/igdb-record.mjs';
-import { preferExistingCover } from '../../src/lib/utils/artwork-policy.mjs';
-const fields='id,name,slug,summary,storyline,first_release_date,release_dates.date,release_dates.date_format.format,release_dates.status.name,updated_at,url,game_type,game_status.status,cover.image_id,screenshots.image_id,artworks.image_id,artworks.width,artworks.height,genres.name,themes.name,platforms.name,websites.url,involved_companies.company.name,involved_companies.developer,involved_companies.publisher,aggregated_rating';
+import { preferExistingCover, reviewedHeroArtwork, selectLandscapeArtwork } from '../../src/lib/utils/artwork-policy.mjs';
+const fields='id,name,slug,summary,storyline,first_release_date,release_dates.date,release_dates.date_format.format,release_dates.status.name,updated_at,url,game_type,game_status.status,cover.image_id,screenshots.image_id,screenshots.width,screenshots.height,artworks.image_id,artworks.width,artworks.height,artworks.alpha_channel,artworks.animated,artworks.image_type.name,genres.name,themes.name,platforms.name,websites.url,involved_companies.company.name,involved_companies.developer,involved_companies.publisher,aggregated_rating';
 export async function readIgdbDiscovery(query) {
   const start=Math.floor(Date.now()/1000),end=start+3*366*86400;
   const games=await query('games','fields '+fields+'; where game_type = 0 & cover != null & first_release_date > '+start+' & first_release_date < '+end+'; sort hypes desc; limit 40;');
@@ -13,7 +13,7 @@ export async function upsertIgdbEssential(sql,game,{allowCreate=false}={}) {
   return sql.begin(async tx=>{
     const matches=await tx`SELECT g.* FROM public.games g WHERE g.igdb_id=${record.igdb_id}
       OR g.id IN (SELECT game_id FROM public.game_sources WHERE source_name='igdb' AND source_game_id=${String(record.igdb_id)})
-      OR (${record.steam_app_id}::bigint IS NOT NULL AND g.steam_app_id=${record.steam_app_id}) LIMIT 3`;
+      OR (${record.steam_app_id}::bigint IS NOT NULL AND g.steam_app_id=${record.steam_app_id}) LIMIT 3 FOR UPDATE OF g`;
     if(matches.length>1) throw new Error('Ambiguous provider identity; manual catalogue review required');
     let gameId;let created=0;
     if(matches.length) {
@@ -34,7 +34,10 @@ export async function upsertIgdbEssential(sql,game,{allowCreate=false}={}) {
         release_date:preserveFullReleaseDate?existing.release_date:record.release_date||existing.release_date,
         release_status:preserveStatus?existing.release_status:record.release_status||existing.release_status,
         cover_image:cover,media_source:cover===existing.cover_image?existing.media_source:record.media_source,
-        header_image:existing.header_image||record.header_image,
+        header_image:selectLandscapeArtwork({
+          igdb:game, cover:existing.cover_image, existing:existing.header_image, steamAppId:existing.steam_app_id,
+          reviewed:reviewedHeroArtwork({ slug:existing.slug, igdbId:game.id, rawgId:existing.rawg_id }),
+        }) || existing.header_image,
         screenshots:existing.screenshots?.length?existing.screenshots:record.screenshots,
         last_enriched_at:record.last_enriched_at,enrichment_sources:[...new Set([...(existing.enrichment_sources||[]),'igdb'])]};
       // Preserve identifiers, scores/reviews/interest, editorials and manual choices.
