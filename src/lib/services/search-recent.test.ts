@@ -2,7 +2,7 @@ import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 
 const state = vi.hoisted(() => ({
   cache: new Map<string, Promise<unknown>>(), calls: [] as {columns:string; ids?:string[]; filters:unknown[][]; range:number[]}[],
-  active: 0, peak: 0, failChunk: false, bypassCache:false,
+  active: 0, peak: 0, failChunk: false, failClassificationFallback:false, bypassCache:false,
 }));
 vi.mock('next/cache', () => ({unstable_cache: (fn:(...args:unknown[])=>Promise<unknown>, keys:string[]) => (...args:unknown[]) => {
   if (state.bypassCache) return fn(...args);
@@ -21,6 +21,7 @@ const rows = Array.from({length:1000}, (_, index) => ({
   description:'A complete standalone action adventure with a substantial story.',
   score:90, verdict_score:90, confidence:0.9, review_count:1000000, steam_total_count:1000000,
   steam_positive_count:950000, current_players:1000, momentum:0.2, is_provisional:false, verdict_label:'MUST PLAY',
+  explore_primary_safe:true as boolean|null,
 }));
 vi.mock('@/lib/supabase/public', () => ({hasPublicSupabaseEnv:()=>true, getPublicSupabase:()=>({from:()=>{
   const query:Record<string,unknown> = {};
@@ -43,6 +44,7 @@ vi.mock('@/lib/supabase/public', () => ({hasPublicSupabaseEnv:()=>true, getPubli
         await new Promise(done=>setTimeout(done,2));
         signal.throwIfAborted();
         if(state.failChunk && ids?.includes('game-200'))return {data:null,error:{code:'57014'}};
+        if(state.failClassificationFallback && columns.includes('description'))return {data:null,error:{code:'57014'}};
         // Hydration is deliberately unordered: the loader must restore the ID cohort.
         const selected=ids?rows.filter(row=>ids!.includes(row.id)).reverse():rows.slice(range[0],range[1]+1);
         return {data:selected.map(row=>Object.fromEntries(Object.entries(row).filter(([key])=>columns.split(',').includes(key)))),error:null};
@@ -56,8 +58,16 @@ import {loadSearchResults} from './search';
 const request = {query:'',platform:'All',genre:'',year:'',monetization:'All',sort:'recently-added',page:1} as const;
 describe('bounded Recently Added cohort',()=>{
   beforeEach(()=>{
-    state.cache.clear();state.calls=[];state.active=0;state.peak=0;state.failChunk=false;state.bypassCache=false;
+    state.cache.clear();state.calls=[];state.active=0;state.peak=0;state.failChunk=false;state.failClassificationFallback=false;state.bypassCache=false;
     vi.useFakeTimers({toFake:['Date']});vi.setSystemTime(new Date('2026-11-19T12:00:00Z'));
+  });
+  it('fails closed if missing-classification metadata cannot be read',async()=>{
+    const prior=rows[0].explore_primary_safe;
+    try{
+      rows[0].explore_primary_safe=null;state.failClassificationFallback=true;
+      await expect(loadSearchResults(request)).rejects.toEqual({code:'57014'});
+      expect(state.cache.size).toBe(0);
+    }finally{rows[0].explore_primary_safe=prior;}
   });
   afterEach(()=>vi.useRealTimers());
   it('keeps all 1,000 candidates, restores their order and shares the cohort across pages',async()=>{
@@ -71,7 +81,17 @@ describe('bounded Recently Added cohort',()=>{
     const chunks=state.calls.filter(call=>call.ids && call.ids.length>25);
     expect(chunks.map(call=>call.ids!.length)).toEqual([200,200,200,200,200]);
     expect(state.peak).toBe(2);
-    expect(chunks.every(call=>call.columns.includes('description'))).toBe(true);
+    expect(chunks.every(call=>!call.columns.includes('description') && call.columns.includes('explore_primary_safe'))).toBe(true);
+  });
+  it('loads original full safety metadata for an unclassified row and excludes classified unsafe rows',async()=>{
+    const first=rows[0].explore_primary_safe,second=rows[1].explore_primary_safe;
+    try{
+      rows[0].explore_primary_safe=null;rows[1].explore_primary_safe=false;
+      const result=await loadSearchResults(request);
+      expect(result.items.some(row=>row.id==='game-0')).toBe(true);
+      expect(result.items.some(row=>row.id==='game-1')).toBe(false);
+      expect(state.calls.some(call=>call.ids?.length===1 && call.ids[0]==='game-0' && call.columns.includes('description'))).toBe(true);
+    }finally{rows[0].explore_primary_safe=first;rows[1].explore_primary_safe=second;}
   });
   it('reapplies platform and release-year filters to every bounded read',async()=>{
     const result=await loadSearchResults({...request,platform:'PC',year:'2025'});

@@ -1,0 +1,25 @@
+[
+  {
+    "id": 44622553702,
+    "failures": [
+      "Scheduled job\tUNKNOWN STEP\t2026-11-19T21:49:21.0646687Z   SCHEDULER_DB_CONNECT_TIMEOUT_SECONDS: 30",
+      "Scheduled job\tUNKNOWN STEP\t2026-11-19T21:49:53.2729454Z PostgresError: (ECHECKOUTTIMEOUT) unable to check out connection from the pool after 15000ms in Session mode",
+      "Scheduled job\tUNKNOWN STEP\t2026-11-19T21:49:53.2803366Z ##[error]Process completed with exit code 1."
+    ]
+  },
+  {
+    "id": 44613777512,
+    "failures": [
+      "Advisory lock check failed: ECHECKOUTTIMEOUT, unable to check out connection from the pool after 15000ms in Session mode; run aborted before worker acquisition."
+    ]
+  },
+  {
+    "id": 44611690380,
+    "failures": [
+      "Scheduled job\tUNKNOWN STEP\t2026-11-19T20:44:25.3359099Z   SCHEDULER_DB_CONNECT_TIMEOUT_SECONDS: 30",
+      "Scheduled job\tUNKNOWN STEP\t2026-11-19T20:47:29.3024038Z ❌ Refresh trending failed: canceling statement due to statement timeout",
+      "Scheduled job\tUNKNOWN STEP\t2026-11-19T20:49:34.8390931Z ⚠ scheduler_runs finish logging failed: canceling statement due to statement timeout",
+      "Scheduled job\tUNKNOWN STEP\t2026-11-19T20:49:52.9097462Z ##[error]Process completed with exit code 1."
+    ]
+  }
+]

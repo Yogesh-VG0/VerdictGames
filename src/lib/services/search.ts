@@ -35,6 +35,16 @@ const BROWSE_POOL_COLUMNS = GAME_CARD_COLUMNS_WITH_DESC.split(',').filter(column
   'price_deal_url', 'price_lowest', 'featured', 'is_featured_manual',
   'steam_rating_label', 'updated_at',
 ].includes(column)).join(',');
+// Recently Added needs no description-length quality gate. The existing
+// maintained classifier contains the same public-safety/primary-game checks.
+// Keep the original source cohort and ranking inputs; load display fields only
+// for a visible page. NULL classifications take the original full-row path.
+const RECENT_POOL_COLUMNS = [
+  'id','title','cover_image','release_date','created_at','steam_app_id',
+  'review_count','steam_total_count','rawg_rating','score_source','user_score',
+  'score','verdict_score','confidence','current_players','is_provisional',
+  'verdict_label','developer','publisher','explore_primary_safe',
+].join(',');
 
 export function createEmptySearchResult(page: number): PaginatedResponse<Game> {
   return {
@@ -521,6 +531,7 @@ async function fetchSearchResults(state: SearchGamesState,poolOnly=false): Promi
   const isNewest = sort === "newest";
   const isUpcoming = sort === "upcoming";
   const isRecentlyAdded = sort === "recently-added";
+  const compactRecentPool = poolOnly && isRecentlyAdded;
   const start = (page - 1) * SEARCH_PAGE_SIZE;
   // Rank a stable finite cohort before pagination. Growing the pool with page
   // number promoted later candidates into earlier pages and repeated games.
@@ -533,7 +544,7 @@ async function fetchSearchResults(state: SearchGamesState,poolOnly=false): Promi
   const createQuery = createSearchQueryFactory(state);
   const controller = new AbortController();
   const signal = AbortSignal.any([AbortSignal.timeout(10_000), controller.signal]);
-  const columns = poolOnly ? BROWSE_POOL_COLUMNS : GAME_CARD_COLUMNS_WITH_DESC;
+  const columns = compactRecentPool ? RECENT_POOL_COLUMNS : poolOnly ? BROWSE_POOL_COLUMNS : GAME_CARD_COLUMNS_WITH_DESC;
   let data: GameRow[] | null;
   let returnedCount: number;
   let phase = 'initial-query';
@@ -549,6 +560,16 @@ async function fetchSearchResults(state: SearchGamesState,poolOnly=false): Promi
     data = boundedCohort
       ? await hydrateBrowseCohort(createQuery, (result.data ?? []).map(row => row.id), columns, signal)
       : result.data;
+    if (compactRecentPool) {
+      const unclassified=(data || []).filter(row=>typeof (row as GameRow & {explore_primary_safe?:boolean|null}).explore_primary_safe!=='boolean').map(row=>row.id);
+      if(unclassified.length){
+        phase='classification-fallback';
+        const fullRows=await hydrateBrowseCohort(createQuery,unclassified,BROWSE_POOL_COLUMNS,signal);
+        const byId=new Map(fullRows.map(row=>[row.id,row]));
+        const missing=new Set(unclassified);
+        data=(data || []).flatMap(row=>missing.has(row.id)?byId.has(row.id)?[byId.get(row.id)!]:[]:[row]);
+      }
+    }
   } catch (error) {
     console.warn('[Search] catalogue read failed', {sort, phase, ms:Math.round(performance.now()-started), deadlineExpired:signal.aborted});
     controller.abort();
@@ -563,11 +584,12 @@ async function fetchSearchResults(state: SearchGamesState,poolOnly=false): Promi
   const isBroadDiscovery = !q && (isTopRated || isTrending || sort === "relevance" || isNewest || isUpcoming || isRecentlyAdded);
 
   let rows = (data ?? []).filter((row) => {
-    if (!isPublicSafeGame(row) || !hasUsableCardImage(row)) {
+    const storedSafety=compactRecentPool?(row as GameRow & {explore_primary_safe?:boolean|null}).explore_primary_safe:undefined;
+    if (storedSafety===false || (storedSafety!==true && !isPublicSafeGame(row)) || !hasUsableCardImage(row)) {
       return false;
     }
 
-    if (isBroadDiscovery && !isPrimaryDiscoveryGame(row)) {
+    if (isBroadDiscovery && storedSafety!==true && !isPrimaryDiscoveryGame(row)) {
       return false;
     }
 
@@ -805,7 +827,7 @@ function readSharedBrowsePool(sort: SearchGamesState['sort']): Promise<RankedBro
 const readRankedBrowsePool=unstable_cache(async(sort:SearchGamesState['sort'])=>{
   if(!['relevance','newest','upcoming','recently-added','top-rated','trending'].includes(sort))throw new Error('Invalid public browse sort');
   return readSharedBrowsePool(sort);
-},['public-browse-ranked-ids-v8'],{revalidate:SEARCH_REVALIDATE_SECONDS,tags:['public-search']});
+},['public-browse-ranked-ids-v9'],{revalidate:SEARCH_REVALIDATE_SECONDS,tags:['public-search']});
 
 async function readBrowseCards(ids:string[]):Promise<Game[]> {
   const {data,error}=await getPublicSupabase().from('games').select(GAME_CARD_COLUMNS_WITH_DESC).in('id',ids).abortSignal(AbortSignal.timeout(5000));

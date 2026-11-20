@@ -1,0 +1,15 @@
+{
+  "sampledAt": "2026-11-20T00:52:00Z",
+  "project": "vjzsvnaswronkctazarn",
+  "controlPlane": "ACTIVE_HEALTHY",
+  "publicDataReads": "Two narrow classifier reads for captured public IDs timed out at unchanged5s; batch200 then100. No further loop.",
+  "sqlConnector": "Connection terminated due to connection timeout, including a simple activity/lock summary",
+  "healthAdvisorLints": 0,
+  "edgeSample": {
+    "at": "2026-11-20T00:47:24.223Z",
+    "status": 522
+  },
+  "scope": "Health label and empty advisory list do not prove data-plane availability. Regional/cluster root cause unverified because SQL cannot connect.",
+  "ownerDashboardStatus": "requested; no restart, pause, upgrade, settings change or credential disclosure requested",
+  "hostedWrites": 0
+}
