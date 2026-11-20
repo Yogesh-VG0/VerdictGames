@@ -423,9 +423,9 @@ export async function ingestGame(options: IngestOptions): Promise<IngestResult> 
   }
 
   const finalScreenshots = igdbScreenshots.length > 0 ? igdbScreenshots : screenshotUrls;
-  const finalHeader = igdbScreenshots.length > 0
+  const finalHeader = igdbEnrichment?.headerImageUrl || (igdbScreenshots.length > 0
     ? igdbScreenshots[0]
-    : (fullGame.background_image_additional ?? fullGame.background_image ?? "");
+    : (fullGame.background_image_additional ?? fullGame.background_image ?? ""));
 
   const gameRecord = {
     slug,

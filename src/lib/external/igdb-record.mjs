@@ -1,4 +1,5 @@
 import { isPublicContentAllowed } from '../utils/public-safety.mjs';
+import {igdbLandscapeArtwork} from '../utils/artwork-policy.mjs';
 // Essential metadata only. Provider ratings/hypes are never relabeled as RAWG
 // interest, Steam reviews or a computed Verdict Score.
 const genres={'Role-playing (RPG)':'RPG',Platform:'Platformer',Simulator:'Simulation',Sport:'Sports',
@@ -21,7 +22,7 @@ export function igdbVerifiedReleaseFields(game, now=new Date(), currentStatus) {
 export function igdbEssentialRecord(game,now=new Date()) {
   if(!Number.isSafeInteger(game?.id)||game.id<=0||typeof game.name!=='string'||!game.name.trim()
     ||typeof game.slug!=='string'||game.slug.length>200||!/^[a-z0-9]+(?:-+[a-z0-9]+)*$/.test(game.slug)) return null;
-  if(['themes','platforms','genres','websites','screenshots','release_dates','involved_companies'].some(key=>game[key]!=null&&!Array.isArray(game[key]))
+  if(['themes','platforms','genres','websites','screenshots','artworks','release_dates','involved_companies'].some(key=>game[key]!=null&&!Array.isArray(game[key]))
     ||['summary','storyline'].some(key=>game[key]!=null&&typeof game[key]!=='string')) return null;
   if(game.game_type!=null&&game.game_type!==0&&game.game_type?.id!==0) return null;
   const description=(game.storyline||game.summary||'').slice(0,8000);
@@ -61,7 +62,7 @@ export function igdbEssentialRecord(game,now=new Date()) {
     } catch { /* Identity is never guessed from names or arbitrary hosts. */ }
   }
   const screenshots=(game.screenshots||[]).map(item=>image(item.image_id).replace('t_cover_big_2x','t_screenshot_big')).filter(Boolean).slice(0,8);
-  return {slug:game.slug,title:game.name.trim().slice(0,300),cover_image:cover,header_image:screenshots[0]||cover,screenshots,
+  return {slug:game.slug,title:game.name.trim().slice(0,300),cover_image:cover,header_image:igdbLandscapeArtwork(game)||screenshots[0]||cover,screenshots,
     platforms:[...new Set((game.platforms||[]).map(item=>platforms[item.name]).filter(Boolean))],
     genres:[...new Set((game.genres||[]).map(item=>genres[item.name]||item.name).filter(value=>typeof value==='string'))],
     tags,developer:game.involved_companies?.find(item=>item.developer)?.company?.name||'',

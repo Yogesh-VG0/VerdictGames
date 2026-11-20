@@ -1,6 +1,6 @@
 import { igdbEssentialRecord } from '../../src/lib/external/igdb-record.mjs';
 import { preferExistingCover } from '../../src/lib/utils/artwork-policy.mjs';
-const fields='id,name,slug,summary,storyline,first_release_date,release_dates.date,release_dates.date_format.format,release_dates.status.name,updated_at,url,game_type,game_status.status,cover.image_id,screenshots.image_id,genres.name,themes.name,platforms.name,websites.url,involved_companies.company.name,involved_companies.developer,involved_companies.publisher,aggregated_rating';
+const fields='id,name,slug,summary,storyline,first_release_date,release_dates.date,release_dates.date_format.format,release_dates.status.name,updated_at,url,game_type,game_status.status,cover.image_id,screenshots.image_id,artworks.image_id,artworks.width,artworks.height,genres.name,themes.name,platforms.name,websites.url,involved_companies.company.name,involved_companies.developer,involved_companies.publisher,aggregated_rating';
 export async function readIgdbDiscovery(query) {
   const start=Math.floor(Date.now()/1000),end=start+3*366*86400;
   const games=await query('games','fields '+fields+'; where game_type = 0 & cover != null & first_release_date > '+start+' & first_release_date < '+end+'; sort hypes desc; limit 40;');

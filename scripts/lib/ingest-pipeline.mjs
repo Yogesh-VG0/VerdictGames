@@ -13,7 +13,7 @@
 import { rawgFetchJson } from "./rawg-client.mjs";
 import { isInfrastructureDbError } from "./scheduler-logger.mjs";
 import { fetchSteamReviews } from "../../src/lib/external/steam-reviews-api.mjs";
-import { preferExistingCover } from '../../src/lib/utils/artwork-policy.mjs';
+import { preferExistingCover,igdbLandscapeArtwork } from '../../src/lib/utils/artwork-policy.mjs';
 import { refreshIgdbCatalogue } from './igdb-fallback.mjs';
 import {igdbVerifiedReleaseFields} from '../../src/lib/external/igdb-record.mjs';
 
@@ -279,7 +279,7 @@ function pickTrailer(vids, name) {
 const IGDB_WEB = { OFFICIAL: 1, WIKIPEDIA: 3, REDDIT: 14 };
 
 async function findIgdb(title, year) {
-  const q = `search "${esc(title)}"; fields name,slug,summary,storyline,aggregated_rating,rating,total_rating,first_release_date,url,cover.image_id,screenshots.image_id,genres.name,platforms.name,videos.video_id,videos.name,websites.url,websites.category; where game_type = 0; limit 10;`;
+  const q = `search "${esc(title)}"; fields name,slug,summary,storyline,aggregated_rating,rating,total_rating,first_release_date,url,cover.image_id,screenshots.image_id,artworks.image_id,artworks.width,artworks.height,genres.name,platforms.name,videos.video_id,videos.name,websites.url,websites.category; where game_type = 0; limit 10;`;
   const res = await igdbQ("games", q); if (!res?.length) return null;
   const nt = title.toLowerCase().trim(); let bm = res[0], bs = -Infinity;
   for (const g of res) { let s = 0; const gn = g.name.toLowerCase().trim();
@@ -289,7 +289,7 @@ async function findIgdb(title, year) {
     if (g.cover?.image_id) s += 10; if (g.screenshots?.length) s += 5;
     if (s > bs) { bs = s; bm = g; } }
   // Follow-up full query for properly expanded nested fields
-  const full = await igdbQ("games", `where id = ${bm.id}; fields name,slug,summary,storyline,aggregated_rating,aggregated_rating_count,rating,rating_count,total_rating,total_rating_count,first_release_date,game_status.status,release_dates.date,release_dates.date_format.format,release_dates.status.name,url,cover.image_id,screenshots.image_id,genres.name,themes.name,platforms.name,platforms.abbreviation,involved_companies.company.name,involved_companies.developer,involved_companies.publisher,videos.video_id,videos.name,websites.url,websites.category,similar_games.name,similar_games.slug,similar_games.cover.image_id,game_modes.name,player_perspectives.name; limit 1;`);
+  const full = await igdbQ("games", `where id = ${bm.id}; fields name,slug,summary,storyline,aggregated_rating,aggregated_rating_count,rating,rating_count,total_rating,total_rating_count,first_release_date,game_status.status,release_dates.date,release_dates.date_format.format,release_dates.status.name,url,cover.image_id,screenshots.image_id,artworks.image_id,artworks.width,artworks.height,genres.name,themes.name,platforms.name,platforms.abbreviation,involved_companies.company.name,involved_companies.developer,involved_companies.publisher,videos.video_id,videos.name,websites.url,websites.category,similar_games.name,similar_games.slug,similar_games.cover.image_id,game_modes.name,player_perspectives.name; limit 1;`);
   return full?.[0] ?? bm;
 }
 function igdbEnrich(g) {
@@ -590,7 +590,7 @@ export async function ingestGameDirect(sql, query, options = {}) {
   
   // Header image: prefer IGDB screenshots, then RAWG additional/background
   // Header is separate from cover - don't use Steam for headers
-  const header = igdbSS.length ? igdbSS[0] : (fullGame.background_image_additional ?? fullGame.background_image ?? "");
+  const header = igdbLandscapeArtwork(igdbData) || (igdbSS.length ? igdbSS[0] : (fullGame.background_image_additional ?? fullGame.background_image ?? ""));
   const finalSS = igdbSS.length ? igdbSS : ssUrls;
   const freeTags = ["free-to-play","free to play","f2p"];
   const monetization = isFree ? "Free" : allTags.some(t => freeTags.includes(t)) ? "Free" : "Paid";

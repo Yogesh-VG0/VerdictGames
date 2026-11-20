@@ -195,7 +195,7 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
               <HeroImage
                 src={game.headerImage || game.coverImage}
                 alt={game.title}
-                className="object-center"
+                className="object-[70%_center] sm:object-center"
                 priority={prioritizeHeroImage}
               />
             ) : (
@@ -263,6 +263,9 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
             </div>
 
             {/* Summary - prefer actual description over template verdict summary */}
+            {game.score > 0 && game.confidence != null && game.confidence < 0.3 && (
+              <p className="text-xs hero-overlay-text-muted">Limited rating evidence</p>
+            )}
             <p className="hidden sm:block text-sm md:text-base hero-overlay-text-secondary max-w-2xl line-clamp-2">
               {getHeroSummary(game)}
             </p>

@@ -568,8 +568,14 @@ async function fetchSearchResults(state: SearchGamesState,poolOnly=false): Promi
     // Newest is a release-date view, not a confidence/popularity ranking.
     // Fresh console releases must not require Steam activity or old reviews.
     if (isNewest) {
+      // Being unrated is not evidence of an upcoming game, but a passed
+      // estimate alone is still not evidence of a launch. Retain the existing
+      // 14-day discovery allowance; older zero-review rows need verified status.
+      const oldWithoutReleaseEvidence = (row.review_count ?? 0) === 0 && !hasKnownFullRelease(row)
+        && getDateAgeDays(row.release_date) > justReleasedDays;
       return Boolean(row.release_date && !isFutureDate(row.release_date))
         && !hasUnreleasedStatus(row)
+        && !oldWithoutReleaseEvidence
         && mapGameRow(row).verdictLabel !== 'COMING SOON';
     }
 
@@ -793,7 +799,7 @@ function readSharedBrowsePool(sort: SearchGamesState['sort']): Promise<RankedBro
 const readRankedBrowsePool=unstable_cache(async(sort:SearchGamesState['sort'])=>{
   if(!['relevance','newest','upcoming','recently-added','top-rated','trending'].includes(sort))throw new Error('Invalid public browse sort');
   return readSharedBrowsePool(sort);
-},['public-browse-ranked-ids-v10'],{revalidate:SEARCH_REVALIDATE_SECONDS,tags:['public-search']});
+},['public-browse-ranked-ids-v11'],{revalidate:SEARCH_REVALIDATE_SECONDS,tags:['public-search']});
 
 async function readBrowseCards(ids:string[]):Promise<Game[]> {
   const {data,error}=await getPublicSupabase().from('games').select(GAME_CARD_COLUMNS_WITH_DESC).in('id',ids).abortSignal(AbortSignal.timeout(5000));
