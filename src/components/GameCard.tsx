@@ -159,7 +159,7 @@ export default function GameCard({
             <h3 className="text-base font-bold text-white leading-tight line-clamp-2 group-hover:text-accent transition-colors drop-shadow-md">
               {game.title}
             </h3>
-            {hasRealScore(game) && <VerdictBadge label={game.verdictLabel} size="sm" />}
+            {(hasRealScore(game) || game.verdictLabel === 'NOT YET RATED') && <VerdictBadge label={game.verdictLabel} size="sm" />}
             {hasRealScore(game) && game.confidence != null && game.confidence < 0.3 && <p className="text-[10px] text-white/70">Limited rating evidence</p>}
             {game.verdictSummary && (
               <p className="text-xs text-white/60 line-clamp-2 leading-relaxed">
@@ -260,7 +260,7 @@ export default function GameCard({
           </h3>
 
           <div className="min-h-[20px]">
-            {hasRealScore(game) && <VerdictBadge label={game.verdictLabel} size="sm" />}
+            {(hasRealScore(game) || game.verdictLabel === 'NOT YET RATED') && <VerdictBadge label={game.verdictLabel} size="sm" />}
             {hasRealScore(game) && game.confidence != null && game.confidence < 0.3 && <p className="text-[10px] text-tertiary mt-1">Limited rating evidence</p>}
           </div>
 
