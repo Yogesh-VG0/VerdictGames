@@ -12,7 +12,8 @@ import { scoreToVerdict } from "../utils/score";
 import { getVerdictLabel } from "../utils/scoring";
 import { sanitizeDiscoveryDescription } from "../utils/discovery";
 import { normalizePlatforms } from "../utils/platform";
-import {hasUnreleasedStatus} from '../utils/release-status';
+import {hasUnreleasedStatus,hasKnownFullRelease} from '../utils/release-status';
+import {hasBrowseTrendingSignal} from '../utils/trending';
 
 /**
  * Regenerate verdict summary from display score + title + genres.
@@ -22,60 +23,29 @@ import {hasUnreleasedStatus} from '../utils/release-status';
 function regenerateVerdictSummary(
   title: string,
   displayScore: number,
-  genres: string[],
-  storedSummary: string | null,
 ): string {
-  const genreStr = genres.slice(0, 2).join("/") || "game";
-  const g1 = genres[0]?.toLowerCase() ?? "game";
-  const hash = title.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
-  const variant = hash % 4;
-
-  if (displayScore >= 90) {
-    const options = [
-      `${title} is an exceptional ${genreStr} that raises the bar for the genre.`,
-      `A masterclass in ${g1} design, ${title} delivers an unforgettable experience from start to finish.`,
-      `${title} stands out as one of the best ${genreStr} titles in recent memory.`,
-      `With near-perfect execution, ${title} is a must-play for any ${g1} fan.`,
-    ];
-    return options[variant];
-  }
-  if (displayScore >= 75) {
-    const options = [
-      `${title} is a strong ${genreStr} that delivers where it counts.`,
-      `A well-crafted ${g1} experience, ${title} is well worth your time.`,
-      `${title} confidently hits its marks as a quality ${genreStr} title.`,
-      `Fans of the ${g1} genre will find plenty to enjoy in ${title}.`,
-    ];
-    return options[variant];
-  }
-  if (displayScore >= 50) {
-    const options = [
-      `${title} has interesting ideas but inconsistent execution holds it back.`,
-      `A mixed bag, ${title} shows flashes of brilliance alongside notable shortcomings.`,
-      `${title} offers a decent ${genreStr} experience but doesn't quite reach its potential.`,
-      `There's fun to be had in ${title}, though it may not appeal to everyone.`,
-    ];
-    return options[variant];
-  }
-  if (displayScore > 0) {
-    const options = [
-      `${title} struggles to deliver on its ${genreStr} ambitions.`,
-      `Despite some effort, ${title} falls short of expectations in key areas.`,
-      `${title} has fundamental issues that make it difficult to recommend.`,
-      `Only for the most dedicated ${g1} fans — ${title} needs significant improvements.`,
-    ];
-    return options[variant];
-  }
-  // Score 0 or no score
-  return storedSummary || `${title} is awaiting more reviews for a full verdict.`;
+  // Ratings summarize reception; they cannot establish gameplay, story or
+  // technical quality. Keep the same score/label policy without inventing a review.
+  if (displayScore <= 0) return `${title} is awaiting enough rating evidence for a verdict.`;
+  return `Verdict ${displayScore}/100, based on the available rating evidence. Provider ratings and review confidence are shown separately.`;
 }
 
 /**
  * Sanitize stored pros text at read time to fix legacy "0K reviews" bug
  * and ensure review count text matches actual data.
  */
+// Exact strings emitted by the legacy tag-to-review generator. Preserve authored prose.
+const GENERATED_TAG_CLAIMS = new Set([
+  'Compelling narrative and story', 'Rich open world to explore',
+  'Engaging multiplayer/co-op experience', 'Outstanding soundtrack',
+  'Standout indie gem', 'Unique gameplay concept',
+  'Steep difficulty curve may not appeal to casual players',
+  'Can require significant grinding', 'No significant drawbacks reported',
+]);
+
 function sanitizePros(pros: string[], reviewCount: number): string[] {
-  return pros.map((p) => {
+  return pros.filter(p => !GENERATED_TAG_CLAIMS.has(p)).map((p) => {
+    p=p.replace(/^Critically acclaimed \((\d+)\/100 critic average\)$/, 'IGDB critic average: $1/100');
     // Fix "from 0K reviews" → use actual count
     if (p.includes("from 0K reviews")) {
       const countStr = reviewCount >= 1000
@@ -98,7 +68,8 @@ function sanitizePros(pros: string[], reviewCount: number): string[] {
   });
 }
 
-function computeTrendingReason(row: GameRow): string | undefined {
+function computeTrendingReason(row: GameRow, label: VerdictLabel): string | undefined {
+  if (label === 'COMING SOON' || label === 'CANCELLED') return undefined;
   const r = row as GameRow & { is_trending_manual?: boolean; is_featured_manual?: boolean };
   const momentum = row.momentum ?? 0;
   const score = (row.verdict_score != null && row.verdict_score > 0)
@@ -122,10 +93,11 @@ function computeTrendingReason(row: GameRow): string | undefined {
 
   // 3. Momentum signals
   if (momentum > 0.2 && (currentPlayers >= 50 || reviewCount >= 250)) return "Trending Up";
+  if (momentum > 0 && hasBrowseTrendingSignal(row)) return "Trending Up";
 
   // 4. Quality / popularity tiers
-  if (score >= 90 && reviewCount >= 150) return "Top Rated";
   if (currentPlayers > 10000) return "🎮 Popular Now";
+  if (score >= 90 && reviewCount >= 150) return "Top Rated";
   if (row.price_deal_url && row.price_lowest != null && score >= 75) return "On Sale";
   if (score >= 82 && reviewCount < 150 && currentPlayers < 5000) return "💎 Hidden Gem";
 
@@ -142,6 +114,7 @@ const BAYESIAN_PRIOR_WEIGHT = 50;
 const BAYESIAN_PRIOR_SCORE = 75;
 
 function displayScore(score: number, reviewCount: number): number {
+  if (!Number.isFinite(score) || score <= 0) return 0;
   if (reviewCount >= MIN_REVIEWS_FOR_RAW_SCORE) return score;
   return Math.round(
     (score * reviewCount + BAYESIAN_PRIOR_SCORE * BAYESIAN_PRIOR_WEIGHT) /
@@ -152,7 +125,7 @@ function displayScore(score: number, reviewCount: number): number {
 /** Map a games row to the frontend Game interface. */
 export function mapGameRow(row: GameRow): Game {
   const flagProvisional = (row as GameRow & { is_provisional?: boolean }).is_provisional ?? false;
-  const releaseStatus = (row as GameRow & { release_status?: string | null }).release_status ?? undefined;
+  const releaseStatus = row.release_status?.toLowerCase().replace(/_/g,'-') || undefined;
 
   /* Stubs may set verdict_label to COMING SOON without is_provisional (e.g. migration 008 not applied). */
   const rowVerdict = row.verdict_label as VerdictLabel | undefined;
@@ -188,22 +161,34 @@ export function mapGameRow(row: GameRow): Game {
   // Provisional: future games, explicit flags, OR old games with 0 reviews (not recent releases)
   const explicitlyUnreleased = hasUnreleasedStatus(row);
   const effectiveProvisional = isFutureRelease || explicitlyUnreleased
-    || ((flagProvisional || isComingSoonLabel || hasNoReviews) && !isRecentRelease);
+    || (!hasKnownFullRelease(row) && (flagProvisional || isComingSoonLabel) && !isRecentRelease);
 
   // ── Score resolution: prefer verdict_score (v2), fall back to legacy Bayesian ──
   const rawScore = row.score ?? 0;
-  const hasV2Score = row.verdict_score != null && row.verdict_score > 0;
+  const hasV2Score = row.verdict_score != null && Number.isFinite(row.verdict_score) && row.verdict_score > 0;
   const rowConfidence = row.confidence ?? 0;
+  // The existing launch window uses 20 reviews as its evidence floor. Do not
+  // turn the same tiny fallback sample into a definitive negative verdict
+  // simply because that window elapsed. Keep valid critic/Steam evidence.
+  const hasCriticEvidence = (row.critic_score ?? row.igdb_rating ?? row.rawg_metacritic ?? 0) > 0;
+  const hasSteamEvidence = (row.steam_total_count ?? 0) > 0 || row.user_score != null && reviewCount > 0;
+  const insufficientFallbackEvidence = reviewCount < JUST_RELEASED_MIN_REVIEWS && !hasCriticEvidence && !hasSteamEvidence;
 
   let score: number;
   let verdictLabel: VerdictLabel;
 
-  if (effectiveProvisional) {
+  if (['cancelled','canceled'].includes((releaseStatus || '').toLowerCase())) {
+    score = 0;
+    verdictLabel = 'CANCELLED';
+  } else if (effectiveProvisional) {
     score = 0;
     verdictLabel = "COMING SOON";
   } else if (isJustReleased) {
     score = 0;
     verdictLabel = "JUST RELEASED";
+  } else if (insufficientFallbackEvidence || !hasV2Score && (rawScore <= 0 || !Number.isFinite(rawScore) || hasNoReviews)) {
+    score = 0;
+    verdictLabel = 'NOT YET RATED';
   } else if (hasV2Score) {
     // Use v2 scoring: verdict_score already incorporates Wilson LB + critic blend
     score = Math.round(row.verdict_score!);
@@ -214,11 +199,13 @@ export function mapGameRow(row: GameRow): Game {
     verdictLabel = scoreToVerdict(score) as VerdictLabel;
   }
 
-  const verdictSummary = effectiveProvisional
-    ? "This game is awaiting data enrichment."
+  const verdictSummary = verdictLabel === 'CANCELLED'
+    ? 'Development has been cancelled. Previous release estimates no longer apply.'
+    : effectiveProvisional
+    ? releaseStatus === 'early-access' ? 'Playable in Early Access. The full release is still pending.' : 'Explore the announced platforms, trailers and release details.'
     : isJustReleased
       ? `${row.title} just launched — verdict pending as review data comes in.`
-      : regenerateVerdictSummary(row.title, score, row.genres, row.verdict_summary);
+      : regenerateVerdictSummary(row.title, score);
   const description = sanitizeDiscoveryDescription(row);
 
   return {
@@ -244,7 +231,7 @@ export function mapGameRow(row: GameRow): Game {
     pros: sanitizePros(row.pros ?? [], reviewCount),
     // Suppress the exact legacy auto-generated assertion until stored repair.
     // Editorial/user prose and actual release metadata are preserved.
-    cons: (row.cons ?? []).filter(con => con !== "Still in Early Access — content may be incomplete"),
+    cons: (row.cons ?? []).filter(con => con !== "Still in Early Access — content may be incomplete" && !GENERATED_TAG_CLAIMS.has(con)),
     monetization: row.monetization as MonetizationType,
     performanceNotes: row.performance_notes ?? "",
     monetizationNotes: row.monetization_notes ?? "",
@@ -290,7 +277,7 @@ export function mapGameRow(row: GameRow): Game {
     // Trending signals
     isFeaturedManual: (row as GameRow & { is_featured_manual?: boolean }).is_featured_manual ?? undefined,
     isTrendingManual: (row as GameRow & { is_trending_manual?: boolean }).is_trending_manual ?? undefined,
-    trendingReason: computeTrendingReason(row),
+    trendingReason: computeTrendingReason(row, verdictLabel),
 
     // Momentum
     momentum: row.momentum ?? undefined,
@@ -303,7 +290,7 @@ export function mapGameRow(row: GameRow): Game {
     confidence: rowConfidence > 0 ? rowConfidence : undefined,
     communityScore: row.community_score != null ? Math.round(row.community_score) : undefined,
     criticScore: row.critic_score != null ? Math.round(row.critic_score) : undefined,
-    verdictScore: hasV2Score ? Math.round(row.verdict_score!) : undefined,
+    verdictScore: hasV2Score && score > 0 ? score : undefined,
   };
 }
 

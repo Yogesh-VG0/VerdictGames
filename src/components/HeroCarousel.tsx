@@ -230,7 +230,7 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
 
             {/* Score + Verdict + Platforms */}
             <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-              {!game.isProvisional && <div className="flex flex-col items-center gap-0.5">
+              {!game.isProvisional && game.score > 0 && <div className="flex flex-col items-center gap-0.5">
                 <ScoreRing score={game.score} size={40} strokeWidth={3} className="sm:hidden" />
                 <ScoreRing score={game.score} size={56} strokeWidth={3} className="hidden sm:block" />
                   {game.score > 0 && (

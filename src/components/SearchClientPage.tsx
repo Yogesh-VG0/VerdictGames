@@ -90,7 +90,7 @@ function getSearchPageHeader(browseTab: SearchBrowseTab, freeSubTab: FreeSubTab,
     case "upcoming":
       return {
         title: "Upcoming Games",
-        subtitle: "Unreleased games arriving soonest.",
+        subtitle: "Upcoming releases and games still in Early Access.",
         gradient: "linear-gradient(90deg, #a855f7, #6366f1, #ec4899)",
         icon: <Calendar className="w-6 h-6 text-purple-500" />,
       };
@@ -642,7 +642,7 @@ function SearchClientPageContent({
               {data?.notice && <p role="status" className="mb-4 text-sm text-secondary">{data.notice}</p>}
               <div className="flex items-center gap-2 mb-4">
                 <p className="text-xs text-tertiary">
-                  Showing {(page - 1) * (data?.pageSize ?? 25) + 1}–{Math.min(page * (data?.pageSize ?? 25), totalCount)} of {totalCount}{data?.totalIsExact === false ? '+' : ''} game{totalCount !== 1 ? "s" : ""}
+                  Showing {(page - 1) * (data?.pageSize ?? 25) + 1}–{Math.min(page * (data?.pageSize ?? 25), totalCount)} of {totalCount} game{totalCount !== 1 ? "s" : ""}{data?.totalIsExact === false ? ' in this discovery selection' : ''}
                 </p>
                 {isResultsRefreshing && (
                   <div className="w-3.5 h-3.5 border-2 border-accent border-t-transparent rounded-full animate-spin" />

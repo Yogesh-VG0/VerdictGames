@@ -120,7 +120,7 @@ export default function GameCard({
               </div>
             ) : isUnreleased(game) ? (
               <div className="absolute top-3 right-3 rounded-xl px-2.5 py-1 bg-accent/70 backdrop-blur-md border border-white/10 text-[10px] font-bold text-white">
-                {game.releaseStatus === 'early-access' ? 'Early Access' : game.releaseDateTba ? 'Date TBA' : 'Coming Soon'}
+                {game.verdictLabel === 'CANCELLED' ? 'Cancelled' : game.releaseStatus === 'early-access' ? 'Early Access' : game.releaseDateTba ? 'Date TBA' : 'Coming Soon'}
               </div>
             ) : game.verdictLabel === "JUST RELEASED" ? (
               <div className="absolute top-3 right-3 rounded-xl px-2.5 py-1 bg-pixel-cyan/70 backdrop-blur-md border border-white/10 text-[10px] font-bold text-white">
@@ -160,6 +160,7 @@ export default function GameCard({
               {game.title}
             </h3>
             {hasRealScore(game) && <VerdictBadge label={game.verdictLabel} size="sm" />}
+            {hasRealScore(game) && game.confidence != null && game.confidence < 0.3 && <p className="text-[10px] text-white/70">Limited rating evidence</p>}
             {game.verdictSummary && (
               <p className="text-xs text-white/60 line-clamp-2 leading-relaxed">
                 {game.verdictSummary}
@@ -213,7 +214,7 @@ export default function GameCard({
           )}
           {isUnreleased(game) && (
             <div className="absolute top-2.5 right-2.5 rounded-xl px-2 py-1 bg-accent/70 backdrop-blur-md border border-white/10 text-[10px] font-bold text-white">
-              {game.releaseStatus === 'early-access' ? 'Early Access' : game.releaseDateTba ? 'Date TBA' : 'Coming Soon'}
+              {game.verdictLabel === 'CANCELLED' ? 'Cancelled' : game.releaseStatus === 'early-access' ? 'Early Access' : game.releaseDateTba ? 'Date TBA' : 'Coming Soon'}
             </div>
           )}
           {!isUnreleased(game) && game.verdictLabel === "JUST RELEASED" && (
@@ -260,6 +261,7 @@ export default function GameCard({
 
           <div className="min-h-[20px]">
             {hasRealScore(game) && <VerdictBadge label={game.verdictLabel} size="sm" />}
+            {hasRealScore(game) && game.confidence != null && game.confidence < 0.3 && <p className="text-[10px] text-tertiary mt-1">Limited rating evidence</p>}
           </div>
 
           <div className="flex items-center gap-1 text-[10px] text-tertiary font-medium min-h-[16px]">

@@ -57,7 +57,7 @@ export default function ScoreRing({
           className="text-lg font-bold tabular-nums"
           style={{ color }}
         >
-          {score}
+          {score > 0 ? score : '—'}
         </span>
       </div>
     </div>

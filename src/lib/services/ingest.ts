@@ -41,6 +41,7 @@ import { findIgdbMatch, extractIgdbEnrichment, isIgdbConfigured } from "../exter
 import { validateAndGetSteamCover } from "../utils/mediaReadiness";
 import { preferExistingCover } from '../utils/artwork-policy.mjs';
 import { findGameWikiSummary } from "../external/wikipedia";
+import {igdbVerifiedReleaseFields} from '../external/igdb-record.mjs';
 import { fetchHLTBData } from "../external/howlongtobeat";
 import { slugify } from "../utils/slugify";
 import { scoreToVerdict } from "../utils/score";
@@ -184,9 +185,9 @@ export async function ingestGame(options: IngestOptions): Promise<IngestResult> 
   // ── Step 2: Check if game already exists ──
   const { data: existing } = await supabase
     .from("games")
-    .select("id, slug, cover_image, media_source")
+    .select("id, slug, cover_image, media_source, release_status")
     .or(`slug.eq.${slug},rawg_id.eq.${bestMatch.id}`)
-    .maybeSingle() as { data: { id: string; slug: string; cover_image: string; media_source: string | null } | null };
+    .maybeSingle() as { data: { id: string; slug: string; cover_image: string; media_source: string | null; release_status: string | null } | null };
 
   if (existing && !forceRefresh) {
     return {
@@ -360,7 +361,8 @@ export async function ingestGame(options: IngestOptions): Promise<IngestResult> 
   const score = verdictScoreValue > 0 ? verdictScoreValue : legacyScore;
 
   // Determine if upcoming or just released
-  const releaseDate = fullGame.released ?? null;
+  const verifiedRelease = igdbVerifiedReleaseFields(igdbData, new Date(), existing?.release_status);
+  const releaseDate = verifiedRelease.release_date ?? fullGame.released ?? null;
   const isUpcoming = releaseDate ? new Date(releaseDate) > new Date() : false;
   const isJustReleasedForLabel = releaseDate
     ? (Date.now() - new Date(releaseDate).getTime()) < 14 * 86400000 && reviewCount < 20
@@ -437,11 +439,12 @@ export async function ingestGame(options: IngestOptions): Promise<IngestResult> 
     tags,
     developer,
     publisher,
-    release_date: fullGame.released ?? null,
+    release_date: releaseDate,
+    ...verifiedRelease,
     description: buildDescription(fullGame, igdbData, wikiData),
     score,
     verdict_label: verdictLabel,
-    verdict_summary: generateVerdictSummary(fullGame.name, score, genres),
+    verdict_summary: generateVerdictSummary(fullGame.name, score),
     pros: generateSmartPros(fullGame, steamReviewData, igdbData, currentPlayers),
     cons: generateSmartCons(fullGame, steamReviewData, igdbData),
     monetization: isFree ? "Free" : detectMonetization(fullGame),
@@ -667,51 +670,10 @@ function detectMonetization(game: RawgGameDetail): string {
   return "Paid";
 }
 
-function generateVerdictSummary(
-  title: string,
-  score: number,
-  genres: string[]
-): string {
-  const genreStr = genres.slice(0, 2).join("/") || "game";
-  const g1 = genres[0]?.toLowerCase() ?? "game";
-  // Use title hash for deterministic variety
-  const hash = title.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
-  const variant = hash % 4;
-
-  if (score >= 90) {
-    const options = [
-      `${title} is an exceptional ${genreStr} that raises the bar for the genre.`,
-      `A masterclass in ${g1} design, ${title} delivers an unforgettable experience from start to finish.`,
-      `${title} stands out as one of the best ${genreStr} titles in recent memory.`,
-      `With near-perfect execution, ${title} is a must-play for any ${g1} fan.`,
-    ];
-    return options[variant];
-  }
-  if (score >= 75) {
-    const options = [
-      `${title} is a strong ${genreStr} that delivers where it counts.`,
-      `A well-crafted ${g1} experience, ${title} is well worth your time.`,
-      `${title} confidently hits its marks as a quality ${genreStr} title.`,
-      `Fans of the ${g1} genre will find plenty to enjoy in ${title}.`,
-    ];
-    return options[variant];
-  }
-  if (score >= 50) {
-    const options = [
-      `${title} has interesting ideas but inconsistent execution holds it back.`,
-      `A mixed bag, ${title} shows flashes of brilliance alongside notable shortcomings.`,
-      `${title} offers a decent ${genreStr} experience but doesn't quite reach its potential.`,
-      `There's fun to be had in ${title}, though it may not appeal to everyone.`,
-    ];
-    return options[variant];
-  }
-  const options = [
-    `${title} struggles to deliver on its ${genreStr} ambitions.`,
-    `Despite some effort, ${title} falls short of expectations in key areas.`,
-    `${title} has fundamental issues that make it difficult to recommend.`,
-    `Only for the most dedicated ${g1} fans — ${title} needs significant improvements.`,
-  ];
-  return options[variant];
+function generateVerdictSummary(title: string, score: number): string {
+  return score > 0
+    ? `Verdict ${score}/100, based on the available rating evidence. Provider ratings and review confidence are shown separately.`
+    : `${title} is awaiting enough rating evidence for a verdict.`;
 }
 
 /**
@@ -786,22 +748,11 @@ function generateSmartPros(
     pros.push(`Critically acclaimed (${Math.round(igdb.aggregated_rating)}/100 critic average)`);
   }
 
-  // Genre-specific pros
-  const genres = (game.genres ?? []).map(g => g.name.toLowerCase());
-  const tags = (game.tags ?? []).map(t => t.name.toLowerCase());
-  
-  if (tags.includes("story rich") || tags.includes("narrative")) pros.push("Compelling narrative and story");
-  if (tags.includes("open world") || tags.includes("exploration")) pros.push("Rich open world to explore");
-  if (tags.includes("multiplayer") || tags.includes("co-op")) pros.push("Engaging multiplayer/co-op experience");
-  if (tags.includes("great soundtrack") || tags.includes("soundtrack")) pros.push("Outstanding soundtrack");
-  if (genres.includes("indie") && game.rating >= 4) pros.push("Standout indie gem");
-  
   // RAWG rating fallback
   if (pros.length < 2 && game.rating >= 4) {
     pros.push(`Highly rated by ${game.ratings_count.toLocaleString()} players`);
   }
 
-  if (pros.length === 0) pros.push("Unique gameplay concept");
   return pros.slice(0, 4);
 }
 
@@ -1021,10 +972,8 @@ function generateSmartCons(
     if (pct < 70) cons.push(`Mixed Steam reception (${pct}% positive)`);
   }
 
-  if (tags.includes("difficult") || tags.includes("souls-like")) cons.push("Steep difficulty curve may not appeal to casual players");
   // RAWG tags are historical/community labels, not current release-state evidence.
   if (tags.includes("microtransactions") || tags.includes("in-app purchases")) cons.push("Contains microtransactions");
-  if (tags.includes("grinding") || tags.includes("grindy")) cons.push("Can require significant grinding");
 
   if (game.rating < 3.5 && game.ratings_count > 100) {
     cons.push("Below-average player reception");
@@ -1033,8 +982,6 @@ function generateSmartCons(
   if (cons.length === 0) {
     if (!game.metacritic && !(igdb?.aggregated_rating)) {
       cons.push("Limited professional critic coverage");
-    } else {
-      cons.push("No significant drawbacks reported");
     }
   }
   return cons.slice(0, 3);

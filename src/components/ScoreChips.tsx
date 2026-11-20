@@ -13,7 +13,7 @@ interface ScoreChipsProps {
 /** Source-specific chip styling */
 const chipStyles: Record<string, { bg: string; icon: string; label: string }> = {
   steam: { bg: "bg-[#1b2838] text-[#66c0f4]", icon: "🎮", label: "Steam" },
-  igdb: { bg: "bg-purple-950 text-purple-300", icon: "📊", label: "IGDB" },
+  igdb: { bg: "bg-purple-950 text-purple-300", icon: "📊", label: "IGDB critics" },
   metacritic: { bg: "bg-yellow-950 text-yellow-300", icon: "🏅", label: "MC" },
 };
 
@@ -46,7 +46,7 @@ export default function ScoreChips({
     chips.push({ source: "steam", value: `${game.userScore}%`, detail });
   }
 
-  // IGDB rating
+  // Stored igdb_rating is IGDB aggregated_rating, not its community rating.
   if (game.igdbRating != null) {
     chips.push({ source: "igdb", value: String(Math.round(game.igdbRating)) });
   }
@@ -58,6 +58,7 @@ export default function ScoreChips({
 
   // Nothing to show? Fall back to showing the Verdict score with source label
   if (chips.length === 0) {
+    if (game.score <= 0) return null;
     return (
       <div className={cn("flex items-center gap-1", className)}>
         <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold bg-accent/15 text-accent border border-accent/20">

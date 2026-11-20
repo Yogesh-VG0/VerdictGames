@@ -1,6 +1,8 @@
 import {afterEach,beforeEach,describe,expect,it,vi} from 'vitest';
 import type {RawgListGameItem} from '@/lib/api';
 import type {SearchGamesState} from '@/lib/search';
+import {SEARCH_GENRE_OPTIONS} from '@/lib/search';
+import type {Platform} from '@/lib/types';
 const mocks=vi.hoisted(()=>({explore:vi.fn()}));
 vi.mock('./explore',()=>({loadExplore:mocks.explore}));
 import {loadUpcomingSearch,mergeUpcomingCards,upcomingCard} from './upcoming-search';
@@ -9,6 +11,15 @@ function item(id:number,override:Partial<RawgListGameItem>={}):RawgListGameItem{
 describe('Upcoming discovery and catalogue union',()=>{
  beforeEach(()=>{mocks.explore.mockReset();vi.useFakeTimers({toFake:['Date']});vi.setSystemTime(new Date('2026-11-19T10:00:00Z'));});
  afterEach(()=>vi.useRealTimers());
+ const platforms:Platform[]=['PC','PlayStation 5','Xbox Series X|S','Nintendo Switch','Android','iOS','macOS','Linux'];
+ it.each(platforms.flatMap(platform=>SEARCH_GENRE_OPTIONS.map(genre=>({platform,genre}))))
+ ('applies $platform / $genre with year and price without requiring reviews',({platform,genre})=>{
+   const game=upcomingCard(item(10,{platforms:[platform],genres:[genre],monetization:'Free',ratingsCount:0,rating:0}));
+   const selected={...state,platform,genre,year:'2027',monetization:'Free' as const};
+   expect(mergeUpcomingCards([],[game],selected)).toEqual([game]);
+   expect(mergeUpcomingCards([],[game],{...selected,year:'2026'})).toEqual([]);
+   expect(mergeUpcomingCards([],[game],{...selected,monetization:'Paid'})).toEqual([]);
+ });
  it('paginates the complete discovery feed rather than limiting Upcoming to local rows',async()=>{
   const records=Array.from({length:55},(_,i)=>item(i));
   mocks.explore.mockImplementation(async(_type:string,page:number)=>({items:records.slice((page-1)*40,page*40),count:55,source:'rawg',degraded:false}));

@@ -25,7 +25,7 @@ import { unstable_cache } from "next/cache";
 import { getPublicSupabase } from "@/lib/supabase/public";
 import { readCachedUpcomingSnapshot } from '@/lib/services/upcoming-snapshot';
 import { readHomepageReleaseRanking } from '@/lib/services/community-ranking';
-import {hasEarlyAccessSignal,hasUnreleasedStatus} from '@/lib/utils/release-status';
+import {hasEarlyAccessSignal,hasUnreleasedStatus,hasKnownFullRelease} from '@/lib/utils/release-status';
 import { isPrimaryDiscoveryGame } from '@/lib/utils/discovery';
 import { mapGameRow } from "@/lib/db/mappers";
 import { GAME_CARD_COLUMNS_WITH_DESC } from "@/lib/db/columns";
@@ -86,7 +86,7 @@ const HOMEPAGE_MAX_APPEARANCES_PER_GAME = 3;
 const HOMEPAGE_TRENDING_REPEAT_BUDGET = 3;
 const HOMEPAGE_NEW_RELEASE_REPEAT_BUDGET = 8;
 const HOMEPAGE_TOP_RATED_REPEAT_BUDGET = 4;
-const HOMEPAGE_RECOMMENDATION_REPEAT_BUDGET = 8;
+const HOMEPAGE_RECOMMENDATION_REPEAT_BUDGET = 0;
 
 function monthsAgoISO(months: number): string {
   const d = new Date();
@@ -692,15 +692,14 @@ export async function fetchHeroCandidates(limit = 12): Promise<Game[]> {
     const rows=(data || []) as unknown as GameRow[];
     const spotlights=upcoming.flatMap(item=>{
       const row=rows.find(row=>row.rawg_id===item.id);
-      if(!row || !isPublicSafeGame(row) || !isPrimaryDiscoveryGame(row)
+      if(!row || row.release_date !== item.released || !isPublicSafeGame(row) || !isPrimaryDiscoveryGame(row)
         || ['cancelled','canceled','delisted'].includes(row.release_status || '')
         || item.released!<=today && hasEarlyAccessSignal(row)
         || item.released!>today && ['released','full release'].includes(row.release_status || ''))return [];
       const game=mapGameRow(row);
-      return [{...game,headerImage:row.header_image || item.background_image!,
-        releaseDate:item.released!,score:0,verdictScore:undefined,isProvisional:true,
-        verdictLabel:item.released!>today?'COMING SOON' as const:'JUST RELEASED' as const,releaseStatus:item.released!>today?'upcoming':'released',
-        platforms:(item.platforms || []).map(p=>p.platform.name==='Xbox Series S/X'?'Xbox Series X|S':p.platform.name) as Game['platforms']}];
+      // Discovery chooses a spotlight, not a different score/status projection.
+      // Preserve the same canonical mapping used by cards and game details.
+      return [{...game,headerImage:row.header_image || item.background_image!}];
     }).slice(0,1);
     return [...spotlights,...released.filter(game=>!spotlights.some(spot=>spot.id===game.id))].slice(0,limit);
   } catch { return released; }
@@ -881,12 +880,6 @@ export async function fetchTrendingGames(limit = 20, homepageOnly = true): Promi
    Recency:  2 years, fallback 5 years
    ═══════════════════════════════════════════════════ */
 
-function dateCutoff(yearsBack: number): string {
-  const d = new Date();
-  d.setFullYear(d.getFullYear() - yearsBack);
-  return d.toISOString().slice(0, 10);
-}
-
 export function getHomepageRecommendationScore(row: GameRow): number {
   const qualityScore = confidenceWeightedScore(row);
   const evidenceReviewCount = getEvidenceReviewCount(row);
@@ -1032,53 +1025,28 @@ export async function fetchNewReleases(limit = 20): Promise<Game[]> {
   const supabase = getPublicSupabase();
   const fetchLimit = getHomepageQueryFetchLimit(limit);
 
-  // Try last 2 years first
-  let { data, error } = await supabase
+  // New Releases is a 90-day release-date rail, not a quality ranking.
+  const { data, error } = await supabase
     .from("games")
     .select(GAME_CARD_COLUMNS_WITH_DESC)
     .not("release_date", "is", null)
     .lte("release_date", new Date().toISOString().slice(0, 10))
-    .gte("release_date", dateCutoff(2))
+    .gte("release_date", new Date(Date.now()-90*86400000).toISOString().slice(0,10))
     .not("cover_image", "is", null)
     .neq("cover_image", "")
     .neq("description", "")
     .order("release_date", { ascending: false })
     .limit(fetchLimit) as { data: GameRow[] | null; error: unknown };
 
-  // Fallback to 5 years if insufficient
-  if (!error && (!data || data.length < limit)) {
-    const fallback = await supabase
-      .from("games")
-      .select(GAME_CARD_COLUMNS_WITH_DESC)
-      .not("release_date", "is", null)
-      .lte("release_date", new Date().toISOString().slice(0, 10))
-      .gte("release_date", dateCutoff(5))
-      .not("cover_image", "is", null)
-      .neq("cover_image", "")
-      .neq("description", "")
-      .order("release_date", { ascending: false })
-      .limit(fetchLimit) as { data: GameRow[] | null; error: unknown };
-
-    if (!fallback.error && fallback.data && fallback.data.length > (data?.length ?? 0)) {
-      data = fallback.data;
-      error = fallback.error;
-    }
-  }
-
   if (error) throw error;
 
   // Surface readiness + public safety + media readiness gate
   const ready = (data ?? []).filter((r) =>
     isSurfaceReady(r, "homepageRail") &&
-    isPublicSafeGame(r) &&
+    isPublicSafeGame(r) && isPrimaryDiscoveryGame(r) &&
     hasUsableCardImage(r)
   );
-  const filtered = filterQualityGames(ready, {
-    section: "newReleases",
-    minResults: Math.min(limit, HOMEPAGE_RAIL_TARGET),
-    allowReadinessFallback: true,
-    fallbackSurface: "homepageRail",
-  });
+  const filtered = ready;
 
   // Exclude games that will be converted to COMING SOON by mapper:
   // - is_provisional = true (unless well-reviewed)
@@ -1097,7 +1065,7 @@ export async function fetchNewReleases(limit = 20): Promise<Game[]> {
     
     // Exclude 0-review games that are past the "just released" window
     const reviewCount = r.review_count ?? 0;
-    if (reviewCount === 0 && r.release_date) {
+    if (reviewCount === 0 && r.release_date && !hasKnownFullRelease(r)) {
       const normalizedReleaseDate = /^\d{4}-\d{2}-\d{2}$/.test(r.release_date)
         ? `${r.release_date}T00:00:00Z`
         : /^\d{4}$/.test(r.release_date)
@@ -1553,15 +1521,15 @@ export const EMPTY_HOMEPAGE_DATA: HomepageData = {
 // admitted only when every requested section resolved; cold partial results
 // remain displayable but never replace a shared successful value.
 const sectionCacheOptions = { revalidate: HOMEPAGE_REVALIDATE_SECONDS };
-const cachedHero = unstable_cache(() => retryCatalogRead(() => fetchHeroCandidates(HOMEPAGE_HERO_FETCH_TARGET)), ['homepage-hero-v2'], sectionCacheOptions);
-const cachedTrending = unstable_cache(() => retryCatalogRead(() => fetchTrendingGames(HOMEPAGE_SECTION_FETCH_TARGET, true)), ['homepage-trending-v1'], sectionCacheOptions);
-const cachedNewReleases = unstable_cache(() => retryCatalogRead(() => fetchNewReleases(HOMEPAGE_SECTION_FETCH_TARGET)), ['homepage-new-v2'], sectionCacheOptions);
-const cachedTopRated = unstable_cache(() => retryCatalogRead(() => fetchHomepageTopRated(HOMEPAGE_SECTION_FETCH_TARGET)), ['homepage-top-v1'], sectionCacheOptions);
-const cachedRecommendations = unstable_cache(() => retryCatalogRead(() => fetchHomepageRecommendations(HOMEPAGE_SECTION_FETCH_TARGET)), ['homepage-recommendations-v1'], sectionCacheOptions);
+const cachedHero = unstable_cache(() => retryCatalogRead(() => fetchHeroCandidates(HOMEPAGE_HERO_FETCH_TARGET)), ['homepage-hero-v3'], sectionCacheOptions);
+const cachedTrending = unstable_cache(() => retryCatalogRead(() => fetchTrendingGames(HOMEPAGE_SECTION_FETCH_TARGET, true)), ['homepage-trending-v2'], sectionCacheOptions);
+const cachedNewReleases = unstable_cache(() => retryCatalogRead(() => fetchNewReleases(HOMEPAGE_SECTION_FETCH_TARGET)), ['homepage-new-v3'], sectionCacheOptions);
+const cachedTopRated = unstable_cache(() => retryCatalogRead(() => fetchHomepageTopRated(HOMEPAGE_SECTION_FETCH_TARGET)), ['homepage-top-v2'], sectionCacheOptions);
+const cachedRecommendations = unstable_cache(() => retryCatalogRead(() => fetchHomepageRecommendations(HOMEPAGE_SECTION_FETCH_TARGET)), ['homepage-recommendations-v2'], sectionCacheOptions);
 
 const getCachedHomepageData = unstable_cache(
   coalesceCatalogueRead(fetchHomepageData),
-  ["homepage-data-v26"],
+  ["homepage-data-v27"],
   { revalidate: HOMEPAGE_REVALIDATE_SECONDS }
 );
 
@@ -1683,71 +1651,6 @@ function buildHomepageTrendingFallback(pools: Game[][], limit: number): Game[] {
   return merged
     .filter(isHomepageTrendingFallbackCandidate)
     .sort((left, right) => getHomepageTrendingFallbackScore(right) - getHomepageTrendingFallbackScore(left))
-    .slice(0, limit);
-}
-
-function isHomepageNewReleaseFallbackCandidate(game: Game): boolean {
-  const score = game.score ?? 0;
-  const currentPlayers = game.currentPlayers ?? 0;
-  const reviewCount = game.reviewCount ?? 0;
-  const today = new Date().toISOString().slice(0, 10);
-  const ageDays = getHomepageReleaseAgeDays(game.releaseDate);
-
-  if (!game.coverImage || !game.releaseDate || game.releaseDate > today) {
-    return false;
-  }
-
-  if (game.verdictLabel === "COMING SOON" || ageDays > 365 * 5) {
-    return false;
-  }
-
-  return ageDays <= 365 * 2
-    || score >= 80
-    || currentPlayers >= 1000
-    || reviewCount >= 1000;
-}
-
-function getHomepageNewReleaseFallbackScore(game: Game): number {
-  const ageDays = getHomepageReleaseAgeDays(game.releaseDate);
-  const score = game.score ?? 0;
-  const currentPlayers = game.currentPlayers ?? 0;
-  const reviewCount = game.reviewCount ?? 0;
-  const recencyBoost = ageDays <= 30
-    ? 40
-    : ageDays <= 90
-      ? 28
-      : ageDays <= 180
-        ? 18
-        : ageDays <= 365
-          ? 12
-          : ageDays <= 365 * 2
-            ? 8
-            : 0;
-
-  return recencyBoost
-    + score
-    + Math.min(18, Math.log10(currentPlayers + 1) * 4.5)
-    + Math.min(12, Math.log10(reviewCount + 1) * 3);
-}
-
-function buildHomepageNewReleaseFallback(pools: Game[][], limit: number): Game[] {
-  const seenIds = new Set<string>();
-  const merged: Game[] = [];
-
-  for (const pool of pools) {
-    for (const game of pool) {
-      if (seenIds.has(game.id)) {
-        continue;
-      }
-
-      seenIds.add(game.id);
-      merged.push(game);
-    }
-  }
-
-  return merged
-    .filter(isHomepageNewReleaseFallbackCandidate)
-    .sort((left, right) => getHomepageNewReleaseFallbackScore(right) - getHomepageNewReleaseFallbackScore(left))
     .slice(0, limit);
 }
 
@@ -1879,16 +1782,7 @@ export async function fetchHomepageData(): Promise<HomepageData> {
   }
 
   const trendingCandidates = trendingRaw;
-  let newReleaseCandidates = newReleasesRaw;
-  const fallbackNewReleases = buildHomepageNewReleaseFallback([
-    newReleaseCandidates,
-    trendingRaw,
-    topRatedRaw,
-    recsRaw,
-  ], HOMEPAGE_RAIL_TARGET * 2);
-  if (fallbackNewReleases.length > 0) {
-    newReleaseCandidates = prioritizeById(newReleaseCandidates, fallbackNewReleases, HOMEPAGE_RAIL_TARGET * 2);
-  }
+  const newReleaseCandidates = newReleasesRaw;
 
   // Claim in priority order
   const hero = claimSlots(heroRaw, HOMEPAGE_HERO_TARGET);
@@ -1899,7 +1793,7 @@ export async function fetchHomepageData(): Promise<HomepageData> {
   const topRated = topRatedPremium.length >= HOMEPAGE_PRIORITY_FLOOR
     ? prioritizeById(topRatedPremium, topRatedClaimed, HOMEPAGE_RAIL_TARGET)
     : topRatedClaimed;
-  const recommendations = claimSlots(recsRaw, HOMEPAGE_RAIL_TARGET, HOMEPAGE_RECOMMENDATION_REPEAT_BUDGET);
+  const recommendations = claimSlots(recsRaw.filter(game => !appearanceCounts.has(game.id)), HOMEPAGE_RAIL_TARGET, HOMEPAGE_RECOMMENDATION_REPEAT_BUDGET);
 
   return admitCataloguePayload({ hero, trending, topRated, newReleases, deals, recommendations }, sectionResults);
 }

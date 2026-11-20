@@ -15,6 +15,7 @@ import { isInfrastructureDbError } from "./scheduler-logger.mjs";
 import { fetchSteamReviews } from "../../src/lib/external/steam-reviews-api.mjs";
 import { preferExistingCover } from '../../src/lib/utils/artwork-policy.mjs';
 import { refreshIgdbCatalogue } from './igdb-fallback.mjs';
+import {igdbVerifiedReleaseFields} from '../../src/lib/external/igdb-record.mjs';
 
 // ══════════════════════════════════════════════════
 // Configuration
@@ -288,7 +289,7 @@ async function findIgdb(title, year) {
     if (g.cover?.image_id) s += 10; if (g.screenshots?.length) s += 5;
     if (s > bs) { bs = s; bm = g; } }
   // Follow-up full query for properly expanded nested fields
-  const full = await igdbQ("games", `where id = ${bm.id}; fields name,slug,summary,storyline,aggregated_rating,aggregated_rating_count,rating,rating_count,total_rating,total_rating_count,first_release_date,url,cover.image_id,screenshots.image_id,genres.name,themes.name,platforms.name,platforms.abbreviation,involved_companies.company.name,involved_companies.developer,involved_companies.publisher,videos.video_id,videos.name,websites.url,websites.category,similar_games.name,similar_games.slug,similar_games.cover.image_id,game_modes.name,player_perspectives.name; limit 1;`);
+  const full = await igdbQ("games", `where id = ${bm.id}; fields name,slug,summary,storyline,aggregated_rating,aggregated_rating_count,rating,rating_count,total_rating,total_rating_count,first_release_date,game_status.status,release_dates.date,release_dates.date_format.format,release_dates.status.name,url,cover.image_id,screenshots.image_id,genres.name,themes.name,platforms.name,platforms.abbreviation,involved_companies.company.name,involved_companies.developer,involved_companies.publisher,videos.video_id,videos.name,websites.url,websites.category,similar_games.name,similar_games.slug,similar_games.cover.image_id,game_modes.name,player_perspectives.name; limit 1;`);
   return full?.[0] ?? bm;
 }
 function igdbEnrich(g) {
@@ -392,13 +393,10 @@ function buildDesc(rawg, igdb, wiki) {
   return rd;
 }
 
-function genSummary(title, score, genres) {
-  const gs = genres.slice(0, 2).join("/") || "game", g1 = genres[0]?.toLowerCase() ?? "game";
-  const v = title.split("").reduce((a, c) => a + c.charCodeAt(0), 0) % 4;
-  if (score >= 90) return [`${title} is an exceptional ${gs} that raises the bar for the genre.`,`A masterclass in ${g1} design, ${title} delivers an unforgettable experience from start to finish.`,`${title} stands out as one of the best ${gs} titles in recent memory.`,`With near-perfect execution, ${title} is a must-play for any ${g1} fan.`][v];
-  if (score >= 75) return [`${title} is a strong ${gs} that delivers where it counts.`,`A well-crafted ${g1} experience, ${title} is well worth your time.`,`${title} confidently hits its marks as a quality ${gs} title.`,`Fans of the ${g1} genre will find plenty to enjoy in ${title}.`][v];
-  if (score >= 50) return [`${title} has interesting ideas but inconsistent execution holds it back.`,`A mixed bag, ${title} shows flashes of brilliance alongside notable shortcomings.`,`${title} offers a decent ${gs} experience but doesn't quite reach its potential.`,`There's fun to be had in ${title}, though it may not appeal to everyone.`][v];
-  return [`${title} struggles to deliver on its ${gs} ambitions.`,`Despite some effort, ${title} falls short of expectations in key areas.`,`${title} has fundamental issues that make it difficult to recommend.`,`Only for the most dedicated ${g1} fans — ${title} needs significant improvements.`][v];
+function genSummary(title, score) {
+  return score > 0
+    ? `Verdict ${score}/100, based on the available rating evidence. Provider ratings and review confidence are shown separately.`
+    : `${title} is awaiting enough rating evidence for a verdict.`;
 }
 
 function genPros(game, sr, igdb, players) {
@@ -410,26 +408,17 @@ function genPros(game, sr, igdb, players) {
   if (players > 5000) pros.push(`Active community with ${players.toLocaleString()} concurrent players`);
   else if (players > 500) pros.push(`Healthy player count of ${players.toLocaleString()} concurrent`);
   if (igdb?.aggregated_rating >= 80) pros.push(`Critically acclaimed (${Math.round(igdb.aggregated_rating)}/100 critic average)`);
-  const tags = (game.tags ?? []).map(t => t.name.toLowerCase());
-  if (tags.includes("story rich") || tags.includes("narrative")) pros.push("Compelling narrative and story");
-  if (tags.includes("open world") || tags.includes("exploration")) pros.push("Rich open world to explore");
-  if (tags.includes("multiplayer") || tags.includes("co-op")) pros.push("Engaging multiplayer/co-op experience");
-  if (tags.includes("great soundtrack") || tags.includes("soundtrack")) pros.push("Outstanding soundtrack");
-  if ((game.genres ?? []).map(g => g.name.toLowerCase()).includes("indie") && game.rating >= 4) pros.push("Standout indie gem");
   if (pros.length < 2 && game.rating >= 4) pros.push(`Highly rated by ${(game.ratings_count ?? 0).toLocaleString()} players`);
-  if (!pros.length) pros.push("Unique gameplay concept");
   return pros.slice(0, 4);
 }
 
 function genCons(game, sr, igdb) {
   const cons = [], tags = (game.tags ?? []).map(t => t.name.toLowerCase());
   if (sr) { const pct = Math.round((sr.total_positive / sr.total_reviews) * 100); if (pct < 70) cons.push(`Mixed Steam reception (${pct}% positive)`); }
-  if (tags.includes("difficult") || tags.includes("souls-like")) cons.push("Steep difficulty curve may not appeal to casual players");
   // Historical RAWG tags cannot establish a game's current release state.
   if (tags.includes("microtransactions") || tags.includes("in-app purchases")) cons.push("Contains microtransactions");
-  if (tags.includes("grinding") || tags.includes("grindy")) cons.push("Can require significant grinding");
   if (game.rating < 3.5 && (game.ratings_count ?? 0) > 100) cons.push("Below-average player reception");
-  if (!cons.length) { if (!game.metacritic && !igdb?.aggregated_rating) cons.push("Limited professional critic coverage"); else cons.push("No significant drawbacks reported"); }
+  if (!cons.length) { if (!game.metacritic && !igdb?.aggregated_rating) cons.push("Limited professional critic coverage"); }
   return cons.slice(0, 3);
 }
 
@@ -478,7 +467,7 @@ export async function ingestGameDirect(sql, query, options = {}) {
   if (BLOCKED.has(slug)) return { success: false, gameId: null, slug: null, title: best.name, rawgId: best.id, message: `"${slug}" is blocklisted.`, alreadyExisted: false };
 
   // ── 3. Check existence ──
-  const [existing] = await sql`SELECT id, slug FROM games WHERE slug = ${slug} OR rawg_id = ${best.id} LIMIT 1`;
+  const [existing] = await sql`SELECT id, slug, release_status FROM games WHERE slug = ${slug} OR rawg_id = ${best.id} LIMIT 1`;
   if (existing && !forceRefresh) return { success: true, gameId: existing.id, slug: existing.slug, title: best.name, rawgId: best.id, message: "Already exists.", alreadyExisted: true };
 
   // ── 4. Fetch full details ──
@@ -545,7 +534,8 @@ export async function ingestGameDirect(sql, query, options = {}) {
   const conf = confidence(revCount, critN, source);
   const vs = verdictScore(commScore, critScore, conf);
   const finalScore = vs > 0 ? vs : legacy;
-  const relDate = fullGame.released ?? null;
+  const verifiedRelease = igdbVerifiedReleaseFields(igdbData, new Date(), existing?.release_status);
+  const relDate = verifiedRelease.release_date ?? fullGame.released ?? null;
   const isUpcoming = relDate ? new Date(relDate) > new Date() : false;
   const isJustRel = relDate ? (Date.now() - new Date(relDate).getTime()) < 14 * 86400000 && revCount < 20 : false;
   const vl = vs > 0 ? verdictLabel(vs, conf, isUpcoming, isJustRel) : legacyVerdict(finalScore);
@@ -609,8 +599,8 @@ export async function ingestGameDirect(sql, query, options = {}) {
   const rec = {
     slug, title: fullGame.name, subtitle: null, cover_image: cover, header_image: header,
     screenshots: finalSS, platforms, genres, tags, developer: dev, publisher: pub,
-    release_date: relDate, description: buildDesc(fullGame, igdbData, wikiData),
-    score: finalScore, verdict_label: vl, verdict_summary: genSummary(fullGame.name, finalScore, genres),
+    release_date: relDate, ...verifiedRelease, description: buildDesc(fullGame, igdbData, wikiData),
+    score: finalScore, verdict_label: vl, verdict_summary: genSummary(fullGame.name, finalScore),
     pros: genPros(fullGame, steamRev, igdbData, curPlayers), cons: genCons(fullGame, steamRev, igdbData),
     monetization, performance_notes: "", monetization_notes: "",
     steam_url: steamAppId ? `https://store.steampowered.com/app/${steamAppId}` : null,

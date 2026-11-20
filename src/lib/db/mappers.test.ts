@@ -78,6 +78,34 @@ function makeGameRow(overrides: Partial<GameRow> = {}): GameRow {
 }
 
 describe("mapGameRow", () => {
+  it.each([6,7])('does not call a %i-vote fallback score a definitive SKIP after launch',review_count=>{
+    const row=makeGameRow({score:29,verdict_score:29,confidence:0.05,review_count,user_score:null,
+      steam_total_count:null,critic_score:null,critic_source_count:0,igdb_rating:null,rawg_metacritic:null,score_source:'rawg',rawg_rating:3.17});
+    expect(mapGameRow(row)).toMatchObject({score:0,verdictScore:undefined,verdictLabel:'NOT YET RATED',isProvisional:false});
+    expect(mapGameRow({...row,critic_score:84,critic_source_count:1}).score).toBe(29);
+  });
+  it('rejects stale upcoming prose after a verified full release without rewriting provider text',()=>{
+    expect(mapGameRow(makeGameRow({release_status:'released',description:'Test Game is an upcoming adventure game.',
+      igdb_summary:'Test Game is an adventure about exploration.'})).description).toBe('Test Game is an adventure about exploration.');
+  });
+  it('honors verified full release over stale provisional and Coming Soon flags',()=>{
+    expect(mapGameRow(makeGameRow({release_status:'released',is_provisional:true,verdict_label:'COMING SOON'})))
+      .toMatchObject({score:85,isProvisional:false,verdictLabel:'WORTH IT'});
+  });
+  it('keeps cancelled games distinct from upcoming games and suppresses review badges',()=>{
+    expect(mapGameRow(makeGameRow({release_status:'cancelled',release_date:'2099-12-31'})))
+      .toMatchObject({score:0,verdictLabel:'CANCELLED',trendingReason:undefined});
+  });
+  it('does not turn missing legacy ratings into a Bayesian prior or an upcoming game',()=>{
+    for(const score of [0,Number.NaN]){
+      expect(mapGameRow(makeGameRow({score,review_count:4,user_score:null,steam_app_id:null})))
+        .toMatchObject({score:0,verdictLabel:'NOT YET RATED',isProvisional:false});
+    }
+  });
+  it('does not combine an explicitly unreleased state with a just-released badge',()=>{
+    const game=mapGameRow(makeGameRow({release_date:new Date().toISOString().slice(0,10),release_status:'upcoming'}));
+    expect(game.verdictLabel).toBe('COMING SOON');expect(game.trendingReason).toBeUndefined();
+  });
   it('distinguishes a just-launched game awaiting reviews from an explicitly unreleased game',()=>{
     const today=new Date().toISOString().slice(0,10);
     const fresh=makeGameRow({release_date:today,review_count:0,is_provisional:true,verdict_label:'COMING SOON'});
@@ -142,13 +170,13 @@ describe("mapGameRow", () => {
 
   // ── 0-review games ──
 
-  it("games with 0 reviews map to COMING SOON regardless of score", () => {
+  it("an old game with no rating evidence is unrated rather than coming soon", () => {
     const game = mapGameRow(makeGameRow({
       score: 80,
       review_count: 0,
       release_date: "2025-06-01",
     }));
-    expect(game.verdictLabel).toBe("COMING SOON");
+    expect(game.verdictLabel).toBe("NOT YET RATED");
     expect(game.score).toBe(0);
   });
 
@@ -170,7 +198,7 @@ describe("mapGameRow", () => {
     expect(game.verdictSummary).not.toContain("masterclass");
   });
 
-  it("high-score game with many reviews gets appropriate 'exceptional' summary", () => {
+  it("summarizes rating evidence without inventing a qualitative review", () => {
     const game = mapGameRow(makeGameRow({
       title: "Baldurs Gate III",
       score: 97,
@@ -178,13 +206,15 @@ describe("mapGameRow", () => {
       genres: ["Adventure", "RPG"],
     }));
     expect(game.score).toBe(97);
-    // Should be in the >=90 tier
-    expect(
-      game.verdictSummary.includes("exceptional") ||
-      game.verdictSummary.includes("masterclass") ||
-      game.verdictSummary.includes("best") ||
-      game.verdictSummary.includes("must-play")
-    ).toBe(true);
+    expect(game.verdictSummary).toContain('97/100');
+    expect(game.verdictSummary).not.toMatch(/masterclass|near-perfect|exceptional/);
+  });
+
+  it('removes exact generated tag claims while preserving authored prose and evidence',()=>{
+    const game=mapGameRow(makeGameRow({pros:['Rich open world to explore','Outstanding soundtrack','An authored observation'],
+      cons:['No significant drawbacks reported','An authored caveat']}));
+    expect(game.pros).toEqual(['An authored observation']);
+    expect(game.cons).toEqual(['An authored caveat']);
   });
 
   // ── Review count formatting (sanitizePros) ──

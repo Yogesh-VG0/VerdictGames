@@ -24,7 +24,7 @@ export type MonetizationType =
   | "Subscription"
   | "Unknown";
 
-export type VerdictLabel = "MUST PLAY" | "WORTH IT" | "MIXED" | "SKIP" | "COMING SOON" | "JUST RELEASED";
+export type VerdictLabel = "MUST PLAY" | "WORTH IT" | "MIXED" | "SKIP" | "COMING SOON" | "JUST RELEASED" | "NOT YET RATED" | "CANCELLED";
 
 export type SortOption = "relevance" | "newest" | "upcoming" | "recently-added" | "top-rated" | "trending";
 

@@ -189,7 +189,7 @@ export async function searchIgdb(
     "games",
     `search "${escapeQuotes(query)}";
      fields name, slug, summary, aggregated_rating, rating, total_rating,
-            first_release_date, url, cover.image_id,
+            first_release_date, game_status.status, release_dates.date, release_dates.date_format.format, release_dates.status.name, url, cover.image_id,
             genres.name, platforms.name, platforms.abbreviation,
             websites.url, websites.category,
             videos.video_id, videos.name;
@@ -211,7 +211,7 @@ export async function getIgdbGameBySlug(slug: string): Promise<IgdbGame | null> 
      fields name, slug, summary, storyline,
             aggregated_rating, aggregated_rating_count,
             rating, rating_count, total_rating, total_rating_count,
-            first_release_date, url, cover.image_id,
+            first_release_date, game_status.status, release_dates.date, release_dates.date_format.format, release_dates.status.name, url, cover.image_id,
             screenshots.image_id,
             genres.name, platforms.name, platforms.abbreviation,
             involved_companies.company.name, involved_companies.developer, involved_companies.publisher,
@@ -305,7 +305,7 @@ export async function getIgdbGame(igdbId: number): Promise<IgdbGame | null> {
      fields name, slug, summary, storyline,
             aggregated_rating, aggregated_rating_count,
             rating, rating_count, total_rating, total_rating_count,
-            first_release_date, url, cover.image_id,
+            first_release_date, game_status.status, release_dates.date, release_dates.date_format.format, release_dates.status.name, url, cover.image_id,
             screenshots.image_id,
             genres.name, themes.name,
             platforms.name, platforms.abbreviation,
@@ -333,7 +333,7 @@ export async function findIgdbMatch(
   const query = `search "${escapeQuotes(title)}";
      fields name, slug, summary, storyline,
             aggregated_rating, rating, total_rating,
-            first_release_date, url, cover.image_id,
+            first_release_date, game_status.status, release_dates.date, release_dates.date_format.format, release_dates.status.name, url, cover.image_id,
             screenshots.image_id,
             genres.name, platforms.name,
             videos.video_id, videos.name,

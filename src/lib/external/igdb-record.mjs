@@ -7,6 +7,17 @@ const platforms={'PC (Microsoft Windows)':'PC',PC:'PC','PlayStation 5':'PlayStat
   'Xbox Series X|S':'Xbox Series X|S','Xbox One':'Xbox One','Nintendo Switch':'Nintendo Switch',
   'Nintendo Switch 2':'Nintendo Switch 2',Android:'Android',iOS:'iOS',Mac:'macOS',Linux:'Linux'};
 const image=id=>typeof id==='string'&&/^[a-zA-Z0-9_]{1,128}$/.test(id)?'https://images.igdb.com/igdb/image/upload/t_cover_big_2x/'+id+'.jpg':'';
+// Reuse explicit provider lifecycle evidence in both ingestion paths. Unknown
+// status must not erase a reviewed catalogue correction or become "released"
+// merely because an estimated date has passed.
+export function igdbVerifiedReleaseFields(game, now=new Date(), currentStatus) {
+  const record=igdbEssentialRecord(game,now);
+  if(!record || !['released','early_access','cancelled','delisted'].includes(record.release_status))return {};
+  const current=String(currentStatus||'').toLowerCase().replace(/[-_]/g,' ');
+  if(['cancelled','canceled'].includes(current) || ['released','full release'].includes(current) && record.release_status!=='released')return {};
+  return {release_status:record.release_status,
+    ...(typeof record.release_date==='string'?{release_date:record.release_date}:{})};
+}
 export function igdbEssentialRecord(game,now=new Date()) {
   if(!Number.isSafeInteger(game?.id)||game.id<=0||typeof game.name!=='string'||!game.name.trim()
     ||typeof game.slug!=='string'||game.slug.length>200||!/^[a-z0-9]+(?:-+[a-z0-9]+)*$/.test(game.slug)) return null;

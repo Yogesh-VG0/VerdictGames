@@ -16,6 +16,7 @@
 import type { GameRow } from "@/lib/supabase/types";
 import { isPrimaryDiscoveryGame } from "@/lib/utils/discovery";
 import { effectiveEvidenceReviewCount, resolveCommunityEvidenceSource } from "@/lib/utils/scoring";
+import {hasUnreleasedStatus} from '@/lib/utils/release-status';
 
 /* ═══════════════════════════════════════════════════
    Surface-Specific Readiness Profiles
@@ -308,6 +309,7 @@ export function isQualityGame(row: GameRow, section: SectionType = "generic"): b
   const t = THRESHOLDS[section];
   const evidenceReviewCount = getEvidenceReviewCount(row);
   const canUseCriticFallback = section === "topRated" && hasStrongCriticEvidence(row);
+  if (['hero','trending','topRated','recommendations'].includes(section) && hasUnreleasedStatus(row)) return false;
 
   if (DISCOVERY_SECTIONS.has(section) && !isPrimaryDiscoveryGame(row)) return false;
 

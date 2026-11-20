@@ -1,15 +1,34 @@
 import {beforeEach,describe,expect,it,vi} from 'vitest';
-const state=vi.hoisted(()=>({responses:[] as unknown[]}));
+const state=vi.hoisted(()=>({responses:[] as unknown[],discovery:[] as unknown[]}));
+vi.mock('@/lib/services/upcoming-snapshot',()=>({readCachedUpcomingSnapshot:async()=>({results:state.discovery})}));
+vi.mock('@/lib/services/community-ranking',()=>({readHomepageReleaseRanking:async()=>null}));
 vi.mock('next/cache',()=>({unstable_cache:(read:unknown)=>read}));
 vi.mock('@/lib/supabase/public',()=>({getPublicSupabase:()=>({from:()=>{
   const chain:Record<string,unknown>={};
-  for(const key of ['select','eq','not','neq','gte','lte','gt','order','limit'])chain[key]=()=>chain;
+  for(const key of ['select','eq','not','neq','gte','lte','gt','order','limit','in','abortSignal'])chain[key]=()=>chain;
   chain.then=(resolve:(value:unknown)=>unknown,reject:(error:unknown)=>unknown)=>Promise.resolve(state.responses.shift()).then(resolve,reject);
   return chain;
 }})}));
-import {fetchTrendingGames,fetchNewReleases} from './homepage';
+import {fetchTrendingGames,fetchNewReleases,fetchHeroCandidates} from './homepage';
 describe('homepage trending read failures',()=>{
- beforeEach(()=>{state.responses=[]});
+ beforeEach(()=>{state.responses=[];state.discovery=[]});
+ it('uses discovery to select a hero without replacing the canonical Verdict or adding reads per slide',async()=>{
+   const today=new Date().toISOString().slice(0,10);
+   const base={release_date:today,description:'A standalone action adventure with substantial review coverage.',
+    cover_image:'https://images.igdb.com/co123.jpg',header_image:'https://images.igdb.com/scene.jpg',
+    platforms:['PC'],genres:['Action'],tags:[],score:95,verdict_score:95,confidence:0.9,
+    review_count:100000,steam_total_count:100000,steam_app_id:123,user_score:95,
+    current_players:10000,developer:'Studio',publisher:'Studio',verdict_label:'MUST PLAY'};
+   const rows=Array.from({length:6},(_,i)=>({...base,id:`hero-${i}`,slug:`hero-${i}`,title:`Hero ${i}`,steam_app_id:100+i}));
+   const launch={...base,id:'launch',rawg_id:972995,slug:'console-launch',title:'Console Launch',steam_app_id:null,
+    steam_total_count:null,user_score:null,score:77,verdict_score:77,confidence:0.245543,review_count:104};
+   state.discovery=[{id:972995,name:'Console Launch',slug:'console-launch',released:today,tba:false,added:1000,
+    background_image:base.header_image,tags:[],genres:[],platforms:[]}];
+   state.responses=[{data:rows,error:null},{data:[],error:null},{data:rows,error:null},{data:[launch],error:null}];
+   const result=await fetchHeroCandidates(6);
+   expect(result).toHaveLength(6);expect(result[0]).toMatchObject({id:'launch',score:77,verdictScore:77,verdictLabel:'WORTH IT',isProvisional:false});
+   expect(state.responses).toHaveLength(0);
+ });
  it('never shows Coming Soon inside New Releases, while preserving a low-confidence console launch',async()=>{
   const launch={id:'launch',slug:'launch',title:'Console Launch',description:'A standalone action adventure with an open world.',
    release_date:new Date().toISOString().slice(0,10),cover_image:'https://images.igdb.com/co123.jpg',header_image:'https://images.igdb.com/co123.jpg',
@@ -19,6 +38,14 @@ describe('homepage trending read failures',()=>{
   const rows=[launch,pending];state.responses=[{data:rows,error:null},{data:rows,error:null}];
   const result=await fetchNewReleases(10);
   expect(result.map(game=>game.id)).toEqual(['launch']);expect(result[0].score).toBe(77);
+ });
+ it('keeps a verified release without ratings instead of requiring a quality score',async()=>{
+  const row={id:'unrated-release',slug:'unrated-release',title:'Unrated Release',description:'A complete standalone role playing game.',
+   release_date:new Date(Date.now()-29*86400000).toISOString().slice(0,10),release_status:'released',
+   cover_image:'https://images.igdb.com/co123.jpg',platforms:['PC'],genres:['RPG'],tags:[],score:60,verdict_score:0,
+   review_count:0,developer:'Studio',publisher:'Studio',score_source:'rawg'};
+  state.responses=[{data:[row],error:null}];
+  expect(await fetchNewReleases(20)).toMatchObject([{id:'unrated-release',score:0,verdictLabel:'NOT YET RATED'}]);
  });
  it('propagates a failed candidate pool rather than caching a successful empty rail',async()=>{
   const error={code:'57014',message:'Controlled statement cancellation'};

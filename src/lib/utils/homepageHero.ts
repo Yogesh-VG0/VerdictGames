@@ -24,6 +24,7 @@ export function selectHeroDiscoveryCandidates(items:RawgListItem[],day:string) {
   return items.filter(item=>{
     const release=Date.parse(`${item.released}T00:00:00Z`);
     if(!isPublicSafeRawgGame(item) || item.added<100 || !item.background_image
+      || item.tba || item.released?.endsWith('-12-31')
       || !Number.isFinite(release) || release<midnight-14*86400000 || release>midnight+90*86400000 || seen.has(item.id))return false;
     seen.add(item.id);return true;
   }).sort((a,b)=>b.added-a.added || a.slug.localeCompare(b.slug)).slice(0,4);

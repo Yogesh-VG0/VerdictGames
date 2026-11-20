@@ -15,7 +15,7 @@ export default function Footer() {
                 <span className="text-secondary font-light">.games</span>
               </p>
               <p className="text-xs text-tertiary mt-2 leading-relaxed">
-                Your trusted source for honest game verdicts. Data-driven reviews powered by 7 sources.
+                Find your next game with clear ratings, reviews and information from multiple sources.
               </p>
             </div>
             <div>
