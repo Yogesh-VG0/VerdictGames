@@ -1,5 +1,5 @@
 import { connectDb, closeDb } from './lib/db-connect.mjs';
-import { acquireLock, releaseLock, startRun, finishRun } from './lib/scheduler-logger.mjs';
+import { acquireLock, releaseLock, startRun, finishRun, isInfrastructureDbError } from './lib/scheduler-logger.mjs';
 import { fetchSteamReviews } from '../src/lib/external/steam-reviews-api.mjs';
 import { pathToFileURL } from 'node:url';
 
@@ -39,6 +39,9 @@ export async function refreshReviewBatch(sql, { limit = 500, pauseMs = 1000 } = 
       });
       stats.refreshed++;
     } catch (error) {
+      // Do not issue another database write to record a capacity failure.
+      // Leave the durable refresh marker and last good snapshot unchanged.
+      if (isInfrastructureDbError(error)) throw error;
       stats.failed++;
       await sql`INSERT INTO public.steam_review_refresh_state (game_id, attempted_at, next_attempt_at, failures)
         VALUES (${game.id}, now(), now() + interval '1 hour', 1)
