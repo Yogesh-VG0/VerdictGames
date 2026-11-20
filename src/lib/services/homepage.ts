@@ -564,6 +564,7 @@ function mapHeroGameRow(row: GameRow): Game {
     ...game,
     headerImage: reviewed.url,
     heroArtworkFallback: alternate,
+    heroArtworkMobileFocalPoint: reviewed.mobileFocalPoint,
     ...(row.slug === 'grand-theft-auto-vi' ? {
       description: 'A robbery gone wrong pulls Jason and Lucia into a criminal conspiracy that stretches from Vice City across Leonida.',
     } : {}),
@@ -1580,7 +1581,7 @@ function cacheHomepageRail(
   return unstable_cache(refresh, [key], sectionCacheOptions);
 }
 
-const cachedHero = cacheHomepageRail('homepage-hero-v6', 'refresh_hero', () => fetchHeroCandidates(HOMEPAGE_HERO_FETCH_TARGET));
+const cachedHero = cacheHomepageRail('homepage-hero-v7', 'refresh_hero', () => fetchHeroCandidates(HOMEPAGE_HERO_FETCH_TARGET));
 const cachedTrending = cacheHomepageRail('homepage-trending-v3', 'refresh_trending', () => fetchTrendingGames(HOMEPAGE_SECTION_FETCH_TARGET, true));
 const cachedNewReleases = cacheHomepageRail('homepage-new-v4', 'refresh_new_releases', () => fetchNewReleases(HOMEPAGE_SECTION_FETCH_TARGET));
 const cachedTopRated = cacheHomepageRail('homepage-top-v3', 'refresh_top_rated', () => fetchHomepageTopRated(HOMEPAGE_SECTION_FETCH_TARGET));

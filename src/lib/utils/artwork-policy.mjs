@@ -10,6 +10,7 @@ const reviewedArtwork = {
     igdbId: 52189, rawgId: 972995,
     url: 'https://images.igdb.com/igdb/image/upload/t_1080p/ar6i4p.jpg',
     fallbackUrl: 'https://images.igdb.com/igdb/image/upload/t_screenshot_big/scwpqj.jpg',
+    mobileFocalPoint: 'right',
     credit: 'Rockstar Games promotional artwork via IGDB',
     sourceUrl: 'https://www.igdb.com/games/grand-theft-auto-vi',
   },

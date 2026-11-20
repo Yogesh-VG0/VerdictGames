@@ -207,7 +207,9 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
                 src={game.headerImage || game.coverImage}
                 alternate={game.heroArtworkFallback || (game.coverImage !== game.headerImage ? game.coverImage : undefined)}
                 alt={game.title}
-                className="object-[69%_center] md:object-[56%_center]"
+                className={game.heroArtworkMobileFocalPoint === 'right'
+                  ? 'object-[69%_center] md:object-[56%_center]'
+                  : 'object-center md:object-[56%_center]'}
                 priority={prioritizeHeroImage}
               />
             ) : (
