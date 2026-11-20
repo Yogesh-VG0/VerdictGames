@@ -1,12 +1,12 @@
 import { connectDb, closeDb } from './lib/db-connect.mjs';
-import { acquireLock, releaseLock, startRun, finishRun } from './lib/scheduler-logger.mjs';
+import { acquireLock, releaseLock, startRun, finishRun, isInfrastructureDbError } from './lib/scheduler-logger.mjs';
 import { fetchSteamReviews } from '../src/lib/external/steam-reviews-api.mjs';
 import { pathToFileURL } from 'node:url';
 
 const integer = value => Math.max(0, Math.trunc(Number(value) || 0));
 const timestamp = value => Number.isFinite(value) ? new Date(value * 1000).toISOString() : null;
 
-export async function refreshReviewBatch(sql, { limit = 500, pauseMs = 1000 } = {}) {
+export async function refreshReviewBatch(sql, { limit = 50, pauseMs = 1000 } = {}) {
   const games = await sql`
     SELECT g.id, g.steam_app_id FROM public.games g
     LEFT JOIN public.steam_review_refresh_state s ON s.game_id = g.id
@@ -39,6 +39,9 @@ export async function refreshReviewBatch(sql, { limit = 500, pauseMs = 1000 } = 
       });
       stats.refreshed++;
     } catch (error) {
+      // Do not issue another database write to record a capacity failure.
+      // Leave the durable refresh marker and last good snapshot unchanged.
+      if (isInfrastructureDbError(error)) throw error;
       stats.failed++;
       await sql`INSERT INTO public.steam_review_refresh_state (game_id, attempted_at, next_attempt_at, failures)
         VALUES (${game.id}, now(), now() + interval '1 hour', 1)
@@ -62,7 +65,7 @@ async function main() {
     if (!locked) return;
     run = await startRun(sql, 'refresh-steam-reviews');
     const limitArg = process.argv.find(arg => arg.startsWith('--limit='));
-    const stats = await refreshReviewBatch(sql, { limit: limitArg ? integer(limitArg.split('=')[1]) : integer(process.env.STEAM_REVIEW_LIMIT || 500) });
+    const stats = await refreshReviewBatch(sql, { limit: limitArg ? integer(limitArg.split('=')[1]) : integer(process.env.STEAM_REVIEW_LIMIT || 50) });
     const error = stats.failed ? `${stats.failed} Steam refreshes failed; remaining work deferred` : null;
     await finishRun(sql, run.id, { rows_scanned: stats.scanned, rows_updated: stats.refreshed, error_message: error, metadata: stats });
     console.log(JSON.stringify(stats));

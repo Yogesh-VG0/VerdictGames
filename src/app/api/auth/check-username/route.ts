@@ -25,10 +25,10 @@ export async function GET(request: NextRequest) {
     // Escape LIKE wildcards: underscores are valid literal username characters.
     .ilike("username", username.replaceAll('_', '\\_'))
     .limit(1)
-    .abortSignal(AbortSignal.timeout(2500))
+    .abortSignal(AbortSignal.any([request.signal, AbortSignal.timeout(2500)]))
     .maybeSingle();
 
-  if (error) return jsonError("Temporarily unable to verify username. Please retry.", 503);
+  if (error || request.signal.aborted) return jsonError("Temporarily unable to verify username. Please retry.", 503);
 
   if (existing) {
     return jsonPrivateOk({ available: false, reason: "Username is already taken" });

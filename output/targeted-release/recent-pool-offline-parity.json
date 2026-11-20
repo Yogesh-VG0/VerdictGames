@@ -1,0 +1,10 @@
+{
+  "passed": true,
+  "scope": "Offline original release source versus bounded candidate; captured public catalogue only; no network or database credentials",
+  "sourceRows": 1000,
+  "eligible": 481,
+  "pages": 20,
+  "allResponseFieldsEqual": true,
+  "uniqueIds": 481,
+  "orderedIdSha256": "2a8242b3413979e235f2ae0bce5cce2b57ff9f09546bf84bf79579af4f27b952"
+}

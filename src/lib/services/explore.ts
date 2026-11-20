@@ -11,6 +11,7 @@ import { hasEarlyAccessSignal, hasKnownFullRelease } from '@/lib/utils/release-s
 import { readCataloguePage } from '@/lib/services/explore-query';
 import { loadProviderRanking } from '@/lib/services/provider-explore';
 import type { GameRow } from '@/lib/supabase/types';
+import type { Game } from '@/lib/types';
 import type { RawgListResponse, RawgListType, RawgListGameItem, ExploreSort } from '@/lib/api';
 
 export const EXPLORE_GENRES: Record<string, string> = { 'role-playing-games-rpg': 'RPG', action: 'Action', adventure: 'Adventure', shooter: 'Shooter', strategy: 'Strategy', simulation: 'Simulation', puzzle: 'Puzzle', racing: 'Racing', sports: 'Sports', fighting: 'Fighting', platformer: 'Platformer', indie: 'Indie' };
@@ -25,6 +26,14 @@ const readPortraits = unstable_cache(async (titles: string[]) => {
   try { return await getIgdbPortraits(titles); }
   catch (error) { portraitsRetryAt = Date.now() + 60_000; throw error; }
 }, ['explore-igdb-portraits-v3'], { revalidate: 86400 });
+const readUpcomingMatches = unstable_cache(async (ids:number[]) => {
+  if (!ids.length) return [];
+  const {data,error} = await getPublicSupabase().from('games')
+    .select('id,rawg_id,slug,cover_image,header_image,steam_app_id,tags,genres,release_status,monetization')
+    .in('rawg_id',ids);
+  if (error) throw error;
+  return data || [];
+}, ['upcoming-public-matches-v1'], {revalidate:300,tags:['public-explore']});
 // Cache confirmed absence, never a transient network failure.
 const verifiedSteamPoster = unstable_cache(async (appId: number): Promise<string | null> => {
   if (!Number.isSafeInteger(appId) || appId <= 0) return null;
@@ -141,8 +150,8 @@ export async function loadExplore(type: RawgListType, page = 1, pageSize = 20, y
       const response = await measure('snapshot', () => readUpcoming());
       const seen = new Set<number>();
       const upcoming = response.results.filter(item => isPublicSafeRawgGame(item) && (item.tba || !item.released || item.released > today) && !seen.has(item.id) && Boolean(seen.add(item.id)));
-      const { data: matches, error } = await measure('matches', () => getPublicSupabase().from('games').select('rawg_id,slug,cover_image,header_image,steam_app_id,tags,genres,release_status').in('rawg_id', upcoming.map(item => item.id)));
-      if (error) throw error;
+      let matchesUnavailable = false;
+      const matches = await measure('matches', () => readUpcomingMatches(upcoming.map(item => item.id))).catch(() => {matchesUnavailable=true;return [];});
       const byId = new Map((matches || []).map(item => [item.rawg_id, item]));
       const eligibleUpcoming = upcoming.filter(item => !hasKnownFullRelease(byId.get(item.id) || {}));
       const normalizedPlatform = (name: string) => name === 'Xbox Series S/X' ? 'Xbox Series X|S' : name;
@@ -165,6 +174,7 @@ export async function loadExplore(type: RawgListType, page = 1, pageSize = 20, y
         const image=(local && isPortraitArtwork(local.cover_image) ? local.cover_image : matchPortrait(item,portraits))
           || local?.cover_image || item.background_image;
         return {rawgId:item.id,slug:local?.slug || (item.slug==='grand-theft-aito-vi'?'grand-theft-auto-vi':item.slug),name:item.name,
+          catalogueId:local?.id,tags:(item.tags||[]).map(tag=>tag.name),monetization:local?.monetization as Game['monetization'] | undefined,
           released:item.released,tba:item.tba,image,imageKind:isPortraitArtwork(image)?'cover':'artwork',
           rating:item.rating,ratingsCount:item.ratings_count,metacritic:item.metacritic,metricSource:'rawg',
           earlyAccess:Boolean(local && hasEarlyAccessSignal(local)),added:item.added,
@@ -173,7 +183,8 @@ export async function loadExplore(type: RawgListType, page = 1, pageSize = 20, y
       });
       await repairVisibleArtwork(mapped,item=>byId.get(item.rawgId));
       return {items:mapped,count:ordered.length,page,pageSize,hasNext:page*pageSize<ordered.length,source:'rawg',
-        fetchedAt:response.fetchedAt,degraded:!response.complete || Date.now()-Date.parse(response.fetchedAt)>43200_000,
+        fetchedAt:response.fetchedAt,degraded:matchesUnavailable || !response.complete || Date.now()-Date.parse(response.fetchedAt)>43200_000,
+        ...(matchesUnavailable ? {notice:'Some catalogue details are temporarily unavailable. Showing upcoming provider records.'} : {}),
         definition:'Upcoming games and Early Access releases, ordered by interest on RAWG. Library additions and want-to-play counts are shown separately. Dates can change.'};
 
     } catch (error) {
@@ -185,7 +196,7 @@ export async function loadExplore(type: RawgListType, page = 1, pageSize = 20, y
     const compact = await measure('catalogue_query', () => readCataloguePage(type,year,EXPLORE_GENRES[genre] || '',platform,type === 'all-time' ? 'default' : sort,page,pageSize,today));
     if (compact) {
       const visible:RawgListGameItem[]=compact.rows.map(row=>({
-        rawgId:row.rawg_id || 0,slug:row.slug,name:row.title,image:row.cover_image || row.header_image,
+        catalogueId:row.id,rawgId:row.rawg_id || 0,slug:row.slug,name:row.title,image:row.cover_image || row.header_image,tags:row.tags || [],
         imageKind:isPortraitArtwork(row.cover_image)?'cover':'artwork',released:row.release_date,
         tba:!row.release_date || type==='best-of-year' && hasEarlyAccessSignal(row) && Boolean(row.release_date && row.release_date<=today),
         earlyAccess:hasEarlyAccessSignal(row),metricSource:'catalogue',verdictScore:row.verdict_score || row.score,
@@ -202,7 +213,7 @@ export async function loadExplore(type: RawgListType, page = 1, pageSize = 20, y
     fetchedAt = pool.fetchedAt;
     for (const row of pool.rows) artworkRows.set(row.slug, row);
     items = pool.rows.map(row => ({
-      rawgId: row.rawg_id || 0, slug: row.slug, name: row.title, image: row.cover_image || row.header_image,
+      catalogueId:row.id,rawgId: row.rawg_id || 0, slug: row.slug, name: row.title, image: row.cover_image || row.header_image,tags:row.tags || [],
       imageKind: isPortraitArtwork(row.cover_image) ? 'cover' : 'artwork', released: row.release_date, tba: !row.release_date || type === 'best-of-year' && hasEarlyAccessSignal(row) && Boolean(row.release_date && row.release_date <= today), earlyAccess: hasEarlyAccessSignal(row),
       metricSource: 'catalogue', verdictScore: row.verdict_score || row.score, rankingScore: confidenceWeightedScore(row), catalogueAdded: row.created_at,
       rating: 0, ratingsCount: row.review_count || 0, metacritic: null, added: 0, toplay: 0, playing: 0, owned: 0,

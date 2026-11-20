@@ -3,6 +3,7 @@ import {
   acquireLock,
   checkMinInterval,
   isInfrastructureDbError,
+  isResourcePressureDbError,
   retryInfrastructureDbOperation,
   finishRun,
   startRun,
@@ -15,7 +16,7 @@ describe("isInfrastructureDbError", () => {
     "connection refused",
     "MaxClientsInSessionMode",
     "(EAUTHQUERY) auth_query secret check timed out",
-  ])("recognizes transient database failures: %s", (message) => {
+  ])("recognizes database availability failures: %s", (message) => {
     expect(isInfrastructureDbError(new Error(message))).toBe(true);
   });
 
@@ -45,6 +46,17 @@ describe('maintenance outcome logging', () => {
 });
 
 describe("retryInfrastructureDbOperation", () => {
+  it.each(['ECHECKOUTTIMEOUT', '53300', '53200', '53100', '57014'])('does not retry database pressure %s', async code => {
+    const error = Object.assign(new Error('Controlled database pressure'), { code });
+    const operation = vi.fn().mockRejectedValue(error);
+    expect(isResourcePressureDbError(error)).toBe(true);
+    expect(isInfrastructureDbError(error)).toBe(true);
+    await expect(retryInfrastructureDbOperation('bounded pressure check', operation, { attempts: 3, initialDelayMs: 0 })).rejects.toBe(error);
+    expect(operation).toHaveBeenCalledTimes(1);
+  });
+  it('recognizes the actual pooler message even when a SQLSTATE is absent', () => {
+    expect(isResourcePressureDbError(new Error('(ECHECKOUTTIMEOUT) unable to check out connection from the pool after 15000ms in Session mode'))).toBe(true);
+  });
   it("retries infrastructure failures until the operation succeeds", async () => {
     const warning = vi.spyOn(console, "warn").mockImplementation(() => {});
     const operation = vi.fn()
@@ -87,6 +99,26 @@ describe("retryInfrastructureDbOperation", () => {
 });
 
 describe("scheduler skip guards", () => {
+  it.each(['ECHECKOUTTIMEOUT', '57014'])('fails closed at startup and outcome logging after %s', async code => {
+    const logged = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const error = Object.assign(new Error('Controlled capacity failure'), { code });
+    try {
+      const interval = vi.fn().mockRejectedValue(error);
+      await expect(checkMinInterval(interval, 'test-job', 5)).rejects.toBe(error);
+      expect(interval).toHaveBeenCalledTimes(1);
+      const reserve = vi.fn().mockRejectedValue(error);
+      await expect(acquireLock({ reserve }, 'test-job')).rejects.toBe(error);
+      expect(reserve).toHaveBeenCalledTimes(1);
+      const start = vi.fn().mockRejectedValue(error);
+      await expect(startRun(start, 'test-job')).rejects.toBe(error);
+      expect(start).toHaveBeenCalledTimes(1);
+      const finish = vi.fn().mockRejectedValue(error);
+      await expect(finishRun(finish, 'local-run')).rejects.toBe(error);
+      expect(finish).toHaveBeenCalledTimes(1);
+    } finally {
+      logged.mockRestore();
+    }
+  });
   it("aborts unexpected lock errors without running unlocked", async () => {
     const logged = vi.spyOn(console, "error").mockImplementation(() => {});
     const failure = Object.assign(new Error("permission denied for advisory lock"), { code: "42501" });

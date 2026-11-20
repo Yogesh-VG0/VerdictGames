@@ -1,0 +1,214 @@
+{
+  "scope": "Read-only exact Recently Added query-plan/index inspection; no catalogue execution or changes",
+  "selectedColumns": 35,
+  "indexes": [
+    {
+      "indexname": "games_explore_unclassified_idx",
+      "indexdef": "CREATE INDEX games_explore_unclassified_idx ON public.games USING btree (id) WHERE ((explore_title_key IS NULL) OR (explore_year_suffix IS NULL) OR (explore_franchise_key IS NULL) OR (explore_developer_key IS NULL) OR (explore_publisher_key IS NULL) OR (explore_primary_safe IS NULL) OR (explore_early_access IS NULL))"
+    },
+    {
+      "indexname": "games_pkey",
+      "indexdef": "CREATE UNIQUE INDEX games_pkey ON public.games USING btree (id)"
+    },
+    {
+      "indexname": "games_slug_key",
+      "indexdef": "CREATE UNIQUE INDEX games_slug_key ON public.games USING btree (slug)"
+    },
+    {
+      "indexname": "idx_games_browse_trending_pool",
+      "indexdef": "CREATE INDEX idx_games_browse_trending_pool ON public.games USING btree (is_trending_manual DESC NULLS LAST, trending DESC NULLS LAST, current_players DESC NULLS LAST, momentum DESC NULLS LAST, verdict_score DESC NULLS LAST, review_count DESC NULLS LAST, id) WHERE (cover_image IS NOT NULL)"
+    },
+    {
+      "indexname": "idx_games_cheapshark_id",
+      "indexdef": "CREATE INDEX idx_games_cheapshark_id ON public.games USING btree (cheapshark_id) WHERE (cheapshark_id IS NOT NULL)"
+    },
+    {
+      "indexname": "idx_games_community_score",
+      "indexdef": "CREATE INDEX idx_games_community_score ON public.games USING btree (community_score DESC NULLS LAST)"
+    },
+    {
+      "indexname": "idx_games_completeness_score",
+      "indexdef": "CREATE INDEX idx_games_completeness_score ON public.games USING btree (completeness_score)"
+    },
+    {
+      "indexname": "idx_games_confidence",
+      "indexdef": "CREATE INDEX idx_games_confidence ON public.games USING btree (confidence DESC NULLS LAST)"
+    },
+    {
+      "indexname": "idx_games_current_players",
+      "indexdef": "CREATE INDEX idx_games_current_players ON public.games USING btree (current_players DESC NULLS LAST)"
+    },
+    {
+      "indexname": "idx_games_default_browse_pool",
+      "indexdef": "CREATE INDEX idx_games_default_browse_pool ON public.games USING btree (trending DESC NULLS LAST, verdict_score DESC NULLS LAST, release_date DESC, id) WHERE (cover_image IS NOT NULL)"
+    },
+    {
+      "indexname": "idx_games_developer",
+      "indexdef": "CREATE INDEX idx_games_developer ON public.games USING btree (developer) WHERE (developer <> ''::text)"
+    },
+    {
+      "indexname": "idx_games_developer_trgm",
+      "indexdef": "CREATE INDEX idx_games_developer_trgm ON public.games USING gin (developer gin_trgm_ops)"
+    },
+    {
+      "indexname": "idx_games_featured",
+      "indexdef": "CREATE INDEX idx_games_featured ON public.games USING btree (featured) WHERE (featured = true)"
+    },
+    {
+      "indexname": "idx_games_franchise",
+      "indexdef": "CREATE INDEX idx_games_franchise ON public.games USING btree (franchise) WHERE ((franchise IS NOT NULL) AND (franchise <> ''::text))"
+    },
+    {
+      "indexname": "idx_games_genres_gin",
+      "indexdef": "CREATE INDEX idx_games_genres_gin ON public.games USING gin (genres)"
+    },
+    {
+      "indexname": "idx_games_homepage_recommendation_pool",
+      "indexdef": "CREATE INDEX idx_games_homepage_recommendation_pool ON public.games USING btree (verdict_score DESC NULLS LAST, score DESC, release_date DESC) WHERE ((release_date IS NOT NULL) AND (cover_image IS NOT NULL) AND (cover_image <> ''::text) AND (score >= 75) AND (review_count >= 75) AND (confidence >= (0.4)::double precision))"
+    },
+    {
+      "indexname": "idx_games_homepage_top_rated_pool",
+      "indexdef": "CREATE INDEX idx_games_homepage_top_rated_pool ON public.games USING btree (verdict_score DESC NULLS LAST, confidence DESC NULLS LAST, score DESC, release_date DESC) WHERE ((release_date IS NOT NULL) AND (cover_image IS NOT NULL) AND (cover_image <> ''::text) AND (score >= 70) AND (review_count >= 75) AND (confidence >= (0.3)::double precision))"
+    },
+    {
+      "indexname": "idx_games_homepage_trending_pool",
+      "indexdef": "CREATE INDEX idx_games_homepage_trending_pool ON public.games USING btree (is_trending_manual DESC NULLS LAST, trending DESC NULLS LAST, current_players DESC NULLS LAST, momentum DESC NULLS LAST, verdict_score DESC NULLS LAST, review_count DESC NULLS LAST, score DESC) WHERE ((release_date IS NOT NULL) AND (cover_image IS NOT NULL) AND (cover_image <> ''::text) AND (score > 0))"
+    },
+    {
+      "indexname": "idx_games_igdb_id",
+      "indexdef": "CREATE INDEX idx_games_igdb_id ON public.games USING btree (igdb_id) WHERE (igdb_id IS NOT NULL)"
+    },
+    {
+      "indexname": "idx_games_is_adult",
+      "indexdef": "CREATE INDEX idx_games_is_adult ON public.games USING btree (is_adult) WHERE (is_adult = true)"
+    },
+    {
+      "indexname": "idx_games_is_free",
+      "indexdef": "CREATE INDEX idx_games_is_free ON public.games USING btree (is_free) WHERE (is_free = true)"
+    },
+    {
+      "indexname": "idx_games_is_provisional",
+      "indexdef": "CREATE INDEX idx_games_is_provisional ON public.games USING btree (is_provisional) WHERE (is_provisional = true)"
+    },
+    {
+      "indexname": "idx_games_last_enriched",
+      "indexdef": "CREATE INDEX idx_games_last_enriched ON public.games USING btree (last_enriched_at NULLS FIRST)"
+    },
+    {
+      "indexname": "idx_games_manual_featured",
+      "indexdef": "CREATE INDEX idx_games_manual_featured ON public.games USING btree (is_featured_manual) WHERE (is_featured_manual = true)"
+    },
+    {
+      "indexname": "idx_games_manual_trending",
+      "indexdef": "CREATE INDEX idx_games_manual_trending ON public.games USING btree (is_trending_manual) WHERE (is_trending_manual = true)"
+    },
+    {
+      "indexname": "idx_games_momentum",
+      "indexdef": "CREATE INDEX idx_games_momentum ON public.games USING btree (momentum DESC)"
+    },
+    {
+      "indexname": "idx_games_publisher_trgm",
+      "indexdef": "CREATE INDEX idx_games_publisher_trgm ON public.games USING gin (publisher gin_trgm_ops)"
+    },
+    {
+      "indexname": "idx_games_rawg_id",
+      "indexdef": "CREATE INDEX idx_games_rawg_id ON public.games USING btree (rawg_id) WHERE (rawg_id IS NOT NULL)"
+    },
+    {
+      "indexname": "idx_games_release_date",
+      "indexdef": "CREATE INDEX idx_games_release_date ON public.games USING btree (release_date DESC)"
+    },
+    {
+      "indexname": "idx_games_score",
+      "indexdef": "CREATE INDEX idx_games_score ON public.games USING btree (score DESC)"
+    },
+    {
+      "indexname": "idx_games_slug",
+      "indexdef": "CREATE INDEX idx_games_slug ON public.games USING btree (slug)"
+    },
+    {
+      "indexname": "idx_games_steam_app_id",
+      "indexdef": "CREATE INDEX idx_games_steam_app_id ON public.games USING btree (steam_app_id) WHERE (steam_app_id IS NOT NULL)"
+    },
+    {
+      "indexname": "idx_games_tags_gin",
+      "indexdef": "CREATE INDEX idx_games_tags_gin ON public.games USING gin (tags)"
+    },
+    {
+      "indexname": "idx_games_title_trgm",
+      "indexdef": "CREATE INDEX idx_games_title_trgm ON public.games USING gin (title gin_trgm_ops)"
+    },
+    {
+      "indexname": "idx_games_trending",
+      "indexdef": "CREATE INDEX idx_games_trending ON public.games USING btree (trending) WHERE (trending = true)"
+    },
+    {
+      "indexname": "idx_games_verdict_confidence",
+      "indexdef": "CREATE INDEX idx_games_verdict_confidence ON public.games USING btree (verdict_score DESC NULLS LAST, confidence DESC NULLS LAST) WHERE (verdict_score IS NOT NULL)"
+    },
+    {
+      "indexname": "idx_games_verdict_score",
+      "indexdef": "CREATE INDEX idx_games_verdict_score ON public.games USING btree (verdict_score DESC NULLS LAST)"
+    }
+  ],
+  "plan": [
+    {
+      "Plan": {
+        "Node Type": "Limit",
+        "Parallel Aware": false,
+        "Async Capable": false,
+        "Startup Cost": 3511.58,
+        "Total Cost": 3514.08,
+        "Plan Rows": 1000,
+        "Plan Width": 584,
+        "Plans": [
+          {
+            "Node Type": "Sort",
+            "Parent Relationship": "Outer",
+            "Parallel Aware": false,
+            "Async Capable": false,
+            "Startup Cost": 3511.58,
+            "Total Cost": 3515.43,
+            "Plan Rows": 1539,
+            "Plan Width": 584,
+            "Sort Key": [
+              "created_at DESC",
+              "id"
+            ],
+            "Plans": [
+              {
+                "Node Type": "Bitmap Heap Scan",
+                "Parent Relationship": "Outer",
+                "Parallel Aware": false,
+                "Async Capable": false,
+                "Relation Name": "games",
+                "Alias": "games",
+                "Startup Cost": 61.41,
+                "Total Cost": 3430.11,
+                "Plan Rows": 1539,
+                "Plan Width": 584,
+                "Recheck Cond": "((release_date IS NOT NULL) AND (release_date >= '2021-11-19'::date) AND (release_date <= '2026-11-19'::date))",
+                "Filter": "(((is_provisional IS NULL) OR (NOT is_provisional)) AND (cover_image <> ''::text) AND (score > 0) AND (verdict_label <> 'COMING SOON'::text))",
+                "Plans": [
+                  {
+                    "Node Type": "Bitmap Index Scan",
+                    "Parent Relationship": "Outer",
+                    "Parallel Aware": false,
+                    "Async Capable": false,
+                    "Index Name": "idx_games_release_date",
+                    "Startup Cost": 0,
+                    "Total Cost": 61.02,
+                    "Plan Rows": 1659,
+                    "Plan Width": 0,
+                    "Index Cond": "((release_date IS NOT NULL) AND (release_date >= '2021-11-19'::date) AND (release_date <= '2026-11-19'::date))"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "query": "SELECT id,slug,title,cover_image,platforms,genres,tags,developer,publisher,release_date,score,verdict_score,verdict_label,confidence,review_count,monetization,steam_total_count,critic_source_count,is_free,current_players,peak_players_24h,momentum,trending,is_trending_manual,is_provisional,release_status,community_score,critic_score,score_source,user_score,rawg_metacritic,rawg_rating,steam_app_id,created_at,description FROM public.games WHERE release_date IS NOT NULL AND release_date>='2021-11-19' AND release_date<='2026-11-19' AND cover_image IS NOT NULL AND cover_image<>'' AND score>0 AND (is_provisional IS NULL OR is_provisional=false) AND verdict_label<>'COMING SOON' ORDER BY created_at DESC,id ASC LIMIT 1000"
+}

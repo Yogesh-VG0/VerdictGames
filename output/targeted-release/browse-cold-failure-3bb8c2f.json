@@ -1,0 +1,60 @@
+{
+  "head": "3bb8c2fd74dba29ec2f22448e12c3ee2e1466b12",
+  "origin": "https://verdict-games-m7rn0wz9l-yogesh-vg0s-projects.vercel.app",
+  "deployment": "dpl_EdQxLCbuToWviQsZZEdoqPyXsGtq",
+  "passed": false,
+  "scope": "Exact protected preview; anonymous read-only; new v8 cohort namespace; simultaneous cold Recently Added pages; database storage state uncontrolled; storage coldness is not controlled",
+  "samples": [
+    {
+      "path": "/api/search?sort=trending",
+      "status": 200,
+      "ms": 6957,
+      "bytes": 20852,
+      "cache": "MISS",
+      "cacheControl": "public, max-age=0, must-revalidate",
+      "vary": null,
+      "total": 11,
+      "phase": "framework-cold Trending; new v8 cohort namespace"
+    },
+    {
+      "path": "/api/search?sort=trending",
+      "status": 200,
+      "ms": 310,
+      "bytes": 20852,
+      "cache": "HIT",
+      "cacheControl": "public, max-age=0, must-revalidate",
+      "vary": null,
+      "total": 11,
+      "phase": "warm Trending / same URL"
+    },
+    {
+      "path": "/api/search?sort=recently-added",
+      "status": 500,
+      "ms": 10517,
+      "bytes": 58,
+      "cache": "MISS",
+      "cacheControl": "private, no-store, max-age=0",
+      "vary": "Cookie",
+      "phase": "framework-cold shared cohort / simultaneous page1",
+      "error": "Failed to load search results."
+    }
+  ],
+  "runtime": {
+    "phase": "hydrate",
+    "sharedDeadlineMs": 10000,
+    "batchRows": 200,
+    "failedBatchMs": [
+      6381,
+      6799,
+      6717,
+      7326
+    ],
+    "distinctFunctionRequests": 2,
+    "inFlightMapScope": "one function worker only; these requests ran separately"
+  },
+  "productionChanged": false,
+  "error": {
+    "name": "AssertionError",
+    "message": "/api/search?sort=recently-added\n\n500 !== 200\n"
+  }
+}

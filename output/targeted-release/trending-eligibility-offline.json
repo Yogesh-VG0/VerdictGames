@@ -1,0 +1,64 @@
+{
+  "capturedPublicCandidates": 1319,
+  "allQualifying": 11,
+  "qualifyingInPrepared750": 11,
+  "unchangedRules": true,
+  "source": "single bounded public GET diagnostic, evaluated offline",
+  "top": [
+    {
+      "slug": "limbus-company",
+      "players": 63811,
+      "momentum": 0.4647
+    },
+    {
+      "slug": "black-survival-eternal-return",
+      "players": 11259,
+      "momentum": 0.3876
+    },
+    {
+      "slug": "disney-dreamlight-valley",
+      "players": 3798,
+      "momentum": 0.7282
+    },
+    {
+      "slug": "dota-2",
+      "players": 450612,
+      "momentum": 0.1022
+    },
+    {
+      "slug": "once-human",
+      "players": 13767,
+      "momentum": 0.1928
+    },
+    {
+      "slug": "grand-theft-auto-v",
+      "players": 41900,
+      "momentum": 0.0703
+    },
+    {
+      "slug": "unturned",
+      "players": 17428,
+      "momentum": 0.1934
+    },
+    {
+      "slug": "kingdom-come-deliverance-ii",
+      "players": 8703,
+      "momentum": 0.051
+    },
+    {
+      "slug": "red-dead-redemption-2",
+      "players": 19102,
+      "momentum": 0.056
+    },
+    {
+      "slug": "fragpunk",
+      "players": 269,
+      "momentum": 0.1054
+    },
+    {
+      "slug": "final-fantasy-tactics-the-ivalice-chronicles",
+      "players": 194,
+      "momentum": 0.1025
+    }
+  ]
+}

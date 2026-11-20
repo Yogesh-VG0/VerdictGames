@@ -22,11 +22,12 @@ import { isPublicSafeGame, isPublicSafeRawgGame } from "@/lib/utils/publicSafety
 import { normalizeTitle } from "@/lib/utils/slugify";
 import { isFutureDate } from "@/lib/utils";
 import {searchGenrePredicate} from '@/lib/utils/searchGenre';
+import {hasKnownFullRelease,hasUnreleasedStatus} from '@/lib/utils/release-status';
 
 export const SEARCH_REVALIDATE_SECONDS = 300;
 export const SEARCH_API_CACHE_CONTROL = `s-maxage=${SEARCH_REVALIDATE_SECONDS}, stale-while-revalidate=300`;
 export const SEARCH_PAGE_SIZE = 25;
-const SEARCH_RESULTS_CACHE_NAMESPACE = "search-results-v7";
+const SEARCH_RESULTS_CACHE_NAMESPACE = "search-results-v12";
 // Ranking and eligibility need evidence and safety metadata, not display copy,
 // prices or hero flags. Hydrate full card fields only for the visible page.
 const BROWSE_POOL_COLUMNS = GAME_CARD_COLUMNS_WITH_DESC.split(',').filter(column => ![
@@ -34,6 +35,16 @@ const BROWSE_POOL_COLUMNS = GAME_CARD_COLUMNS_WITH_DESC.split(',').filter(column
   'price_deal_url', 'price_lowest', 'featured', 'is_featured_manual',
   'steam_rating_label', 'updated_at',
 ].includes(column)).join(',');
+// Recently Added needs no description-length quality gate. The existing
+// maintained classifier contains the same public-safety/primary-game checks.
+// Keep the original source cohort and ranking inputs; load display fields only
+// for a visible page. NULL classifications take the original full-row path.
+const RECENT_POOL_COLUMNS = [
+  'id','title','cover_image','release_date','created_at','steam_app_id',
+  'review_count','steam_total_count','rawg_rating','score_source','user_score',
+  'score','verdict_score','confidence','current_players','is_provisional',
+  'verdict_label','developer','publisher','explore_primary_safe',
+].join(',');
 
 export function createEmptySearchResult(page: number): PaginatedResponse<Game> {
   return {
@@ -305,12 +316,197 @@ function isUpcomingDiscoveryReady(row: GameRow): boolean {
   const hasPlatforms = (row.platforms?.length ?? 0) > 0;
 
   return Boolean(row.release_date && isFutureDate(row.release_date))
+    && !hasKnownFullRelease(row)
+    && !['cancelled','canceled','delisted'].includes((row.release_status || '').toLowerCase())
     && isPrimaryDiscoveryGame(row)
     && getUpcomingMetadataScore(row) >= 2
     && (hasCredits || hasPlatforms);
 }
 
-interface RankedBrowsePool { ids:string[]; totalIsExact:boolean }
+// Resolve filters once, then reuse them for the narrow cohort and bounded reads.
+// A wrapped builder avoids accidentally executing its Promise-like query here.
+function createSearchQueryFactory(state: SearchGamesState) {
+  const {query:q, platform, genre, year, monetization, sort} = state;
+  const supabase = getPublicSupabase();
+  let mobileIds: Promise<string[]> | undefined;
+  const today = new Date().toISOString().slice(0, 10);
+  const recentlyAddedReleaseCutoff = new Date();
+  recentlyAddedReleaseCutoff.setFullYear(recentlyAddedReleaseCutoff.getFullYear() - 5);
+  const recentlyAddedReleaseCutoffStr = recentlyAddedReleaseCutoff.toISOString().slice(0, 10);
+  return async (columns: string, signal: AbortSignal, ids?: string[]) => {
+    let query = supabase.from("games").select(columns);
+
+    let scopedIds = ids;
+
+    if (q) {
+      query = query.or(`title.ilike.%${q}%,developer.ilike.%${q}%,publisher.ilike.%${q}%`);
+    }
+
+    if (platform && platform !== "All") {
+      const platformFamilies: Record<string, string[]> = {
+        "PlayStation 5": ["PlayStation 5", "PlayStation 4"],
+        "Xbox Series X|S": ["Xbox Series X|S", "Xbox One"],
+        "Nintendo Switch": ["Nintendo Switch", "Nintendo Switch 2"],
+      };
+      const platformAliases: Record<string, string> = {
+        playstation: "PlayStation 5",
+        ps5: "PlayStation 5",
+        ps4: "PlayStation 5",
+        xbox: "Xbox Series X|S",
+        switch: "Nintendo Switch",
+        mac: "macOS",
+        macos: "macOS",
+      };
+      const resolvedPlatform = platformAliases[platform.toLowerCase()] ?? platform;
+      const mobileStoreMap: Record<string, string> = {
+        Android: "google_play",
+        iOS: "app_store",
+      };
+      const storeName = mobileStoreMap[resolvedPlatform];
+
+      if (storeName) {
+        mobileIds ??= (async () => {
+          const { data: verifiedIds, error } = await supabase
+            .from("mobile_store_listings")
+            .select("game_id")
+            .eq("store", storeName)
+            .eq("is_verified", true).abortSignal(signal);
+          if (error) throw error;
+          return (verifiedIds ?? []).map((row: {game_id:string}) => row.game_id);
+        })();
+        const verifiedIds = await mobileIds;
+
+        if (verifiedIds.length > 0) {
+          const verifiedSet = new Set(verifiedIds);
+          scopedIds = ids ? ids.filter(id => verifiedSet.has(id)) : verifiedIds;
+        } else {
+          query = query.contains("platforms", [resolvedPlatform]);
+        }
+      } else {
+        const family = platformFamilies[resolvedPlatform];
+        if (family) {
+          query = query.or(family.map((candidate) => `platforms.cs.{${candidate}}`).join(","));
+        } else {
+          query = query.contains("platforms", [resolvedPlatform]);
+        }
+      }
+    }
+
+    if (genre) {
+      query = query.or(searchGenrePredicate(genre));
+    }
+
+    if (year) {
+      query = query.gte("release_date", `${year}-01-01`).lte("release_date", `${year}-12-31`);
+    }
+
+    if (monetization && monetization !== "All") {
+      query = query.eq("monetization", monetization);
+    }
+
+    switch (sort) {
+      case "newest":
+        query = query
+          .lte("release_date", today)
+          .not("cover_image", "is", null)
+          .neq("cover_image", "")
+          .or("is_provisional.is.null,is_provisional.eq.false")
+          .neq("verdict_label", "COMING SOON")
+          .order("release_date", { ascending: false })
+          .order("id", { ascending: true });
+        break;
+      case "upcoming":
+        query = query
+          .gt("release_date", today)
+          .not("cover_image", "is", null)
+          .neq("cover_image", "")
+          .order("release_date", { ascending: true })
+          .order("id", { ascending: true });
+        break;
+      case "recently-added":
+        query = query
+          .not("release_date", "is", null)
+          .gte("release_date", recentlyAddedReleaseCutoffStr)
+          .lte("release_date", today)
+          .not("cover_image", "is", null)
+          .neq("cover_image", "")
+          .gt("score", 0)
+          .or("is_provisional.is.null,is_provisional.eq.false")
+          .neq("verdict_label", "COMING SOON")
+          .order("created_at", { ascending: false })
+          .order("id", { ascending: true });
+        break;
+      case "top-rated":
+        query = query
+          .not("cover_image", "is", null)
+          .neq("cover_image", "")
+          .order("verdict_score", { ascending: false, nullsFirst: false })
+          .order("confidence", { ascending: false, nullsFirst: false })
+          .order("score", { ascending: false })
+          .order("id", { ascending: true });
+        break;
+      case "trending":
+        query = query
+          .not("cover_image", "is", null)
+          .neq("cover_image", "")
+          .order("is_trending_manual", { ascending: false, nullsFirst: false })
+          .order("trending", { ascending: false, nullsFirst: false })
+          .order("current_players", { ascending: false, nullsFirst: false })
+          .order("momentum", { ascending: false, nullsFirst: false })
+          .order("verdict_score", { ascending: false, nullsFirst: false })
+          .order("review_count", { ascending: false, nullsFirst: false })
+          .order("id", { ascending: true });
+        break;
+      default:
+        if (q) {
+          query = query
+            .order("verdict_score", { ascending: false, nullsFirst: false })
+            .order("score", { ascending: false })
+            .order("id", { ascending: true });
+        } else {
+          query = query
+            .gte("review_count", 10)
+            .gte("score", 55)
+            .not("cover_image", "is", null)
+            .neq("cover_image", "")
+            .order("trending", { ascending: false, nullsFirst: false })
+            .order("verdict_score", { ascending: false, nullsFirst: false })
+            .order("release_date", { ascending: false })
+            .order("id", { ascending: true });
+        }
+        break;
+    }
+
+    if (scopedIds) query = query.in('id', scopedIds);
+    return {query};
+  };
+}
+
+async function hydrateBrowseCohort(
+  createQuery: ReturnType<typeof createSearchQueryFactory>,
+  ids: string[], columns: string, signal: AbortSignal,
+): Promise<GameRow[]> {
+  const rows = new Map<string, GameRow>();
+  let cursor = 0;
+  const worker = async () => {
+    while (cursor < ids.length) {
+      signal.throwIfAborted();
+      const batch = ids.slice(cursor, cursor += 200);
+      const {query} = await createQuery(columns, signal, batch);
+      const started = performance.now();
+      const {data, error} = await query.abortSignal(signal) as unknown as {data:GameRow[]|null; error:unknown};
+      if (error) {
+        console.warn('[Search] cohort hydration failed', {rows:batch.length, ms:Math.round(performance.now()-started), deadlineExpired:signal.aborted});
+        throw error;
+      }
+      for (const row of data ?? []) rows.set(row.id, row);
+    }
+  };
+  await Promise.all([worker(), worker()]);
+  return ids.flatMap(id => rows.has(id) ? [rows.get(id)!] : []);
+}
+
+interface RankedBrowsePool { ids:string[]; totalIsExact:boolean; cards?:Game[] }
 async function fetchSearchResults(state:SearchGamesState,poolOnly:true):Promise<RankedBrowsePool>;
 async function fetchSearchResults(state:SearchGamesState,poolOnly?:false):Promise<PaginatedResponse<Game>>;
 async function fetchSearchResults(state: SearchGamesState,poolOnly=false): Promise<PaginatedResponse<Game>|RankedBrowsePool> {
@@ -320,7 +516,6 @@ async function fetchSearchResults(state: SearchGamesState,poolOnly=false): Promi
     return poolOnly?{ids:[],totalIsExact:true}:createEmptySearchResult(page);
   }
 
-  const supabase = getPublicSupabase();
   if(!poolOnly && !q && platform==='All' && !genre && !year && monetization==='All') {
     const pool=await readRankedBrowsePool(sort);
     const ids=pool.ids.slice((page-1)*SEARCH_PAGE_SIZE,page*SEARCH_PAGE_SIZE);
@@ -329,144 +524,6 @@ async function fetchSearchResults(state: SearchGamesState,poolOnly=false): Promi
     return {items:ids.flatMap(id=>games.has(id)?[games.get(id)!]:[]),total:pool.ids.length,page,pageSize:SEARCH_PAGE_SIZE,
       hasMore:page*SEARCH_PAGE_SIZE<pool.ids.length,totalIsExact:pool.totalIsExact};
   }
-  let query = supabase.from("games").select(poolOnly ? BROWSE_POOL_COLUMNS : GAME_CARD_COLUMNS_WITH_DESC);
-
-  if (q) {
-    query = query.or(`title.ilike.%${q}%,developer.ilike.%${q}%,publisher.ilike.%${q}%`);
-  }
-
-  if (platform && platform !== "All") {
-    const platformFamilies: Record<string, string[]> = {
-      "PlayStation 5": ["PlayStation 5", "PlayStation 4"],
-      "Xbox Series X|S": ["Xbox Series X|S", "Xbox One"],
-      "Nintendo Switch": ["Nintendo Switch", "Nintendo Switch 2"],
-    };
-    const platformAliases: Record<string, string> = {
-      playstation: "PlayStation 5",
-      ps5: "PlayStation 5",
-      ps4: "PlayStation 5",
-      xbox: "Xbox Series X|S",
-      switch: "Nintendo Switch",
-      mac: "macOS",
-      macos: "macOS",
-    };
-    const resolvedPlatform = platformAliases[platform.toLowerCase()] ?? platform;
-    const mobileStoreMap: Record<string, string> = {
-      Android: "google_play",
-      iOS: "app_store",
-    };
-    const storeName = mobileStoreMap[resolvedPlatform];
-
-    if (storeName) {
-      const { data: verifiedIds } = await supabase
-        .from("mobile_store_listings")
-        .select("game_id")
-        .eq("store", storeName)
-        .eq("is_verified", true);
-
-      if (verifiedIds && verifiedIds.length > 0) {
-        query = query.in("id", verifiedIds.map((row: { game_id: string }) => row.game_id));
-      } else {
-        query = query.contains("platforms", [resolvedPlatform]);
-      }
-    } else {
-      const family = platformFamilies[resolvedPlatform];
-      if (family) {
-        query = query.or(family.map((candidate) => `platforms.cs.{${candidate}}`).join(","));
-      } else {
-        query = query.contains("platforms", [resolvedPlatform]);
-      }
-    }
-  }
-
-  if (genre) {
-    query = query.or(searchGenrePredicate(genre));
-  }
-
-  if (year) {
-    query = query.gte("release_date", `${year}-01-01`).lte("release_date", `${year}-12-31`);
-  }
-
-  if (monetization && monetization !== "All") {
-    query = query.eq("monetization", monetization);
-  }
-
-  const today = new Date().toISOString().slice(0, 10);
-  const recentlyAddedReleaseCutoff = new Date();
-  recentlyAddedReleaseCutoff.setFullYear(recentlyAddedReleaseCutoff.getFullYear() - 5);
-  const recentlyAddedReleaseCutoffStr = recentlyAddedReleaseCutoff.toISOString().slice(0, 10);
-  switch (sort) {
-    case "newest":
-      query = query
-        .lte("release_date", today)
-        .not("cover_image", "is", null)
-        .neq("cover_image", "")
-        .or("is_provisional.is.null,is_provisional.eq.false")
-        .neq("verdict_label", "COMING SOON")
-        .order("release_date", { ascending: false })
-        .order("id", { ascending: true });
-      break;
-    case "upcoming":
-      query = query
-        .gt("release_date", today)
-        .not("cover_image", "is", null)
-        .neq("cover_image", "")
-        .order("release_date", { ascending: true })
-        .order("id", { ascending: true });
-      break;
-    case "recently-added":
-      query = query
-        .not("release_date", "is", null)
-        .gte("release_date", recentlyAddedReleaseCutoffStr)
-        .lte("release_date", today)
-        .not("cover_image", "is", null)
-        .neq("cover_image", "")
-        .gt("score", 0)
-        .or("is_provisional.is.null,is_provisional.eq.false")
-        .neq("verdict_label", "COMING SOON")
-        .order("created_at", { ascending: false })
-        .order("id", { ascending: true });
-      break;
-    case "top-rated":
-      query = query
-        .not("cover_image", "is", null)
-        .neq("cover_image", "")
-        .order("verdict_score", { ascending: false, nullsFirst: false })
-        .order("confidence", { ascending: false, nullsFirst: false })
-        .order("score", { ascending: false })
-        .order("id", { ascending: true });
-      break;
-    case "trending":
-      query = query
-        .not("cover_image", "is", null)
-        .neq("cover_image", "")
-        .order("is_trending_manual", { ascending: false, nullsFirst: false })
-        .order("trending", { ascending: false, nullsFirst: false })
-        .order("current_players", { ascending: false, nullsFirst: false })
-        .order("momentum", { ascending: false, nullsFirst: false })
-        .order("verdict_score", { ascending: false, nullsFirst: false })
-        .order("review_count", { ascending: false, nullsFirst: false })
-        .order("id", { ascending: true });
-      break;
-    default:
-      if (q) {
-        query = query
-          .order("verdict_score", { ascending: false, nullsFirst: false })
-          .order("score", { ascending: false })
-          .order("id", { ascending: true });
-      } else {
-        query = query
-          .gte("review_count", 10)
-          .gte("score", 55)
-          .not("cover_image", "is", null)
-          .neq("cover_image", "")
-          .order("trending", { ascending: false, nullsFirst: false })
-          .order("verdict_score", { ascending: false, nullsFirst: false })
-          .order("release_date", { ascending: false })
-          .order("id", { ascending: true });
-      }
-      break;
-  }
 
   const isRelevanceWithQuery = sort === "relevance" && Boolean(q);
   const isTopRated = sort === "top-rated";
@@ -474,6 +531,7 @@ async function fetchSearchResults(state: SearchGamesState,poolOnly=false): Promi
   const isNewest = sort === "newest";
   const isUpcoming = sort === "upcoming";
   const isRecentlyAdded = sort === "recently-added";
+  const compactRecentPool = poolOnly && isRecentlyAdded;
   const start = (page - 1) * SEARCH_PAGE_SIZE;
   // Rank a stable finite cohort before pagination. Growing the pool with page
   // number promoted later candidates into earlier pages and repeated games.
@@ -482,14 +540,41 @@ async function fetchSearchResults(state: SearchGamesState,poolOnly=false): Promi
   const requestedLimit = isRelevanceWithQuery ? 150
     : isRecentlyAdded ? 1000 : isTrendingSort ? 750
       : isTopRated || isNewest || isUpcoming ? 500 : 150;
-  query=query.range(0,requestedLimit-1);
-
-  const { data, error } = await query.abortSignal(AbortSignal.timeout(10_000)) as unknown as { data: GameRow[] | null; error: unknown };
-  if (error) {
+  const boundedCohort = requestedLimit > 200;
+  const createQuery = createSearchQueryFactory(state);
+  const controller = new AbortController();
+  const signal = AbortSignal.any([AbortSignal.timeout(10_000), controller.signal]);
+  const columns = compactRecentPool ? RECENT_POOL_COLUMNS : poolOnly ? BROWSE_POOL_COLUMNS : GAME_CARD_COLUMNS_WITH_DESC;
+  let data: GameRow[] | null;
+  let returnedCount: number;
+  let phase = 'initial-query';
+  const started = performance.now();
+  try {
+    const {query} = await createQuery(boundedCohort ? 'id' : columns, signal);
+    const result = await query.range(0, requestedLimit - 1).abortSignal(signal) as unknown as {data:GameRow[]|null; error:unknown};
+    if (result.error) throw result.error;
+    returnedCount = result.data?.length ?? 0;
+    // Keep exactly the original candidate boundary and initial ordering.
+    // No partial response is cached when a chunk fails or the shared deadline expires.
+    phase = 'hydrate';
+    data = boundedCohort
+      ? await hydrateBrowseCohort(createQuery, (result.data ?? []).map(row => row.id), columns, signal)
+      : result.data;
+    if (compactRecentPool) {
+      const unclassified=(data || []).filter(row=>typeof (row as GameRow & {explore_primary_safe?:boolean|null}).explore_primary_safe!=='boolean').map(row=>row.id);
+      if(unclassified.length){
+        phase='classification-fallback';
+        const fullRows=await hydrateBrowseCohort(createQuery,unclassified,BROWSE_POOL_COLUMNS,signal);
+        const byId=new Map(fullRows.map(row=>[row.id,row]));
+        const missing=new Set(unclassified);
+        data=(data || []).flatMap(row=>missing.has(row.id)?byId.has(row.id)?[byId.get(row.id)!]:[]:[row]);
+      }
+    }
+  } catch (error) {
+    console.warn('[Search] catalogue read failed', {sort, phase, ms:Math.round(performance.now()-started), deadlineExpired:signal.aborted});
+    controller.abort();
     throw error;
   }
-
-  const returnedCount = data?.length ?? 0;
   let totalIsExact = returnedCount < requestedLimit;
 
   const justReleasedDays = 14;
@@ -499,16 +584,25 @@ async function fetchSearchResults(state: SearchGamesState,poolOnly=false): Promi
   const isBroadDiscovery = !q && (isTopRated || isTrending || sort === "relevance" || isNewest || isUpcoming || isRecentlyAdded);
 
   let rows = (data ?? []).filter((row) => {
-    if (!isPublicSafeGame(row) || !hasUsableCardImage(row)) {
+    const storedSafety=compactRecentPool?(row as GameRow & {explore_primary_safe?:boolean|null}).explore_primary_safe:undefined;
+    if (storedSafety===false || (storedSafety!==true && !isPublicSafeGame(row)) || !hasUsableCardImage(row)) {
       return false;
     }
 
-    if (isBroadDiscovery && !isPrimaryDiscoveryGame(row)) {
+    if (isBroadDiscovery && storedSafety!==true && !isPrimaryDiscoveryGame(row)) {
       return false;
     }
 
     if (isUpcoming) {
       return isUpcomingDiscoveryReady(row);
+    }
+
+    // Newest is a release-date view, not a confidence/popularity ranking.
+    // Fresh console releases must not require Steam activity or old reviews.
+    if (isNewest) {
+      return Boolean(row.release_date && !isFutureDate(row.release_date))
+        && !hasUnreleasedStatus(row)
+        && mapGameRow(row).verdictLabel !== 'COMING SOON';
     }
 
     if ((row as GameRow & { is_provisional?: boolean }).is_provisional) {
@@ -552,9 +646,6 @@ async function fetchSearchResults(state: SearchGamesState,poolOnly=false): Promi
       return false;
     }
 
-    if (isNewest && !isQualityGame(row, "newReleases")) {
-      return false;
-    }
 
     if (isRecentlyAdded && !passesRecentlyAddedDiscoveryFloor(row)) {
       return false;
@@ -641,7 +732,7 @@ async function fetchSearchResults(state: SearchGamesState,poolOnly=false): Promi
     });
   }
 
-  if(poolOnly)return {ids:rows.map(row=>row.id),totalIsExact};
+  if(poolOnly)return {ids:rows.map(row=>row.id),totalIsExact,...(isUpcoming?{cards:rows.map(mapGameRow).map(game=>({...game,description:''}))}:{})};
   rows=rows.slice(start,start+SEARCH_PAGE_SIZE);
 
   const games = rows.map(mapGameRow);
@@ -721,10 +812,22 @@ async function fetchSearchResults(state: SearchGamesState,poolOnly=false): Promi
 // Only six unfiltered public discovery cohorts enter this shared cache.
 // Store IDs (~40KB maximum), never the 1,000 wide source rows. Warm pages read
 // only their 25 card records; personalized data never enters this path.
+// Next can start multiple background revalidations of the same stale entry.
+// Share their work within a function worker; retain only the six allowed sorts
+// while a read is pending, and always remove failed or completed reads.
+const pendingBrowsePools = new Map<SearchGamesState['sort'], Promise<RankedBrowsePool>>();
+function readSharedBrowsePool(sort: SearchGamesState['sort']): Promise<RankedBrowsePool> {
+  const pending = pendingBrowsePools.get(sort);
+  if (pending) return pending;
+  const read = fetchSearchResults({query:'',platform:'All',genre:'',year:'',monetization:'All',sort,page:1},true)
+    .finally(() => {pendingBrowsePools.delete(sort);});
+  pendingBrowsePools.set(sort, read);
+  return read;
+}
 const readRankedBrowsePool=unstable_cache(async(sort:SearchGamesState['sort'])=>{
   if(!['relevance','newest','upcoming','recently-added','top-rated','trending'].includes(sort))throw new Error('Invalid public browse sort');
-  return fetchSearchResults({query:'',platform:'All',genre:'',year:'',monetization:'All',sort,page:1},true);
-},['public-browse-ranked-ids-v2'],{revalidate:SEARCH_REVALIDATE_SECONDS,tags:['public-search']});
+  return readSharedBrowsePool(sort);
+},['public-browse-ranked-ids-v9'],{revalidate:SEARCH_REVALIDATE_SECONDS,tags:['public-search']});
 
 async function readBrowseCards(ids:string[]):Promise<Game[]> {
   const {data,error}=await getPublicSupabase().from('games').select(GAME_CARD_COLUMNS_WITH_DESC).in('id',ids).abortSignal(AbortSignal.timeout(5000));
@@ -734,6 +837,10 @@ async function readBrowseCards(ids:string[]):Promise<Game[]> {
 const readCachedBrowseCards=unstable_cache(readBrowseCards,['public-browse-cards-v1'],{revalidate:SEARCH_REVALIDATE_SECONDS,tags:['public-search']});
 
 export async function loadSearchResults(state: SearchGamesState): Promise<PaginatedResponse<Game>> {
+  if(state.sort==='upcoming'){
+    const {loadUpcomingSearch}=await import('./upcoming-search');
+    return loadUpcomingSearch(state,readRankedBrowsePool('upcoming'));
+  }
   // Next bypasses nested unstable_cache reads. Keep the cohort and small-card
   // caches outside the per-filter response cache, or every page rescans1,000 rows.
   if(!state.query && state.platform==='All' && !state.genre && !state.year && state.monetization==='All')return fetchSearchResults(state);

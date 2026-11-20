@@ -63,7 +63,9 @@ export default function EmailCodeForm({ email, purpose, onVerified, onBack }: Em
         type="text" inputMode="numeric" autoComplete="one-time-code" maxLength={19} required spellCheck={false} autoFocus
         className="h-12 w-full rounded-2xl border border-border bg-surface-2 px-4 text-lg tracking-widest text-foreground focus:outline-none focus:ring-2 focus:ring-accent/50"
         aria-describedby={`${codeId}-help`} />
-      <p id={`${codeId}-help`} className="text-xs leading-5 text-secondary">Codes expire and can be used once. Never share this code with anyone.</p>
+      <p id={`${codeId}-help`} className="text-xs leading-5 text-secondary">{purpose === 'email'
+        ? 'Use the latest code once, in this browser. Already confirmed elsewhere? Sign in here with your password.'
+        : 'Use the latest code once. If you verified it in another browser, finish there or request a fresh code here.'}</p>
     </div>
     {error && <p role="alert" className="text-sm text-danger">{error}</p>}
     {notice && <p role="status" className="text-sm text-secondary">{notice}</p>}

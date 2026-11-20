@@ -25,7 +25,7 @@ import { unstable_cache } from "next/cache";
 import { getPublicSupabase } from "@/lib/supabase/public";
 import { readCachedUpcomingSnapshot } from '@/lib/services/upcoming-snapshot';
 import { readHomepageReleaseRanking } from '@/lib/services/community-ranking';
-import {hasEarlyAccessSignal} from '@/lib/utils/release-status';
+import {hasEarlyAccessSignal,hasUnreleasedStatus} from '@/lib/utils/release-status';
 import { isPrimaryDiscoveryGame } from '@/lib/utils/discovery';
 import { mapGameRow } from "@/lib/db/mappers";
 import { GAME_CARD_COLUMNS_WITH_DESC } from "@/lib/db/columns";
@@ -1085,11 +1085,12 @@ export async function fetchNewReleases(limit = 20): Promise<Game[]> {
   // - verdict_label = 'COMING SOON'
   // - future release date
   // - 0 reviews AND not a recent release (>14 days old)
-  const JUST_RELEASED_DAYS = 45;
+  const JUST_RELEASED_DAYS = 14;
   const today = new Date().toISOString().slice(0, 10);
   const todayMs = new Date(today + "T00:00:00").getTime();
   
   const final = deduplicateBySteamAppId(filtered.filter((r) => {
+    if (hasUnreleasedStatus(r)) return false;
     if ((r as GameRow & { is_provisional?: boolean }).is_provisional && r.review_count < 50) return false;
     if (r.verdict_label === "COMING SOON") return false;
     if (isFutureDate(r.release_date)) return false;
@@ -1119,7 +1120,7 @@ export async function fetchNewReleases(limit = 20): Promise<Game[]> {
     return (b.current_players ?? 0) - (a.current_players ?? 0);
   });
 
-  return final.slice(0, limit).map(mapGameRow);
+  return final.map(mapGameRow).filter(game => game.verdictLabel !== 'COMING SOON').slice(0, limit);
 }
 
 /* ═══════════════════════════════════════════════════
@@ -1554,13 +1555,13 @@ export const EMPTY_HOMEPAGE_DATA: HomepageData = {
 const sectionCacheOptions = { revalidate: HOMEPAGE_REVALIDATE_SECONDS };
 const cachedHero = unstable_cache(() => retryCatalogRead(() => fetchHeroCandidates(HOMEPAGE_HERO_FETCH_TARGET)), ['homepage-hero-v2'], sectionCacheOptions);
 const cachedTrending = unstable_cache(() => retryCatalogRead(() => fetchTrendingGames(HOMEPAGE_SECTION_FETCH_TARGET, true)), ['homepage-trending-v1'], sectionCacheOptions);
-const cachedNewReleases = unstable_cache(() => retryCatalogRead(() => fetchNewReleases(HOMEPAGE_SECTION_FETCH_TARGET)), ['homepage-new-v1'], sectionCacheOptions);
+const cachedNewReleases = unstable_cache(() => retryCatalogRead(() => fetchNewReleases(HOMEPAGE_SECTION_FETCH_TARGET)), ['homepage-new-v2'], sectionCacheOptions);
 const cachedTopRated = unstable_cache(() => retryCatalogRead(() => fetchHomepageTopRated(HOMEPAGE_SECTION_FETCH_TARGET)), ['homepage-top-v1'], sectionCacheOptions);
 const cachedRecommendations = unstable_cache(() => retryCatalogRead(() => fetchHomepageRecommendations(HOMEPAGE_SECTION_FETCH_TARGET)), ['homepage-recommendations-v1'], sectionCacheOptions);
 
 const getCachedHomepageData = unstable_cache(
   coalesceCatalogueRead(fetchHomepageData),
-  ["homepage-data-v25"],
+  ["homepage-data-v26"],
   { revalidate: HOMEPAGE_REVALIDATE_SECONDS }
 );
 

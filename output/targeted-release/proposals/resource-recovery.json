@@ -1,0 +1,45 @@
+{
+  "status": "PROPOSED ONLY - explicit owner approval required",
+  "repository": "Yogesh-VG0/VerdictGames",
+  "project": "vjzsvnaswronkctazarn",
+  "rationale": "Known scheduled workers encounter pool checkout and statement-limit failures while both public and native DB access fail; prevent more maintenance work during recovery.",
+  "operations": [
+    {
+      "action": "Temporarily disable only Scheduled maintenance workflow 317757346",
+      "command": "gh workflow disable 317757346 --repo Yogesh-VG0/VerdictGames",
+      "preflight": "Verify exact workflow ID/name/path and current main workflow blob above; stop if any run is in progress or an unexpected queued/waiting run exists.",
+      "verify": "Read workflow state; require disabled_manually. Security and quality workflows stay enabled."
+    },
+    {
+      "action": "Cancel only stale queued scheduled run 43097684922, if still queued with the same head and no started job",
+      "command": "gh run cancel 43097684922 --repo Yogesh-VG0/VerdictGames",
+      "preflight": "Exact workflow, schedule event, old head d2101ef470d30ad452cc6d3b3e99d4a8acd39fa6 and queued/no-started-job state; completed/cancelled means skip, changed/running means stop.",
+      "verify": "Read run state after cancellation; never force cancel or cancel another run."
+    },
+    {
+      "action": "At most one owner-operated Restart project in the existing Supabase dashboard, only if database access remains unavailable after maintenance has stopped",
+      "target": "vjzsvnaswronkctazarn only",
+      "conditions": [
+        "First verify no maintenance job is active/queued; stop all agent catalogue/performance testing.",
+        "Owner confirms no separate bulk import, SQL job or maintenance operation is running. If unknown, stop and use Supabase support instead of restarting.",
+        "One minimal bounded read still fails; no repeated load probe.",
+        "Use Restart project only, never Pause, Restore, Reset database or Upgrade."
+      ],
+      "risk": "Brief additional downtime and cold database buffers; restart does not replenish IO credits, fix a query or prove root cause. No restart loop.",
+      "verify": "Wait for dashboard readiness, make one minimal read, then inspect only small resource/query statistics if available. Stop if still unavailable."
+    }
+  ],
+  "restoration": {
+    "command": "gh workflow enable 317757346 --repo Yogesh-VG0/VerdictGames",
+    "condition": "After database recovery, resource review and an explicitly approved release containing the fail-fast maintenance correction. Verify same workflow path/source; no manual job dispatch or backlog replay.",
+    "includedIfApproved": true
+  },
+  "effects": "Maintenance data freshness can lag during pause. Public website remains deployed; visitor traffic is not disabled. Missed schedules are not replayed automatically.",
+  "excluded": [
+    "No production merge/deployment, Auth/template write or migration/data/grant/RLS change",
+    "No new index/backfill/snapshot, cache purge, query cancellation or session termination",
+    "No timeout/pool/compute/storage/billing change, secret rotation or recovery replay",
+    "No required-check or branch-protection changes"
+  ],
+  "evidence": "output/targeted-release/resource-pressure-nov20.json"
+}

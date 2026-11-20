@@ -1,0 +1,81 @@
+{
+  "hosted": true,
+  "inspectOnly": false,
+  "migrationSha256": "198fc99b54c1e350211b194be07d7e7e654e5dccb2d08416652b36647175d7c9",
+  "requestedWriteSize": 10,
+  "updated": 147,
+  "batches": [
+    {
+      "rows": 10,
+      "ms": 2758
+    },
+    {
+      "rows": 10,
+      "ms": 1654
+    },
+    {
+      "rows": 10,
+      "ms": 1968
+    },
+    {
+      "rows": 10,
+      "ms": 1579
+    },
+    {
+      "rows": 10,
+      "ms": 1572
+    },
+    {
+      "rows": 10,
+      "ms": 1582
+    },
+    {
+      "rows": 10,
+      "ms": 1516
+    },
+    {
+      "rows": 10,
+      "ms": 1493
+    },
+    {
+      "rows": 10,
+      "ms": 1560
+    },
+    {
+      "rows": 10,
+      "ms": 1619
+    },
+    {
+      "rows": 10,
+      "ms": 2255
+    },
+    {
+      "rows": 10,
+      "ms": 2099
+    },
+    {
+      "rows": 10,
+      "ms": 1621
+    },
+    {
+      "rows": 10,
+      "ms": 1720
+    },
+    {
+      "rows": 7,
+      "ms": 1505
+    }
+  ],
+  "reductions": [],
+  "readBatches": 168,
+  "maxReadIds": 100,
+  "idReadBatches": 168,
+  "maxIdReadRows": 100,
+  "sourceValuesPreserved": true,
+  "completed": true,
+  "phase": "completed",
+  "ids": 8355,
+  "pending": 147,
+  "writeStep": "projection-verification",
+  "remaining": 0
+}

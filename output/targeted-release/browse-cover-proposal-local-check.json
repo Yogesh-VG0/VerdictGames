@@ -1,0 +1,7 @@
+{
+  "scope": "Exact migration and guarded ledger/index rollback, loopback only; all local changes rolled back",
+  "unexpectedLedgerAndDefinitionRefused": true,
+  "exactMigrationAndRollbackPassed": true,
+  "grantsAndRlsPreserved": true,
+  "localChangesRolledBack": true
+}

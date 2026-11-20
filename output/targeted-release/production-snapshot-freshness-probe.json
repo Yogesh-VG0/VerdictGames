@@ -1,0 +1,24 @@
+[
+  {
+    "path": "/api/rawg/lists?type=all-time",
+    "status": 200,
+    "cache": "HIT",
+    "date": "Thu, 19 Nov 2026 09:09:11 GMT",
+    "timing": "snapshot;dur=1860, catalogue_total;dur=1861",
+    "source": "rawg",
+    "degraded": false,
+    "fetchedAt": "2026-11-19T09:01:49.111021+00:00",
+    "count": 215
+  },
+  {
+    "path": "/api/rawg/lists?type=all-time&pageSize=19",
+    "status": 200,
+    "cache": "HIT",
+    "date": "Thu, 19 Nov 2026 09:09:11 GMT",
+    "timing": "snapshot;dur=1795, catalogue_total;dur=1796",
+    "source": "rawg",
+    "degraded": false,
+    "fetchedAt": "2026-11-19T09:01:49.111021+00:00",
+    "count": 215
+  }
+]

@@ -12,6 +12,7 @@ import { scoreToVerdict } from "../utils/score";
 import { getVerdictLabel } from "../utils/scoring";
 import { sanitizeDiscoveryDescription } from "../utils/discovery";
 import { normalizePlatforms } from "../utils/platform";
+import {hasUnreleasedStatus} from '../utils/release-status';
 
 /**
  * Regenerate verdict summary from display score + title + genres.
@@ -185,7 +186,9 @@ export function mapGameRow(row: GameRow): Game {
   const isJustReleased = isRecentRelease && reviewCount < JUST_RELEASED_MIN_REVIEWS;
 
   // Provisional: future games, explicit flags, OR old games with 0 reviews (not recent releases)
-  const effectiveProvisional = flagProvisional || isComingSoonLabel || isFutureRelease || (hasNoReviews && !isRecentRelease);
+  const explicitlyUnreleased = hasUnreleasedStatus(row);
+  const effectiveProvisional = isFutureRelease || explicitlyUnreleased
+    || ((flagProvisional || isComingSoonLabel || hasNoReviews) && !isRecentRelease);
 
   // ── Score resolution: prefer verdict_score (v2), fall back to legacy Bayesian ──
   const rawScore = row.score ?? 0;

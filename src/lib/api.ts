@@ -671,6 +671,9 @@ export async function getGXCalendar(month?: string): Promise<GXCalendarMonthResp
    ═══════════════════════════════════════════════════ */
 
 export interface RawgListGameItem {
+  catalogueId?: string;
+  tags?: string[];
+  monetization?: Game['monetization'];
   metricSource?: 'rawg' | 'catalogue';
   verdictScore?: number;
   rankingScore?: number;
@@ -698,6 +701,7 @@ export interface RawgListGameItem {
 }
 
 export interface RawgListResponse {
+  notice?: string;
   source?: 'rawg' | 'catalogue';
   fetchedAt?: string;
   degraded?: boolean;

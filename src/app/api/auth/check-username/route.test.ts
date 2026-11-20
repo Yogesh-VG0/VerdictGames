@@ -29,4 +29,10 @@ describe('username availability', () => {
   it('validates reserved names before querying', async () => {
     expect((await (await GET(request('ADMIN'))).json()).data.available).toBe(false);
   });
+  it('never publishes availability after the caller cancels the request', async () => {
+    const controller=new AbortController();controller.abort();
+    const response=await GET(new NextRequest('http://localhost/api/auth/check-username?username=player_test',{signal:controller.signal}));
+    expect(response.status).toBe(503);
+    expect((await response.json()).data?.available).not.toBe(true);
+  });
 });

@@ -1,0 +1,14 @@
+{
+  "passed": true,
+  "scope": "Offline original release source versus compact classification candidate; actual PostgreSQL classifier on captured public catalogue, transaction rolled back; no network or database credentials",
+  "sourceRows": 1000,
+  "fullBytes": 1428156,
+  "compactBytes": 565609,
+  "classificationSource": "exact approved SQL function in disposable local transaction; hosted flag read unavailable",
+  "eligible": 481,
+  "pages": 20,
+  "allResponseFieldsEqual": true,
+  "uniqueIds": 481,
+  "orderedIdSha256": "2a8242b3413979e235f2ae0bce5cce2b57ff9f09546bf84bf79579af4f27b952",
+  "byteComparison": "Uncompressed JSON of the identical captured source cohort; original columns versus compact classification/ranking fields. Not a hosted transport measurement."
+}

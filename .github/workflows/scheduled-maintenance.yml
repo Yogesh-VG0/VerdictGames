@@ -31,7 +31,7 @@ on:
       review_limit:
         description: Maximum Steam review caches to refresh (1–1000)
         required: false
-        default: "500"
+        default: "50"
         type: string
 
 permissions:
@@ -125,7 +125,7 @@ jobs:
           TWITCH_CLIENT_ID: ${{ secrets.TWITCH_CLIENT_ID }}
           TWITCH_CLIENT_SECRET: ${{ secrets.TWITCH_CLIENT_SECRET }}
           STEAM_API_KEY: ${{ secrets.STEAM_API_KEY }}
-          STEAM_REVIEW_LIMIT: ${{ inputs.review_limit || '500' }}
+          STEAM_REVIEW_LIMIT: ${{ inputs.review_limit || '50' }}
           SCHEDULER_DB_MAX_CONNECTIONS: "2"
           SCHEDULER_DB_CONNECT_TIMEOUT_SECONDS: "30"
           SCHEDULER_DB_IDLE_TIMEOUT_SECONDS: "30"

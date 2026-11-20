@@ -10,6 +10,7 @@
 
 import { Suspense, useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { usePathname, useSearchParams, useRouter } from "next/navigation";
+import Link from 'next/link';
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import { getUsernameValidationError, normalizeUsername, sanitizeUsername } from "@/lib/auth/username";
@@ -232,12 +233,12 @@ function AuthModalContent({ isOpen, onClose, defaultTab = "login", message }: Au
     if (result.error) {
       setError(result.error);
     } else {
-      setSuccessMsg('If this address has an account awaiting verification, a new confirmation link is on its way.');
+      setSuccessMsg('If this address is awaiting verification, a new confirmation code is on its way.');
       setVerificationEmail(targetEmail.trim().toLowerCase());
       setResendUntil(Date.now() + 60_000);
     }
     } catch {
-      setError('Temporarily unable to send the confirmation link. Please retry.');
+      setError('Temporarily unable to send the confirmation code. Please retry.');
     } finally { resendPending.current = false; setResendLoading(false); }
   }
 
@@ -652,12 +653,13 @@ function AuthModalContent({ isOpen, onClose, defaultTab = "login", message }: Au
                 {loading ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    {view === "login" ? "Signing in..." : view === "signup" ? "Creating account..." : "Sending reset link..."}
+                    {view === "login" ? "Signing in..." : view === "signup" ? "Creating account..." : "Sending recovery code..."}
                   </>
                 ) : (
-                  view === "login" ? "Log In" : view === "signup" ? "Create Account" : "Send Reset Link"
+                  view === "login" ? "Log In" : view === "signup" ? "Create Account" : "Send Recovery Code"
                 )}
               </button>
+              {view === 'signup' && <Link href="/auth/confirm" onClick={onClose} className="block text-center text-sm font-medium text-accent">Already received a code? Verify your email</Link>}
             </form>
             )}
           </motion.div>

@@ -1,0 +1,22 @@
+{
+  "verified": true,
+  "scope": "Anonymous private headers and fresh public CDN response only; not overall production acceptance",
+  "privatePaths": [
+    "/api/auth/me",
+    "/api/library",
+    "/api/library/stats",
+    "/api/lists?scope=mine&view=summary",
+    "/api/recommendations",
+    "/api/reviews?page=1"
+  ],
+  "sourceFresh": true,
+  "publicHit": true,
+  "reliabilityIssues": [
+    {
+      "path": "/api/search?sort=recently-added",
+      "status": 500,
+      "ms": 7754,
+      "scope": "Cold CDN MISS; unresolved and not waived"
+    }
+  ]
+}

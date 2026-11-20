@@ -1,0 +1,37 @@
+{
+  "status": "LOCAL ONLY - approval required",
+  "project": "vjzsvnaswronkctazarn",
+  "migration": "supabase/migrations/20261119153400_cover_browse_trending_ids.sql",
+  "migrationSha256": "8d00cb80c1b21e44b37ccb8f99c76567cd4e96ff32e80acdecee1339fe997722",
+  "rollback": "output/targeted-release/proposals/rollback_browse_trending_cover.sql",
+  "rollbackSha256": "1b1d867270460a5c3b6e7d2d7e58b9caa87f3d423497ac8eb63e9d4bdd0f0f93",
+  "scope": "One additive covering index and exact matching migration ledger entry; no source data, grants, RLS, functions, Auth, scheduler or old index changes",
+  "rationale": "The actual narrow Trending ID query still hit the existing PostgreSQL 3-second limit. Its installed ordering index requires heap reads for cover_image filtering. The covering index allows an index-only plan including generic prepared queries.",
+  "local": {
+    "games": 8350,
+    "baselineMs": 0.532,
+    "coveredMs": 0.201,
+    "baselineBuffers": 757,
+    "coveredBuffers": 15,
+    "coveredHeapFetches": 0,
+    "indexBytes": 1155072,
+    "exact750OrderedIdsPreserved": true
+  },
+  "limits": {
+    "lockTimeoutSeconds": 2,
+    "statementTimeoutSeconds": 5
+  },
+  "caveats": [
+    "Local timings are memory-resident, not hosted storage-cold proof.",
+    "Hosted planner visibility estimate is 1705/4721 pages; an index-only scan can still fetch heap tuples until ordinary vacuum visibility permits skipping them.",
+    "Hosted benefit must be measured before merge/deployment. If the reviewed benefit/compatibility checks fail, roll back only this new index and exact ledger entry and stop release.",
+    "The existing older ordering index is retained. Approximately1.15MB additional storage and extra relevant-write maintenance are expected.",
+    "No manual VACUUM, configuration change, timeout increase or extra migration is authorized."
+  ],
+  "application": {
+    "pr": 12,
+    "sourceUnchangedFrom": "b97a4a3b7fa9be6b19d0256d8184309abc3febe6",
+    "mergeAndProductionDeployment": "Separate exact-head approval required, conditional on CI and real cold-request acceptance"
+  },
+  "recovery": "Existing verified R3/R4, uploaded catalogue-state supplement and newly verified/uploaded encrypted email configuration are preserved; no source/user row mutation is proposed"
+}

@@ -5,17 +5,21 @@
   "checks": [
     "signup waiting step removes password fields",
     "signup-code-phone fits viewport",
-    "confirmation template supplies the landing marker for old and new signup clients",
-    "opening/scanning confirmation page does not consume token",
-    "confirmation secret removed from visible URL/history",
+    "new confirmation email contains only a code and a non-consuming form address",
+    "local Auth issues the proposed six-digit confirmation code",
+    "opening/scanning the generic confirmation form does not confirm an account",
     "confirmation result forbids browser/shared caching and sends no-referrer",
-    "confirmation tab signs in and automatically closes matching original signup modal",
+    "confirmation code in another tab signs in and automatically closes matching original signup modal",
     "confirmation-success-phone fits viewport",
     "confirmation-success-desktop fits viewport",
     "confirmation success remains understandable across theme/layout changes",
+    "legacy confirmation secret is removed from visible URL/history",
     "replayed confirmation cannot create a session in another browser",
     "signup waiting step removes password fields",
     "confirmation code verifies original signup without clicking a link",
+    "signup waiting step removes password fields",
+    "concurrent confirmations authenticate only the code owner",
+    "confirmation replay is rejected after concurrent requests finish",
     "signup waiting step removes password fields",
     "confirmation on a separate device/browser does not silently authenticate the original device",
     "recovery-code-phone fits viewport",
@@ -49,5 +53,13 @@
     "vercel": "private, no-store",
     "referrer": "no-referrer"
   },
-  "recordedAt": "2026-11-18T10:33:13.263Z"
+  "concurrentConfirmation": [
+    {
+      "success": true
+    },
+    {
+      "success": true
+    }
+  ],
+  "recordedAt": "2026-11-19T16:35:29.289Z"
 }

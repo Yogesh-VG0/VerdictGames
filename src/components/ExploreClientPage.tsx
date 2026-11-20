@@ -308,7 +308,7 @@ export default function ExplorePage({ initialData, initialKey = '' }: { initialD
           </span>
         )}
       </div>
-      {query.data?.degraded && !isPending && <p role="status" className="text-sm text-secondary">{query.data.source === 'rawg' ? 'Showing saved RAWG rankings while we check for updates.' : activeTab === 'best-of-year' ? 'Showing saved upcoming games. Community counts are temporarily unavailable.' : 'RAWG rankings are temporarily unavailable. Showing Verdict rankings instead.'}</p>}
+      {query.data?.degraded && !isPending && <p role="status" className="text-sm text-secondary">{query.data.notice || (query.data.source === 'rawg' ? 'Showing saved RAWG rankings while we check for updates.' : activeTab === 'best-of-year' ? 'Showing saved upcoming games. Community counts are temporarily unavailable.' : 'RAWG rankings are temporarily unavailable. Showing Verdict rankings instead.')}</p>}
 
       {(isPending || query.isLoading) && <p role="status" className="flex items-center gap-2 text-sm text-secondary"><span className="h-2 w-2 rounded-full bg-accent motion-safe:animate-pulse" aria-hidden="true" />Updating games…</p>}
       {/* Feedback belongs beside the results being replaced, not in a distant toast. */}

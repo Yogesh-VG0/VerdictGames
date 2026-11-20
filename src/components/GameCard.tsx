@@ -75,6 +75,10 @@ export default function GameCard({
   className,
   variant = "default",
 }: GameCardProps) {
+  const ratingLabel = game.isPreview ? sourceLabel(game.scoreSource) || 'Provider' : 'Verdict';
+  const ratingTitle = game.isPreview
+    ? `${ratingLabel} rating: ${game.score}`
+    : `Verdict score: ${game.score}. Provider ratings are separate; this score accounts for review confidence.`;
   if (variant === "spotlight") {
     return (
       <Link href={`/game/${game.slug}`} prefetch={prefetch} className={cn("block group", className)}>
@@ -109,16 +113,14 @@ export default function GameCard({
                   "group-hover:" + scoreGlowClass(game.score),
                   "transition-colors duration-150"
                 )}
-                title={`Verdict Score: ${game.score} (source: ${game.scoreSource ?? "blended"})`}
+                title={ratingTitle}
               >
                 {game.score}
-                {sourceLabel(game.scoreSource) && (
-                  <span className="text-[10px] text-white/80 font-medium uppercase">{sourceLabel(game.scoreSource)}</span>
-                )}
+                <span className="text-[10px] text-white/80 font-medium uppercase">{ratingLabel}</span>
               </div>
             ) : isUnreleased(game) ? (
               <div className="absolute top-3 right-3 rounded-xl px-2.5 py-1 bg-accent/70 backdrop-blur-md border border-white/10 text-[10px] font-bold text-white">
-                Coming Soon
+                {game.releaseStatus === 'early-access' ? 'Early Access' : game.releaseDateTba ? 'Date TBA' : 'Coming Soon'}
               </div>
             ) : game.verdictLabel === "JUST RELEASED" ? (
               <div className="absolute top-3 right-3 rounded-xl px-2.5 py-1 bg-pixel-cyan/70 backdrop-blur-md border border-white/10 text-[10px] font-bold text-white">
@@ -203,17 +205,15 @@ export default function GameCard({
                 scoreColor(game.score),
                 "transition-colors duration-150"
               )}
-              title={`Verdict ${game.score} (${game.scoreSource ?? "blended"})`}
+              title={ratingTitle}
             >
               {game.score}
-              {sourceLabel(game.scoreSource) && (
-                <span className="text-[10px] text-white/80 font-medium uppercase">{sourceLabel(game.scoreSource)}</span>
-              )}
+              <span className="text-[10px] text-white/80 font-medium uppercase">{ratingLabel}</span>
             </div>
           )}
           {isUnreleased(game) && (
             <div className="absolute top-2.5 right-2.5 rounded-xl px-2 py-1 bg-accent/70 backdrop-blur-md border border-white/10 text-[10px] font-bold text-white">
-              Coming Soon
+              {game.releaseStatus === 'early-access' ? 'Early Access' : game.releaseDateTba ? 'Date TBA' : 'Coming Soon'}
             </div>
           )}
           {!isUnreleased(game) && game.verdictLabel === "JUST RELEASED" && (

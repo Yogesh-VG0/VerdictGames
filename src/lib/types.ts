@@ -31,6 +31,7 @@ export type SortOption = "relevance" | "newest" | "upcoming" | "recently-added" 
 export type LibraryStatus = "wishlist" | "playing" | "completed" | "dropped" | "paused";
 
 export interface Game {
+  releaseDateTba?: boolean;
   id: string;
   slug: string;
   title: string;
@@ -263,6 +264,7 @@ export interface SearchFilters {
 }
 
 export interface PaginatedResponse<T> {
+  notice?: string;
   items: T[];
   total: number;
   page: number;

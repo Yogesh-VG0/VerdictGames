@@ -1,0 +1,68 @@
+{
+  "project": "vjzsvnaswronkctazarn",
+  "keys": [
+    "discovery:rawg:all-time:0:v1",
+    "discovery:rawg:popular-in-year:2026:v1",
+    "discovery:rawg:popular-in-year:2025:v1",
+    "discovery:rawg:popular-in-year:2024:v1"
+  ],
+  "workerSha256": "e35fb58151ef3e9aaa1c6e9092be9c3cc8edcae2b208f5f1426d015e89ed3a02",
+  "completed": true,
+  "before": [],
+  "results": [
+    {
+      "type": "all-time",
+      "year": 0,
+      "rows": 250,
+      "ok": true
+    },
+    {
+      "type": "popular-in-year",
+      "year": 2026,
+      "rows": 250,
+      "ok": true
+    },
+    {
+      "type": "popular-in-year",
+      "year": 2025,
+      "rows": 250,
+      "ok": true
+    },
+    {
+      "type": "popular-in-year",
+      "year": 2024,
+      "rows": 250,
+      "ok": true
+    }
+  ],
+  "readback": [
+    {
+      "key": "discovery:rawg:all-time:0:v1",
+      "count": 250,
+      "bytes": 269104,
+      "sha256": "1a92cf24434851c79478710842a10af8cace1b722cebe9a4d7c55652f4104fb2",
+      "fetchedAt": "2026-11-19T09:01:49.111Z"
+    },
+    {
+      "key": "discovery:rawg:popular-in-year:2026:v1",
+      "count": 250,
+      "bytes": 162597,
+      "sha256": "69d414977e0ca8ab53be1910f55ecdfce74f72d773abaaef9ec2c4eabb7e4f2d",
+      "fetchedAt": "2026-11-19T09:01:53.576Z"
+    },
+    {
+      "key": "discovery:rawg:popular-in-year:2025:v1",
+      "count": 250,
+      "bytes": 378611,
+      "sha256": "d6918d8187ae551bed0b617a34afb798ed2f03c19c5998e5863caf1bc899c9b3",
+      "fetchedAt": "2026-11-19T09:02:12.286Z"
+    },
+    {
+      "key": "discovery:rawg:popular-in-year:2024:v1",
+      "count": 250,
+      "bytes": 357293,
+      "sha256": "0d33355617a3406c76f7854c70ee8cec3d98a0e0a3c36baf3b1af245cefdae9e",
+      "fetchedAt": "2026-11-19T09:02:32.848Z"
+    }
+  ]
+}
