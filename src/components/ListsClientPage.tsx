@@ -161,7 +161,7 @@ export default function ListsPage({ initialData }: { initialData?: ListSummaries
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent pointer-events-none" />
                   <div className="absolute bottom-2 left-2">
                     <PixelBadge variant="accent" size="sm">
-                      {list.gameCount} games
+                      {list.gameCount} {list.gameCount === 1 ? "game" : "games"}
                     </PixelBadge>
                   </div>
                   <span className="absolute right-2 top-2 rounded-lg bg-black/75 px-2 py-1 text-[10px] font-medium text-white">{list.isPublic === false ? 'Private' : list.isSystemManaged ? 'Editorial' : 'Community'}</span>

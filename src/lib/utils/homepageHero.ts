@@ -4,16 +4,17 @@ import { hasBrowseTrendingSignal } from "@/lib/utils/trending";
 import {isPublicSafeRawgGame} from './publicSafety';
 import type {RawgListItem} from '@/lib/external/rawg';
 import type {Game} from '@/lib/types';
+import { hasKnownFullRelease, hasUnreleasedStatus } from './release-status';
 
 export function getHeroSummary(game:Game):string {
   const description=game.description?.trim();
-  if(description && description.length>20 && !/is an exceptional|is a solid|has moments of brilliance|struggles to deliver/i.test(description)) {
+  const staleEarlyAccessLead = game.releaseStatus === 'early-access' && /\bis an upcoming\b/i.test(description?.slice(0, 120) ?? '');
+  if(description && description.length>20 && !staleEarlyAccessLead && !/is an exceptional|is a solid|has moments of brilliance|struggles to deliver/i.test(description)) {
     return description.slice(0,200)+(description.length>200?'…':'');
   }
+  if (game.releaseStatus === 'early-access') return 'Available in Early Access. The full release is still ahead.';
   if(game.isProvisional || game.verdictLabel==='COMING SOON') {
-    return game.releaseStatus==='early-access'
-      ? 'Available in Early Access. The full release is still ahead.'
-      : 'Explore the announced platforms, trailers and release details.';
+    return 'Explore the announced platforms, trailers and release details.';
   }
   if(game.verdictLabel==='JUST RELEASED')return 'Just released. A Verdict will appear when enough review data is available.';
   return game.verdictSummary;
@@ -21,13 +22,17 @@ export function getHeroSummary(game:Game):string {
 
 export function selectHeroDiscoveryCandidates(items:RawgListItem[],day:string) {
   const midnight=Date.parse(`${day}T00:00:00Z`);const seen=new Set<number>();
-  return items.filter(item=>{
+  const ranked = items.filter(item=>{
     const release=Date.parse(`${item.released}T00:00:00Z`);
     if(!isPublicSafeRawgGame(item) || item.added<100 || !item.background_image
       || item.tba || item.released?.endsWith('-12-31')
       || !Number.isFinite(release) || release<midnight-14*86400000 || release>midnight+90*86400000 || seen.has(item.id))return false;
     seen.add(item.id);return true;
-  }).sort((a,b)=>b.added-a.added || a.slug.localeCompare(b.slug)).slice(0,4);
+  }).sort((a,b)=>b.added-a.added || a.slug.localeCompare(b.slug));
+  return [
+    ...ranked.filter(item => item.released! <= day).slice(0, 2),
+    ...ranked.filter(item => item.released! > day).slice(0, 2),
+  ];
 }
 
 function getHomepageHeroAgeDays(row: Pick<GameRow, "release_date">): number {
@@ -76,13 +81,12 @@ export function isHomepageHeroAutoCandidate(row: GameRow): boolean {
   const verdictScore = row.verdict_score ?? row.score ?? 0;
   const ageDays = getHomepageHeroAgeDays(row);
 
-  if (row.is_featured_manual ?? false) {
-    return isHomepageHeroManualCandidate(row);
-  }
-
-  if (!row.release_date || verdictScore < 80) {
+  if (!row.header_image || row.header_image === row.cover_image || !row.release_date || ageDays < 0
+    || hasUnreleasedStatus(row) || (row.is_provisional && !hasKnownFullRelease(row)) || verdictScore < 80) {
     return false;
   }
+
+  if (row.is_featured_manual && isHomepageHeroManualCandidate(row)) return true;
 
   if (ageDays >= 0 && ageDays <= 120 && row.header_image && verdictScore >= 85 && hasStrongCriticEvidence(row) && evidenceReviewCount >= 1000) return true;
   if (currentPlayers < 2000) {
@@ -127,11 +131,13 @@ export function getHomepageHeroScore(row: GameRow): number {
             ? 3
             : 0;
   const volume = Math.min(8, Math.log10(evidenceReviewCount + 1) * 2);
-  const hasScreenshots = Array.isArray(row.screenshots) ? row.screenshots.length > 0 : Boolean(row.screenshots);
-  const mediaQuality = (hasScreenshots ? 2.5 : 0) + (row.header_image ? 2.5 : 0);
-  const lowPresencePenalty = ageDays > 60 && players < 150 && momentum < 0.03 && evidenceReviewCount < 50000
+  const mediaQuality = row.header_image && row.header_image !== row.cover_image
+    ? (/\/library_hero(?:_[^/]+)?\.|\/t_1080p\//i.test(row.header_image) ? 5 : 2)
+    : 0;
+  const independentRatingEvidence = hasStrongCriticEvidence(row) && evidenceReviewCount >= 1000;
+  const lowPresencePenalty = !independentRatingEvidence && ageDays > 60 && players < 150 && momentum < 0.03 && evidenceReviewCount < 50000
     ? 16
-    : ageDays > 30 && players < 250 && momentum < 0.03 && evidenceReviewCount < 25000
+    : !independentRatingEvidence && ageDays > 30 && players < 250 && momentum < 0.03 && evidenceReviewCount < 25000
       ? 10
       : 0;
 

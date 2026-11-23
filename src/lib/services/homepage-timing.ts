@@ -1,8 +1,8 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 
 type Rail = 'hero' | 'trending' | 'new_releases' | 'top_rated' | 'recommendations' | 'deals';
-type Phase = `rail_${Rail}` | `refresh_${Exclude<Rail, 'deals'>}`
-  | 'homepage_total' | 'database' | 'candidate_selection' | 'candidate_hydration'
+type Phase = `rail_${Rail}` | `refresh_${Rail}`
+  | 'homepage_total' | 'rail_queue' | 'database' | 'candidate_selection' | 'candidate_hydration'
   | 'provider_snapshot' | 'provider_fetch' | 'provider_fallback' | 'serialization';
 
 type Sample = { elapsed: number; active: number };

@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useSyncExternalStore } from "react";
 import Link from "next/link";
-import { motion, AnimatePresence, useReducedMotion, type Variants } from "framer-motion";
+import { motion, AnimatePresence, type Variants } from "framer-motion";
 import { Game } from "@/lib/types";
 import VerdictBadge from "@/components/ui/VerdictBadge";
 import ScoreRing from "@/components/ui/ScoreRing";
@@ -39,13 +39,23 @@ const slideVariants: Variants = {
 
 const SWIPE_THRESHOLD = 40;
 const SWIPE_VELOCITY = 300;
+const reducedMotionQuery = "(prefers-reduced-motion: reduce)";
+
+function subscribeToReducedMotion(callback: () => void) {
+  const media = window.matchMedia(reducedMotionQuery);
+  media.addEventListener("change", callback);
+  return () => media.removeEventListener("change", callback);
+}
+
+const readReducedMotion = () => window.matchMedia(reducedMotionQuery).matches;
+const readServerReducedMotion = () => false;
 
 export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselProps) {
   const [[page, direction], setPage] = useState([0, 0]);
   const [isPaused, setIsPaused] = useState(false);
   const [hovered, setHovered] = useState(false);
   const [focused, setFocused] = useState(false);
-  const reducedMotion = useReducedMotion();
+  const reducedMotion = useSyncExternalStore(subscribeToReducedMotion, readReducedMotion, readServerReducedMotion);
   const paused = isPaused || hovered || focused || Boolean(reducedMotion);
   const isSwiping = useRef(false);
   const isAnimating = useRef(false);
@@ -146,9 +156,10 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
 
   // Context-aware reason label per slide
   const getReasonLabel = (g: Game): string => {
+    if (g.releaseStatus === 'early-access') return "Early Access";
     if (g.isFeaturedManual) return "Editor's Pick";
     if (g.isProvisional || g.verdictLabel === "COMING SOON" || g.verdictLabel === 'JUST RELEASED') return "Featured";
-    if (g.isTrendingManual || g.trending) return "Trending Now";
+    if (g.trendingReason === "Trending Up") return "Trending Now";
     if (g.score >= 90) return "Top Rated";
     if (g.priceCurrent === 0 || g.isFree) return "Free to Play";
     if (g.priceLowest && g.priceCurrent && g.priceCurrent < g.priceLowest) return "On Sale";
@@ -194,8 +205,11 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
             {(game.headerImage || game.coverImage) ? (
               <HeroImage
                 src={game.headerImage || game.coverImage}
+                alternate={game.heroArtworkFallback || (game.coverImage !== game.headerImage ? game.coverImage : undefined)}
                 alt={game.title}
-                className="object-[70%_center] sm:object-center"
+                className={game.heroArtworkMobileFocalPoint === 'right'
+                  ? 'object-[69%_center] md:object-[56%_center]'
+                  : 'object-center md:object-[56%_center]'}
                 priority={prioritizeHeroImage}
               />
             ) : (
@@ -206,7 +220,7 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
 
         {/* Cinematic gradient overlay — stronger left-to-right + bottom-to-top for text readability */}
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-black/10 z-[1]" />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-transparent z-[1]" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/65 via-black/10 to-transparent z-[1]" />
       </div>
 
       {/* Content overlay — receives touch events for swipe */}
@@ -266,7 +280,7 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
             {game.score > 0 && game.confidence != null && game.confidence < 0.3 && (
               <p className="text-xs hero-overlay-text-muted">Limited rating evidence</p>
             )}
-            <p className="hidden sm:block text-sm md:text-base hero-overlay-text-secondary max-w-2xl line-clamp-2">
+            <p className="text-xs sm:text-sm md:text-base hero-overlay-text-secondary max-w-2xl line-clamp-2">
               {getHeroSummary(game)}
             </p>
 
@@ -351,7 +365,7 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
       {/* Dot indicators */}
       {slideCount > 1 && (
         <div className="absolute bottom-4 sm:bottom-5 left-1/2 -translate-x-1/2 sm:left-auto sm:translate-x-0 sm:right-6 md:right-10 z-[3] flex items-center gap-1.5 sm:gap-2 bg-black/30 backdrop-blur-sm rounded-full px-2 py-1.5" data-interactive>
-          {!reducedMotion && <button type="button" onClick={() => setIsPaused(!isPaused)} aria-label={isPaused ? 'Resume slideshow' : 'Pause slideshow'} aria-pressed={isPaused} className="flex h-8 w-8 items-center justify-center rounded-full text-white text-xs">{isPaused ? '▶' : 'Ⅱ'}</button>}
+          {!reducedMotion && <button type="button" onClick={() => setIsPaused(!isPaused)} aria-label={isPaused ? 'Resume slideshow' : 'Pause slideshow'} aria-pressed={isPaused} className="flex h-8 w-8 items-center justify-center rounded-full text-white text-xs motion-reduce:hidden">{isPaused ? '▶' : 'Ⅱ'}</button>}
           {games.map((_, i) => (
             <button
               key={i}
@@ -371,7 +385,7 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
 
       {/* Progress bar */}
       {slideCount > 1 && !paused && (
-        <div className="absolute bottom-0 left-0 right-0 h-[2px] z-[3]">
+        <div className="absolute bottom-0 left-0 right-0 h-[2px] z-[3] motion-reduce:hidden">
           <motion.div
             key={`progress-${page}`}
             className="h-full bg-accent/70 origin-left"

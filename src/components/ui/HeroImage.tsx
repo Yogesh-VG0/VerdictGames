@@ -1,10 +1,11 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { Gamepad2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import SafeImage from "@/components/ui/SafeImage";
-import {heroArtworkUrl} from '@/lib/utils/artwork-policy.mjs';
+import { isProviderHeroArtwork } from '@/lib/utils/artwork-policy.mjs';
+import { igdbHeroImageLoader } from '@/lib/utils/image-loader';
 
 /**
  * Resilient hero image component.
@@ -16,6 +17,7 @@ type HeroImageProps = {
   src: string;
   alt: string;
   priority?: boolean;
+  alternate?: string;
   className?: string;
   sizes?: string;
   fit?: 'cover' | 'contain';
@@ -27,12 +29,15 @@ function HeroImageContent({
   src,
   alt,
   priority = false,
+  alternate,
   className,
   sizes = "100vw",
   fit = 'cover',
   fallback,
   fallbackClassName,
 }: HeroImageProps) {
+  const [useAlternate, setUseAlternate] = useState(false);
+  const activeSrc = useAlternate && alternate ? alternate : src;
   if (!src) {
     return (
       <div
@@ -48,13 +53,15 @@ function HeroImageContent({
 
   return (
     <SafeImage
-      src={heroArtworkUrl(src)}
+      src={activeSrc}
       alt={alt}
       fill
       className={cn("object-cover", className)}
       style={{ objectFit: fit }}
       sizes={sizes}
-      priority={priority}
+      preload={priority && !useAlternate}
+      loader={activeSrc.startsWith('https://images.igdb.com/') && isProviderHeroArtwork(activeSrc) ? igdbHeroImageLoader : undefined}
+      onError={alternate && !useAlternate ? () => setUseAlternate(true) : undefined}
       quality={85}
       fallback={fallback ?? <Gamepad2 className="w-8 h-8 text-accent/35" />}
       fallbackClassName={cn(

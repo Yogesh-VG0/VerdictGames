@@ -6,7 +6,7 @@ import {
   type GXDealEntry,
   type GXGameListEntry,
 } from "@/lib/external/gxcorner";
-import { gxFetchWithCache } from "@/lib/external/gx-cache";
+import { gxFetchWithCache, readGXDealsSnapshot } from "@/lib/external/gx-cache";
 import { getServerSupabase } from "@/lib/supabase/server";
 import type { GXDeal, GXFreeGame, GXTopGame } from "@/lib/types";
 import { slugify, titlesMatch } from "@/lib/utils/slugify";
@@ -171,6 +171,14 @@ export const loadGXDeals = unstable_cache(
   ["gx-feeds", "deals"],
   { revalidate: GX_FEEDS_REVALIDATE_SECONDS }
 );
+
+// The homepage can use the durable feed as-is. Dedicated Deals retains live
+// refresh and canonical game-link hydration through its current entry point.
+export async function loadHomepageDeals(): Promise<GXDeal[]> {
+  const rows = await readGXDealsSnapshot();
+  const matches = new Map<string, GXMatchedGame>();
+  return rows.slice(0, 20).map(entry => mapDealEntry(entry, matches));
+}
 
 export const loadGXFreeToPlay = unstable_cache(
   async () => loadGXFreeToPlayUncached(),

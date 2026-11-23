@@ -3,7 +3,7 @@ import { unstable_cache } from 'next/cache';
 import { getPublicSupabase } from '@/lib/supabase/public';
 import { mapGameRow, mapListRow } from '@/lib/db/mappers';
 import { GAME_CARD_COLUMNS_WITH_DESC } from '@/lib/db/columns';
-import { passesCuratedListSelection } from '@/lib/utils/curatedLists';
+import { editorialListTitle, passesCuratedListSelection } from '@/lib/utils/curatedLists';
 import { dedupePublicCanonicalRows } from '@/lib/utils/publicCanonical';
 import { isPublicSafeGame } from '@/lib/utils/publicSafety';
 import { hasUsableCardImage } from '@/lib/utils/mediaReadiness';
@@ -32,7 +32,7 @@ async function readListDetail(db: SupabaseClient<Database>, slug: string, ownerI
   items.sort((a, b) => a.position - b.position);
   const rows: GameRow[] = [];
   for (let offset = 0; offset < items.length; offset += 250) {
-    const { data, error } = await db.from('games').select(GAME_CARD_COLUMNS_WITH_DESC).in('id', items.slice(offset, offset + 250).map(item => item.game_id))
+    const { data, error } = await db.from('games').select(GAME_CARD_COLUMNS_WITH_DESC + ',hltb_main,rawg_id').in('id', items.slice(offset, offset + 250).map(item => item.game_id))
       .abortSignal(AbortSignal.timeout(PUBLIC_DATABASE_READ_TIMEOUT_MS));
     if (error) throw error;
     rows.push(...(data ?? []) as unknown as GameRow[]);
@@ -40,11 +40,13 @@ async function readListDetail(db: SupabaseClient<Database>, slug: string, ownerI
   const byId = new Map(rows.filter(row => isPublicSafeGame(row) && hasUsableCardImage(row)).map(row => [row.id, row]));
   const ordered = items.map(item => byId.get(item.game_id)).filter((row): row is GameRow => !!row);
   const games = dedupePublicCanonicalRows(ordered.filter(row => passesCuratedListSelection(list as ListRow, row))).map(mapGameRow);
-  return mapListRow(list as ListRow, games);
+  return mapListRow(list.is_system_managed
+    ? { ...list, title: editorialListTitle(list), cover_image: games[0]?.coverImage || '' } as ListRow
+    : list as ListRow, games);
 }
 
 // Only public, anonymously readable content may enter this shared cache.
-export const loadPublicList = cache(unstable_cache((slug: string) => readListDetail(getPublicSupabase(),slug), ['public-list-v2'], { revalidate: 300, tags:['public-lists'] }));
+export const loadPublicList = cache(unstable_cache((slug: string) => readListDetail(getPublicSupabase(),slug), ['public-list-v4'], { revalidate: 300, tags:['public-lists'] }));
 
 // Caller-authenticated/RLS reads stay outside all shared caches. The explicit
 // owner predicate also prevents a caller from reading another user's list.

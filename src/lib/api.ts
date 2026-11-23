@@ -129,6 +129,7 @@ export interface HomepageData {
   trending: Game[];    // trending rail — pre-deduped against hero server-side
   topRated: Game[];
   newReleases: Game[];
+  /** @deprecated Use getHomepageDeals for the independently loaded Deals tab. */
   deals: GXDeal[];
   recommendations: Game[];  // anonymous recommendations — bundled to avoid extra API call
 }
@@ -566,6 +567,12 @@ export async function getRecommendations(limit = 8): Promise<Game[]> {
   return (await apiFetch<Game[]>(`/api/recommendations?limit=${limit}`)) ?? [];
 }
 
+export async function getHomepageRecommendations(exclude: string): Promise<{ games: Game[]; personalized: boolean }> {
+  const params = new URLSearchParams({ limit: "20", context: "homepage", exclude });
+  return (await apiFetch<{ games: Game[]; personalized: boolean }>(`/api/recommendations?${params}`))
+    ?? { games: [], personalized: false };
+}
+
 /* ═══════════════════════════════════════════════════
    DEVELOPERS
    ═══════════════════════════════════════════════════ */
@@ -632,6 +639,10 @@ export async function getSiteStats(): Promise<SiteStats> {
 /* ═══════════════════════════════════════════════════
    GX CORNER — Live feeds (no DB, refreshed every 5 min)
    ═══════════════════════════════════════════════════ */
+
+export function getHomepageDeals(signal?: AbortSignal): Promise<GXDeal[]> {
+  return apiFetchOrThrow<GXDeal[]>("/api/gx/deals/snapshot", { credentials: "omit", signal });
+}
 
 export async function getGXDeals(): Promise<GXDeal[]> {
   return (await apiFetch<GXDeal[]>("/api/gx/deals")) ?? [];

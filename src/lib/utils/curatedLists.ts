@@ -2,8 +2,17 @@ import type { GameRow, ListRow } from "@/lib/supabase/types";
 import { isPrimaryDiscoveryGame } from "@/lib/utils/discovery";
 import { isQualityGame, isSurfaceReady } from "@/lib/utils/quality";
 import {hasEarlyAccessSignal,hasKnownFullRelease} from './release-status';
+import { editorialExclusion } from './editorial-eligibility.mjs';
 
 type CuratedListDescriptor = Pick<ListRow, "is_system_managed" | "slug" | "tags">;
+
+export function editorialListTitle(list: CuratedListDescriptor & Pick<ListRow, "title">): string {
+  const annual = /^most-wanted-(\d{4})$/.exec(list.slug);
+  const currentYear = new Date().getUTCFullYear();
+  return list.is_system_managed && annual && Number(annual[1]) < currentYear
+    ? `${list.title} (archive)`
+    : list.title;
+}
 
 const UPCOMING_RELEASE_STATUSES = new Set(["announced", "coming_soon", "upcoming", "tba"]);
 
@@ -19,6 +28,7 @@ export function isUpcomingCuratedListGame(row: GameRow): boolean {
   if(hasEarlyAccessSignal(row))return true;
   const today = new Date().toISOString().slice(0, 10);
   const releaseStatus = String(row.release_status ?? "").toLowerCase();
+  if (["cancelled", "canceled", "delisted"].includes(releaseStatus)) return false;
 
   return Boolean(
     (row.release_date && row.release_date > today)
@@ -29,6 +39,7 @@ export function isUpcomingCuratedListGame(row: GameRow): boolean {
 }
 
 export function passesCuratedListSelection(list: CuratedListDescriptor, row: GameRow): boolean {
+  if (list.is_system_managed && (editorialExclusion(list.slug, row) || !isPrimaryDiscoveryGame(row))) return false;
   if (isUpcomingSystemManagedList(list)) {
     return isUpcomingCuratedListGame(row)
       && isPrimaryDiscoveryGame(row)

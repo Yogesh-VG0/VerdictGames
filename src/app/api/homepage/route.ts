@@ -1,13 +1,14 @@
 /**
  * GET /api/homepage
  *
- * Homepage aggregator — returns all homepage sections in a single call.
+ * Initial catalogue aggregator — returns all homepage sections in a single call.
  * Eliminates 5+ separate API calls from the frontend.
  *
  * Returns: { hero, trending, topRated, newReleases, deals, recommendations }
  * hero and trending are distinct pools — hero feeds the carousel,
  * trending feeds the rail. They are pre-deduped server-side.
  * recommendations are genre-diverse picks for anonymous users.
+ * deals is a deprecated empty field. Use /api/gx/deals/snapshot.
  */
 
 import { NextResponse } from "next/server";

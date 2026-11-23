@@ -21,6 +21,7 @@ const rows = Array.from({length:1000}, (_, index) => ({
   description:'A complete standalone action adventure with a substantial story.',
   score:90, verdict_score:90, confidence:0.9, review_count:1000000, steam_total_count:1000000,
   steam_positive_count:950000, current_players:1000, momentum:0.2, is_provisional:false, verdict_label:'MUST PLAY',
+  players_updated_at:'2026-11-19T11:59:00Z',
   explore_primary_safe:true as boolean|null,
 }));
 vi.mock('@/lib/supabase/public', () => ({hasPublicSupabaseEnv:()=>true, getPublicSupabase:()=>({from:()=>{
@@ -116,7 +117,7 @@ describe('bounded Recently Added cohort',()=>{
   it('also bounds the demonstrated 750-row Trending cohort without changing its size',async()=>{
     const result=await loadSearchResults({...request,sort:'trending'});
     expect(result.total).toBe(750);expect(result.totalIsExact).toBe(false);
-    expect(result.items.map(row=>row.id)).toEqual(rows.slice(0,25).map(row=>row.id));
+    expect(result.items.map(row=>row.id)).toEqual(rows.slice(0,750).map(row=>row.id).sort().slice(0,25));
     expect(state.calls[0].columns).toBe('id');expect(state.calls[0].range).toEqual([0,749]);
     const chunks=state.calls.filter(call=>call.ids && call.ids.length>25);
     expect(chunks.map(call=>call.ids!.length)).toEqual([200,200,200,150]);

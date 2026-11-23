@@ -29,6 +29,7 @@
  * 11. Sci-Fi Epics                         22. Best Action RPGs of All Time
  */
 
+import { compareEditorialGames, editorialAnticipation, editorialExclusion, EDITORIAL_GAME_COLUMNS, EDITORIAL_UPCOMING_SNAPSHOT_KEY, matchesEditorialAnticipation, selectEditorialIds } from "../src/lib/utils/editorial-eligibility.mjs";
 import { startRun, finishRun, acquireLock, releaseLock, isInfrastructureDbError } from './lib/scheduler-logger.mjs';
 import { connectDb, closeDb } from './lib/db-connect.mjs';
 import { createHash } from 'node:crypto';
@@ -77,7 +78,6 @@ function buildSeedHash(seed, gameIds) {
 // Rule 1: No game in more than 2 lists globally.
 // Rule 2: Any two lists must be ≥ 50% different (Jaccard dissimilarity).
 const gameAppearanceCount = new Map();
-const seededListSets = {}; // slug → Set<id>
 const usedCoverImages = new Set(); // Track cover images to avoid duplicates across lists
 
 // Minimum review counts — prevents low-review games with inflated scores
@@ -86,37 +86,6 @@ const MIN_ALLTIME_REVIEWS = 50;   // for all-time lists (higher bar for classics
 
 // Confidence-weighted score SQL (inlined in ORDER BY):
 // (score::float * GREATEST(review_count, 0) + 75.0 * 200.0) / (GREATEST(review_count, 0) + 200.0) DESC
-
-function enforceOverlapConstraints(ids, maxPerGame = 2) {
-  const result = [];
-  for (const id of ids) {
-    const count = gameAppearanceCount.get(id) ?? 0;
-    if (count < maxPerGame) result.push(id);
-  }
-  return result;
-}
-
-function recordAppearances(slug, ids) {
-  seededListSets[slug] = new Set(ids);
-  for (const id of ids) {
-    gameAppearanceCount.set(id, (gameAppearanceCount.get(id) ?? 0) + 1);
-  }
-}
-
-// Returns true if the proposed list is ≥ 50% different from ALL already-seeded lists.
-// Jaccard similarity = |A ∩ B| / |A ∪ B|; we require similarity < 0.5.
-function passesPairwiseOverlap(proposedIds) {
-  const proposed = new Set(proposedIds);
-  for (const [otherSlug, otherSet] of Object.entries(seededListSets)) {
-    const intersection = [...proposed].filter((id) => otherSet.has(id)).length;
-    const union = new Set([...proposed, ...otherSet]).size;
-    const similarity = union > 0 ? intersection / union : 0;
-    if (similarity >= 0.5) {
-      return { ok: false, conflictSlug: otherSlug, similarity: (similarity * 100).toFixed(0) };
-    }
-  }
-  return { ok: true };
-}
 
 const LIST_BLUEPRINTS = [
   // ── 1. Best Recent Single-Player RPGs ──
@@ -279,26 +248,17 @@ const LIST_BLUEPRINTS = [
     title: `Most Wanted Upcoming ${new Date().getFullYear()} Games`,
     description: `The most anticipated games releasing in ${new Date().getFullYear()}. Add them to your watchlist now.`,
     tags: ["editorial", "upcoming", String(new Date().getFullYear()), "wishlist"],
-    query: async () => {
+    query: async (anticipation) => {
+      const ids = [...anticipation.keys()].sort((a, b) => anticipation.get(b).interest - anticipation.get(a).interest);
+      if (!ids.length) return [];
       const yearStr = String(new Date().getFullYear());
       const today = new Date().toISOString().slice(0, 10);
       return sql`
         SELECT id FROM games
-        WHERE (
-            (release_date > ${today} AND release_date <= ${yearStr + "-12-31"})
-            OR (
-              release_date IS NULL
-              AND (
-                is_provisional = true
-                OR verdict_label = 'COMING SOON'
-                OR COALESCE(release_status, '') IN ('announced', 'coming_soon', 'upcoming', 'tba')
-              )
-            )
-          )
+        WHERE rawg_id = ANY(${ids}::integer[])
+          AND release_date > ${today} AND release_date < ${yearStr + "-12-31"}
           AND cover_image IS NOT NULL AND cover_image != ''
-        ORDER BY CASE WHEN release_date IS NULL THEN 1 ELSE 0 END,
-               release_date ASC NULLS LAST,
-               (score::float * GREATEST(COALESCE(review_count, 0), 0) + 75.0 * 200.0) / (GREATEST(COALESCE(review_count, 0), 0) + 200.0) DESC NULLS LAST
+        ORDER BY array_position(${ids}::integer[], rawg_id), release_date, id
         LIMIT 24
       `;
     },
@@ -640,17 +600,20 @@ function pickPreferredCanonicalRow(a, b) {
   return score(b) > score(a) ? b : a;
 }
 
-async function dedupeCanonicalIds(ids) {
+async function dedupeCanonicalIds(ids, slug, anticipation) {
   if (ids.length === 0) {
     return [];
   }
 
   const rows = await sql`
-    SELECT id, title, steam_app_id, current_players, verdict_score, score, review_count, confidence, release_date
+    SELECT ${sql(EDITORIAL_GAME_COLUMNS.split(","))}, current_players, verdict_score
     FROM games
     WHERE id = ANY(${ids})
   `;
-  const rowsById = new Map(rows.map((row) => [row.id, row]));
+  const annual = /^most-wanted-\d{4}$/.test(slug);
+  const eligible = rows.filter(row => !editorialExclusion(slug, row)
+    && (!annual || matchesEditorialAnticipation(row, anticipation)));
+  const rowsById = new Map(eligible.map(row => [row.id, row]));
   const byGroup = new Map();
 
   for (const id of ids) {
@@ -661,7 +624,7 @@ async function dedupeCanonicalIds(ids) {
     byGroup.set(key, existing ? pickPreferredCanonicalRow(existing, row) : row);
   }
 
-  return Array.from(byGroup.values()).map((row) => row.id);
+  return Array.from(byGroup.values()).sort((a, b) => compareEditorialGames(slug, a, b, anticipation)).map(row => row.id);
 }
 
 // ── Main ──
@@ -682,11 +645,13 @@ let updated = 0;
 let skipped = 0;
 
 try {
+const [snapshot] = await sql`SELECT payload FROM gx_cache WHERE feed_key = ${EDITORIAL_UPCOMING_SNAPSHOT_KEY} LIMIT 1`;
+const anticipation = editorialAnticipation(snapshot?.payload);
 for (const blueprint of LIST_BLUEPRINTS) {
   console.log(`\n📋 Processing: "${blueprint.title}"`);
 
   // Run query to get game IDs
-  const gameRows = await blueprint.query().catch((e) => {
+  const gameRows = await blueprint.query(anticipation).catch((e) => {
     if (isInfrastructureDbError(e)) throw e;
     console.log(`  ✗ Query failed: ${e.message}`);
     return [];
@@ -698,34 +663,13 @@ for (const blueprint of LIST_BLUEPRINTS) {
     continue;
   }
 
-  // Apply overlap constraint: no game in more than 3 lists (relaxed for 22 lists)
-  let allIds = gameRows.map((r) => r.id);
-  allIds = await dedupeCanonicalIds(allIds);
-  const constrainedIds = enforceOverlapConstraints(allIds, 3).slice(0, 12);
-
-  if (constrainedIds.length < 4) {
-    console.log(`  ⚠ Only ${constrainedIds.length} games after overlap enforcement (min 4 required), skipping`);
+  const allIds = await dedupeCanonicalIds(gameRows.map(row => row.id), blueprint.slug, anticipation);
+  const constrainedIds = selectEditorialIds(allIds, gameAppearanceCount);
+  if (!constrainedIds.length) {
+    console.log('  No records passed the editorial contract; preserving the saved selection');
     skipped++;
     continue;
   }
-
-  // Pairwise 50% overlap check: this list must be ≥50% different from every other seeded list
-  const pairwiseCheck = passesPairwiseOverlap(constrainedIds);
-  if (!pairwiseCheck.ok) {
-    console.log(`  ⚠ Pairwise overlap too high with "${pairwiseCheck.conflictSlug}" (${pairwiseCheck.similarity}% similar). Trying with tighter constraint...`);
-    // Try again with a stricter per-game appearance limit (2 instead of 3)
-    const stricterIds = enforceOverlapConstraints(allIds, 2).slice(0, 12);
-    const recheckPairwise = passesPairwiseOverlap(stricterIds);
-    if (!recheckPairwise.ok || stricterIds.length < 4) {
-      console.log(`  ⚠ Still too similar after strict enforcement. Skipping "${blueprint.title}"`);
-      skipped++;
-      continue;
-    }
-    constrainedIds.length = 0;
-    constrainedIds.push(...stricterIds);
-  }
-
-  console.log(`  ✓ ${gameRows.length} raw → ${allIds.length} canonical → ${constrainedIds.length} after overlap enforcement`);
 
   // Get a unique cover image for this list (avoid duplicates across lists)
   let coverImage = "";
@@ -756,10 +700,10 @@ for (const blueprint of LIST_BLUEPRINTS) {
 
   // Upsert the list
   const [existingList] = await sql`
-    SELECT id, title, is_system_managed FROM lists WHERE slug = ${blueprint.slug} LIMIT 1
+    SELECT id, title, is_system_managed, is_public FROM lists WHERE slug = ${blueprint.slug} LIMIT 1
   `;
 
-  if (existingList && !existingList.is_system_managed) {
+  if (existingList && (!existingList.is_system_managed || !existingList.is_public)) {
     console.log(`  ⚠ Slug conflict with non-system list "${existingList.title}" — skipping`);
     skipped++;
     continue;
@@ -853,7 +797,7 @@ for (const blueprint of LIST_BLUEPRINTS) {
   }
 
   // Record these games as used (global + pairwise overlap tracking)
-  recordAppearances(blueprint.slug, constrainedIds);
+  for (const id of constrainedIds) gameAppearanceCount.set(id, (gameAppearanceCount.get(id) ?? 0) + 1);
 
   console.log(`  ✓ Inserted ${items.length} games into list`);
 }
@@ -865,11 +809,13 @@ const currentSlugs = LIST_BLUEPRINTS.map((b) => b.slug);
 const staleLists = await sql`
   SELECT id, slug FROM lists
   WHERE is_system_managed = true
+    AND is_public = true
     AND managed_by = ${SYSTEM_LIST_MANAGER}
     AND slug != ALL(${currentSlugs})
 `;
 let cleaned = 0;
 for (const stale of staleLists) {
+  if (/^most-wanted-\d{4}$/.test(stale.slug)) continue;
   await sql`DELETE FROM list_items WHERE list_id = ${stale.id}`;
   await sql`DELETE FROM lists WHERE id = ${stale.id}`;
   console.log(`  🗑 Removed stale list: "${stale.slug}"`);

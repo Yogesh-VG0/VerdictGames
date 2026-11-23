@@ -4,12 +4,13 @@ import { useQuery } from "@tanstack/react-query";
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import {
-  getRecommendations,
+  getHomepageDeals,
+  getHomepageRecommendations,
   getGXFreeToPlay,
 } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
-import type { Game, GXDeal } from "@/lib/types";
+import type { Game } from "@/lib/types";
 import FadeInSection from "@/components/FadeInSection";
 import GameCard from "@/components/GameCard";
 import HorizontalScroll from "@/components/HorizontalScroll";
@@ -34,7 +35,7 @@ type DiscoverTab = "new" | "deals" | "free";
 interface HomepageClientSectionsProps {
   initialRecommendations: Game[];
   initialNewReleases: Game[];
-  initialDeals: GXDeal[];
+  shownGameSlugs: string;
 }
 
 const CARD_WIDTH = "shrink-0 w-44 sm:w-52 md:w-56 lg:w-60 h-full";
@@ -48,16 +49,24 @@ const DISCOVER_TABS: { label: string; value: DiscoverTab; icon: ReactNode }[] = 
 export default function HomepageClientSections({
   initialRecommendations,
   initialNewReleases,
-  initialDeals,
+  shownGameSlugs,
 }: HomepageClientSectionsProps) {
   const { user } = useAuth();
   const [discoverTab, setDiscoverTab] = useState<DiscoverTab>("new");
 
   const personalized = useQuery({
-    queryKey: ["personalized", user?.id ?? null],
-    queryFn: () => getRecommendations(20),
+    queryKey: ["personalized", user?.id ?? null, shownGameSlugs],
+    queryFn: () => getHomepageRecommendations(shownGameSlugs),
     enabled: !!user,
     staleTime: 5 * 60 * 1000,
+  });
+
+  const deals = useQuery({
+    queryKey: ["gx-homepage-deals"],
+    queryFn: ({ signal }) => getHomepageDeals(signal),
+    enabled: discoverTab === "deals",
+    staleTime: 5 * 60 * 1000,
+    retry: false,
   });
 
   const gxFreeToPlay = useQuery({
@@ -67,13 +76,9 @@ export default function HomepageClientSections({
     enabled: discoverTab === "free",
   });
 
-  const personalizedGames = personalized.data ?? [];
-  const fallbackRecommendationIds = new Set(personalizedGames.map((game) => game.id));
-  const fallbackRecommendations = initialRecommendations.filter((game) => !fallbackRecommendationIds.has(game.id));
-  const mergedPersonalizedGames = [...personalizedGames, ...fallbackRecommendations];
-  const showingPersonalized = !!user && mergedPersonalizedGames.length > 0;
-  const recommendedGames = showingPersonalized ? mergedPersonalizedGames : initialRecommendations;
-  const recommendedLoading = !!user && personalized.isLoading && initialRecommendations.length === 0;
+  const showingPersonalized = !!user && personalized.data?.personalized === true;
+  const recommendedGames = user ? personalized.data?.games ?? [] : initialRecommendations;
+  const recommendedLoading = !!user && personalized.isLoading;
 
   return (
     <>
@@ -129,9 +134,11 @@ export default function HomepageClientSections({
 
             {discoverTab === "deals" && (
               <>
-                {initialDeals.length > 0 ? (
+                {deals.isLoading ? (
+                  <HorizontalScrollSkeleton count={6} />
+                ) : deals.data && deals.data.length > 0 ? (
                   <HorizontalScroll>
-                    {initialDeals.slice(0, 20).map((deal) => (
+                    {deals.data.map((deal) => (
                       <div
                         key={deal.id}
                         className={CARD_WIDTH}
@@ -141,7 +148,7 @@ export default function HomepageClientSections({
                     ))}
                   </HorizontalScroll>
                 ) : (
-                  <p className="text-secondary text-sm py-8 text-center">No deals available right now.</p>
+                  <p className="text-secondary text-sm py-8 text-center">{deals.isError ? "Deals are temporarily unavailable." : "No deals available right now."}</p>
                 )}
               </>
             )}
@@ -245,7 +252,7 @@ export default function HomepageClientSections({
                 <SectionHeader
                   title={showingPersonalized ? "Recommended For You" : "You Might Enjoy"}
                   icon={<Gem className="w-5 h-5" />}
-                  subtitle={showingPersonalized ? "Based on your library & play history" : "Curated picks across diverse genres"}
+                  subtitle={showingPersonalized ? "Inspired by genres in your library" : "Curated picks across diverse genres"}
                   gradient="linear-gradient(90deg, #a855f7 0%, #6366f1 25%, #ec4899 50%, #a855f7 75%, #6366f1 100%)"
                 />
                 <HorizontalScroll>

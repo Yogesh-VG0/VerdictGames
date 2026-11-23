@@ -29,9 +29,9 @@ import {hasEarlyAccessSignal,hasUnreleasedStatus,hasKnownFullRelease} from '@/li
 import { isPrimaryDiscoveryGame } from '@/lib/utils/discovery';
 import { mapGameRow } from "@/lib/db/mappers";
 import { GAME_CARD_COLUMNS_WITH_DESC } from "@/lib/db/columns";
-import { retryCatalogRead } from '@/lib/db/catalog-read';
 import { admitCataloguePayload, coalesceCatalogueRead, readCachedCatalogue } from '@/lib/db/cached-catalogue';
 import { measureHomepagePhase, startHomepagePhase } from '@/lib/services/homepage-timing';
+import { boundedHomepageRead, currentHomepageSignal } from '@/lib/services/homepage-budget';
 import { isFutureDate } from "@/lib/utils";
 import {
   filterQualityGames,
@@ -47,6 +47,7 @@ import { isPublicSafeGame } from "@/lib/utils/publicSafety";
 import { hasUsableCardImage } from "@/lib/utils/mediaReadiness";
 import { dedupePublicCanonicalRows } from "@/lib/utils/publicCanonical";
 import { getHomepageHeroScore, isHomepageHeroAutoCandidate, selectHeroDiscoveryCandidates } from "@/lib/utils/homepageHero";
+import { isProviderHeroArtwork, reviewedHeroArtwork } from '@/lib/utils/artwork-policy.mjs';
 import {
   getPublicTrendingScore,
   hasBrowseTrendingSignal,
@@ -56,7 +57,6 @@ import {
 } from "@/lib/utils/trending";
 import type { GameRow } from "@/lib/supabase/types";
 import type { Game, GXDeal } from "@/lib/types";
-import { loadGXDeals } from "@/lib/services/gx-feeds";
 
 /* ═══════════════════════════════════════════════════
    Homepage Recency Helpers
@@ -551,26 +551,47 @@ function isHomepageHeroBackfillCandidate(row: GameRow): boolean {
    RULE:     NEVER derived from trending. Only from is_featured_manual + auto pool.
    ═══════════════════════════════════════════════════ */
 
+const HERO_GAME_COLUMNS = GAME_CARD_COLUMNS_WITH_DESC + ',rawg_id,igdb_id';
+
+function mapHeroGameRow(row: GameRow): Game {
+  const game = mapGameRow(row);
+  const reviewed = reviewedHeroArtwork({ slug: row.slug, igdbId: row.igdb_id, rawgId: row.rawg_id });
+  if (!reviewed) return game;
+  const alternate = [game.headerImage, reviewed.fallbackUrl].find(url =>
+    url !== reviewed.url && url !== game.coverImage && isProviderHeroArtwork(url));
+  return {
+    ...game,
+    headerImage: reviewed.url,
+    heroArtworkFallback: alternate,
+    heroArtworkMobileFocalPoint: reviewed.mobileFocalPoint,
+    ...(row.slug === 'grand-theft-auto-vi' ? {
+      description: 'A robbery gone wrong pulls Jason and Lucia into a criminal conspiracy that stretches from Vice City across Leonida.',
+    } : {}),
+  };
+}
+
 export async function fetchHeroCandidates(limit = 12): Promise<Game[]> {
   const supabase = getPublicSupabase();
+  const today = new Date().toISOString().slice(0, 10);
+  const launchCutoff = new Date(Date.now() - 14 * 86400000).toISOString().slice(0, 10);
 
   // Recent, well-supported releases must not require a multiplayer-scale
   // concurrent player count to earn a spotlight.
-  const { data: freshReleases } = await measureHomepagePhase('database', () => supabase.from('games')
-    .select(GAME_CARD_COLUMNS_WITH_DESC).gte('release_date', monthsAgoISO(6))
-    .lte('release_date', new Date().toISOString().slice(0,10))
-    .gte('score', 80).gte('confidence', 0.5).gte('review_count', 1000)
+  const { data: freshReleases, error: freshError } = await measureHomepagePhase('database', () => supabase.from('games')
+    .select(HERO_GAME_COLUMNS).gte('release_date', monthsAgoISO(6))
+    .lte('release_date', today)
+    .or(`and(score.gte.80,confidence.gte.0.5,review_count.gte.1000),and(release_status.eq.released,release_date.gte.${launchCutoff},or(verdict_score.gte.75,score.gte.75),critic_score.gte.85,review_count.gte.100)`)
     .not('header_image', 'is', null).neq('header_image', '')
     .order('release_date', { ascending: false }).limit(60));
+  if (freshError) throw freshError;
 
   // Step 1: Manually featured games (editorial priority) — with 36mo recency cap
   // FIX: Old evergreen manual picks were dominating hero. Now capped at 3 years.
   // RULE: Hero sourced from is_featured_manual flag, NEVER from trending flag
   const manualCutoff = monthsAgoISO(36);
-  const today = new Date().toISOString().slice(0, 10);
-  const { data: manualFeatured } = await measureHomepagePhase('database', () => supabase
+  const { data: manualFeatured, error: featuredError } = await measureHomepagePhase('database', () => supabase
     .from("games")
-    .select(GAME_CARD_COLUMNS_WITH_DESC)
+    .select(HERO_GAME_COLUMNS)
     .eq("is_featured_manual", true)
     .not("header_image", "is", null)
     .neq("header_image", "")
@@ -580,16 +601,16 @@ export async function fetchHeroCandidates(limit = 12): Promise<Game[]> {
     .lte("release_date", today)
     .order("verdict_score", { ascending: false, nullsFirst: false })
     .order("score", { ascending: false })
-    .limit(4)) as { data: GameRow[] | null }; // Reduced from 6 to 4 to allow more auto-selected games
+    .limit(4)) as { data: GameRow[] | null; error: unknown };
+  if (featuredError) throw featuredError;
 
   // Step 2: Auto-selected recent high-quality games with header art
   const cutoff24 = monthsAgoISO(24);
-  const cutoff36 = monthsAgoISO(36);
   const cutoff60 = monthsAgoISO(60);
 
-  let { data: autoPool } = await measureHomepagePhase('database', () => supabase
+  const initialPool = await measureHomepagePhase('database', () => supabase
     .from("games")
-    .select(GAME_CARD_COLUMNS_WITH_DESC)
+    .select(HERO_GAME_COLUMNS)
     .not("header_image", "is", null)
     .neq("header_image", "")
     .gte("score", 76)
@@ -600,64 +621,25 @@ export async function fetchHeroCandidates(limit = 12): Promise<Game[]> {
     .lte("release_date", today)
     .order("verdict_score", { ascending: false, nullsFirst: false })
     .order("score", { ascending: false })
-    .limit(40)) as { data: GameRow[] | null };
-
-  // Widen to 36mo if pool is thin
-  if (!autoPool || autoPool.length < 6) {
-    const wider = await measureHomepagePhase('database', () => supabase
-      .from("games")
-      .select(GAME_CARD_COLUMNS_WITH_DESC)
-      .not("header_image", "is", null)
-      .neq("header_image", "")
-      .gte("score", 76)
-      .gt("score", 0)
-      .gte("confidence", 0.5)
-      .gte("review_count", 5000)
-      .gte("release_date", cutoff36)
-      .lte("release_date", today)
-      .order("verdict_score", { ascending: false, nullsFirst: false })
-      .order("score", { ascending: false })
-      .limit(40)) as { data: GameRow[] | null };
-
-    autoPool = wider.data;
-  }
-
-  // Last resort: widen to 60mo
-  if (!autoPool || autoPool.length < 4) {
-    const widest = await measureHomepagePhase('database', () => supabase
-      .from("games")
-      .select(GAME_CARD_COLUMNS_WITH_DESC)
-      .not("header_image", "is", null)
-      .neq("header_image", "")
-      .gte("score", 76)
-      .gt("score", 0)
-      .gte("confidence", 0.5)
-      .gte("review_count", 5000)
-      .gte("release_date", cutoff60)
-      .lte("release_date", today)
-      .order("verdict_score", { ascending: false, nullsFirst: false })
-      .order("score", { ascending: false })
-      .limit(40)) as { data: GameRow[] | null };
-
-    autoPool = widest.data;
-  }
-
-  const finishSelection = startHomepagePhase('candidate_selection');
-  const manualIds = new Set((manualFeatured ?? []).map((g) => g.id));
-  const autoDeduped = (autoPool ?? []).filter((g) => !manualIds.has(g.id));
-  const combined = deduplicateBySteamAppId([...(freshReleases ?? []) as unknown as GameRow[], ...(manualFeatured ?? []), ...autoDeduped]);
-
-  // Surface readiness gate + public safety + media readiness + quality filter
-  const ready = combined.filter((r) =>
+    .limit(40)) as { data: GameRow[] | null; error: unknown };
+  if (initialPool.error) throw initialPool.error;
+  const isReadyHero = (r: GameRow) =>
     isSurfaceReady(r, "homepageRail") &&
     isPublicSafeGame(r) &&
     hasUsableCardImage(r) &&
-    !isFutureDate(r.release_date)
-  );
-  const qualityFiltered = ready.filter((r) => isQualityGame(r, "hero"));
+    r.header_image && r.header_image !== r.cover_image &&
+    !hasUnreleasedStatus(r) &&
+    (!r.is_provisional || hasKnownFullRelease(r)) &&
+    !isFutureDate(r.release_date);
+  const finishSelection = startHomepagePhase('candidate_selection');
+  const combined = deduplicateBySteamAppId([
+    ...(freshReleases ?? []) as unknown as GameRow[], ...(manualFeatured ?? []), ...(initialPool.data ?? []),
+  ]);
+  const ready = combined.filter(isReadyHero);
+  const qualityFiltered = ready.filter(r => isQualityGame(r, "hero"));
   const heroFiltered = qualityFiltered.filter(isHomepageHeroAutoCandidate);
-
-  let ranked = [...heroFiltered].sort((a, b) => getHomepageHeroScore(b) - getHomepageHeroScore(a));
+  const byHeroScore = (a: GameRow, b: GameRow) => getHomepageHeroScore(b) - getHomepageHeroScore(a);
+  let ranked = heroFiltered.sort(byHeroScore);
 
   const freshIds = new Set(((freshReleases ?? []) as unknown as GameRow[]).map(row => row.id));
   const freshSpotlights = ready.filter(row => freshIds.has(row.id) && !row.is_provisional && row.verdict_label !== 'COMING SOON')
@@ -672,9 +654,45 @@ export async function fetchHeroCandidates(limit = 12): Promise<Game[]> {
     const backfill = qualityFiltered
       .filter((row) => !rankedIds.has(row.id))
       .filter(isHomepageHeroBackfillCandidate)
-      .sort((a, b) => getHomepageHeroScore(b) - getHomepageHeroScore(a));
+      .sort(byHeroScore);
 
     ranked = prioritizeById(ranked, backfill, limit);
+  }
+
+  finishSelection();
+
+  // The raw 24-month pool can be full while the qualified hero is short.
+  // Widen only in that case and keep the existing quality and player gates.
+  if (ranked.length < Math.min(limit, HOMEPAGE_HERO_TARGET)) {
+    try {
+      const older = await boundedHomepageRead(1500, () => measureHomepagePhase('database', () => supabase
+        .from("games")
+        .select(HERO_GAME_COLUMNS)
+        .not("header_image", "is", null)
+        .neq("header_image", "")
+        .gte("score", 76)
+        .gte("confidence", 0.5)
+        .gte("review_count", 5000)
+        .gte("current_players", 2000)
+        .gte("release_date", cutoff60)
+        .lt("release_date", cutoff24)
+        .order("verdict_score", { ascending: false, nullsFirst: false })
+        .order("score", { ascending: false })
+        .limit(40)));
+      if (!older.error) {
+        ranked = deduplicateBySteamAppId([
+          ...ranked,
+          ...((older.data ?? []) as unknown as GameRow[])
+            .filter(isReadyHero)
+            .filter(row => isQualityGame(row, "hero") &&
+              (isHomepageHeroAutoCandidate(row) || isHomepageHeroBackfillCandidate(row)))
+            .sort(byHeroScore),
+        ]).slice(0, limit);
+      }
+    } catch {
+      // A late or unavailable supplementary read leaves the qualified pool.
+      currentHomepageSignal()?.throwIfAborted();
+    }
   }
 
   // Genre diversity: max 2 per primary genre
@@ -682,32 +700,50 @@ export async function fetchHeroCandidates(limit = 12): Promise<Game[]> {
   // half empty when the catalogue has enough otherwise-qualified games.
   const diversified = prioritizeById(applyGenreDiversity(ranked, limit, 2), ranked, limit);
 
-  const released = diversified.map(mapGameRow);
-  finishSelection();
+  const released = diversified.map(mapHeroGameRow);
+  // A confirmed, independently reviewed launch can qualify from catalogue
+  // evidence when the third-party ranking snapshot is absent or slow.
+  const verifiedLaunch = ready.filter(row => freshIds.has(row.id) && row.header_image !== row.cover_image
+      && row.release_date! >= launchCutoff && hasKnownFullRelease(row) && !row.is_provisional
+      && isPrimaryDiscoveryGame(row) && (row.verdict_score ?? row.score ?? 0) >= 75
+      && (row.critic_score ?? 0) >= 85 && (row.critic_source_count ?? 0) >= 1 && (row.review_count ?? 0) >= 100)
+    .sort((a, b) => getHomepageHeroScore(b) - getHomepageHeroScore(a))[0];
+  const launch = verifiedLaunch && mapHeroGameRow(verifiedLaunch);
+  const fallback = launch ? [launch, ...released.filter(game => game.id !== launch.id)].slice(0, limit) : released;
   try {
-    const [discovery,releaseRanking] = await measureHomepagePhase('provider_snapshot', () =>
-      Promise.allSettled([readCachedUpcomingSnapshot(),readHomepageReleaseRanking()]));
-    const snapshot=[...(discovery.status==='fulfilled'?discovery.value.results:[]),...(releaseRanking.status==='fulfilled'?releaseRanking.value?.results || []:[])];
-    const upcoming = selectHeroDiscoveryCandidates(snapshot,today);
-    if(!upcoming.length)return released;
-    const {data,error} = await measureHomepagePhase('candidate_hydration', () =>
-      measureHomepagePhase('database', () => supabase.from('games').select(GAME_CARD_COLUMNS_WITH_DESC+',rawg_id')
-        .in('rawg_id',upcoming.map(item=>item.id)).abortSignal(AbortSignal.timeout(3000))));
-    if(error)return released;
-    const rows=(data || []) as unknown as GameRow[];
-    const spotlights=upcoming.flatMap(item=>{
-      const row=rows.find(row=>row.rawg_id===item.id);
-      if(!row || row.release_date !== item.released || !isPublicSafeGame(row) || !isPrimaryDiscoveryGame(row)
-        || ['cancelled','canceled','delisted'].includes(row.release_status || '')
-        || item.released!<=today && hasEarlyAccessSignal(row)
-        || item.released!>today && ['released','full release'].includes(row.release_status || ''))return [];
-      const game=mapGameRow(row);
-      // Discovery chooses a spotlight, not a different score/status projection.
-      // Preserve the same canonical mapping used by cards and game details.
-      return [{...game,headerImage:row.header_image || item.background_image!}];
-    }).slice(0,1);
-    return [...spotlights,...released.filter(game=>!spotlights.some(spot=>spot.id===game.id))].slice(0,limit);
-  } catch { return released; }
+    return await boundedHomepageRead(2200, async () => {
+      const [discovery,releaseRanking] = await measureHomepagePhase('provider_snapshot', () =>
+        Promise.allSettled([readCachedUpcomingSnapshot(),readHomepageReleaseRanking()]));
+      const snapshot=[...(discovery.status==='fulfilled'?discovery.value.results:[]),...(releaseRanking.status==='fulfilled'?releaseRanking.value?.results || []:[])];
+      const upcoming = selectHeroDiscoveryCandidates(snapshot,today);
+      if(!upcoming.length)return fallback;
+      const {data,error} = await measureHomepagePhase('candidate_hydration', () =>
+        measureHomepagePhase('database', () => supabase.from('games').select(HERO_GAME_COLUMNS+',igdb_summary,wikipedia_excerpt')
+          .in('rawg_id',upcoming.map(item=>item.id)).abortSignal(AbortSignal.timeout(3000))));
+      if(error)return fallback;
+      const rows=(data || []) as unknown as GameRow[];
+      const spotlights=upcoming.flatMap(item=>{
+        const row=rows.find(row=>row.rawg_id===item.id);
+        if(!row || row.release_date !== item.released || !isPublicSafeGame(row) || !isPrimaryDiscoveryGame(row)
+          || ['cancelled','canceled','delisted'].includes(row.release_status || '')
+          || item.released!<=today && hasEarlyAccessSignal(row)
+          || item.released!>today && ['released','full release'].includes(row.release_status || ''))return [];
+        const game=mapHeroGameRow(row);
+        // Discovery chooses a spotlight, not a different score/status projection.
+        // Preserve the same canonical mapping used by cards and game details.
+        return [{...game,headerImage:game.headerImage || item.background_image!}];
+      });
+      const recent = spotlights.find(game => game.releaseDate <= today && !game.isProvisional) ?? launch;
+      const forthcoming = spotlights.find(game => game.releaseDate > today && game.isProvisional);
+      const spotlightIds = new Set([recent?.id, forthcoming?.id]);
+      const otherReleased = released.filter(game => !spotlightIds.has(game.id));
+      return [
+        ...(recent ? [recent] : otherReleased.splice(0, 1)),
+        ...(forthcoming ? [forthcoming] : []),
+        ...otherReleased,
+      ].slice(0, limit);
+    });
+  } catch { return fallback; }
 }
 
 /* ═══════════════════════════════════════════════════
@@ -1472,14 +1508,6 @@ export async function fetchHomepageRecommendations(limit = 20): Promise<Game[]> 
 }
 
 /* ═══════════════════════════════════════════════════
-   GX Deals (mapped from GX Corner external API)
-   ═══════════════════════════════════════════════════ */
-
-export async function fetchDeals(): Promise<GXDeal[]> {
-  return loadGXDeals();
-}
-
-/* ═══════════════════════════════════════════════════
    Homepage Aggregator — single call, all sections
    with strict global deduplication and refill logic
 
@@ -1492,6 +1520,7 @@ export interface HomepageData {
   trending: Game[];    // trending rail — genuine momentum
   topRated: Game[];
   newReleases: Game[];
+  /** @deprecated Deals load separately when the visitor selects the tab. */
   deals: GXDeal[];
   recommendations: Game[];  // anonymous recommendations
 }
@@ -1529,28 +1558,53 @@ const MAX_HOMEPAGE_RAIL_REFRESHES = 3;
 let activeRailRefreshes = 0;
 const waitingRailRefreshes: (() => void)[] = [];
 
-function cacheHomepageRail(
+async function acquireRailRefresh(signal?: AbortSignal) {
+  signal?.throwIfAborted();
+  if (activeRailRefreshes < MAX_HOMEPAGE_RAIL_REFRESHES) {
+    activeRailRefreshes++;
+    return;
+  }
+  await new Promise<void>((resolve, reject) => {
+    const wake = () => {
+      signal?.removeEventListener('abort', abort);
+      resolve();
+    };
+    const abort = () => {
+      const index = waitingRailRefreshes.indexOf(wake);
+      if (index >= 0) waitingRailRefreshes.splice(index, 1);
+      reject(signal?.reason);
+    };
+    waitingRailRefreshes.push(wake);
+    signal?.addEventListener('abort', abort, { once: true });
+  });
+}
+
+function cacheHomepageRail<T>(
   key: string,
   phase: 'refresh_hero' | 'refresh_trending' | 'refresh_new_releases' | 'refresh_top_rated' | 'refresh_recommendations',
-  read: () => Promise<Game[]>,
+  read: () => Promise<T>,
 ) {
-  const refresh = coalesceCatalogueRead(() => measureHomepagePhase(phase, async () => {
-    // Independent stale reads can trigger background refreshes simultaneously.
-    // Transfer the slot to a waiting rail before admitting any new refresh.
-    if (activeRailRefreshes < MAX_HOMEPAGE_RAIL_REFRESHES) activeRailRefreshes++;
-    else await new Promise<void>(resolve => waitingRailRefreshes.push(resolve));
+  const refresh = coalesceCatalogueRead(async () => {
+    const signal = currentHomepageSignal();
+    await measureHomepagePhase('rail_queue', () => acquireRailRefresh(signal));
     try {
-      return await retryCatalogRead(read);
+      signal?.throwIfAborted();
+      const result = await measureHomepagePhase(phase, read);
+      signal?.throwIfAborted();
+      return result;
     } finally {
       const next = waitingRailRefreshes.shift();
       if (next) next();
       else activeRailRefreshes--;
     }
-  }));
-  return unstable_cache(refresh, [key], sectionCacheOptions);
+  });
+  // Next includes the callback source in the key. Turbopack minifies the
+  // page and route copies differently. Binding gives both the same native
+  // callback representation, so the explicit versioned rail key identifies it.
+  return unstable_cache(refresh.bind(null), [key], sectionCacheOptions);
 }
 
-const cachedHero = cacheHomepageRail('homepage-hero-v4', 'refresh_hero', () => fetchHeroCandidates(HOMEPAGE_HERO_FETCH_TARGET));
+const cachedHero = cacheHomepageRail('homepage-hero-v9', 'refresh_hero', () => fetchHeroCandidates(HOMEPAGE_HERO_FETCH_TARGET));
 const cachedTrending = cacheHomepageRail('homepage-trending-v3', 'refresh_trending', () => fetchTrendingGames(HOMEPAGE_SECTION_FETCH_TARGET, true));
 const cachedNewReleases = cacheHomepageRail('homepage-new-v4', 'refresh_new_releases', () => fetchNewReleases(HOMEPAGE_SECTION_FETCH_TARGET));
 const cachedTopRated = cacheHomepageRail('homepage-top-v3', 'refresh_top_rated', () => fetchHomepageTopRated(HOMEPAGE_SECTION_FETCH_TARGET));
@@ -1591,7 +1645,7 @@ export async function loadHomepageMostAnticipatedWithStatus(): Promise<{ data: H
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
     return { data: [], degraded: true };
   }
-  return readCachedCatalogue(getCachedHomepageMostAnticipated, []);
+  return readCachedCatalogue(() => boundedHomepageRead(3500, getCachedHomepageMostAnticipated), []);
 }
 
 function resolveHomepageSection<T>(result: PromiseSettledResult<T>, label: string, fallback: T): T {
@@ -1713,13 +1767,12 @@ function isReservedHomepageTopRatedGame(game: Game): boolean {
 export async function fetchHomepageData(): Promise<HomepageData> {
   // Rail cache lookups can overlap. The queue above caps database refreshes
   // even when stale lookups start background work together.
-  const [heroResult, trendingPrimaryResult, newReleasesResult, dealsResult, topRatedResult, recsResult] = await Promise.allSettled([
-    measureHomepagePhase('rail_hero', cachedHero),
-    measureHomepagePhase('rail_trending', cachedTrending),
-    measureHomepagePhase('rail_new_releases', cachedNewReleases),
-    measureHomepagePhase('rail_deals', fetchDeals),
-    measureHomepagePhase('rail_top_rated', cachedTopRated),
-    measureHomepagePhase('rail_recommendations', cachedRecommendations),
+  const [heroResult, trendingPrimaryResult, newReleasesResult, topRatedResult, recsResult] = await Promise.allSettled([
+    measureHomepagePhase('rail_hero', () => boundedHomepageRead(9000, cachedHero)),
+    measureHomepagePhase('rail_trending', () => boundedHomepageRead(7500, cachedTrending)),
+    measureHomepagePhase('rail_new_releases', () => boundedHomepageRead(7500, cachedNewReleases)),
+    measureHomepagePhase('rail_top_rated', () => boundedHomepageRead(9000, cachedTopRated)),
+    measureHomepagePhase('rail_recommendations', () => boundedHomepageRead(9000, cachedRecommendations)),
   ]);
 
   const finishSelection = startHomepagePhase('candidate_selection');
@@ -1727,11 +1780,10 @@ export async function fetchHomepageData(): Promise<HomepageData> {
   let trendingRaw = resolveHomepageSection(trendingPrimaryResult, "trending rail", [] as Game[]);
   const topRatedRaw = resolveHomepageSection(topRatedResult, "top rated rail", [] as Game[]);
   const newReleasesRaw = resolveHomepageSection(newReleasesResult, "new releases rail", [] as Game[]);
-  const deals = resolveHomepageSection(dealsResult, "deals rail", [] as GXDeal[]);
   const recsRaw = resolveHomepageSection(recsResult, "recommendations rail", [] as Game[]);
   const sectionResults: Record<string, PromiseSettledResult<unknown>> = {
     hero: heroResult, trending: trendingPrimaryResult, newReleases: newReleasesResult,
-    topRated: topRatedResult, recommendations: recsResult, deals: dealsResult,
+    topRated: topRatedResult, recommendations: recsResult,
   };
 
   // The primary already requests100 results from the capped120-row pool.
@@ -1819,7 +1871,7 @@ export async function fetchHomepageData(): Promise<HomepageData> {
   const recommendations = claimSlots(recsRaw.filter(game => !appearanceCounts.has(game.id)), HOMEPAGE_RAIL_TARGET, HOMEPAGE_RECOMMENDATION_REPEAT_BUDGET);
 
   finishSelection();
-  return admitCataloguePayload({ hero, trending, topRated, newReleases, deals, recommendations }, sectionResults);
+  return admitCataloguePayload({ hero, trending, topRated, newReleases, deals: [], recommendations }, sectionResults);
 }
 
 function prioritizeById<T extends { id: string }>(primary: T[], fallback: T[], limit: number): T[] {

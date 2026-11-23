@@ -95,6 +95,7 @@ describe("homepage hero auto candidates", () => {
     const game=mapGameRow(makeGameRow({release_date:'2099-12-31',description:'',verdict_summary:'This game is worth playing.'}));
     expect(getHeroSummary(game)).toBe('Explore the announced platforms, trailers and release details.');
     expect(getHeroSummary({...game,releaseStatus:'early-access'})).toMatch(/Early Access/);
+    expect(getHeroSummary({...game,releaseStatus:'early-access',description:'Test Game is an upcoming action-adventure with an open world.'})).toMatch(/Early Access/);
     expect(getHeroSummary({...game,isProvisional:false,verdictLabel:'JUST RELEASED'})).toMatch(/enough review data/);
   });
   it('retains a major console launch on its release day and after launch without inventing a reviewed score',()=>{

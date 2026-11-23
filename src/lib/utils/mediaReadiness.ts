@@ -15,6 +15,8 @@
  *   4. Keep existing trusted media or leave empty for repair
  */
 
+import { steamLibraryHeroAsset } from './artwork-policy.mjs';
+
 /**
  * Known-problematic Steam cover URL pattern.
  * Steam's library_600x900 capsules don't exist for all games.
@@ -132,7 +134,7 @@ export function isMediaUpgrade(existingSource: string | null, newSource: string 
  */
 export async function fetchSteamCoverViaGetItems(
   steamAppId: number
-): Promise<{ coverUrl: string; headerUrl: string | null } | null> {
+): Promise<{ coverUrl: string; headerUrl: string | null; libraryHeroUrl?: string | null } | null> {
   try {
     const inputJson = JSON.stringify({
       ids: [{ appid: steamAppId }],
@@ -156,7 +158,7 @@ export async function fetchSteamCoverViaGetItems(
       ? `${baseUrl}/${asset_url_format.replace("${FILENAME}", header)}`
       : null;
 
-    return { coverUrl, headerUrl };
+    return { coverUrl, headerUrl, libraryHeroUrl: steamLibraryHeroAsset(item, steamAppId) };
   } catch {
     return null;
   }
@@ -171,7 +173,7 @@ export async function fetchSteamCoverViaGetItems(
  */
 export async function validateAndGetSteamCover(
   steamAppId: number
-): Promise<{ coverUrl: string; headerUrl: string | null; source: string } | null> {
+): Promise<{ coverUrl: string; headerUrl: string | null; libraryHeroUrl?: string | null; source: string } | null> {
   // Try standard CDN URL first (faster if it exists)
   const cdnUrl = `https://cdn.akamai.steamstatic.com/steam/apps/${steamAppId}/library_600x900_2x.jpg`;
   try {
