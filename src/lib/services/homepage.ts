@@ -46,7 +46,7 @@ import {
 import { isPublicSafeGame } from "@/lib/utils/publicSafety";
 import { hasUsableCardImage } from "@/lib/utils/mediaReadiness";
 import { dedupePublicCanonicalRows } from "@/lib/utils/publicCanonical";
-import { getHomepageHeroScore, isHomepageHeroAutoCandidate, selectHeroDiscoveryCandidates } from "@/lib/utils/homepageHero";
+import { getHomepageHeroScore, hasRecentHeroActivity, isHomepageHeroAutoCandidate, selectHeroDiscoveryCandidates } from "@/lib/utils/homepageHero";
 import { isProviderHeroArtwork, reviewedHeroArtwork } from '@/lib/utils/artwork-policy.mjs';
 import {
   getPublicTrendingScore,
@@ -516,9 +516,14 @@ function isHomepageHeroBackfillCandidate(row: GameRow): boolean {
   const verdictScore = row.verdict_score ?? row.score ?? 0;
   const ageDays = getHomepageReleaseAgeDays(row.release_date);
 
-  if (!row.release_date || verdictScore < 80 || currentPlayers < 2000) {
-    return false;
-  }
+  if (!row.release_date || verdictScore < 80) return false;
+
+  // An exceptional catalogue title may earn an evergreen slot based on
+  // corroborated acclaim. Activity-based candidates need a recent sample.
+  if (ageDays > 365 && verdictScore >= 90 && (row.confidence ?? 0) >= 0.7 &&
+    (row.critic_source_count ?? 0) > 0 && (row.critic_score ?? 0) >= 85 &&
+    evidenceReviewCount >= 50000) return true;
+  if (!hasRecentHeroActivity(row) || currentPlayers < 2000) return false;
 
   if (ageDays <= 180) {
     return (hasStrongCriticEvidence(row) && verdictScore >= 82)
@@ -555,6 +560,11 @@ const HERO_GAME_COLUMNS = GAME_CARD_COLUMNS_WITH_DESC + ',rawg_id,igdb_id';
 
 function mapHeroGameRow(row: GameRow): Game {
   const game = mapGameRow(row);
+  // TVGS identifies this Steam app as Early Access. Its stored score remains canonical.
+  if (row.steam_app_id === 3164500 && row.slug === 'schedule-i' && !row.release_status) {
+    game.releaseStatus = 'early-access';
+    game.description = 'Start a small operation in Hyland Point and build it into a criminal enterprise. Manage production and distribution alone or with friends.';
+  }
   const reviewed = reviewedHeroArtwork({ slug: row.slug, igdbId: row.igdb_id, rawgId: row.rawg_id });
   if (!reviewed) return game;
   const alternate = [game.headerImage, reviewed.fallbackUrl].find(url =>
@@ -673,7 +683,7 @@ export async function fetchHeroCandidates(limit = 12): Promise<Game[]> {
         .gte("score", 76)
         .gte("confidence", 0.5)
         .gte("review_count", 5000)
-        .gte("current_players", 2000)
+        .or("current_players.gte.2000,and(critic_source_count.gte.1,critic_score.gte.85,review_count.gte.50000)")
         .gte("release_date", cutoff60)
         .lt("release_date", cutoff24)
         .order("verdict_score", { ascending: false, nullsFirst: false })
@@ -1062,17 +1072,57 @@ export function isHomepageRecommendationBackfillCandidate(row: GameRow): boolean
     || currentPlayers >= 750;
 }
 
+type ReviewedRelease = {
+  slug: string;
+  date: string;
+  catalogueDate?: string;
+  identity: 'igdb_id' | 'rawg_id' | 'steam_app_id';
+  providerId: number;
+};
+
+// Publisher or storefront evidence for specific catalogue records. This
+// corrects the public rail projection, without changing stored lifecycle data.
+const reviewedHomepageReleases: ReviewedRelease[] = [
+  { slug: 'sulfur', date: '2026-10-28', identity: 'steam_app_id', providerId: 2124120 },
+  { slug: 'phantom-blade-zero', date: '2026-10-29', identity: 'igdb_id', providerId: 250618 },
+  { slug: 'reka', date: '2026-10-26', identity: 'steam_app_id', providerId: 1737870 },
+  { slug: 'final-fantasy-resonance', date: '2026-10-22', identity: 'igdb_id', providerId: 410844 },
+  { slug: 'castlevania-belmonts-curse', date: '2026-10-15', identity: 'steam_app_id', providerId: 4231820 },
+  { slug: 'valor-mortis', date: '2026-10-13', identity: 'steam_app_id', providerId: 2828710 },
+  { slug: 'clive-barkers-hellraiser-revival', date: '2026-10-08', identity: 'rawg_id', providerId: 1015542 },
+  { slug: 'gears-of-war-e-day', date: '2026-10-06', identity: 'steam_app_id', providerId: 3010850 },
+  { slug: 'ace-combat-8-wings-of-theve', date: '2026-10-02', identity: 'igdb_id', providerId: 381247 },
+  { slug: 'ea-sports-fc-27', date: '2026-09-25', identity: 'steam_app_id', providerId: 4080220 },
+  { slug: 'control-resonant', date: '2026-09-24', identity: 'rawg_id', providerId: 1015409 },
+  { slug: 'silent-hill-townfall', date: '2026-09-24', catalogueDate: '2026-09-23', identity: 'rawg_id', providerId: 1018062 },
+  { slug: 'aniimo', date: '2026-09-16', identity: 'steam_app_id', providerId: 4126040 },
+  { slug: 'marvels-wolverine', date: '2026-09-15', identity: 'rawg_id', providerId: 662318 },
+  { slug: 'onimusha-way-of-the-sword', date: '2026-09-04', identity: 'rawg_id', providerId: 994600 },
+  { slug: 'the-blood-of-dawnwalker', date: '2026-09-03', catalogueDate: '2026-09-02', identity: 'steam_app_id', providerId: 3751260 },
+  { slug: 'resonance-a-plague-tale-legacy', date: '2026-08-27', identity: 'steam_app_id', providerId: 2713000 },
+  { slug: 'star-wars-zero-company', date: '2026-08-27', identity: 'rawg_id', providerId: 1002691 },
+];
+
 export async function fetchNewReleases(limit = 20): Promise<Game[]> {
   const supabase = getPublicSupabase();
   const fetchLimit = getHomepageQueryFetchLimit(limit);
+  const now = Date.now();
+  const today = new Date(now).toISOString().slice(0, 10);
+  const cutoff = new Date(now - 90 * 86400000).toISOString().slice(0, 10);
+  const reviewed = reviewedHomepageReleases.filter(game => game.date >= cutoff && game.date <= today);
+  const earliestStoredDate = reviewed.reduce((earliest, game) =>
+    game.catalogueDate && game.catalogueDate < earliest ? game.catalogueDate : earliest, cutoff);
+  const eligible = ['release_status.in.(released,"full release",full_release,full-release)'];
+  if (reviewed.length) eligible.push(`slug.in.(${reviewed.map(game => game.slug).join(',')})`);
 
   // New Releases is a 90-day release-date rail, not a quality ranking.
   const { data, error } = await measureHomepagePhase('database', () => supabase
     .from("games")
-    .select(GAME_CARD_COLUMNS_WITH_DESC)
+    .select(GAME_CARD_COLUMNS_WITH_DESC + ",igdb_id,rawg_id")
+    .or(eligible.join(','))
     .not("release_date", "is", null)
-    .lte("release_date", new Date().toISOString().slice(0, 10))
-    .gte("release_date", new Date(Date.now()-90*86400000).toISOString().slice(0,10))
+    .lte("release_date", today)
+    .gte("release_date", earliestStoredDate)
     .not("cover_image", "is", null)
     .neq("cover_image", "")
     .neq("description", "")
@@ -1087,39 +1137,18 @@ export async function fetchNewReleases(limit = 20): Promise<Game[]> {
     isPublicSafeGame(r) && isPrimaryDiscoveryGame(r) &&
     hasUsableCardImage(r)
   );
-  const filtered = ready;
-
-  // Exclude games that will be converted to COMING SOON by mapper:
-  // - is_provisional = true (unless well-reviewed)
-  // - verdict_label = 'COMING SOON'
-  // - future release date
-  // - 0 reviews AND not a recent release (>14 days old)
-  const JUST_RELEASED_DAYS = 14;
-  const today = new Date().toISOString().slice(0, 10);
-  const todayMs = new Date(today + "T00:00:00").getTime();
-  
-  const final = deduplicateBySteamAppId(filtered.filter((r) => {
-    if (hasUnreleasedStatus(r)) return false;
-    if ((r as GameRow & { is_provisional?: boolean }).is_provisional && r.review_count < 50) return false;
-    if (r.verdict_label === "COMING SOON") return false;
-    if (isFutureDate(r.release_date)) return false;
-    
-    // Exclude 0-review games that are past the "just released" window
-    const reviewCount = r.review_count ?? 0;
-    if (reviewCount === 0 && r.release_date && !hasKnownFullRelease(r)) {
-      const normalizedReleaseDate = /^\d{4}-\d{2}-\d{2}$/.test(r.release_date)
-        ? `${r.release_date}T00:00:00Z`
-        : /^\d{4}$/.test(r.release_date)
-          ? `${r.release_date}-01-01T00:00:00Z`
-          : r.release_date;
-      const releaseMs = new Date(normalizedReleaseDate).getTime();
-      if (Number.isNaN(releaseMs)) return false;
-      const daysSinceRelease = (todayMs - releaseMs) / (1000 * 60 * 60 * 24);
-      if (daysSinceRelease > JUST_RELEASED_DAYS) return false;
+  const verified = ready.flatMap(row => {
+    if (row.is_provisional || row.verdict_label === "COMING SOON" || hasUnreleasedStatus(row)) return [];
+    const match = reviewed.find(game => game.slug === row.slug && row[game.identity] === game.providerId
+      && (game.date === row.release_date || (game.catalogueDate && game.catalogueDate === row.release_date)));
+    if (match && (!row.release_status || hasKnownFullRelease(row))) {
+      return [{ ...row, release_date: match.date, release_status: 'released' }];
     }
-    
-    return true;
-  })).sort((a, b) => {
+    const date = row.release_date ?? "";
+    return /^\d{4}-\d{2}-\d{2}$/.test(date) && date >= cutoff && date <= today &&
+      hasKnownFullRelease(row) && ((row.steam_app_id ?? 0) > 0 || (row.critic_source_count ?? 0) > 0) ? [row] : [];
+  });
+  const final = deduplicateBySteamAppId(verified).sort((a, b) => {
     const releaseDiff = (b.release_date ?? "").localeCompare(a.release_date ?? "");
     if (releaseDiff !== 0) return releaseDiff;
     const launchDiff = getNewReleaseDiscoveryScore(b) - getNewReleaseDiscoveryScore(a);
@@ -1527,6 +1556,7 @@ export interface HomepageData {
 
 export interface HomepageAnticipatedGame {
   earlyAccess?: boolean;
+  releaseWindow?: string;
   imageKind?: 'cover' | 'artwork';
   rawgId: number;
   slug: string;
@@ -1604,24 +1634,53 @@ function cacheHomepageRail<T>(
   return unstable_cache(refresh.bind(null), [key], sectionCacheOptions);
 }
 
-const cachedHero = cacheHomepageRail('homepage-hero-v9', 'refresh_hero', () => fetchHeroCandidates(HOMEPAGE_HERO_FETCH_TARGET));
+const cachedHero = cacheHomepageRail('homepage-hero-v10', 'refresh_hero', () => fetchHeroCandidates(HOMEPAGE_HERO_FETCH_TARGET));
 const cachedTrending = cacheHomepageRail('homepage-trending-v3', 'refresh_trending', () => fetchTrendingGames(HOMEPAGE_SECTION_FETCH_TARGET, true));
-const cachedNewReleases = cacheHomepageRail('homepage-new-v4', 'refresh_new_releases', () => fetchNewReleases(HOMEPAGE_SECTION_FETCH_TARGET));
+const cachedNewReleases = cacheHomepageRail('homepage-new-v6', 'refresh_new_releases', () => fetchNewReleases(HOMEPAGE_SECTION_FETCH_TARGET));
 const cachedTopRated = cacheHomepageRail('homepage-top-v3', 'refresh_top_rated', () => fetchHomepageTopRated(HOMEPAGE_SECTION_FETCH_TARGET));
 const cachedRecommendations = cacheHomepageRail('homepage-recommendations-v3', 'refresh_recommendations', () => fetchHomepageRecommendations(HOMEPAGE_SECTION_FETCH_TARGET));
 
 const readHomepageData = coalesceCatalogueRead(fetchHomepageData);
 
+// Publisher-confirmed windows for the reviewed current snapshot entries.
+const reviewedAnticipation = new Map([
+  [391403, { window: 'Dec 2026', earlyAccess: true }], // Steam app 2694490
+  [973539, { window: 'Mar 2027', earlyAccess: true }], // norestforthewicked.com/news
+  [1015421, { window: 'Feb 2027', earlyAccess: false }], // playtombraider.com
+  [469645, { window: 'Jan 2027', earlyAccess: true }], // Steam app 1154030
+]);
+
+const MOST_ANTICIPATED_MAX_AGE_MS = 12 * 60 * 60 * 1000;
+const EMPTY_MOST_ANTICIPATED = { data: [] as HomepageAnticipatedGame[], fetchedAt: null };
+
+function isValidAnticipationSnapshot(fetchedAt: string | undefined): fetchedAt is string {
+  if (!fetchedAt) return false;
+  const age = Date.now() - Date.parse(fetchedAt);
+  return age >= 0 && age <= MOST_ANTICIPATED_MAX_AGE_MS;
+}
+
 const getCachedHomepageMostAnticipated = unstable_cache(
   coalesceCatalogueRead(async () => {
+    const signal = currentHomepageSignal();
     const { loadExplore } = await import('@/lib/services/explore');
     const data = await loadExplore('best-of-year', 1, HOMEPAGE_MOST_ANTICIPATED_TARGET);
-    const items = data.items.map(item => ({ rawgId: item.rawgId, slug: item.slug, name: item.name, released: item.released, tba: item.tba, earlyAccess: item.earlyAccess, image: item.image, imageKind: item.imageKind, added: item.added, toplay: item.toplay, genres: item.genres }));
-    return admitCataloguePayload(items, { discovery: data.degraded
-      ? { status: 'rejected', reason: 'Discovery snapshot temporarily unavailable' }
-      : { status: 'fulfilled', value: true } });
+    signal?.throwIfAborted();
+    if (data.source !== 'rawg' || data.degraded || !isValidAnticipationSnapshot(data.fetchedAt)) {
+      throw new Error('Discovery snapshot temporarily unavailable');
+    }
+    const items = data.items
+      .filter(item => item.catalogueId || reviewedAnticipation.has(item.rawgId))
+      .map(item => {
+        const review = reviewedAnticipation.get(item.rawgId);
+        return {
+          rawgId: item.rawgId, slug: item.slug, name: item.name, released: item.released, tba: item.tba,
+          earlyAccess: review?.earlyAccess ?? item.earlyAccess, releaseWindow: review?.window,
+          image: item.image, imageKind: item.imageKind, added: item.added, toplay: item.toplay, genres: item.genres,
+        };
+      });
+    return { data: items, fetchedAt: data.fetchedAt };
   }),
-  ["homepage-most-anticipated-v7"],
+  ["homepage-most-anticipated-v9"],
   { revalidate: 3600 }
 );
 
@@ -1641,11 +1700,24 @@ export async function loadHomepageMostAnticipated(): Promise<HomepageAnticipated
   return (await loadHomepageMostAnticipatedWithStatus()).data;
 }
 
-export async function loadHomepageMostAnticipatedWithStatus(): Promise<{ data: HomepageAnticipatedGame[]; degraded: boolean }> {
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
-    return { data: [], degraded: true };
+export async function loadHomepageMostAnticipatedWithStatus() {
+  if (process.env.NEXT_PUBLIC_SUPABASE_URL) {
+    try {
+      // Next retains the last successful cache value during stale revalidation.
+      const snapshot = await boundedHomepageRead(3500, getCachedHomepageMostAnticipated);
+      if (isValidAnticipationSnapshot(snapshot.fetchedAt)) {
+        const today = new Date(Date.now()).toISOString().slice(0, 10);
+        return {
+          fetchedAt: snapshot.fetchedAt,
+          degraded: false,
+          data: snapshot.data.filter(game => !game.released || game.released > today),
+        };
+      }
+    } catch {
+      // The independent rail can be omitted when no usable cached value exists.
+    }
   }
-  return readCachedCatalogue(() => boundedHomepageRead(3500, getCachedHomepageMostAnticipated), []);
+  return { ...EMPTY_MOST_ANTICIPATED, degraded: true };
 }
 
 function resolveHomepageSection<T>(result: PromiseSettledResult<T>, label: string, fallback: T): T {

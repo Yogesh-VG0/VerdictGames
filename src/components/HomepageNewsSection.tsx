@@ -26,21 +26,25 @@ export default function HomepageNewsSection() {
         throw new Error("Gaming news is temporarily unavailable.");
       }
       const [popular = [], feed = []] = available;
-      const seen = new Set<string>();
-      const normalize = (value: string) => value.toLowerCase().replace(/[^a-z0-9]/g, "");
+      const seenTitles = new Set<string>();
+      const seenUrls = new Set<string>();
       const merged = [] as typeof popular;
       for (const article of [...popular, ...feed]) {
-        const key = normalize(article.title);
-        if (!seen.has(key)) {
-          seen.add(key);
-          merged.push(article);
-        }
+        if (!article.publisherName?.trim()) continue;
+        let url: URL;
+        try { url = new URL(article.url); } catch { continue; }
+        if (url.protocol !== "https:" || url.username || url.password || url.pathname === "/") continue;
+        const title = article.title.trim().toLowerCase().replace(/[^a-z0-9]/g, "");
+        const canonicalUrl = url.hostname.replace(/^www\./, "") + url.pathname.replace(/\/$/, "");
+        if (!title || seenTitles.has(title) || seenUrls.has(canonicalUrl)) continue;
+        seenTitles.add(title);
+        seenUrls.add(canonicalUrl);
+        merged.push(article);
         if (merged.length >= 12) break;
       }
       return merged;
     },
     staleTime: 5 * 60 * 1000,
-    refetchOnMount: "always",
   });
 
   if (!gxNews.data || gxNews.data.length === 0) {
@@ -58,7 +62,7 @@ export default function HomepageNewsSection() {
             <SectionHeader
               title="Gaming News"
               icon={<Newspaper className="w-5 h-5" />}
-              subtitle="Trending stories from top gaming outlets"
+              subtitle="Stories from gaming publishers"
               gradient="linear-gradient(90deg, #14b8a6 0%, #06b6d4 25%, #3b82f6 50%, #06b6d4 75%, #14b8a6 100%)"
               href="/news"
               linkLabel="View all news"
