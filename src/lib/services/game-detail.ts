@@ -14,7 +14,7 @@ import {
   type RawgSearchResult,
   type RawgStoreLink,
 } from "@/lib/external/rawg";
-import { getPublicSupabase, hasPublicSupabaseEnv } from "@/lib/supabase/public";
+import { getPublicSupabase, hasPublicSupabaseEnv, PUBLIC_SUPABASE_FETCH_TIMEOUT_MS } from "@/lib/supabase/public";
 import type { GameRow } from "@/lib/supabase/types";
 import {isPublicSafeGame,isPublicSafeRawgGame} from '@/lib/utils/publicSafety';
 import type { Game } from "@/lib/types";
@@ -258,7 +258,8 @@ async function fetchGameRecord(args: {
       .from("games")
       .select("*")
       .eq("slug", args.slug)
-      .abortSignal(AbortSignal.timeout(PUBLIC_DATABASE_READ_TIMEOUT_MS))
+      // Let the SDK see the overall deadline expire before considering a retry.
+      .abortSignal(AbortSignal.timeout(PUBLIC_SUPABASE_FETCH_TIMEOUT_MS))
       .maybeSingle() as { data: GameRow | null; error: unknown };
 
     if (error) throw error;

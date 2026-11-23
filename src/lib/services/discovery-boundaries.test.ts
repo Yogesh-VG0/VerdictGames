@@ -3,7 +3,7 @@ const state=vi.hoisted(()=>({search:vi.fn(),detail:vi.fn(),row:null as unknown})
 vi.mock('next/cache',()=>({unstable_cache:(fn:unknown)=>fn}));
 vi.mock('react',()=>({cache:(fn:unknown)=>fn}));
 vi.mock('@/lib/external/rawg',()=>({searchRawg:state.search,getRawgGame:state.detail,getRawgScreenshots:async()=>[],getRawgStoreLinks:async()=>[],mapRawgPlatforms:()=>[]}));
-vi.mock('@/lib/supabase/public',()=>({hasPublicSupabaseEnv:()=>true,getPublicSupabase:()=>({from:()=>{
+vi.mock('@/lib/supabase/public',async importOriginal=>({...await importOriginal<typeof import('@/lib/supabase/public')>(),hasPublicSupabaseEnv:()=>true,getPublicSupabase:()=>({from:()=>{
  const query:Record<string,unknown>={};for(const method of ['select','or','gte','gt','lte','not','neq','order','range','abortSignal','contains','eq'])query[method]=()=>query;
  query.maybeSingle=async()=>({data:state.row,error:null});query.then=(resolve:(value:unknown)=>unknown)=>Promise.resolve({data:[],error:null}).then(resolve);return query;
 }})}));
