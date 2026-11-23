@@ -121,6 +121,7 @@ describe('homepage rail cache using the installed Next.js implementation', () =>
       expect(state.reads).toBe(beforeHit);
 
       const heroKey = Array.from(entries.keys()).find(key => key.includes('homepage-hero-v9'))!;
+      expect(heroKey).toBe('function () { [native code] }-homepage-hero-v9-[]');
       entries.delete(heroKey);
       expect(await request(loadHomepageDataWithStatus)).toEqual(cold);
       const heroOnlyReads = state.reads - beforeHit;

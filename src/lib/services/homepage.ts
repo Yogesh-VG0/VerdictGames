@@ -1598,7 +1598,10 @@ function cacheHomepageRail<T>(
       else activeRailRefreshes--;
     }
   });
-  return unstable_cache(refresh, [key], sectionCacheOptions);
+  // Next includes the callback source in the key. Turbopack minifies the
+  // page and route copies differently. Binding gives both the same native
+  // callback representation, so the explicit versioned rail key identifies it.
+  return unstable_cache(refresh.bind(null), [key], sectionCacheOptions);
 }
 
 const cachedHero = cacheHomepageRail('homepage-hero-v9', 'refresh_hero', () => fetchHeroCandidates(HOMEPAGE_HERO_FETCH_TARGET));
