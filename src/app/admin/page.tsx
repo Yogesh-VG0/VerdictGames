@@ -229,12 +229,13 @@ export default function AdminDashboard() {
         <p className="text-sm text-secondary mt-1">Overview of your verdict.games database</p>
       </div>
 
+      {stats.isError && <p role="alert" className="text-sm text-danger">Dashboard counts are unavailable.</p>}
       {/* Stats Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
         {[
           { label: "Total Games", value: stats.data?.totalGames, icon: <Gamepad2 className="w-5 h-5" /> as ReactNode, color: "text-pixel-cyan", href: "/admin/games" },
-          { label: "Total Reviews", value: stats.data?.totalReviews, icon: <FileText className="w-5 h-5" /> as ReactNode, color: "text-pixel-green", href: "/admin/reviews" },
-          { label: "Total Users", value: stats.data?.totalUsers, icon: <Users className="w-5 h-5" /> as ReactNode, color: "text-accent", href: "/admin/users" },
+          { label: "Stored Community Reviews", value: stats.data?.totalReviews, icon: <FileText className="w-5 h-5" /> as ReactNode, color: "text-pixel-green", href: "/admin/reviews" },
+          { label: "Registered Profiles", value: stats.data?.totalUsers, icon: <Users className="w-5 h-5" /> as ReactNode, color: "text-accent", href: "/admin/users" },
         ].map((stat) => (
           <Link
             key={stat.label}
@@ -251,7 +252,7 @@ export default function AdminDashboard() {
               {stats.isLoading ? (
                 <span className="animate-pulse bg-white/5 rounded-lg inline-block w-16 h-8" />
               ) : (
-                (stat.value ?? 0).toLocaleString()
+                stat.value?.toLocaleString() ?? "—"
               )}
             </p>
             <p className="text-xs text-secondary mt-1">{stat.label}</p>
@@ -305,7 +306,9 @@ export default function AdminDashboard() {
             <p className="text-xs text-tertiary">Populate your site with starter content for launch.</p>
             <div className="space-y-3">
               <button
-                onClick={() => seedListsMutation.mutate()}
+                onClick={() => {
+                  if (window.confirm("Replace memberships in the system editorial collections? User-owned lists are unchanged.")) seedListsMutation.mutate();
+                }}
                 disabled={seedListsMutation.isPending}
                 className="w-full rounded-2xl border border-border bg-surface p-4 hover:border-accent/30 transition-all text-left disabled:opacity-50"
               >
@@ -314,7 +317,7 @@ export default function AdminDashboard() {
                   {seedListsMutation.isPending ? "Seeding Lists..." : "Seed Editorial Lists"}
                 </h3>
                 <p className="text-xs text-tertiary mt-1">
-                  Creates 22 curated lists from your existing game database.
+                  Rebuilds system editorial collections from existing eligible games.
                 </p>
                 {seedListsMutation.isSuccess && (
                   <p className="text-xs text-pixel-green mt-2">Done! Check the Lists page.</p>
@@ -341,7 +344,9 @@ export default function AdminDashboard() {
         {/* Right column: Recent Admin Activity */}
         <div className="space-y-3">
           <h2 className="text-lg font-bold text-foreground">Recent Activity</h2>
-          <ActivityLog entries={activity.data ?? []} isLoading={activity.isLoading} />
+          <p className="text-xs text-secondary">Latest 50 admin events</p>
+          {activity.isError ? <p role="alert" className="text-sm text-danger">Recent activity is unavailable.</p>
+            : <ActivityLog entries={activity.data ?? []} isLoading={activity.isLoading} />}
         </div>
       </div>
     </div>

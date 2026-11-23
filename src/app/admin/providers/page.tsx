@@ -17,6 +17,9 @@ interface ProviderUsage {
 
 interface UsageResponse {
   providers: ProviderUsage[];
+  reportingTimezone: "UTC";
+  refreshedAt: string;
+  overallLatencyMs: number | null;
 }
 
 async function fetchProviderUsage(): Promise<UsageResponse> {
@@ -53,9 +56,8 @@ export default function AdminProvidersPage() {
   const providers = data?.providers ?? [];
   const totalRequests = providers.reduce((sum, p) => sum + p.todayRequests, 0);
   const totalErrors = providers.reduce((sum, p) => sum + p.todayErrors, 0);
-  const avgLatency = providers.length > 0
-    ? Math.round(providers.reduce((sum, p) => sum + p.avgLatencyMs, 0) / providers.filter(p => p.avgLatencyMs > 0).length || 0)
-    : 0;
+  const totalSuccess = providers.reduce((sum, p) => sum + p.todaySuccess, 0);
+  const avgLatency = data?.overallLatencyMs;
 
   return (
     <div className="space-y-6">
@@ -67,8 +69,9 @@ export default function AdminProvidersPage() {
             API Provider Usage
           </h1>
           <p className="text-sm text-secondary mt-0.5">
-            Real-time monitoring of external API providers
+            Recorded activity for the UTC reporting day
           </p>
+          {data && <p className="mt-1 text-xs text-secondary">Refreshed {new Date(data.refreshedAt).toLocaleTimeString(undefined, { timeZone: data.reportingTimezone })} UTC</p>}
         </div>
         <button
           onClick={() => refetch()}
@@ -87,7 +90,7 @@ export default function AdminProvidersPage() {
             Today&apos;s Requests
           </div>
           <p className="text-2xl font-bold text-foreground tabular-nums">
-            {totalRequests.toLocaleString()}
+            {data ? totalRequests.toLocaleString() : "—"}
           </p>
         </div>
         <div className="rounded-2xl border border-border bg-surface p-4">
@@ -96,7 +99,7 @@ export default function AdminProvidersPage() {
             Success Rate
           </div>
           <p className="text-2xl font-bold text-foreground tabular-nums">
-            {totalRequests > 0 ? ((1 - totalErrors / totalRequests) * 100).toFixed(1) : "0.0"}%
+            {totalRequests > 0 ? `${(totalSuccess / totalRequests * 100).toFixed(1)}%` : "—"}
           </p>
         </div>
         <div className="rounded-2xl border border-border bg-surface p-4">
@@ -105,16 +108,16 @@ export default function AdminProvidersPage() {
             Errors
           </div>
           <p className="text-2xl font-bold text-foreground tabular-nums">
-            {totalErrors.toLocaleString()}
+            {data ? totalErrors.toLocaleString() : "—"}
           </p>
         </div>
         <div className="rounded-2xl border border-border bg-surface p-4">
           <div className="flex items-center gap-2 text-secondary text-xs font-medium mb-2">
             <Clock className="w-4 h-4 text-blue-400" />
-            Avg Latency
+            Avg Successful Latency
           </div>
           <p className="text-2xl font-bold text-foreground tabular-nums">
-            {avgLatency}ms
+            {avgLatency == null ? "—" : `${avgLatency} ms`}
           </p>
         </div>
       </div>
@@ -130,7 +133,7 @@ export default function AdminProvidersPage() {
               <th className="text-right px-4 py-3 text-xs font-semibold text-secondary uppercase tracking-wider hidden sm:table-cell">Errors</th>
               <th className="text-right px-4 py-3 text-xs font-semibold text-secondary uppercase tracking-wider hidden md:table-cell">Latency</th>
               <th className="text-right px-4 py-3 text-xs font-semibold text-secondary uppercase tracking-wider">Usage</th>
-              <th className="text-center px-4 py-3 text-xs font-semibold text-secondary uppercase tracking-wider">Status</th>
+              <th className="text-center px-4 py-3 text-xs font-semibold text-secondary uppercase tracking-wider">Configuration</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -205,14 +208,14 @@ export default function AdminProvidersPage() {
                           </span>
                         </div>
                       ) : (
-                        <span className="text-xs text-tertiary">∞</span>
+                        <span className="text-xs text-tertiary">{provider.hourlyLimit ? `${provider.hourlyLimit}/hour` : "No local limit set"}</span>
                       )}
                     </td>
                     <td className="px-4 py-3 text-center">
                       {provider.isEnabled ? (
                         <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-green-500/10 text-green-400 font-medium">
                           <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
-                          Active
+                          Enabled
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-red-500/10 text-red-400 font-medium">
@@ -234,8 +237,7 @@ export default function AdminProvidersPage() {
         <p className="flex items-start gap-2">
           <Activity className="w-4 h-4 mt-0.5 shrink-0 text-accent" />
           <span>
-            Usage is tracked automatically for all external API calls (RAWG, IGDB, Steam, CheapShark, etc.).
-            Data refreshes every minute. Budget limits can be configured in the database.
+            Usage reflects recorded calls. Configuration shows whether a provider is enabled. Success and error counts reflect observed requests.
           </span>
         </p>
       </div>

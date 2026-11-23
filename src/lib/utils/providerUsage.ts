@@ -140,7 +140,7 @@ async function flushUsageBufferAsync(): Promise<void> {
 
     // Aggregate by provider+endpoint within the current hour
     const hourBucket = new Date();
-    hourBucket.setMinutes(0, 0, 0);
+    hourBucket.setUTCMinutes(0, 0, 0);
     const hourBucketISO = hourBucket.toISOString();
 
     const aggregated = new Map<string, {
@@ -252,7 +252,7 @@ export async function checkProviderBudget(
 
     // Get current hour's usage
     const hourBucket = new Date();
-    hourBucket.setMinutes(0, 0, 0);
+    hourBucket.setUTCMinutes(0, 0, 0);
 
     const { data: hourlyUsage } = await usageTable
       .select("request_count")
@@ -271,7 +271,7 @@ export async function checkProviderBudget(
 
     // Get today's usage
     const dayStart = new Date();
-    dayStart.setHours(0, 0, 0, 0);
+    dayStart.setUTCHours(0, 0, 0, 0);
 
     const { data: dailyUsage } = await usageTable
       .select("request_count")
@@ -302,6 +302,9 @@ export async function checkProviderBudget(
  * Get usage summary for all providers.
  */
 export async function getProviderUsageSummary(): Promise<{
+  reportingTimezone: "UTC";
+  refreshedAt: string;
+  overallLatencyMs: number | null;
   providers: Array<{
     provider: string;
     todayRequests: number;
@@ -314,70 +317,75 @@ export async function getProviderUsageSummary(): Promise<{
     percentUsed: number | null;
   }>;
 }> {
-  try {
-    const supabase = getServerSupabase();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const budgetTable = supabase.from("api_provider_budgets") as any;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const usageTable = supabase.from("api_provider_usage") as any;
+  const supabase = getServerSupabase();
+  const refreshedAt = new Date();
+  const dayStart = new Date(refreshedAt);
+  dayStart.setUTCHours(0, 0, 0, 0);
 
-    // Get today's start
-    const dayStart = new Date();
-    dayStart.setHours(0, 0, 0, 0);
+  // Legacy telemetry tables predate the generated Database type.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const budgetsTable = supabase.from("api_provider_budgets") as any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const usageTable = supabase.from("api_provider_usage") as any;
+  const [budgets, usage] = await Promise.all([
+    budgetsTable.select("provider, daily_limit, hourly_limit, is_enabled") as PromiseLike<{ data: ProviderBudget[] | null; error: unknown }>,
+    usageTable.select("provider, request_count, success_count, error_count, total_latency_ms")
+      .gte("hour_bucket", dayStart.toISOString()) as PromiseLike<{ data: UsageRow[] | null; error: unknown }>,
+  ]);
+  if (budgets.error || usage.error) throw new Error("Provider usage query failed");
 
-    // Get all budgets
-    const { data: budgets } = await budgetTable
-      .select("*") as { data: ProviderBudget[] | null };
+  // Aggregate usage by provider
+  const usageByProvider = new Map<string, {
+    requests: number;
+    success: number;
+    errors: number;
+    totalLatency: number;
+  }>();
 
-    // Get today's usage per provider
-    const { data: usage } = await usageTable
-      .select("provider, request_count, success_count, error_count, total_latency_ms")
-      .gte("hour_bucket", dayStart.toISOString()) as { data: UsageRow[] | null };
-
-    // Aggregate usage by provider
-    const usageByProvider = new Map<string, {
-      requests: number;
-      success: number;
-      errors: number;
-      totalLatency: number;
-    }>();
-
-    for (const u of usage ?? []) {
-      const existing = usageByProvider.get(u.provider);
-      if (existing) {
-        existing.requests += u.request_count ?? 0;
-        existing.success += u.success_count ?? 0;
-        existing.errors += u.error_count ?? 0;
-        existing.totalLatency += u.total_latency_ms ?? 0;
-      } else {
-        usageByProvider.set(u.provider, {
-          requests: u.request_count ?? 0,
-          success: u.success_count ?? 0,
-          errors: u.error_count ?? 0,
-          totalLatency: u.total_latency_ms ?? 0,
-        });
-      }
+  for (const u of (usage.data ?? []) as UsageRow[]) {
+    const existing = usageByProvider.get(u.provider);
+    if (existing) {
+      existing.requests += u.request_count ?? 0;
+      existing.success += u.success_count ?? 0;
+      existing.errors += u.error_count ?? 0;
+      existing.totalLatency += u.total_latency_ms ?? 0;
+    } else {
+      usageByProvider.set(u.provider, {
+        requests: u.request_count ?? 0,
+        success: u.success_count ?? 0,
+        errors: u.error_count ?? 0,
+        totalLatency: u.total_latency_ms ?? 0,
+      });
     }
-
-    // Build summary
-    const providers = (budgets ?? []).map((b) => {
-      const u = usageByProvider.get(b.provider) ?? { requests: 0, success: 0, errors: 0, totalLatency: 0 };
-      return {
-        provider: b.provider,
-        todayRequests: u.requests,
-        todaySuccess: u.success,
-        todayErrors: u.errors,
-        avgLatencyMs: u.success > 0 ? Math.round(u.totalLatency / u.success) : 0,
-        dailyLimit: b.daily_limit,
-        hourlyLimit: b.hourly_limit,
-        isEnabled: b.is_enabled,
-        percentUsed: b.daily_limit ? Math.round((u.requests / b.daily_limit) * 100) : null,
-      };
-    });
-
-    return { providers };
-  } catch (err) {
-    console.warn("[ProviderUsage] Failed to get summary:", (err as Error).message);
-    return { providers: [] };
   }
+
+  // Build summary
+  const providers = (budgets.data ?? []).map((b) => {
+    const u = usageByProvider.get(b.provider) ?? { requests: 0, success: 0, errors: 0, totalLatency: 0 };
+    return {
+      provider: b.provider,
+      todayRequests: u.requests,
+      todaySuccess: u.success,
+      todayErrors: u.errors,
+      avgLatencyMs: u.success > 0 ? Math.round(u.totalLatency / u.success) : 0,
+      dailyLimit: b.daily_limit,
+      hourlyLimit: b.hourly_limit,
+      isEnabled: b.is_enabled,
+      percentUsed: b.daily_limit ? Math.round((u.requests / b.daily_limit) * 100) : null,
+    };
+  });
+
+  let successfulRequests = 0;
+  let successfulLatency = 0;
+  for (const provider of providers) {
+    const totals = usageByProvider.get(provider.provider);
+    successfulRequests += totals?.success ?? 0;
+    successfulLatency += totals?.totalLatency ?? 0;
+  }
+  return {
+    providers,
+    reportingTimezone: "UTC",
+    refreshedAt: refreshedAt.toISOString(),
+    overallLatencyMs: successfulRequests ? Math.round(successfulLatency / successfulRequests) : null,
+  };
 }

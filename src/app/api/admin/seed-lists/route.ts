@@ -1,4 +1,4 @@
-import { jsonOk } from "@/lib/api/response";
+import { jsonPrivateOk as jsonOk } from "@/lib/api/response";
 import { requireAdmin } from "@/lib/admin";
 import { getEditorialSeedSummaries, seedEditorialLists } from "@/lib/admin/seedEditorialLists";
 

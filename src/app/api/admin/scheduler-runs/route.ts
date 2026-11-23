@@ -1,4 +1,4 @@
-import { jsonPrivateOk as jsonOk } from "@/lib/api/response";
+import { jsonPrivateOk as jsonOk, jsonError } from "@/lib/api/response";
 import { requireAdmin } from "@/lib/admin";
 import { getServerSupabase } from "@/lib/supabase/server";
 import { NextRequest } from "next/server";
@@ -13,13 +13,11 @@ export async function GET(req: NextRequest) {
   const limit = Math.min(parseInt(searchParams.get("limit") || "100"), 500);
   const jobName = searchParams.get("job") || null;
 
-  // Auto-cleanup: mark runs stuck in 'running' for >2h as 'stale'
   const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await (supabase.from("scheduler_runs") as any)
-    .update({ status: "stale", finished_at: new Date().toISOString() })
-    .eq("status", "running")
-    .lt("started_at", twoHoursAgo);
+  const displayStatus = (row: { status: string; started_at: string; metadata?: unknown }) => {
+    if (parseSchedulerMetadata(row.metadata)?.outcome === 'deferred') return 'deferred';
+    return row.status === 'running' && row.started_at < twoHoursAgo ? 'stale' : row.status;
+  };
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let query = (supabase.from("scheduler_runs") as any)
@@ -34,15 +32,17 @@ export async function GET(req: NextRequest) {
   const { data, error: dbError } = await query;
 
   if (dbError) {
-    return Response.json({ error: dbError.message }, { status: 500 });
+    return jsonError("Scheduler history is unavailable.", 503);
   }
 
   // Also fetch summary stats
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: stats } = await (supabase.from("scheduler_runs") as any)
+  const { data: stats, error: statsError } = await (supabase.from("scheduler_runs") as any)
     .select("job_name, status, started_at, metadata")
     .gte("started_at", new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
     .order("started_at", { ascending: false });
+
+  if (statsError) return jsonError("Scheduler summary is unavailable.", 503);
 
   // Compute per-job summary
   const jobSummary: Record<string, {
@@ -65,18 +65,18 @@ export async function GET(req: NextRequest) {
     s.total++;
     // Older health checks stored deferrals as errors. Preserve that history
     // while making their operational meaning visible in the dashboard.
-    const status = parseSchedulerMetadata(row.metadata)?.outcome === 'deferred' ? 'deferred' : row.status;
+    const status = displayStatus(row);
     if (status === "success") { s.success++; s.lastSuccess ??= row.started_at; }
     else if (status === "deferred") s.deferred++;
-    else if (row.status === "error") s.error++;
-    else if (row.status === "running") s.running++;
-    else if (row.status === "stale") s.stale++;
+    else if (status === "error") s.error++;
+    else if (status === "running") s.running++;
+    else if (status === "stale") s.stale++;
     if (!s.lastRun) {
       s.lastRun = row.started_at;
       s.lastStatus = status;
     }
   }
 
-  return jsonOk({ runs: (data ?? []).map((row: { status: string; metadata?: unknown }) =>
-    parseSchedulerMetadata(row.metadata)?.outcome === 'deferred' ? { ...row, status: 'deferred' } : row), summary: jobSummary });
+  return jsonOk({ runs: (data ?? []).map((row: { status: string; started_at: string; metadata?: unknown }) =>
+    ({ ...row, status: displayStatus(row) })), summary: jobSummary });
 }

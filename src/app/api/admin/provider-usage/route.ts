@@ -4,7 +4,7 @@
  * Returns API provider usage summary for budget monitoring.
  */
 
-import { jsonOk, jsonError } from "@/lib/api/response";
+import { jsonPrivateOk as jsonOk, jsonError } from "@/lib/api/response";
 import { requireAdmin } from "@/lib/admin";
 import { getProviderUsageSummary } from "@/lib/utils/providerUsage";
 
