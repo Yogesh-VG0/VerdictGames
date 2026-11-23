@@ -156,7 +156,7 @@ const COUNTER_LABELS: Record<string, { scanned: string; created: string; updated
 function getRunSummaryText(run: SchedulerRun, meta: Record<string, unknown> | null): string | null {
   const { job_name, status, rows_created, rows_updated, rows_scanned, rows_skipped } = run;
 
-  if (status === "stale") return "Run was interrupted or timed out before completing.";
+  if (status === "stale") return "No completion was recorded within the two-hour window.";
   if (status === "running") return "Currently executing...";
   if (status === "error") return null; // error_message shown separately
 

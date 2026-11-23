@@ -210,7 +210,11 @@ export default function ListsPage({ initialData }: { initialData?: ListSummaries
           {user?.role === "admin" && (
             <div className="pt-4 border-t border-border mt-4 mx-auto max-w-xs">
               <button
-                onClick={() => seedMutation.mutate()}
+                onClick={() => {
+                  if (window.confirm("Replace memberships in the system editorial collections? User-owned lists are unchanged.")) {
+                    seedMutation.mutate();
+                  }
+                }}
                 disabled={seedMutation.isPending}
                 className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium bg-pixel-cyan/10 text-pixel-cyan border border-pixel-cyan/20 rounded-xl hover:bg-pixel-cyan/20 transition-all disabled:opacity-50"
               >
