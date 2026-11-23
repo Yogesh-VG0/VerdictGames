@@ -12,7 +12,7 @@
  */
 
 import { getServerSupabase } from "@/lib/supabase/server";
-import type { GXCalendarEntry } from "@/lib/external/gxcorner";
+import type { GXCalendarEntry, GXDealEntry } from "@/lib/external/gxcorner";
 import type { GXCalendarGame, GXCalendarMonthResponse } from "@/lib/types";
 import { measureHomepagePhase, startHomepagePhase } from "@/lib/services/homepage-timing";
 import { dedupeGXCalendarGames, filterGXCalendarEntriesByMonth, getCalendarMonthKey, isPastCalendarMonth, shouldHideGXCalendarEntry } from "@/lib/utils/gx-calendar";
@@ -28,6 +28,17 @@ type FeedKey =
   | "news_feed";
 
 const GX_CALENDAR_SNAPSHOT_VERSION = 2;
+
+export async function readGXDealsSnapshot(): Promise<GXDealEntry[]> {
+  if (!hasServerSupabaseEnv()) return [];
+  const { data, error } = await measureHomepagePhase('provider_snapshot', () => getServerSupabase()
+    .from('gx_cache').select('payload').eq('feed_key', 'deals')
+    .abortSignal(AbortSignal.timeout(1500)).maybeSingle());
+  if (error) throw error;
+  const rows = parsePayload<unknown>(data?.payload);
+  if (data && !Array.isArray(rows)) throw new Error('Invalid stored Deals snapshot');
+  return Array.isArray(rows) ? rows : [];
+}
 
 function parsePayload<T>(payload: unknown): T | null {
   if (payload == null) return null;

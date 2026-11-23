@@ -10,6 +10,7 @@
 import { recordProviderUsage } from "@/lib/utils/providerUsage";
 import { isUpcomingSnapshot } from './rawg-snapshot.mjs';
 import { collectRawgPages } from './rawg-discovery.mjs';
+import { homepageSignal } from '@/lib/services/homepage-budget';
 
 const RAWG_BASE = "https://api.rawg.io/api";
 let rawgRetryAt = 0;
@@ -37,7 +38,7 @@ async function trackedFetch(endpoint: string, url: string, init?: RequestInit): 
   const request = (async () => {
     const start = Date.now();
     try {
-      const res = await fetch(url, { ...init, signal: init?.signal ? AbortSignal.any([init.signal, AbortSignal.timeout(8000)]) : AbortSignal.timeout(8000) });
+      const res = await fetch(url, { ...init, signal: homepageSignal(init?.signal ? AbortSignal.any([init.signal, AbortSignal.timeout(8000)]) : AbortSignal.timeout(8000)) });
       if (res.status === 429 || res.status >= 500) {
         const retryAfter = Number(res.headers.get('retry-after')) * 1000;
         rawgRetryAt = Date.now() + Math.min(300_000, Math.max(60_000, retryAfter || 0));

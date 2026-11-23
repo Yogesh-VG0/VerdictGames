@@ -2,22 +2,35 @@ import { createRequire } from 'node:module';
 import { readFileSync } from 'node:fs';
 import { setTimeout as delay } from 'node:timers/promises';
 import { describe, expect, it, vi } from 'vitest';
+import { currentHomepageSignal } from './homepage-budget';
 
-const state = vi.hoisted(() => ({ reads: 0, active: 0, peak: 0, rows: [] as Record<string, unknown>[] }));
+const state = vi.hoisted(() => ({ reads: 0, active: 0, peak: 0, aborted: 0, stall: false, dealsStall: false, dealsAborted: false, rows: [] as Record<string, unknown>[] }));
 vi.mock('@/lib/services/upcoming-snapshot', () => ({ readCachedUpcomingSnapshot: async () => ({ results: [] }) }));
 vi.mock('@/lib/services/community-ranking', () => ({ readHomepageReleaseRanking: async () => null }));
-vi.mock('@/lib/services/gx-feeds', () => ({ loadGXDeals: async () => [] }));
+vi.mock('@/lib/services/gx-feeds', () => ({ loadHomepageDeals: async () => {
+  if (state.dealsStall) {
+    try { await delay(30_000, undefined, { signal: currentHomepageSignal() }); }
+    catch (error) { state.dealsAborted = true; throw error; }
+  }
+  return [];
+} }));
 vi.mock('@/lib/supabase/public', () => ({ getPublicSupabase: () => ({ from: () => {
   const chain: Record<string, unknown> = {};
-  for (const key of ['select', 'eq', 'not', 'neq', 'gte', 'lte', 'gt', 'order', 'limit', 'in', 'abortSignal']) {
+  for (const key of ['select', 'eq', 'not', 'neq', 'gte', 'lte', 'gt', 'order', 'limit', 'in', 'or', 'abortSignal']) {
     chain[key] = () => chain;
   }
-  chain.then = async (resolve: (value: unknown) => unknown) => {
+  chain.then = async (resolve: (value: unknown) => unknown, reject: (error: unknown) => unknown) => {
     state.reads++;
     state.peak = Math.max(state.peak, ++state.active);
-    await delay(8);
-    state.active--;
-    return resolve({ data: state.rows, error: null });
+    try {
+      await delay(state.stall ? 30_000 : 8, undefined, { signal: currentHomepageSignal() });
+      return resolve({ data: state.rows, error: null });
+    } catch (error) {
+      state.aborted++;
+      return reject(error);
+    } finally {
+      state.active--;
+    }
   };
   return chain;
 } }) }));
@@ -82,7 +95,7 @@ describe('homepage rail cache using the installed Next.js implementation', () =>
       expect(hit.timing).not.toContain('refresh_hero');
       expect(state.reads).toBe(beforeHit);
 
-      const heroKey = Array.from(entries.keys()).find(key => key.includes('homepage-hero-v7'))!;
+      const heroKey = Array.from(entries.keys()).find(key => key.includes('homepage-hero-v8'))!;
       entries.delete(heroKey);
       expect(await request(loadHomepageDataWithStatus)).toEqual(cold);
       const heroOnlyReads = state.reads - beforeHit;
@@ -103,8 +116,37 @@ describe('homepage rail cache using the installed Next.js implementation', () =>
         console.info(JSON.stringify({ coldReads, nestedReads: coldReads, warmRailReads: 0, heroOnlyReads,
           coldMs: Math.round(coldMs), nestedMs: Math.round(nestedMs), warmRailsMs: Math.round(warmRailsMs), peakReads: state.peak }));
       }
+
+      const dealsKey = [...entries.keys()].find(key => key.includes('homepage-deals-snapshot-v1'))!;
+      entries.delete(dealsKey);
+      state.dealsStall = true;
+      const optionalStarted = performance.now();
+      const missingDeals = await request(loadHomepageDataWithStatus);
+      expect(performance.now() - optionalStarted).toBeLessThan(3_000);
+      expect(missingDeals).toEqual({ data: cold.data, degraded: true });
+      expect(state.dealsAborted).toBe(true);
+      expect(entries.has(dealsKey)).toBe(false);
+      state.dealsStall = false;
+
+      // All cold database work stalls. A shorter queued rail expires before
+      // admission and active transports are cancelled without leaking slots.
+      entries.clear();
+      state.stall = true;
+      const beforeStall = state.reads;
+      const pressureStarted = performance.now();
+      const pressure = await request(loadHomepageDataWithStatus);
+      expect(performance.now() - pressureStarted).toBeLessThan(11_000);
+      expect(pressure.degraded).toBe(true);
+      expect(pressure.data.hero).toEqual([]);
+      expect(state.reads - beforeStall).toBe(state.aborted);
+      expect(state.active).toBe(0);
+      expect(state.peak).toBeLessThanOrEqual(3);
+      expect([...entries.keys()].some(key => key.includes('homepage-hero-v8'))).toBe(false);
+
+      state.stall = false;
+      expect(await request(loadHomepageDataWithStatus)).toEqual(cold);
     } finally {
       vi.unstubAllEnvs();
     }
-  });
+  }, 18_000);
 });

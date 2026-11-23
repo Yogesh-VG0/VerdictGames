@@ -8,7 +8,7 @@ vi.mock('@/lib/services/community-ranking',()=>({readHomepageReleaseRanking:asyn
 vi.mock('next/cache',()=>({unstable_cache:(read:unknown)=>read}));
 vi.mock('@/lib/supabase/public',()=>({getPublicSupabase:()=>({from:()=>{
   const chain:Record<string,unknown>={};
-  for(const key of ['select','eq','not','neq','gte','lte','gt','order','limit','in','abortSignal'])chain[key]=()=>chain;
+  for(const key of ['select','eq','not','neq','gte','lte','gt','order','limit','in','or','abortSignal'])chain[key]=()=>chain;
   chain.then=(resolve:(value:unknown)=>unknown,reject:(error:unknown)=>unknown)=>Promise.resolve(state.responses.shift()).then(resolve,reject);
   return chain;
 }})}));
@@ -55,6 +55,18 @@ describe('homepage trending read failures',()=>{
   const rows=[launch,pending];state.responses=[{data:rows,error:null},{data:rows,error:null}];
   const result=await fetchNewReleases(10);
   expect(result.map(game=>game.id)).toEqual(['launch']);expect(result[0].score).toBe(77);
+ });
+ it('considers independently reviewed confirmed launches without a provider ranking snapshot', async () => {
+   const release = { id:'confirmed', slug:'confirmed-launch', title:'Confirmed Console Launch',
+     description:'A complete standalone action adventure, available on consoles.', release_status:'released',
+     release_date:new Date().toISOString().slice(0,10), cover_image:'https://images.igdb.com/co123.jpg',
+     header_image:'https://images.igdb.com/scene.jpg', platforms:['PlayStation 5'], genres:['Action'], tags:[],
+     score:55, verdict_score:77, critic_score:98, critic_source_count:1, confidence:0.24, review_count:104 };
+   const pool = Array.from({length:6}, (_,i)=>({...release,id:`historical-${i}`,slug:`historical-${i}`,
+     title:`Historical ${i}`,release_date:'2020-11-20',steam_app_id:8000+i}));
+   state.responses = [{data:[release],error:null},{data:[],error:null},{data:pool,error:null}];
+   expect((await fetchHeroCandidates(6))[0]).toMatchObject({id:'confirmed',verdictScore:77});
+   expect(state.responses).toHaveLength(0);
  });
  it('keeps a verified release without ratings instead of requiring a quality score',async()=>{
   const row={id:'unrated-release',slug:'unrated-release',title:'Unrated Release',description:'A complete standalone role playing game.',

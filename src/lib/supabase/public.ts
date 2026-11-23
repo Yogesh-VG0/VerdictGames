@@ -1,5 +1,6 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "./types";
+import { homepageSignal } from '@/lib/services/homepage-budget';
 
 let _publicClient: SupabaseClient<Database> | null = null;
 
@@ -24,9 +25,9 @@ export function getPublicSupabase(): SupabaseClient<Database> {
     global: {
       fetch: (input, init) => fetch(input, {
         ...init,
-        signal: init?.signal
+        signal: homepageSignal(init?.signal
           ? AbortSignal.any([init.signal, AbortSignal.timeout(5000)])
-          : AbortSignal.timeout(5000),
+          : AbortSignal.timeout(5000)),
       }),
     },
   });

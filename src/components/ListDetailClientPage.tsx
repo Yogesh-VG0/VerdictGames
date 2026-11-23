@@ -98,7 +98,9 @@ export default function ListDetailClientPage({ slug, initialList, privateOwner }
       </div>
 
       {/* Games grid */}
-      <GameGrid games={list.games} columns={4} />
+      {list.isSystemManaged && list.games.length === 0 ? (
+        <p className="py-8 text-sm text-secondary">This collection currently has no games with enough verified information to qualify.</p>
+      ) : <GameGrid games={list.games} columns={4} />}
     </div>
   );
 }

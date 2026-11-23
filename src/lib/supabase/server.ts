@@ -8,6 +8,7 @@
 
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "./types";
+import { currentHomepageSignal } from '@/lib/services/homepage-budget';
 
 let _serverClient: SupabaseClient<Database> | null = null;
 
@@ -25,6 +26,11 @@ export function getServerSupabase(): SupabaseClient<Database> {
 
   _serverClient = createClient<Database>(url, key, {
     auth: { persistSession: false, autoRefreshToken: false },
+    global: { fetch: (input, init) => {
+      const budget = currentHomepageSignal();
+      if (!budget) return fetch(input, init);
+      return fetch(input, { ...init, signal: init?.signal ? AbortSignal.any([init.signal, budget]) : budget });
+    } },
   });
 
   return _serverClient;
