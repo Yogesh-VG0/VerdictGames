@@ -60,7 +60,7 @@ export default async function HomePage() {
   ]);
   const { data: homepage } = homepageResult;
   const mostAnticipatedGames = anticipatedResult.data;
-  const degraded = homepageResult.degraded || anticipatedResult.degraded;
+  const degraded = homepageResult.degraded;
   const featured = homepage.hero.filter((game) => game.headerImage || game.coverImage).slice(0, 6);
   const trendingGames = homepage.trending
     .filter((game) => game.coverImage)
@@ -121,7 +121,7 @@ export default async function HomePage() {
 
       {hasMostAnticipatedGames ? (
         <>
-          <HomepageMostAnticipatedSection games={mostAnticipatedGames} />
+          <HomepageMostAnticipatedSection games={mostAnticipatedGames} fetchedAt={anticipatedResult.fetchedAt} />
 
           <div className="max-w-[1400px] mx-auto px-4">
             <hr className="border-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
