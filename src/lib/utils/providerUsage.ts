@@ -140,7 +140,7 @@ async function flushUsageBufferAsync(): Promise<void> {
 
     // Aggregate by provider+endpoint within the current hour
     const hourBucket = new Date();
-    hourBucket.setUTCMinutes(0, 0, 0);
+    hourBucket.setMinutes(0, 0, 0);
     const hourBucketISO = hourBucket.toISOString();
 
     const aggregated = new Map<string, {
@@ -252,7 +252,7 @@ export async function checkProviderBudget(
 
     // Get current hour's usage
     const hourBucket = new Date();
-    hourBucket.setUTCMinutes(0, 0, 0);
+    hourBucket.setMinutes(0, 0, 0);
 
     const { data: hourlyUsage } = await usageTable
       .select("request_count")
@@ -271,7 +271,7 @@ export async function checkProviderBudget(
 
     // Get today's usage
     const dayStart = new Date();
-    dayStart.setUTCHours(0, 0, 0, 0);
+    dayStart.setHours(0, 0, 0, 0);
 
     const { data: dailyUsage } = await usageTable
       .select("request_count")
