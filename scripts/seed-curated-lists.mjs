@@ -606,7 +606,7 @@ async function dedupeCanonicalIds(ids, slug, anticipation) {
   }
 
   const rows = await sql`
-    SELECT ${sql(EDITORIAL_GAME_COLUMNS.split(","))}, steam_app_id, current_players, verdict_score
+    SELECT ${sql(EDITORIAL_GAME_COLUMNS.split(","))}, current_players, verdict_score
     FROM games
     WHERE id = ANY(${ids})
   `;

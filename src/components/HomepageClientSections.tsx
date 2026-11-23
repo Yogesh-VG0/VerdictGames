@@ -4,12 +4,13 @@ import { useQuery } from "@tanstack/react-query";
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import {
+  getHomepageDeals,
   getHomepageRecommendations,
   getGXFreeToPlay,
 } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
-import type { Game, GXDeal } from "@/lib/types";
+import type { Game } from "@/lib/types";
 import FadeInSection from "@/components/FadeInSection";
 import GameCard from "@/components/GameCard";
 import HorizontalScroll from "@/components/HorizontalScroll";
@@ -34,7 +35,6 @@ type DiscoverTab = "new" | "deals" | "free";
 interface HomepageClientSectionsProps {
   initialRecommendations: Game[];
   initialNewReleases: Game[];
-  initialDeals: GXDeal[];
   shownGameSlugs: string;
 }
 
@@ -49,7 +49,6 @@ const DISCOVER_TABS: { label: string; value: DiscoverTab; icon: ReactNode }[] = 
 export default function HomepageClientSections({
   initialRecommendations,
   initialNewReleases,
-  initialDeals,
   shownGameSlugs,
 }: HomepageClientSectionsProps) {
   const { user } = useAuth();
@@ -60,6 +59,14 @@ export default function HomepageClientSections({
     queryFn: () => getHomepageRecommendations(shownGameSlugs),
     enabled: !!user,
     staleTime: 5 * 60 * 1000,
+  });
+
+  const deals = useQuery({
+    queryKey: ["gx-homepage-deals"],
+    queryFn: ({ signal }) => getHomepageDeals(signal),
+    enabled: discoverTab === "deals",
+    staleTime: 5 * 60 * 1000,
+    retry: false,
   });
 
   const gxFreeToPlay = useQuery({
@@ -127,9 +134,11 @@ export default function HomepageClientSections({
 
             {discoverTab === "deals" && (
               <>
-                {initialDeals.length > 0 ? (
+                {deals.isLoading ? (
+                  <HorizontalScrollSkeleton count={6} />
+                ) : deals.data && deals.data.length > 0 ? (
                   <HorizontalScroll>
-                    {initialDeals.slice(0, 20).map((deal) => (
+                    {deals.data.map((deal) => (
                       <div
                         key={deal.id}
                         className={CARD_WIDTH}
@@ -139,7 +148,7 @@ export default function HomepageClientSections({
                     ))}
                   </HorizontalScroll>
                 ) : (
-                  <p className="text-secondary text-sm py-8 text-center">No deals available right now.</p>
+                  <p className="text-secondary text-sm py-8 text-center">{deals.isError ? "Deals are temporarily unavailable." : "No deals available right now."}</p>
                 )}
               </>
             )}

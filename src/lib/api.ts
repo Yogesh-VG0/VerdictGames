@@ -129,6 +129,7 @@ export interface HomepageData {
   trending: Game[];    // trending rail — pre-deduped against hero server-side
   topRated: Game[];
   newReleases: Game[];
+  /** @deprecated Use getHomepageDeals for the independently loaded Deals tab. */
   deals: GXDeal[];
   recommendations: Game[];  // anonymous recommendations — bundled to avoid extra API call
 }
@@ -638,6 +639,10 @@ export async function getSiteStats(): Promise<SiteStats> {
 /* ═══════════════════════════════════════════════════
    GX CORNER — Live feeds (no DB, refreshed every 5 min)
    ═══════════════════════════════════════════════════ */
+
+export function getHomepageDeals(signal?: AbortSignal): Promise<GXDeal[]> {
+  return apiFetchOrThrow<GXDeal[]>("/api/gx/deals/snapshot", { credentials: "omit", signal });
+}
 
 export async function getGXDeals(): Promise<GXDeal[]> {
   return (await apiFetch<GXDeal[]>("/api/gx/deals")) ?? [];

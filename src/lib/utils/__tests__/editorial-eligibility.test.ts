@@ -49,6 +49,22 @@ describe('system collection eligibility', () => {
     }
   });
 
+  it.each([
+    [588650, 'Dead Cells', '2018-08-07'],
+    [646570, 'Slay the Spire', '2019-01-22'],
+    [1794680, 'Vampire Survivors', '2022-10-20'],
+  ])('uses a verified 1.0 launch only for the matched legacy row (%s)', (steam_app_id, title, date) => {
+    const row = { ...base, title, steam_app_id, release_date: date, release_status: null, tags: ['Early Access', 'Roguelite'] };
+    const reason = (overrides = {}) => editorialExclusion('best-roguelikes-roguelites', { ...row, ...overrides }, today);
+    expect(reason()).toBeNull();
+    for (const overrides of [{ steam_app_id: 99 }, { title: 'Other Game' }, { release_date: '2020-01-01' },
+      { is_provisional: true }, { verdict_label: 'COMING SOON' }, { release_status: 'early_access' },
+      { release_status: 'coming_soon' }, { release_status: 'cancelled' }]) {
+      expect(reason(overrides)).toBe('full release required');
+    }
+    expect(reason({ tags: ['Early Access'] })).toBe('insufficient genre, mode or playtime evidence');
+  });
+
   it('rejects broad labels and unknown playtime and does not pad a short list', () => {
     expect(editorialExclusion('best-horror-games', { ...base, genres: ['Puzzle', 'Horror'] }, today)).toBeTruthy();
     expect(editorialExclusion('best-strategy-games', { ...base, genres: ['Strategy', 'Puzzle'] }, today)).toBeTruthy();

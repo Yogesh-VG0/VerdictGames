@@ -46,7 +46,7 @@ async function readListDetail(db: SupabaseClient<Database>, slug: string, ownerI
 }
 
 // Only public, anonymously readable content may enter this shared cache.
-export const loadPublicList = cache(unstable_cache((slug: string) => readListDetail(getPublicSupabase(),slug), ['public-list-v3'], { revalidate: 300, tags:['public-lists'] }));
+export const loadPublicList = cache(unstable_cache((slug: string) => readListDetail(getPublicSupabase(),slug), ['public-list-v4'], { revalidate: 300, tags:['public-lists'] }));
 
 // Caller-authenticated/RLS reads stay outside all shared caches. The explicit
 // owner predicate also prevents a caller from reading another user's list.

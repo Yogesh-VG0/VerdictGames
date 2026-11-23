@@ -57,7 +57,6 @@ import {
 } from "@/lib/utils/trending";
 import type { GameRow } from "@/lib/supabase/types";
 import type { Game, GXDeal } from "@/lib/types";
-import { loadHomepageDeals } from "@/lib/services/gx-feeds";
 
 /* ═══════════════════════════════════════════════════
    Homepage Recency Helpers
@@ -1521,14 +1520,6 @@ export async function fetchHomepageRecommendations(limit = 20): Promise<Game[]> 
 }
 
 /* ═══════════════════════════════════════════════════
-   GX Deals (mapped from GX Corner external API)
-   ═══════════════════════════════════════════════════ */
-
-export async function fetchDeals(): Promise<GXDeal[]> {
-  return loadHomepageDeals();
-}
-
-/* ═══════════════════════════════════════════════════
    Homepage Aggregator — single call, all sections
    with strict global deduplication and refill logic
 
@@ -1541,6 +1532,7 @@ export interface HomepageData {
   trending: Game[];    // trending rail — genuine momentum
   topRated: Game[];
   newReleases: Game[];
+  /** @deprecated Deals load separately when the visitor selects the tab. */
   deals: GXDeal[];
   recommendations: Game[];  // anonymous recommendations
 }
@@ -1601,7 +1593,7 @@ async function acquireRailRefresh(signal?: AbortSignal) {
 
 function cacheHomepageRail<T>(
   key: string,
-  phase: 'refresh_hero' | 'refresh_trending' | 'refresh_new_releases' | 'refresh_top_rated' | 'refresh_recommendations' | 'refresh_deals',
+  phase: 'refresh_hero' | 'refresh_trending' | 'refresh_new_releases' | 'refresh_top_rated' | 'refresh_recommendations',
   read: () => Promise<T>,
 ) {
   const refresh = coalesceCatalogueRead(async () => {
@@ -1626,7 +1618,6 @@ const cachedTrending = cacheHomepageRail('homepage-trending-v3', 'refresh_trendi
 const cachedNewReleases = cacheHomepageRail('homepage-new-v4', 'refresh_new_releases', () => fetchNewReleases(HOMEPAGE_SECTION_FETCH_TARGET));
 const cachedTopRated = cacheHomepageRail('homepage-top-v3', 'refresh_top_rated', () => fetchHomepageTopRated(HOMEPAGE_SECTION_FETCH_TARGET));
 const cachedRecommendations = cacheHomepageRail('homepage-recommendations-v3', 'refresh_recommendations', () => fetchHomepageRecommendations(HOMEPAGE_SECTION_FETCH_TARGET));
-const cachedDeals = cacheHomepageRail('homepage-deals-snapshot-v1', 'refresh_deals', fetchDeals);
 
 const readHomepageData = coalesceCatalogueRead(fetchHomepageData);
 
@@ -1785,10 +1776,9 @@ function isReservedHomepageTopRatedGame(game: Game): boolean {
 export async function fetchHomepageData(): Promise<HomepageData> {
   // Rail cache lookups can overlap. The queue above caps database refreshes
   // even when stale lookups start background work together.
-  const [heroResult, trendingPrimaryResult, dealsResult, newReleasesResult, topRatedResult, recsResult] = await Promise.allSettled([
+  const [heroResult, trendingPrimaryResult, newReleasesResult, topRatedResult, recsResult] = await Promise.allSettled([
     measureHomepagePhase('rail_hero', () => boundedHomepageRead(9000, cachedHero)),
     measureHomepagePhase('rail_trending', () => boundedHomepageRead(7500, cachedTrending)),
-    measureHomepagePhase('rail_deals', () => boundedHomepageRead(2000, cachedDeals)),
     measureHomepagePhase('rail_new_releases', () => boundedHomepageRead(7500, cachedNewReleases)),
     measureHomepagePhase('rail_top_rated', () => boundedHomepageRead(9000, cachedTopRated)),
     measureHomepagePhase('rail_recommendations', () => boundedHomepageRead(9000, cachedRecommendations)),
@@ -1799,11 +1789,10 @@ export async function fetchHomepageData(): Promise<HomepageData> {
   let trendingRaw = resolveHomepageSection(trendingPrimaryResult, "trending rail", [] as Game[]);
   const topRatedRaw = resolveHomepageSection(topRatedResult, "top rated rail", [] as Game[]);
   const newReleasesRaw = resolveHomepageSection(newReleasesResult, "new releases rail", [] as Game[]);
-  const deals = resolveHomepageSection(dealsResult, "deals rail", [] as GXDeal[]);
   const recsRaw = resolveHomepageSection(recsResult, "recommendations rail", [] as Game[]);
   const sectionResults: Record<string, PromiseSettledResult<unknown>> = {
     hero: heroResult, trending: trendingPrimaryResult, newReleases: newReleasesResult,
-    topRated: topRatedResult, recommendations: recsResult, deals: dealsResult,
+    topRated: topRatedResult, recommendations: recsResult,
   };
 
   // The primary already requests100 results from the capped120-row pool.
@@ -1891,7 +1880,7 @@ export async function fetchHomepageData(): Promise<HomepageData> {
   const recommendations = claimSlots(recsRaw.filter(game => !appearanceCounts.has(game.id)), HOMEPAGE_RAIL_TARGET, HOMEPAGE_RECOMMENDATION_REPEAT_BUDGET);
 
   finishSelection();
-  return admitCataloguePayload({ hero, trending, topRated, newReleases, deals, recommendations }, sectionResults);
+  return admitCataloguePayload({ hero, trending, topRated, newReleases, deals: [], recommendations }, sectionResults);
 }
 
 function prioritizeById<T extends { id: string }>(primary: T[], fallback: T[], limit: number): T[] {

@@ -3,6 +3,13 @@ import { isUpcomingSnapshot } from '../external/rawg-snapshot.mjs';
 
 const unreleased = new Set(['announced', 'coming soon', 'upcoming', 'unreleased', 'tba', 'cancelled', 'canceled', 'delisted']);
 const released = new Set(['released', 'full release']);
+// Published 1.0 launches for legacy rows that retained an Early Access tag.
+// Match the Steam app, title and captured date. Explicit lifecycle still wins.
+const verifiedLaunches = new Map([
+  [588650, { title: 'dead cells', date: '2018-08-07' }], // https://track.dead-cells.com/products
+  [646570, { title: 'slay the spire', date: '2019-01-23', catalogueDate: '2019-01-22' }], // https://www.megacrit.com/news/2026-1-22-neowsletter-issue-18/
+  [1794680, { title: 'vampire survivors', date: '2022-10-20' }], // https://store.steampowered.com/app/1794680/
+]);
 const coOp = ['co op', 'online co op', 'local co op', 'co op campaign', 'co operative'];
 const multiplayer = ['multiplayer', 'local multiplayer', 'online multiplayer', 'pvp', 'massively multiplayer', 'mmo', ...coOp];
 const strategy = ['city builder', 'base building', 'colony sim', '4x', 'grand strategy', 'rts', 'real time strategy', 'turn based strategy', 'real time tactics', 'turn based tactics', 'wargame'];
@@ -56,7 +63,7 @@ const contracts = {
     && (tag('action rpg') || (genre('action') && tag('souls like', 'soulslike', 'real time combat')))],
 };
 
-export const EDITORIAL_GAME_COLUMNS = 'id,title,description,cover_image,genres,tags,release_date,release_status,is_provisional,verdict_label,score,review_count,confidence,critic_score,critic_source_count,hltb_main,rawg_id';
+export const EDITORIAL_GAME_COLUMNS = 'id,title,description,cover_image,genres,tags,release_date,release_status,is_provisional,verdict_label,score,review_count,confidence,critic_score,critic_source_count,hltb_main,rawg_id,steam_app_id';
 export const EDITORIAL_UPCOMING_SNAPSHOT_KEY = 'discovery:rawg:upcoming:v1';
 
 export function editorialAnticipation(payload) {
@@ -111,8 +118,12 @@ export function editorialExclusion(slug, row, today = new Date().toISOString().s
     return row.rawg_id > 0 && ['announced', 'coming soon', 'unreleased', 'upcoming'].includes(status) ? null : 'missing explicit upcoming evidence';
   }
 
+  const launch = verifiedLaunches.get(row.steam_app_id);
+  const verifiedLegacyLaunch = !status && launch && launch.title === normalize(row.title)
+    && launch.date <= today && (launch.date === date || launch.catalogueDate === date);
   if (date > today || unreleased.has(status) || status === 'early access'
-    || (!released.has(status) && (any('early access') || row.is_provisional || row.verdict_label === 'COMING SOON'))) return 'full release required';
+    || (!released.has(status) && (row.is_provisional || row.verdict_label === 'COMING SOON'
+      || (any('early access') && !verifiedLegacyLaunch)))) return 'full release required';
   const [score, reviews, years, matches] = rule;
   if (years && date < String(Number(today.slice(0, 4)) - years) + today.slice(4)) return 'outside the editorial release window';
   if ((row.score ?? 0) < score || (row.review_count ?? 0) < reviews

@@ -168,7 +168,6 @@ export default async function HomePage() {
         ])].join(",")}
         initialRecommendations={homepage.recommendations}
         initialNewReleases={homepage.newReleases}
-        initialDeals={homepage.deals}
       />
 
       {/* ── 6. Gaming News ── */}

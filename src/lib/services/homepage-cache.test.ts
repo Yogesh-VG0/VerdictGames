@@ -4,15 +4,12 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { describe, expect, it, vi } from 'vitest';
 import { currentHomepageSignal } from './homepage-budget';
 
-const state = vi.hoisted(() => ({ reads: 0, active: 0, peak: 0, aborted: 0, stall: false, dealsStall: false, dealsAborted: false, rows: [] as Record<string, unknown>[] }));
+const state = vi.hoisted(() => ({ reads: 0, active: 0, peak: 0, aborted: 0, stall: false, dealsReads: 0, rows: [] as Record<string, unknown>[] }));
 vi.mock('@/lib/services/upcoming-snapshot', () => ({ readCachedUpcomingSnapshot: async () => ({ results: [] }) }));
 vi.mock('@/lib/services/community-ranking', () => ({ readHomepageReleaseRanking: async () => null }));
-vi.mock('@/lib/services/gx-feeds', () => ({ loadHomepageDeals: async () => {
-  if (state.dealsStall) {
-    try { await delay(30_000, undefined, { signal: currentHomepageSignal() }); }
-    catch (error) { state.dealsAborted = true; throw error; }
-  }
-  return [];
+vi.mock('@/lib/services/gx-feeds', () => ({ GX_FEEDS_API_CACHE_CONTROL: 's-maxage=300', loadHomepageDeals: async () => {
+  state.dealsReads++;
+  throw new Error('Deals snapshot unavailable');
 } }));
 vi.mock('@/lib/supabase/public', () => ({ getPublicSupabase: () => ({ from: () => {
   const chain: Record<string, unknown> = {};
@@ -117,16 +114,14 @@ describe('homepage rail cache using the installed Next.js implementation', () =>
           coldMs: Math.round(coldMs), nestedMs: Math.round(nestedMs), warmRailsMs: Math.round(warmRailsMs), peakReads: state.peak }));
       }
 
-      const dealsKey = [...entries.keys()].find(key => key.includes('homepage-deals-snapshot-v1'))!;
-      entries.delete(dealsKey);
-      state.dealsStall = true;
-      const optionalStarted = performance.now();
-      const missingDeals = await request(loadHomepageDataWithStatus);
-      expect(performance.now() - optionalStarted).toBeLessThan(3_000);
-      expect(missingDeals).toEqual({ data: cold.data, degraded: true });
-      expect(state.dealsAborted).toBe(true);
-      expect(entries.has(dealsKey)).toBe(false);
-      state.dealsStall = false;
+      expect(cold.data.deals).toEqual([]);
+      expect(state.dealsReads).toBe(0);
+      const { GET } = await import('@/app/api/gx/deals/snapshot/route');
+      const unavailable = await GET();
+      expect(unavailable.status).toBe(503);
+      expect(unavailable.headers.get('cache-control')).toContain('private, no-store');
+      expect(unavailable.headers.get('cdn-cache-control')).toBe('private, no-store');
+      expect(state.dealsReads).toBe(1);
 
       // All cold database work stalls. A shorter queued rail expires before
       // admission and active transports are cancelled without leaking slots.
