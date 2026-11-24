@@ -8,7 +8,7 @@ vi.mock('@/lib/services/community-ranking',()=>({readHomepageReleaseRanking:asyn
 vi.mock('next/cache',()=>({unstable_cache:(read:unknown)=>read}));
 vi.mock('@/lib/supabase/public',()=>({getPublicSupabase:()=>({from:()=>{
   const chain:Record<string,unknown>={};
-  for(const key of ['select','eq','not','neq','gte','lte','gt','order','limit','in','or','abortSignal'])chain[key]=()=>chain;
+  for(const key of ['select','eq','not','neq','gte','lte','lt','gt','order','limit','in','or','abortSignal'])chain[key]=()=>chain;
   chain.then=(resolve:(value:unknown)=>unknown,reject:(error:unknown)=>unknown)=>Promise.resolve(state.responses.shift()).then(resolve,reject);
   return chain;
 }})}));
@@ -21,7 +21,7 @@ describe('homepage trending read failures',()=>{
     cover_image:'https://images.igdb.com/co123.jpg',header_image:'https://images.igdb.com/scene.jpg',
     platforms:['PC'],genres:['Action'],tags:[],score:95,verdict_score:95,confidence:0.9,
     review_count:100000,steam_total_count:100000,steam_app_id:123,user_score:95,
-    current_players:10000,developer:'Studio',publisher:'Studio',verdict_label:'MUST PLAY'};
+    current_players:10000,players_updated_at:new Date().toISOString(),developer:'Studio',publisher:'Studio',verdict_label:'MUST PLAY'};
    const rows=Array.from({length:6},(_,i)=>({...base,id:`hero-${i}`,slug:`hero-${i}`,title:`Hero ${i}`,steam_app_id:100+i}));
    Object.assign(rows[0], {
      title: 'Legacy Spotlight',
@@ -47,12 +47,13 @@ describe('homepage trending read failures',()=>{
    expect(state.responses).toHaveLength(0);
  });
  it('never shows Coming Soon inside New Releases, while preserving a low-confidence console launch',async()=>{
-  const launch={id:'launch',slug:'launch',title:'Console Launch',description:'A standalone action adventure with an open world.',
+  const launch={id:'launch',slug:'launch',release_status:'released',title:'Console Launch',description:'A standalone action adventure with an open world.',
    release_date:new Date().toISOString().slice(0,10),cover_image:'https://images.igdb.com/co123.jpg',header_image:'https://images.igdb.com/co123.jpg',
    platforms:['PlayStation 5'],genres:['Action'],tags:['Nudity'],score:77,verdict_score:77,confidence:0.245543,review_count:104,
    developer:'Studio',publisher:'Studio',score_source:'igdb',critic_score:98,critic_source_count:1,verdict_label:'WORTH IT'};
   const pending={...launch,id:'pending',title:'Unconfirmed Release',release_date:'2025-01-01',review_count:1000,is_provisional:true};
-  const rows=[launch,pending];state.responses=[{data:rows,error:null},{data:rows,error:null}];
+  const draft={...launch,id:'draft',slug:'draft-release',critic_source_count:0,review_count:0,score_source:'rawg'};
+  const rows=[launch,pending,draft];state.responses=[{data:rows,error:null},{data:rows,error:null}];
   const result=await fetchNewReleases(10);
   expect(result.map(game=>game.id)).toEqual(['launch']);expect(result[0].score).toBe(77);
  });
@@ -72,9 +73,34 @@ describe('homepage trending read failures',()=>{
   const row={id:'unrated-release',slug:'unrated-release',title:'Unrated Release',description:'A complete standalone role playing game.',
    release_date:new Date(Date.now()-29*86400000).toISOString().slice(0,10),release_status:'released',
    cover_image:'https://images.igdb.com/co123.jpg',platforms:['PC'],genres:['RPG'],tags:[],score:60,verdict_score:0,
-   review_count:0,developer:'Studio',publisher:'Studio',score_source:'rawg'};
+   review_count:0,steam_app_id:123,developer:'Studio',publisher:'Studio',score_source:'rawg'};
   state.responses=[{data:[row],error:null}];
   expect(await fetchNewReleases(20)).toMatchObject([{id:'unrated-release',score:0,verdictLabel:'NOT YET RATED'}]);
+ });
+ it('restores publisher-confirmed legacy records and excludes conflicting lifecycle and dates', async () => {
+  const clock = vi.spyOn(Date, 'now').mockReturnValue(Date.parse('2026-11-23T13:00:00Z'));
+  try {
+    const base = { id:'sulfur',slug:'sulfur', title:'SULFUR', description:'A standalone action adventure with a distinctive world.',
+      release_date:'2026-10-28',release_status:null,cover_image:'https://images.igdb.com/co123.jpg',
+      platforms:['PC'],genres:['Action'],tags:['Early Access'],score:88,verdict_score:88,review_count:500,
+      steam_app_id:2124120,developer:'Studio',publisher:'Studio',verdict_label:'WORTH IT' };
+    const silentHill = { ...base,id:'townfall',slug:'silent-hill-townfall',title:'Silent Hill: Townfall',
+      release_date:'2026-09-23',steam_app_id:null,rawg_id:1018062,tags:[] };
+    const blocked = [
+      { ...base,id:'wrong-id',steam_app_id:9999 },
+      { ...base,id:'wrong-date',release_date:'2026-10-27' },
+      { ...base,id:'early',release_status:'early-access' },
+      { ...base,id:'ambiguous',slug:'unreviewed',steam_app_id:9999 },
+      { ...base,id:'outside',slug:'outside',release_date:'2026-08-20',release_status:'released' },
+      { ...base,id:'upcoming',release_status:'upcoming' },
+    ];
+    state.responses = [{ data:[silentHill,base,...blocked],error:null }];
+    expect(await fetchNewReleases(20)).toMatchObject([
+      { id:'sulfur',releaseDate:'2026-10-28',releaseStatus:'released' },
+      { id:'townfall',releaseDate:'2026-09-24',releaseStatus:'released' },
+    ]);
+    expect(silentHill.release_date).toBe('2026-09-23');
+  } finally { clock.mockRestore(); }
  });
  it('propagates a failed candidate pool rather than caching a successful empty rail',async()=>{
   const error={code:'57014',message:'Controlled statement cancellation'};

@@ -6,6 +6,13 @@ import type {RawgListItem} from '@/lib/external/rawg';
 import type {Game} from '@/lib/types';
 import { hasKnownFullRelease, hasUnreleasedStatus } from './release-status';
 
+const HERO_ACTIVITY_WINDOW_MS = 72 * 60 * 60 * 1000;
+
+export function hasRecentHeroActivity(row: Pick<GameRow, 'players_updated_at'>, now = Date.now()) {
+  const age = now - Date.parse(row.players_updated_at ?? '');
+  return age >= 0 && age <= HERO_ACTIVITY_WINDOW_MS;
+}
+
 export function getHeroSummary(game:Game):string {
   const description=game.description?.trim();
   const staleEarlyAccessLead = game.releaseStatus === 'early-access' && /\bis an upcoming\b/i.test(description?.slice(0, 120) ?? '');
@@ -42,8 +49,9 @@ function getHomepageHeroAgeDays(row: Pick<GameRow, "release_date">): number {
 
 function isHomepageHeroManualCandidate(row: GameRow): boolean {
   const evidenceReviewCount = getEvidenceReviewCount(row);
-  const currentPlayers = row.current_players ?? 0;
-  const momentum = row.momentum ?? 0;
+  const activityIsRecent = hasRecentHeroActivity(row);
+  const currentPlayers = activityIsRecent ? row.current_players ?? 0 : 0;
+  const momentum = activityIsRecent ? row.momentum ?? 0 : 0;
   const verdictScore = row.verdict_score ?? row.score ?? 0;
   const ageDays = getHomepageHeroAgeDays(row);
 
@@ -76,8 +84,9 @@ function isHomepageHeroManualCandidate(row: GameRow): boolean {
 
 export function isHomepageHeroAutoCandidate(row: GameRow): boolean {
   const evidenceReviewCount = getEvidenceReviewCount(row);
-  const currentPlayers = row.current_players ?? 0;
-  const momentum = row.momentum ?? 0;
+  const activityIsRecent = hasRecentHeroActivity(row);
+  const currentPlayers = activityIsRecent ? row.current_players ?? 0 : 0;
+  const momentum = activityIsRecent ? row.momentum ?? 0 : 0;
   const verdictScore = row.verdict_score ?? row.score ?? 0;
   const ageDays = getHomepageHeroAgeDays(row);
 
@@ -85,6 +94,9 @@ export function isHomepageHeroAutoCandidate(row: GameRow): boolean {
     || hasUnreleasedStatus(row) || (row.is_provisional && !hasKnownFullRelease(row)) || verdictScore < 80) {
     return false;
   }
+
+  if (ageDays > 365 && !hasRecentHeroActivity(row) &&
+    !(verdictScore >= 90 && hasStrongCriticEvidence(row) && evidenceReviewCount >= 50000)) return false;
 
   if (row.is_featured_manual && isHomepageHeroManualCandidate(row)) return true;
 
@@ -109,12 +121,13 @@ export function isHomepageHeroAutoCandidate(row: GameRow): boolean {
 }
 
 export function getHomepageHeroScore(row: GameRow): number {
-  const editorial = row.is_featured_manual ? 20 : 0;
+  const editorial = row.is_featured_manual ? 12 : 0;
   const verdict = Math.min(25, ((row.verdict_score ?? row.score ?? 0) / 100) * 25);
-  const momentum = row.momentum ?? 0;
-  const players = row.current_players ?? 0;
+  const recentActivity = hasRecentHeroActivity(row);
+  const momentum = recentActivity ? row.momentum ?? 0 : 0;
+  const players = recentActivity ? row.current_players ?? 0 : 0;
   const evidenceReviewCount = getEvidenceReviewCount(row);
-  const signalBoost = hasBrowseTrendingSignal(row) ? 6 : 0;
+  const signalBoost = recentActivity && hasBrowseTrendingSignal(row) ? 6 : 0;
   const momentumBoost = Math.min(4, Math.max(0, momentum * 20));
   const playerBoost = Math.min(6, Math.log10(players + 1) * 1.8);
   const significance = signalBoost + momentumBoost + playerBoost;

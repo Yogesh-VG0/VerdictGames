@@ -212,6 +212,7 @@ describe("homepage hero auto candidates", () => {
       steam_total_count: 18000,
       steam_positive_count: 16740,
       current_players: 11200,
+      players_updated_at: new Date().toISOString(),
       momentum: 0.12,
       verdict_score: 88,
       score: 88,
@@ -220,6 +221,7 @@ describe("homepage hero auto candidates", () => {
     });
 
     expect(isHomepageHeroAutoCandidate(breakout)).toBe(true);
+    expect(isHomepageHeroAutoCandidate({...breakout,players_updated_at:isoDaysAgo(4)})).toBe(false);
   });
 
   it("accepts a major critically-backed flagship and ranks a breakout above a mid-scale hit", () => {
@@ -250,6 +252,7 @@ describe("homepage hero auto candidates", () => {
       steam_total_count: 22000,
       steam_positive_count: 20460,
       current_players: 13800,
+      players_updated_at: new Date().toISOString(),
       momentum: 0.15,
       verdict_score: 89,
       score: 89,

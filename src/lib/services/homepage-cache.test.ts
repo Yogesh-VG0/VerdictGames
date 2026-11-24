@@ -44,7 +44,7 @@ describe('homepage rail cache using the installed Next.js implementation', () =>
       ...fixture, id: String(index), steam_app_id: index + 1,
       slug: `sample-game-${index}`, title: `Sample Game ${index}`,
       release_date: new Date(Date.now() - (index === 6 ? 900 : 30) * 86400000).toISOString().slice(0, 10),
-      release_status: 'released', current_players: 8000,
+      release_status: 'released', current_players: 8000, players_updated_at: new Date().toISOString(),
     }));
     try {
       state.rows = rows.slice(0, 6).map((row, index) => index < 5 ? row : { ...row, header_image: row.cover_image });
@@ -120,8 +120,8 @@ describe('homepage rail cache using the installed Next.js implementation', () =>
       expect(hit.timing).not.toContain('refresh_hero');
       expect(state.reads).toBe(beforeHit);
 
-      const heroKey = Array.from(entries.keys()).find(key => key.includes('homepage-hero-v9'))!;
-      expect(heroKey).toBe('function () { [native code] }-homepage-hero-v9-[]');
+      const heroKey = Array.from(entries.keys()).find(key => key.includes('homepage-hero-v10'))!;
+      expect(heroKey).toBe('function () { [native code] }-homepage-hero-v10-[]');
       entries.delete(heroKey);
       expect(await request(loadHomepageDataWithStatus)).toEqual(cold);
       const heroOnlyReads = state.reads - beforeHit;
@@ -165,7 +165,7 @@ describe('homepage rail cache using the installed Next.js implementation', () =>
       expect(state.reads - beforeStall).toBe(state.aborted);
       expect(state.active).toBe(0);
       expect(state.peak).toBeLessThanOrEqual(3);
-      expect([...entries.keys()].some(key => key.includes('homepage-hero-v9'))).toBe(false);
+      expect([...entries.keys()].some(key => key.includes('homepage-hero-v10'))).toBe(false);
 
       state.stall = false;
       expect(await request(loadHomepageDataWithStatus)).toEqual(cold);

@@ -567,9 +567,9 @@ export async function getRecommendations(limit = 8): Promise<Game[]> {
   return (await apiFetch<Game[]>(`/api/recommendations?limit=${limit}`)) ?? [];
 }
 
-export async function getHomepageRecommendations(exclude: string): Promise<{ games: Game[]; personalized: boolean }> {
+export async function getHomepageRecommendations(exclude: string, signal?: AbortSignal): Promise<{ games: Game[]; personalized: boolean }> {
   const params = new URLSearchParams({ limit: "20", context: "homepage", exclude });
-  return (await apiFetch<{ games: Game[]; personalized: boolean }>(`/api/recommendations?${params}`))
+  return (await apiFetch<{ games: Game[]; personalized: boolean }>(`/api/recommendations?${params}`, { signal }))
     ?? { games: [], personalized: false };
 }
 
