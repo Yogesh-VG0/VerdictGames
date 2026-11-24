@@ -20,6 +20,7 @@ import { isEmailCode, normalizeEmailCode, type EmailCodePurpose } from '@/lib/au
 interface AuthContextType {
   user: AuthUser | null;
   hasSession: boolean;
+  sessionId: string | null;
   isPasswordRecovery: boolean;
   sessionEmail: string | null;
   loading: boolean;
@@ -129,6 +130,7 @@ function mapAuthError(message: string, action: AuthAction) {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [hasSession, setHasSession] = useState(false);
+  const [sessionId, setSessionId] = useState<string | null>(null);
   const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
   const [sessionEmail, setSessionEmail] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -138,9 +140,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const profileRequest = useRef(0);
   const pendingProfile = useRef<{ id: string; requestId: number; promise: Promise<void> } | null>(null);
   const activeAuthId = useRef<string | null>(null);
+  const resolvedAuthId = useRef<string | null>(null);
   const activateIdentity = useCallback((id: string | null) => {
     if (activeAuthId.current === id) return;
     activeAuthId.current = id;
+    resolvedAuthId.current = null;
+    setSessionId(id);
     profileRequest.current++;
     pendingProfile.current = null;
     setProfileLoading(false);
@@ -154,7 +159,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsPasswordRecovery(false);
   }, []);
 
-  const fetchProfile = useCallback((authId: string) => {
+  const fetchProfile = useCallback((authId: string, force = false) => {
+    if (!force && resolvedAuthId.current === authId) return Promise.resolve();
     if (pendingProfile.current?.id === authId) return pendingProfile.current.promise;
     const requestId = ++profileRequest.current;
     setProfileLoading(true);
@@ -162,7 +168,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const profile = await loadOwnProfile(authId,
         () => requestId === profileRequest.current && activeAuthId.current === authId);
-      if (profile) setUser(profile);
+      if (profile) {
+        resolvedAuthId.current = authId;
+        setUser(profile);
+      }
     } catch {
       // Leave the session available for retry without retaining another user's
       // profile or inferring an administrator role from editable metadata.
@@ -219,7 +228,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         activateIdentity(session.user.id);
         setHasSession(true);
         setSessionEmail(session.user.email ?? null);
-        void fetchProfile(session.user.id);
+        void fetchProfile(session.user.id, event === "USER_UPDATED" || event === "TOKEN_REFRESHED");
       } else {
         activateIdentity(null);
         setHasSession(false);
@@ -339,7 +348,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       activateIdentity(authUser.id);
       setHasSession(true);
       setSessionEmail(authUser.email ?? null);
-      await fetchProfile(authUser.id);
+      await fetchProfile(authUser.id, true);
     } else {
       activateIdentity(null);
       setHasSession(false);
@@ -353,6 +362,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       value={{
         user,
         hasSession,
+        sessionId,
         isPasswordRecovery,
         sessionEmail,
         loading: loading || (!user && profileLoading),

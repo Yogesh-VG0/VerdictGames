@@ -376,6 +376,7 @@ export interface GXCalendarMonthResponse {
 }
 
 export interface CalendarGame extends Game {
+  calendarReleaseWindow?: string;
   calendarOriginalReleaseDate?: string;
   calendarEntryTag?: string | null;
   calendarEntryTagColor?: string | null;
@@ -394,4 +395,5 @@ export interface CalendarMonthResponse {
   gxCount: number;
   dbCount: number;
   gxFetchedAt?: string;
+  unavailable?: boolean;
 }

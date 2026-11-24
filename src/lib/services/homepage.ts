@@ -71,9 +71,6 @@ const HOMEPAGE_TRENDING_LAST_RESORT_MONTHS = 120;
 const HOMEPAGE_TOP_RATED_MONTHS = 24;
 const HOMEPAGE_TOP_RATED_FALLBACK_MONTHS = 60; // Widened from 36 to 60
 const HOMEPAGE_TOP_RATED_EVERGREEN_MONTHS = 180;
-const HOMEPAGE_REC_MONTHS = 48;
-const HOMEPAGE_REC_FALLBACK_MONTHS = 72;
-const HOMEPAGE_REC_LAST_RESORT_MONTHS = 120;
 const HOMEPAGE_HERO_TARGET = 6;
 const HOMEPAGE_RAIL_TARGET = 20;
 const HOMEPAGE_MOST_ANTICIPATED_TARGET = 20;
@@ -1387,14 +1384,10 @@ export async function fetchHomepageTopRated(limit = 20): Promise<Game[]> {
 
 export async function fetchHomepageRecommendations(limit = 20): Promise<Game[]> {
   const supabase = getPublicSupabase();
-  const fetchLimit = Math.max(getHomepageQueryFetchLimit(limit, 5), 160);
-  const cutoff = monthsAgoISO(HOMEPAGE_REC_MONTHS);
- 
+  const fetchLimit = Math.min(240, Math.max(limit * 3, 160));
   const { data, error } = await measureHomepagePhase('database', () => supabase
     .from("games")
     .select(GAME_CARD_COLUMNS_WITH_DESC)
-    .not("release_date", "is", null)
-    .gte("release_date", cutoff)
     .lte("release_date", new Date().toISOString().slice(0, 10))
     .gte("score", 75)
     .gte("review_count", 75)
@@ -1403,138 +1396,25 @@ export async function fetchHomepageRecommendations(limit = 20): Promise<Game[]> 
     .neq("cover_image", "")
     .order("verdict_score", { ascending: false, nullsFirst: false })
     .order("score", { ascending: false })
+    .order("id")
     .limit(fetchLimit)) as { data: GameRow[] | null; error: unknown };
-
   if (error) throw error;
 
-  let ready = deduplicateBySteamAppId((data ?? []).filter((r) =>
-    isSurfaceReady(r, "homepageRail") &&
-    isPublicSafeGame(r) &&
-    hasUsableCardImage(r)
+  const released = dedupePublicCanonicalRows((data ?? []).filter(row =>
+    isSurfaceReady(row, "homepageRail") && isPublicSafeGame(row) && hasUsableCardImage(row)
+    && !row.is_provisional && row.verdict_label !== "COMING SOON" && !hasUnreleasedStatus(row)
   ));
-
-  let clean = ready.filter((r) => {
-    if ((r as GameRow & { is_provisional?: boolean }).is_provisional) return false;
-    if (r.verdict_label === "COMING SOON") return false;
-    if (isFutureDate(r.release_date)) return false;
-    return true;
-  });
-
-  let qualityFiltered = filterQualityGames(clean, {
+  const quality = filterQualityGames(released, {
     section: "recommendations",
     minResults: 4,
     allowReadinessFallback: false,
   });
-
-  if (qualityFiltered.length < limit) {
-    const fallbackCutoff = monthsAgoISO(HOMEPAGE_REC_FALLBACK_MONTHS);
-    const fallback = await measureHomepagePhase('database', () => supabase
-      .from("games")
-      .select(GAME_CARD_COLUMNS_WITH_DESC)
-      .not("release_date", "is", null)
-      .gte("release_date", fallbackCutoff)
-      .lte("release_date", new Date().toISOString().slice(0, 10))
-      .gte("score", 75)
-      .gte("review_count", 75)
-      .gte("confidence", 0.4)
-      .not("cover_image", "is", null)
-      .neq("cover_image", "")
-      .order("verdict_score", { ascending: false, nullsFirst: false })
-      .order("score", { ascending: false })
-      .limit(fetchLimit)) as { data: GameRow[] | null; error: unknown };
-
-    if (!fallback.error && fallback.data) {
-      ready = deduplicateBySteamAppId([
-        ...ready,
-        ...fallback.data.filter((r) =>
-          isSurfaceReady(r, "homepageRail") &&
-          isPublicSafeGame(r) &&
-          hasUsableCardImage(r)
-        ),
-      ]);
-      clean = ready.filter((r) => {
-        if ((r as GameRow & { is_provisional?: boolean }).is_provisional) return false;
-        if (r.verdict_label === "COMING SOON") return false;
-        if (isFutureDate(r.release_date)) return false;
-        return true;
-      });
-      qualityFiltered = filterQualityGames(clean, {
-        section: "recommendations",
-        minResults: 4,
-        allowReadinessFallback: false,
-      });
-    }
-  }
-
-  if (qualityFiltered.length < limit) {
-    const lastResortCutoff = monthsAgoISO(HOMEPAGE_REC_LAST_RESORT_MONTHS);
-    const lastResort = await measureHomepagePhase('database', () => supabase
-      .from("games")
-      .select(GAME_CARD_COLUMNS_WITH_DESC)
-      .not("release_date", "is", null)
-      .gte("release_date", lastResortCutoff)
-      .lte("release_date", new Date().toISOString().slice(0, 10))
-      .gte("score", 75)
-      .gte("review_count", 75)
-      .gte("confidence", 0.4)
-      .not("cover_image", "is", null)
-      .neq("cover_image", "")
-      .order("verdict_score", { ascending: false, nullsFirst: false })
-      .order("score", { ascending: false })
-      .limit(fetchLimit)) as { data: GameRow[] | null; error: unknown };
-
-    if (!lastResort.error && lastResort.data) {
-      ready = deduplicateBySteamAppId([
-        ...ready,
-        ...lastResort.data.filter((r) =>
-          isSurfaceReady(r, "homepageRail") &&
-          isPublicSafeGame(r) &&
-          hasUsableCardImage(r)
-        ),
-      ]);
-      clean = ready.filter((r) => {
-        if ((r as GameRow & { is_provisional?: boolean }).is_provisional) return false;
-        if (r.verdict_label === "COMING SOON") return false;
-        if (isFutureDate(r.release_date)) return false;
-        return true;
-      });
-      qualityFiltered = filterQualityGames(clean, {
-        section: "recommendations",
-        minResults: 4,
-        allowReadinessFallback: false,
-      });
-    }
-  }
-
-  const desiredCount = Math.min(limit, HOMEPAGE_RAIL_TARGET);
-  const homepageEligible = qualityFiltered.filter(isHomepageRecommendationEligible);
-  const distinctPool = qualityFiltered.filter(isHomepageRecommendationDistinctCandidate);
-  const backfillPool = qualityFiltered.filter(isHomepageRecommendationBackfillCandidate);
-  const displayPool = qualityFiltered.filter((row) =>
-    isHomepageRecommendationEligible(row) || isHomepageRecommendationDistinctCandidate(row)
-  );
-  if (displayPool.length >= desiredCount) {
-    qualityFiltered = displayPool;
-  } else if (displayPool.length >= HOMEPAGE_PRIORITY_FLOOR) {
-    qualityFiltered = prioritizeById(displayPool, qualityFiltered, qualityFiltered.length);
-  }
-  if (displayPool.length < desiredCount && backfillPool.length > 0) {
-    qualityFiltered = prioritizeById(displayPool, backfillPool, displayPool.length + backfillPool.length);
-    qualityFiltered = prioritizeById(qualityFiltered, qualityFiltered, qualityFiltered.length);
-  }
-
-  qualityFiltered.sort((a, b) => getHomepageRecommendationScore(b) - getHomepageRecommendationScore(a));
-  if (homepageEligible.length > 0) {
-    qualityFiltered = prioritizeById(homepageEligible, qualityFiltered, qualityFiltered.length);
-  }
-  if (distinctPool.length > 0) {
-    qualityFiltered = prioritizeById(distinctPool, qualityFiltered, qualityFiltered.length);
-  }
-
-  // Genre diversity: max 1 per genre for anonymous recs (broad discovery)
-  const diversified = applyGenreDiversity(qualityFiltered, limit, 1);
-
-  return diversified.map(mapGameRow);
+  const scores = new Map(quality.map(row => [row.id, getHomepageRecommendationScore(row)
+    + (isHomepageRecommendationEligible(row) ? 10 : 0)
+    + (isHomepageRecommendationDistinctCandidate(row) ? 5 : 0)
+    + (isHomepageRecommendationBackfillCandidate(row) ? 2 : 0)]));
+  quality.sort((a, b) => scores.get(b.id)! - scores.get(a.id)! || a.id.localeCompare(b.id));
+  return applyGenreDiversity(quality, limit, 2).map(mapGameRow);
 }
 
 /* ═══════════════════════════════════════════════════
@@ -1639,17 +1519,9 @@ const cachedHero = cacheHomepageRail('homepage-hero-v10', 'refresh_hero', () => 
 const cachedTrending = cacheHomepageRail('homepage-trending-v3', 'refresh_trending', () => fetchTrendingGames(HOMEPAGE_SECTION_FETCH_TARGET, true));
 const cachedNewReleases = cacheHomepageRail('homepage-new-v6', 'refresh_new_releases', () => fetchNewReleases(HOMEPAGE_SECTION_FETCH_TARGET));
 const cachedTopRated = cacheHomepageRail('homepage-top-v3', 'refresh_top_rated', () => fetchHomepageTopRated(HOMEPAGE_SECTION_FETCH_TARGET));
-const cachedRecommendations = cacheHomepageRail('homepage-recommendations-v3', 'refresh_recommendations', () => fetchHomepageRecommendations(HOMEPAGE_SECTION_FETCH_TARGET));
+const cachedRecommendations = cacheHomepageRail('homepage-recommendations-v4', 'refresh_recommendations', () => fetchHomepageRecommendations(HOMEPAGE_SECTION_FETCH_TARGET));
 
 const readHomepageData = coalesceCatalogueRead(fetchHomepageData);
-
-// Publisher-confirmed windows for the reviewed current snapshot entries.
-const reviewedAnticipation = new Map([
-  [391403, { window: 'Dec 2026', earlyAccess: true }], // Steam app 2694490
-  [973539, { window: 'Mar 2027', earlyAccess: true }], // norestforthewicked.com/news
-  [1015421, { window: 'Feb 2027', earlyAccess: false }], // playtombraider.com
-  [469645, { window: 'Jan 2027', earlyAccess: true }], // Steam app 1154030
-]);
 
 const MOST_ANTICIPATED_MAX_AGE_MS = 12 * 60 * 60 * 1000;
 const EMPTY_MOST_ANTICIPATED = { data: [] as HomepageAnticipatedGame[], fetchedAt: null };
@@ -1664,25 +1536,27 @@ const getCachedHomepageMostAnticipated = unstable_cache(
   coalesceCatalogueRead(async () => {
     const signal = currentHomepageSignal();
     const { loadExplore } = await import('@/lib/services/explore');
-    const data = await loadExplore('best-of-year', 1, HOMEPAGE_MOST_ANTICIPATED_TARGET);
+    const data = await loadExplore('best-of-year', 1, HOMEPAGE_MOST_ANTICIPATED_TARGET, undefined, undefined, 'default', '', undefined, { snapshotOnly: true });
     signal?.throwIfAborted();
     if (data.source !== 'rawg' || data.degraded || !isValidAnticipationSnapshot(data.fetchedAt)) {
       throw new Error('Discovery snapshot temporarily unavailable');
     }
-    const items = data.items
-      .filter(item => item.catalogueId || reviewedAnticipation.has(item.rawgId))
-      .map(item => {
-        const review = reviewedAnticipation.get(item.rawgId);
+    const seen = new Set<string>();
+    const items = data.items.filter(item => {
+      if (!item.image || seen.has(item.slug)) return false;
+      seen.add(item.slug);
+      return true;
+    }).map(item => {
         return {
           rawgId: item.rawgId, slug: item.slug, name: item.name, released: item.released, tba: item.tba,
-          earlyAccess: review?.earlyAccess ?? item.earlyAccess, releaseWindow: review?.window,
+          earlyAccess: item.earlyAccess, releaseWindow: item.releaseWindow,
           image: item.image, imageKind: item.imageKind, added: item.added, toplay: item.toplay, genres: item.genres,
         };
       });
     return { data: items, fetchedAt: data.fetchedAt };
   }),
-  ["homepage-most-anticipated-v9"],
-  { revalidate: 3600 }
+  ["homepage-most-anticipated-v10"],
+  { revalidate: 300 }
 );
 
 export async function loadHomepageData(): Promise<HomepageData> {
@@ -1941,7 +1815,7 @@ export async function fetchHomepageData(): Promise<HomepageData> {
   const topRated = topRatedPremium.length >= HOMEPAGE_PRIORITY_FLOOR
     ? prioritizeById(topRatedPremium, topRatedClaimed, HOMEPAGE_RAIL_TARGET)
     : topRatedClaimed;
-  const recommendations = claimSlots(recsRaw.filter(game => !appearanceCounts.has(game.id)), HOMEPAGE_RAIL_TARGET, HOMEPAGE_RECOMMENDATION_REPEAT_BUDGET);
+  const recommendations = claimSlots([...recsRaw.filter(game => !appearanceCounts.has(game.id)), ...recsRaw.filter(game => appearanceCounts.has(game.id))], HOMEPAGE_RAIL_TARGET, HOMEPAGE_RECOMMENDATION_REPEAT_BUDGET);
 
   finishSelection();
   return admitCataloguePayload({ hero, trending, topRated, newReleases, deals: [], recommendations }, sectionResults);

@@ -10,7 +10,7 @@ describe('public search cache boundary',()=>{
     const log=vi.spyOn(console,'error').mockImplementation(()=>{});
     try {
       const response=await GET(new NextRequest('http://localhost/api/search?sort=recently-added'));
-      expect(response.status).toBe(500);
+      expect(response.status).toBe(503);
       for(const header of ['cache-control','cdn-cache-control','vercel-cdn-cache-control']){
         expect(response.headers.get(header)).toContain('private, no-store');
       }

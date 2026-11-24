@@ -28,7 +28,7 @@ export default function HomepageMostAnticipatedSection({
         <FadeInSection>
           <SectionHeader
             title="Most Anticipated"
-            href="/explore"
+            href="/explore?type=best-of-year"
             linkLabel="See all"
             icon={<Rocket className="w-5 h-5" />}
             subtitle={MOST_ANTICIPATED_SUBTITLE}
@@ -71,7 +71,7 @@ export default function HomepageMostAnticipatedSection({
                         ))}
                         <span className="ml-auto text-[10px] font-medium">
                           <span className={game.releaseWindow ? "text-white/70" : "text-yellow-400"}>
-                            {game.releaseWindow ?? "TBA"}
+                            {game.releaseWindow ?? (!game.tba && game.released ? game.released : "TBA")}
                           </span>
                         </span>
                       </div>

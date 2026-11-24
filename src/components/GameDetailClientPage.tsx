@@ -148,13 +148,23 @@ export default function GameDetailClientPage({
     staleTime: 60 * 1000,
   });
 
-  const { data: reviewsData, isLoading: isReviewsLoading } = useQuery({
-    queryKey: ["gameReviews", slug, user?.id ?? null],
-    queryFn: () => getGameReviews(slug, { sort: "helpful" }),
+  const publicReviews = useQuery({
+    queryKey: ["publicGameReviews", slug],
+    queryFn: ({ signal }) => getGameReviews(slug, { sort: "helpful", publicOnly: true, signal }),
     enabled: !!game && !initialGame.isPreview,
-    initialData: user ? undefined : initialReviewsData,
+    initialData: initialReviewsData,
     staleTime: 60 * 1000,
+    retry: false,
   });
+  const privateReviews = useQuery({
+    queryKey: ["gameReviews", slug, user?.id ?? null],
+    queryFn: ({ signal }) => getGameReviews(slug, { sort: "helpful", signal }),
+    enabled: !!user && !!publicReviews.data?.items.length,
+    staleTime: 60 * 1000,
+    retry: false,
+  });
+  const reviewsData = privateReviews.data ?? publicReviews.data;
+  const isReviewsLoading = publicReviews.isLoading;
 
   const { data: related } = useQuery({
     queryKey: ["relatedGames", slug],
@@ -1388,6 +1398,8 @@ export default function GameDetailClientPage({
                         ))}
                       </div>
                     </div>
+                  ) : publicReviews.isError && !reviewsData ? (
+                    <button type="button" className="text-accent" onClick={() => void publicReviews.refetch()}>Community reviews are temporarily unavailable. Try again</button>
                   ) : reviewsData?.items && reviewsData.items.length > 0 ? (
                     <div className="space-y-3">
                       <h4 className="text-xs font-semibold text-secondary uppercase tracking-wider">

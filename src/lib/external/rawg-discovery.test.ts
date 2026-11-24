@@ -1,7 +1,13 @@
 import {describe,expect,it} from 'vitest';
 import {collectRawgPages} from './rawg-discovery.mjs';
+import {mapRawgPlatforms} from './rawg';
 const game=(id:number)=>({id,name:`Game ${id}`,slug:`game-${id}`,released:'2025-01-01',tba:false,rating:4,ratings_count:10,added:100,genres:[],tags:[],platforms:[],background_image:null,description:'unneeded'.repeat(10000)});
 describe('bounded complete RAWG cohorts',()=>{
+  it('preserves provider-only previews when snapshot platforms contain only names', () => {
+    expect(mapRawgPlatforms([{platform:{name:'PC'}}, {platform:{name:'Nintendo Switch 2'}},
+      {platform:{slug:'xbox-series-x'}}, {platform:{name:'PC'}}, {}]))
+      .toEqual(['PC', 'Nintendo Switch 2', 'Xbox Series X|S']);
+  });
   it('collects the final six upcoming games beyond the provider 40-row cap and removes unused payload',async()=>{
     const pages:number[]=[];const value=await collectRawgPages(async page=>{pages.push(page);return {count:46,results:Array.from({length:page===1?40:6},(_,i)=>game((page-1)*40+i+1))};},1000);
     expect(pages).toEqual([1,2]);expect(value.results).toHaveLength(46);expect(value.complete).toBe(true);

@@ -69,8 +69,9 @@ describe('homepage rail cache using the installed Next.js implementation', () =>
     const { fetchHomepageData, loadHomepageDataWithStatus } = await import('./homepage');
     const { withHomepageTimings } = await import('./homepage-timing');
     const fixture = JSON.parse(readFileSync(new URL('../../../scripts/fixtures/public-games.json', import.meta.url), 'utf8'));
-    state.rows = fixture.slice(0, 24).map((entry: Record<string, unknown>) => ({
+    state.rows = fixture.slice(0, 24).map((entry: Record<string, unknown>, index: number) => ({
       ...entry,
+      id: String(index),
       release_date: new Date(Date.now() - 8 * 86400000).toISOString().slice(0, 10),
     }));
     const entries = new Map<string, { value: unknown; isStale: boolean }>();

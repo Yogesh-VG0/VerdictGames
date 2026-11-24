@@ -15,6 +15,7 @@ import { getServerSupabase } from "@/lib/supabase/server";
 import type { GXCalendarEntry, GXDealEntry } from "@/lib/external/gxcorner";
 import type { GXCalendarGame, GXCalendarMonthResponse } from "@/lib/types";
 import { measureHomepagePhase, startHomepagePhase } from "@/lib/services/homepage-timing";
+import { boundedHomepageRead, currentHomepageSignal } from "@/lib/services/homepage-budget";
 import { dedupeGXCalendarGames, filterGXCalendarEntriesByMonth, getCalendarMonthKey, isPastCalendarMonth, shouldHideGXCalendarEntry } from "@/lib/utils/gx-calendar";
 
 type FeedKey =
@@ -134,7 +135,8 @@ function mergeGXCalendarSnapshotItems(existingItems: GXCalendarGame[], liveItems
 export async function gxFetchWithCache<T>(
   feedKey: FeedKey,
   liveFetcher: () => Promise<T>,
-  staleTtlMs = 6 * 60 * 60 * 1000
+  staleTtlMs = 6 * 60 * 60 * 1000,
+  acceptPayload: (payload: unknown) => boolean = (payload) => Array.isArray(payload) ? payload.length > 0 : Boolean(payload)
 ): Promise<{ data: T; source: "live" | "cache" | "empty" }> {
   const cacheTable = hasServerSupabaseEnv()
     ? getServerSupabase().from("gx_cache")
@@ -144,79 +146,46 @@ export async function gxFetchWithCache<T>(
   // upstream latency (or trigger writes) on every cache miss at the CDN.
   let stored: { data: T; source: "cache" } | null = null;
   if (cacheTable) {
-    const { data } = await measureHomepagePhase('provider_snapshot', () =>
-      cacheTable.select('payload, fetched_at').eq('feed_key', feedKey)
-        .abortSignal(AbortSignal.timeout(3000)).maybeSingle());
-    const parsed = parsePayload<T>(data?.payload);
-    if (parsed && (!Array.isArray(parsed) || parsed.length > 0)) {
-      stored = { data: parsed, source: 'cache' };
-      if (Date.now() - Date.parse(data!.fetched_at) < staleTtlMs) return stored;
+    try {
+      const { data, error } = await boundedHomepageRead(1400, async () => measureHomepagePhase('provider_snapshot', () =>
+        cacheTable.select('payload, fetched_at').eq('feed_key', feedKey).abortSignal(currentHomepageSignal()!).maybeSingle()));
+      if (error) throw error;
+      const parsed = parsePayload<T>(data?.payload);
+      if (data && parsed !== null && acceptPayload(parsed)) {
+        stored = { data: parsed, source: 'cache' };
+        if (Date.now() - Date.parse(data.fetched_at) < staleTtlMs) return stored;
+      }
+    } catch {
+      console.warn(`[GX Cache] Snapshot read failed for ${feedKey}`);
     }
   }
 
-  // 1. Try live fetch
+  let liveData: T;
   try {
-    const liveData = await measureHomepagePhase('provider_fetch', liveFetcher);
-
-    // An empty upstream response is treated as a failure so a good cached feed
-    // is not replaced by a temporary provider outage.
-    const isNonEmpty = Array.isArray(liveData) ? liveData.length > 0 : !!liveData;
-    if (!isNonEmpty) {
-      throw new Error(`GX returned an empty payload for ${feedKey}`);
+    liveData = await boundedHomepageRead(3500, () => measureHomepagePhase('provider_fetch', liveFetcher));
+    if (!acceptPayload(liveData)) {
+      throw new Error('Unusable provider payload');
     }
-
-    if (cacheTable) {
-      const { error } = await cacheTable.upsert({
-        feed_key: feedKey,
-        payload: liveData,
-        fetched_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      }).abortSignal(AbortSignal.timeout(3000));
-      if (error) {
-        console.warn(`[GX Cache] Failed to update cache for ${feedKey}:`, error.message);
-      }
-    }
-
-    return { data: liveData, source: "live" };
-  } catch (liveErr) {
-    console.warn(`[GX Cache] Live fetch failed for ${feedKey}:`, (liveErr as Error).message);
-  }
-
-  // 2. Fallback to cache
-  const finishFallback = startHomepagePhase('provider_fallback');
-  try {
-    if (stored) return stored;
-    if (cacheTable) {
-      try {
-        const { data: cached } = await cacheTable
-          .select("payload, fetched_at")
-          .eq("feed_key", feedKey)
-          .abortSignal(AbortSignal.timeout(3000)).single() as { data: { payload: unknown; fetched_at: string } | null };
-
-        if (cached?.payload) {
-          const age = Date.now() - new Date(cached.fetched_at).getTime();
-          const parsed = parsePayload<T>(cached.payload);
-          if (!parsed) {
-            throw new Error(`Invalid cached payload for ${feedKey}`);
-          }
-          const isStale = age > staleTtlMs;
-
-          if (isStale) {
-            console.warn(`[GX Cache] Serving stale cache for ${feedKey} (age: ${Math.round(age / 60000)}min)`);
-          }
-
-          return { data: parsed, source: "cache" };
-        }
-      } catch (cacheErr) {
-        console.warn(`[GX Cache] Cache read failed for ${feedKey}:`, (cacheErr as Error).message);
-      }
-    }
-
-    // 3. Both failed — return empty
-    return { data: ([] as unknown) as T, source: "empty" };
-  } finally {
+  } catch {
+    console.warn(`[GX Cache] Live fetch failed for ${feedKey}`);
+    const finishFallback = startHomepagePhase('provider_fallback');
+    const result = stored ?? { data: [] as unknown as T, source: 'empty' as const };
     finishFallback();
+    return result;
   }
+
+  if (cacheTable) {
+    try {
+      const fetchedAt = new Date().toISOString();
+      const { error } = await boundedHomepageRead(950, async () => cacheTable.upsert({
+        feed_key: feedKey, payload: liveData, fetched_at: fetchedAt, updated_at: fetchedAt,
+      }).abortSignal(currentHomepageSignal()!));
+      if (error) throw error;
+    } catch {
+      console.warn(`[GX Cache] Snapshot write failed for ${feedKey}`);
+    }
+  }
+  return { data: liveData, source: "live" };
 }
 
 async function readCalendarMonthSnapshot(month: string): Promise<{ items: GXCalendarGame[]; fetchedAt: string; snapshotVersion: number } | null> {
@@ -226,6 +195,7 @@ async function readCalendarMonthSnapshot(month: string): Promise<{ items: GXCale
     .from("gx_calendar_month_snapshots")
     .select("payload, fetched_at, snapshot_version")
     .eq("month_key", month)
+    .abortSignal(AbortSignal.timeout(1800))
     .maybeSingle() as { data: { payload: unknown; fetched_at: string; snapshot_version: number | null } | null };
 
   const items = normalizeGXCalendarPayload(data?.payload);
@@ -251,7 +221,7 @@ async function writeCalendarMonthSnapshot(month: string, items: GXCalendarGame[]
       snapshot_version: GX_CALENDAR_SNAPSHOT_VERSION,
       fetched_at: fetchedAt,
       updated_at: fetchedAt,
-    });
+    }).abortSignal(AbortSignal.timeout(1800));
 
   if (error) {
     console.warn(`[GX Cache] Failed to write calendar month snapshot for ${month}:`, error.message);

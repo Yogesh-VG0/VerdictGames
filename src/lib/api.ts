@@ -49,6 +49,11 @@ function getBaseUrl(): string {
   return process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 }
 
+function boundedClientSignal(signal?: AbortSignal): AbortSignal {
+  const timeout = AbortSignal.timeout(11000);
+  return signal ? AbortSignal.any([signal, timeout]) : timeout;
+}
+
 /** Typed fetch wrapper that returns parsed data or null on failure. */
 async function apiFetch<T>(
   path: string,
@@ -141,9 +146,10 @@ export async function getHomepageData(): Promise<HomepageData> {
 
 /** Search games with filters and pagination. */
 export async function searchGames(
-  filters: SearchFilters
+  filters: SearchFilters,
+  signal?: AbortSignal
 ): Promise<PaginatedResponse<Game>> {
-  return apiFetchOrThrow<PaginatedResponse<Game>>(buildSearchApiPath(filters));
+  return apiFetchOrThrow<PaginatedResponse<Game>>(buildSearchApiPath(filters), { signal: boundedClientSignal(signal) });
 }
 
 /** Get a single game by slug. Pass rawgId for RAWG-sourced links to avoid slug collisions. */
@@ -182,16 +188,17 @@ export async function getPersonalizedGames(limit = 12, trendingCache?: Game[]): 
 /** Get reviews for a specific game. */
 export async function getGameReviews(
   slug: string,
-  options?: { sort?: "newest" | "helpful"; page?: number }
+  options?: { sort?: "newest" | "helpful"; page?: number; publicOnly?: boolean; signal?: AbortSignal }
 ): Promise<PaginatedResponse<Review>> {
   const params = new URLSearchParams();
   if (options?.sort) params.set("sort", options.sort);
   if (options?.page) params.set("page", String(options.page));
 
-  const data = await apiFetch<PaginatedResponse<Review>>(
-    `/api/games/${encodeURIComponent(slug)}/reviews?${params.toString()}`
+  if (options?.publicOnly) params.set("public", "1");
+  return apiFetchOrThrow<PaginatedResponse<Review>>(
+    `/api/games/${encodeURIComponent(slug)}/reviews?${params.toString()}`,
+    { signal: boundedClientSignal(options?.signal), ...(options?.publicOnly ? { credentials: "omit" } : {}) }
   );
-  return data ?? EMPTY_PAGE<Review>();
 }
 
 /** Editorial review from site editors */
@@ -388,12 +395,13 @@ export interface SteamReviewsData {
 /** Get top Steam player reviews for a game. */
 export async function getSteamReviews(
   slug: string,
-  limit = 3
+  limit = 3,
+  signal?: AbortSignal
 ): Promise<SteamReviewsData> {
-  const data = await apiFetch<SteamReviewsData>(
-    `/api/games/${encodeURIComponent(slug)}/steam-reviews?limit=${limit}`
+  return apiFetchOrThrow<SteamReviewsData>(
+    `/api/games/${encodeURIComponent(slug)}/steam-reviews?limit=${limit}`,
+    { credentials: "omit", signal: boundedClientSignal(signal) }
   );
-  return data ?? { reviews: [], total: 0, steamAppId: null };
 }
 
 /* ═══════════════════════════════════════════════════
@@ -538,14 +546,15 @@ export async function toggleFollow(profileId: string, action: "follow" | "unfoll
    ═══════════════════════════════════════════════════ */
 
 /** Get games releasing in a specific month. */
-export async function getCalendarGames(month?: string): Promise<CalendarMonthResponse> {
+export async function getCalendarGames(month?: string, signal?: AbortSignal): Promise<CalendarMonthResponse> {
   const resolvedMonth = resolveCalendarMonthKey(month) ?? getCalendarMonthKey();
-  return (await apiFetch<CalendarMonthResponse>(buildCalendarApiPath(month))) ?? {
+  return (await apiFetch<CalendarMonthResponse>(buildCalendarApiPath(month), { signal: boundedClientSignal(signal) })) ?? {
     month: resolvedMonth,
     items: [],
     gxSource: "empty",
     gxCount: 0,
     dbCount: 0,
+    unavailable: true,
   };
 }
 
@@ -567,10 +576,12 @@ export async function getRecommendations(limit = 8): Promise<Game[]> {
   return (await apiFetch<Game[]>(`/api/recommendations?limit=${limit}`)) ?? [];
 }
 
-export async function getHomepageRecommendations(exclude: string, signal?: AbortSignal): Promise<{ games: Game[]; personalized: boolean }> {
+export async function getHomepageRecommendations(exclude: string, accountId: string, signal?: AbortSignal): Promise<{ games: Game[]; personalized: boolean }> {
   const params = new URLSearchParams({ limit: "20", context: "homepage", exclude });
-  return (await apiFetch<{ games: Game[]; personalized: boolean }>(`/api/recommendations?${params}`, { signal }))
-    ?? { games: [], personalized: false };
+  return apiFetchOrThrow<{ games: Game[]; personalized: boolean }>(`/api/recommendations?${params}`, {
+    signal: boundedClientSignal(signal),
+    headers: { "x-verdict-account": accountId },
+  });
 }
 
 /* ═══════════════════════════════════════════════════
@@ -644,8 +655,8 @@ export function getHomepageDeals(signal?: AbortSignal): Promise<GXDeal[]> {
   return apiFetchOrThrow<GXDeal[]>("/api/gx/deals/snapshot", { credentials: "omit", signal });
 }
 
-export async function getGXDeals(): Promise<GXDeal[]> {
-  return (await apiFetch<GXDeal[]>("/api/gx/deals")) ?? [];
+export async function getGXDeals(signal?: AbortSignal): Promise<GXDeal[]> {
+  return apiFetchOrThrow<GXDeal[]>("/api/gx/deals", { credentials: "omit", signal: boundedClientSignal(signal) });
 }
 
 export async function getGXPopularNews(): Promise<GXNewsItem[]> {
@@ -656,12 +667,12 @@ export async function getGXNewsFeed(): Promise<GXNewsItem[]> {
   return apiFetchOrThrow<GXNewsItem[]>("/api/gx/news/feed");
 }
 
-export async function getGXTopGames(): Promise<GXTopGame[]> {
-  return (await apiFetch<GXTopGame[]>("/api/gx/top-games?v=2")) ?? [];
+export async function getGXTopGames(signal?: AbortSignal): Promise<GXTopGame[]> {
+  return apiFetchOrThrow<GXTopGame[]>("/api/gx/top-games?v=2", { credentials: "omit", signal: boundedClientSignal(signal) });
 }
 
-export async function getGXFreeToPlay(): Promise<GXFreeGame[]> {
-  return (await apiFetch<GXFreeGame[]>("/api/gx/free-to-play")) ?? [];
+export async function getGXFreeToPlay(signal?: AbortSignal): Promise<GXFreeGame[]> {
+  return apiFetchOrThrow<GXFreeGame[]>("/api/gx/free-to-play", { credentials: "omit", signal: boundedClientSignal(signal) });
 }
 
 export async function getGXTopLiked(): Promise<GXMostLiked[]> {
@@ -689,6 +700,7 @@ export interface RawgListGameItem {
   verdictScore?: number;
   rankingScore?: number;
   earlyAccess?: boolean;
+  releaseWindow?: string;
   rank?: number;
   catalogueAdded?: string;
   imageKind?: 'cover' | 'artwork';

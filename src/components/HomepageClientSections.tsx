@@ -19,7 +19,6 @@ import HeroImage from "@/components/ui/HeroImage";
 import GXDealCard from "@/components/GXDealCard";
 import {
   HorizontalScrollSkeleton,
-  SectionHeaderSkeleton,
 } from "@/components/ui/Skeleton";
 import {
   Gem,
@@ -51,13 +50,14 @@ export default function HomepageClientSections({
   initialNewReleases,
   shownGameSlugs,
 }: HomepageClientSectionsProps) {
-  const { user, loading } = useAuth();
+  const { sessionId, loading } = useAuth();
   const [discoverTab, setDiscoverTab] = useState<DiscoverTab>("new");
 
   const personalized = useQuery({
-    queryKey: ["personalized", user?.id ?? null, shownGameSlugs],
-    queryFn: ({ signal }) => getHomepageRecommendations(shownGameSlugs, signal),
-    enabled: !!user,
+    queryKey: ["personalized", sessionId, shownGameSlugs],
+    queryFn: ({ signal }) => getHomepageRecommendations(shownGameSlugs, sessionId!, signal),
+    enabled: !!sessionId,
+    retry: false,
     staleTime: 5 * 60 * 1000,
   });
 
@@ -70,15 +70,16 @@ export default function HomepageClientSections({
   });
 
   const gxFreeToPlay = useQuery({
-    queryKey: ["gx-free-to-play"],
-    queryFn: () => getGXFreeToPlay(),
-    staleTime: 60 * 60 * 1000,
+    queryKey: ["gx-free-browse"],
+    queryFn: ({ signal }) => getGXFreeToPlay(signal),
+    retry: false,
+    staleTime: 5 * 60 * 1000,
     enabled: discoverTab === "free",
   });
 
-  const showingPersonalized = !!user && personalized.data?.personalized === true;
-  const recommendedGames = user ? personalized.data?.games ?? [] : initialRecommendations;
-  const recommendedLoading = loading || (!!user && personalized.isLoading);
+  const showingPersonalized = !!sessionId && personalized.data?.personalized === true;
+  const recommendedGames = personalized.data?.games.length ? personalized.data.games : initialRecommendations;
+  const recommendedLoading = !!sessionId ? personalized.isPending : loading;
 
   return (
     <>
@@ -226,7 +227,7 @@ export default function HomepageClientSections({
                     })}
                   </HorizontalScroll>
                 ) : (
-                  <p className="text-secondary text-sm py-8 text-center">No free games available.</p>
+                  <p className="text-secondary text-sm py-8 text-center">{gxFreeToPlay.isError ? "Free-to-play games are temporarily unavailable." : "No free games available."}</p>
                 )}
               </>
             )}
@@ -242,17 +243,12 @@ export default function HomepageClientSections({
       <section className="py-12 sm:py-16">
         <div className="max-w-[1400px] mx-auto px-4">
           <FadeInSection>
-            {recommendedLoading ? (
-              <>
-                <SectionHeaderSkeleton />
-                <HorizontalScrollSkeleton count={6} />
-              </>
-            ) : recommendedGames.length > 0 ? (
+            {recommendedGames.length > 0 ? (
               <>
                 <SectionHeader
-                  title={showingPersonalized ? "Recommended For You" : "You Might Enjoy"}
+                  title={showingPersonalized ? "Recommended For You" : recommendedLoading ? "Discover Games" : "You Might Enjoy"}
                   icon={<Gem className="w-5 h-5" />}
-                  subtitle={showingPersonalized ? "Inspired by genres in your library" : "Curated picks across diverse genres"}
+                  subtitle={showingPersonalized ? "Inspired by genres in your library" : personalized.isError && sessionId ? "Showing curated picks while library recommendations are unavailable" : "Curated picks across diverse genres"}
                   gradient="linear-gradient(90deg, #a855f7 0%, #6366f1 25%, #ec4899 50%, #a855f7 75%, #6366f1 100%)"
                 />
                 <HorizontalScroll>

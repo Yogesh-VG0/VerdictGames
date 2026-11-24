@@ -22,13 +22,14 @@ describe('Upcoming discovery and catalogue union',()=>{
  });
  it('paginates the complete discovery feed rather than limiting Upcoming to local rows',async()=>{
   const records=Array.from({length:55},(_,i)=>item(i));
-  mocks.explore.mockImplementation(async(_type:string,page:number)=>({items:records.slice((page-1)*40,page*40),count:55,source:'rawg',degraded:false}));
+  mocks.explore.mockImplementation(async(_type:string,page:number,size:number)=>({items:records.slice((page-1)*size,page*size),count:55,source:'rawg',degraded:false}));
   const ids:string[]=[];
   for(let page=1;page<=3;page++){
    const response=await loadUpcomingSearch({...state,page},Promise.resolve({cards:[],totalIsExact:true}));
    expect(response.total).toBe(55);expect(response.totalIsExact).toBe(true);ids.push(...response.items.map(game=>game.id));
   }
   expect(ids).toHaveLength(55);expect(new Set(ids).size).toBe(55);
+  expect(mocks.explore.mock.calls.map(([, page, size]) => [page, size])).toEqual([[1, 1000], [1, 1000], [1, 1000]]);
  });
  it('applies title, tag/genre, announced platform, year and known price together',()=>{
   const horror=upcomingCard(item(1,{name:'Moon Mystery',platforms:['PlayStation 5'],tags:['Horror'],monetization:'Paid'}));

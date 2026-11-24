@@ -1,4 +1,5 @@
 import { unstable_cache } from "next/cache";
+import { boundedHomepageRead } from "@/lib/services/homepage-budget";
 import {
   getGXDeals,
   getGXFreeToPlay,
@@ -11,6 +12,7 @@ import { getServerSupabase } from "@/lib/supabase/server";
 import type { GXDeal, GXFreeGame, GXTopGame } from "@/lib/types";
 import { slugify, titlesMatch } from "@/lib/utils/slugify";
 import { measureHomepagePhase } from "@/lib/services/homepage-timing";
+import { isPublicSafeGame } from "@/lib/utils/publicSafety";
 
 export const GX_FEEDS_REVALIDATE_SECONDS = 300;
 export const GX_FEEDS_API_CACHE_CONTROL = "s-maxage=300, stale-while-revalidate=3600";
@@ -31,6 +33,17 @@ function preferCanonicalCover(feedCover: string | null, matchedGame?: GXMatchedG
   return matchedGame?.cover_image || matchedGame?.header_image || feedCover;
 }
 
+function isGameFeed(payload: unknown): boolean {
+  return Array.isArray(payload) && payload.every(entry =>
+    entry && typeof entry.id === 'string' && typeof entry.game?.title === 'string'
+    && (entry.game.slug == null || typeof entry.game.slug === 'string')
+    && Array.isArray(entry.game.genres) && Array.isArray(entry.game.platforms)
+    && entry.game.genres.every((genre: unknown) => typeof (genre as { name?: unknown } | null)?.name === 'string')
+    && entry.game.platforms.every((platform: unknown) => typeof (platform as { name?: unknown } | null)?.name === 'string'));
+}
+
+const GX_GAME_SNAPSHOT_MAX_FRESH_MS = 60 * 60 * 1000;
+
 async function loadMatchedGamesBySlug(slugs: string[]): Promise<Map<string, GXMatchedGame>> {
   const uniqueSlugs = Array.from(
     new Set(slugs.map((slug) => slug.trim()).filter(Boolean))
@@ -44,11 +57,12 @@ async function loadMatchedGamesBySlug(slugs: string[]): Promise<Map<string, GXMa
   const supabase = getServerSupabase();
   const { data: matchingGames } = await supabase
     .from("games")
-    .select("slug, title, cover_image, header_image")
-    .in("slug", uniqueSlugs);
+    .select("slug, title, description, genres, tags, cover_image, header_image")
+    .in("slug", uniqueSlugs.slice(0, 240))
+    .abortSignal(AbortSignal.timeout(2200));
 
   for (const game of matchingGames ?? []) {
-    if (!game.slug) {
+    if (!game.slug || !isPublicSafeGame(game)) {
       continue;
     }
 
@@ -65,7 +79,8 @@ async function loadMatchedGamesBySlug(slugs: string[]): Promise<Map<string, GXMa
 
 function mapDealEntry(entry: GXDealEntry, matchedGamesBySlug: Map<string, GXMatchedGame>): GXDeal {
   const sourceSlug = entry.game.slug?.trim() ?? null;
-  const matchedGame = sourceSlug ? matchedGamesBySlug.get(sourceSlug) : undefined;
+  const candidate = sourceSlug ? matchedGamesBySlug.get(sourceSlug) : undefined;
+  const matchedGame = candidate?.title && titlesMatch(candidate.title, entry.game.title) ? candidate : undefined;
 
   return {
     id: entry.id,
@@ -87,7 +102,8 @@ function mapDealEntry(entry: GXDealEntry, matchedGamesBySlug: Map<string, GXMatc
 
 function mapFreeGameEntry(entry: GXGameListEntry, matchedGamesBySlug: Map<string, GXMatchedGame>): GXFreeGame {
   const sourceSlug = entry.game.slug?.trim() ?? null;
-  const matchedGame = sourceSlug ? matchedGamesBySlug.get(sourceSlug) : undefined;
+  const candidate = sourceSlug ? matchedGamesBySlug.get(sourceSlug) : undefined;
+  const matchedGame = candidate?.title && titlesMatch(candidate.title, entry.game.title) ? candidate : undefined;
 
   return {
     id: entry.id,
@@ -102,10 +118,11 @@ function mapFreeGameEntry(entry: GXGameListEntry, matchedGamesBySlug: Map<string
 }
 
 async function loadGXDealsUncached(): Promise<GXDeal[]> {
-  const { data: raw } = await gxFetchWithCache(
+  const { data: raw, source } = await gxFetchWithCache(
     "deals",
-    getGXDeals
+    getGXDeals, GX_GAME_SNAPSHOT_MAX_FRESH_MS, isGameFeed
   );
+  if (source === "empty") throw new Error("Deals feed temporarily unavailable");
   const matchedGamesBySlug = await measureHomepagePhase('candidate_hydration', () =>
     loadMatchedGamesBySlug(raw.map((entry) => entry.game.slug ?? "")));
 
@@ -113,10 +130,11 @@ async function loadGXDealsUncached(): Promise<GXDeal[]> {
 }
 
 async function loadGXFreeToPlayUncached(): Promise<GXFreeGame[]> {
-  const { data: raw } = await gxFetchWithCache(
+  const { data: raw, source } = await gxFetchWithCache(
     "free_to_play",
-    getGXFreeToPlay
+    getGXFreeToPlay, GX_GAME_SNAPSHOT_MAX_FRESH_MS, isGameFeed
   );
+  if (source === "empty") throw new Error("Free-to-play feed temporarily unavailable");
   const matchedGamesBySlug = await loadMatchedGamesBySlug(
     raw.map((entry) => entry.game.slug ?? "")
   );
@@ -125,10 +143,11 @@ async function loadGXFreeToPlayUncached(): Promise<GXFreeGame[]> {
 }
 
 async function loadGXTopGamesUncached(): Promise<GXTopGame[]> {
-  const { data: raw } = await gxFetchWithCache(
+  const { data: raw, source } = await gxFetchWithCache(
     "top_games",
-    getGXTopGames
+    getGXTopGames, GX_GAME_SNAPSHOT_MAX_FRESH_MS, isGameFeed
   );
+  if (source === "empty") throw new Error("Subscription feed temporarily unavailable");
   const candidateSlugs = Array.from(
     new Set(
       raw.flatMap((entry) => {
@@ -145,11 +164,11 @@ async function loadGXTopGamesUncached(): Promise<GXTopGame[]> {
     const titleSlug = slugify(entry.game.title);
     const sourceMatch = sourceSlug ? matchedGamesBySlug.get(sourceSlug) : undefined;
     const titleMatch = titleSlug ? matchedGamesBySlug.get(titleSlug) : undefined;
-    const verifiedSlug = sourceMatch?.slug
+    const verifiedSlug = (sourceMatch?.title && titlesMatch(sourceMatch.title, entry.game.title) ? sourceMatch.slug : null)
       ?? (titleMatch?.title && titlesMatch(titleMatch.title, entry.game.title) ? titleMatch.slug : null);
     const matchedGame = verifiedSlug
       ? matchedGamesBySlug.get(verifiedSlug)
-      : sourceMatch;
+      : undefined;
 
     return {
       id: entry.id,
@@ -167,8 +186,8 @@ async function loadGXTopGamesUncached(): Promise<GXTopGame[]> {
 }
 
 export const loadGXDeals = unstable_cache(
-  async () => loadGXDealsUncached(),
-  ["gx-feeds", "deals"],
+  async () => boundedHomepageRead(8000, loadGXDealsUncached),
+  ["gx-feeds-v2", "deals"],
   { revalidate: GX_FEEDS_REVALIDATE_SECONDS }
 );
 
@@ -181,13 +200,13 @@ export async function loadHomepageDeals(): Promise<GXDeal[]> {
 }
 
 export const loadGXFreeToPlay = unstable_cache(
-  async () => loadGXFreeToPlayUncached(),
-  ["gx-feeds", "free-to-play"],
+  async () => boundedHomepageRead(8000, loadGXFreeToPlayUncached),
+  ["gx-feeds-v2", "free-to-play"],
   { revalidate: GX_FEEDS_REVALIDATE_SECONDS }
 );
 
 export const loadGXTopGames = unstable_cache(
-  async () => loadGXTopGamesUncached(),
-  ["gx-feeds", "top-games"],
+  async () => boundedHomepageRead(8000, loadGXTopGamesUncached),
+  ["gx-feeds-v2", "top-games"],
   { revalidate: GX_FEEDS_REVALIDATE_SECONDS }
 );

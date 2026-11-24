@@ -6,10 +6,11 @@
  */
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 30;
+export const maxDuration = 15;
 
 import { NextRequest } from "next/server";
-import { jsonPrivateOk as jsonOk } from "@/lib/api/response";
+import { boundedHomepageRead } from "@/lib/services/homepage-budget";
+import { jsonError, jsonPrivateOk as jsonOk } from "@/lib/api/response";
 import { getHomepageRecommendationScore, isHomepageRecommendationEligible } from "@/lib/services/homepage";
 import { mapGameRow } from "@/lib/db/mappers";
 import { GAME_CARD_COLUMNS_WITH_DESC } from "@/lib/db/columns";
@@ -19,11 +20,21 @@ import { isPublicSafeGame } from "@/lib/utils/publicSafety";
 import { hasUsableCardImage } from "@/lib/utils/mediaReadiness";
 import { hasUnreleasedStatus } from "@/lib/utils/release-status";
 import type { GameRow } from "@/lib/supabase/types";
+import { getAuthSupabase, getCurrentUser } from "@/lib/supabase/auth";
 
 export async function GET(request: NextRequest) {
+  try {
+    return await boundedHomepageRead(7500, () => loadRecommendations(request));
+  } catch {
+    return jsonError("Recommendations temporarily unavailable", 503);
+  }
+}
+
+async function loadRecommendations(request: NextRequest) {
   const rawLimit = parseInt(request.nextUrl.searchParams.get("limit") ?? "8", 10);
   const limit = Number.isFinite(rawLimit) && rawLimit > 0 ? Math.min(rawLimit, 50) : 8;
   const homepage = request.nextUrl.searchParams.get("context") === "homepage";
+  const expectedAccount = homepage ? request.headers.get("x-verdict-account") : null;
   const exclusion = (request.nextUrl.searchParams.get("exclude") ?? "").slice(0, 6000);
   const shown = new Set(homepage ? exclusion.split(",").slice(0, 96).filter(slug => /^[a-z0-9_-]{1,100}$/i.test(slug)) : []);
   const respond = (games: ReturnType<typeof mapGameRow>[], personalized = false) =>
@@ -34,28 +45,32 @@ export async function GET(request: NextRequest) {
       return respond([]);
     }
 
-    const { getAuthSupabase } = await import("@/lib/supabase/auth");
     const supabase = await getAuthSupabase();
 
     // Try to get user-specific recommendations
     let userGenres: string[] = [];
     let userGameIds: string[] = [];
+    let largeLibraryProfileId: string | undefined;
 
     try {
-      const { getCurrentUser } = await import("@/lib/supabase/auth");
-      const user = await getCurrentUser();
+      const user = await getCurrentUser({ strict: true }, supabase);
+      if (expectedAccount && user?.id !== expectedAccount) {
+        return jsonError("Current account changed", 401);
+      }
 
       if (user) {
         // Get user's library to find preferred genres
         const { data: userGames, error: libraryError } = await supabase
           .from("user_games")
           .select("game_id, game:games!inner(genres)")
-          .eq("user_id", user.profileId) as { data: { game_id: string; game: { genres: string[] } | null }[] | null; error: unknown };
+          .eq("user_id", user.profileId)
+          .order("game_id").limit(1000) as { data: { game_id: string; game: { genres: string[] } | null }[] | null; error: unknown };
 
-        if (libraryError && homepage) return respond([]);
+        if (libraryError && homepage) throw libraryError;
 
         if (userGames && userGames.length > 0) {
           userGameIds = userGames.map((ug) => ug.game_id);
+          if (userGames.length === 1000) largeLibraryProfileId = user.profileId;
 
           // Count genre frequency
           const genreCounts: Record<string, number> = {};
@@ -75,25 +90,20 @@ export async function GET(request: NextRequest) {
             .map(([g]) => g);
         }
       }
-    } catch {
-      if (homepage) return respond([]);
+    } catch (error) {
+      if (homepage) throw error;
     }
 
-    // Recency gate: only recommend games from the last 3 years on homepage
-    const cutoffDate = new Date();
-    cutoffDate.setMonth(cutoffDate.getMonth() - 36);
-    const cutoffStr = cutoffDate.toISOString().slice(0, 10);
     const today = new Date().toISOString().slice(0, 10);
 
     // Over-fetch so quality filtering + genre diversity still leaves enough
-    const fetchLimit = limit * 5;
+    const fetchLimit = Math.min(240, Math.max(100, limit * 8));
 
     // Build recommendation query — require minimum review count at DB level
     let query = supabase
       .from("games")
       .select(GAME_CARD_COLUMNS_WITH_DESC)
       .not("release_date", "is", null)
-      .gte("release_date", cutoffStr)
       .lte("release_date", today)           // exclude unreleased/future games
       .gte("score", 70)
       .gte("review_count", 50)              // minimum review threshold — no tiny-sample games
@@ -120,7 +130,7 @@ export async function GET(request: NextRequest) {
       // Exclude provisional / coming soon
       if ((r as GameRow & { is_provisional?: boolean }).is_provisional) return false;
       if (r.verdict_label === "COMING SOON") return false;
-      if (hasUnreleasedStatus(r) || shown.has(r.slug)) return false;
+      if (hasUnreleasedStatus(r)) return false;
       return isQualityGame(r, "recommendations");
     });
 
@@ -130,15 +140,24 @@ export async function GET(request: NextRequest) {
       rows = rows.filter((r) => !excludeSet.has(r.id));
     }
 
+    // The bounded genre sample may omit owned games from a large library.
+    if (largeLibraryProfileId) {
+      const ids = rows.map(row => row.id);
+      const owned = new Set<string>();
+      for (let offset = 0; offset < ids.length; offset += 80) {
+        const page = await supabase.from("user_games").select("game_id")
+          .eq("user_id", largeLibraryProfileId).in("game_id", ids.slice(offset, offset + 80));
+        if (page.error) throw page.error;
+        for (const row of page.data ?? []) owned.add(row.game_id);
+      }
+      rows = rows.filter(row => !owned.has(row.id));
+    }
     rows = dedupePublicCanonicalRows(rows);
 
-    const homepageEligible = rows.filter(isHomepageRecommendationEligible);
-    if (homepageEligible.length > 0) {
-      rows = homepageEligible;
-    }
-
     const matchesLibrary = (row: GameRow) => userGenres.some(genre => row.genres?.includes(genre));
-    rows.sort((a, b) => (homepage ? Number(matchesLibrary(b)) - Number(matchesLibrary(a)) : 0)
+    rows.sort((a, b) => (homepage ? Number(shown.has(a.slug)) - Number(shown.has(b.slug)) : 0)
+      || Number(matchesLibrary(b)) - Number(matchesLibrary(a))
+      || Number(isHomepageRecommendationEligible(b)) - Number(isHomepageRecommendationEligible(a))
       || getHomepageRecommendationScore(b) - getHomepageRecommendationScore(a)
       || a.id.localeCompare(b.id));
 
@@ -147,9 +166,9 @@ export async function GET(request: NextRequest) {
     const picks: GameRow[] = [];
     for (const row of rows) {
       if (picks.length >= limit) break;
-      const primary = (row.genres?.[0] ?? "unknown").toLowerCase();
-      if (!seen.has(primary) || seen.size >= 8) {
-        seen.add(primary);
+      const genre = row.genres?.find(value => !seen.has(value.toLowerCase()));
+      if (genre && !shown.has(row.slug)) {
+        seen.add(genre.toLowerCase());
         picks.push(row);
       }
     }
@@ -163,9 +182,11 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    return respond(picks.map(mapGameRow), picks.some(matchesLibrary));
+    const relevant = picks.filter(matchesLibrary).length;
+    return respond(picks.map(mapGameRow), relevant > 0 && relevant >= Math.ceil(picks.length / 3));
   } catch (err) {
     console.error("[API] /recommendations error:", err);
+    if (homepage) throw err;
     return respond([]);
   }
 }

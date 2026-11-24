@@ -101,6 +101,7 @@ export default async function GameDetailPage({ params }: GameDetailPageProps) {
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
       />
       <GameDetailClientPage
+        key={canonicalSlug}
         slug={canonicalSlug}
         rawgId={game.rawgId ?? null}
         initialGame={game}

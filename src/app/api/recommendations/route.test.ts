@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { NextRequest } from 'next/server';
 
 const state = vi.hoisted(() => ({ library: [] as { game_id: string; game: { genres: string[] } }[], error: null as unknown }));
-vi.mock('@/lib/supabase/auth', () => ({ getCurrentUser: async () => ({ profileId: 'local-fixture' }),
+vi.mock('@/lib/supabase/auth', () => ({ getCurrentUser: async () => ({ id: 'fixture-a', profileId: 'local-fixture' }),
   getAuthSupabase: async () => ({ from: (table: string) => {
     const query: Record<string, unknown> = {};
     for (const method of ['select', 'eq', 'not', 'neq', 'gte', 'lte', 'order', 'limit', 'overlaps']) query[method] = () => query;
@@ -34,27 +34,39 @@ describe('private homepage recommendations', () => {
   });
   afterEach(() => vi.unstubAllEnvs());
   const request = () => GET(new NextRequest('http://127.0.0.1/api/recommendations?context=homepage&limit=20&exclude=shown'));
-  it('labels an empty-library fallback generic and excludes earlier rails and cancellations', async () => {
+  it('labels empty-library picks generic and refills with an earlier-rail game after unique picks', async () => {
     const response = await request();
     expect(response.headers.get('Cache-Control')).toContain('private, no-store');
     const { data } = await response.json();
     expect(data.personalized).toBe(false);
-    expect(data.games.map((game: { slug: string }) => game.slug).sort()).toEqual(['action', 'indie', 'owned']);
+    expect(data.games.map((game: { slug: string }) => game.slug).sort()).toEqual(['action', 'indie', 'owned', 'shown']);
+    expect(data.games.at(-1).slug).toBe('shown');
   });
 
   it('prefers matching genres, keeps a diverse fallback and excludes the library', async () => {
     state.library = [{ game_id: 'owned', game: { genres: ['Indie'] } }];
     const { data } = await (await request()).json();
     expect(data.personalized).toBe(true);
-    expect(data.games.map((game: { slug: string }) => game.slug)).toEqual(['indie', 'action']);
+    expect(data.games.map((game: { slug: string }) => game.slug)).toEqual(['indie', 'action', 'shown']);
     state.library.push({ game_id: 'outside-catalogue', game: { genres: ['Action', 'RPG'] } });
     const diverse = await (await request()).json();
-    expect(diverse.data.games).toHaveLength(2);
+    expect(diverse.data.games).toHaveLength(3);
   });
 
-  it('returns an empty private result when the authenticated library cannot be read', async () => {
+  it('returns a private service error when the authenticated library cannot be read', async () => {
     state.error = { code: '57014' };
-    const { data } = await (await request()).json();
-    expect(data).toEqual({ games: [], personalized: false });
+    const response = await request();
+    expect(response.status).toBe(503);
+    expect(response.headers.get('Cache-Control')).toContain('private, no-store');
+    expect(await response.json()).toMatchObject({ success: false });
+  });
+
+  it('refuses to return another account’s picks during a session switch', async () => {
+    const response = await GET(new NextRequest('http://127.0.0.1/api/recommendations?context=homepage', {
+      headers: { 'x-verdict-account': 'fixture-b' },
+    }));
+    expect(response.status).toBe(401);
+    expect(response.headers.get('Cache-Control')).toContain('private, no-store');
+    expect(await response.json()).not.toHaveProperty('data');
   });
 });

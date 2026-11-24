@@ -48,6 +48,7 @@ try {
 } catch { /* Use process environment variables. */ }
 
 const sql = connectDb("seed-curated-lists");
+const preview = process.argv.includes("--preview");
 
 function yearsAgoISO(years) {
   const d = new Date();
@@ -188,9 +189,9 @@ const LIST_BLUEPRINTS = [
     query: async () => sql`
       SELECT id FROM games
       WHERE (genres && ARRAY['Indie'] OR tags && ARRAY['Indie'])
-        AND hltb_main IS NOT NULL
+        AND hltb_main > 0
         AND hltb_main <= 20
-        AND release_date >= ${yearsAgoISO(4)}
+        AND (tags && ARRAY['Singleplayer', 'Single Player', 'Single-player'])
         AND release_date <= CURRENT_DATE
         AND score >= 80
         AND review_count >= ${MIN_LIST_REVIEWS}
@@ -226,26 +227,26 @@ const LIST_BLUEPRINTS = [
   },
   // ── 8. Most Wanted Upcoming Games ──
   // FIX: Must actually be UPCOMING (release_date > today), not just within the year
-  {
-    slug: `most-wanted-${new Date().getFullYear()}`,
-    title: `Most Wanted Upcoming ${new Date().getFullYear()} Games`,
-    description: `The most anticipated games releasing in ${new Date().getFullYear()}. Add them to your watchlist now.`,
-    tags: ["editorial", "upcoming", String(new Date().getFullYear()), "wishlist"],
+  ...[new Date().getUTCFullYear(), new Date().getUTCFullYear() + 1].map(annualYear => ({
+    slug: `most-wanted-${annualYear}`,
+    title: `Most Wanted Upcoming ${annualYear} Games`,
+    description: `The most anticipated games releasing in ${annualYear}. Add them to your watchlist now.`,
+    tags: ["editorial", "upcoming", String(annualYear), "wishlist"],
     query: async (anticipation) => {
       const ids = [...anticipation.keys()].sort((a, b) => anticipation.get(b).interest - anticipation.get(a).interest);
       if (!ids.length) return [];
-      const yearStr = String(new Date().getFullYear());
+      const yearStr = String(annualYear);
       const today = new Date().toISOString().slice(0, 10);
       return sql`
         SELECT id FROM games
         WHERE rawg_id = ANY(${ids}::integer[])
-          AND release_date > ${today} AND release_date < ${yearStr + "-12-31"}
+          AND release_date > ${today} AND release_date >= ${yearStr + "-01-01"} AND release_date < ${String(annualYear + 1) + "-01-01"}
           AND cover_image IS NOT NULL AND cover_image != ''
         ORDER BY array_position(${ids}::integer[], rawg_id), release_date, id
-        LIMIT 24
+        LIMIT 60
       `;
     },
-  },
+  })),
   // ── 9. Best Deckbuilders & Turn-Based Games ──
   // NOTE: 'Roguelike'/'Roguelite' tags REMOVED — too broad, pulled action games like Sifu
   {
@@ -617,10 +618,10 @@ console.log("  VERDICT.GAMES — Seed Curated Lists");
 console.log(`  ${new Date().toISOString()}`);
 console.log("═══════════════════════════════════════════\n");
 
-const locked = await acquireLock(sql, 'seed-curated-lists');
+const locked = preview || await acquireLock(sql, 'seed-curated-lists');
 if (!locked) { await closeDb(sql, 'seed-curated-lists'); process.exit(0); }
 
-const run = await startRun(sql, 'seed-curated-lists');
+const run = preview ? null : await startRun(sql, 'seed-curated-lists');
 const startedAt = Date.now();
 
 let created = 0;
@@ -628,8 +629,9 @@ let updated = 0;
 let skipped = 0;
 
 try {
-const [snapshot] = await sql`SELECT payload FROM gx_cache WHERE feed_key = ${EDITORIAL_UPCOMING_SNAPSHOT_KEY} LIMIT 1`;
-const anticipation = editorialAnticipation(snapshot?.payload);
+const [snapshot] = await sql`SELECT payload, fetched_at FROM gx_cache WHERE feed_key = ${EDITORIAL_UPCOMING_SNAPSHOT_KEY} LIMIT 1`;
+const snapshotAge = snapshot ? Date.now() - new Date(snapshot.fetched_at).getTime() : Infinity;
+const anticipation = editorialAnticipation(snapshotAge >= 0 && snapshotAge <= 12 * 60 * 60 * 1000 ? snapshot.payload : null);
 for (const blueprint of LIST_BLUEPRINTS) {
   console.log(`\n📋 Processing: "${blueprint.title}"`);
 
@@ -655,21 +657,11 @@ for (const blueprint of LIST_BLUEPRINTS) {
   }
 
   // Get a unique cover image for this list (avoid duplicates across lists)
-  let coverImage = "";
-  for (const gid of constrainedIds) {
-    const [g] = await sql`SELECT cover_image, header_image FROM games WHERE id = ${gid} LIMIT 1`;
-    const img = g?.header_image || g?.cover_image || "";
-    if (img && !usedCoverImages.has(img)) {
-      coverImage = img;
-      usedCoverImages.add(img);
-      break;
-    }
-  }
-  // Fallback: use first game's image even if duplicate
-  if (!coverImage) {
-    const [g] = await sql`SELECT cover_image, header_image FROM games WHERE id = ${constrainedIds[0]} LIMIT 1`;
-    coverImage = g?.header_image || g?.cover_image || "";
-  }
+  const selected = await sql`SELECT id, slug, title, release_date, hltb_main, cover_image, header_image FROM games
+    WHERE id = ANY(${constrainedIds}) ORDER BY array_position(${constrainedIds}::uuid[], id)`;
+  const images = selected.map(game => game.header_image || game.cover_image).filter(Boolean);
+  const coverImage = images.find(image => !usedCoverImages.has(image)) || images[0] || "";
+  if (coverImage) usedCoverImages.add(coverImage);
 
   const previewText = blueprint.description;
   const bodyText = blueprint.description;
@@ -681,7 +673,11 @@ for (const blueprint of LIST_BLUEPRINTS) {
     tags: blueprint.tags,
   }, constrainedIds);
 
-  const change = await publishManagedList(sql, blueprint, { previewText, bodyText, coverImage, seedHash, constrainedIds });
+  const change = await publishManagedList(sql, blueprint, { previewText, bodyText, coverImage, seedHash, constrainedIds, preview });
+  if (preview) {
+    console.log(JSON.stringify({ slug: blueprint.slug, change, qualified: allIds.length,
+      proposed: selected.map(({ slug, title, release_date, hltb_main }) => ({ slug, title, release_date, hltb_main })) }));
+  }
   if (change === "created") created++;
   else if (change === "updated") updated++;
   else skipped++;
@@ -693,7 +689,7 @@ for (const blueprint of LIST_BLUEPRINTS) {
   // Record these games as used (global + pairwise overlap tracking)
   for (const id of constrainedIds) gameAppearanceCount.set(id, (gameAppearanceCount.get(id) ?? 0) + 1);
 
-  console.log(`  ✓ Inserted ${items.length} games into list`);
+  console.log(`  ✓ ${change}: ${constrainedIds.length} qualified games`);
 }
 
 // Stale blueprints are retained. Publication never removes lists.
@@ -703,7 +699,7 @@ console.log(`  Created: ${created} | Updated: ${updated} | Skipped: ${skipped}`)
 console.log("  ✅ Done!");
 console.log("═══════════════════════════════════════════\n");
 
-await finishRun(sql, run.id, {
+if (run) await finishRun(sql, run.id, {
   rows_created: created,
   rows_updated: updated,
   rows_skipped: skipped,
@@ -713,14 +709,14 @@ await finishRun(sql, run.id, {
 } catch (err) {
   console.error(`❌ Seed curated lists failed:`, err.message);
   try {
-    await finishRun(sql, run.id, { error_message: err.message });
+    if (run) await finishRun(sql, run.id, { error_message: err.message });
   } catch (logError) {
     console.error(`❌ Could not record curated-list failure: ${logError.message}`);
   }
-  await releaseLock(sql, 'seed-curated-lists');
+  if (!preview) await releaseLock(sql, 'seed-curated-lists');
   await closeDb(sql, 'seed-curated-lists');
   process.exit(1);
 }
 
-await releaseLock(sql, 'seed-curated-lists');
+if (!preview) await releaseLock(sql, 'seed-curated-lists');
 await closeDb(sql, 'seed-curated-lists');
