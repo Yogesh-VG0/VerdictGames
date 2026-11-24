@@ -1,3 +1,4 @@
+import { getFreshPlayerSignals } from '@/lib/utils/trending';
 /**
  * VERDICT.GAMES — DB ↔ Frontend Model Mappers
  *
@@ -71,11 +72,11 @@ function sanitizePros(pros: string[], reviewCount: number): string[] {
 function computeTrendingReason(row: GameRow, label: VerdictLabel): string | undefined {
   if (label === 'COMING SOON' || label === 'CANCELLED') return undefined;
   const r = row as GameRow & { is_trending_manual?: boolean; is_featured_manual?: boolean };
-  const momentum = row.momentum ?? 0;
+  const momentum = getFreshPlayerSignals(row).momentum;
   const score = (row.verdict_score != null && row.verdict_score > 0)
     ? Math.round(row.verdict_score)
     : displayScore(row.score ?? 0, row.review_count ?? 0);
-  const currentPlayers = row.current_players ?? 0;
+  const currentPlayers = getFreshPlayerSignals(row).players;
   const reviewCount = row.review_count ?? 0;
   const ageDays = row.release_date
     ? (Date.now() - new Date(`${row.release_date}T00:00:00`).getTime()) / 86400000

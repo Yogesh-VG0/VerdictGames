@@ -17,14 +17,20 @@ export async function fetchSteamReviews(appId, options = {}, fetcher = fetch) {
     signal: AbortSignal.timeout(10000),
     ...options.fetchOptions,
   });
-  if (!response.ok) throw new Error(`Steam reviews returned HTTP ${response.status}`);
+  if (!response.ok) throw steamReviewError(`http_${response.status}`, `Steam reviews returned HTTP ${response.status}`);
   if (!response.headers.get('content-type')?.includes('application/json')) {
-    throw new Error('Steam reviews returned a non-JSON response');
+    throw steamReviewError('non_json', 'Steam reviews returned a non-JSON response');
   }
-  const payload = await response.json();
+  let payload;
+  try { payload = await response.json(); } catch { throw steamReviewError('invalid_json'); }
   const data = payload?.response;
-  if (!data || !Array.isArray(data.reviews) || !data.query_summary || !Number.isFinite(data.query_summary.total_reviews)) {
-    throw new Error('Steam reviews returned an invalid response');
-  }
+  if (!data || typeof data !== 'object' || Array.isArray(data)) throw steamReviewError('missing_envelope');
+  const total = data.query_summary?.total_reviews;
+  if (!Number.isSafeInteger(total) || total < 0) throw steamReviewError('invalid_summary');
+  if (!Array.isArray(data.reviews)) throw steamReviewError(total === 0 ? 'zero_summary_without_reviews' : 'missing_reviews');
   return data;
+}
+
+function steamReviewError(reason, message = 'Steam reviews returned an invalid response') {
+  return Object.assign(new Error(message), { steamReviewReason: reason });
 }

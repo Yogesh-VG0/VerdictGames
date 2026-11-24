@@ -29,10 +29,10 @@
  * 11. Sci-Fi Epics                         22. Best Action RPGs of All Time
  */
 
+import { buildSeedHash, publishManagedList } from './lib/curated-publisher.mjs';
 import { compareEditorialGames, editorialAnticipation, editorialExclusion, EDITORIAL_GAME_COLUMNS, EDITORIAL_UPCOMING_SNAPSHOT_KEY, matchesEditorialAnticipation, selectEditorialIds } from "../src/lib/utils/editorial-eligibility.mjs";
 import { startRun, finishRun, acquireLock, releaseLock, isInfrastructureDbError } from './lib/scheduler-logger.mjs';
 import { connectDb, closeDb } from './lib/db-connect.mjs';
-import { createHash } from 'node:crypto';
 
 try {
   const { readFileSync } = await import("fs");
@@ -48,8 +48,6 @@ try {
 } catch { /* Use process environment variables. */ }
 
 const sql = connectDb("seed-curated-lists");
-const SYSTEM_LIST_MANAGER = "system-curated-lists";
-const SYSTEM_LIST_SEED_VERSION = 3;
 
 function yearsAgoISO(years) {
   const d = new Date();
@@ -57,21 +55,6 @@ function yearsAgoISO(years) {
   return d.toISOString().slice(0, 10);
 }
 
-const SYSTEM_CURATOR = "editorial";
-
-function buildSeedHash(seed, gameIds) {
-  return createHash("sha256")
-    .update(JSON.stringify({
-      slug: seed.slug,
-      title: seed.title,
-      previewText: seed.previewText,
-      bodyText: seed.bodyText,
-      tags: seed.tags,
-      gameIds,
-      seedVersion: SYSTEM_LIST_SEED_VERSION,
-    }))
-    .digest("hex");
-}
 
 // Define list blueprints — each contains SQL criteria to pick games
 // ── Overlap enforcement ──
@@ -698,102 +681,13 @@ for (const blueprint of LIST_BLUEPRINTS) {
     tags: blueprint.tags,
   }, constrainedIds);
 
-  // Upsert the list
-  const [existingList] = await sql`
-    SELECT id, title, is_system_managed, is_public FROM lists WHERE slug = ${blueprint.slug} LIMIT 1
-  `;
-
-  if (existingList && (!existingList.is_system_managed || !existingList.is_public)) {
-    console.log(`  ⚠ Slug conflict with non-system list "${existingList.title}" — skipping`);
-    skipped++;
+  const change = await publishManagedList(sql, blueprint, { previewText, bodyText, coverImage, seedHash, constrainedIds });
+  if (change === "created") created++;
+  else if (change === "updated") updated++;
+  else skipped++;
+  if (change === "preserved") {
+    console.log("  Preserved protected or manually edited list");
     continue;
-  }
-
-  let listId;
-  if (existingList) {
-    await sql`
-      UPDATE lists SET
-        title = ${blueprint.title},
-        description = ${bodyText},
-        preview_text = ${previewText},
-        body_text = ${bodyText},
-        cover_image = ${coverImage},
-        curated_by = ${SYSTEM_CURATOR},
-        tags = ${blueprint.tags},
-        is_system_managed = true,
-        system_key = ${blueprint.slug},
-        managed_by = ${SYSTEM_LIST_MANAGER},
-        seed_version = ${SYSTEM_LIST_SEED_VERSION},
-        seed_hash = ${seedHash},
-        last_seeded_at = NOW(),
-        updated_at = NOW()
-      WHERE id = ${existingList.id}
-    `;
-    listId = existingList.id;
-    console.log(`  ↺ Updated existing list (${listId})`);
-    updated++;
-  } else {
-    const [newList] = await sql`
-      INSERT INTO lists (
-        slug,
-        title,
-        description,
-        preview_text,
-        body_text,
-        cover_image,
-        curated_by,
-        tags,
-        is_public,
-        is_system_managed,
-        system_key,
-        managed_by,
-        seed_version,
-        seed_hash,
-        last_seeded_at,
-        created_at,
-        updated_at
-      )
-      VALUES (
-        ${blueprint.slug},
-        ${blueprint.title},
-        ${bodyText},
-        ${previewText},
-        ${bodyText},
-        ${coverImage},
-        ${SYSTEM_CURATOR},
-        ${blueprint.tags},
-        true,
-        true,
-        ${blueprint.slug},
-        ${SYSTEM_LIST_MANAGER},
-        ${SYSTEM_LIST_SEED_VERSION},
-        ${seedHash},
-        NOW(),
-        NOW(),
-        NOW()
-      )
-      RETURNING id
-    `;
-    listId = newList.id;
-    console.log(`  + Created new list (${listId})`);
-    created++;
-  }
-
-  // Delete existing items for this list and re-insert fresh
-  await sql`DELETE FROM list_items WHERE list_id = ${listId}`;
-
-  const items = constrainedIds.map((id, i) => ({
-    list_id: listId,
-    game_id: id,
-    position: i + 1,
-  }));
-
-  for (const item of items) {
-    await sql`
-      INSERT INTO list_items (list_id, game_id, position, added_at)
-      VALUES (${item.list_id}, ${item.game_id}, ${item.position}, NOW())
-      ON CONFLICT DO NOTHING
-    `;
   }
 
   // Record these games as used (global + pairwise overlap tracking)
@@ -802,28 +696,10 @@ for (const blueprint of LIST_BLUEPRINTS) {
   console.log(`  ✓ Inserted ${items.length} games into list`);
 }
 
-// ── Cleanup stale editorial lists not in current blueprints ──
-// Also clean up lists created by the admin seed button ("Verdict.games Editorial")
-// to prevent duplicates between the two seeding systems
-const currentSlugs = LIST_BLUEPRINTS.map((b) => b.slug);
-const staleLists = await sql`
-  SELECT id, slug FROM lists
-  WHERE is_system_managed = true
-    AND is_public = true
-    AND managed_by = ${SYSTEM_LIST_MANAGER}
-    AND slug != ALL(${currentSlugs})
-`;
-let cleaned = 0;
-for (const stale of staleLists) {
-  if (/^most-wanted-\d{4}$/.test(stale.slug)) continue;
-  await sql`DELETE FROM list_items WHERE list_id = ${stale.id}`;
-  await sql`DELETE FROM lists WHERE id = ${stale.id}`;
-  console.log(`  🗑 Removed stale list: "${stale.slug}"`);
-  cleaned++;
-}
+// Stale blueprints are retained. Publication never removes lists.
 
 console.log("\n═══════════════════════════════════════════");
-console.log(`  Created: ${created} | Updated: ${updated} | Skipped: ${skipped} | Cleaned: ${cleaned}`);
+console.log(`  Created: ${created} | Updated: ${updated} | Skipped: ${skipped}`);
 console.log("  ✅ Done!");
 console.log("═══════════════════════════════════════════\n");
 
@@ -832,7 +708,7 @@ await finishRun(sql, run.id, {
   rows_updated: updated,
   rows_skipped: skipped,
   rows_scanned: LIST_BLUEPRINTS.length,
-  metadata: { elapsed: ((Date.now() - startedAt) / 1000).toFixed(1), cleaned },
+  metadata: { elapsed: ((Date.now() - startedAt) / 1000).toFixed(1) },
 });
 } catch (err) {
   console.error(`❌ Seed curated lists failed:`, err.message);

@@ -19,7 +19,7 @@ export async function refreshReviewBatch(sql, { limit = 50, pauseMs = 1000 } = {
     ORDER BY s.last_success_at ASC NULLS FIRST, g.trending DESC, g.review_count DESC
     LIMIT ${Math.max(1, Math.min(1000, limit))}
   `;
-  const stats = { scanned: 0, refreshed: 0, failed: 0, deletedReviews: 0, writtenReviews: 0 };
+  const stats = { scanned: 0, refreshed: 0, failed: 0, deletedReviews: 0, writtenReviews: 0, failureReasons: {} };
   for (const game of games) {
     stats.scanned++;
     try {
@@ -65,13 +65,17 @@ export async function refreshReviewBatch(sql, { limit = 50, pauseMs = 1000 } = {
       // Leave the durable refresh marker and last good snapshot unchanged.
       if (isInfrastructureDbError(error)) throw error;
       stats.failed++;
+      const reason = error.steamReviewReason ?? (error.name === 'TimeoutError' ? 'timeout' : 'processing_error');
+      stats.failureReasons[reason] = (stats.failureReasons[reason] ?? 0) + 1;
+      const malformed = ['missing_envelope','invalid_summary','missing_reviews','zero_summary_without_reviews','invalid_json','non_json'].includes(reason);
+      const baseDelayHours = malformed ? 72 : 1;
       await sql`INSERT INTO public.steam_review_refresh_state (game_id, attempted_at, next_attempt_at, failures)
-        VALUES (${game.id}, now(), now() + interval '1 hour', 1)
+        VALUES (${game.id}, now(), now() + ${baseDelayHours} * interval '1 hour', 1)
         ON CONFLICT (game_id) DO UPDATE SET attempted_at = now(), failures = steam_review_refresh_state.failures + 1,
-          next_attempt_at = now() + least(24, power(2, least(steam_review_refresh_state.failures, 5))) * interval '1 hour'`;
-      console.warn(`Steam review refresh failed (${stats.failed}): ${error.message}`);
+          next_attempt_at = now() + least(336, ${baseDelayHours} * power(2, least(steam_review_refresh_state.failures, 5))) * interval '1 hour'`;
+      console.warn(`Steam review refresh failed (${stats.failed}, ${reason})`);
       // A provider outage must not fan out across hundreds of games.
-      if (stats.failed >= 3) break;
+      if (!malformed || stats.failed >= 3) break;
     }
     if (pauseMs) await new Promise(resolve => setTimeout(resolve, pauseMs));
   }
@@ -87,7 +91,8 @@ async function main() {
     if (!locked) return;
     run = await startRun(sql, 'refresh-steam-reviews');
     const limitArg = process.argv.find(arg => arg.startsWith('--limit='));
-    const stats = await refreshReviewBatch(sql, { limit: limitArg ? integer(limitArg.split('=')[1]) : integer(process.env.STEAM_REVIEW_LIMIT || 50) });
+    const requestedLimit = limitArg ? integer(limitArg.split('=')[1]) : integer(process.env.STEAM_REVIEW_LIMIT || 25);
+    const stats = await refreshReviewBatch(sql, { limit: Math.max(1, Math.min(25, requestedLimit)) });
     const error = stats.failed ? `${stats.failed} Steam refreshes failed; remaining work deferred` : null;
     await finishRun(sql, run.id, { rows_scanned: stats.scanned, rows_updated: stats.refreshed, error_message: error, metadata: stats });
     console.log(JSON.stringify(stats));

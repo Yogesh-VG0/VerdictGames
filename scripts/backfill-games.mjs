@@ -55,7 +55,8 @@ const args = Object.fromEntries(
 
 const YEAR_FROM    = parseInt(args["year-from"]   ?? "2022");
 const YEAR_TO      = parseInt(args["year-to"]     ?? String(new Date().getFullYear()));
-const LIMIT        = parseInt(args["limit"]        ?? "60");
+const LIMIT        = Math.max(1, Math.min(60, parseInt(args["limit"] ?? "60") || 6));
+const MAX_PAGES    = Math.max(1, Math.min(10, parseInt(args["pages"] ?? "4") || 2));
 const CONCURRENCY  = Math.max(1, Math.min(5, parseInt(args["concurrency"] ?? process.env.SCHEDULER_INGEST_CONCURRENCY ?? "2") || 2));
 const DELAY_MS     = parseInt(args["delay-ms"]     ?? "500");
 const DRY_RUN      = args["dry-run"] === true;
@@ -187,13 +188,6 @@ try {
     }
   }
 
-  // Load existing DB titles for deduplication
-  console.log("📦 Loading existing games from DB...");
-  const existingRows = await sql`SELECT slug, title FROM games`;
-  const existingSlugs  = new Set(existingRows.map((r) => r.slug));
-  const existingTitles = new Set(existingRows.map((r) => normTitle(r.title)));
-  console.log(`  ${existingRows.length} games already in DB\n`);
-
   let fetched = 0;
   let ingested = 0;
   let skipped = 0;
@@ -203,7 +197,7 @@ try {
   let rawgFailures = 0;
 
   // ── Year loop ──
-  for (let year = resumeYear; year >= YEAR_FROM; year--) {
+  years: for (let year = resumeYear; year >= YEAR_FROM; year--) {
     if (fetched >= LIMIT) break;
 
     const dateFrom = `${year}-01-01`;
@@ -216,33 +210,52 @@ try {
     let yearNew = 0;
 
     while (fetched < LIMIT) {
+      if (rawgRequests >= MAX_PAGES) {
+        if (!DRY_RUN) saveCheckpoint({ lastYear: year, lastPage: page });
+        break years;
+      }
       let data;
       try {
         rawgRequests++;
         data = await rawgFetch(`/games?dates=${dateFrom},${dateTo}&ordering=-rating&page=${page}&page_size=${PAGE_SIZE}&metacritic=60,100&exclude_additions=true`);
+        if (!Array.isArray(data?.results)) throw new Error("Backfill source page is incomplete");
       } catch (e) {
         rawgFailures++;
+        if (!DRY_RUN) saveCheckpoint({ lastYear: year, lastPage: page });
         console.log(`  ✗ RAWG error p${page}: ${e.message}`);
-        break;
+        break years;
       }
 
-      const rawGames = (data?.results ?? []).filter((g) => {
+      const source = data.results.slice(0, PAGE_SIZE);
+      const ids = source.map(g => g.id).filter(id => Number.isSafeInteger(id) && id > 0 && id <= 2_147_483_647);
+      const slugs = source.filter(g => g.name).map(g => slugifyTitle(g.name));
+      const existingRows = await sql`SELECT slug, title, rawg_id FROM public.games
+        WHERE slug = ANY(${slugs}::text[]) OR rawg_id = ANY(${ids}::int[])`;
+      const existingIds = new Set(existingRows.map(row => row.rawg_id));
+      const existingSlugs = new Set(existingRows.map(row => row.slug));
+      const existingTitles = new Set(existingRows.map(row => normTitle(row.title)));
+      const rawGames = source.filter((g) => {
         if ((g.rating ?? 0) < MIN_RAWG_RATING) return false;
         if ((g.ratings_count ?? 0) < MIN_RATINGS_COUNT) return false;
-        if (!g.name) return false;
+        if (!g.name || !g.slug || !ids.includes(g.id)) return false;
         const s = slugifyTitle(g.name);
         const n = normTitle(g.name);
-        if (existingSlugs.has(s) || existingTitles.has(n)) { skipped++; return false; }
+        if (existingIds.has(g.id) || existingSlugs.has(s) || existingTitles.has(n)) { skipped++; return false; }
         return true;
       });
 
       if (rawGames.length === 0) {
-        if (!data.next) break;
+        if (!data.next) {
+          if (!DRY_RUN) saveCheckpoint({ lastYear: year - 1, lastPage: 1 });
+          break;
+        }
         page++;
-        saveCheckpoint({ lastYear: year, lastPage: page });
+        if (!DRY_RUN) saveCheckpoint({ lastYear: year, lastPage: page });
         continue;
       }
 
+      const remaining = LIMIT - fetched;
+      const errorsBefore = errors;
       if (DRY_RUN) {
         rawGames.slice(0, LIMIT - fetched).forEach((g) => {
           console.log(`  [DRY] ${g.name} (${year}, ★${g.rating})`);
@@ -258,9 +271,10 @@ try {
           const title = normTitle(rawgGame.name);
 
           try {
-            const result = await ingestGameDirect(sql, rawgGame.name, { expectedSlug: rawgGame.slug });
+            const result = await ingestGameDirect(sql, rawgGame.name, { expectedSlug: rawgGame.slug, expectedRawgId: rawgGame.id });
             if (result.success) {
-              ingested++;
+              if (result.alreadyExisted) skipped++;
+              else ingested++;
               existingSlugs.add(slug);
               existingTitles.add(title);
               console.log(`  ✓ [${ingested}] ${rawgGame.name} (${year})`);
@@ -282,9 +296,14 @@ try {
         yearNew += batch.length;
       }
 
-      saveCheckpoint({ lastYear: year, lastPage: page });
+      const pageFinished = rawGames.length <= remaining && errors === errorsBefore;
+      if (!DRY_RUN) saveCheckpoint({
+        lastYear: pageFinished && !data.next ? year - 1 : year,
+        lastPage: pageFinished ? (data.next ? page + 1 : 1) : page,
+      });
       console.log(`  p${page}: +${rawGames.length} candidates (${yearNew} this year, ${fetched}/${LIMIT} total)`);
 
+      if (!pageFinished) break years;
       if (!data.next) break;
       page++;
       await sleep(DELAY_MS);
@@ -301,7 +320,7 @@ try {
   }
 
   // All done — clear checkpoint so next full run starts fresh
-  if (!DRY_RUN && fetched < LIMIT) clearCheckpoint();
+  if (!DRY_RUN && (loadCheckpoint()?.lastYear ?? YEAR_TO) < YEAR_FROM) clearCheckpoint();
 
   // Finalize ingest run
   if (!DRY_RUN && runId) {
@@ -328,7 +347,8 @@ try {
       rows_scanned: fetched,
       rows_created: ingested,
       rows_skipped: skipped,
-      metadata: { errors, yearFrom: YEAR_FROM, yearTo: YEAR_TO },
+      metadata: { errors, rawgRequests, rawgFailures, yearFrom: YEAR_FROM, yearTo: YEAR_TO },
+      outcome: rawgFailures || errors ? 'deferred' : null,
     });
   }
 } catch (err) {
