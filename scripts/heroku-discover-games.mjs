@@ -119,7 +119,14 @@ try {
   let snapshotCount;
   try {
     if(process.env.DISCOVERY_PROVIDER==='igdb') throw new Error('RAWG health gate selected independent discovery');
-    if (process.env.DISCOVERY_REFRESH_UPCOMING !== 'false') snapshotCount=await refreshDiscoverySnapshot(sql);
+    if (process.env.DISCOVERY_REFRESH_UPCOMING !== 'false') {
+      snapshotCount = await refreshDiscoverySnapshot(sql);
+    } else {
+      const [snapshot] = await sql`SELECT fetched_at >= now() - interval '8 hours' AS fresh
+        FROM public.gx_cache WHERE feed_key = 'discovery:rawg:upcoming:v1'`;
+      // Keep the daily fallback available after a missed independent run.
+      if (!snapshot?.fresh) snapshotCount = await refreshDiscoverySnapshot(sql);
+    }
     console.log('Community ranking snapshot refresh:',await refreshCommunitySnapshots(sql));
   }
   catch (error) {

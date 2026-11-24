@@ -25,11 +25,16 @@ export function getProvider(input) {
 }
 
 const job = process.env.CATALOGUE_BUDGET_JOB;
+const counts = {};
+const blocked = new Set();
+
+export function readMaintenanceBudget() {
+  return job && providerBudgets[job] ? { provider_attempts: { ...counts }, budget_exhausted: [...blocked] } : null;
+}
+
 if (job && providerBudgets[job]) {
   const budget = providerBudgets[job];
   const baseFetch = globalThis.fetch;
-  const counts = {};
-  const blocked = new Set();
   globalThis.fetch = async (input, init) => {
     const provider = getProvider(input);
     const count = counts[provider] ?? 0;
