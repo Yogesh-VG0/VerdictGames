@@ -11,20 +11,25 @@ import { isPublicSafeGame } from '@/lib/utils/publicSafety';
 import { coalesceCatalogueRead } from '@/lib/db/cached-catalogue';
 
 const PUBLIC_DATABASE_READ_TIMEOUT_MS = 10_000;
+// Keep the existing public game projection except fields the hub mapper never reads.
+const UNUSED_HUB_COLUMNS = new Set(['verdict_summary', 'critic_source_count', 'created_at', 'updated_at']);
+const DEVELOPER_HUB_COLUMNS = GAME_CARD_COLUMNS_WITH_DESC.split(',')
+  .filter(column => !UNUSED_HUB_COLUMNS.has(column)).join(',');
 
 const loadDeveloperNames = unstable_cache(coalesceCatalogueRead(async () => {
   const db = getPublicSupabase();
   const names = new Set<string>();
   let after: string | undefined;
   for (;;) {
-    let query = db.from('games').select('developer').not('developer', 'is', null)
+    // Shorten the repeated JSON key while keeping the database cursor on developer.
+    let query = db.from('games').select('d:developer').not('developer', 'is', null)
       .neq('developer', '').order('developer', { ascending: true }).limit(1000);
     if (after) query = query.gt('developer', after);
     const { data, error } = await query.abortSignal(AbortSignal.timeout(PUBLIC_DATABASE_READ_TIMEOUT_MS));
     if (error) throw error;
-    for (const row of data ?? []) if (row.developer) names.add(row.developer);
+    for (const row of data ?? []) if (row.d) names.add(row.d);
     if (!data?.length || data.length < 1000) return [...names];
-    const last = data[data.length - 1].developer;
+    const last = data[data.length - 1].d;
     if (!last || last === after) throw new Error('Developer directory cursor did not advance');
     after = last;
   }
@@ -32,7 +37,7 @@ const loadDeveloperNames = unstable_cache(coalesceCatalogueRead(async () => {
 
 const cachedDeveloperHub = unstable_cache(async (slug: string, names: string[]): Promise<DeveloperHub | null> => {
   const rows = await collectSitemapRows(async (after, size) => {
-    let query = getPublicSupabase().from('games').select(GAME_CARD_COLUMNS_WITH_DESC)
+    let query = getPublicSupabase().from('games').select(DEVELOPER_HUB_COLUMNS)
       .in('developer', names).order('id', { ascending: true }).limit(size);
     if (after) query = query.gt('id', after);
     const { data, error } = await query.abortSignal(AbortSignal.timeout(PUBLIC_DATABASE_READ_TIMEOUT_MS));
