@@ -5,7 +5,7 @@ on:
     # GitHub cron is UTC. Off-hour minutes reduce scheduler delays.
     # Restore essential freshness first. Other jobs remain available for manual dispatch.
     - cron: "17 0,12 * * *" # Steam players and trending, twice daily
-    - cron: "37 3 * * *" # Standard discovery, daily
+    - cron: "37 3 * * *" # Essential discovery, daily
     - cron: "47 6 * * *" # Recent release and stale metadata refresh, daily
   workflow_dispatch:
     inputs:
@@ -32,13 +32,14 @@ on:
 permissions:
   contents: read
 
-concurrency:
-  # A single worker prevents different jobs competing for the free database.
-  group: scheduled-maintenance
-  cancel-in-progress: false
-
 jobs:
   run:
+    # Let explicitly approved manual trials run before recurring work is enabled.
+    if: github.event_name == 'workflow_dispatch' || vars.CATALOGUE_CRON_ENABLED == 'true'
+    concurrency:
+      # A single worker prevents different jobs competing for the free database.
+      group: scheduled-maintenance
+      cancel-in-progress: false
     name: ${{ inputs.job || 'Scheduled job' }}
     runs-on: ubuntu-latest
     timeout-minutes: 60
@@ -109,7 +110,6 @@ jobs:
         env:
           JOB: ${{ steps.resolve.outputs.job }}
           DISCOVERY_PROVIDER: ${{ steps.rawg_health.outputs.discovery_provider }}
-          RE_ENRICH_LIMIT: ${{ github.event_name == 'schedule' && '10' || '20' }}
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
           RAWG_API_KEY: ${{ secrets.RAWG_API_KEY }}
           TWITCH_CLIENT_ID: ${{ secrets.TWITCH_CLIENT_ID }}
@@ -125,9 +125,9 @@ jobs:
           case "$JOB" in
             refresh-trending) node scripts/heroku-refresh-trending.mjs ;;
             refresh-steam-reviews) node scripts/refresh-steam-reviews.mjs ;;
-            re-enrich) node scripts/heroku-re-enrich.mjs --limit "$RE_ENRICH_LIMIT" ;;
+            re-enrich) node scripts/heroku-re-enrich.mjs --limit 10 ;;
             seed-curated-lists) node scripts/seed-curated-lists.mjs ;;
-            discover-standard) node scripts/heroku-discover-games.mjs ;;
+            discover-standard) node scripts/heroku-discover-games.mjs --essential ;;
             discover-deep) node scripts/heroku-discover-games.mjs --deep ;;
             backfill-games) node scripts/backfill-games.mjs ;;
             backfill-mobile-android) node scripts/backfill-mobile-listings.mjs --android-only ;;
