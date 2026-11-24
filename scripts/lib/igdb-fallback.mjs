@@ -61,7 +61,7 @@ export async function upsertIgdbEssential(sql,game,{allowCreate=false}={}) {
   });
 }
 
-export async function refreshIgdbCatalogue(sql,query) {
+export async function refreshIgdbCatalogue(sql,query,{limit=80}={}) {
   const upcoming=await readIgdbDiscovery(query);
   const known=await sql`SELECT igdb_id FROM public.games WHERE igdb_id IS NOT NULL AND
     (last_enriched_at IS NULL OR last_enriched_at<now()-interval '24 hours') ORDER BY last_enriched_at NULLS FIRST,id LIMIT 40`;
@@ -73,7 +73,7 @@ export async function refreshIgdbCatalogue(sql,query) {
   }
   const unique=new Map([...upcoming,...refreshed].map(game=>[game.id,game]));
   const totals={created:0,updated:0,skipped:0,scanned:unique.size,provider:'igdb',rawgAvailable:false};
-  for(const game of unique.values()) {
+  for(const game of [...unique.values()].slice(0,limit)) {
     const result=await upsertIgdbEssential(sql,game,{allowCreate:true});
     for(const key of ['created','updated','skipped']) totals[key]+=result[key];
   }

@@ -2,7 +2,7 @@
 // prerequisite for existing Steam catalogue refreshes.
 export function missingMaintenanceSecrets(job, environment) {
   const missing = environment.SUPABASE_DB_URL ? [] : ['SUPABASE_DB_URL'];
-  if (['re-enrich', 'backfill-games'].includes(job) && !environment.RAWG_API_KEY) {
+  if (['re-enrich', 'backfill-games', 'refresh-upcoming-snapshot', 'discover-steam-popular'].includes(job) && !environment.RAWG_API_KEY) {
     missing.push('RAWG_API_KEY');
   }
   if (['discover-standard', 'discover-deep'].includes(job)

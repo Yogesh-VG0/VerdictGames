@@ -12,6 +12,7 @@ import HeroImage from "@/components/ui/HeroImage";
 import { collapsePlatforms } from "@/lib/utils/platform";
 import { cn, getStableYear } from "@/lib/utils";
 import {getHeroSummary} from '@/lib/utils/homepageHero';
+import { getFreshPlayerSignals } from '@/lib/utils/trending';
 
 interface HeroCarouselProps {
   games: Game[];
@@ -153,6 +154,10 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
   }, [paused, slideCount, interval, paginate]);
 
   if (!game) return null;
+  const { players: freshPlayers } = getFreshPlayerSignals({
+    current_players: game.currentPlayers,
+    players_updated_at: game.playersUpdatedAt,
+  });
 
   // Context-aware reason label per slide
   const getReasonLabel = (g: Game): string => {
@@ -298,10 +303,10 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
                   <span>{Math.round(game.hltbMain)}h main story</span>
                 </>
               )}
-              {game.currentPlayers && game.currentPlayers > 1000 && (
+              {freshPlayers > 1000 && (
                 <>
                   <span>·</span>
-                  <span>{(game.currentPlayers / 1000).toFixed(1)}K playing</span>
+                  <span>{(freshPlayers / 1000).toFixed(1)}K playing</span>
                 </>
               )}
             </div>

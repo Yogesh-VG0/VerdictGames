@@ -13,6 +13,13 @@ on:
     - cron: "23 2 * * 6" # Curated lists, weekly
     - cron: "29 5 * * 2" # Android verification, weekly
     - cron: "29 5 * * 5" # iOS verification, weekly
+    - cron: "53 2,8,14,20 * * *" # Independent upcoming snapshots
+    - cron: "23 6,18 * * *" # Additional Trending passes, staggered from player observations
+    - cron: "47 13 * * *" # Second bounded enrichment cohort
+    - cron: "57 9 * * *" # Missing Steam chart games
+    - cron: "53 4 * * 3" # Incremental deep discovery
+    - cron: "51 4 * * 0" # Checkpointed historical backfill
+    - cron: "9 7 * * *" # Freshness and failure summary
   workflow_dispatch:
     inputs:
       job:
@@ -22,6 +29,9 @@ on:
         options:
           - refresh-trending
           - refresh-player-counts
+          - refresh-upcoming-snapshot
+          - discover-steam-popular
+          - maintenance-health
           - refresh-steam-reviews
           - re-enrich
           - seed-curated-lists
@@ -31,9 +41,9 @@ on:
           - backfill-mobile-android
           - backfill-mobile-ios
       review_limit:
-        description: Maximum Steam review caches to refresh (1–1000)
+        description: Maximum Steam review caches to refresh (1–25)
         required: false
-        default: "50"
+        default: "25"
         type: string
 
 permissions:
@@ -49,7 +59,10 @@ jobs:
       (github.event.schedule != '43 4 * * 1,4' || vars.CATALOGUE_REVIEW_CRON_ENABLED == 'true') &&
       (github.event.schedule != '23 2 * * 6' || vars.CATALOGUE_CURATED_CRON_ENABLED == 'true') &&
       (!contains(fromJSON('["29 5 * * 2","29 5 * * 5"]'), github.event.schedule) ||
-      vars.CATALOGUE_MOBILE_CRON_ENABLED == 'true'))
+      vars.CATALOGUE_MOBILE_CRON_ENABLED == 'true') &&
+      (github.event.schedule != '53 2,8,14,20 * * *' || vars.CATALOGUE_UPCOMING_CRON_ENABLED == 'true') &&
+      (!contains(fromJSON('["23 6,18 * * *","47 13 * * *","57 9 * * *","53 4 * * 3","51 4 * * 0","9 7 * * *"]'), github.event.schedule) ||
+      vars.CATALOGUE_FOLLOWUP_CRON_ENABLED == 'true'))
     concurrency:
       # A single worker prevents different jobs competing for the free database.
       group: scheduled-maintenance
@@ -77,6 +90,13 @@ jobs:
               "23 2 * * 6") job="seed-curated-lists" ;;
               "29 5 * * 2") job="backfill-mobile-android" ;;
               "29 5 * * 5") job="backfill-mobile-ios" ;;
+              "53 2,8,14,20 * * *") job="refresh-upcoming-snapshot" ;;
+              "23 6,18 * * *") job="refresh-trending" ;;
+              "47 13 * * *") job="re-enrich" ;;
+              "57 9 * * *") job="discover-steam-popular" ;;
+              "53 4 * * 3") job="discover-deep" ;;
+              "51 4 * * 0") job="backfill-games" ;;
+              "9 7 * * *") job="maintenance-health" ;;
               *) echo "::error::Unknown schedule: $SCHEDULE"; exit 1 ;;
             esac
           fi
@@ -105,8 +125,17 @@ jobs:
       - name: Install production dependencies
         run: npm ci --omit=dev --ignore-scripts
 
+      - name: Check database pressure
+        id: pressure
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          SCHEDULER_DB_MAX_CONNECTIONS: "1"
+          SCHEDULER_DB_CONNECT_TIMEOUT_SECONDS: "5"
+        run: node scripts/check-maintenance-pressure.mjs "${{ steps.resolve.outputs.job }}"
+
       - name: Check RAWG availability
         id: rawg_health
+        if: steps.pressure.outputs.run_job == 'true'
         env:
           RAWG_API_KEY: ${{ secrets.RAWG_API_KEY }}
           TWITCH_CLIENT_ID: ${{ secrets.TWITCH_CLIENT_ID }}
@@ -135,21 +164,32 @@ jobs:
           TWITCH_CLIENT_SECRET: ${{ secrets.TWITCH_CLIENT_SECRET }}
           STEAM_API_KEY: ${{ secrets.STEAM_API_KEY }}
           STEAM_REVIEW_LIMIT: ${{ inputs.review_limit || '25' }}
+          DISCOVERY_REFRESH_UPCOMING: ${{ vars.CATALOGUE_UPCOMING_CRON_ENABLED != 'true' }}
+          CATALOGUE_UPCOMING_CRON_ENABLED: ${{ vars.CATALOGUE_UPCOMING_CRON_ENABLED }}
+          CATALOGUE_BUDGET_JOB: ${{ steps.resolve.outputs.job }}
+          CATALOGUE_PLAYER_CRON_ENABLED: ${{ vars.CATALOGUE_PLAYER_CRON_ENABLED }}
+          CATALOGUE_REVIEW_CRON_ENABLED: ${{ vars.CATALOGUE_REVIEW_CRON_ENABLED }}
+          CATALOGUE_CURATED_CRON_ENABLED: ${{ vars.CATALOGUE_CURATED_CRON_ENABLED }}
+          CATALOGUE_MOBILE_CRON_ENABLED: ${{ vars.CATALOGUE_MOBILE_CRON_ENABLED }}
           SCHEDULER_DB_MAX_CONNECTIONS: "2"
           SCHEDULER_DB_CONNECT_TIMEOUT_SECONDS: "30"
           SCHEDULER_DB_IDLE_TIMEOUT_SECONDS: "30"
           # One connection remains available while the session advisory lock is held.
           SCHEDULER_INGEST_CONCURRENCY: "1"
         run: |
+          export NODE_OPTIONS="--import=./scripts/lib/maintenance-provider-budget.mjs"
           case "$JOB" in
             refresh-trending) node scripts/heroku-refresh-trending.mjs ;;
             refresh-player-counts) node scripts/heroku-refresh-trending.mjs --players-only ;;
+            refresh-upcoming-snapshot) node scripts/catalogue-discovery-maintenance.mjs upcoming ;;
+            maintenance-health) node scripts/maintenance-health.mjs ;;
             refresh-steam-reviews) node scripts/refresh-steam-reviews.mjs ;;
             re-enrich) node scripts/heroku-re-enrich.mjs --limit 10 ;;
             seed-curated-lists) node scripts/seed-curated-lists.mjs ;;
             discover-standard) node scripts/heroku-discover-games.mjs --essential ;;
-            discover-deep) node scripts/heroku-discover-games.mjs --deep ;;
-            backfill-games) node scripts/backfill-games.mjs ;;
+            discover-steam-popular) node scripts/catalogue-discovery-maintenance.mjs popular ;;
+            discover-deep) node scripts/catalogue-discovery-maintenance.mjs deep ;;
+            backfill-games) node scripts/backfill-games.mjs --limit=4 --pages=2 ;;
             backfill-mobile-android) node scripts/backfill-mobile-listings.mjs --android-only --limit=25 ;;
             backfill-mobile-ios) node scripts/backfill-mobile-listings.mjs --ios-only --limit=25 ;;
             *) echo "::error::Unknown job: $JOB"; exit 1 ;;

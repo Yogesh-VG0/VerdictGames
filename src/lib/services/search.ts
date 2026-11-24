@@ -1,3 +1,4 @@
+import { getFreshPlayerSignals } from '@/lib/utils/trending';
 import { unstable_cache } from "next/cache";
 import { searchGamesStateToFilters, type SearchGamesState } from "@/lib/search";
 import { GAME_CARD_COLUMNS_WITH_DESC } from "@/lib/db/columns";
@@ -27,7 +28,7 @@ import {hasKnownFullRelease,hasUnreleasedStatus} from '@/lib/utils/release-statu
 export const SEARCH_REVALIDATE_SECONDS = 300;
 export const SEARCH_API_CACHE_CONTROL = `s-maxage=${SEARCH_REVALIDATE_SECONDS}, stale-while-revalidate=300`;
 export const SEARCH_PAGE_SIZE = 25;
-const SEARCH_RESULTS_CACHE_NAMESPACE = "search-results-v13";
+const SEARCH_RESULTS_CACHE_NAMESPACE = "search-results-v14";
 // Ranking and eligibility need evidence and safety metadata, not display copy,
 // prices or hero flags. Hydrate full card fields only for the visible page.
 const BROWSE_POOL_COLUMNS = GAME_CARD_COLUMNS_WITH_DESC.split(',').filter(column => ![
@@ -42,7 +43,7 @@ const BROWSE_POOL_COLUMNS = GAME_CARD_COLUMNS_WITH_DESC.split(',').filter(column
 const RECENT_POOL_COLUMNS = [
   'id','title','cover_image','release_date','created_at','steam_app_id',
   'review_count','steam_total_count','rawg_rating','score_source','user_score',
-  'score','verdict_score','confidence','current_players','is_provisional',
+  'score','verdict_score','confidence','current_players','players_updated_at','is_provisional',
   'verdict_label','developer','publisher','explore_primary_safe',
 ].join(',');
 
@@ -91,7 +92,7 @@ function titleSimilarity(query: string, title: string): number {
 function passesBrowseDiscoveryFloor(row: GameRow): boolean {
   const reviewCount = getEvidenceReviewCount(row);
   const confidence = row.confidence ?? 0;
-  const currentPlayers = row.current_players ?? 0;
+  const currentPlayers = getFreshPlayerSignals(row).players;
   const qualityScore = confidenceWeightedScore(row);
 
   if (qualityScore < 74) {
@@ -122,8 +123,8 @@ function getDateAgeDays(value: string | null | undefined): number {
 function getBrowseRelevanceDiscoveryScore(row: GameRow): number {
   const qualityScore = confidenceWeightedScore(row);
   const evidenceReviewCount = getEvidenceReviewCount(row);
-  const currentPlayers = row.current_players ?? 0;
-  const momentum = Math.max(0, row.momentum ?? 0);
+  const currentPlayers = getFreshPlayerSignals(row).players;
+  const momentum = Math.max(0, getFreshPlayerSignals(row).momentum);
   const ageDays = getDateAgeDays(row.release_date);
   const freshness = ageDays <= 180
     ? 10
@@ -148,7 +149,7 @@ function getBrowseTopRatedAgeDays(row: GameRow): number {
 
 export function isBrowseTopRatedEligible(row: GameRow): boolean {
   const evidenceReviewCount = getEvidenceReviewCount(row);
-  const currentPlayers = row.current_players ?? 0;
+  const currentPlayers = getFreshPlayerSignals(row).players;
   const ageDays = getBrowseTopRatedAgeDays(row);
 
   if (ageDays <= 120 && currentPlayers < 400 && evidenceReviewCount < 50000) {
@@ -200,8 +201,8 @@ export function getBrowseTopRatedScore(row: GameRow): number {
   const qualityScore = confidenceWeightedScore(row);
   const evidenceReviewCount = getEvidenceReviewCount(row);
   const criticSources = getCriticSourceCount(row);
-  const currentPlayers = row.current_players ?? 0;
-  const momentum = Math.max(0, row.momentum ?? 0);
+  const currentPlayers = getFreshPlayerSignals(row).players;
+  const momentum = Math.max(0, getFreshPlayerSignals(row).momentum);
   const ageDays = getBrowseTopRatedAgeDays(row);
   const reviewScore = Math.min(14, Math.log10(evidenceReviewCount + 1) * 3.1);
   const activityScore = Math.min(18, Math.log10(currentPlayers + 1) * 4.6);
@@ -245,7 +246,7 @@ export function getBrowseTopRatedScore(row: GameRow): number {
 function passesRecentlyAddedDiscoveryFloor(row: GameRow): boolean {
   const qualityScore = confidenceWeightedScore(row);
   const evidenceReviewCount = getEvidenceReviewCount(row);
-  const currentPlayers = row.current_players ?? 0;
+  const currentPlayers = getFreshPlayerSignals(row).players;
   const releaseAgeDays = getDateAgeDays(row.release_date);
 
   if (!isPrimaryDiscoveryGame(row)) {
@@ -647,7 +648,7 @@ async function fetchSearchResults(state: SearchGamesState,poolOnly=false): Promi
       if (launchDiff !== 0) return launchDiff;
       const reviewDiff = getEvidenceReviewCount(right) - getEvidenceReviewCount(left);
       if (reviewDiff !== 0) return reviewDiff;
-      return (right.current_players ?? 0) - (left.current_players ?? 0);
+      return getFreshPlayerSignals(right).players - getFreshPlayerSignals(left).players;
     });
   } else if (isRecentlyAdded && rows.length > 0) {
     rows.sort((left, right) => {
@@ -694,7 +695,7 @@ async function fetchSearchResults(state: SearchGamesState,poolOnly=false): Promi
       if (scoreDiff !== 0) return scoreDiff;
       const reviewDiff = getEvidenceReviewCount(right) - getEvidenceReviewCount(left);
       if (reviewDiff !== 0) return reviewDiff;
-      const playerDiff = (right.current_players ?? 0) - (left.current_players ?? 0);
+      const playerDiff = getFreshPlayerSignals(right).players - getFreshPlayerSignals(left).players;
       if (playerDiff !== 0) return playerDiff;
       const criticDiff = getCriticSourceCount(right) - getCriticSourceCount(left);
       if (criticDiff !== 0) return criticDiff;

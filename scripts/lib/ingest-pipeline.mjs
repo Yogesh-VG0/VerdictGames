@@ -10,6 +10,8 @@
  *   slugify(text)                         — URL-safe slug
  */
 
+import { recordMaintenanceAttempt } from './maintenance-due.mjs';
+import { observedSteamPlayers } from './steam-player-batch.mjs';
 import { withVerifiedEditorialModes } from '../../src/lib/utils/editorial-eligibility.mjs';
 import { rawgFetchJson } from "./rawg-client.mjs";
 import { isInfrastructureDbError } from "./scheduler-logger.mjs";
@@ -229,7 +231,7 @@ async function getSteamDetails(appId) {
 }
 async function getSteamPlayers(appId) {
   try { const r = await fetch(`${STEAM_API_BASE}/ISteamUserStats/GetNumberOfCurrentPlayers/v1/?appid=${appId}`, { signal: AbortSignal.timeout(10000) });
-    if (!r.ok) return null; const d = await r.json(); return d.response?.result === 1 ? d.response.player_count : null; } catch { return null; }
+    if (!r.ok) return null; return observedSteamPlayers(await r.json()); } catch { return null; }
 }
 function steamPrice(d) {
   if (!d) return { cur: null, currency: "USD", free: false };
@@ -258,9 +260,9 @@ async function igdbQ(endpoint, body) {
     body, signal: AbortSignal.timeout(15000) }); if (!r.ok) return null; return r.json(); } catch { return null; }
 }
 function igdbConfigured() { return !!(process.env.TWITCH_CLIENT_ID && process.env.TWITCH_CLIENT_SECRET); }
-export async function discoverIgdbDirect(sql) {
+export async function discoverIgdbDirect(sql, options) {
   if(!igdbConfigured()) throw new Error('Independent IGDB discovery is not configured');
-  return refreshIgdbCatalogue(sql,igdbQ);
+  return refreshIgdbCatalogue(sql,igdbQ,options);
 }
 export { igdbQ as queryIgdbDirect };
 function esc(s) { return s.replace(/"/g, '\\"'); }
@@ -438,10 +440,18 @@ const BLOCKED = new Set(["grand-theft-aito-vi"]);
  * @returns {Promise<{success:boolean, gameId:string|null, slug:string|null, title:string|null, rawgId:number|null, message:string, alreadyExisted:boolean}>}
  */
 export async function ingestGameDirect(sql, query, options = {}) {
-  const { forceRefresh = false, expectedSlug } = options;
+  const { forceRefresh = false, expectedSlug, expectedGameId, expectedSteamAppId, expectedRawgId } = options;
+  const [target] = expectedGameId ? await sql`SELECT id, slug, release_status, header_image, igdb_id,
+    rawg_id, steam_app_id, is_featured_manual FROM games WHERE id = ${expectedGameId}` : [];
+  if (expectedGameId && !target) return { success: false, message: "Expected catalogue game is missing" };
+  const verifiedId = Number(target?.rawg_id ?? expectedRawgId);
+  const rawgDetail = verifiedId > 0 && Number.isSafeInteger(verifiedId) ? await getRawgGame(verifiedId) : null;
+  if (verifiedId > 0 && rawgDetail?.id !== verifiedId) {
+    return { success: false, message: "RAWG detail did not match the stored identity" };
+  }
 
   // ── 1. Search RAWG ──
-  const search = await searchRawg(query);
+  const search = rawgDetail ? { results: [rawgDetail] } : await searchRawg(query);
   if (!search.results?.length) return { success: false, gameId: null, slug: null, title: null, rawgId: null, message: `No RAWG results for "${query}".`, alreadyExisted: false };
 
   // ── 2. Pick best match ──
@@ -462,23 +472,44 @@ export async function ingestGameDirect(sql, query, options = {}) {
     return s;
   };
   const best = search.results.reduce((b, c) => sc(c) > sc(b) ? c : b, search.results[0]);
-  if (sc(best) < 30) return { success: false, gameId: null, slug: null, title: best?.name ?? null, rawgId: best?.id ?? null, message: `No confident match for "${query}".`, alreadyExisted: false };
+  if (!rawgDetail && sc(best) < 30) return { success: false, gameId: null, slug: null, title: best?.name ?? null, rawgId: best?.id ?? null, message: `No confident match for "${query}".`, alreadyExisted: false };
 
   const slug = slugify(best.name);
   if (BLOCKED.has(slug)) return { success: false, gameId: null, slug: null, title: best.name, rawgId: best.id, message: `"${slug}" is blocklisted.`, alreadyExisted: false };
 
   // ── 3. Check existence ──
-  const [existing] = await sql`SELECT id, slug, release_status, header_image, igdb_id, rawg_id, steam_app_id, is_featured_manual
+  if (target) {
+    if (!rawgDetail && (slug !== target.slug || norm(best.name) !== qn)) {
+      return { success: false, message: "Unmapped game requires an exact title and canonical slug" };
+    }
+    const [conflict] = await sql`
+      SELECT 1 FROM public.game_sources WHERE source_name = 'rawg'
+        AND source_game_id = ${String(best.id)} AND game_id <> ${target.id}
+      UNION ALL
+      SELECT 1 FROM public.games WHERE rawg_id = ${best.id} AND id <> ${target.id}
+      LIMIT 1`;
+    if (conflict) return { success: false, message: "RAWG identity already belongs to another game" };
+  }
+  const [matchedExisting] = target ? [] : await sql`SELECT id, slug, release_status, header_image, igdb_id, rawg_id, steam_app_id, is_featured_manual
     FROM games WHERE slug = ${slug} OR rawg_id = ${best.id} LIMIT 1`;
+  const existing = target ?? matchedExisting;
   if (existing && !forceRefresh) return { success: true, gameId: existing.id, slug: existing.slug, title: best.name, rawgId: best.id, message: "Already exists.", alreadyExisted: true };
 
   // ── 4. Fetch full details ──
   const [fullGame, screenshots, storeLinks] = await Promise.all([
-    getRawgGame(best.id), getRawgScreenshots(best.id), getRawgStoreLinks(best.id),
+    rawgDetail ?? getRawgGame(best.id), getRawgScreenshots(best.id), getRawgStoreLinks(best.id),
   ]);
 
   // ── 5. Enrich from multiple sources ──
-  const steamAppId = extractSteamAppId(fullGame.stores, storeLinks);
+  if (fullGame?.id !== best.id) return { success: false, message: "RAWG detail identity mismatch" };
+  const linkedSteamId = extractSteamAppId(fullGame.stores, storeLinks);
+  if (expectedSteamAppId && Number(linkedSteamId) !== expectedSteamAppId) {
+    return { success: false, message: "RAWG did not confirm the expected Steam app" };
+  }
+  if (target?.steam_app_id && linkedSteamId && Number(target.steam_app_id) !== Number(linkedSteamId)) {
+    return { success: false, message: "Steam association conflicts with the stored identity" };
+  }
+  const steamAppId = target?.steam_app_id ?? linkedSteamId;
   const playStoreUrl = extractPlayStoreUrl(fullGame.stores, storeLinks);
   const releaseYear = fullGame.released ? new Date(fullGame.released).getFullYear() : undefined;
   const sources = ["rawg"];
@@ -486,7 +517,7 @@ export async function ingestGameDirect(sql, query, options = {}) {
   const [steamRev, steamDet, steamPl, csData, igdbData, wikiData, hltbData] = await Promise.all([
     steamAppId ? getSteamReviews(steamAppId) : null,
     steamAppId ? getSteamDetails(steamAppId) : null,
-    steamAppId ? getSteamPlayers(steamAppId) : null,
+    steamAppId && !target ? getSteamPlayers(steamAppId) : null,
     findDeal(fullGame.name, steamAppId).catch(() => null),
     igdbConfigured() ? findIgdb(fullGame.name, releaseYear).catch(e => { console.warn("[ingest] IGDB failed:", e.message); return null; }) : null,
     findWiki(fullGame.name).catch(() => null),
@@ -699,6 +730,11 @@ export async function ingestGameDirect(sql, query, options = {}) {
       }
       upd[key] = val;
     }
+    if (curPlayers === null) {
+      delete upd.current_players;
+      delete upd.players_updated_at;
+    } else upd.momentum = 0;
+    delete upd.peak_players_24h;
     if (cur?.cover_image && !Object.hasOwn(upd, 'cover_image')) upd.media_source = cur.media_source;
 
     if (header && header !== existing.header_image) {
@@ -720,22 +756,22 @@ export async function ingestGameDirect(sql, query, options = {}) {
   // ── 7. Source mappings ──
   await sql`INSERT INTO game_sources (game_id, source_name, source_game_id, source_url)
     VALUES (${gameId}, 'rawg', ${String(fullGame.id)}, ${"https://rawg.io/games/" + fullGame.slug})
-    ON CONFLICT (source_name, source_game_id) DO UPDATE SET game_id = ${gameId}`.catch((error) => {
+    ON CONFLICT (source_name, source_game_id) DO NOTHING`.catch((error) => {
       if (isInfrastructureDbError(error)) throw error;
     });
   if (steamAppId) await sql`INSERT INTO game_sources (game_id, source_name, source_game_id, source_url)
     VALUES (${gameId}, 'steam', ${String(steamAppId)}, ${"https://store.steampowered.com/app/" + steamAppId})
-    ON CONFLICT (source_name, source_game_id) DO UPDATE SET game_id = ${gameId}`.catch((error) => {
+    ON CONFLICT (source_name, source_game_id) DO NOTHING`.catch((error) => {
       if (isInfrastructureDbError(error)) throw error;
     });
   if (artworkIgdb && ie?.igdbId) await sql`INSERT INTO game_sources (game_id, source_name, source_game_id, source_url)
     VALUES (${gameId}, 'igdb', ${String(ie.igdbId)}, ${ie.igdbUrl})
-    ON CONFLICT (source_name, source_game_id) DO UPDATE SET game_id = ${gameId}`.catch((error) => {
+    ON CONFLICT (source_name, source_game_id) DO NOTHING`.catch((error) => {
       if (isInfrastructureDbError(error)) throw error;
     });
   if (csId) await sql`INSERT INTO game_sources (game_id, source_name, source_game_id, source_url)
     VALUES (${gameId}, 'cheapshark', ${csId}, ${pDealUrl})
-    ON CONFLICT (source_name, source_game_id) DO UPDATE SET game_id = ${gameId}`.catch((error) => {
+    ON CONFLICT (source_name, source_game_id) DO NOTHING`.catch((error) => {
       if (isInfrastructureDbError(error)) throw error;
     });
 
@@ -753,53 +789,49 @@ export async function ingestGameDirect(sql, query, options = {}) {
  */
 export async function reEnrichBatch(sql, { limit = 10 } = {}) {
   const batchLimit = Math.min(Math.max(1, limit), 50);
-  const cutoff = new Date(Date.now() - 24 * 3600000).toISOString();
   const lockCutoff = new Date(Date.now() - 10 * 60000).toISOString();
-  const recentCutoff = new Date(Date.now() - 14 * 86400000).toISOString().slice(0, 10);
-  const today = new Date().toISOString().slice(0, 10);
-  const log = [];
-
-  // Fast-path: recently released under-enriched games
-  const fp = await sql`
-    SELECT id, title, slug, last_enriched_at, review_count, release_date
-    FROM games WHERE release_date >= ${recentCutoff} AND release_date <= ${today}
-      AND review_count < 100
-      AND (last_enriched_at < ${cutoff} OR last_enriched_at IS NULL)
-      AND (is_refreshing = false OR is_refreshing IS NULL OR refresh_started_at < ${lockCutoff} OR refresh_started_at IS NULL)
-    ORDER BY release_date DESC, last_enriched_at ASC NULLS FIRST, id LIMIT ${Math.min(batchLimit, 10)}`;
-  if (fp.length) { log.push(`Fast-path: ${fp.length} recent releases`); for (const g of fp) log.push(`  ${g.title} (${g.release_date}, ${g.review_count} reviews)`); }
-
-  // Standard stale games
-  const rem = batchLimit - fp.length;
-  let stale = [];
-  if (rem > 0) {
-    stale = await sql`
-      SELECT id, title, slug, last_enriched_at FROM games
-      WHERE (last_enriched_at < ${cutoff} OR last_enriched_at IS NULL)
-        AND id <> ALL(${fp.map(game => game.id)}::uuid[])
-        AND (is_refreshing = false OR is_refreshing IS NULL OR refresh_started_at < ${lockCutoff} OR refresh_started_at IS NULL)
-      ORDER BY last_enriched_at ASC NULLS FIRST, id LIMIT ${rem}`;
-  }
-
-  const all = [...fp, ...stale];
-  if (!all.length) return { refreshed: 0, failed: 0, total: 0, log: ["No stale games found"] };
-  log.push(`${all.length} games to re-enrich (${fp.length} fast-path + ${stale.length} standard)`);
+  const priorityLimit = Math.min(batchLimit, 4);
+  const priority = await sql`
+    SELECT g.id, g.title
+    FROM public.games g
+    LEFT JOIN public.maintenance_item_due_state s ON s.game_id = g.id AND s.job = 're-enrich'
+    WHERE (g.release_date BETWEEN current_date - 30 AND current_date + 30 OR g.trending IS TRUE)
+      AND CASE WHEN s.failures > 0 THEN s.next_attempt_at
+        ELSE LEAST(s.next_attempt_at, COALESCE(g.last_enriched_at + interval '2 days', '-infinity')) END <= now()
+      AND (g.is_refreshing IS DISTINCT FROM true OR g.refresh_started_at < ${lockCutoff} OR g.refresh_started_at IS NULL)
+    ORDER BY COALESCE(s.next_attempt_at, g.last_enriched_at, '-infinity'), g.id
+    LIMIT ${priorityLimit}`;
+  const rotating = await sql`
+    SELECT g.id, g.title
+    FROM public.games g
+    LEFT JOIN public.maintenance_item_due_state s ON s.game_id = g.id AND s.job = 're-enrich'
+    WHERE g.id <> ALL(${priority.map(game => game.id)}::uuid[])
+      AND COALESCE(s.next_attempt_at, g.last_enriched_at + interval '45 days', '-infinity') <= now()
+      AND (g.is_refreshing IS DISTINCT FROM true OR g.refresh_started_at < ${lockCutoff} OR g.refresh_started_at IS NULL)
+    ORDER BY COALESCE(s.next_attempt_at, g.last_enriched_at, '-infinity'), g.id
+    LIMIT ${batchLimit - priority.length}`;
+  const all = [...priority.map(game => ({ ...game, dueDays: 2 })), ...rotating.map(game => ({ ...game, dueDays: 45 }))];
+  const log = [`Selected ${all.length} due games (${priority.length} priority, ${rotating.length} rotating)`];
 
   let ok = 0, fail = 0;
   for (const game of all) {
     const now = new Date().toISOString();
     // Acquire lock
     try { const [lk] = await sql`UPDATE games SET is_refreshing = true, refresh_started_at = ${now}
-      WHERE id = ${game.id} AND (last_enriched_at < ${cutoff} OR last_enriched_at IS NULL)
+      WHERE id = ${game.id}
         AND (is_refreshing = false OR is_refreshing IS NULL OR refresh_started_at < ${lockCutoff} OR refresh_started_at IS NULL) RETURNING id`;
       if (!lk) { log.push(`SKIP ${game.title} — locked`); continue; }
     } catch (error) {
       if (isInfrastructureDbError(error)) throw error;
-      // Lock columns may not exist on older schemas.
+      fail++;
+      log.push(`FAIL ${game.title} - could not acquire refresh lock`);
+      continue;
     }
 
+    let succeeded = false;
     try {
-      const r = await ingestGameDirect(sql, game.title, { forceRefresh: true });
+      const r = await ingestGameDirect(sql, game.title, { forceRefresh: true, expectedGameId: game.id });
+      succeeded = r.success;
       if (r.success) { ok++; log.push(`OK ${game.title}`); } else { fail++; log.push(`FAIL ${game.title} — ${r.message}`); }
     } catch (e) {
       if (isInfrastructureDbError(e)) throw e;
@@ -814,7 +846,8 @@ export async function reEnrichBatch(sql, { limit = 10 } = {}) {
       }
     }
 
+    await recordMaintenanceAttempt(sql, "re-enrich", game.id, succeeded, game.dueDays);
     await new Promise(r => setTimeout(r, 500)); // rate limit
   }
-  return { refreshed: ok, failed: fail, total: all.length, fastPathCount: fp.length, staleCount: stale.length, log };
+  return { refreshed: ok, failed: fail, total: all.length, fastPathCount: priority.length, staleCount: rotating.length, log };
 }

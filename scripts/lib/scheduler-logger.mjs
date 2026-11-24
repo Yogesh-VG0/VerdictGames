@@ -13,6 +13,8 @@
  *   await releaseLock(sql, 'refresh-trending');
  */
 
+import { readMaintenanceBudget } from './maintenance-provider-budget.mjs';
+
 // Stable hash for advisory lock keys (Postgres advisory locks use bigint keys)
 function jobNameToLockId(jobName) {
   let hash = 0;
@@ -248,9 +250,13 @@ export async function finishRun(sql, runId, {
   if (!runId) return;
 
   if (outcome !== null && !['success', 'error', 'deferred'].includes(outcome)) throw new Error('Invalid scheduler outcome');
-  const status = outcome ?? (error_message ? 'error' : 'success');
+  const budget = readMaintenanceBudget();
+  const exhausted = budget?.budget_exhausted.length > 0;
+  const resolvedOutcome = outcome ?? (error_message ? 'error' : 'success');
+  const status = exhausted && resolvedOutcome === 'success' ? 'deferred' : resolvedOutcome;
+  const resolvedError = error_message ?? (exhausted ? 'Provider request budget exhausted; retry at the next scheduled window' : null);
   try {
-    const metadataClause = metadata ?? null;
+    const metadataClause = budget ? { ...metadata, ...budget } : metadata ?? null;
     await retryInfrastructureDbOperation(`Finish scheduler run ${runId}`, () => sql`
         UPDATE scheduler_runs SET
           finished_at = now(),
@@ -260,7 +266,7 @@ export async function finishRun(sql, runId, {
           rows_created = ${rows_created},
           rows_updated = ${rows_updated},
           rows_skipped = ${rows_skipped},
-          error_message = ${error_message},
+          error_message = ${resolvedError},
           metadata = COALESCE(${metadataClause}::jsonb, metadata)
         WHERE id = ${runId}
       `);

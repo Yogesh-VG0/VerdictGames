@@ -1,3 +1,4 @@
+import { getFreshPlayerSignals } from '@/lib/utils/trending';
 /**
  * VERDICT.GAMES — Homepage Service Layer
  *
@@ -124,8 +125,8 @@ function getHomepageQueryFetchLimit(limit: number, multiplier = 4): number {
 }
 
 export function isHomepageTrendingEligible(row: GameRow): boolean {
-  const currentPlayers = row.current_players ?? 0;
-  const momentum = row.momentum ?? 0;
+  const currentPlayers = getFreshPlayerSignals(row).players;
+  const momentum = getFreshPlayerSignals(row).momentum;
   const ageDays = getHomepageReleaseAgeDays(row.release_date);
   const hasSharedTrendingSignal = hasBrowseTrendingSignal(row);
 
@@ -199,7 +200,7 @@ export function getHomepageTopRatedScore(row: GameRow): number {
   const qualityScore = confidenceWeightedScore(row);
   const evidenceReviewCount = getEvidenceReviewCount(row);
   const criticSources = getCriticSourceCount(row);
-  const currentPlayers = row.current_players ?? 0;
+  const currentPlayers = getFreshPlayerSignals(row).players;
   const reviewScore = Math.min(14, Math.log10(evidenceReviewCount + 1) * 3.1);
   const activityScore = Math.min(16, Math.log10(currentPlayers + 1) * 4);
   const ageDays = getHomepageReleaseAgeDays(row.release_date);
@@ -242,7 +243,7 @@ export function getHomepageTopRatedScore(row: GameRow): number {
 
 function getHomepageTopRatedEvidenceTier(row: GameRow): number {
   const evidenceReviewCount = getEvidenceReviewCount(row);
-  const currentPlayers = row.current_players ?? 0;
+  const currentPlayers = getFreshPlayerSignals(row).players;
 
   if (
     evidenceReviewCount >= 50000
@@ -267,7 +268,7 @@ function getHomepageTopRatedEvidenceTier(row: GameRow): number {
 
 export function isHomepageTopRatedEligible(row: GameRow): boolean {
   const evidenceReviewCount = getEvidenceReviewCount(row);
-  const currentPlayers = row.current_players ?? 0;
+  const currentPlayers = getFreshPlayerSignals(row).players;
   const ageDays = getHomepageReleaseAgeDays(row.release_date);
 
   if (ageDays <= 120 && currentPlayers < 450 && evidenceReviewCount < 50000) {
@@ -344,7 +345,7 @@ function preferHomepageTopRatedPool(rows: GameRow[], desiredCount: number): Game
 
 export function isHomepageTopRatedEvergreenBackfillCandidate(row: GameRow): boolean {
   const evidenceReviewCount = getEvidenceReviewCount(row);
-  const currentPlayers = row.current_players ?? 0;
+  const currentPlayers = getFreshPlayerSignals(row).players;
   const verdictScore = row.verdict_score ?? row.score ?? 0;
   const ageDays = getHomepageReleaseAgeDays(row.release_date);
 
@@ -387,8 +388,8 @@ function preferHomepageTrendingQualityPool(rows: GameRow[], desiredCount: number
 
 function getHomepageTrendingScore(row: GameRow): number {
   const base = getPublicTrendingScore(row);
-  const currentPlayers = row.current_players ?? 0;
-  const momentum = row.momentum ?? 0;
+  const currentPlayers = getFreshPlayerSignals(row).players;
+  const momentum = getFreshPlayerSignals(row).momentum;
   const ageDays = getHomepageReleaseAgeDays(row.release_date);
 
   const highActivityBonus = currentPlayers >= 10000 && momentum >= 0.03
@@ -425,8 +426,8 @@ function getHomepageTrendingScore(row: GameRow): number {
 
 function preferHomepageTrendingSignalPool(rows: GameRow[], desiredCount: number): GameRow[] {
   const premiumPool = rows.filter((row) => {
-    const currentPlayers = row.current_players ?? 0;
-    const momentum = row.momentum ?? 0;
+    const currentPlayers = getFreshPlayerSignals(row).players;
+    const momentum = getFreshPlayerSignals(row).momentum;
     const qualityScore = confidenceWeightedScore(row);
     const ageDays = getHomepageReleaseAgeDays(row.release_date);
 
@@ -441,8 +442,8 @@ function preferHomepageTrendingSignalPool(rows: GameRow[], desiredCount: number)
   }
 
   const strongPool = rows.filter((row) => {
-    const currentPlayers = row.current_players ?? 0;
-    const momentum = row.momentum ?? 0;
+    const currentPlayers = getFreshPlayerSignals(row).players;
+    const momentum = getFreshPlayerSignals(row).momentum;
     const qualityScore = confidenceWeightedScore(row);
     const ageDays = getHomepageReleaseAgeDays(row.release_date);
 
@@ -461,8 +462,8 @@ function preferHomepageTrendingSignalPool(rows: GameRow[], desiredCount: number)
 
 function isHomepageTrendingDisplayGame(row: GameRow): boolean {
   const qualityScore = confidenceWeightedScore(row);
-  const currentPlayers = row.current_players ?? 0;
-  const momentum = row.momentum ?? 0;
+  const currentPlayers = getFreshPlayerSignals(row).players;
+  const momentum = getFreshPlayerSignals(row).momentum;
   const ageDays = getHomepageReleaseAgeDays(row.release_date);
 
   if (ageDays > 365 * 4) {
@@ -486,8 +487,8 @@ function isHomepageTrendingDisplayGame(row: GameRow): boolean {
 
 function isHomepageTrendingFallbackDisplayGame(row: GameRow): boolean {
   const qualityScore = confidenceWeightedScore(row);
-  const currentPlayers = row.current_players ?? 0;
-  const momentum = row.momentum ?? 0;
+  const currentPlayers = getFreshPlayerSignals(row).players;
+  const momentum = getFreshPlayerSignals(row).momentum;
   const ageDays = getHomepageReleaseAgeDays(row.release_date);
 
   if (ageDays > 365 * 4) {
@@ -511,8 +512,8 @@ function isHomepageTrendingFallbackDisplayGame(row: GameRow): boolean {
 
 function isHomepageHeroBackfillCandidate(row: GameRow): boolean {
   const evidenceReviewCount = getEvidenceReviewCount(row);
-  const currentPlayers = row.current_players ?? 0;
-  const momentum = row.momentum ?? 0;
+  const currentPlayers = getFreshPlayerSignals(row).players;
+  const momentum = getFreshPlayerSignals(row).momentum;
   const verdictScore = row.verdict_score ?? row.score ?? 0;
   const ageDays = getHomepageReleaseAgeDays(row.release_date);
 
@@ -934,7 +935,7 @@ export async function fetchTrendingGames(limit = 20, homepageOnly = true): Promi
 export function getHomepageRecommendationScore(row: GameRow): number {
   const qualityScore = confidenceWeightedScore(row);
   const evidenceReviewCount = getEvidenceReviewCount(row);
-  const currentPlayers = row.current_players ?? 0;
+  const currentPlayers = getFreshPlayerSignals(row).players;
   const ageDays = getHomepageReleaseAgeDays(row.release_date);
   const recencyBonus = ageDays <= 180
     ? 12
@@ -970,7 +971,7 @@ export function getHomepageRecommendationScore(row: GameRow): number {
 
 export function isHomepageRecommendationEligible(row: GameRow): boolean {
   const evidenceReviewCount = getEvidenceReviewCount(row);
-  const currentPlayers = row.current_players ?? 0;
+  const currentPlayers = getFreshPlayerSignals(row).players;
   const ageDays = getHomepageReleaseAgeDays(row.release_date);
 
   if (ageDays > 365 && currentPlayers < 1000 && evidenceReviewCount < 25000) {
@@ -1008,7 +1009,7 @@ export function isHomepageRecommendationEligible(row: GameRow): boolean {
 
 export function isHomepageRecommendationDistinctCandidate(row: GameRow): boolean {
   const evidenceReviewCount = getEvidenceReviewCount(row);
-  const currentPlayers = row.current_players ?? 0;
+  const currentPlayers = getFreshPlayerSignals(row).players;
   const verdictScore = row.verdict_score ?? row.score ?? 0;
   const ageDays = getHomepageReleaseAgeDays(row.release_date);
 
@@ -1041,7 +1042,7 @@ export function isHomepageRecommendationDistinctCandidate(row: GameRow): boolean
 
 export function isHomepageRecommendationBackfillCandidate(row: GameRow): boolean {
   const evidenceReviewCount = getEvidenceReviewCount(row);
-  const currentPlayers = row.current_players ?? 0;
+  const currentPlayers = getFreshPlayerSignals(row).players;
   const verdictScore = row.verdict_score ?? row.score ?? 0;
   const ageDays = getHomepageReleaseAgeDays(row.release_date);
 
@@ -1155,7 +1156,7 @@ export async function fetchNewReleases(limit = 20): Promise<Game[]> {
     if (launchDiff !== 0) return launchDiff;
     const reviewDiff = getEvidenceReviewCount(b) - getEvidenceReviewCount(a);
     if (reviewDiff !== 0) return reviewDiff;
-    return (b.current_players ?? 0) - (a.current_players ?? 0);
+    return getFreshPlayerSignals(b).players - getFreshPlayerSignals(a).players;
   });
 
   return final.map(mapGameRow).filter(game => game.verdictLabel !== 'COMING SOON').slice(0, limit);

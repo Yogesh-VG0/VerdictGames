@@ -9,6 +9,8 @@ const rawgOnlyJobs = new Set([
   "discover-standard",
   "discover-deep",
   "backfill-games",
+  "refresh-upcoming-snapshot",
+  "discover-steam-popular",
 ]);
 
 function setOutput(name, value) {

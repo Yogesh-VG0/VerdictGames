@@ -32,6 +32,7 @@ try {
 } catch { /* .env not found */ }
 
 import { connectDb } from "./lib/db-connect.mjs";
+import { recordMaintenanceAttempt } from './lib/maintenance-due.mjs';
 import { checkMinInterval, startRun, finishRun, acquireLock, releaseLock, isInfrastructureDbError } from "./lib/scheduler-logger.mjs";
 
 const sql = connectDb("backfill-mobile");
@@ -40,7 +41,8 @@ const ANDROID_ONLY = process.argv.includes("--android-only");
 const IOS_ONLY = process.argv.includes("--ios-only");
 const DRY_RUN = process.argv.includes("--dry-run");
 const limitArg = process.argv.find((a) => a.startsWith("--limit="));
-const LIMIT = limitArg ? parseInt(limitArg.split("=")[1], 10) : 999;
+const requestedLimit = limitArg ? Number(limitArg.split("=")[1]) : 25;
+const LIMIT = Number.isInteger(requestedLimit) ? Math.max(1, Math.min(25, requestedLimit)) : 25;
 
 const THROTTLE_MS = 1500; // delay between scraper calls to avoid bans
 
@@ -138,25 +140,44 @@ async function getGplay() {
 
 // ── Main ──
 
+const googleOperations = { search: 0, app: 0 };
+async function queryGoogle(method, input) {
+  if (googleOperations.search + googleOperations.app >= 1 + LIMIT * 3) {
+    throw new Error("Google Play lookup budget reached");
+  }
+  googleOperations[method]++;
+  const scraper = await getGplay();
+  return scraper[method](input);
+}
+
 const stats = {
   android: { checked: 0, verified: 0, failed: 0, skipped: 0 },
   ios: { checked: 0, verified: 0, failed: 0, skipped: 0 },
 };
 
-// Get games tagged with Android/iOS that don't already have verified listings
+// Reserve some slots for revalidation without starving new candidates.
 async function getGamesToVerify(platform, store) {
-  const rows = await sql`
-    SELECT g.id, g.title, g.play_store_url, g.developer
-    FROM games g
-    WHERE g.platforms @> ARRAY[${platform}]::text[]
-      AND NOT EXISTS (
-        SELECT 1 FROM mobile_store_listings msl
-        WHERE msl.game_id = g.id AND msl.store = ${store} AND msl.is_verified = true
-      )
-    ORDER BY g.review_count DESC, g.score DESC
-    LIMIT ${LIMIT}
+  return sql`
+    WITH eligible AS (
+      SELECT g.id, g.title, g.play_store_url, g.developer, listing.external_id AS verified_id,
+        COALESCE(due.next_attempt_at, listing.last_verified_at + interval '35 days', '-infinity') AS due_at
+      FROM public.games g
+      LEFT JOIN public.maintenance_item_due_state due ON due.game_id = g.id AND due.job = ${store}
+      LEFT JOIN LATERAL (
+        SELECT external_id, last_verified_at FROM public.mobile_store_listings
+        WHERE game_id = g.id AND mobile_store_listings.store = ${store} AND is_verified IS TRUE
+        ORDER BY last_verified_at DESC NULLS LAST, external_id LIMIT 1
+      ) listing ON true
+      WHERE g.platforms @> ARRAY[${platform}]::text[] OR listing.external_id IS NOT NULL
+    ), reverify AS (
+      SELECT * FROM eligible WHERE verified_id IS NOT NULL AND due_at <= now()
+      ORDER BY due_at, id LIMIT ${Math.min(5, LIMIT)}
+    )
+    SELECT * FROM reverify
+    UNION ALL
+    (SELECT * FROM eligible WHERE verified_id IS NULL AND due_at <= now()
+      ORDER BY due_at, id LIMIT (${LIMIT} - (SELECT count(*) FROM reverify)))
   `;
-  return rows;
 }
 
 try {
@@ -164,13 +185,12 @@ try {
   if (!IOS_ONLY) {
     console.log("── Android Verification ──\n");
     const games = await getGamesToVerify("Android", "google_play");
-    console.log(`Found ${games.length} Android-tagged games without verified listings.\n`);
+    console.log(`Found ${games.length} Android-tagged games due for verification.\n`);
 
     if (games.length) {
-      const scraper = await getGplay();
       // A known listing distinguishes broken search parsing/provider blocking
       // from delisted games and inaccurate upstream platform tags.
-      const control = await scraper.search({ term: 'Stardew Valley', num: 5, lang: 'en', country: 'us' });
+      const control = await queryGoogle("search", { term: 'Stardew Valley', num: 5, lang: 'en', country: 'us' });
       if (!control.some(app => app.appId === 'com.chucklefish.stardewvalley')) {
         throw new Error('Google Play search health check failed; mobile verification deferred');
       }
@@ -180,24 +200,30 @@ try {
       stats.android.checked++;
       const label = `[${stats.android.checked}/${games.length}] ${game.title}`;
       let performingDatabaseWrite = false;
+      let succeeded = false;
+      let infrastructureError = false;
 
       try {
-        const scraper = await getGplay();
 
-        let packageName = extractPackageName(game.play_store_url);
+        let packageName = game.verified_id ?? extractPackageName(game.play_store_url);
         let appData = null;
 
         if (packageName) {
           try {
-            appData = await scraper.app({ appId: packageName });
+            appData = await queryGoogle("app", { appId: packageName });
           } catch {
             appData = null;
           }
         }
 
+        if (game.verified_id && (!appData || (appData.appId ?? extractPackageName(appData.url)) !== game.verified_id)) {
+          stats.android.skipped++;
+          continue;
+        }
+
         if (!appData) {
           await sleep(THROTTLE_MS);
-          const results = await scraper.search({
+          const results = await queryGoogle("search", {
             term: game.title,
             num: 5,
             lang: 'en',
@@ -218,7 +244,7 @@ try {
             packageName = bestMatch.appId;
             await sleep(THROTTLE_MS);
             try {
-              appData = await scraper.app({ appId: packageName });
+              appData = await queryGoogle("app", { appId: packageName });
             } catch {
               appData = null;
             }
@@ -255,7 +281,7 @@ try {
         }
 
         performingDatabaseWrite = true;
-        await sql`
+        const written = await sql`
           INSERT INTO mobile_store_listings (
             game_id, store, external_id, store_url, title, developer,
             icon_url, header_image_url, screenshots,
@@ -282,7 +308,6 @@ try {
             true, NOW()
           )
           ON CONFLICT (store, external_id) DO UPDATE SET
-            game_id = EXCLUDED.game_id,
             store_url = EXCLUDED.store_url,
             title = EXCLUDED.title,
             developer = EXCLUDED.developer,
@@ -294,7 +319,10 @@ try {
             real_installs = EXCLUDED.real_installs,
             is_verified = true,
             last_verified_at = NOW()
+          WHERE mobile_store_listings.game_id = EXCLUDED.game_id
         `;
+        if (!written.count) throw new Error("Store identity already belongs to another game");
+        succeeded = true;
 
         if (!game.play_store_url && appData.url) {
           await sql`
@@ -308,9 +336,14 @@ try {
         );
         stats.android.verified++;
       } catch (err) {
-        if (performingDatabaseWrite && isInfrastructureDbError(err)) throw err;
+        if (performingDatabaseWrite && isInfrastructureDbError(err)) {
+          infrastructureError = true;
+          throw err;
+        }
         console.log(`  ✗ ${label} — error: ${err.message}`);
         stats.android.failed++;
+      } finally {
+        if (!DRY_RUN && !infrastructureError) await recordMaintenanceAttempt(sql, "google_play", game.id, succeeded, 35);
       }
 
       await sleep(THROTTLE_MS);
@@ -321,12 +354,14 @@ try {
   if (!ANDROID_ONLY) {
     console.log("\n── iOS Verification ──\n");
     const games = await getGamesToVerify("iOS", "app_store");
-    console.log(`Found ${games.length} iOS-tagged games without verified listings.\n`);
+    console.log(`Found ${games.length} iOS-tagged games due for verification.\n`);
 
     for (const game of games) {
       stats.ios.checked++;
       const label = `[${stats.ios.checked}/${games.length}] ${game.title}`;
       let performingDatabaseWrite = false;
+      let succeeded = false;
+      let infrastructureError = false;
 
       try {
         const params = new URLSearchParams({
@@ -337,7 +372,8 @@ try {
           limit: "5",
         });
 
-        const res = await fetch(`https://itunes.apple.com/search?${params}`, {
+        const path = game.verified_id ? `lookup?id=${encodeURIComponent(game.verified_id)}&country=us` : `search?${params}`;
+        const res = await fetch(`https://itunes.apple.com/${path}`, {
           headers: { "User-Agent": "VerdictGames/1.0" },
           signal: AbortSignal.timeout(10000),
         });
@@ -365,7 +401,11 @@ try {
           }
         }
 
-        if (!bestMatch || !isHighConfidenceMatch(game.title, game.developer ?? "", bestMatch.trackName ?? "", bestMatch.artistName ?? "", bestSim)) {
+        if (game.verified_id) bestMatch = gameResults.find(app => String(app.trackId) === game.verified_id);
+        const confident = Number.isSafeInteger(bestMatch?.trackId) && (game.verified_id || isHighConfidenceMatch(
+          game.title, game.developer ?? "", bestMatch.trackName ?? "", bestMatch.artistName ?? "", bestSim
+        ));
+        if (!confident) {
           if (bestMatch) {
             console.log(
               `  ⚠ ${label} — best match "${bestMatch.trackName}" (dev: ${bestMatch.artistName ?? "?"}) sim=${bestSim}% — below confidence threshold`
@@ -388,7 +428,7 @@ try {
         }
 
         performingDatabaseWrite = true;
-        await sql`
+        const written = await sql`
           INSERT INTO mobile_store_listings (
             game_id, store, external_id, store_url, title, developer,
             icon_url, screenshots,
@@ -413,7 +453,6 @@ try {
             true, NOW()
           )
           ON CONFLICT (store, external_id) DO UPDATE SET
-            game_id = EXCLUDED.game_id,
             store_url = EXCLUDED.store_url,
             title = EXCLUDED.title,
             developer = EXCLUDED.developer,
@@ -422,7 +461,10 @@ try {
             rating_count = EXCLUDED.rating_count,
             is_verified = true,
             last_verified_at = NOW()
+          WHERE mobile_store_listings.game_id = EXCLUDED.game_id
         `;
+        if (!written.count) throw new Error("Store identity already belongs to another game");
+        succeeded = true;
         performingDatabaseWrite = false;
 
         console.log(
@@ -430,9 +472,14 @@ try {
         );
         stats.ios.verified++;
       } catch (err) {
-        if (performingDatabaseWrite && isInfrastructureDbError(err)) throw err;
+        if (performingDatabaseWrite && isInfrastructureDbError(err)) {
+          infrastructureError = true;
+          throw err;
+        }
         console.log(`  ✗ ${label} — error: ${err.message}`);
         stats.ios.failed++;
+      } finally {
+        if (!DRY_RUN && !infrastructureError) await recordMaintenanceAttempt(sql, "app_store", game.id, succeeded, 35);
       }
 
       await sleep(3500);
@@ -461,7 +508,7 @@ try {
       rows_updated: totalVerified,
       rows_skipped: (stats.android?.skipped ?? 0) + (stats.ios?.skipped ?? 0),
       error_message: excessiveFailures ? `${totalFailed}/${totalChecked} mobile listing checks failed; successful verifications were retained` : null,
-      metadata: { failed: totalFailed, elapsed },
+      metadata: { failed: totalFailed, elapsed, googleOperations, appleLookups: stats.ios.checked },
     });
     if (excessiveFailures) process.exitCode = 1;
   }

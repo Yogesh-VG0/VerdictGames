@@ -243,3 +243,15 @@ export function preferTrendingMomentumPool(rows: GameRow[], desiredCount: number
 
   return rows;
 }
+export function getFreshPlayerSignals(row: {
+  players_updated_at?: string | null;
+  current_players?: number | null;
+  momentum?: number | null;
+}, now = Date.now()) {
+  const age = now - Date.parse(row.players_updated_at ?? '');
+  const fresh = age >= 0 && age <= 24 * 60 * 60 * 1000;
+  return {
+    players: fresh ? row.current_players ?? 0 : 0,
+    momentum: fresh ? row.momentum ?? 0 : 0,
+  };
+}

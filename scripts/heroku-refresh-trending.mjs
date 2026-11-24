@@ -138,10 +138,18 @@ async function applyPlayerCountUpdates(updates, timestamp) {
     const safeCount = Math.max(0, Math.trunc(players));
     try {
       const result = await sql`
-        UPDATE games
+        UPDATE games AS g
         SET current_players = ${safeCount},
-            players_updated_at = ${timestamp}
-        WHERE id = ${update.id}
+            players_updated_at = ${timestamp},
+            momentum = CASE WHEN ${safeCount}::integer > 0 THEN COALESCE((
+              SELECT ROUND(LN((${safeCount}::numeric + 1)) - LN((snap.player_count + 1)::numeric), 4)
+              FROM public.player_snapshots snap
+              WHERE snap.game_id = g.id AND snap.player_count > 0
+                AND snap.recorded_at >= ${timestamp}::timestamptz - interval '36 hours'
+                AND snap.recorded_at < ${timestamp}::timestamptz - interval '5 minutes'
+              ORDER BY snap.recorded_at DESC LIMIT 1
+            ), 0) ELSE 0 END
+        WHERE g.id = ${update.id}
       `;
       applied += Number(result.count ?? 0);
     } catch (err) {
@@ -151,34 +159,6 @@ async function applyPlayerCountUpdates(updates, timestamp) {
   }
   return applied;
 }
-
-async function refreshMomentumFromLatestSnapshots(observedAt) {
-  const result = await sql`
-    WITH calculated_momentum AS (
-      SELECT g.id, COALESCE(ROUND(
-        LN((g.current_players + 1)::numeric) - LN((latest_snapshots.player_count + 1)::numeric),
-        4
-      )::real, 0) AS momentum
-      FROM games AS g
-      LEFT JOIN LATERAL (
-        SELECT player_count FROM player_snapshots
-        WHERE game_id = g.id AND player_count > 0
-          AND recorded_at >= ${observedAt}::timestamptz - interval '36 hours'
-          AND recorded_at < ${observedAt}::timestamptz - interval '5 minutes'
-        ORDER BY recorded_at DESC LIMIT 1
-      ) AS latest_snapshots ON g.current_players > 0
-      WHERE g.players_updated_at = ${observedAt}
-    )
-    UPDATE games AS g
-    SET momentum = calculated_momentum.momentum
-    FROM calculated_momentum
-    WHERE g.id = calculated_momentum.id
-      AND g.momentum IS DISTINCT FROM calculated_momentum.momentum
-  `;
-  return Number(result.count ?? 0);
-}
-
-// ═══════════════════════ MAIN ═══════════════════════
 
 const start = Date.now();
 console.log("═══════════════════════════════════════════");
@@ -274,12 +254,7 @@ try {
   `;
 
   if (gamesWithPlayers.length > 0) {
-    // 1) FIRST: compute momentum by comparing fresh current_players against LATEST existing snapshot
-    //    This works even if the snapshot was from a previous run hours ago
-    const momentumUpdated = await refreshMomentumFromLatestSnapshots(now);
-    console.log(`  📈 Updated momentum for ${momentumUpdated} games`);
-
-    // 2) THEN: insert new snapshot (throttled to avoid duplicates from retries)
+    // Snapshot the measured count after momentum has used the prior observation.
     const [recentSnap] = await sql`
       SELECT id FROM player_snapshots
       WHERE recorded_at > NOW() - INTERVAL '5 minutes'
