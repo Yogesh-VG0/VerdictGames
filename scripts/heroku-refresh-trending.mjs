@@ -3,26 +3,20 @@
 /**
  * VERDICT.GAMES — Scheduler: Refresh Trending
  *
- * Runs via GitHub Actions every 6 hours:
- *   Step 0 — Fetch Steam's GLOBAL Top 100 most-played games
- *   Step 1 — Auto-ingest any top-100 games missing from our DB
- *   Step 2 — Refresh current_players for ALL our Steam games
- *   Step 3 — Rank trending by current_players DESC (truly global)
- *   Step 4 — IGDB PopScore fallback (for non-Steam, if < 20)
- *   Step 5 — Recency fill (if still < 20)
- *   Step 6 — Apply trending + featured flags
+ * Refreshes a bounded priority and rotating Steam batch, then ranks Trending.
+ * Pass --players-only to refresh observations without rankings or snapshots.
  *
  * Command: node scripts/heroku-refresh-trending.mjs
  *
  * Required Config Vars:
  *   DATABASE_URL (or SUPABASE_DB_URL).
- * Optional: RAWG_API_KEY for new-game ingestion; Twitch credentials for IGDB fallback.
+ * Optional: Twitch credentials for IGDB ranking fallback.
  */
 
 import { startRun, finishRun, acquireLock, releaseLock, checkMinInterval, isInfrastructureDbError } from './lib/scheduler-logger.mjs';
 import { connectDb, closeDb } from './lib/db-connect.mjs';
-import { ingestGameDirect } from './lib/ingest-pipeline.mjs';
 import { groupSteamPlayerRows } from './lib/steam-player-groups.mjs';
+import { observedSteamPlayers, readSteamPlayerBatch } from './lib/steam-player-batch.mjs';
 
 // Load .env for local development; hosted schedulers inject environment variables.
 try {
@@ -40,11 +34,13 @@ try {
   // .env not found; use process environment variables.
 }
 
-const sql = connectDb("refresh-trending");
+const PLAYERS_ONLY = process.argv.includes("--players-only");
+const JOB_NAME = PLAYERS_ONLY ? "refresh-player-counts" : "refresh-trending";
+const LOCK_NAME = "refresh-trending";
+const sql = connectDb(JOB_NAME);
 const IGDB_BASE = "https://api.igdb.com/v4";
 const TWITCH_TOKEN_URL = "https://id.twitch.tv/oauth2/token";
 const STEAM_API = "https://api.steampowered.com/ISteamUserStats/GetNumberOfCurrentPlayers/v1";
-const STEAM_CHARTS_API = "https://api.steampowered.com/ISteamChartsService/GetMostPlayedGames/v1/";
 
 // ── Helpers ──
 async function getIgdbToken() {
@@ -56,6 +52,7 @@ async function getIgdbToken() {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: new URLSearchParams({ client_id: clientId, client_secret: clientSecret, grant_type: "client_credentials" }),
+      signal: AbortSignal.timeout(8000),
     });
     if (!res.ok) return null;
     const data = await res.json();
@@ -69,6 +66,7 @@ async function igdbQuery(endpoint, body, auth) {
       method: "POST",
       headers: { "Client-ID": auth.clientId, Authorization: `Bearer ${auth.token}`, "Content-Type": "text/plain" },
       body,
+      signal: AbortSignal.timeout(8000),
     });
     if (!res.ok) { console.error(`  IGDB /${endpoint} failed: ${res.status}`); return []; }
     return await res.json();
@@ -132,20 +130,6 @@ function appendTrendingCandidate(row, match, trendingIds, trendingGroupKeys, mat
   return true;
 }
 
-/** Resolve Steam App ID → game name via store API */
-async function getSteamAppName(appId) {
-  try {
-    const res = await fetch(`https://store.steampowered.com/api/appdetails?appids=${appId}&filters=basic`, {
-      signal: AbortSignal.timeout(8000),
-    });
-    if (!res.ok) return null;
-    const data = await res.json();
-    const info = data?.[String(appId)];
-    if (!info?.success) return null;
-    return info.data?.name ?? null;
-  } catch { return null; }
-}
-
 async function applyPlayerCountUpdates(updates, timestamp) {
   let applied = 0;
   for (const update of updates) {
@@ -170,20 +154,19 @@ async function applyPlayerCountUpdates(updates, timestamp) {
 
 async function refreshMomentumFromLatestSnapshots(observedAt) {
   const result = await sql`
-    WITH latest_snapshots AS (
-      SELECT DISTINCT ON (game_id) game_id, player_count
-      FROM player_snapshots
-      WHERE player_count > 0
-        AND recorded_at >= ${observedAt}::timestamptz - interval '36 hours'
-        AND recorded_at < ${observedAt}::timestamptz - interval '5 minutes'
-      ORDER BY game_id, recorded_at DESC
-    ), calculated_momentum AS (
+    WITH calculated_momentum AS (
       SELECT g.id, COALESCE(ROUND(
         LN((g.current_players + 1)::numeric) - LN((latest_snapshots.player_count + 1)::numeric),
         4
       )::real, 0) AS momentum
       FROM games AS g
-      LEFT JOIN latest_snapshots ON g.id = latest_snapshots.game_id AND g.current_players > 0
+      LEFT JOIN LATERAL (
+        SELECT player_count FROM player_snapshots
+        WHERE game_id = g.id AND player_count > 0
+          AND recorded_at >= ${observedAt}::timestamptz - interval '36 hours'
+          AND recorded_at < ${observedAt}::timestamptz - interval '5 minutes'
+        ORDER BY recorded_at DESC LIMIT 1
+      ) AS latest_snapshots ON g.current_players > 0
       WHERE g.players_updated_at = ${observedAt}
     )
     UPDATE games AS g
@@ -203,102 +186,33 @@ console.log("  VERDICT.GAMES — Trending & Featured Sync");
 console.log(`  ${new Date().toISOString()}`);
 console.log("═══════════════════════════════════════════\n");
 
-// Skip if last successful run was less than 5 hours ago (effective "every 6h" with hourly trigger)
-const MIN_INTERVAL_HOURS = parseFloat(process.env.TRENDING_INTERVAL_HOURS || "5");
-const shouldRun = await checkMinInterval(sql, 'refresh-trending', MIN_INTERVAL_HOURS);
-if (!shouldRun) { await closeDb(sql, 'refresh-trending'); process.exit(0); }
+// Player observations and ranking have independent minimum intervals.
+const MIN_INTERVAL_HOURS = PLAYERS_ONLY ? 0.75 : parseFloat(process.env.TRENDING_INTERVAL_HOURS || "5");
+const shouldRun = await checkMinInterval(sql, JOB_NAME, MIN_INTERVAL_HOURS);
+if (!shouldRun) { await closeDb(sql, JOB_NAME); process.exit(0); }
 
-const locked = await acquireLock(sql, 'refresh-trending');
-if (!locked) { await closeDb(sql, 'refresh-trending'); process.exit(0); }
-const run = await startRun(sql, 'refresh-trending');
+const locked = await acquireLock(sql, LOCK_NAME);
+if (!locked) { await closeDb(sql, JOB_NAME); process.exit(0); }
+const run = await startRun(sql, JOB_NAME);
 const trendingIds = [];
 const trendingGroupKeys = new Set();
 const matched = [];
 let caughtError = null;
+let playerCursor;
 
 const QUALITY_FLOOR_SQL = sql`
   (
     is_trending_manual = true
     OR COALESCE(verdict_score, score, 0) >= 72
-    OR (COALESCE(current_players, 0) >= 5000 AND COALESCE(verdict_score, score, 0) >= 68)
-    OR (COALESCE(momentum, 0) >= 0.18 AND COALESCE(current_players, 0) >= 1000 AND COALESCE(verdict_score, score, 0) >= 68)
+    OR (COALESCE(current_players, 0) >= 5000 AND players_updated_at >= NOW() - INTERVAL '24 hours' AND COALESCE(verdict_score, score, 0) >= 68)
+    OR (COALESCE(momentum, 0) >= 0.18 AND COALESCE(current_players, 0) >= 1000 AND players_updated_at >= NOW() - INTERVAL '24 hours' AND COALESCE(verdict_score, score, 0) >= 68)
   )
 `;
 
 try {
 
-// ── Step 0: Fetch Steam Global Top 100 ──
-console.log("🌍 Step 0: Fetching Steam Global Top 100 most-played...");
-let globalTop = [];
-try {
-  // ISteamChartsService may require a Steam Web API key on some infrastructure
-  const steamKey = process.env.STEAM_API_KEY || process.env.STEAM_WEB_API_KEY;
-  const chartsUrl = steamKey
-    ? `${STEAM_CHARTS_API}?key=${steamKey}`
-    : STEAM_CHARTS_API;
-  const res = await fetch(chartsUrl, { signal: AbortSignal.timeout(15000) });
-  if (res.ok) {
-    const data = await res.json();
-    globalTop = (data?.response?.ranks ?? [])
-      .filter((r) => r.appid && r.peak_in_game > 0)
-      .slice(0, 100);
-    console.log(`  ✓ Got ${globalTop.length} games from Steam Charts`);
-    if (globalTop.length === 0) {
-      console.log(`  ⚠ Steam Charts returned empty ranks. Response keys: ${JSON.stringify(Object.keys(data?.response ?? {}))}`);
-      if (!steamKey) {
-        console.log(`  💡 Tip: Set STEAM_API_KEY config var for reliable Steam Charts access`);
-      }
-    }
-  } else {
-    console.log(`  ⚠ Steam Charts API returned ${res.status}, falling back to DB-only`);
-  }
-} catch (e) {
-  console.log(`  ⚠ Steam Charts API failed: ${e.message}, falling back to DB-only`);
-}
-
-// ── Step 1: Auto-ingest missing top games ──
-if (globalTop.length > 0) {
-  const ourApps = await sql`SELECT steam_app_id FROM games WHERE steam_app_id IS NOT NULL`;
-  const ourAppSet = new Set(ourApps.map((r) => r.steam_app_id));
-
-  const missing = globalTop.filter((r) => !ourAppSet.has(r.appid));
-  console.log(`\n🆕 Step 1: ${missing.length} top Steam games not in our DB`);
-
-  if (missing.length > 0 && !process.env.RAWG_API_KEY) {
-    console.log('  RAWG is not configured; skipping optional new-game ingestion. Existing Steam metadata refresh continues.');
-  } else if (missing.length > 0) {
-    // Auto-ingest up to 20 missing games per run via local pipeline
-    const toIngest = missing.slice(0, 20);
-    let ingested = 0;
-
-    for (const game of toIngest) {
-      const name = await getSteamAppName(game.appid);
-      if (!name) { console.log(`  ⚠ Could not resolve name for appid ${game.appid}`); continue; }
-
-      try {
-        const result = await ingestGameDirect(sql, name);
-        if (result.success) {
-          ingested++;
-          console.log(`  ✓ Ingested: ${name} (appid ${game.appid})`);
-        } else {
-          console.log(`  ✗ Failed to ingest ${name}: ${result.message}`);
-        }
-      } catch (e) {
-        if (isInfrastructureDbError(e)) throw e;
-        console.log(`  ✗ Ingest error for ${name}: ${e.message}`);
-      }
-
-      // Small delay between ingests
-      await new Promise((r) => setTimeout(r, 1000));
-    }
-    console.log(`  Ingested ${ingested}/${toIngest.length} new games`);
-  }
-}
-
-// ── Step 2: Update current player counts from the per-game API ──
-console.log("\n🔄 Step 2: Refreshing Steam current player counts...");
-const steamGames = await sql`SELECT id, title, steam_app_id FROM games WHERE steam_app_id IS NOT NULL ORDER BY score DESC`;
-console.log(`  ${steamGames.length} games with Steam App IDs`);
+// Refresh a fixed-size batch without fetching global charts or ingesting games.
+const { rows: steamGames, cursor } = await readSteamPlayerBatch(sql);
 const steamGroups = groupSteamPlayerRows(steamGames);
 console.log(`  ${steamGroups.length} unique Steam player-count requests`);
 
@@ -316,8 +230,9 @@ for (let i = 0; i < steamGroups.length; i += 10) {
         const res = await fetch(`${STEAM_API}?appid=${g.appId}`, { signal: AbortSignal.timeout(8000) });
         if (!res.ok) return null;
         const data = await res.json();
-        if (data.response?.result !== 1) return null;
-        return g.rows.map(row => ({ id: row.id, players: data.response.player_count }));
+        const players = observedSteamPlayers(data);
+        if (players === null) return null;
+        return g.rows.map(row => ({ id: row.id, players }));
       } catch { return null; }
     })
   );
@@ -333,6 +248,7 @@ for (let i = 0; i < steamGroups.length; i += 10) {
   if (i + 10 < steamGroups.length) await new Promise((r) => setTimeout(r, 500));
 }
 
+playerCursor = cursor;
 if (pendingPlayerUpdates.length > 0) {
   playerUpdates = await applyPlayerCountUpdates(pendingPlayerUpdates, now);
 }
@@ -341,6 +257,14 @@ if (steamGames.length > 0 && playerUpdates === 0) {
   throw new Error(`Steam current-player refresh failed for all ${steamGames.length} games`);
 }
 
+const runMetadata = { player_cursor: playerCursor, steam_requests: steamGroups.length };
+if (PLAYERS_ONLY) {
+  await finishRun(sql, run.id, {
+    rows_scanned: steamGames.length,
+    rows_updated: playerUpdates,
+    metadata: runMetadata,
+  });
+} else {
 // ── Step 2b: Compute momentum + snapshot player counts ──
 console.log("\n📸 Step 2b: Computing momentum + snapshotting player counts...");
 try {
@@ -375,7 +299,11 @@ try {
 
   const deleted = await sql`
     DELETE FROM player_snapshots
-    WHERE recorded_at < NOW() - INTERVAL '7 days'
+    WHERE id IN (
+      SELECT id FROM player_snapshots
+      WHERE recorded_at < NOW() - INTERVAL '7 days'
+      ORDER BY recorded_at LIMIT 200
+    )
   `;
   if (deleted.count > 0) console.log(`  🗑️ Cleaned ${deleted.count} old snapshots`);
 } catch (e) {
@@ -389,7 +317,7 @@ console.log("🎮 Step 3: Steam Most Played (current_players DESC)...");
 const mostPlayed = await sql`
   SELECT id, title, score, verdict_score, current_players, review_count, momentum, is_trending_manual, steam_app_id
   FROM games
-  WHERE current_players IS NOT NULL AND current_players > 0
+  WHERE current_players > 0 AND players_updated_at >= NOW() - INTERVAL '24 hours'
     AND cover_image IS NOT NULL AND cover_image != ''
     AND ${QUALITY_FLOOR_SQL}
   ORDER BY current_players DESC
@@ -481,7 +409,7 @@ console.log("\n═════════════════════�
 console.log("  TRENDING RESULTS");
 console.log("═══════════════════════════════════════════");
 const uniqueIds = [...new Set(trendingIds)].slice(0, 20);
-await sql`
+const flags = await sql`
   UPDATE games
   SET trending = CASE
     WHEN id = ANY(${uniqueIds.length > 0 ? uniqueIds : ["00000000-0000-0000-0000-000000000000"]}) THEN true
@@ -505,28 +433,31 @@ console.log(`\n🔥 Marked ${uniqueIds.length} games as trending`);
 const [{ fc: featCount }] = await sql`SELECT COUNT(*) as fc FROM games WHERE is_featured_manual = true`;
 console.log(`⭐ Featured (editorial): ${featCount} games with is_featured_manual=true`);
 
-const [{ count }] = await sql`SELECT COUNT(*) as count FROM games`;
 const [{ tc }] = await sql`SELECT COUNT(*) as tc FROM games WHERE trending = true`;
 const elapsed = ((Date.now() - start) / 1000).toFixed(1);
-console.log(`\n📈 Total: ${count} | Trending: ${tc} | Time: ${elapsed}s`);
+console.log(`\n📈 Trending: ${tc} | Time: ${elapsed}s`);
 await finishRun(sql, run.id, {
   rows_scanned: steamGames.length,
-  rows_updated: playerUpdates + uniqueIds.length,
-  metadata: { totalGames: Number(count), trending: Number(tc), elapsed },
+  rows_updated: playerUpdates + Number(flags.count ?? 0),
+  metadata: { ...runMetadata, player_updates: playerUpdates, trending_flag_changes: Number(flags.count ?? 0), trending: Number(tc), elapsed },
 });
+}
 console.log("✅ Done!");
 } catch (err) {
   caughtError = err;
   const errorMessage = err?.message ?? String(err);
   console.error(`❌ Refresh trending failed: ${errorMessage}`);
   try {
-    await finishRun(sql, run.id, { error_message: errorMessage });
+    await finishRun(sql, run.id, {
+      error_message: errorMessage,
+      metadata: playerCursor && !isInfrastructureDbError(err) ? { player_cursor: playerCursor } : {},
+    });
   } catch (logError) {
     console.error(`❌ Could not record refresh failure: ${logError.message}`);
   }
 } finally {
-  await releaseLock(sql, 'refresh-trending');
-  await closeDb(sql, 'refresh-trending');
+  await releaseLock(sql, LOCK_NAME);
+  await closeDb(sql, JOB_NAME);
 }
 
 if (caughtError) {

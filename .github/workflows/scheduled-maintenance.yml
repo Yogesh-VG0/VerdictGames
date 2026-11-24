@@ -7,6 +7,12 @@ on:
     - cron: "17 0,12 * * *" # Steam players and trending, twice daily
     - cron: "37 3 * * *" # Essential discovery, daily
     - cron: "47 6 * * *" # Recent release and stale metadata refresh, daily
+    # These additional schedules have separate opt-in gates after capacity trials.
+    - cron: "13 1-11,13-23 * * *" # Player observations between Trending runs
+    - cron: "43 4 * * 1,4" # Steam review excerpts, twice weekly
+    - cron: "23 2 * * 6" # Curated lists, weekly
+    - cron: "29 5 * * 2" # Android verification, weekly
+    - cron: "29 5 * * 5" # iOS verification, weekly
   workflow_dispatch:
     inputs:
       job:
@@ -15,6 +21,7 @@ on:
         type: choice
         options:
           - refresh-trending
+          - refresh-player-counts
           - refresh-steam-reviews
           - re-enrich
           - seed-curated-lists
@@ -35,7 +42,14 @@ permissions:
 jobs:
   run:
     # Let explicitly approved manual trials run before recurring work is enabled.
-    if: github.event_name == 'workflow_dispatch' || vars.CATALOGUE_CRON_ENABLED == 'true'
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (vars.CATALOGUE_CRON_ENABLED == 'true' &&
+      (github.event.schedule != '13 1-11,13-23 * * *' || vars.CATALOGUE_PLAYER_CRON_ENABLED == 'true') &&
+      (github.event.schedule != '43 4 * * 1,4' || vars.CATALOGUE_REVIEW_CRON_ENABLED == 'true') &&
+      (github.event.schedule != '23 2 * * 6' || vars.CATALOGUE_CURATED_CRON_ENABLED == 'true') &&
+      (!contains(fromJSON('["29 5 * * 2","29 5 * * 5"]'), github.event.schedule) ||
+      vars.CATALOGUE_MOBILE_CRON_ENABLED == 'true'))
     concurrency:
       # A single worker prevents different jobs competing for the free database.
       group: scheduled-maintenance
@@ -58,6 +72,11 @@ jobs:
               "17 0,12 * * *") job="refresh-trending" ;;
               "37 3 * * *") job="discover-standard" ;;
               "47 6 * * *") job="re-enrich" ;;
+              "13 1-11,13-23 * * *") job="refresh-player-counts" ;;
+              "43 4 * * 1,4") job="refresh-steam-reviews" ;;
+              "23 2 * * 6") job="seed-curated-lists" ;;
+              "29 5 * * 2") job="backfill-mobile-android" ;;
+              "29 5 * * 5") job="backfill-mobile-ios" ;;
               *) echo "::error::Unknown schedule: $SCHEDULE"; exit 1 ;;
             esac
           fi
@@ -115,7 +134,7 @@ jobs:
           TWITCH_CLIENT_ID: ${{ secrets.TWITCH_CLIENT_ID }}
           TWITCH_CLIENT_SECRET: ${{ secrets.TWITCH_CLIENT_SECRET }}
           STEAM_API_KEY: ${{ secrets.STEAM_API_KEY }}
-          STEAM_REVIEW_LIMIT: ${{ inputs.review_limit || '50' }}
+          STEAM_REVIEW_LIMIT: ${{ inputs.review_limit || '25' }}
           SCHEDULER_DB_MAX_CONNECTIONS: "2"
           SCHEDULER_DB_CONNECT_TIMEOUT_SECONDS: "30"
           SCHEDULER_DB_IDLE_TIMEOUT_SECONDS: "30"
@@ -124,13 +143,14 @@ jobs:
         run: |
           case "$JOB" in
             refresh-trending) node scripts/heroku-refresh-trending.mjs ;;
+            refresh-player-counts) node scripts/heroku-refresh-trending.mjs --players-only ;;
             refresh-steam-reviews) node scripts/refresh-steam-reviews.mjs ;;
             re-enrich) node scripts/heroku-re-enrich.mjs --limit 10 ;;
             seed-curated-lists) node scripts/seed-curated-lists.mjs ;;
             discover-standard) node scripts/heroku-discover-games.mjs --essential ;;
             discover-deep) node scripts/heroku-discover-games.mjs --deep ;;
             backfill-games) node scripts/backfill-games.mjs ;;
-            backfill-mobile-android) node scripts/backfill-mobile-listings.mjs --android-only ;;
-            backfill-mobile-ios) node scripts/backfill-mobile-listings.mjs --ios-only ;;
+            backfill-mobile-android) node scripts/backfill-mobile-listings.mjs --android-only --limit=25 ;;
+            backfill-mobile-ios) node scripts/backfill-mobile-listings.mjs --ios-only --limit=25 ;;
             *) echo "::error::Unknown job: $JOB"; exit 1 ;;
           esac
