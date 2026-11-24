@@ -3,15 +3,10 @@ name: Scheduled maintenance
 on:
   schedule:
     # GitHub cron is UTC. Off-hour minutes reduce scheduler delays.
-    - cron: "17 0,6,12,18 * * *" # Steam players and trending, every 6 hours
-    - cron: "43 0,6,12,18 * * *" # Cached Steam review excerpts; no Vercel CPU
-    - cron: "47 1,13 * * *" # Re-enrich stale games, twice daily
-    - cron: "23 2 * * *" # Curated lists, daily
+    # Restore essential freshness first. Other jobs remain available for manual dispatch.
+    - cron: "17 0,12 * * *" # Steam players and trending, twice daily
     - cron: "37 3 * * *" # Standard discovery, daily
-    - cron: "53 4 * * 3" # Checkpointed historical backfill, weekly
-    - cron: "29 5 * * 2" # Android listing verification, weekly
-    - cron: "29 5 * * 5" # iOS listing verification, weekly
-    - cron: "11 15 * * 0" # Deep discovery, weekly and >5h after standard can finish
+    - cron: "47 6 * * *" # Recent release and stale metadata refresh, daily
   workflow_dispatch:
     inputs:
       job:
@@ -59,15 +54,9 @@ jobs:
             job="$MANUAL_JOB"
           else
             case "$SCHEDULE" in
-              "17 0,6,12,18 * * *") job="refresh-trending" ;;
-              "43 0,6,12,18 * * *") job="refresh-steam-reviews" ;;
-              "47 1,13 * * *") job="re-enrich" ;;
-              "23 2 * * *") job="seed-curated-lists" ;;
+              "17 0,12 * * *") job="refresh-trending" ;;
               "37 3 * * *") job="discover-standard" ;;
-              "53 4 * * 3") job="backfill-games" ;;
-              "29 5 * * 2") job="backfill-mobile-android" ;;
-              "29 5 * * 5") job="backfill-mobile-ios" ;;
-              "11 15 * * 0") job="discover-deep" ;;
+              "47 6 * * *") job="re-enrich" ;;
               *) echo "::error::Unknown schedule: $SCHEDULE"; exit 1 ;;
             esac
           fi
@@ -120,6 +109,7 @@ jobs:
         env:
           JOB: ${{ steps.resolve.outputs.job }}
           DISCOVERY_PROVIDER: ${{ steps.rawg_health.outputs.discovery_provider }}
+          RE_ENRICH_LIMIT: ${{ github.event_name == 'schedule' && '10' || '20' }}
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
           RAWG_API_KEY: ${{ secrets.RAWG_API_KEY }}
           TWITCH_CLIENT_ID: ${{ secrets.TWITCH_CLIENT_ID }}
@@ -135,7 +125,7 @@ jobs:
           case "$JOB" in
             refresh-trending) node scripts/heroku-refresh-trending.mjs ;;
             refresh-steam-reviews) node scripts/refresh-steam-reviews.mjs ;;
-            re-enrich) node scripts/heroku-re-enrich.mjs ;;
+            re-enrich) node scripts/heroku-re-enrich.mjs --limit "$RE_ENRICH_LIMIT" ;;
             seed-curated-lists) node scripts/seed-curated-lists.mjs ;;
             discover-standard) node scripts/heroku-discover-games.mjs ;;
             discover-deep) node scripts/heroku-discover-games.mjs --deep ;;
