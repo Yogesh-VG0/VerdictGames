@@ -2,7 +2,7 @@
  * DELETE /api/admin/games/[id]/delete
  *
  * Permanently deletes a game from the database.
- * Admin-only. Also removes related list_items and source_mappings.
+ * Admin-only. Existing foreign keys cascade dependent records atomically.
  */
 
 import { NextRequest } from "next/server";
@@ -21,30 +21,20 @@ export async function DELETE(
   const { id } = await params;
   const supabase = getServerSupabase();
 
-  // Fetch game info for audit log
-  const { data: game } = await supabase
-    .from("games")
-    .select("id, slug, title")
-    .eq("id", id)
-    .maybeSingle();
-
-  if (!game) {
-    return jsonError("Game not found", 404);
-  }
-
-  // Delete related records first (foreign key constraints)
-  await supabase.from("list_items").delete().eq("game_id", id);
-  await supabase.from("source_mappings").delete().eq("game_id", id);
-  await supabase.from("user_games").delete().eq("game_id", id);
-
-  // Delete the game itself
-  const { error: deleteErr } = await supabase
+  // Commit the game and its cascading deletes in one statement.
+  const { data: game, error: deleteErr } = await supabase
     .from("games")
     .delete()
-    .eq("id", id);
+    .eq("id", id)
+    .select("id, slug, title")
+    .maybeSingle();
 
   if (deleteErr) {
     return jsonError(`Failed to delete game: ${deleteErr.message}`, 500);
+  }
+
+  if (!game) {
+    return jsonError("Game not found", 404);
   }
 
   await writeAuditLog({
