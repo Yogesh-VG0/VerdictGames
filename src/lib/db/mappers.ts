@@ -92,10 +92,13 @@ function computeTrendingReason(row: GameRow, label: VerdictLabel): string | unde
   if (ageDays <= 30) return "✨ Just Released";
 
   // 3. Momentum signals
-  if (getPlayerGrowthEvidence(row) === 'fresh') return "Trending Up";
+  const growth = getPlayerGrowthEvidence(row);
+  if (growth === 'fresh') return "Trending Up";
+  if (growth === 'stale') return "Past Momentum";
 
   // 4. Quality / popularity tiers
-  if (currentPlayers > 10000) return "🎮 Popular Now";
+  const observationAge = Date.now() - Date.parse(row.players_updated_at ?? '');
+  if (currentPlayers > 10000 && observationAge >= 0 && observationAge <= 72 * 60 * 60 * 1000) return "🎮 Popular Now";
   if (score >= 90 && reviewCount >= 150) return "Top Rated";
   if (row.price_deal_url && row.price_lowest != null && score >= 75) return "On Sale";
   if (score >= 82 && reviewCount < 150 && currentPlayers < 5000) return "💎 Hidden Gem";
@@ -103,8 +106,6 @@ function computeTrendingReason(row: GameRow, label: VerdictLabel): string | unde
   // 5. Cooling-off signal — keep this narrow so strong top-rated games do not look weak by default
   if (momentum < -0.35 && currentPlayers >= 2500 && score < 90) return "Falling";
 
-  // 6. Generic fallback
-  if (getPlayerGrowthEvidence(row) === 'stale') return "Past Momentum";
   return undefined;
 }
 

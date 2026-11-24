@@ -51,12 +51,12 @@ export default function HomepageClientSections({
   initialNewReleases,
   shownGameSlugs,
 }: HomepageClientSectionsProps) {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const [discoverTab, setDiscoverTab] = useState<DiscoverTab>("new");
 
   const personalized = useQuery({
     queryKey: ["personalized", user?.id ?? null, shownGameSlugs],
-    queryFn: () => getHomepageRecommendations(shownGameSlugs),
+    queryFn: ({ signal }) => getHomepageRecommendations(shownGameSlugs, signal),
     enabled: !!user,
     staleTime: 5 * 60 * 1000,
   });
@@ -78,7 +78,7 @@ export default function HomepageClientSections({
 
   const showingPersonalized = !!user && personalized.data?.personalized === true;
   const recommendedGames = user ? personalized.data?.games ?? [] : initialRecommendations;
-  const recommendedLoading = !!user && personalized.isLoading;
+  const recommendedLoading = loading || (!!user && personalized.isLoading);
 
   return (
     <>

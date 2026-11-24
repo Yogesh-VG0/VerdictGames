@@ -37,9 +37,11 @@ import { connectDb, closeDb } from './lib/db-connect.mjs';
 import { ingestGameDirect, discoverIgdbDirect } from './lib/ingest-pipeline.mjs';
 import { rawgFetchJson } from './lib/rawg-client.mjs';
 import { refreshDiscoverySnapshot, refreshCommunitySnapshots } from './lib/discovery-snapshot.mjs';
+import { selectEssentialDiscoveryGames } from './lib/essential-discovery.mjs';
 
 const RAWG_KEY     = process.env.RAWG_API_KEY;
 const DEEP         = process.argv.includes("--deep");
+const ESSENTIAL    = !DEEP && process.argv.includes("--essential");
 const JOB_NAME     = DEEP ? "discover-games-deep" : "discover-games";
 const CONCURRENCY  = Math.max(1, Math.min(5, parseInt(process.env.SCHEDULER_INGEST_CONCURRENCY ?? "2") || 2));
 const DELAY_MS     = 300;
@@ -87,7 +89,8 @@ async function withConcurrency(items, concurrency, fn) {
 const start = Date.now();
 console.log("═══════════════════════════════════════════");
 console.log("  VERDICT.GAMES — Discover New Games (Local Pipeline)");
-console.log(`  Mode: ${DEEP ? "DEEP" : "Standard"} | Concurrency: ${CONCURRENCY}`);
+const mode = DEEP ? "deep" : ESSENTIAL ? "essential" : "standard";
+console.log(`  Mode: ${mode} | Concurrency: ${CONCURRENCY}`);
 console.log(`  ${new Date().toISOString()}`);
 console.log("═══════════════════════════════════════════\n");
 
@@ -99,7 +102,7 @@ if (!shouldRun) { console.log("⏭ Skipping — last run too recent"); await clo
 
 const locked = await acquireLock(sql, INGEST_LOCK);
 if (!locked) { console.log("🔒 Another game ingest run is active"); await closeDb(sql, 'discover-games'); process.exit(0); }
-run = await startRun(sql, JOB_NAME, { mode: DEEP ? 'deep' : 'standard' });
+run = await startRun(sql, JOB_NAME, { mode });
 
 try {
   const now = new Date();
@@ -137,57 +140,61 @@ try {
     rawgFetch("games", { ordering: "-added", dates: recentWindow }, 40),
     rawgFetch("games", { ordering: "-released", dates: lastMonth }, 40),
     rawgFetch("games", { ordering: "-added", dates: upcoming }, 40),
-    rawgFetch("games", { ordering: "-metacritic", dates: thisYear, metacritic: "60,100" }, 40),
-    rawgFetch("games", { ordering: "-metacritic", dates: lastYear, metacritic: "70,100" }, 40),
-    rawgFetch("games", { ordering: "-rating", metacritic: "80,100" }, 40),
-    rawgFetch("games", { ordering: "-added", metacritic: "1,100" }, 40),
-    rawgFetch("games", { ordering: "-rating" }, 40),
   ];
+  if (!ESSENTIAL) {
+    fetches.push(
+      rawgFetch("games", { ordering: "-metacritic", dates: thisYear, metacritic: "60,100" }, 40),
+      rawgFetch("games", { ordering: "-metacritic", dates: lastYear, metacritic: "70,100" }, 40),
+      rawgFetch("games", { ordering: "-rating", metacritic: "80,100" }, 40),
+      rawgFetch("games", { ordering: "-added", metacritic: "1,100" }, 40),
+      rawgFetch("games", { ordering: "-rating" }, 40),
+    );
 
-  // Platform-specific
-  const platforms = [
-    { id: "187", name: "PS5" }, { id: "186", name: "Xbox Series" },
-    { id: "7", name: "Switch" }, { id: "18", name: "PS4" }, { id: "21", name: "Android" },
-  ];
-  for (const plat of platforms) {
-    fetches.push(rawgFetch("games", { platforms: plat.id, ordering: "-metacritic", metacritic: "60,100" }, 40));
-    fetches.push(rawgFetch("games", { platforms: plat.id, ordering: "-rating" }, 40));
-    fetches.push(rawgFetch("games", { platforms: plat.id, ordering: "-added", dates: recentWindow }, 20));
-  }
-
-  // Genre-specific
-  const genres = ["action", "rpg", "adventure", "strategy", "shooter", "puzzle", "platformer", "racing", "sports", "simulation", "indie", "fighting"];
-  for (const genre of genres) {
-    fetches.push(rawgFetch("games", { genres: genre, ordering: "-rating", metacritic: "65,100" }, 40));
-    fetches.push(rawgFetch("games", { genres: genre, ordering: "-added", dates: recentWindow }, 20));
-  }
-
-  // Multi-page top rated
-  for (let p = 1; p <= 5; p++) {
-    fetches.push(rawgFetch("games", { ordering: "-metacritic", metacritic: "70,100", page: String(p) }, 40));
-  }
-
-  // Recent years
-  for (let y = currentYear - 5; y <= currentYear; y++) {
-    fetches.push(rawgFetch("games", { ordering: "-metacritic", dates: `${y}-01-01,${y}-12-31`, metacritic: "60,100" }, 40));
-  }
-
-  if (DEEP) {
-    for (const genre of genres) {
-      for (let p = 2; p <= 3; p++) {
-        fetches.push(rawgFetch("games", { genres: genre, ordering: "-rating", page: String(p) }, 40));
-      }
-    }
+    // Platform-specific
+    const platforms = [
+      { id: "187", name: "PS5" }, { id: "186", name: "Xbox Series" },
+      { id: "7", name: "Switch" }, { id: "18", name: "PS4" }, { id: "21", name: "Android" },
+    ];
     for (const plat of platforms) {
-      for (let p = 2; p <= 4; p++) {
-        fetches.push(rawgFetch("games", { platforms: plat.id, ordering: "-rating", page: String(p) }, 40));
-      }
+      fetches.push(rawgFetch("games", { platforms: plat.id, ordering: "-metacritic", metacritic: "60,100" }, 40));
+      fetches.push(rawgFetch("games", { platforms: plat.id, ordering: "-rating" }, 40));
+      fetches.push(rawgFetch("games", { platforms: plat.id, ordering: "-added", dates: recentWindow }, 20));
     }
-    for (let y = currentYear - 10; y <= currentYear - 6; y++) {
-      fetches.push(rawgFetch("games", { ordering: "-metacritic", dates: `${y}-01-01,${y}-12-31`, metacritic: "70,100" }, 40));
+
+    // Genre-specific
+    const genres = ["action", "rpg", "adventure", "strategy", "shooter", "puzzle", "platformer", "racing", "sports", "simulation", "indie", "fighting"];
+    for (const genre of genres) {
+      fetches.push(rawgFetch("games", { genres: genre, ordering: "-rating", metacritic: "65,100" }, 40));
+      fetches.push(rawgFetch("games", { genres: genre, ordering: "-added", dates: recentWindow }, 20));
     }
-    for (let p = 2; p <= 10; p++) {
+
+    // Multi-page top rated
+    for (let p = 1; p <= 5; p++) {
       fetches.push(rawgFetch("games", { ordering: "-metacritic", metacritic: "70,100", page: String(p) }, 40));
+    }
+
+    // Recent years
+    for (let y = currentYear - 5; y <= currentYear; y++) {
+      fetches.push(rawgFetch("games", { ordering: "-metacritic", dates: `${y}-01-01,${y}-12-31`, metacritic: "60,100" }, 40));
+    }
+
+    if (DEEP) {
+      for (const genre of genres) {
+        for (let p = 2; p <= 3; p++) {
+          fetches.push(rawgFetch("games", { genres: genre, ordering: "-rating", page: String(p) }, 40));
+        }
+      }
+      for (const plat of platforms) {
+        for (let p = 2; p <= 4; p++) {
+          fetches.push(rawgFetch("games", { platforms: plat.id, ordering: "-rating", page: String(p) }, 40));
+        }
+      }
+      for (let y = currentYear - 10; y <= currentYear - 6; y++) {
+        fetches.push(rawgFetch("games", { ordering: "-metacritic", dates: `${y}-01-01,${y}-12-31`, metacritic: "70,100" }, 40));
+      }
+      for (let p = 2; p <= 10; p++) {
+        fetches.push(rawgFetch("games", { ordering: "-metacritic", metacritic: "70,100", page: String(p) }, 40));
+      }
     }
   }
 
@@ -263,6 +270,8 @@ try {
 
   const filtered = rawGames.length - allGames.length;
   console.log(`  After quality filtering: ${allGames.length} games (${filtered} filtered out)\n`);
+  const gamesToIngest = ESSENTIAL ? await selectEssentialDiscoveryGames(sql, allGames) : allGames;
+  console.log(`  Selected for ingestion: ${gamesToIngest.length}`);
 
   // ── Step 2: Ingest each game via local pipeline (direct DB) ──
   console.log("🔄 Step 2: Ingesting games via local pipeline...\n");
@@ -271,7 +280,7 @@ try {
   const newGames = [];
   const errors = [];
 
-  await withConcurrency(allGames, CONCURRENCY, async (game) => {
+  await withConcurrency(gamesToIngest, CONCURRENCY, async (game) => {
     try {
       const result = await ingestGameDirect(sql, game.name, { expectedSlug: game.slug });
       if (result.alreadyExisted) {
@@ -294,7 +303,7 @@ try {
 
   const elapsed = ((Date.now() - start) / 1000).toFixed(1);
 
-  if (allGames.length > 0 && newCount + existedCount === 0 && failedCount > 0) {
+  if (gamesToIngest.length > 0 && newCount + existedCount === 0 && failedCount > 0) {
     throw new Error(`All ${failedCount} discovered game ingestions failed`);
   }
 
