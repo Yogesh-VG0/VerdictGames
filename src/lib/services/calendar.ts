@@ -6,15 +6,19 @@ import { getGXCalendar } from "@/lib/external/gxcorner";
 import { getPublicSupabase, hasPublicSupabaseEnv } from "@/lib/supabase/public";
 import type { CalendarMonthResponse } from "@/lib/types";
 import type { GameRow } from "@/lib/supabase/types";
-import { mergeCalendarGames } from "@/lib/utils/gx-calendar";
+import { getCalendarMonthKey, gxCalendarToGame, mergeCalendarGames } from "@/lib/utils/gx-calendar";
 import { hasUsableCardImage } from "@/lib/utils/mediaReadiness";
+import { loadExplore } from '@/lib/services/explore';
+import { boundedHomepageRead } from '@/lib/services/homepage-budget';
+import { normalizeTitle } from '@/lib/utils/slugify';
 import { isPublicSafeGame } from "@/lib/utils/publicSafety";
+import { IncompleteCatalogueRead } from "@/lib/db/cached-catalogue";
 
 export const CALENDAR_REVALIDATE_SECONDS = 300;
 export const CALENDAR_API_CACHE_CONTROL = `s-maxage=${CALENDAR_REVALIDATE_SECONDS}, stale-while-revalidate=3600`;
 export const CALENDAR_DEFAULT_LIMIT = 50;
 export const CALENDAR_MAX_LIMIT = 200;
-const CALENDAR_MONTH_CACHE_NAMESPACE = "calendar-month-v3-games-only";
+const CALENDAR_MONTH_CACHE_NAMESPACE = "calendar-month-v4-upcoming";
 
 export function normalizeCalendarLimit(limit?: number): number {
   return Number.isFinite(limit) && Number(limit) > 0
@@ -53,7 +57,8 @@ async function fetchCalendarContextMatches(args: {
         .from("games")
         .select(GAME_CARD_COLUMNS_WITH_DESC)
         .in("slug", args.slugs)
-        .limit(Math.max(args.slugs.length * 2, 25)) as unknown as Promise<{ data: GameRow[] | null; error: unknown }>
+        .limit(Math.min(200, Math.max(args.slugs.length * 2, 25)))
+        .abortSignal(AbortSignal.timeout(1800)) as unknown as Promise<{ data: GameRow[] | null; error: unknown }>
     );
   }
 
@@ -63,7 +68,8 @@ async function fetchCalendarContextMatches(args: {
         .from("games")
         .select(GAME_CARD_COLUMNS_WITH_DESC)
         .in("title", args.titles)
-        .limit(Math.max(args.titles.length * 2, 25)) as unknown as Promise<{ data: GameRow[] | null; error: unknown }>
+        .limit(Math.min(200, Math.max(args.titles.length * 2, 25)))
+        .abortSignal(AbortSignal.timeout(1800)) as unknown as Promise<{ data: GameRow[] | null; error: unknown }>
     );
   }
 
@@ -84,7 +90,7 @@ async function fetchCalendarMonth(month: string, limit: number): Promise<Calenda
   const supabase = getPublicSupabase();
   const [year, mon] = month.split("-");
   const start = `${year}-${mon}-01`;
-  const lastDay = new Date(Number.parseInt(year, 10), Number.parseInt(mon, 10), 0).getDate();
+  const lastDay = new Date(Date.UTC(Number.parseInt(year, 10), Number.parseInt(mon, 10), 0)).getUTCDate();
   const end = `${year}-${mon}-${String(lastDay).padStart(2, "0")}`;
 
   const query = supabase
@@ -96,21 +102,20 @@ async function fetchCalendarMonth(month: string, limit: number): Promise<Calenda
     .gte("release_date", start)
     .lte("release_date", end)
     .order("release_date", { ascending: true })
-    .limit(limit * 2);
-  const dbQuery = query.then((result) => result as { data: GameRow[] | null; error: unknown });
+    .limit(limit * 2)
+    .abortSignal(AbortSignal.timeout(4000));
+  const dbQuery = Promise.resolve(query).then((result) => result as { data: GameRow[] | null; error: unknown });
 
-  const [{ data, error }, gxCalendar] = await Promise.all([
-    dbQuery,
-    gxFetchCalendarMonthSnapshot(month, getGXCalendar),
+  const [dbResult, gxResult, upcoming] = await Promise.all([
+    dbQuery.catch(() => ({ data: null, error: new Error('Catalogue calendar unavailable') })),
+    boundedHomepageRead(6500, () => gxFetchCalendarMonthSnapshot(month, getGXCalendar)).catch(() => null),
+    month >= getCalendarMonthKey() ? boundedHomepageRead(3800, () => loadExplore('best-of-year', 1, limit, undefined, undefined, 'oldest', '', undefined, { snapshotOnly: true, releaseMonth: month })).catch(() => null) : null,
   ]);
+  const { data, error } = dbResult;
+  const gxCalendar = gxResult ?? { items: [], source: 'empty' as const, fetchedAt: undefined };
 
-  if (error) {
-    throw error;
-  }
-
-  const monthRows = (data ?? [])
-    .filter((row) => isPublicSafeGame(row) && hasUsableCardImage(row))
-    ;
+  const monthRows = (data ?? []).filter(row => isPublicSafeGame(row) && hasUsableCardImage(row)
+    && !["cancelled", "canceled", "delisted", "tba"].includes(row.release_status ?? ""));
 
   const gxSlugs = Array.from(new Set(gxCalendar.items.map((item) => item.slug).filter((slug): slug is string => Boolean(slug))));
   const gxTitles = Array.from(new Set(gxCalendar.items.map((item) => item.title).filter(Boolean)));
@@ -130,21 +135,64 @@ async function fetchCalendarMonth(month: string, limit: number): Promise<Calenda
   const dbContextGames = contextRows.map(mapGameRow);
   const dbGames = Array.from(new Map([...dbMonthGames, ...dbContextGames].map((game) => [game.id, game])).values());
 
-  return {
+  const items = mergeCalendarGames(dbGames, gxCalendar.items).filter(game => game.releaseDate?.slice(0, 7) === month);
+  const knownTitles = new Set(items.map(game => normalizeTitle(game.title)));
+  const knownSlugs = new Set(items.map(game => game.slug));
+  if (upcoming?.source === 'rawg' && !upcoming.degraded) {
+    for (const game of upcoming.items) {
+      if (!game.released) continue;
+      const titleKey = normalizeTitle(game.name);
+      if (knownSlugs.has(game.slug) || knownTitles.has(titleKey)) {
+        if (game.releaseWindow) {
+          const match = items.find(entry => (entry.slug === game.slug || normalizeTitle(entry.title) === titleKey)
+            && entry.releaseDate?.slice(0, 10) === game.released && !entry.calendarOriginalReleaseDate);
+          if (match) {
+            match.releaseDate = '';
+            match.calendarReleaseWindow = game.releaseWindow;
+            if (game.earlyAccess) match.calendarEntryTag = 'Full release pending';
+          }
+        }
+        continue;
+      }
+      knownSlugs.add(game.slug);
+      knownTitles.add(titleKey);
+      const entry = gxCalendarToGame({ title: game.name, slug: game.slug, cover: game.image,
+        releaseDate: game.released, originalReleaseDate: null, hotGame: false,
+        url: null, ctaLabel: null, tagLabel: game.earlyAccess ? 'Full release pending' : null, tagColor: null,
+        genres: game.genres, platforms: game.platforms });
+      items.push({ ...entry, rawgId: game.rawgId, scoreSource: 'rawg', calendarHasDetailPage: true,
+        ...(game.releaseWindow ? { releaseDate: '', calendarReleaseWindow: game.releaseWindow } : {}) });
+    }
+  }
+  const unavailable = [
+    ...(error ? ['catalogue'] : []),
+    ...(gxCalendar.source === 'empty' ? ['GX calendar'] : []),
+    ...(month >= getCalendarMonthKey() && (!upcoming || upcoming.degraded) ? ['upcoming snapshot'] : []),
+  ];
+  const dataForMonth: CalendarMonthResponse = {
     month,
-    items: mergeCalendarGames(dbGames, gxCalendar.items).slice(0, limit),
+    items: items.sort((a, b) => (a.releaseDate || '9999').localeCompare(b.releaseDate || '9999') || a.title.localeCompare(b.title)).slice(0, limit),
     gxSource: gxCalendar.source,
     gxCount: gxCalendar.items.length,
     dbCount: dbMonthGames.length,
     gxFetchedAt: gxCalendar.fetchedAt,
   };
+  if (unavailable.length) {
+    throw new IncompleteCatalogueRead({ ...dataForMonth, unavailable: true }, unavailable);
+  }
+  return dataForMonth;
 }
 
 export async function loadCalendarMonth(month: string, limit = CALENDAR_DEFAULT_LIMIT): Promise<CalendarMonthResponse> {
   const normalizedLimit = normalizeCalendarLimit(limit);
-  return unstable_cache(
-    () => fetchCalendarMonth(month, normalizedLimit),
-    [CALENDAR_MONTH_CACHE_NAMESPACE, month, String(normalizedLimit)],
-    { revalidate: CALENDAR_REVALIDATE_SECONDS }
-  )();
+  try {
+    return await unstable_cache(
+      () => fetchCalendarMonth(month, normalizedLimit),
+      [CALENDAR_MONTH_CACHE_NAMESPACE, month, String(normalizedLimit)],
+      { revalidate: CALENDAR_REVALIDATE_SECONDS }
+    )();
+  } catch (error) {
+    if (error instanceof IncompleteCatalogueRead) return error.data as CalendarMonthResponse;
+    throw error;
+  }
 }

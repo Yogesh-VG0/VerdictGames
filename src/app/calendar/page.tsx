@@ -35,7 +35,9 @@ export async function generateMetadata({ searchParams }: CalendarPageProps): Pro
 export default async function CalendarPage({ searchParams }: CalendarPageProps) {
   const resolvedSearchParams = searchParams ? await searchParams : undefined;
   const state = parseCalendarPageState(resolvedSearchParams);
-  const initialMonthData = await loadCalendarMonth(state.month);
+  const initialMonthData = await loadCalendarMonth(state.month).catch(() => ({
+    month: state.month, items: [], gxSource: "empty" as const, gxCount: 0, dbCount: 0, unavailable: true,
+  }));
   const today = new Date().toISOString().slice(0, 10);
   const currentMonth = getCalendarMonthKey();
 

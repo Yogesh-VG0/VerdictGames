@@ -3,7 +3,7 @@
  * adaptations and crossovers when the headline establishes a gaming connection.
  */
 export function isRelevantGamingHeadline(title: string): boolean {
-  const entertainment = /\b(anime|manga|screenx|box office|cinema|film|movie|tv series|television|animators)\b/i;
-  const gaming = /\b(video[ -]?games?|games?|gaming|gameplay|gamers?|playstation|xbox|nintendo|steam|dlc|esports?|rpg|controller|console|adaptation|crossover)\b/i;
+  const entertainment = /\b(anime|manga|screenx|box office|cinema|films?|movies?|tv series|television|animators|casting|recast(?:ing)?|cast as|cast to play|actors?|avengers[ :]+doomsday)\b/i;
+  const gaming = /\b(video[ -]?games?|games?|gaming|gameplay|gamers?|playstation|xbox|nintendo|steam|dlc|esports?|rpg|controller|console)\b/i;
   return !entertainment.test(title) || gaming.test(title);
 }

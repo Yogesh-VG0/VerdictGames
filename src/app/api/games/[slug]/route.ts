@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { jsonNotFound } from "@/lib/api/response";
+import { jsonError, jsonNotFound } from "@/lib/api/response";
 import {
   GAME_DETAIL_API_CACHE_CONTROL,
   GAME_DETAIL_REVALIDATE_SECONDS,
@@ -48,7 +48,7 @@ export async function GET(
     );
   } catch (err) {
     console.error(`[API] /games/${slug} error:`, err);
-    return NextResponse.json({ success: false, error: 'Game data is temporarily unavailable' }, { status: 503 });
+    return jsonError('Game data is temporarily unavailable', 503);
   }
 }
 

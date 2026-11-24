@@ -11,12 +11,15 @@ import { recordProviderUsage } from "@/lib/utils/providerUsage";
 import { isUpcomingSnapshot } from './rawg-snapshot.mjs';
 import { collectRawgPages } from './rawg-discovery.mjs';
 import { homepageSignal } from '@/lib/services/homepage-budget';
+import { normalizePlatform } from '@/lib/utils/platform';
 
 const RAWG_BASE = "https://api.rawg.io/api";
 let rawgRetryAt = 0;
 let recoveryProbe = false;
 const pendingReads = new Map<string, Promise<Response>>();
 const missingEndpoints = new Map<string, number>();
+
+export class RawgNotFoundError extends Error {}
 
 function getApiKey(): string {
   const key = process.env.RAWG_API_KEY;
@@ -30,7 +33,7 @@ function getApiKey(): string {
 async function trackedFetch(endpoint: string, url: string, init?: RequestInit): Promise<Response> {
   const pending = pendingReads.get(url);
   if (pending) return (await pending).clone();
-  if ((missingEndpoints.get(url) || 0) > Date.now()) throw new Error('RAWG endpoint unavailable; using stored data');
+  if ((missingEndpoints.get(url) || 0) > Date.now()) throw new RawgNotFoundError('RAWG confirmed this endpoint is missing');
   if (Date.now() < rawgRetryAt) throw new Error('RAWG temporarily unavailable; using stored data');
   if (recoveryProbe) throw new Error('RAWG recovery probe in progress; using stored data');
   const isProbe = rawgRetryAt > 0;
@@ -87,6 +90,7 @@ export interface RawgSearchResponse {
 }
 
 export interface RawgGameDetail extends RawgSearchResult {
+  tba?: boolean;
   name_original: string;
   description_raw: string;
   description: string; // HTML
@@ -144,13 +148,14 @@ export async function searchRawg(
 /**
  * Get full game details from RAWG by ID.
  */
-export async function getRawgGame(id: number): Promise<RawgGameDetail> {
+export async function getRawgGame(id: number | string): Promise<RawgGameDetail> {
   const params = new URLSearchParams({ key: getApiKey() });
 
-  const res = await trackedFetch("game", `${RAWG_BASE}/games/${id}?${params}`, {
+  const res = await trackedFetch("game", `${RAWG_BASE}/games/${encodeURIComponent(id)}?${params}`, {
     next: { revalidate: 3600 },
   });
 
+  if (res.status === 404 || res.status === 410) throw new RawgNotFoundError('RAWG game not found');
   if (!res.ok) {
     throw new Error(`RAWG game fetch failed: ${res.status} ${res.statusText}`);
   }
@@ -467,28 +472,12 @@ export function extractPlayStoreUrl(
  * Map RAWG platforms to our internal platform types.
  */
 export function mapRawgPlatforms(
-  platforms: RawgSearchResult["platforms"]
+  platforms?: { platform?: { name?: string; slug?: string } }[] | null
 ): string[] {
-  if (!platforms) return [];
-
-  const mapped: string[] = [];
-  const add = (p: string) => { if (!mapped.includes(p)) mapped.push(p); };
-
-  for (const { platform } of platforms) {
-    const slug = platform.slug.toLowerCase();
-    const name = platform.name.toLowerCase();
-
-    if (slug === "pc") add("PC");
-    else if (slug === "linux") add("Linux");
-    else if (slug === "macos" || slug === "macintosh") add("macOS");
-    else if (slug === "playstation5" || name.includes("playstation 5")) add("PlayStation 5");
-    else if (slug === "playstation4" || name.includes("playstation 4")) add("PlayStation 4");
-    else if (slug === "xbox-series-x" || name.includes("xbox series")) add("Xbox Series X|S");
-    else if (slug === "xbox-one" || name.includes("xbox one")) add("Xbox One");
-    else if (slug === "nintendo-switch" || name.includes("nintendo switch")) add("Nintendo Switch");
-    else if (slug === "android") add("Android");
-    else if (slug === "ios") add("iOS");
+  const mapped = new Set<string>();
+  for (const { platform } of platforms ?? []) {
+    const canonical = normalizePlatform(platform?.name ?? "") ?? normalizePlatform(platform?.slug?.replace(/-/g, " ") ?? "");
+    if (canonical) mapped.add(canonical);
   }
-
-  return mapped;
+  return [...mapped];
 }

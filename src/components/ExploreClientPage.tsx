@@ -113,6 +113,8 @@ function GameCard({ game, rank, priority = false, showRating = true }: { game: R
             <span className="ml-auto text-[10px] font-medium">
               {game.tba ? (
                 <span className="text-yellow-400">TBA</span>
+              ) : game.releaseWindow ? (
+                <span className="text-white/70">{game.releaseWindow}</span>
               ) : game.released ? (
                 <span className="text-white/50">{new Date(game.released).getFullYear()}</span>
               ) : null}

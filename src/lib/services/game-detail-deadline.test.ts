@@ -132,7 +132,7 @@ describe('game-detail slug deadline with the installed SDK and Next cache', () =
     const failed = await pending;
     await failed.revalidations;
     expect(failed.response.status).toBe(503);
-    expect(failed.response.headers.get('cache-control')).toBeNull();
+    expect(failed.response.headers.get('cache-control')).toContain('no-store');
     expect(entries.size).toBe(0);
     await vi.advanceTimersByTimeAsync(5000);
     expect(attempts).toEqual([{ started: 0, ended: 5000, retry: null }]);

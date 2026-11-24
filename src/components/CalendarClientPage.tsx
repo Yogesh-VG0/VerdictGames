@@ -182,6 +182,7 @@ export default function CalendarClientPage({ initialMonth, initialMonthData, tod
   const scrollStartX = useRef(0);
   const hasDragged = useRef(false);
   const monthRequestId = useRef(0);
+  const monthRequest = useRef<AbortController | null>(null);
   const currentMonthDate = useMemo(() => new Date(`${currentMonth}-01T00:00:00Z`), [currentMonth]);
   const [serverSnapshot, setServerSnapshot] = useState(initialMonthData);
   if (serverSnapshot !== initialMonthData) {
@@ -194,6 +195,7 @@ export default function CalendarClientPage({ initialMonth, initialMonthData, tod
 
   useEffect(() => {
     monthRequestId.current += 1;
+    return () => monthRequest.current?.abort();
   }, [initialMonth, initialMonthData]);
 
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
@@ -258,7 +260,7 @@ export default function CalendarClientPage({ initialMonth, initialMonthData, tod
     if (!games.length) return {} as Record<string, CalendarGame[]>;
     const map: Record<string, CalendarGame[]> = {};
     for (const game of games) {
-      const day = game.releaseDate?.slice(0, 10) ?? "TBA";
+      const day = game.releaseDate?.slice(0, 10) || "TBA";
       (map[day] ??= []).push(game);
     }
     return Object.fromEntries(Object.entries(map).sort(([left], [right]) => left.localeCompare(right)));
@@ -278,10 +280,13 @@ export default function CalendarClientPage({ initialMonth, initialMonthData, tod
 
   const loadMonth = useCallback(async (month: string) => {
     const requestId = ++monthRequestId.current;
+    monthRequest.current?.abort();
+    const controller = new AbortController();
+    monthRequest.current = controller;
     setIsMonthLoading(true);
-    const data = await getCalendarGames(month);
+    const data = await getCalendarGames(month, controller.signal);
 
-    if (monthRequestId.current !== requestId) {
+    if (monthRequestId.current !== requestId || controller.signal.aborted) {
       return;
     }
 
@@ -386,8 +391,13 @@ export default function CalendarClientPage({ initialMonth, initialMonthData, tod
         </div>
       </div>
 
+      {!isMonthLoading && monthData.unavailable && games.length > 0 && (
+        <p role="status" className="text-sm text-secondary">Some release sources are unavailable. Showing the dates we could load.</p>
+      )}
       <AnimatePresence mode="wait">
-        {games.length > 0 ? (
+        {isMonthLoading && monthData.month !== selectedMonth ? (
+          <p key="month-loading" role="status" className="py-16 text-center text-secondary">Loading releases…</p>
+        ) : games.length > 0 ? (
           <motion.div
             key={selectedMonth}
             initial={false}
@@ -398,7 +408,7 @@ export default function CalendarClientPage({ initialMonth, initialMonthData, tod
           >
             {Object.entries(grouped).map(([date, dayGames]) => {
               const formatted = date === "TBA"
-                ? "TBA"
+                  ? "Day to be announced"
                 : formatCalendarDay(date);
               const isCollapsed = collapsedDays.has(date);
               const isToday = date === today;
@@ -440,7 +450,7 @@ export default function CalendarClientPage({ initialMonth, initialMonthData, tod
                               const status = getCalendarStatus(game, today);
                               const contextBadge = getCalendarContextBadge(game);
                               const contextNote = getCalendarContextNote(game);
-                              const primaryHref = game.calendarHasDetailPage && game.slug ? `/game/${game.slug}` : game.calendarUrl;
+                              const primaryHref = game.calendarHasDetailPage && game.slug ? `/game/${game.slug}${game.rawgId ? `?rawgId=${game.rawgId}` : ""}` : game.calendarUrl;
                               const primaryIsExternal = !game.calendarHasDetailPage && Boolean(game.calendarUrl);
                               const externalHref = game.calendarHasDetailPage ? game.calendarUrl : null;
                               const rowClassName = "flex items-center gap-3 sm:gap-4 px-4 py-3.5";
@@ -588,7 +598,7 @@ export default function CalendarClientPage({ initialMonth, initialMonthData, tod
             className={`text-center py-16 space-y-4 transition-opacity ${isMonthLoading ? "opacity-60" : ""}`}
           >
             <CalendarX className="w-10 h-10 text-accent mx-auto" />
-            <p className="text-foreground font-semibold text-lg">No releases found for this month</p>
+            <p className="text-foreground font-semibold text-lg">{monthData.unavailable ? "Release calendar is temporarily unavailable" : "No releases found for this month"}</p>
             <p className="text-secondary text-sm max-w-md mx-auto">
               Try selecting a different month, or browse games that are already available.
             </p>

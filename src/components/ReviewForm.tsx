@@ -37,6 +37,7 @@ export default function ReviewForm({ gameId, gameSlug, onAuthRequired, onSuccess
     mutationFn: submitReview,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["gameReviews", gameSlug] });
+      queryClient.invalidateQueries({ queryKey: ["publicGameReviews", gameSlug] });
       setIsOpen(false);
       setTitle("");
       setBody("");

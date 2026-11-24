@@ -139,9 +139,10 @@ const REVIEWS_PER_PAGE = 3;
 export default function SteamReviews({ slug, className, initialData }: SteamReviewsProps) {
   const [page, setPage] = useState(1);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["steam-reviews", slug],
-    queryFn: () => getSteamReviews(slug, 21),
+    queryFn: ({ signal }) => getSteamReviews(slug, 21, signal),
+    retry: false,
     initialData,
     staleTime: 30 * 60 * 1000,
   });
@@ -159,6 +160,9 @@ export default function SteamReviews({ slug, className, initialData }: SteamRevi
     );
   }
 
+  if (!data && isError) {
+    return <button type="button" className="text-accent" onClick={() => void refetch()}>Steam reviews are temporarily unavailable. Try again</button>;
+  }
   if (!data || data.reviews.length === 0) return null;
 
   const steamUrl = data.steamAppId

@@ -5,7 +5,10 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { boundedHomepageRead } from "@/lib/services/homepage-budget";
 import { loadSteamReviews } from "@/lib/services/steam-reviews";
+
+export const maxDuration = 15;
 
 const STEAM_REVIEWS_API_CACHE_CONTROL = "s-maxage=300, stale-while-revalidate=3600";
 
@@ -25,7 +28,7 @@ export async function GET(
   const limit = Number.isFinite(requestedLimit) ? Math.min(Math.max(requestedLimit, 1), 21) : 3;
 
   try {
-    const data = await loadSteamReviews(slug, limit);
+    const data = await boundedHomepageRead(6000, () => loadSteamReviews(slug, limit));
     return jsonSteamReviews(data);
   } catch (err) {
     console.error("[API] /games/[slug]/steam-reviews error:", err);

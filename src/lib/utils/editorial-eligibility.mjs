@@ -14,6 +14,9 @@ const coOp = ['co op', 'online co op', 'local co op', 'co op campaign', 'co oper
 const multiplayer = ['multiplayer', 'local multiplayer', 'online multiplayer', 'pvp', 'massively multiplayer', 'mmo', ...coOp];
 const strategy = ['city builder', 'base building', 'colony sim', '4x', 'grand strategy', 'rts', 'real time strategy', 'turn based strategy', 'real time tactics', 'turn based tactics', 'wargame'];
 const normalize = value => String(value ?? '').trim().toLowerCase().replace(/[-_]+/g, ' ').replace(/\s+/g, ' ');
+// PostgREST sends date strings while the scheduler's Postgres driver returns Date objects.
+const releaseDay = value => typeof value === 'string' ? value.slice(0, 10)
+  : value instanceof Date && Number.isFinite(value.getTime()) ? value.toISOString().slice(0, 10) : '';
 
 // Entries are [score, review floor, years since launch, thematic evidence].
 // Stored tags are classification evidence. Official mode confirmations are
@@ -30,7 +33,7 @@ const contracts = {
   'best-story-driven-adventures': [78, 20, 4, (genre, tag, any) =>
     (genre('adventure', 'rpg') || tag('visual novel', 'interactive fiction'))
       && any('story rich', 'choices matter', 'narrative', 'visual novel', 'interactive fiction')],
-  'best-indie-under-20-hours': [80, 20, 4, (_genre, tag, any, row) =>
+  'best-indie-under-20-hours': [80, 20, 0, (_genre, tag, any, row) =>
     any('indie') && row.hltb_main > 0 && row.hltb_main <= 20 && tag('singleplayer', 'single player')],
   'best-competitive-multiplayer': [72, 20, 5, (_genre, _tag, any) =>
     any('pvp', 'competitive', 'esports', 'battle royale', 'moba', 'arena shooter') && any(...multiplayer)],
@@ -67,13 +70,14 @@ export const EDITORIAL_GAME_COLUMNS = 'id,title,description,cover_image,genres,t
 export const EDITORIAL_UPCOMING_SNAPSHOT_KEY = 'discovery:rawg:upcoming:v1';
 
 export function editorialAnticipation(payload) {
-  const rows = isUpcomingSnapshot(payload) ? payload.results : [];
+  const rows = isUpcomingSnapshot(payload) && payload.complete && payload.count === payload.results.length ? payload.results : [];
   return new Map(rows.filter(row => !row.tba && row.released && row.added >= 100)
     .map(row => [row.id, { date: row.released, interest: row.added }]));
 }
 
 export function matchesEditorialAnticipation(game, anticipation) {
-  return anticipation.get(game.rawg_id)?.date === game.release_date;
+  const day = releaseDay(game.release_date);
+  return Boolean(day && anticipation.get(game.rawg_id)?.date === day);
 }
 
 export function selectEditorialIds(rankedIds, appearances, limit = 12) {
@@ -90,7 +94,7 @@ export function compareEditorialGames(slug, a, b, anticipation = new Map()) {
   const quality = score(b) - score(a);
   const stable = () => a.id.localeCompare(b.id);
   if (/^most-wanted-\d{4}$/.test(slug)) return (anticipation.get(b.rawg_id)?.interest ?? 0) - (anticipation.get(a.rawg_id)?.interest ?? 0)
-    || a.release_date.localeCompare(b.release_date) || stable();
+      || releaseDay(a.release_date).localeCompare(releaseDay(b.release_date)) || stable();
   if (slug === 'best-competitive-multiplayer') return players || quality || stable();
   if (slug === 'hidden-gems-since-2024' || slug === 'hidden-indie-gems') return quality || -reviews || stable();
   return quality || reviews || players || stable();
@@ -107,7 +111,7 @@ export function editorialExclusion(slug, row, today = new Date().toISOString().s
   const tag = (...values) => values.some(value => tags.has(value));
   const any = (...values) => genre(...values) || tag(...values);
   const status = normalize(row.release_status);
-  const date = row.release_date;
+  const date = releaseDay(row.release_date);
   if (!row.title || !row.cover_image || !isPublicContentAllowed(row)) return 'catalogue visibility or artwork';
   if (any('utilities', 'software', 'game development', 'audio production', 'design & illustration', 'dlc', 'soundtrack')
     || /(?:soundpad|soundtrack|season pass|expansion pass|dlc pack|remaster collection)\s*$/i.test(row.title)) return 'supplemental content or software';
@@ -128,7 +132,7 @@ export function editorialExclusion(slug, row, today = new Date().toISOString().s
   if (years && date < String(Number(today.slice(0, 4)) - years) + today.slice(4)) return 'outside the editorial release window';
   if ((row.score ?? 0) < score || (row.review_count ?? 0) < reviews
     || ((row.confidence ?? 0) < 0.2 && !((row.critic_source_count ?? 0) > 0 && (row.critic_score ?? 0) >= 80))) return 'insufficient review evidence';
-  return matches(genre, tag, any, row) ? null : 'insufficient genre, mode or playtime evidence';
+  return matches(genre, tag, any, { ...row, release_date: date }) ? null : 'insufficient genre, mode or playtime evidence';
 }
 
 export function withVerifiedEditorialModes(tags, modes) {

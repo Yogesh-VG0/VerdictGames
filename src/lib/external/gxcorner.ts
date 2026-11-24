@@ -7,6 +7,8 @@
  * Server-only — called from /api/gx/* proxy routes.
  */
 
+import { homepageSignal } from "@/lib/services/homepage-budget";
+
 const BASE = "https://proxy.gxcorner.games";
 const NEWS_BASE = "https://api.news.gxcorner.games";
 const PARAMS = "LANG=en&COUNTRY=US&LOCALE=en-US";
@@ -161,7 +163,7 @@ async function gxFetch<T>(url: string, revalidateSeconds = 3600): Promise<T> {
     ...(revalidateSeconds > 0
       ? { next: { revalidate: revalidateSeconds } }
       : { cache: "no-store" as const }),
-    signal: AbortSignal.timeout(15000),
+    signal: homepageSignal(AbortSignal.timeout(5000)),
   });
   if (!res.ok) throw new Error(`GX API ${res.status}: ${url}`);
   return res.json();
@@ -192,41 +194,26 @@ export async function getGXCalendar(): Promise<GXCalendarEntry[]> {
 
 /** API 4 — Free-to-play games */
 export async function getGXFreeToPlay(): Promise<GXGameListEntry[]> {
-  try {
-    const data = await gxFetch<{ data: { sectionType: [{ games: GXGameListEntry[] }] } }>(
-      `${BASE}/new-content/corners/free-to-plays/${SECTION_IDS.freeToPlay}/us/en?version=desktop&${PARAMS}`
-    );
-    return data.data.sectionType[0].games.sort((a, b) => a.order - b.order);
-  } catch (err) {
-    console.warn("[GX] free-to-play fetch failed:", err);
-    return [];
-  }
+  const data = await gxFetch<{ data: { sectionType: [{ games: GXGameListEntry[] }] } }>(
+    `${BASE}/new-content/corners/free-to-plays/${SECTION_IDS.freeToPlay}/us/en?version=desktop&${PARAMS}`, 0
+  );
+  return data.data.sectionType[0].games.sort((a, b) => a.order - b.order);
 }
 
 /** API 5 — Top games (PS Plus, Game Pass, etc.) */
 export async function getGXTopGames(): Promise<GXGameListEntry[]> {
-  try {
-    const data = await gxFetch<{ data: { sectionType: [{ games: GXGameListEntry[] }] } }>(
-      `${BASE}/new-content/corners/top-games/${SECTION_IDS.topGames}/us/en?version=desktop&${PARAMS}`
-    );
-    return data.data.sectionType[0].games;
-  } catch (err) {
-    console.warn("[GX] top games fetch failed:", err);
-    return [];
-  }
+  const data = await gxFetch<{ data: { sectionType: [{ games: GXGameListEntry[] }] } }>(
+    `${BASE}/new-content/corners/top-games/${SECTION_IDS.topGames}/us/en?version=desktop&${PARAMS}`, 0
+  );
+  return data.data.sectionType[0].games;
 }
 
 /** API 6 — Super deals / discounts */
 export async function getGXDeals(): Promise<GXDealEntry[]> {
-  try {
-    const data = await gxFetch<{ data: { sectionType: [{ games: GXDealEntry[] }] } }>(
-      `${BASE}/new-content/corners/super-deals/${SECTION_IDS.superDeals}/us/en?${PARAMS}`
-    );
-    return data.data.sectionType[0].games;
-  } catch (err) {
-    console.warn("[GX] deals fetch failed:", err);
-    return [];
-  }
+  const data = await gxFetch<{ data: { sectionType: [{ games: GXDealEntry[] }] } }>(
+    `${BASE}/new-content/corners/super-deals/${SECTION_IDS.superDeals}/us/en?${PARAMS}`, 0
+  );
+  return data.data.sectionType[0].games;
 }
 
 /** API 7 — Most liked / most anticipated. Falls back to RAWG trending if GX fails. */

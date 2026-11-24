@@ -9,6 +9,7 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import type { Database, ProfileRow } from "./types";
 import { getServerSupabase } from "./server";
+import { currentHomepageSignal } from "@/lib/services/homepage-budget";
 
 export async function getAuthSupabase() {
   const cookieStore = await cookies();
@@ -17,6 +18,10 @@ export async function getAuthSupabase() {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
+      global: { fetch: (input, init) => {
+        const deadline = currentHomepageSignal();
+        return fetch(input, deadline ? { ...init, signal: init?.signal ? AbortSignal.any([deadline, init.signal]) : deadline } : init);
+      } },
       cookies: {
         getAll() {
           return cookieStore.getAll();
@@ -35,11 +40,16 @@ export async function getAuthSupabase() {
   );
 }
 
+export class MissingProfileError extends Error {}
+
 /** Get the currently authenticated user's profile, or null. */
-export async function getCurrentUser() {
+export async function getCurrentUser({ strict = false }: { strict?: boolean } = {}, client?: Awaited<ReturnType<typeof getAuthSupabase>>) {
   try {
-    const supabase = await getAuthSupabase();
-    const { data: { user } } = await supabase.auth.getUser();
+    const supabase = client ?? await getAuthSupabase();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (strict && authError && authError.name !== "AuthSessionMissingError"
+      && authError.status !== 401 && authError.status !== 403
+      && !["session_not_found", "refresh_token_not_found", "bad_jwt"].includes(authError.code ?? "")) throw authError;
     if (!user) return null;
 
     // Read private identity/role columns only after Auth has verified the
@@ -55,31 +65,36 @@ export async function getCurrentUser() {
       .eq("auth_id", user.id)
       .maybeSingle() as { data: (ProfileRow & { role?: string }) | null; error: unknown };
 
+    const missingRole = ['42703', 'PGRST204'].includes((profileErr as { code?: string } | null)?.code ?? '');
+    if (strict && profileErr && !missingRole) throw profileErr;
     if (!profileErr && profile) {
       resolvedProfile = profile;
-    } else {
-      // Fallback: role column may not exist, or auth_id lookup failed
-      const { data: profileFallback } = await profileClient
+    } else if (profileErr) {
+      // Older schemas may lack the role column.
+      const { data: profileFallback, error: fallbackError } = await profileClient
         .from("profiles")
         .select("id, username, display_name, avatar_url")
         .eq("auth_id", user.id)
-        .maybeSingle() as { data: ProfileRow | null };
+        .maybeSingle() as { data: ProfileRow | null; error: unknown };
+      if (strict && fallbackError) throw fallbackError;
 
-      if (!profileFallback) {
-        // Try by id (legacy schema)
-        const { data: profileById } = await profileClient
-          .from("profiles")
-          .select("id, username, display_name, avatar_url")
-          .eq("id", user.id)
-          .is("auth_id", null)
-          .maybeSingle() as { data: ProfileRow | null };
-        resolvedProfile = profileById;
-      } else {
-        resolvedProfile = profileFallback;
-      }
+      resolvedProfile = profileFallback;
+    }
+    if (!resolvedProfile) {
+      const { data: profileById, error: legacyError } = await profileClient
+        .from("profiles")
+        .select("id, username, display_name, avatar_url")
+        .eq("id", user.id)
+        .is("auth_id", null)
+        .maybeSingle() as { data: ProfileRow | null; error: unknown };
+      if (strict && legacyError) throw legacyError;
+      resolvedProfile = profileById;
     }
 
-    if (!resolvedProfile) return null;
+    if (!resolvedProfile) {
+      if (strict) throw new MissingProfileError("Verified session has no profile");
+      return null;
+    }
 
     return {
       id: user.id,
@@ -90,7 +105,8 @@ export async function getCurrentUser() {
       avatar: resolvedProfile.avatar_url,
       role: (resolvedProfile.role as "user" | "admin") ?? "user",
     };
-  } catch {
+  } catch (error) {
+    if (strict) throw error;
     return null;
   }
 }

@@ -22,7 +22,7 @@ vi.mock('@/lib/services/explore', () => ({ loadExplore: state.load }));
 
 const now = Date.parse('2026-11-23T13:00:00Z');
 const fetchedAt = new Date(now - 90 * 60000).toISOString();
-const item = { rawgId: 973539, catalogueId: 'matched-fixture', slug: 'discovered-game', name: 'Discovered Game', released: '2027-03-31', tba: false, earlyAccess: false, image: null, added: 30, toplay: 7, genres: [] };
+const item = { rawgId: 973539, catalogueId: 'matched-fixture', slug: 'discovered-game', name: 'Discovered Game', released: '2027-03-31', tba: false, earlyAccess: true, releaseWindow: 'Mar 2027', image: 'https://media.rawg.io/media/games/fixture.jpg', added: 30, toplay: 7, genres: [] };
 const snapshot = { items: [item], source: 'rawg', fetchedAt, degraded: false };
 const unavailable = { data: [], fetchedAt: null, degraded: true };
 
@@ -45,14 +45,14 @@ describe('homepage discovery cache admission', () => {
   it('caches a healthy dated snapshot, keeps verified identity and omits past releases', async () => {
     state.load.mockResolvedValue({
       ...snapshot,
-      items: [item, { ...item, rawgId: 1, catalogueId: null },
+      items: [item, { ...item, rawgId: 1, catalogueId: null, earlyAccess: false, releaseWindow: undefined, slug: 'provider-only-game', name: 'Provider Game' },
         { ...item, rawgId: 2, released: '2026-11-22' }],
     });
     const { loadHomepageMostAnticipatedWithStatus: read } = await import('./homepage');
     const result = await read();
     expect(result).toMatchObject({
       fetchedAt, degraded: false,
-      data: [{ name: 'Discovered Game', earlyAccess: true, releaseWindow: 'Mar 2027' }],
+      data: [{ name: 'Discovered Game', earlyAccess: true, releaseWindow: 'Mar 2027' }, { name: 'Provider Game', earlyAccess: false, added: 30, toplay: 7 }],
     });
     expect(await read()).toEqual(result);
     expect(state.load).toHaveBeenCalledTimes(1);

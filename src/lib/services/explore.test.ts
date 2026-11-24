@@ -18,7 +18,7 @@ describe('Explore catalogue regressions', () => {
   beforeEach(() => { state.rows = []; state.compact = null; state.upcoming.mockReset(); });
   it('keeps the provider upcoming pool even when only one entry is tracked locally, and resolves its cover and canonical slug', async () => {
     state.rows = [{ rawg_id: 1, slug: 'canonical-one', cover_image: 'https://images.igdb.com/igdb/image/upload/t_cover_big/co123.jpg' }];
-    state.upcoming.mockResolvedValue({ results: [1,2,3].map(id => ({ id, slug: `game-${id}`, name: `Game ${id}`, released: '2099-01-01', tba: false, rating:0, ratings_count:0, background_image: `scene-${id}.jpg`, tags: id === 3 ? [{name:'NSFW'}] : [], genres: [], platforms: [], added: 100, added_by_status: {} })) });
+    state.upcoming.mockResolvedValue({ count: 3, results: [1,2,3].map(id => ({ id, slug: `game-${id}`, name: `Game ${id}`, released: '2099-01-01', tba: false, rating:0, ratings_count:0, background_image: `scene-${id}.jpg`, tags: id === 3 ? [{name:'NSFW'}] : [], genres: [], platforms: [], added: 100, added_by_status: {} })) });
     const first = await loadExplore('best-of-year', 1, 1);
     expect(first.count).toBe(2);
     expect(first.hasNext).toBe(true);
@@ -27,7 +27,7 @@ describe('Explore catalogue regressions', () => {
   });
   it('uses an exactly matched IGDB cover for a real untracked anticipated title', async () => {
     state.portraits.mockResolvedValueOnce([{ name: 'Exodus', year:2099, companies:['Archetype Entertainment'], aliases: [], image: 'https://images.igdb.com/igdb/image/upload/t_cover_big/co123.jpg' }]);
-    state.upcoming.mockResolvedValue({ results: [{ id: 973389, slug: 'exodus-archetype-entertainment', name: 'Exodus (Archetype Entertainment)', released: '2099-04-07', tba:false, rating:0, ratings_count:0, background_image: 'https://media.rawg.io/media/screenshots/c78/example.jpg', tags: [], genres: [], platforms: [], added: 23, added_by_status: { toplay: 12 } }] });
+    state.upcoming.mockResolvedValue({ count: 1, results: [{ id: 973389, slug: 'exodus-archetype-entertainment', name: 'Exodus (Archetype Entertainment)', released: '2099-04-07', tba:false, rating:0, ratings_count:0, background_image: 'https://media.rawg.io/media/screenshots/c78/example.jpg', tags: [], genres: [], platforms: [], added: 23, added_by_status: { toplay: 12 } }] });
     const result = await loadExplore('best-of-year');
     expect(result.items[0].imageKind).toBe('cover');
     expect(result.items[0].metricSource).toBe('rawg');
@@ -42,7 +42,7 @@ describe('Explore catalogue regressions', () => {
   });
   it('excludes a locally verified full release from provider TBA discovery without changing remaining interest counts',async()=>{
     state.rows=[{rawg_id:1,slug:'released',release_status:'released',tags:['Early Access'],cover_image:'https://images.igdb.com/igdb/image/upload/t_cover_big/co123.jpg'}];
-    state.upcoming.mockResolvedValue({results:[1,2].map(id=>({id,slug:`game-${id}`,name:`Game ${id}`,released:null,tba:true,rating:0,ratings_count:0,background_image:'poster.jpg',tags:[],genres:[],platforms:[],added:123,added_by_status:{toplay:17}}))});
+    state.upcoming.mockResolvedValue({count:2,results:[1,2].map(id=>({id,slug:`game-${id}`,name:`Game ${id}`,released:null,tba:true,rating:0,ratings_count:0,background_image:'poster.jpg',tags:[],genres:[],platforms:[],added:123,added_by_status:{toplay:17}}))});
     const result=await loadExplore('best-of-year');
     expect(result.count).toBe(1);
     expect(result.items[0]).toMatchObject({slug:'game-2',added:123,toplay:17,metricSource:'rawg'});

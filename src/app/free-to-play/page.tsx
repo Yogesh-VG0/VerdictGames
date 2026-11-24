@@ -169,16 +169,19 @@ export default function FreeToPlayPage() {
   const [selectedGenre, setSelectedGenre] = useState("All");
   const [selectedService, setSelectedService] = useState("All");
 
-  const { data: freeGames, isLoading: freeLoading } = useQuery({
-    queryKey: ["gx-free-to-play-full"],
-    queryFn: () => getGXFreeToPlay(),
-    staleTime: 60 * 60 * 1000,
+  const { data: freeGames, isLoading: freeLoading, isError: freeError, refetch: retryFree } = useQuery({
+    queryKey: ["gx-free-browse"],
+    queryFn: ({ signal }) => getGXFreeToPlay(signal),
+    enabled: activeTab === "free",
+    retry: false,
+    staleTime: 5 * 60 * 1000,
   });
 
-  const { data: topGames, isLoading: topLoading } = useQuery({
-    queryKey: ["gx-top-games-full"],
-    queryFn: () => getGXTopGames(),
-    staleTime: 60 * 60 * 1000,
+  const { data: topGames, isLoading: topLoading, isError: topError, refetch: retryTop } = useQuery({
+    queryKey: ["gx-top-games-browse"],
+    queryFn: ({ signal }) => getGXTopGames(signal),
+    retry: false,
+    staleTime: 5 * 60 * 1000,
     enabled: activeTab === "subscriptions",
   });
 
@@ -366,7 +369,9 @@ export default function FreeToPlayPage() {
       </div>
 
       {/* Grid */}
-      {isLoading ? (
+      {(activeTab === "free" ? freeError && !freeGames : topError && !topGames) ? (
+        <button type="button" onClick={() => void (activeTab === "free" ? retryFree() : retryTop())}>Games are temporarily unavailable. Try again</button>
+      ) : isLoading ? (
         <GameGridSkeleton count={10} columns={5} />
       ) : filteredCount === 0 ? (
         <div className="py-16 text-center">

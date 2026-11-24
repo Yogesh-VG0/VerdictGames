@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { jsonNotFound } from "@/lib/api/response";
+import { jsonError, jsonNotFound } from "@/lib/api/response";
+import { boundedHomepageRead } from "@/lib/services/homepage-budget";
 import { loadGameDetail } from "@/lib/services/game-detail";
 import {
   getRelatedGamesForGame,
@@ -8,6 +9,7 @@ import {
 } from "@/lib/services/relatedGames";
 
 export const revalidate = 300;
+export const maxDuration = 15;
 
 if (RELATED_GAMES_REVALIDATE_SECONDS !== revalidate) {
   throw new Error("Related games API revalidate must stay aligned with the shared related-games loader.");
@@ -22,13 +24,13 @@ export async function GET(
   const limit = Number.isFinite(parsedLimit) ? parsedLimit : 4;
 
   try {
-    const detail = await loadGameDetail({ slug });
+    const detail = await boundedHomepageRead(4500, () => loadGameDetail({ slug }));
 
     if (detail.status !== "ok") {
       return jsonNotFound("Game");
     }
 
-    const related = await getRelatedGamesForGame(detail.game, limit);
+    const related = await boundedHomepageRead(3500, () => getRelatedGamesForGame(detail.game, limit));
 
     return NextResponse.json(
       { success: true, data: related },
@@ -42,6 +44,6 @@ export async function GET(
     );
   } catch (err) {
     console.error(`[API] /games/${slug}/related error:`, err);
-    return jsonNotFound("Game");
+    return jsonError("Related games temporarily unavailable", 503);
   }
 }

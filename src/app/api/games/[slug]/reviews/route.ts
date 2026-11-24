@@ -9,22 +9,34 @@
  */
 
 import { NextRequest } from "next/server";
-import { jsonPrivateOk as jsonOk, jsonNotFound } from "@/lib/api/response";
+import { jsonError, jsonPrivateOk as jsonOk, jsonNotFound } from "@/lib/api/response";
+import { boundedHomepageRead } from "@/lib/services/homepage-budget";
+import { getPublicSupabase } from "@/lib/supabase/public";
 import { mapReviewRow } from "@/lib/db/mappers";
 import { getAuthSupabase, getCurrentUser } from "@/lib/supabase/auth";
 import { attachReviewVoteFields, getReviewVoteAggregates, getUserReviewVotes } from "@/lib/reviewVotes";
 import type { PaginatedResponse, Review } from "@/lib/types";
 
 const PAGE_SIZE = 12;
+export const maxDuration = 15;
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
 ) {
+  try {
+    return await boundedHomepageRead(5500, () => readReviews(request, params));
+  } catch {
+    return jsonError("Community reviews temporarily unavailable", 503);
+  }
+}
+
+async function readReviews(request: NextRequest, params: Promise<{ slug: string }>) {
   const { slug } = await params;
   const searchParams = request.nextUrl.searchParams;
   const sort = searchParams.get("sort") ?? "newest";
-  const page = parseInt(searchParams.get("page") ?? "1", 10);
+  const page = Math.min(100, Math.max(1, Number.parseInt(searchParams.get("page") ?? "1", 10) || 1));
+  const includeUserVotes = searchParams.get("public") !== "1";
 
   try {
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
@@ -32,23 +44,19 @@ export async function GET(
       return jsonOk(empty);
     }
 
-    const supabase = await getAuthSupabase();
+    const supabase = includeUserVotes ? await getAuthSupabase() : getPublicSupabase();
 
-    // Get current user for their vote state (optional)
-    let currentProfileId: string | null = null;
-    try {
-      const user = await getCurrentUser();
-      currentProfileId = user?.profileId ?? null;
-    } catch {
-      // Not authenticated — that's fine
-    }
-
-    // First, get the game ID from slug
-    const { data: gameData } = await supabase
+    const gameLookup = supabase
       .from("games")
       .select("id")
       .eq("slug", slug)
-      .maybeSingle() as { data: { id: string } | null };
+      .maybeSingle();
+    const [{ data: gameData, error: gameError }, user] = await Promise.all([
+      gameLookup,
+      includeUserVotes ? getCurrentUser({ strict: true }, supabase) : null,
+    ]);
+
+    if (gameError) throw gameError;
 
     if (!gameData) {
       return jsonNotFound("Game");
@@ -85,8 +93,10 @@ export async function GET(
     if (error) throw error;
 
     const reviewIds = (data ?? []).map((r: Record<string, unknown>) => r.id as string);
-    const voteCounts = await getReviewVoteAggregates(supabase, reviewIds);
-    const userVotes = await getUserReviewVotes(supabase, reviewIds, currentProfileId);
+    const [voteCounts, userVotes] = await Promise.all([
+      getReviewVoteAggregates(supabase, reviewIds),
+      getUserReviewVotes(supabase, reviewIds, user?.profileId ?? null),
+    ]);
 
     const reviews = (data ?? []).map((row: Record<string, unknown>) => {
       const enriched = attachReviewVoteFields(
@@ -109,7 +119,6 @@ export async function GET(
     return jsonOk(result);
   } catch (err) {
     console.error(`[API] /games/${slug}/reviews error:`, err);
-    const empty: PaginatedResponse<Review> = { items: [], total: 0, page, pageSize: PAGE_SIZE, hasMore: false };
-    return jsonOk(empty);
+    return jsonError("Community reviews temporarily unavailable", 503);
   }
 }

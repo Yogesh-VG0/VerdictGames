@@ -10,6 +10,7 @@
 
 import { recordProviderUsage } from "@/lib/utils/providerUsage";
 import { fetchSteamReviews } from "./steam-reviews-api.mjs";
+import { homepageSignal } from "@/lib/services/homepage-budget";
 
 const STEAM_STORE_BASE = "https://store.steampowered.com/api";
 const STEAM_API_BASE = "https://api.steampowered.com";
@@ -102,23 +103,28 @@ export interface SteamReviewSummary {
  * No API key required — public endpoint.
  */
 export async function getSteamAppDetails(
-  appId: number
+  appId: number,
+  strict = false
 ): Promise<SteamAppDetails["data"] | null> {
   try {
     const res = await trackedFetch(
       "appdetails",
       `${STEAM_STORE_BASE}/appdetails?appids=${appId}&cc=us&l=english`,
-      { next: { revalidate: 3600 } }
+      { next: { revalidate: 3600 }, signal: homepageSignal(AbortSignal.timeout(3500)) }
     );
 
-    if (!res.ok) return null;
+    if (!res.ok) {
+      if (strict) throw new Error(`Steam app details HTTP ${res.status}`);
+      return null;
+    }
 
     const data: Record<string, SteamAppDetails> = await res.json();
     const entry = data[String(appId)];
 
     if (!entry?.success || !entry.data) return null;
     return entry.data;
-  } catch {
+  } catch (error) {
+    if (strict) throw error;
     console.error(`[Steam] Failed to fetch app details for ${appId}`);
     return null;
   }

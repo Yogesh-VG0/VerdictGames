@@ -1,10 +1,12 @@
 import { unstable_cache } from "next/cache";
 import { cache } from "react";
+import { boundedHomepageRead } from "@/lib/services/homepage-budget";
 import { mapGameRow } from "@/lib/db/mappers";
 import {
   extractPlayStoreUrl,
   extractSteamAppId,
   getRawgGame,
+  RawgNotFoundError,
   getRawgScreenshots,
   getRawgStoreLinks,
   mapRawgPlatforms,
@@ -28,7 +30,6 @@ export const GAME_DETAIL_SLUG_REDIRECTS: Record<string, string> = {
 export const GAME_DETAIL_BLOCKED_SLUGS = new Set(["grand-theft-aito-vi"]);
 
 const VALID_SLUG_PATTERN = /^[a-z0-9-]{1,100}$/i;
-const PUBLIC_DATABASE_READ_TIMEOUT_MS = 10_000;
 
 type MobileStoreListing = {
   store: string;
@@ -112,8 +113,8 @@ function mapRawgPreviewGame(args: {
 }): Game {
   const { detail, screenshots, storeLinks } = args;
   const today = new Date().toISOString().slice(0, 10);
-  const releaseDate = detail.released ?? "";
-  const isUpcoming = Boolean(releaseDate && releaseDate > today);
+  const releaseDate = detail.tba ? "" : detail.released ?? "";
+  const isUpcoming = Boolean(detail.tba || releaseDate && releaseDate > today);
   const score = isUpcoming
     ? 0
     : detail.metacritic ?? Math.round((detail.rating ?? 0) * 20);
@@ -143,11 +144,12 @@ function mapRawgPreviewGame(args: {
     developer: (detail.developers ?? []).map((developer) => developer.name).join(", "),
     publisher: (detail.publishers ?? []).map((publisher) => publisher.name).join(", "),
     releaseDate,
+    releaseDateTba: detail.tba,
     description: detail.description_raw ?? "",
     score,
     verdictLabel,
     verdictSummary: isUpcoming
-      ? `${detail.name} is scheduled to launch on ${releaseDate}.`
+      ? releaseDate ? `${detail.name} is scheduled to launch on ${releaseDate}.` : `A release date for ${detail.name} is still to be announced.`
       : `Preview data sourced from RAWG while verdict.games builds a full tracked page for ${detail.name}.`,
     pros: [],
     cons: [],
@@ -173,58 +175,55 @@ function mapRawgPreviewGame(args: {
   };
 }
 
-async function fetchRawgPreviewRecordByRawgId(rawgId: number): Promise<PreviewGameRecord | null> {
+async function fetchRawgPreviewRecord(identity: number | string): Promise<PreviewGameRecord | null> {
   try {
-    const detail = await getRawgGame(rawgId);
-    if (!detail.slug || !isPublicSafeRawgGame(detail) || !isPublicSafeGame({title:detail.name,description:detail.description_raw})) {
+    const detail = await getRawgGame(identity);
+    if (!detail || typeof detail.slug !== "string" || !VALID_SLUG_PATTERN.test(detail.slug)
+      || typeof detail.name !== "string" || !Number.isSafeInteger(detail.id)) {
+      throw new Error("Invalid RAWG game details");
+    }
+    if (!isPublicSafeRawgGame(detail) || !isPublicSafeGame({title:detail.name,description:detail.description_raw})) {
       return null;
     }
 
     const [screenshots, storeLinks] = await Promise.all([
-      getRawgScreenshots(rawgId).catch(() => []),
-      getRawgStoreLinks(rawgId).catch(() => []),
+      boundedHomepageRead(900, () => getRawgScreenshots(detail.id)).catch(() => []),
+      boundedHomepageRead(900, () => getRawgStoreLinks(detail.id)).catch(() => []),
     ]);
 
     return {
       game: mapRawgPreviewGame({ detail, screenshots, storeLinks }),
       canonicalSlug: detail.slug,
     };
-  } catch {
-    return null;
+  } catch (error) {
+    if (error instanceof RawgNotFoundError) return null;
+    throw error;
   }
 }
 
 async function getCachedRawgPreviewRecordByRawgId(rawgId: number): Promise<PreviewGameRecord | null> {
   return unstable_cache(
-    async () => fetchRawgPreviewRecordByRawgId(rawgId),
-    ["game-detail-preview-v2", `rawg:${rawgId}`],
+    async () => boundedHomepageRead(4500, () => fetchRawgPreviewRecord(rawgId)),
+    ["game-detail-preview-v4", `rawg:${rawgId}`],
     { revalidate: 3600 }
   )();
 }
 
 async function fetchRawgPreviewRecordBySlug(slug: string): Promise<PreviewGameRecord | null> {
-  try {
-    const query = humanizePreviewSlug(slug);
-    if (!query) {
-      return null;
-    }
+  const direct = await fetchRawgPreviewRecord(slug);
+  if (direct) return direct;
+  const query = humanizePreviewSlug(slug);
+  if (!query) return null;
 
-    const searchResults = await searchRawg(query, 1, 5);
-    const candidate = pickRawgPreviewCandidate(slug, searchResults.results);
-    if (!candidate) {
-      return null;
-    }
-
-    return fetchRawgPreviewRecordByRawgId(candidate.id);
-  } catch {
-    return null;
-  }
+  const searchResults = await searchRawg(query, 1, 5);
+  const candidate = pickRawgPreviewCandidate(slug, searchResults.results);
+  return candidate ? fetchRawgPreviewRecord(candidate.id) : null;
 }
 
 async function getCachedRawgPreviewRecordBySlug(slug: string): Promise<PreviewGameRecord | null> {
   return unstable_cache(
-    async () => fetchRawgPreviewRecordBySlug(slug),
-    ["game-detail-preview-v2", `slug:${slug}`],
+    async () => boundedHomepageRead(4500, () => fetchRawgPreviewRecordBySlug(slug)),
+    ["game-detail-preview-v4", `slug:${slug}`],
     { revalidate: 3600 }
   )();
 }
@@ -245,7 +244,7 @@ async function fetchGameRecord(args: {
       .from("games")
       .select("*")
       .eq("rawg_id", args.rawgId)
-      .abortSignal(AbortSignal.timeout(PUBLIC_DATABASE_READ_TIMEOUT_MS))
+      .abortSignal(AbortSignal.timeout(PUBLIC_SUPABASE_FETCH_TIMEOUT_MS))
       .maybeSingle() as { data: GameRow | null; error: unknown };
 
     if (error) throw error;
@@ -267,9 +266,8 @@ async function fetchGameRecord(args: {
     row = data;
   }
 
-  if (!row || !isPublicSafeGame(row)) {
-    return null;
-  }
+  if (!row) return null;
+  if (!isPublicSafeGame(row)) return { row, mobileListings: [] };
 
   let mobileListings: MobileStoreListing[] = [];
 
@@ -279,7 +277,7 @@ async function fetchGameRecord(args: {
       .select("store, store_url")
       .eq("game_id", row.id)
       .eq("is_verified", true)
-      .abortSignal(AbortSignal.timeout(PUBLIC_DATABASE_READ_TIMEOUT_MS)) as { data: MobileStoreListing[] | null };
+      .abortSignal(AbortSignal.timeout(1600)) as { data: MobileStoreListing[] | null };
 
     mobileListings = data ?? [];
   } catch {
@@ -294,7 +292,7 @@ async function getCachedGameRecord(args: {
   rawgId?: number | null;
 }): Promise<CachedGameRecord | null> {
   const key = [
-    "game-detail-v2",
+    "game-detail-v3",
     args.slug ?? "slug:null",
     args.rawgId != null ? `rawg:${args.rawgId}` : "rawg:null",
   ];
@@ -357,10 +355,15 @@ async function loadGameDetailUncached(args: {
   const blockedRequestedSlug = GAME_DETAIL_BLOCKED_SLUGS.has(requestedSlug);
   const rawgId = args.rawgId != null && Number.isFinite(args.rawgId) ? args.rawgId : null;
 
-  if (rawgId != null) {
+  const missing = { status: "not-found" as const, requestedSlug, blockedRequestedSlug, redirectSlug };
+  if (!VALID_SLUG_PATTERN.test(requestedSlug)) return missing;
+  if (blockedRequestedSlug && !redirectSlug) return missing;
+
+  if (rawgId != null && !blockedRequestedSlug) {
     const record = await getCachedGameRecord({ rawgId });
 
     if (record) {
+      if (!isPublicSafeGame(record.row)) return missing;
       const game = withVerifiedMobileStoreUrls(mapGameRow(record.row), record.mobileListings);
       return {
         status: "ok",
@@ -388,6 +391,7 @@ async function loadGameDetailUncached(args: {
 
   const record = await getCachedGameRecord({ slug: lookupSlug });
 
+  if (record && !isPublicSafeGame(record.row)) return missing;
   if (!record) {
     const previewRecord = rawgId != null
       ? (await getCachedRawgPreviewRecordByRawgId(rawgId)) ?? await getCachedRawgPreviewRecordBySlug(lookupSlug)

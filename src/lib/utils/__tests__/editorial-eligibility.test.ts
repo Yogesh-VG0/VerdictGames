@@ -34,6 +34,7 @@ describe('system collection eligibility', () => {
   ])('applies dated evidence and eligibility to %s', (slug, genres, tags) => {
     const game = { ...base, genres, tags };
     expect(editorialExclusion(slug, game, today)).toBeNull();
+    expect(editorialExclusion(slug, { ...game, release_date: new Date(game.release_date) }, today)).toBeNull();
     expect(editorialExclusion(slug, { ...game, release_status: 'cancelled' }, today)).toBe('full release required');
     expect(editorialExclusion(slug, { ...game, review_count: 1 }, today)).toBe('insufficient review evidence');
   });
@@ -42,6 +43,7 @@ describe('system collection eligibility', () => {
     const game = { ...base, rawg_id: 12, release_status: 'upcoming', release_date: '2026-12-04' };
     const reason = (overrides = {}) => editorialExclusion('most-wanted-2026', { ...game, ...overrides }, today);
     expect(reason()).toBeNull();
+    expect(reason({ release_date: new Date(game.release_date) })).toBeNull();
     for (const overrides of [{ title: 'The Beatbox Soundpad' }, { release_date: '2022-01-01' },
       { release_date: '2026-12-31' }, { release_date: '2027-01-15' }, { release_status: 'released' },
       { release_status: 'cancelled' }, { release_status: 'early_access' }, { release_status: null }]) {

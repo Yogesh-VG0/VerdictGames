@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import SearchClientPage from "@/components/SearchClientPage";
 import { buildSearchPagePath, getSearchRobotsRule, getSearchSeoCopy, parseSearchPageState } from "@/lib/search";
-import { loadGXDeals, loadGXFreeToPlay, loadGXTopGames } from "@/lib/services/gx-feeds";
 import { loadSearchResults, SEARCH_REVALIDATE_SECONDS } from "@/lib/services/search";
+import { boundedHomepageRead } from "@/lib/services/homepage-budget";
 import { buildSocialMetadata, SITE_URL } from "@/lib/seo";
 
 export const revalidate = 300;
@@ -46,23 +46,12 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   const resolvedSearchParams = searchParams ? await searchParams : undefined;
   const state = parseSearchPageState(resolvedSearchParams);
   const initialGamesData = state.browseTab === "games"
-    ? await loadSearchResults(state.games).catch(() => null)
+    ? await boundedHomepageRead(8500, () => loadSearchResults(state.games)).catch(() => null)
     : null;
-  const [initialDealsData, initialFreeData, initialTopGamesData] = state.browseTab === "games"
-    ? [null, null, null]
-    : await Promise.all([
-        state.browseTab === "deals" ? loadGXDeals().catch(() => null) : Promise.resolve(null),
-        state.browseTab === "free" ? loadGXFreeToPlay().catch(() => null) : Promise.resolve(null),
-        state.browseTab === "free" ? loadGXTopGames().catch(() => null) : Promise.resolve(null),
-      ]);
-
   return (
     <SearchClientPage
       initialState={state}
       initialGamesData={initialGamesData}
-      initialDealsData={initialDealsData}
-      initialFreeData={initialFreeData}
-      initialTopGamesData={initialTopGamesData}
     />
   );
 }

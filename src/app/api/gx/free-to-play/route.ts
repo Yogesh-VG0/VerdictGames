@@ -1,4 +1,5 @@
-import { jsonOk } from "@/lib/api/response";
+import { jsonError, jsonOk } from "@/lib/api/response";
+import { boundedHomepageRead } from "@/lib/services/homepage-budget";
 import {
   GX_FEEDS_API_CACHE_CONTROL,
   GX_FEEDS_REVALIDATE_SECONDS,
@@ -6,6 +7,7 @@ import {
 } from "@/lib/services/gx-feeds";
 
 export const revalidate = 300;
+export const maxDuration = 15;
 // This route depends on an external provider. Keep its CDN/data cache, but do
 // not make a provider outage block a production build.
 export const dynamic = "force-dynamic";
@@ -15,6 +17,10 @@ if (GX_FEEDS_REVALIDATE_SECONDS !== revalidate) {
 }
 
 export async function GET() {
-  const games = await loadGXFreeToPlay();
-  return jsonOk(games, 200, { cacheControl: GX_FEEDS_API_CACHE_CONTROL });
+  try {
+    const data = await boundedHomepageRead(9000, loadGXFreeToPlay);
+    return jsonOk(data, 200, { cacheControl: GX_FEEDS_API_CACHE_CONTROL });
+  } catch {
+    return jsonError("Feed temporarily unavailable. Please try again.", 503);
+  }
 }

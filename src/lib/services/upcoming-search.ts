@@ -1,11 +1,13 @@
 import type {Game,PaginatedResponse} from '@/lib/types';
-import type {RawgListGameItem,RawgListResponse} from '@/lib/api';
+import type {RawgListGameItem} from '@/lib/api';
 import type {SearchGamesState} from '@/lib/search';
 import {normalizePlatforms} from '@/lib/utils/platform';
 import {dedupePublicCanonicalRows} from '@/lib/utils/publicCanonical';
 import {loadExplore} from './explore';
 import {isPublicSafeGame} from '@/lib/utils/publicSafety';
 import {isPrimaryDiscoveryGame} from '@/lib/utils/discovery';
+import {boundedHomepageRead} from './homepage-budget';
+import {coalesceCatalogueRead} from '@/lib/db/cached-catalogue';
 
 export function upcomingCard(item:RawgListGameItem):Game {
   const today=new Date().toISOString().slice(0,10);
@@ -57,17 +59,16 @@ export function mergeUpcomingCards(local:Game[],discovered:Game[],state:SearchGa
 }
 
 /** Keep provider cache reads outside per-filter response caches. */
+const readBrowseUpcoming = coalesceCatalogueRead(() => boundedHomepageRead(3500, () =>
+  loadExplore('best-of-year', 1, 1000, undefined, 'action', 'oldest', '', undefined, { snapshotOnly: true })));
+
 export async function loadUpcomingSearch(state:SearchGamesState,localRead:Promise<{cards?:Game[];totalIsExact:boolean}>):Promise<PaginatedResponse<Game>> {
-  const discoveryRead=(async()=>{
-    const first=await loadExplore('best-of-year',1,40,undefined,'action','oldest');
-    const pages:RawgListResponse[]=[first];
-    for(let page=2;page<=Math.min(25,Math.ceil(first.count/40));page++)pages.push(await loadExplore('best-of-year',page,40,undefined,'action','oldest'));
-    return {items:pages.flatMap(page=>page.items).map(upcomingCard),complete:first.count<=1000 && pages.every(page=>!page.degraded),notice:pages.find(page=>page.notice)?.notice};
-  })();
-  const [local,discovery]=await Promise.allSettled([localRead,discoveryRead]);
+  const [local,discovery]=await Promise.allSettled([localRead,readBrowseUpcoming()]);
   if(local.status==='rejected' && discovery.status==='rejected')throw local.reason;
-  const cards=mergeUpcomingCards(local.status==='fulfilled'?local.value.cards || []:[],discovery.status==='fulfilled'?discovery.value.items:[],state);
-  const complete=local.status==='fulfilled' && local.value.totalIsExact && discovery.status==='fulfilled' && discovery.value.complete;
+  const providerCards = discovery.status === 'fulfilled' && !discovery.value.degraded ? discovery.value.items.map(upcomingCard) : [];
+  const cards=mergeUpcomingCards(local.status==='fulfilled'?local.value.cards || []:[],providerCards,state);
+  const complete=local.status==='fulfilled' && local.value.totalIsExact && discovery.status==='fulfilled'
+    && !discovery.value.degraded && discovery.value.count === discovery.value.items.length;
   const notice=complete?undefined:discovery.status==='fulfilled' && discovery.value.notice || (discovery.status==='rejected'?'Upcoming discovery is temporarily unavailable. Showing saved catalogue games.':'Some upcoming details are temporarily unavailable. Showing the games we could load.');
   const pageSize=25,start=(state.page-1)*pageSize;
   return {items:cards.slice(start,start+pageSize),total:cards.length,page:state.page,pageSize,hasMore:start+pageSize<cards.length,totalIsExact:complete,...(notice?{notice}:{})};

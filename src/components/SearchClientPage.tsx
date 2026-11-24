@@ -220,13 +220,13 @@ function SearchClientPageContent({
 
   const { data, error, isError, isLoading, isFetching } = useQuery({
     queryKey: ["search", searchApiPath],
-    queryFn: () => searchGames(filters),
+    queryFn: ({ signal }) => searchGames(filters, signal),
     enabled: browseTab === "games",
     initialData: shouldUseInitialGamesData ? initialGamesData ?? undefined : undefined,
     initialDataUpdatedAt: shouldRevalidateInitialGamesData ? 0 : undefined,
     staleTime: 30_000,
     refetchOnMount: shouldRevalidateInitialGamesData ? "always" : undefined,
-    retry: 1,
+    retry: false,
   });
 
   const games = data?.items ?? [];
@@ -243,25 +243,28 @@ function SearchClientPageContent({
     setPage(1);
   }, []);
 
-  const { data: dealsData, isLoading: dealsLoading } = useQuery({
+  const { data: dealsData, isLoading: dealsLoading, isError: dealsError, refetch: retryDeals } = useQuery({
     queryKey: ["gx-deals-browse"],
-    queryFn: () => getGXDeals(),
+    queryFn: ({ signal }) => getGXDeals(signal),
+    retry: false,
     initialData: browseTab === "deals" ? initialDealsData ?? undefined : undefined,
     staleTime: GX_QUERY_STALE_TIME,
     enabled: browseTab === "deals",
   });
 
-  const { data: freeData, isLoading: freeLoading } = useQuery({
+  const { data: freeData, isLoading: freeLoading, isError: freeError, refetch: retryFree } = useQuery({
     queryKey: ["gx-free-browse"],
-    queryFn: () => getGXFreeToPlay(),
+    queryFn: ({ signal }) => getGXFreeToPlay(signal),
+    retry: false,
     initialData: browseTab === "free" ? initialFreeData ?? undefined : undefined,
     staleTime: GX_QUERY_STALE_TIME,
-    enabled: browseTab === "free",
+    enabled: browseTab === "free" && freeSubTab === "free",
   });
 
-  const { data: topGamesData, isLoading: topGamesLoading } = useQuery({
+  const { data: topGamesData, isLoading: topGamesLoading, isError: subscriptionsError, refetch: retrySubscriptions } = useQuery({
     queryKey: ["gx-top-games-browse"],
-    queryFn: () => getGXTopGames(),
+    queryFn: ({ signal }) => getGXTopGames(signal),
+    retry: false,
     initialData: browseTab === "free" ? initialTopGamesData ?? undefined : undefined,
     staleTime: GX_QUERY_STALE_TIME,
     enabled: browseTab === "free" && freeSubTab === "subscriptions",
@@ -900,7 +903,7 @@ function SearchClientPageContent({
           ) : (
             <div className="py-16 text-center">
               <Tag className="w-12 h-12 text-tertiary mx-auto mb-3" />
-              <p className="text-secondary">No deals match your filters.</p>
+              {dealsError ? <button type="button" onClick={() => void retryDeals()}>Deals are temporarily unavailable. Try again</button> : <p className="text-secondary">No deals match your filters.</p>}
               <button
                 onClick={resetDealsFilters}
                 className={`${RESET_FILTERS_BUTTON_CLASS} mt-3`}
@@ -1148,7 +1151,7 @@ function SearchClientPageContent({
               ) : (
                 <div className="py-16 text-center">
                   <Gift className="w-12 h-12 text-tertiary mx-auto mb-3" />
-                  <p className="text-secondary">No free games match your filters.</p>
+                  {freeError ? <button type="button" onClick={() => void retryFree()}>Free-to-play games are temporarily unavailable. Try again</button> : <p className="text-secondary">No free games match your filters.</p>}
                   <button
                     onClick={resetFreeFilters}
                     className={`${RESET_FILTERS_BUTTON_CLASS} mt-3`}
@@ -1268,7 +1271,7 @@ function SearchClientPageContent({
               ) : (
                 <div className="py-16 text-center">
                   <Gamepad2 className="w-12 h-12 text-tertiary mx-auto mb-3" />
-                  <p className="text-secondary">No subscription games match your filters.</p>
+                  {subscriptionsError ? <button type="button" onClick={() => void retrySubscriptions()}>Subscription games are temporarily unavailable. Try again</button> : <p className="text-secondary">No subscription games match your filters.</p>}
                   <button
                     onClick={resetSubscriptionFilters}
                     className={`${RESET_FILTERS_BUTTON_CLASS} mt-3`}

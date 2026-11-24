@@ -7,8 +7,8 @@
 export const revalidate = 300; // ISR: revalidate every 5 minutes
 
 import { NextRequest, NextResponse } from "next/server";
-import { jsonBadRequest } from "@/lib/api/response";
-import { createEmptyCalendarMonthResponse, loadCalendarMonth, normalizeCalendarLimit, CALENDAR_API_CACHE_CONTROL, CALENDAR_REVALIDATE_SECONDS } from "@/lib/services/calendar";
+import { jsonBadRequest, jsonError } from "@/lib/api/response";
+import { loadCalendarMonth, normalizeCalendarLimit, CALENDAR_API_CACHE_CONTROL, CALENDAR_REVALIDATE_SECONDS } from "@/lib/services/calendar";
 import { parseCalendarPageState } from "@/lib/utils/gx-calendar";
 
 if (CALENDAR_REVALIDATE_SECONDS !== revalidate) {
@@ -26,26 +26,21 @@ export async function GET(request: NextRequest) {
 
   try {
     const data = await loadCalendarMonth(state.month, limit);
+    if (data.unavailable && data.items.length === 0) {
+      return jsonError("Release calendar is temporarily unavailable", 503);
+    }
 
     return NextResponse.json(
       { success: true, data },
       {
         status: 200,
         headers: {
-          "Cache-Control": CALENDAR_API_CACHE_CONTROL,
+          "Cache-Control": data.unavailable ? "no-store" : CALENDAR_API_CACHE_CONTROL,
         },
       }
     );
   } catch (err) {
     console.error("[API] /calendar error:", err);
-    return NextResponse.json(
-      { success: true, data: createEmptyCalendarMonthResponse(state.month) },
-      {
-        status: 200,
-        headers: {
-          "Cache-Control": CALENDAR_API_CACHE_CONTROL,
-        },
-      }
-    );
+    return jsonError("Release calendar is temporarily unavailable", 503);
   }
 }

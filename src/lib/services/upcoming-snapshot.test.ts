@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const state = vi.hoisted(() => ({ stored: null as unknown, live: vi.fn() }));
 vi.mock('@/lib/external/rawg', () => ({ getRawgUpcoming: state.live }));
+vi.mock('next/cache', () => ({ unstable_cache: (read: unknown) => read }));
 vi.mock('@/lib/supabase/server', () => ({ getServerSupabase: () => ({ from: () => {
   const query: Record<string, unknown> = {};
   for (const method of ['select','eq','abortSignal']) query[method] = () => query;
@@ -21,19 +22,19 @@ describe('durable upcoming snapshot', () => {
     expect(state.live).not.toHaveBeenCalled();
   });
   it('preserves original freshness during indefinite downtime', async () => {
-    state.stored = { payload: { results }, fetched_at:'2020-01-01T00:00:00Z' };
+    state.stored = { payload: { results, complete: true, count: results.length }, fetched_at:'2020-01-01T00:00:00Z' };
     state.live.mockRejectedValue(new Error('timeout'));
-    expect(await readUpcomingSnapshot()).toEqual({ results, fetchedAt:'2020-01-01T00:00:00Z', complete:false });
+    expect(await readUpcomingSnapshot()).toEqual({ results, fetchedAt:'2020-01-01T00:00:00Z', complete:true });
   });
   it('does not replace a successful snapshot with an empty or malformed response', async () => {
-    state.stored = { payload: { results }, fetched_at:'2020-01-01T00:00:00Z' };
+    state.stored = { payload: { results, complete: true, count: results.length }, fetched_at:'2020-01-01T00:00:00Z' };
     state.live.mockResolvedValue({ results: [] });
     expect((await readUpcomingSnapshot()).results).toEqual(results);
     state.live.mockResolvedValue({ results: [{ name:'wrong shape' }] });
     expect((await readUpcomingSnapshot()).results).toEqual(results);
   });
   it('uses fresh provider data on recovery and rejects an invalid cold read', async () => {
-    state.live.mockResolvedValue({ results });
+    state.live.mockResolvedValue({ results, count: results.length });
     expect((await readUpcomingSnapshot()).results).toEqual(results);
     state.live.mockResolvedValue({ results: [] });
     await expect(readUpcomingSnapshot()).rejects.toThrow('Invalid');

@@ -9,6 +9,7 @@ import { dedupePublicCanonicalRows } from "@/lib/utils/publicCanonical";
 import { isPublicSafeGame } from "@/lib/utils/publicSafety";
 import { confidenceWeightedScore, isQualityGame } from "@/lib/utils/quality";
 import { normalizeTitle } from "@/lib/utils/slugify";
+import { currentHomepageSignal, homepageSignal } from "@/lib/services/homepage-budget";
 
 export const RELATED_GAMES_REVALIDATE_SECONDS = 300;
 export const RELATED_GAMES_API_CACHE_CONTROL = `s-maxage=${RELATED_GAMES_REVALIDATE_SECONDS}, stale-while-revalidate=300`;
@@ -196,58 +197,60 @@ async function fetchCandidateRows(game: Game): Promise<RelatedCandidateBucket[]>
       query = query.lte("release_date", today);
     }
 
-    const { data } = await query.limit(args.limit) as unknown as { data: GameRow[] | null };
+    const { data, error } = await query.limit(args.limit).abortSignal(homepageSignal(AbortSignal.timeout(2200))) as unknown as { data: GameRow[] | null; error: unknown };
+    if (error) throw error;
     return { source: args.source, rows: data ?? [] };
   }
 
   const targetGenres = uniqueStrings(game.genres).slice(0, 3);
   const targetTags = pickSignalTags(game.tags, game.genres).slice(0, 3);
-  const queries: Array<Promise<{ source: RelatedCandidateSource; rows: GameRow[] }>> = [];
+  const queries: Array<Parameters<typeof selectRows>[0]> = [];
 
   if (game.franchise?.trim()) {
-    queries.push(selectRows({
+    queries.push({
       source: "franchise",
       exact: { column: "franchise", value: game.franchise.trim() },
       limit: 16,
-    }));
+    });
   }
 
   if (game.developer?.trim()) {
-    queries.push(selectRows({
+    queries.push({
       source: "developer",
       exact: { column: "developer", value: game.developer.trim() },
       limit: 16,
-    }));
+    });
   }
 
   targetGenres.slice(0, 2).forEach((genre) => {
-    queries.push(selectRows({
+    queries.push({
       source: "genre",
       contains: { column: "genres", value: genre },
       limit: 24,
-    }));
+    });
   });
 
   targetTags.forEach((tag) => {
-    queries.push(selectRows({
+    queries.push({
       source: "tag",
       contains: { column: "tags", value: tag },
       limit: 18,
-    }));
+    });
   });
 
   if (targetGenres[0]) {
-    queries.push(selectRows({
+    queries.push({
       source: "fallback",
       contains: { column: "genres", value: targetGenres[0] },
       limit: 40,
       fallback: true,
-    }));
+    });
   }
 
   const groups: Array<{ source: RelatedCandidateSource; rows: GameRow[] }> = [];
   for (let index = 0; index < queries.length; index += 2) {
-    groups.push(...await Promise.all(queries.slice(index, index + 2)));
+    currentHomepageSignal()?.throwIfAborted();
+    groups.push(...await Promise.all(queries.slice(index, index + 2).map(selectRows)));
   }
   const byId = new Map<string, RelatedCandidateBucket>();
 

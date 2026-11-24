@@ -24,10 +24,11 @@ export default function DealsPage() {
   const [selectedStore, setSelectedStore] = useState("All");
   const [sortMode, setSortMode] = useState<SortMode>("discount");
 
-  const { data: deals, isLoading } = useQuery({
-    queryKey: ["gx-deals-full"],
-    queryFn: () => getGXDeals(),
-    staleTime: 60 * 60 * 1000,
+  const { data: deals, isLoading, isError, refetch } = useQuery({
+    queryKey: ["gx-deals-browse"],
+    queryFn: ({ signal }) => getGXDeals(signal),
+    retry: false,
+    staleTime: 5 * 60 * 1000,
   });
 
   // Extract unique genres and stores from data
@@ -193,7 +194,7 @@ export default function DealsPage() {
       ) : filtered.length === 0 ? (
         <div className="py-16 text-center">
           <Tag className="w-12 h-12 text-tertiary mx-auto mb-3" />
-          <p className="text-secondary">No deals match your filters.</p>
+          {isError ? <button type="button" onClick={() => void refetch()}>Deals are temporarily unavailable. Try again</button> : <p className="text-secondary">No deals match your filters.</p>}
           <button
             onClick={() => { setSelectedGenre("All"); setSelectedStore("All"); }}
             className="mt-3 text-xs text-accent hover:underline"

@@ -18,16 +18,17 @@ export function buildSeedHash(seed, gameIds, seedVersion = SYSTEM_LIST_SEED_VERS
     .digest("hex");
 }
 
-export function publishManagedList(sql, blueprint, { previewText, bodyText, coverImage, seedHash, constrainedIds }) {
+export function publishManagedList(sql, blueprint, { previewText, bodyText, coverImage, seedHash, constrainedIds, preview = false }) {
   if (!constrainedIds.length || new Set(constrainedIds).size !== constrainedIds.length) {
     throw new Error("Curated replacement requires a nonempty, unique set");
   }
-  return sql.begin(async tx => {
+  const publish = async tx => {
+    const lock = preview ? tx`` : tx`FOR UPDATE`;
     const [existingList] = await tx`
       SELECT id, title, slug, description, preview_text, body_text, tags, seed_hash, seed_version,
         is_system_managed, is_public, owner_id, managed_by, system_key,
         updated_at <= last_seeded_at AS untouched
-      FROM public.lists WHERE slug = ${blueprint.slug} FOR UPDATE
+      FROM public.lists WHERE slug = ${blueprint.slug} ${lock}
     `;
     if (existingList) {
       if (!existingList.is_system_managed || !existingList.is_public || existingList.owner_id ||
@@ -35,7 +36,7 @@ export function publishManagedList(sql, blueprint, { previewText, bodyText, cove
           !existingList.untouched || !existingList.seed_hash ||
           existingList.description !== existingList.body_text) return "preserved";
       const current = await tx`SELECT game_id FROM public.list_items WHERE list_id = ${existingList.id}
-        ORDER BY position, id FOR UPDATE`;
+        ORDER BY position, id ${lock}`;
       const currentHash = buildSeedHash({
         slug: existingList.slug, title: existingList.title, previewText: existingList.preview_text,
         bodyText: existingList.body_text, tags: existingList.tags,
@@ -43,6 +44,7 @@ export function publishManagedList(sql, blueprint, { previewText, bodyText, cove
       if (currentHash !== existingList.seed_hash) return "preserved";
       if (currentHash === seedHash) return "unchanged";
     }
+    if (preview) return existingList ? "would-update" : "would-create";
     let listId;
     if (existingList) {
       await tx`
@@ -117,5 +119,6 @@ export function publishManagedList(sql, blueprint, { previewText, bodyText, cove
     const items = constrainedIds.map((id, i) => ({ list_id: listId, game_id: id, position: i + 1 }));
     await tx`INSERT INTO public.list_items ${tx(items)}`;
     return existingList ? "updated" : "created";
-  });
+  };
+  return preview ? sql.begin("read only", publish) : sql.begin(publish);
 }
