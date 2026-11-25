@@ -35,6 +35,24 @@ export const GAME_DETAIL_BLOCKED_SLUGS = new Set(["grand-theft-aito-vi"]);
 
 const VALID_SLUG_PATTERN = /^[a-z0-9-]{1,100}$/i;
 
+// Only the public mapper and identity/release checks consume this record.
+// Keep fallback descriptions and rating/observation evidence while leaving
+// internal classification, refresh state and stored generated prose out.
+const GAME_DETAIL_COLUMNS = [
+  "id", "rawg_id", "igdb_id", "slug", "title", "subtitle", "cover_image", "header_image",
+  "screenshots", "platforms", "genres", "tags", "developer", "publisher", "release_date",
+  "release_status", "is_provisional", "description", "igdb_summary", "wikipedia_excerpt",
+  "score", "verdict_label", "verdict_score", "confidence", "community_score", "critic_score",
+  "rawg_metacritic", "rawg_rating", "steam_total_count", "review_count", "user_score", "pros", "cons",
+  "monetization", "monetization_notes", "performance_notes", "steam_url", "play_store_url", "steam_app_id",
+  "featured", "trending", "price_current", "price_currency", "price_lowest", "price_deal_url", "is_free",
+  "current_players", "peak_players_24h", "players_updated_at", "momentum", "trailer_url", "trailer_thumbnail",
+  "igdb_rating", "igdb_url", "wikipedia_url", "metacritic_url", "website_url", "reddit_url", "steam_rating_label",
+  "score_source", "last_enriched_at", "enrichment_sources", "hltb_main", "hltb_extras", "hltb_completionist",
+  "franchise", "is_featured_manual", "is_trending_manual",
+] satisfies readonly (keyof GameRow)[];
+const gameDetailProjection = GAME_DETAIL_COLUMNS.join(",");
+
 type MobileStoreListing = {
   store: string;
   store_url: string | null;
@@ -254,10 +272,10 @@ async function fetchGameRecord(args: {
   if (args.rawgId != null) {
     const { data, error } = await supabase
       .from("games")
-      .select("*")
+      .select(gameDetailProjection)
       .eq("rawg_id", args.rawgId)
       .abortSignal(AbortSignal.timeout(PUBLIC_SUPABASE_FETCH_TIMEOUT_MS))
-      .maybeSingle() as { data: GameRow | null; error: unknown };
+      .maybeSingle() as unknown as { data: GameRow | null; error: unknown };
 
     if (error) throw error;
 
@@ -267,11 +285,11 @@ async function fetchGameRecord(args: {
   if (!row && args.slug) {
     const { data, error } = await supabase
       .from("games")
-      .select("*")
+      .select(gameDetailProjection)
       .eq("slug", args.slug)
       // Let the SDK see the overall deadline expire before considering a retry.
       .abortSignal(AbortSignal.timeout(PUBLIC_SUPABASE_FETCH_TIMEOUT_MS))
-      .maybeSingle() as { data: GameRow | null; error: unknown };
+      .maybeSingle() as unknown as { data: GameRow | null; error: unknown };
 
     if (error) throw error;
 

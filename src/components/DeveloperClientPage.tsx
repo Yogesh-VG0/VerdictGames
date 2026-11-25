@@ -12,14 +12,18 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import Link from "next/link";
 import PixelButton from "@/components/ui/PixelButton";
 
+type DeveloperPageHub = Pick<DeveloperHub, "name" | "gameCount" | "averageScore"> & {
+  games: Omit<DeveloperHub["games"][number], "verdictSummary">[];
+};
+
 interface Props {
   slug: string;
-  initialHub: DeveloperHub;
+  initialHub: DeveloperPageHub;
 }
 
 export default function DeveloperClientPage({ slug, initialHub }: Props) {
 
-  const { data: hub, isLoading } = useQuery({
+  const { data: hub, isLoading } = useQuery<DeveloperPageHub | null>({
     queryKey: ["developer", slug],
     queryFn: () => getDeveloperHub(slug),
     initialData: initialHub,

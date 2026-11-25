@@ -107,6 +107,14 @@ export default async function GameDetailPage({ params }: GameDetailPageProps) {
   delete initialGame.isTrendingManual;
   delete initialGame.trending;
   delete initialGame.featured;
+  delete initialGame.wikipediaExcerpt;
+  delete initialGame.rawgMetacritic;
+  delete initialGame.rawgRating;
+  delete initialGame.communityScore;
+  delete initialGame.criticScore;
+  delete initialGame.verdictScore;
+  delete initialGame.franchise;
+  delete initialGame.rawgId;
 
   return (
     <>

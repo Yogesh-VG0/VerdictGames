@@ -11,24 +11,26 @@ import SafeImage from "@/components/ui/SafeImage";
 import { OrientedCardImage } from "@/components/CatalogueCardArtwork";
 import { artworkKind, catalogueGameHref } from "@/lib/utils/artwork";
 
+type RenderedGameCard = Omit<GameCardData, "verdictSummary"> & Partial<Pick<GameCardData, "verdictSummary">>;
+
 interface GameCardProps {
-  game: GameCardData;
+  game: RenderedGameCard;
   priority?: boolean;
   prefetch?: boolean;
   className?: string;
   variant?: "default" | "spotlight";
 }
 
-function yearFromGame(game: GameCardData): string | null {
+function yearFromGame(game: RenderedGameCard): string | null {
   return game.releaseTiming ? game.releaseTiming.precision === 'tba' ? null : game.releaseTiming.value.slice(0, 4)
     : getStableYear(game.releaseDate);
 }
 
-function isUnreleased(game: GameCardData): boolean {
+function isUnreleased(game: RenderedGameCard): boolean {
   return game.isProvisional || game.verdictLabel === "COMING SOON";
 }
 
-function hasRealScore(game: GameCardData): boolean {
+function hasRealScore(game: RenderedGameCard): boolean {
   if (isUnreleased(game)) return false;
   if (game.score === 0 && game.scoreSource === "gx") return false;
   if (game.verdictLabel === "JUST RELEASED") return false;
