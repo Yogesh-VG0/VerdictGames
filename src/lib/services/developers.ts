@@ -16,7 +16,7 @@ const developerCardColumns = 'id,slug,title,description,cover_image,platforms,ge
 
 const PUBLIC_DATABASE_READ_TIMEOUT_MS = 10_000;
 
-const loadDeveloperNames = unstable_cache(coalesceCatalogueRead(async () => {
+const loadDeveloperDirectory = unstable_cache(coalesceCatalogueRead(async () => {
   const db = getPublicSupabase();
   const names = new Set<string>();
   let after: string | undefined;
@@ -27,12 +27,20 @@ const loadDeveloperNames = unstable_cache(coalesceCatalogueRead(async () => {
     const { data, error } = await query.abortSignal(AbortSignal.timeout(PUBLIC_DATABASE_READ_TIMEOUT_MS));
     if (error) throw error;
     for (const row of data ?? []) if (row.developer) names.add(row.developer);
-    if (!data?.length || data.length < 1000) return [...names];
+    if (!data?.length || data.length < 1000) break;
     const last = data[data.length - 1].developer;
     if (!last || last === after) throw new Error('Developer directory cursor did not advance');
     after = last;
   }
-}), ['developer-names-v1'], { revalidate: 3600 });
+
+  const namesBySlug = Object.create(null) as Record<string, string[]>;
+  for (const name of names) {
+    const slug = slugify(name);
+    if (!(slug in namesBySlug)) namesBySlug[slug] = [];
+    namesBySlug[slug].push(name);
+  }
+  return namesBySlug;
+}), ['developer-directory-v2'], { revalidate: DEVELOPER_PAGE_REVALIDATE_SECONDS });
 
 const cachedDeveloperHub = unstable_cache(async (slug: string, names: string[]): Promise<DeveloperHub | null> => {
   const rows = await collectSitemapRows(async (after, size) => {
@@ -57,7 +65,8 @@ const cachedDeveloperHub = unstable_cache(async (slug: string, names: string[]):
 
 export const loadDeveloperHub = cache(async (slug: string): Promise<DeveloperHub | null> => {
   if (!/^[a-z0-9_-]{1,150}$/.test(slug)) return null;
-  // Resolve aliases outside the hub cache so Next.js can reuse the directory.
-  const names = (await loadDeveloperNames()).filter(name => slugify(name) === slug);
-  return names.length ? cachedDeveloperHub(slug, names) : null;
+  // Index every spelling once per shared directory refresh, retaining their
+  // original order for the canonical name and membership query.
+  const directory = await loadDeveloperDirectory();
+  return Object.hasOwn(directory, slug) ? cachedDeveloperHub(slug, directory[slug]) : null;
 });

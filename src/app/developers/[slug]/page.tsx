@@ -21,5 +21,14 @@ export default async function DeveloperPage({ params }: Props) {
   const { slug } = await params;
   const hub = await loadDeveloperHub(slug);
   if (!hub) notFound();
-  return <DeveloperClientPage slug={slug} initialHub={hub} />;
+  const { name, gameCount, averageScore } = hub;
+  const games = hub.games.map(game => {
+    const { id, slug, title, coverImage, platforms, genres, releaseDate, releaseDateTba,
+      score, verdictLabel, confidence, scoreSource, isProvisional, releaseStatus, releaseTiming,
+      rawgId, isPreview, trendingReason } = game;
+    return { id, slug, title, coverImage, platforms, genres, releaseDate, releaseDateTba,
+      score, verdictLabel, confidence, scoreSource, isProvisional, releaseStatus, releaseTiming,
+      rawgId, isPreview, trendingReason };
+  });
+  return <DeveloperClientPage slug={slug} initialHub={{ name, gameCount, averageScore, games }} />;
 }
