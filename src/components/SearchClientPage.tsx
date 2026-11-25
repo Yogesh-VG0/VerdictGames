@@ -51,7 +51,7 @@ function getSearchPageHeader(browseTab: SearchBrowseTab, freeSubTab: FreeSubTab,
     if (freeSubTab === "subscriptions") {
       return {
         title: "Included with Subscription",
-        subtitle: "Browse Game Pass and PlayStation Plus picks by service or genre.",
+        subtitle: "US Game Pass and PlayStation Plus listings. Check the provider for platform and plan availability.",
         gradient: "linear-gradient(90deg, #8b5cf6 0%, #6366f1 50%, #06b6d4 100%)",
         icon: <Gamepad2 className="w-6 h-6 text-accent" />,
       };
@@ -1259,7 +1259,7 @@ function SearchClientPageContent({
                                 )}
                               >
                                 <ExternalLink className="w-3 h-3" />
-                                {game.serviceName ? `View on ${game.serviceName}` : "View"}
+                                View entitlement
                               </a>
                             )}
                           </div>

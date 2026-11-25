@@ -18,7 +18,7 @@ export async function GET() {
   if (source === "empty") {
     return jsonError("Gaming news is temporarily unavailable.", 503);
   }
-  const news: GXNewsItem[] = raw.filter(a => isRelevantGamingHeadline(a.title)).map((a) => ({
+  const news: GXNewsItem[] = raw.filter(a => isRelevantGamingHeadline(a.title, a.real_url || a.display_url)).map((a) => ({
     id: a.article_id,
     title: a.title,
     image: a.image,

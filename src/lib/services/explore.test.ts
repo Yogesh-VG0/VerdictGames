@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-const state = vi.hoisted(() => ({ rows: [] as Record<string, unknown>[], compact: null as Record<string,unknown>|null, upcoming: vi.fn(), portraits: vi.fn().mockResolvedValue([]) }));
+const state = vi.hoisted(() => ({ rows: [] as Record<string, unknown>[], compact: null as Record<string,unknown>|null, upcoming: vi.fn(), dates: vi.fn(), portraits: vi.fn().mockResolvedValue([]) }));
 vi.mock('next/cache', () => ({ unstable_cache: (fn: unknown) => fn }));
 vi.mock('@/lib/external/rawg', () => ({ getRawgUpcoming: state.upcoming }));
-vi.mock('@/lib/external/igdb', () => ({ getIgdbPortraits: state.portraits }));
+vi.mock('@/lib/external/igdb', () => ({ getIgdbPortraits: state.portraits, getIgdbReleaseDates: state.dates }));
 vi.mock('@/lib/services/explore-query', () => ({ readCataloguePage: async () => state.compact }));
 vi.mock('@/lib/supabase/public', () => ({ getPublicSupabase: () => {
   const query: Record<string, unknown> = {};
@@ -14,8 +14,30 @@ import { loadExplore, sortExploreItems } from './explore';
 import type { RawgListGameItem } from '@/lib/api';
 
 describe('Explore catalogue regressions', () => {
-  afterEach(() => vi.unstubAllGlobals());
-  beforeEach(() => { state.rows = []; state.compact = null; state.upcoming.mockReset(); });
+  afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); });
+  beforeEach(() => { state.rows = []; state.compact = null; state.upcoming.mockReset(); state.dates.mockReset(); });
+  it('keeps an explicit December 31 launch and excludes a year-only entry from a December view', async () => {
+    vi.stubEnv('TWITCH_CLIENT_ID', 'fixture');
+    vi.stubEnv('TWITCH_CLIENT_SECRET', 'fixture');
+    const released = '2099-12-31';
+    const names = ['Year Window', 'Confirmed Day'];
+    state.upcoming.mockResolvedValue({ count: 2, results: names.map((name, index) => ({
+      id: index + 1, slug: index ? 'confirmed-day' : 'year-window', name, released, tba: false,
+      rating: 0, ratings_count: 0, background_image: 'poster.jpg', tags: [], genres: [], platforms: [], added: 100,
+    })) });
+    state.dates.mockResolvedValue(names.map((name, index) => ({ name, id: index + 10, release_dates: [{
+      date: Date.parse(released + 'T00:00:00Z') / 1000,
+      date_format: { format: index ? 'YYYYMMMMDD' : 'YYYY' },
+    }] })));
+    const all = await loadExplore('best-of-year', 1, 20, 2099, 'action', 'default', '', undefined, { snapshotOnly: true });
+    expect(all.items.find(game => game.slug === 'year-window')).toMatchObject({
+      released, releaseWindow: '2099', releaseTiming: { precision: 'year', value: '2099' },
+    });
+    const december = await loadExplore('best-of-year', 1, 20, 2099, 'action', 'default', '', undefined,
+      { snapshotOnly: true, releaseMonth: '2099-12' });
+    expect(december.items).toHaveLength(1);
+    expect(december.items[0]).toMatchObject({ slug: 'confirmed-day', released, releaseTiming: { precision: 'day', value: released } });
+  });
   it('keeps the provider upcoming pool even when only one entry is tracked locally, and resolves its cover and canonical slug', async () => {
     state.rows = [{ rawg_id: 1, slug: 'canonical-one', cover_image: 'https://images.igdb.com/igdb/image/upload/t_cover_big/co123.jpg' }];
     state.upcoming.mockResolvedValue({ count: 3, results: [1,2,3].map(id => ({ id, slug: `game-${id}`, name: `Game ${id}`, released: '2099-01-01', tba: false, rating:0, ratings_count:0, background_image: `scene-${id}.jpg`, tags: id === 3 ? [{name:'NSFW'}] : [], genres: [], platforms: [], added: 100, added_by_status: {} })) });

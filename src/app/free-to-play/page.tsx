@@ -156,7 +156,7 @@ function SubscriptionGameCard({ game, priority = false }: { game: GXTopGame; pri
             )}
           >
             <ExternalLink className="w-3 h-3" />
-            {game.serviceName ? `View on ${game.serviceName}` : "View"}
+            View entitlement
           </a>
         )}
       </div>
@@ -245,7 +245,7 @@ export default function FreeToPlayPage() {
           </span>
         </h1>
         <p className="text-sm text-secondary mt-1">
-          The best free games and subscription service picks — updated live
+          {activeTab === 'subscriptions' ? 'US offers. Check the provider for platform and plan availability.' : 'Find games you can play for free.'}
         </p>
       </div>
 

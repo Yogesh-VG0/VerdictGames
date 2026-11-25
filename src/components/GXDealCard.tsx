@@ -16,18 +16,15 @@ export default function GXDealCard({ deal, priority = false }: GXDealCardProps) 
   const hasDiscount = deal.discount && deal.discount > 0;
   const gameHref = deal.gameSlug ? `/game/${deal.gameSlug}` : null;
   // Bundle deals go directly to the store — they have no meaningful internal page
-  const isBundle = deal.badge?.toLowerCase().includes("bundle") ||
-    deal.badge?.toLowerCase().includes("collection") ||
-    deal.title.toLowerCase().includes("bundle") ||
-    deal.title.toLowerCase().includes("collection") ||
-    (deal.badge?.toLowerCase().includes("items"));
+  const isBundle = deal.isPromotion || deal.dealType === 'bundle';
   const cardHref = isBundle ? (deal.buyUrl ?? gameHref) : (gameHref ?? deal.buyUrl);
   const isExternal = Boolean(cardHref && (!gameHref || isBundle));
 
-  // Price label for the CTA button
-  const priceLabel = deal.price !== null
-    ? `${deal.currency ?? "$"}${deal.price.toFixed(2)}`
-    : null;
+  const currency = deal.currency;
+  const format = (price: number | null | undefined) => price != null && currency
+    ? new Intl.NumberFormat('en-US', { style: 'currency', currency, currencyDisplay: 'code' }).format(price) : null;
+  const priceLabel = format(deal.price);
+  const originalPrice = format(deal.originalPrice);
 
   const imageContent = (
     <div className="relative aspect-[3/4] overflow-hidden">
@@ -49,7 +46,7 @@ export default function GXDealCard({ deal, priority = false }: GXDealCardProps) 
 
       {hasDiscount && (
         <div className="absolute top-2.5 right-2.5 rounded-xl px-2.5 py-1 bg-pixel-green/90 text-black text-xs font-bold backdrop-blur-md border border-white/10">
-          -{deal.discount}%
+          {deal.isPromotion ? 'Up to ' : '−'}{deal.discount}%
         </div>
       )}
 
@@ -121,6 +118,11 @@ export default function GXDealCard({ deal, priority = false }: GXDealCardProps) 
         </div>
 
         {/* Get Deal CTA — always links to external store */}
+        <div className="text-xs text-secondary">
+          {deal.isPromotion ? 'Store promotion' : priceLabel ? (
+            <><span className="font-semibold text-foreground">{priceLabel}</span>{originalPrice && <del className="ml-2">{originalPrice}</del>}</>
+          ) : 'Price unavailable'}
+        </div>
         {deal.buyUrl && (
           <a
             href={deal.buyUrl}
@@ -134,7 +136,7 @@ export default function GXDealCard({ deal, priority = false }: GXDealCardProps) 
             )}
           >
             <ExternalLink className="w-3 h-3" />
-            {priceLabel ? `Get Deal · ${priceLabel}` : "Get Deal"}
+            {deal.isPromotion ? 'View Sale' : priceLabel ? 'Get Deal' : 'Check Store'}
           </a>
         )}
       </div>

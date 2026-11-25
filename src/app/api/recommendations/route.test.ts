@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { NextRequest } from 'next/server';
 
-const state = vi.hoisted(() => ({ library: [] as { game_id: string; game: { genres: string[] } }[], error: null as unknown }));
+const state = vi.hoisted(() => ({ library: [] as { game_id: string; game: { genres: string[]; title?: string; steam_app_id?: number } }[], error: null as unknown }));
 vi.mock('@/lib/supabase/auth', () => ({ getCurrentUser: async () => ({ id: 'fixture-a', profileId: 'local-fixture' }),
   getAuthSupabase: async () => ({ from: (table: string) => {
     const query: Record<string, unknown> = {};
@@ -59,6 +59,12 @@ describe('private homepage recommendations', () => {
     expect(response.status).toBe(503);
     expect(response.headers.get('Cache-Control')).toContain('private, no-store');
     expect(await response.json()).toMatchObject({ success: false });
+  });
+
+  it('excludes a base game when the library holds a named update', async () => {
+    state.library = [{ game_id: 'update', game: { genres: ['Indie'], title: 'Fixture 2: Update' } }];
+    const { data } = await (await request()).json();
+    expect(data.games.map((game: { slug: string }) => game.slug)).not.toContain('indie');
   });
 
   it('refuses to return another account’s picks during a session switch', async () => {

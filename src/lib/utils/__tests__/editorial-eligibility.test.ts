@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { editorialExclusion, selectEditorialIds, withVerifiedEditorialModes } from '../editorial-eligibility.mjs';
+import { annualReleaseTiming, editorialExclusion, selectEditorialIds, withVerifiedEditorialModes } from '../editorial-eligibility.mjs';
 
 const today = '2026-11-20';
 const base = {
@@ -49,6 +49,20 @@ describe('system collection eligibility', () => {
       { release_status: 'cancelled' }, { release_status: 'early_access' }, { release_status: null }]) {
       expect(reason(overrides)).toBeTruthy();
     }
+  });
+
+  it('uses identity-matched year windows and admits a confirmed boundary day', () => {
+    const game = { ...base, rawg_id: 12, igdb_id: 42, release_status: 'upcoming', release_date: '2027-12-31' };
+    const date = Date.parse('2027-12-31T00:00:00Z') / 1000;
+    const evidence = (format: string, id = 42) => ({ id, release_dates: [{ date, date_format: { format } }] });
+    const year = annualReleaseTiming(game, evidence('YYYY'), game.release_date);
+    const day = annualReleaseTiming(game, evidence('YYYYMMMMDD'), game.release_date);
+    expect(year).toEqual({ precision: 'year', value: '2027' });
+    expect(day).toEqual({ precision: 'day', value: '2027-12-31' });
+    expect(annualReleaseTiming(game, evidence('YYYY', 99), game.release_date)).toBeUndefined();
+    expect(editorialExclusion('most-wanted-2027', { ...game, releaseTiming: year }, today)).toBeNull();
+    expect(editorialExclusion('most-wanted-2027', { ...game, releaseTiming: day }, today)).toBeNull();
+    expect(editorialExclusion('most-wanted-2026', { ...game, releaseTiming: year }, today)).toBeTruthy();
   });
 
   it.each([

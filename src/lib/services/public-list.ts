@@ -3,7 +3,8 @@ import { unstable_cache } from 'next/cache';
 import { getPublicSupabase } from '@/lib/supabase/public';
 import { mapGameRow, mapListRow } from '@/lib/db/mappers';
 import { GAME_CARD_COLUMNS_WITH_DESC } from '@/lib/db/columns';
-import { editorialListTitle, passesCuratedListSelection } from '@/lib/utils/curatedLists';
+import { editorialListTitle, isAnnualEditorialList, passesCuratedListSelection } from '@/lib/utils/curatedLists';
+import { readAnnualListEvidence } from '@/lib/services/annual-list-evidence';
 import { dedupePublicCanonicalRows } from '@/lib/utils/publicCanonical';
 import { isPublicSafeGame } from '@/lib/utils/publicSafety';
 import { hasUsableCardImage } from '@/lib/utils/mediaReadiness';
@@ -29,24 +30,30 @@ async function readListDetail(db: SupabaseClient<Database>, slug: string, ownerI
     if (error) throw error;
     return data ?? [];
   });
-  items.sort((a, b) => a.position - b.position);
+  items.sort((a, b) => a.position - b.position || a.id.localeCompare(b.id));
   const rows: GameRow[] = [];
   for (let offset = 0; offset < items.length; offset += 250) {
-    const { data, error } = await db.from('games').select(GAME_CARD_COLUMNS_WITH_DESC + ',hltb_main,rawg_id').in('id', items.slice(offset, offset + 250).map(item => item.game_id))
+    const { data, error } = await db.from('games').select(GAME_CARD_COLUMNS_WITH_DESC + ',hltb_main,rawg_id,igdb_id,franchise').in('id', items.slice(offset, offset + 250).map(item => item.game_id))
       .abortSignal(AbortSignal.timeout(PUBLIC_DATABASE_READ_TIMEOUT_MS));
     if (error) throw error;
     rows.push(...(data ?? []) as unknown as GameRow[]);
   }
   const byId = new Map(rows.filter(row => isPublicSafeGame(row) && hasUsableCardImage(row)).map(row => [row.id, row]));
   const ordered = items.map(item => byId.get(item.game_id)).filter((row): row is GameRow => !!row);
-  const games = dedupePublicCanonicalRows(ordered.filter(row => passesCuratedListSelection(list as ListRow, row))).map(mapGameRow);
+  const annualEvidence = await readAnnualListEvidence(isAnnualEditorialList(list) ? ordered : []).catch(() => new Map());
+  const games = dedupePublicCanonicalRows(ordered.filter(row => passesCuratedListSelection(list as ListRow, row, annualEvidence.get(row.id))))
+    .map(row => {
+      const game = mapGameRow(row);
+      const timing = annualEvidence.get(row.id);
+      return timing ? { ...game, releaseTiming: timing } : game;
+    });
   return mapListRow(list.is_system_managed
-    ? { ...list, title: editorialListTitle(list), cover_image: games[0]?.coverImage || '' } as ListRow
+    ? { ...list, title: editorialListTitle(list, games.length), cover_image: games[0]?.coverImage || '' } as ListRow
     : list as ListRow, games);
 }
 
 // Only public, anonymously readable content may enter this shared cache.
-export const loadPublicList = cache(unstable_cache((slug: string) => readListDetail(getPublicSupabase(),slug), ['public-list-v4'], { revalidate: 300, tags:['public-lists'] }));
+export const loadPublicList = cache(unstable_cache((slug: string) => readListDetail(getPublicSupabase(),slug), ['public-list-v5'], { revalidate: 300, tags:['public-lists'] }));
 
 // Caller-authenticated/RLS reads stay outside all shared caches. The explicit
 // owner predicate also prevents a caller from reading another user's list.

@@ -48,6 +48,7 @@ export interface GXStore {
 export interface GXPrice {
   url: string;
   price: number | null;
+  originalPrice?: number | null;
   discount: number | null;
   countries: string[] | null;
   currency: { id: number; abbr: string } | null;

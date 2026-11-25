@@ -43,6 +43,7 @@ import AuthModal from "@/components/AuthModal";
 import { getGameNotices } from "@/lib/utils/gameNotices";
 import { useAuth } from "@/hooks/useAuth";
 import { slugify } from "@/lib/utils/slugify";
+import { formatReleaseTiming, resolveReleaseTiming } from '@/lib/utils/release-timing';
 import {
   Zap, Trophy, Newspaper, MessageSquare, Clock,
   BarChart3, Target, ThumbsUp, ThumbsDown, Gamepad2,
@@ -466,9 +467,9 @@ export default function GameDetailClientPage({
                 {game.isFree && (
                   <PixelBadge variant="success" size="md">Free to Play</PixelBadge>
                 )}
-                {game.releaseDate && (
+                {(game.releaseDate || game.releaseTiming?.precision !== 'tba' && game.releaseTiming) && (
                   <span className="text-xs hero-overlay-text-muted font-medium ml-1">
-                    {formatDate(game.releaseDate)}
+                    {formatReleaseTiming(game.releaseTiming ?? resolveReleaseTiming(game.releaseDate))}
                   </span>
                 )}
               </div>
@@ -612,10 +613,10 @@ export default function GameDetailClientPage({
                         ? `This page uses external metadata while verdict.games prepares full tracking, reviews, and richer coverage for ${game.title}.`
                         : "This game page is awaiting full data enrichment. Scores, reviews, and detailed information will be populated automatically when source data becomes available."}
                     </p>
-                    {game.releaseDate && game.verdictLabel !== 'CANCELLED' && (
+                    {(game.releaseDate || game.releaseTiming) && game.verdictLabel !== 'CANCELLED' && (
                       <p className="text-xs text-tertiary">
                         {!isProvisional ? "Release date: " : "Expected release: "}
-                        <span className="text-foreground font-medium">{formatDate(game.releaseDate)}</span>
+                        <span className="text-foreground font-medium">{formatReleaseTiming(game.releaseTiming ?? resolveReleaseTiming(game.releaseDate))}</span>
                       </p>
                     )}
                   </div>
@@ -1176,7 +1177,7 @@ export default function GameDetailClientPage({
                     </div>
                     <div className="flex justify-between">
                       <dt className="text-tertiary">Released</dt>
-                      <dd className="text-foreground font-medium">{formatDate(game.releaseDate)}</dd>
+                      <dd className="text-foreground font-medium">{formatReleaseTiming(game.releaseTiming ?? resolveReleaseTiming(game.releaseDate))}</dd>
                     </div>
                     <div className="flex justify-between">
                       <dt className="text-tertiary">Genres</dt>

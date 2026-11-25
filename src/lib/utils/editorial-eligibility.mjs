@@ -1,5 +1,6 @@
 import { isPublicContentAllowed } from './public-safety.mjs';
 import { isUpcomingSnapshot } from '../external/rawg-snapshot.mjs';
+import { resolveReleaseTiming, selectIgdbTiming } from './release-timing.ts';
 
 const unreleased = new Set(['announced', 'coming soon', 'upcoming', 'unreleased', 'tba', 'cancelled', 'canceled', 'delisted']);
 const released = new Set(['released', 'full release']);
@@ -68,6 +69,7 @@ const contracts = {
 
 export const EDITORIAL_GAME_COLUMNS = 'id,title,description,cover_image,genres,tags,release_date,release_status,is_provisional,verdict_label,score,review_count,confidence,critic_score,critic_source_count,hltb_main,rawg_id,steam_app_id';
 export const EDITORIAL_UPCOMING_SNAPSHOT_KEY = 'discovery:rawg:upcoming:v1';
+export const ANNUAL_LIST_TARGET = 12;
 
 export function editorialAnticipation(payload) {
   const rows = isUpcomingSnapshot(payload) && payload.complete && payload.count === payload.results.length ? payload.results : [];
@@ -77,7 +79,24 @@ export function editorialAnticipation(payload) {
 
 export function matchesEditorialAnticipation(game, anticipation) {
   const day = releaseDay(game.release_date);
-  return Boolean(day && anticipation.get(game.rawg_id)?.date === day);
+  const signal = anticipation.get(game.rawg_id);
+  return Boolean(signal && (game.releaseTiming && game.releaseTiming.precision !== 'tba' || day && signal.date === day));
+}
+
+export function annualReleaseTiming(row, source, rawDate) {
+  if (!source || source.id !== row.igdb_id || !Array.isArray(source.release_dates)) return undefined;
+  const date = rawDate || releaseDay(row.release_date);
+  const timing = selectIgdbTiming(source.release_dates, date || undefined);
+  return timing && timing.precision !== 'tba' ? timing : undefined;
+}
+
+function annualWindowIsUpcoming(timing, year, today) {
+  if (timing.precision === 'tba' || timing.value.slice(0, 4) !== year) return false;
+  if (timing.precision === 'day') return timing.value > today;
+  if (timing.precision === 'month') return timing.value >= today.slice(0, 7);
+  if (timing.precision === 'quarter') return Number(year) > Number(today.slice(0, 4))
+    || Number(timing.value.slice(-1)) >= Math.ceil(Number(today.slice(5, 7)) / 3);
+  return year >= today.slice(0, 4);
 }
 
 export function selectEditorialIds(rankedIds, appearances, limit = 12) {
@@ -115,12 +134,13 @@ export function editorialExclusion(slug, row, today = new Date().toISOString().s
   if (!row.title || !row.cover_image || !isPublicContentAllowed(row)) return 'catalogue visibility or artwork';
   if (any('utilities', 'software', 'game development', 'audio production', 'design & illustration', 'dlc', 'soundtrack')
     || /(?:soundpad|soundtrack|season pass|expansion pass|dlc pack|remaster collection)\s*$/i.test(row.title)) return 'supplemental content or software';
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date ?? '')) return 'missing dated release evidence';
   if (annual) {
-    if (date <= today || !date.startsWith(annual[1] + '-') || date.endsWith('-12-31')) return 'outside the verified annual window';
+    const timing = row.releaseTiming ?? resolveReleaseTiming(date, { upcoming: true });
+    if (!annualWindowIsUpcoming(timing, annual[1], today) || !row.releaseTiming && timing.precision !== 'day') return 'outside the verified annual window';
     if (released.has(status) || ['cancelled', 'canceled', 'delisted', 'early access', 'tba'].includes(status) || any('early access')) return 'incompatible lifecycle';
     return row.rawg_id > 0 && ['announced', 'coming soon', 'unreleased', 'upcoming'].includes(status) ? null : 'missing explicit upcoming evidence';
   }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date ?? '')) return 'missing dated release evidence';
 
   const launch = verifiedLaunches.get(row.steam_app_id);
   const verifiedLegacyLaunch = !status && launch && launch.title === normalize(row.title)

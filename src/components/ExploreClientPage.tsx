@@ -13,6 +13,7 @@ import HeroImage from "@/components/ui/HeroImage";
 import { Flame, Trophy, Clock, Star, Gamepad2, Users, TrendingUp } from "lucide-react";
 import Pagination from "@/components/ui/Pagination";
 import { cn } from "@/lib/utils";
+import { formatReleaseTiming } from '@/lib/utils/release-timing';
 
 const CURRENT_YEAR = new Date().getFullYear();
 const LAST_YEAR = CURRENT_YEAR - 1;
@@ -111,7 +112,9 @@ function GameCard({ game, rank, priority = false, showRating = true }: { game: R
               </span>
             ))}
             <span className="ml-auto text-[10px] font-medium">
-              {game.tba ? (
+              {game.releaseTiming ? (
+                <span className={game.releaseTiming.precision === 'tba' ? "text-yellow-400" : "text-white/70"}>{formatReleaseTiming(game.releaseTiming)}</span>
+              ) : game.tba ? (
                 <span className="text-yellow-400">TBA</span>
               ) : game.releaseWindow ? (
                 <span className="text-white/70">{game.releaseWindow}</span>

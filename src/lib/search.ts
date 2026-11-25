@@ -111,6 +111,15 @@ function sanitizeSearchQuery(query: string | null | undefined): string {
   return (query ?? "").replace(/[%_(),.;'"\\|{}\[\]]/g, "").trim().slice(0, 200);
 }
 
+export function expandGameSearchAlias(query: string): string {
+  const compact = query.trim().toLowerCase().replace(/[\s:-]+/g, '');
+  if (compact === 'cs2') return 'Counter Strike 2';
+  const gta = /^(?:gta)([3456]|iii|iv|v|vi|sanandreas|vicecity)?$/.exec(compact);
+  if (!gta) return query;
+  const sequel = ({ '3': 'III', '4': 'IV', '5': 'V', '6': 'VI', sanandreas: 'San Andreas', vicecity: 'Vice City' } as Record<string, string>)[gta[1]] ?? gta[1]?.toUpperCase();
+  return sequel ? 'Grand Theft Auto ' + sequel : 'Grand Theft Auto';
+}
+
 function normalizeBrowseTab(value: string | null | undefined): SearchBrowseTab {
   return VALID_BROWSE_TABS.has((value ?? "") as SearchBrowseTab) ? (value as SearchBrowseTab) : "games";
 }

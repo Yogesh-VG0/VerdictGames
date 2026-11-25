@@ -13,6 +13,7 @@ import type { GXDeal, GXFreeGame, GXTopGame } from "@/lib/types";
 import { slugify, titlesMatch } from "@/lib/utils/slugify";
 import { measureHomepagePhase } from "@/lib/services/homepage-timing";
 import { isPublicSafeGame } from "@/lib/utils/publicSafety";
+import { readGXEntitlement, readGXOffer } from '@/lib/utils/gx-offers';
 
 export const GX_FEEDS_REVALIDATE_SECONDS = 300;
 export const GX_FEEDS_API_CACHE_CONTROL = "s-maxage=300, stale-while-revalidate=3600";
@@ -87,12 +88,7 @@ function mapDealEntry(entry: GXDealEntry, matchedGamesBySlug: Map<string, GXMatc
     title: entry.game.title,
     cover: preferCanonicalCover(entry.game.imageCoverVertical?.url ?? null, matchedGame),
     gameSlug: matchedGame?.slug ?? null,
-    discount: entry.game.prices?.[0]?.discount ?? null,
-    price: entry.game.prices?.[0]?.price ?? null,
-    currency: entry.game.prices?.[0]?.currency?.abbr ?? null,
-    buyUrl: entry.game.prices?.[0]?.url ?? entry.url ?? null,
-    storeName: entry.store?.name ?? null,
-    storeColor: entry.store?.color ?? null,
+    ...readGXOffer(entry),
     badge: entry.tag?.name ?? null,
     dealType: entry.dealType,
     genres: entry.game.genres.map((genre) => genre.name),
@@ -148,9 +144,13 @@ async function loadGXTopGamesUncached(): Promise<GXTopGame[]> {
     getGXTopGames, GX_GAME_SNAPSHOT_MAX_FRESH_MS, isGameFeed
   );
   if (source === "empty") throw new Error("Subscription feed temporarily unavailable");
+  const subscriptions = raw.flatMap(entry => {
+    const entitlement = readGXEntitlement(entry);
+    return entitlement ? [{ entry, entitlement }] : [];
+  });
   const candidateSlugs = Array.from(
     new Set(
-      raw.flatMap((entry) => {
+      subscriptions.flatMap(({ entry }) => {
         const sourceSlug = entry.game.slug?.trim();
         const titleSlug = slugify(entry.game.title);
         return [sourceSlug, titleSlug].filter((slug): slug is string => Boolean(slug));
@@ -159,7 +159,7 @@ async function loadGXTopGamesUncached(): Promise<GXTopGame[]> {
   );
   const matchedGamesBySlug = await loadMatchedGamesBySlug(candidateSlugs);
 
-  return raw.map((entry) => {
+  return subscriptions.map(({ entry, entitlement }) => {
     const sourceSlug = entry.game.slug?.trim() ?? null;
     const titleSlug = slugify(entry.game.title);
     const sourceMatch = sourceSlug ? matchedGamesBySlug.get(sourceSlug) : undefined;
@@ -176,9 +176,8 @@ async function loadGXTopGamesUncached(): Promise<GXTopGame[]> {
       cover: preferCanonicalCover(entry.game.imageCoverVertical?.url ?? null, matchedGame),
       gameSlug: verifiedSlug,
       url: entry.url,
-      serviceName: entry.store?.name ?? null,
+      ...entitlement,
       serviceColor: entry.store?.color ?? null,
-      serviceTag: entry.tag?.name ?? null,
       genres: entry.game.genres.map((genre) => genre.name),
       platforms: entry.game.platforms.map((platform) => platform.name),
     };
@@ -187,7 +186,7 @@ async function loadGXTopGamesUncached(): Promise<GXTopGame[]> {
 
 export const loadGXDeals = unstable_cache(
   async () => boundedHomepageRead(8000, loadGXDealsUncached),
-  ["gx-feeds-v2", "deals"],
+  ["gx-feeds-v3", "deals"],
   { revalidate: GX_FEEDS_REVALIDATE_SECONDS }
 );
 
@@ -207,6 +206,6 @@ export const loadGXFreeToPlay = unstable_cache(
 
 export const loadGXTopGames = unstable_cache(
   async () => boundedHomepageRead(8000, loadGXTopGamesUncached),
-  ["gx-feeds-v2", "top-games"],
+  ["gx-feeds-v3", "top-games"],
   { revalidate: GX_FEEDS_REVALIDATE_SECONDS }
 );

@@ -47,6 +47,8 @@ import {
 import { isPublicSafeGame } from "@/lib/utils/publicSafety";
 import { hasUsableCardImage } from "@/lib/utils/mediaReadiness";
 import { dedupePublicCanonicalRows } from "@/lib/utils/publicCanonical";
+import { diversifyRecommendations, removeRecommendationVariants } from '@/lib/utils/recommendation-selection';
+import type { ReleaseTiming } from '@/lib/utils/release-timing';
 import { getHomepageHeroScore, hasRecentHeroActivity, isHomepageHeroAutoCandidate, selectHeroDiscoveryCandidates } from "@/lib/utils/homepageHero";
 import { isProviderHeroArtwork, reviewedHeroArtwork } from '@/lib/utils/artwork-policy.mjs';
 import {
@@ -1387,7 +1389,7 @@ export async function fetchHomepageRecommendations(limit = 20): Promise<Game[]> 
   const fetchLimit = Math.min(240, Math.max(limit * 3, 160));
   const { data, error } = await measureHomepagePhase('database', () => supabase
     .from("games")
-    .select(GAME_CARD_COLUMNS_WITH_DESC)
+    .select(GAME_CARD_COLUMNS_WITH_DESC + ',franchise')
     .lte("release_date", new Date().toISOString().slice(0, 10))
     .gte("score", 75)
     .gte("review_count", 75)
@@ -1414,7 +1416,7 @@ export async function fetchHomepageRecommendations(limit = 20): Promise<Game[]> 
     + (isHomepageRecommendationDistinctCandidate(row) ? 5 : 0)
     + (isHomepageRecommendationBackfillCandidate(row) ? 2 : 0)]));
   quality.sort((a, b) => scores.get(b.id)! - scores.get(a.id)! || a.id.localeCompare(b.id));
-  return applyGenreDiversity(quality, limit, 2).map(mapGameRow);
+  return removeRecommendationVariants(quality).slice(0, limit).map(mapGameRow);
 }
 
 /* ═══════════════════════════════════════════════════
@@ -1438,6 +1440,7 @@ export interface HomepageData {
 export interface HomepageAnticipatedGame {
   earlyAccess?: boolean;
   releaseWindow?: string;
+  releaseTiming?: ReleaseTiming;
   imageKind?: 'cover' | 'artwork';
   rawgId: number;
   slug: string;
@@ -1519,7 +1522,7 @@ const cachedHero = cacheHomepageRail('homepage-hero-v10', 'refresh_hero', () => 
 const cachedTrending = cacheHomepageRail('homepage-trending-v3', 'refresh_trending', () => fetchTrendingGames(HOMEPAGE_SECTION_FETCH_TARGET, true));
 const cachedNewReleases = cacheHomepageRail('homepage-new-v6', 'refresh_new_releases', () => fetchNewReleases(HOMEPAGE_SECTION_FETCH_TARGET));
 const cachedTopRated = cacheHomepageRail('homepage-top-v3', 'refresh_top_rated', () => fetchHomepageTopRated(HOMEPAGE_SECTION_FETCH_TARGET));
-const cachedRecommendations = cacheHomepageRail('homepage-recommendations-v4', 'refresh_recommendations', () => fetchHomepageRecommendations(HOMEPAGE_SECTION_FETCH_TARGET));
+const cachedRecommendations = cacheHomepageRail('homepage-recommendations-v5', 'refresh_recommendations', () => fetchHomepageRecommendations(HOMEPAGE_SECTION_FETCH_TARGET));
 
 const readHomepageData = coalesceCatalogueRead(fetchHomepageData);
 
@@ -1549,13 +1552,13 @@ const getCachedHomepageMostAnticipated = unstable_cache(
     }).map(item => {
         return {
           rawgId: item.rawgId, slug: item.slug, name: item.name, released: item.released, tba: item.tba,
-          earlyAccess: item.earlyAccess, releaseWindow: item.releaseWindow,
+    earlyAccess: item.earlyAccess, releaseWindow: item.releaseWindow, releaseTiming: item.releaseTiming,
           image: item.image, imageKind: item.imageKind, added: item.added, toplay: item.toplay, genres: item.genres,
         };
       });
     return { data: items, fetchedAt: data.fetchedAt };
   }),
-  ["homepage-most-anticipated-v10"],
+  ["homepage-most-anticipated-v11"],
   { revalidate: 300 }
 );
 
@@ -1815,7 +1818,11 @@ export async function fetchHomepageData(): Promise<HomepageData> {
   const topRated = topRatedPremium.length >= HOMEPAGE_PRIORITY_FLOOR
     ? prioritizeById(topRatedPremium, topRatedClaimed, HOMEPAGE_RAIL_TARGET)
     : topRatedClaimed;
-  const recommendations = claimSlots([...recsRaw.filter(game => !appearanceCounts.has(game.id)), ...recsRaw.filter(game => appearanceCounts.has(game.id))], HOMEPAGE_RAIL_TARGET, HOMEPAGE_RECOMMENDATION_REPEAT_BUDGET);
+  const exclusiveRecommendations = recsRaw.filter(game => !appearanceCounts.has(game.id));
+  const recommendationRanks = new Map(recsRaw.map((game, index) => [game.id, -index / 2]));
+  const rankedRecommendations = diversifyRecommendations(exclusiveRecommendations, HOMEPAGE_RAIL_TARGET,
+    game => recommendationRanks.get(game.id)!, game => Number(game.releaseDate.slice(0, 4)));
+  const recommendations = claimSlots([...rankedRecommendations, ...recsRaw], HOMEPAGE_RAIL_TARGET, HOMEPAGE_RECOMMENDATION_REPEAT_BUDGET);
 
   finishSelection();
   return admitCataloguePayload({ hero, trending, topRated, newReleases, deals: [], recommendations }, sectionResults);

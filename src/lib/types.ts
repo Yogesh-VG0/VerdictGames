@@ -32,6 +32,7 @@ export type LibraryStatus = "wishlist" | "playing" | "completed" | "dropped" | "
 
 export interface Game {
   releaseDateTba?: boolean;
+  releaseTiming?: import('./utils/release-timing').ReleaseTiming;
   id: string;
   slug: string;
   title: string;
@@ -296,6 +297,8 @@ export interface GXDeal {
   gameSlug?: string | null;
   discount: number | null;
   price: number | null;
+  originalPrice?: number | null;
+  isPromotion?: boolean;
   currency: string | null;
   buyUrl: string | null;
   storeName: string | null;

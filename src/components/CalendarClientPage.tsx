@@ -260,7 +260,8 @@ export default function CalendarClientPage({ initialMonth, initialMonthData, tod
     if (!games.length) return {} as Record<string, CalendarGame[]>;
     const map: Record<string, CalendarGame[]> = {};
     for (const game of games) {
-      const day = game.releaseDate?.slice(0, 10) || "TBA";
+      const timing = game.releaseTiming;
+      const day = timing ? timing.precision === 'day' ? timing.value : "TBA" : game.releaseDate?.slice(0, 10) || "TBA";
       (map[day] ??= []).push(game);
     }
     return Object.fromEntries(Object.entries(map).sort(([left], [right]) => left.localeCompare(right)));

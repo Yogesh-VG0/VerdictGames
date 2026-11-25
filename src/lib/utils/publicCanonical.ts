@@ -105,6 +105,8 @@ function getCounterStrikePreferenceBoost(
       }
       return appId === 730 ? 500 : 0;
     case "counter-strike-current":
+      if (appId === 730) return normalizeTitle(row.title) === 'counterstrike2' ? 5500 : 4000;
+      return appId === 4465480 ? -1000 : 0;
     case "default":
     default:
       return appId === 730 ? 4000 : appId === 4465480 ? -1000 : 0;

@@ -656,7 +656,7 @@ export function getHomepageDeals(signal?: AbortSignal): Promise<GXDeal[]> {
 }
 
 export async function getGXDeals(signal?: AbortSignal): Promise<GXDeal[]> {
-  return apiFetchOrThrow<GXDeal[]>("/api/gx/deals", { credentials: "omit", signal: boundedClientSignal(signal) });
+  return apiFetchOrThrow<GXDeal[]>("/api/gx/deals?v=3", { credentials: "omit", signal: boundedClientSignal(signal) });
 }
 
 export async function getGXPopularNews(): Promise<GXNewsItem[]> {
@@ -668,7 +668,7 @@ export async function getGXNewsFeed(): Promise<GXNewsItem[]> {
 }
 
 export async function getGXTopGames(signal?: AbortSignal): Promise<GXTopGame[]> {
-  return apiFetchOrThrow<GXTopGame[]>("/api/gx/top-games?v=2", { credentials: "omit", signal: boundedClientSignal(signal) });
+  return apiFetchOrThrow<GXTopGame[]>("/api/gx/top-games?v=3", { credentials: "omit", signal: boundedClientSignal(signal) });
 }
 
 export async function getGXFreeToPlay(signal?: AbortSignal): Promise<GXFreeGame[]> {
@@ -701,6 +701,7 @@ export interface RawgListGameItem {
   rankingScore?: number;
   earlyAccess?: boolean;
   releaseWindow?: string;
+  releaseTiming?: import('./utils/release-timing').ReleaseTiming;
   rank?: number;
   catalogueAdded?: string;
   imageKind?: 'cover' | 'artwork';

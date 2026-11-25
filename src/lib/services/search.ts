@@ -1,6 +1,6 @@
 import { getFreshPlayerSignals } from '@/lib/utils/trending';
 import { unstable_cache } from "next/cache";
-import { searchGamesStateToFilters, type SearchGamesState } from "@/lib/search";
+import { expandGameSearchAlias, searchGamesStateToFilters, type SearchGamesState } from "@/lib/search";
 import { GAME_CARD_COLUMNS_WITH_DESC } from "@/lib/db/columns";
 import { mapGameRow } from "@/lib/db/mappers";
 import { getPublicSupabase, hasPublicSupabaseEnv } from "@/lib/supabase/public";
@@ -28,7 +28,7 @@ import {hasKnownFullRelease,hasUnreleasedStatus} from '@/lib/utils/release-statu
 export const SEARCH_REVALIDATE_SECONDS = 300;
 export const SEARCH_API_CACHE_CONTROL = `s-maxage=${SEARCH_REVALIDATE_SECONDS}, stale-while-revalidate=300`;
 export const SEARCH_PAGE_SIZE = 25;
-const SEARCH_RESULTS_CACHE_NAMESPACE = "search-results-v14";
+const SEARCH_RESULTS_CACHE_NAMESPACE = "search-results-v15";
 // Ranking and eligibility need evidence and safety metadata, not display copy,
 // prices or hero flags. Hydrate full card fields only for the visible page.
 const BROWSE_POOL_COLUMNS = GAME_CARD_COLUMNS_WITH_DESC.split(',').filter(column => ![
@@ -305,7 +305,8 @@ function createSearchQueryFactory(state: SearchGamesState) {
     let scopedIds = ids;
 
     if (q) {
-      query = query.or(`title.ilike.%${q}%,developer.ilike.%${q}%,publisher.ilike.%${q}%`);
+      const currentCounterStrike = q.toLowerCase() === 'counter strike 2' ? ',steam_app_id.eq.730,title.ilike.%Counter-Strike 2%' : '';
+      query = query.or(`title.ilike.%${q}%,developer.ilike.%${q}%,publisher.ilike.%${q}%${currentCounterStrike}`);
     }
 
     if (platform && platform !== "All") {
@@ -812,6 +813,8 @@ async function readBrowseCards(ids:string[]):Promise<Game[]> {
 const readCachedBrowseCards=unstable_cache(readBrowseCards,['public-browse-cards-v2'],{revalidate:SEARCH_REVALIDATE_SECONDS,tags:['public-search']});
 
 export async function loadSearchResults(state: SearchGamesState): Promise<PaginatedResponse<Game>> {
+  const expandedQuery = expandGameSearchAlias(state.query);
+  if (expandedQuery !== state.query) state = { ...state, query: expandedQuery };
   if(state.sort==='upcoming'){
     const {loadUpcomingSearch}=await import('./upcoming-search');
     return loadUpcomingSearch(state,readRankedBrowsePool('upcoming'));
