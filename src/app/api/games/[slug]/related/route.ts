@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { jsonError, jsonNotFound } from "@/lib/api/response";
 import { boundedHomepageRead } from "@/lib/services/homepage-budget";
-import { loadGameDetail } from "@/lib/services/game-detail";
+import { loadRelatedGameTarget } from "@/lib/services/game-detail";
+import { relatedFailureReason, type RelatedStage } from "@/lib/services/related-errors";
 import {
   getRelatedGamesForGame,
   RELATED_GAMES_API_CACHE_CONTROL,
@@ -23,14 +24,16 @@ export async function GET(
   const parsedLimit = Number(request.nextUrl.searchParams.get("limit") ?? "4");
   const limit = Number.isFinite(parsedLimit) ? parsedLimit : 4;
 
+  let stage: RelatedStage = "game-resolution";
   try {
-    const detail = await boundedHomepageRead(4500, () => loadGameDetail({ slug }));
+    const target = await boundedHomepageRead(4500, () => loadRelatedGameTarget(slug));
 
-    if (detail.status !== "ok") {
+    if (!target) {
       return jsonNotFound("Game");
     }
 
-    const related = await boundedHomepageRead(3500, () => getRelatedGamesForGame(detail.game, limit));
+    stage = "candidate-lookup";
+    const related = await boundedHomepageRead(3500, () => getRelatedGamesForGame(target, limit));
 
     return NextResponse.json(
       { success: true, data: related },
@@ -38,12 +41,12 @@ export async function GET(
         status: 200,
         headers: {
           "Cache-Control": RELATED_GAMES_API_CACHE_CONTROL,
-          "X-Verdict-Canonical-Slug": detail.canonicalSlug,
+          "X-Verdict-Canonical-Slug": target.slug,
         },
       }
     );
   } catch (err) {
-    console.error(`[API] /games/${slug}/related error:`, err);
+    console.error("[Related games] Request failed", { stage, reason: relatedFailureReason(stage, err) });
     return jsonError("Related games temporarily unavailable", 503);
   }
 }

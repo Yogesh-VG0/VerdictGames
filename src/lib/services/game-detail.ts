@@ -1,6 +1,8 @@
 import { unstable_cache } from "next/cache";
 import { cache } from "react";
-import { boundedHomepageRead } from "@/lib/services/homepage-budget";
+import { boundedHomepageRead, currentHomepageSignal, homepageSignal } from "@/lib/services/homepage-budget";
+import { RelatedDependencyError, relatedDatabaseError } from "@/lib/services/related-errors";
+import { createRelatedReadCoalescer } from "@/lib/services/related-read";
 import { mapGameRow } from "@/lib/db/mappers";
 import { getReviewedReleaseTiming, readReleaseTimings } from '@/lib/services/release-timing';
 import { formatReleaseTiming, resolveReleaseTiming, type ReleaseTiming } from '@/lib/utils/release-timing';
@@ -23,6 +25,7 @@ import { getPublicSupabase, hasPublicSupabaseEnv, PUBLIC_SUPABASE_FETCH_TIMEOUT_
 import type { GameRow } from "@/lib/supabase/types";
 import {isPublicSafeGame,isPublicSafeRawgGame} from '@/lib/utils/publicSafety';
 import type { Game } from "@/lib/types";
+import { normalizePlatforms } from "@/lib/utils/platform";
 
 export const GAME_DETAIL_REVALIDATE_SECONDS = 3600;
 export const GAME_DETAIL_API_CACHE_CONTROL = `s-maxage=${GAME_DETAIL_REVALIDATE_SECONDS}, stale-while-revalidate=300`;
@@ -463,4 +466,53 @@ async function loadGameDetailUncached(args: {
 const memoizedGameDetail = cache((slug: string, rawgId?: number | null) => loadGameDetailUncached({ slug, rawgId }));
 export function loadGameDetail(args: { slug: string; rawgId?: number | null }) {
   return memoizedGameDetail(args.slug, args.rawgId);
+}
+
+export type RelatedGameTarget = Pick<Game,
+  "id" | "slug" | "title" | "genres" | "tags" | "platforms" | "developer" | "publisher" | "franchise" | "releaseDate" | "isPreview"
+>;
+
+async function fetchRelatedGameTarget(slug: string): Promise<RelatedGameTarget | null> {
+  if (hasPublicSupabaseEnv()) {
+    const signal = AbortSignal.timeout(2_200);
+    const overall = currentHomepageSignal();
+    const { data, error } = await getPublicSupabase().from("games")
+      .select("id,slug,title,genres,tags,platforms,developer,publisher,franchise,release_date,description")
+      .eq("slug", slug).abortSignal(homepageSignal(signal)).maybeSingle()
+      .then(result => result, error => { throw relatedDatabaseError(error, signal, overall); });
+    if (error) throw relatedDatabaseError(error, signal, overall);
+    if (data) {
+      const row = data as GameRow;
+      if (!isPublicSafeGame(row)) return null;
+      return {
+        id: row.id, slug: row.slug, title: row.title, genres: row.genres, tags: row.tags,
+        platforms: normalizePlatforms(row.platforms as string[]), developer: row.developer, publisher: row.publisher,
+        franchise: row.franchise ?? undefined, releaseDate: row.release_date ?? "",
+      };
+    }
+  }
+
+  try {
+    const preview = await getCachedRawgPreviewRecordBySlug(slug);
+    if (!preview) return null;
+    const { id, title, genres, tags, platforms, developer, publisher, franchise, releaseDate } = preview.game;
+    return { id, slug: preview.canonicalSlug, title, genres, tags, platforms, developer, publisher, franchise, releaseDate, isPreview: true };
+  } catch {
+    const overall = currentHomepageSignal();
+    if (overall?.aborted) throw overall.reason;
+    throw new RelatedDependencyError("provider-failure");
+  }
+}
+
+const coalesceRelatedTarget = createRelatedReadCoalescer<RelatedGameTarget | null>();
+const readCachedRelatedTarget = unstable_cache(
+  (target: string) => coalesceRelatedTarget(target, () => fetchRelatedGameTarget(target)),
+  ["related-target-v1"],
+  { revalidate: 300 },
+);
+
+export function loadRelatedGameTarget(slug: string): Promise<RelatedGameTarget | null> {
+  const canonical = Object.hasOwn(GAME_DETAIL_SLUG_REDIRECTS, slug) ? GAME_DETAIL_SLUG_REDIRECTS[slug] : undefined;
+  if (!VALID_SLUG_PATTERN.test(slug) || (GAME_DETAIL_BLOCKED_SLUGS.has(slug) && !canonical)) return Promise.resolve(null);
+  return readCachedRelatedTarget(canonical ?? slug);
 }
