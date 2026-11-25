@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { buildSocialMetadata, SITE_URL } from "@/lib/seo";
+import { buildSocialMetadata, SITE_NAME, SITE_URL } from "@/lib/seo";
 
 const title = "Privacy Policy";
 const description = "Privacy policy for verdict.games — how we handle your data and protect your privacy.";
@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   description,
   alternates: { canonical: `${SITE_URL}/privacy` },
   ...buildSocialMetadata({
-    title: `${title} | verdict.games`,
+    title: `${title} | ${SITE_NAME}`,
     description,
     url: `${SITE_URL}/privacy`,
   }),

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { buildSocialMetadata, SITE_URL } from "@/lib/seo";
+import { buildSocialMetadata, SITE_NAME, SITE_URL } from "@/lib/seo";
 
 const title = "Terms of Service";
 const description = "Terms of service for verdict.games — your trusted source for honest game reviews.";
@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   description,
   alternates: { canonical: `${SITE_URL}/terms` },
   ...buildSocialMetadata({
-    title: `${title} | verdict.games`,
+    title: `${title} | ${SITE_NAME}`,
     description,
     url: `${SITE_URL}/terms`,
   }),
