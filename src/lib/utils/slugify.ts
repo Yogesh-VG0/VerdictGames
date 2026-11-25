@@ -5,18 +5,7 @@
  * Rules: lowercase, replace spaces with hyphens, strip special chars.
  */
 
-export function slugify(text: string): string {
-  return text
-    .toString()
-    .toLowerCase()
-    .trim()
-    .replace(/\s+/g, "-")
-    .replace(/&/g, "-and-")
-    .replace(/[^\w-]+/g, "")
-    .replace(/--+/g, "-")
-    .replace(/^-+/, "")
-    .replace(/-+$/, "");
-}
+export { slugify } from "./slug-format.mjs";
 
 /** Strips all non-alphanumeric chars for fuzzy title comparison. */
 export function normalizeTitle(title: string): string {

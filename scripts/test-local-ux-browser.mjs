@@ -6,6 +6,7 @@ import { readFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import { createClient } from '@supabase/supabase-js';
 import postgres from 'postgres';
+import { refreshSitemapSnapshot } from './lib/sitemap-refresh.mjs';
 
 const phase = process.argv[2] ?? 'after';
 const supplemental = process.argv.includes('--supplemental');
@@ -182,6 +183,8 @@ try {
     console.log(`Rendered ${phase} ${theme} ${width}: nine routes`);
   }
   if (phase === 'after') {
+    const sitemapPublication = await refreshSitemapSnapshot(sql);
+    assert.equal(sitemapPublication.outcome, 'published', 'Publishes a complete sitemap in disposable Supabase');
     const sitemap = await fetch(base + '/sitemap.xml');
     assert.equal(sitemap.status, 200, 'Local sitemap loads with restricted profile privileges');
     const xml = await sitemap.text();

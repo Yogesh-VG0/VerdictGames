@@ -30,6 +30,7 @@ on:
           - refresh-trending
           - refresh-player-counts
           - refresh-upcoming-snapshot
+          - refresh-sitemap
           - discover-steam-popular
           - maintenance-health
           - refresh-steam-reviews
@@ -182,6 +183,7 @@ jobs:
             refresh-trending) node scripts/heroku-refresh-trending.mjs ;;
             refresh-player-counts) node scripts/heroku-refresh-trending.mjs --players-only ;;
             refresh-upcoming-snapshot) node scripts/catalogue-discovery-maintenance.mjs upcoming ;;
+            refresh-sitemap) node scripts/refresh-sitemap.mjs ;;
             maintenance-health) node scripts/maintenance-health.mjs ;;
             refresh-steam-reviews) node scripts/refresh-steam-reviews.mjs ;;
             re-enrich) node scripts/heroku-re-enrich.mjs --limit 10 ;;
@@ -194,3 +196,24 @@ jobs:
             backfill-mobile-ios) node scripts/backfill-mobile-listings.mjs --ios-only --limit=25 ;;
             *) echo "::error::Unknown job: $JOB"; exit 1 ;;
           esac
+
+      - name: Check sitemap refresh pressure
+        id: sitemap_pressure
+        if: >-
+          vars.CATALOGUE_SITEMAP_CRON_ENABLED == 'true' &&
+          steps.resolve.outputs.job == 'refresh-player-counts' &&
+          steps.rawg_health.outputs.run_job == 'true'
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          SCHEDULER_DB_MAX_CONNECTIONS: "1"
+          SCHEDULER_DB_CONNECT_TIMEOUT_SECONDS: "5"
+        run: node scripts/check-maintenance-pressure.mjs refresh-sitemap
+
+      - name: Advance durable sitemap
+        if: steps.sitemap_pressure.outputs.run_job == 'true'
+        timeout-minutes: 2
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          SCHEDULER_DB_MAX_CONNECTIONS: "1"
+          SCHEDULER_DB_CONNECT_TIMEOUT_SECONDS: "5"
+        run: node scripts/refresh-sitemap.mjs

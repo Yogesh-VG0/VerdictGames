@@ -23,14 +23,12 @@ import { getPublicSupabase, hasPublicSupabaseEnv, PUBLIC_SUPABASE_FETCH_TIMEOUT_
 import type { GameRow } from "@/lib/supabase/types";
 import {isPublicSafeGame,isPublicSafeRawgGame} from '@/lib/utils/publicSafety';
 import type { Game } from "@/lib/types";
+import { GAME_DETAIL_SLUG_REDIRECTS } from "@/lib/utils/game-slug-redirects.mjs";
 
 export const GAME_DETAIL_REVALIDATE_SECONDS = 3600;
 export const GAME_DETAIL_API_CACHE_CONTROL = `s-maxage=${GAME_DETAIL_REVALIDATE_SECONDS}, stale-while-revalidate=300`;
 export const GAME_DETAIL_RAWG_ID_HEADER = "x-verdict-game-rawg-id";
-export const GAME_DETAIL_SLUG_REDIRECTS: Record<string, string> = {
-  "grand-theft-aito-vi": "grand-theft-auto-vi",
-  "black-myth-wu-kong": "black-myth-wukong",
-};
+export { GAME_DETAIL_SLUG_REDIRECTS };
 export const GAME_DETAIL_BLOCKED_SLUGS = new Set(["grand-theft-aito-vi"]);
 
 const VALID_SLUG_PATTERN = /^[a-z0-9-]{1,100}$/i;
