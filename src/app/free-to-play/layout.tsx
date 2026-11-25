@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import { buildSocialMetadata, SITE_URL } from "@/lib/seo";
+import { buildSocialMetadata, SITE_NAME, SITE_URL } from "@/lib/seo";
 
 const title = "Free to Play Games";
 const description = "Discover the best free-to-play games and titles available on Xbox Game Pass and PlayStation Plus. Browse by genre and platform — updated hourly.";
-const socialTitle = "Free to Play Games | verdict.games";
+const socialTitle = `${title} | ${SITE_NAME}`;
 
 export const metadata: Metadata = {
   title,

@@ -50,7 +50,7 @@ export function reviewedHeroArtwork({ slug, igdbId, rawgId }) {
 
 const titleKey = name => String(name ?? '').normalize('NFKD').toLowerCase().replace(/[^a-z0-9]/g, '');
 
-export function matchedIgdbArtwork(game, { igdbId, steamAppId, title, releaseDate }) {
+export function matchedIgdbArtwork(game, { igdbId, steamAppId, title, releaseDate, developer, publisher, requireCompanies = false }) {
   if (!Number.isSafeInteger(game?.id) || game.id <= 0) return null;
   if (igdbId != null) return game.id === igdbId ? game : null;
   const key = titleKey(title);
@@ -61,6 +61,11 @@ export function matchedIgdbArtwork(game, { igdbId, steamAppId, title, releaseDat
     return id ? [Number(id)] : [];
   });
   if (steamAppId && steamLinks.length) return steamLinks.includes(steamAppId) ? game : null;
+  if (requireCompanies) {
+    const companies = Array.isArray(game.involved_companies) ? game.involved_companies : [];
+    if (!developer || !publisher || !companies.some(entry => entry.developer && titleKey(entry.company?.name) === titleKey(developer))
+      || !companies.some(entry => entry.publisher && titleKey(entry.company?.name) === titleKey(publisher))) return null;
+  }
   const referenceYear = Number(releaseDate?.slice(0, 4));
   const candidateYear = new Date(game.first_release_date * 1000).getUTCFullYear();
   return referenceYear > 0 && Math.abs(referenceYear - candidateYear) <= 1 ? game : null;
@@ -74,7 +79,7 @@ function igdbCandidates(game, kind) {
       || asset.animated || asset.alpha_channel || /\b(logo|icon|portrait)\b/i.test(asset.image_type?.name ?? '')) return [];
     const { width, height } = asset;
     const ratio = width / height;
-    if (!Number.isSafeInteger(width) || !Number.isSafeInteger(height) || width < 1280 || height < 620
+    if (!Number.isSafeInteger(width) || !Number.isSafeInteger(height) || width < 640 || height < 360
       || ratio < 1.55 || ratio > 2.65) return [];
     const desktop = width >= 1920 && height >= 1080;
     const variant = desktop ? (kind === 'artwork' ? '1080p' : 'screenshot_huge') : '720p';
@@ -100,6 +105,7 @@ function steamPath(url, appId) {
 }
 
 const steamHero = /^library_hero(?:_2x)?\.(jpg|png|webp)$/i;
+const steamHeader = /^header\.(jpg|png|webp)$/i;
 const steamScreenshot = /^ss_[a-z0-9]+\.(jpg|png|webp)$/i;
 
 export function steamLibraryHeroAsset(item, appId) {
@@ -125,7 +131,7 @@ function storedTier(value, steamAppId) {
     return folder === 'games' ? 70 : folder === 'screenshots' ? 40 : 0;
   }
   const steamFile = steamPath(url, steamAppId);
-  return steamHero.test(steamFile ?? '') ? 90 : steamScreenshot.test(steamFile ?? '') ? 40 : 0;
+  return steamHero.test(steamFile ?? '') ? 90 : steamHeader.test(steamFile ?? '') ? 76 : steamScreenshot.test(steamFile ?? '') ? 40 : 0;
 }
 
 export function isProviderHeroArtwork(value) {
@@ -146,6 +152,7 @@ export function selectLandscapeArtwork({ igdb, rawg, rawgScreenshots = [], steam
   for (const value of rawgScreenshots) add(value, 40, url => rawgFolder(url, 'screenshots'));
   if (steamAppId && steam?.steam_appid === steamAppId && steam.type === 'game') {
     add(steamHeroUrl, 90, url => steamHero.test(steamPath(url, steamAppId) ?? ''));
+    add(steam.header_image, 76, url => steamHeader.test(steamPath(url, steamAppId) ?? ''));
     for (const shot of Array.isArray(steam.screenshots) ? steam.screenshots : []) {
       add(shot?.path_full, 40, url => steamScreenshot.test(steamPath(url, steamAppId) ?? ''));
     }

@@ -1,7 +1,7 @@
 export function portraitPriority(url: string | null | undefined): number;
 type Identity = { slug: string; igdbId?: number | null; rawgId?: number | null };
 type ReviewedArtwork = Readonly<{ url: string; fallbackUrl?: string; mobileFocalPoint?: 'right'; credit: string; sourceUrl: string }>;
-type SteamArtwork = { steam_appid: number; type: string; screenshots?: { path_full: string }[] };
+type SteamArtwork = { steam_appid: number; type: string; header_image?: string; screenshots?: { path_full: string }[] };
 type ArtworkInput = {
   igdb?: unknown; steam?: SteamArtwork | null; steamAppId?: number | null;
   existing?: string | null; reviewed?: ReviewedArtwork | null;
@@ -10,7 +10,7 @@ type ArtworkInput = {
 };
 export function reviewedHeroArtwork(identity: Identity): ReviewedArtwork | null;
 export function matchedIgdbArtwork<T>(game: T | null, identity: {
-  igdbId?: number | null; steamAppId?: number | null; title: string; releaseDate?: string | null;
+  igdbId?: number | null; steamAppId?: number | null; title: string; releaseDate?: string | null; developer?: string; publisher?: string; requireCompanies?: boolean;
 }): T | null;
 export function isProviderHeroArtwork(url: string | null | undefined): boolean;
 export function steamLibraryHeroAsset(item: unknown, appId: number): string | null;

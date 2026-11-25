@@ -24,10 +24,11 @@ describe('Newest release-date eligibility',()=>{
  });
  afterEach(()=>vi.useRealTimers());
  beforeEach(()=>{state.rows=[];state.filters=[];vi.useFakeTimers({toFake:['Date']});vi.setSystemTime(new Date('2026-11-19T12:00:00Z'));});
- it('includes a mainstream console launch with limited evidence without changing its Verdict',async()=>{
-  state.rows=[launch];const result=await loadSearchResults(request);
+ it('requires release confirmation even for a mainstream title with provider ratings',async()=>{
+  state.rows=[launch];expect((await loadSearchResults(request)).items).toEqual([]);
+  state.rows=[{...launch,release_status:'released'}];const result=await loadSearchResults(request);
   expect(result.items).toHaveLength(1);expect(result.items[0]).toMatchObject({score:77,criticScore:98});
-  expect(state.filters).toContainEqual(['neq','verdict_label','COMING SOON']);
+  expect(state.filters.some(([method,condition])=>method==='or'&&String(condition).includes('release_status.in.'))).toBe(true);
  });
  it('does not call a provisional past-date record a released game',async()=>{
   state.rows=[{...launch,release_date:'2026-10-22',id:'pending-enrichment',review_count:0,verdict_label:'COMING SOON',is_provisional:true}];
@@ -38,6 +39,17 @@ describe('Newest release-date eligibility',()=>{
    {...launch,id:'announced',release_status:'announced'},{...launch,id:'tba',release_status:'coming_soon'},
    {...launch,id:'cancelled',release_status:'cancelled'},{...launch,id:'adult',title:'Hentai Clicker'}];
   expect((await loadSearchResults(request)).items).toEqual([]);
+ });
+ it('uses reviewed exact identity and date in the ranked cohort and its hydrated card',async()=>{
+  const row={...launch,slug:'silent-hill-townfall',rawg_id:1018062,release_date:'2026-09-23'};
+  state.rows=[row];
+  expect((await loadSearchResults(request)).items).toMatchObject([{releaseDate:'2026-09-24',releaseStatus:'released'}]);
+  state.rows=[{...row,rawg_id:111111}];
+  expect((await loadSearchResults(request)).items).toEqual([]);
+ });
+ it('honors a reviewed publisher launch even when the generated card still says Coming Soon',async()=>{
+  state.rows=[{...launch,slug:'grand-theft-auto-vi',rawg_id:972995,release_date:'2026-11-19',is_provisional:true,verdict_label:'COMING SOON'}];
+  expect((await loadSearchResults(request)).items).toMatchObject([{releaseDate:'2026-11-19',releaseStatus:'released',isProvisional:false}]);
  });
  it('retains exact platform predicates on the initial and hydration reads',async()=>{
   state.rows=[launch];await loadSearchResults({...request,platform:'PlayStation 5'});

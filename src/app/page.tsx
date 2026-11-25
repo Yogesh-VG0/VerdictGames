@@ -14,9 +14,9 @@ import {
   loadHomepageDataWithStatus,
   loadHomepageMostAnticipatedWithStatus,
 } from "@/lib/services/homepage";
+import { HOME_DESCRIPTION, HOME_TITLE, serializeJsonLd, SITE_NAME, SITE_URL } from "@/lib/seo";
 
 const CARD_WIDTH = "shrink-0 w-44 sm:w-52 md:w-56 lg:w-60 h-full";
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://www.verdict.games";
 
 export const revalidate = 300;
 // Catalogue data is cached independently in the service layer. Render the
@@ -29,29 +29,22 @@ if (HOMEPAGE_REVALIDATE_SECONDS !== revalidate) {
 }
 
 export const metadata: Metadata = {
-  title: "The Verdict on Every Game",
-  description:
-    "Discover featured verdicts, trending games, top-rated releases, curated recommendations, and fresh gaming picks on verdict.games.",
+  title: { absolute: HOME_TITLE },
   alternates: {
     canonical: "/",
   },
-  openGraph: {
-    title: "verdict.games — The Verdict on Every Game",
-    description:
-      "Discover featured verdicts, trending games, top-rated releases, curated recommendations, and fresh gaming picks on verdict.games.",
-    url: SITE_URL,
-    siteName: "verdict.games",
-    type: "website",
-    images: [{ url: "/og-default.png", width: 1200, height: 630, alt: "verdict.games — The Verdict on Every Game" }],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "verdict.games — The Verdict on Every Game",
-    description:
-      "Discover featured verdicts, trending games, top-rated releases, curated recommendations, and fresh gaming picks on verdict.games.",
-    images: [{ url: "/og-default.png", alt: "verdict.games — The Verdict on Every Game" }],
-  },
 };
+
+const websiteUrl = new URL("/", SITE_URL).href;
+const websiteJsonLd = serializeJsonLd({
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "@id": `${websiteUrl}#website`,
+  name: SITE_NAME,
+  alternateName: ["verdict.games", "VerdictGames"],
+  url: websiteUrl,
+  description: HOME_DESCRIPTION,
+});
 
 export default async function HomePage() {
   const [homepageResult, anticipatedResult] = await Promise.all([
@@ -74,6 +67,7 @@ export default async function HomePage() {
 
   return (
     <div className="space-y-0">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: websiteJsonLd }} />
       {degraded && (
         <p role="status" className="max-w-[1400px] mx-auto px-4 py-4 text-sm text-secondary">
           Some game collections are temporarily unavailable. You can still <a className="text-accent underline underline-offset-4" href="/search">browse available games</a> or try again shortly.
@@ -99,7 +93,7 @@ export default async function HomePage() {
                   href="/search?sort=trending"
                   linkLabel="See trending games"
                   icon={<Flame className="w-5 h-5" />}
-                  subtitle="Rising games and popular picks with an active community"
+                  subtitle="Recent player growth, active player counts, past momentum and editorial picks"
                   gradient="linear-gradient(90deg, #f97316 0%, #ef4444 25%, #f97316 50%, #eab308 75%, #f97316 100%)"
                 />
                 <HorizontalScroll>

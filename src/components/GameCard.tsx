@@ -2,30 +2,33 @@
 
 import Link from "next/link";
 import { Gamepad2 } from "lucide-react";
-import { Game } from "@/lib/types";
+import type { GameCardData } from "@/lib/types";
 import { scoreColor, cn, sourceLabel, scoreGlowClass, getStableYear } from "@/lib/utils";
 import { collapsePlatforms } from "@/lib/utils/platform";
 import VerdictBadge from "@/components/ui/VerdictBadge";
 import PlatformIcon from "@/components/ui/PlatformIcon";
 import SafeImage from "@/components/ui/SafeImage";
+import { OrientedCardImage } from "@/components/CatalogueCardArtwork";
+import { artworkKind, catalogueGameHref } from "@/lib/utils/artwork";
 
 interface GameCardProps {
-  game: Game;
+  game: GameCardData;
   priority?: boolean;
   prefetch?: boolean;
   className?: string;
   variant?: "default" | "spotlight";
 }
 
-function yearFromDate(date: string | undefined): string | null {
-  return getStableYear(date);
+function yearFromGame(game: GameCardData): string | null {
+  return game.releaseTiming ? game.releaseTiming.precision === 'tba' ? null : game.releaseTiming.value.slice(0, 4)
+    : getStableYear(game.releaseDate);
 }
 
-function isUnreleased(game: Game): boolean {
+function isUnreleased(game: GameCardData): boolean {
   return game.isProvisional || game.verdictLabel === "COMING SOON";
 }
 
-function hasRealScore(game: Game): boolean {
+function hasRealScore(game: GameCardData): boolean {
   if (isUnreleased(game)) return false;
   if (game.score === 0 && game.scoreSource === "gx") return false;
   if (game.verdictLabel === "JUST RELEASED") return false;
@@ -43,6 +46,8 @@ function scoreGlowBorder(score: number): string {
 function BlurImage({ src, alt, sizes, priority, className }: {
   src: string; alt: string; sizes?: string; priority?: boolean; className?: string;
 }) {
+  sizes ??= "(max-width: 640px) 44vw, (max-width: 768px) 208px, (max-width: 1024px) 224px, 240px";
+  if (artworkKind(src) === 'artwork') return <OrientedCardImage image={src} alt={alt} layout="portrait" sizes={sizes} priority={priority} />;
   return (
     <>
       <div
@@ -54,7 +59,7 @@ function BlurImage({ src, alt, sizes, priority, className }: {
         src={src}
         alt={alt}
         fill
-        sizes={sizes ?? "(max-width: 640px) 44vw, (max-width: 768px) 208px, (max-width: 1024px) 224px, 240px"}
+        sizes={sizes}
         priority={priority}
         quality={75}
         className={cn(
@@ -75,13 +80,14 @@ export default function GameCard({
   className,
   variant = "default",
 }: GameCardProps) {
+  const href = catalogueGameHref({ slug: game.slug, rawgId: game.rawgId ?? 0, catalogueId: game.isPreview ? undefined : game.id });
   const ratingLabel = game.isPreview ? sourceLabel(game.scoreSource) || 'Provider' : 'Verdict';
   const ratingTitle = game.isPreview
     ? `${ratingLabel} rating: ${game.score}`
     : `Verdict score: ${game.score}. Provider ratings are separate; this score accounts for review confidence.`;
   if (variant === "spotlight") {
     return (
-      <Link href={`/game/${game.slug}`} prefetch={prefetch} className={cn("block group", className)}>
+      <Link href={href} prefetch={prefetch} className={cn("block group rounded-2xl focus-visible:outline-2 focus-visible:outline-accent", className)}>
         <article
           className={cn(
             "relative rounded-2xl border border-border bg-surface overflow-hidden signal-card h-full hover:border-border-hover",
@@ -148,9 +154,9 @@ export default function GameCard({
                   {overflow > 0 && (
                     <span className="text-[9px] text-white/40">+{overflow}</span>
                   )}
-                  {yearFromDate(game.releaseDate) && (
+                  {yearFromGame(game) && (
                     <span className="text-[10px] text-white/50 font-medium ml-auto">
-                      {yearFromDate(game.releaseDate)}
+                      {yearFromGame(game)}
                     </span>
                   )}
                 </div>
@@ -173,7 +179,7 @@ export default function GameCard({
   }
 
   return (
-    <Link href={`/game/${game.slug}`} prefetch={prefetch} className={cn("block group", className)}>
+    <Link href={href} prefetch={prefetch} className={cn("block group rounded-2xl focus-visible:outline-2 focus-visible:outline-accent", className)}>
       <article
         className={cn(
           "relative rounded-2xl border border-border bg-surface overflow-hidden signal-card h-full hover:border-border-hover",
@@ -237,10 +243,10 @@ export default function GameCard({
             );
           })()}
 
-          {yearFromDate(game.releaseDate) && (
+          {yearFromGame(game) && (
             <div className="absolute top-2.5 left-2.5">
               <span className="text-[10px] text-white/70 bg-black/50 backdrop-blur-md px-2 py-0.5 rounded-lg font-medium border border-white/5">
-                {yearFromDate(game.releaseDate)}
+                {yearFromGame(game)}
               </span>
             </div>
           )}
@@ -255,7 +261,7 @@ export default function GameCard({
         </div>
 
         <div className="p-3.5 space-y-2">
-          <h3 className="text-sm font-semibold text-foreground leading-snug line-clamp-1 group-hover:text-accent transition-colors h-5">
+          <h3 className="min-h-10 break-words text-sm font-semibold leading-5 text-foreground line-clamp-2 group-hover:text-accent transition-colors">
             {game.title}
           </h3>
 

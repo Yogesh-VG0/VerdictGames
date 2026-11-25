@@ -1,9 +1,10 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import DeveloperClientPage from '@/components/DeveloperClientPage';
-import { loadDeveloperHub } from '@/lib/services/developers';
+import { DEVELOPER_PAGE_REVALIDATE_SECONDS, loadDeveloperHub } from '@/lib/services/developers';
 import { SITE_URL, buildSocialMetadata } from '@/lib/seo';
-export const revalidate = 900;
+export const revalidate = 3600;
+if (DEVELOPER_PAGE_REVALIDATE_SECONDS !== revalidate) throw new Error('Developer page and data cache intervals must agree.');
 export const maxDuration = 30;
 export function generateStaticParams() { return []; }
 type Props = { params: Promise<{ slug: string }> };

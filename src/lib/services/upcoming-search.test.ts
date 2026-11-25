@@ -48,6 +48,19 @@ describe('Upcoming discovery and catalogue union',()=>{
  it('does not turn interest counts into reviews or display a premature Verdict',()=>{
   const game=upcomingCard(item(1));expect(game.score).toBe(0);expect(game.reviewCount).toBe(0);expect(game.isProvisional).toBe(true);
  });
+ it('keeps the reviewed full-release date unknown when the provider offers a day for Early Access',()=>{
+  const provider=upcomingCard(item(387312,{catalogueId:'paralives-id',slug:'paralives',name:'Paralives'}));
+  const local={...provider,releaseDate:'',releaseDateTba:true,releaseTiming:{precision:'tba'} as const,releaseStatus:'early-access'};
+  expect(mergeUpcomingCards([local],[provider],state)).toMatchObject([{
+    id:'paralives-id',releaseDate:'',releaseDateTba:true,releaseTiming:{precision:'tba'},releaseStatus:'early-access',
+  }]);
+ });
+ it('reports a bounded cohort separately from an outage',async()=>{
+  mocks.explore.mockResolvedValue({items:[],count:0,degraded:false});
+  const card=upcomingCard(item(1));
+  const result=await loadUpcomingSearch(state,Promise.resolve({cards:[card],totalIsExact:false}));
+  expect(result).toMatchObject({items:[card],total:1,totalIsExact:false,notice:expect.stringContaining('bounded selection')});
+ });
  it('puts unknown full-release dates after dated games and rejects editions/adult-only content',()=>{
   const tba=upcomingCard(item(1,{name:'Early Access Game',earlyAccess:true,released:'2025-01-01'}));
   const dated=upcomingCard(item(2));

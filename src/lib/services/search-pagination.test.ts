@@ -8,7 +8,7 @@ vi.mock('next/cache',()=>({unstable_cache:(fn:(...args:unknown[])=>unknown,keys:
   state.depth++;try{return await fn(...args);}finally{state.depth--;}
  })());return state.cache.get(key);
 }}));
-const rows=Array.from({length:300},(_,index)=>({id:`game-${index}`,slug:`game-${index}`,title:`Game ${index}`,steam_app_id:1000+index,
+const rows=Array.from({length:301},(_,index)=>({id:`game-${index}`,slug:`game-${index}`,title:`Game ${index}`,steam_app_id:1000+index,explore_primary_safe:true,
  release_date:'2020-01-01',created_at:'2020-01-01',platforms:['PC'],genres:['Action'],tags:['Singleplayer'],
  developer:'Studio',publisher:'Studio',cover_image:'https://images.igdb.com/co123.jpg',header_image:'https://images.igdb.com/co123.jpg',
  description:'A complete standalone action adventure with a substantial story.',score:90,verdict_score:90,confidence:0.9,
@@ -35,13 +35,15 @@ describe('stable public Browse pagination and compact cohort cache',()=>{
    const result=await loadSearchResults({query:'',platform:'All',genre:'',year:'',monetization:'All',sort:'relevance',page});
    expect(result.items).toHaveLength(25);ids.push(...result.items.map(row=>row.id));
   }
-  expect(new Set(ids).size).toBe(100);expect(state.wideReads).toBe(1);expect(state.cardReads).toBe(4);expect(state.ranges).toEqual([[0,149]]);
+  expect(new Set(ids).size).toBe(100);
+  expect((await loadSearchResults({query:'',platform:'All',genre:'',year:'',monetization:'All',sort:'relevance',page:7})).items).toHaveLength(25);
+  expect(state.wideReads).toBe(1);expect(state.cardReads).toBe(5);expect(state.ranges).toEqual([[0,299]]);
   const cached=await Promise.all([...state.cache.values()]);
   const cohort=cached.find(value=>value && typeof value==='object' && 'ids' in value) as {ids:string[];totalIsExact:boolean};
   expect(Object.keys(cohort).sort()).toEqual(['ids','totalIsExact']);
   expect(JSON.stringify(cohort)).not.toContain('description');expect(Buffer.byteLength(JSON.stringify(cohort))).toBeLessThan(40000);
   expect(state.columns[0].split(',')).not.toContain('verdict_summary');
-  expect(state.columns[0].split(',')).toContain('description');
+  expect(state.columns[0].split(',')).not.toContain('description');
   expect(state.columns[1].split(',')).toContain('verdict_summary');
  });
 });

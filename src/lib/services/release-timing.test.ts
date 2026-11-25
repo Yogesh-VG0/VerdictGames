@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { selectIgdbTiming } from './release-timing';
+import { getReviewedReleaseTiming, selectIgdbTiming } from './release-timing';
 import { formatReleaseTiming, releaseTimingMonth, resolveReleaseTiming } from '@/lib/utils/release-timing';
 
 const fromDate = (day: string, format: string, status?: string) => ({
@@ -9,6 +9,14 @@ const fromDate = (day: string, format: string, status?: string) => ({
 });
 
 describe('release date precision', () => {
+  it('uses the newer Catalyst year without accepting stale precision or changing Legacy of Atlantis', () => {
+    const oldDay = { precision: 'day', value: '2027-12-31' } as const;
+    const catalyst = getReviewedReleaseTiming(1015411, oldDay.value, oldDay);
+    expect(catalyst).toEqual({ precision: 'year', value: '2028' });
+    expect(releaseTimingMonth(catalyst!)).toBeUndefined();
+    expect(getReviewedReleaseTiming(1015421, null)).toEqual({ precision: 'month', value: '2027-02' });
+    expect(getReviewedReleaseTiming(1015421, oldDay.value, oldDay)).toBe(oldDay);
+  });
   it.each(['Clockwork Revolution', 'Kena: Scars of Kosmora', 'Resident Evil Veronica'])(
     'does not turn the year placeholder for %s into December 31',
     () => {

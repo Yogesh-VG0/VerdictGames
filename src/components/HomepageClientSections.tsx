@@ -15,7 +15,7 @@ import FadeInSection from "@/components/FadeInSection";
 import GameCard from "@/components/GameCard";
 import HorizontalScroll from "@/components/HorizontalScroll";
 import SectionHeader from "@/components/SectionHeader";
-import HeroImage from "@/components/ui/HeroImage";
+import { OrientedCardImage } from "@/components/CatalogueCardArtwork";
 import GXDealCard from "@/components/GXDealCard";
 import {
   HorizontalScrollSkeleton,
@@ -165,8 +165,8 @@ export default function HomepageClientSections({
                       const artwork = (
                         <div className="relative aspect-[3/4] overflow-hidden">
                           {game.cover && (
-                            <HeroImage
-                              src={game.cover}
+                            <OrientedCardImage layout="portrait"
+                              image={game.cover}
                               alt={game.title}
                               sizes="(max-width: 640px) 50vw, 20vw"
                               className="transition-transform duration-700 group-hover:scale-110"

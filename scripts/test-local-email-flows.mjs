@@ -72,9 +72,10 @@ async function signup(ctx, label) {
 }
 async function capture(page, name, width, scheme) {
   await page.setViewportSize({ width, height: width === 390 ? 844 : 950 });
-  const targetLabel = scheme === 'light' ? 'Switch to light mode' : 'Switch to dark mode';
-  const theme = page.getByRole('button', { name: targetLabel, exact: true }).first();
-  if (await theme.count()) await theme.click();
+  // Keep any authentication dialog open during the capture. A backdrop
+  // correctly prevents clicks on the theme toggle behind it.
+  await page.emulateMedia({ colorScheme: scheme });
+  await page.waitForFunction(light => document.documentElement.classList.contains('light') === light, scheme === 'light');
   check(!await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), name + ' fits viewport');
   const file = `${output}/${name}.png`; await page.screenshot({ path: file }); evidence.screenshots.push(file);
 }

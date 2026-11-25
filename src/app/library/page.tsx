@@ -174,18 +174,17 @@ function LibraryContent() {
           ) : library.data && library.data.length > 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
               {library.data.map((item, index) => (
-                <div key={item.id} className="relative group">
+                <div key={item.id} className="flex min-w-0 flex-col gap-2">
                   {item.game && <GameCard game={item.game} priority={index < 4} />}
 
-                  {/* Status overlay */}
-                  <div className="absolute top-2 left-2 z-10">
+                  <div className="mt-auto flex items-center gap-1.5">
                     <select
                       id={`library-status-${item.gameId}`}
                       name="status"
                       value={item.status}
                       onChange={(e) => statusMutation.mutate({ gameId: item.gameId, status: e.target.value as LibraryStatus })}
                       aria-label={`Update library status for ${item.game?.title ?? "game"}`}
-                      className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-lg bg-black/70 backdrop-blur-sm text-white border border-white/20 cursor-pointer appearance-none"
+                      className="min-h-8 min-w-0 flex-1 cursor-pointer rounded-lg border border-border bg-surface px-1.5 text-xs font-medium text-foreground focus-visible:outline-2 focus-visible:outline-accent"
                     >
                       <option value="playing">Playing</option>
                       <option value="completed">Completed</option>
@@ -193,23 +192,21 @@ function LibraryContent() {
                       <option value="paused">Paused</option>
                       <option value="dropped">Dropped</option>
                     </select>
+                    {item.personalRating !== undefined && (
+                      <span className="shrink-0 text-xs font-bold text-accent" aria-label={`Your rating: ${item.personalRating}`}>
+                        {item.personalRating}
+                      </span>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => removeMutation.mutate(item.gameId)}
+                      className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-border bg-surface text-secondary transition-colors hover:text-danger focus-visible:outline-2 focus-visible:outline-accent"
+                      aria-label={`Remove ${item.game?.title ?? "game"} from library`}
+                      title="Remove from library"
+                    >
+                      ×
+                    </button>
                   </div>
-
-                  {/* Remove button */}
-                  <button
-                    onClick={() => removeMutation.mutate(item.gameId)}
-                    className="absolute top-2 right-2 z-10 w-6 h-6 rounded-full bg-black/70 backdrop-blur-sm text-white/60 hover:text-danger flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                    title="Remove from library"
-                  >
-                    ×
-                  </button>
-
-                  {/* Personal rating */}
-                  {item.personalRating !== undefined && (
-                    <div className="absolute bottom-2 right-2 z-10 bg-black/70 backdrop-blur-sm rounded-lg px-2 py-0.5">
-                      <span className="text-xs font-bold text-accent">{item.personalRating}</span>
-                    </div>
-                  )}
                 </div>
               ))}
             </div>

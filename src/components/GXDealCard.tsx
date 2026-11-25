@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { ExternalLink } from "lucide-react";
-import HeroImage from "@/components/ui/HeroImage";
+import { OrientedCardImage } from "@/components/CatalogueCardArtwork";
 import type { GXDeal } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -29,8 +29,8 @@ export default function GXDealCard({ deal, priority = false }: GXDealCardProps) 
   const imageContent = (
     <div className="relative aspect-[3/4] overflow-hidden">
       {deal.cover ? (
-        <HeroImage
-          src={deal.cover}
+        <OrientedCardImage layout="portrait"
+          image={deal.cover}
           alt={deal.title}
           sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
           className="transition-transform duration-700 group-hover:scale-110"
@@ -81,7 +81,7 @@ export default function GXDealCard({ deal, priority = false }: GXDealCardProps) 
             href={cardHref}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-sm font-semibold text-foreground leading-tight line-clamp-1 group-hover:text-accent transition-colors"
+            className="min-h-[2.5em] text-sm font-semibold text-foreground leading-tight line-clamp-2 group-hover:text-accent transition-colors"
           >
             {deal.title}
           </a>
@@ -89,12 +89,12 @@ export default function GXDealCard({ deal, priority = false }: GXDealCardProps) 
           <Link
             href={cardHref}
             prefetch={false}
-            className="text-sm font-semibold text-foreground leading-tight line-clamp-1 group-hover:text-accent transition-colors"
+            className="min-h-[2.5em] text-sm font-semibold text-foreground leading-tight line-clamp-2 group-hover:text-accent transition-colors"
           >
             {deal.title}
           </Link>
         ) : (
-          <div className="text-sm font-semibold text-foreground leading-tight line-clamp-1 group-hover:text-accent transition-colors">
+          <div className="min-h-[2.5em] text-sm font-semibold text-foreground leading-tight line-clamp-2 group-hover:text-accent transition-colors">
             {deal.title}
           </div>
         )}

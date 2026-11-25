@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import { buildSocialMetadata, SITE_URL } from "@/lib/seo";
+import { buildSocialMetadata, SITE_NAME, SITE_URL } from "@/lib/seo";
 
 const title = "Curated Lists";
 const description = "Discover curated game lists — best co-op, top RPGs, hidden gems, and more. Hand-picked collections for every type of gamer.";
-const socialTitle = "Curated Lists | verdict.games";
+const socialTitle = `${title} | ${SITE_NAME}`;
 
 export const metadata: Metadata = {
   title,

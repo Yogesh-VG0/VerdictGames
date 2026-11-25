@@ -1,4 +1,5 @@
-import { getFreshPlayerSignals } from '@/lib/utils/trending';
+import { getFreshPlayerSignals, getPlayerGrowthEvidence } from '@/lib/utils/trending';
+import { matchReviewedCatalogueRelease, reviewedCatalogueReleases } from './reviewed-catalogue-releases';
 /**
  * VERDICT.GAMES — Homepage Service Layer
  *
@@ -1072,44 +1073,13 @@ export function isHomepageRecommendationBackfillCandidate(row: GameRow): boolean
     || currentPlayers >= 750;
 }
 
-type ReviewedRelease = {
-  slug: string;
-  date: string;
-  catalogueDate?: string;
-  identity: 'igdb_id' | 'rawg_id' | 'steam_app_id';
-  providerId: number;
-};
-
-// Publisher or storefront evidence for specific catalogue records. This
-// corrects the public rail projection, without changing stored lifecycle data.
-const reviewedHomepageReleases: ReviewedRelease[] = [
-  { slug: 'sulfur', date: '2026-10-28', identity: 'steam_app_id', providerId: 2124120 },
-  { slug: 'phantom-blade-zero', date: '2026-10-29', identity: 'igdb_id', providerId: 250618 },
-  { slug: 'reka', date: '2026-10-26', identity: 'steam_app_id', providerId: 1737870 },
-  { slug: 'final-fantasy-resonance', date: '2026-10-22', identity: 'igdb_id', providerId: 410844 },
-  { slug: 'castlevania-belmonts-curse', date: '2026-10-15', identity: 'steam_app_id', providerId: 4231820 },
-  { slug: 'valor-mortis', date: '2026-10-13', identity: 'steam_app_id', providerId: 2828710 },
-  { slug: 'clive-barkers-hellraiser-revival', date: '2026-10-08', identity: 'rawg_id', providerId: 1015542 },
-  { slug: 'gears-of-war-e-day', date: '2026-10-06', identity: 'steam_app_id', providerId: 3010850 },
-  { slug: 'ace-combat-8-wings-of-theve', date: '2026-10-02', identity: 'igdb_id', providerId: 381247 },
-  { slug: 'ea-sports-fc-27', date: '2026-09-25', identity: 'steam_app_id', providerId: 4080220 },
-  { slug: 'control-resonant', date: '2026-09-24', identity: 'rawg_id', providerId: 1015409 },
-  { slug: 'silent-hill-townfall', date: '2026-09-24', catalogueDate: '2026-09-23', identity: 'rawg_id', providerId: 1018062 },
-  { slug: 'aniimo', date: '2026-09-16', identity: 'steam_app_id', providerId: 4126040 },
-  { slug: 'marvels-wolverine', date: '2026-09-15', identity: 'rawg_id', providerId: 662318 },
-  { slug: 'onimusha-way-of-the-sword', date: '2026-09-04', identity: 'rawg_id', providerId: 994600 },
-  { slug: 'the-blood-of-dawnwalker', date: '2026-09-03', catalogueDate: '2026-09-02', identity: 'steam_app_id', providerId: 3751260 },
-  { slug: 'resonance-a-plague-tale-legacy', date: '2026-08-27', identity: 'steam_app_id', providerId: 2713000 },
-  { slug: 'star-wars-zero-company', date: '2026-08-27', identity: 'rawg_id', providerId: 1002691 },
-];
-
 export async function fetchNewReleases(limit = 20): Promise<Game[]> {
   const supabase = getPublicSupabase();
   const fetchLimit = getHomepageQueryFetchLimit(limit);
   const now = Date.now();
   const today = new Date(now).toISOString().slice(0, 10);
   const cutoff = new Date(now - 90 * 86400000).toISOString().slice(0, 10);
-  const reviewed = reviewedHomepageReleases.filter(game => game.date >= cutoff && game.date <= today);
+  const reviewed = reviewedCatalogueReleases.filter(game => game.date >= cutoff && game.date <= today);
   const earliestStoredDate = reviewed.reduce((earliest, game) =>
     game.catalogueDate && game.catalogueDate < earliest ? game.catalogueDate : earliest, cutoff);
   const eligible = ['release_status.in.(released,"full release",full_release,full-release)'];
@@ -1139,9 +1109,8 @@ export async function fetchNewReleases(limit = 20): Promise<Game[]> {
   );
   const verified = ready.flatMap(row => {
     if (row.is_provisional || row.verdict_label === "COMING SOON" || hasUnreleasedStatus(row)) return [];
-    const match = reviewed.find(game => game.slug === row.slug && row[game.identity] === game.providerId
-      && (game.date === row.release_date || (game.catalogueDate && game.catalogueDate === row.release_date)));
-    if (match && (!row.release_status || hasKnownFullRelease(row))) {
+    const match = matchReviewedCatalogueRelease(row, reviewed);
+    if (match) {
       return [{ ...row, release_date: match.date, release_status: 'released' }];
     }
     const date = row.release_date ?? "";
@@ -1270,7 +1239,7 @@ export async function fetchHomepageTopRated(limit = 20): Promise<Game[]> {
         isPublicSafeGame(r) &&
         hasUsableCardImage(r)
       ));
-      filtered = filterQualityGames(ready, { section: "topRated", minResults: 4, allowReadinessFallback: false });
+      filtered = prioritizeById(filtered, filterQualityGames(ready, { section: "topRated", minResults: 4, allowReadinessFallback: false }), filtered.length + ready.length);
     }
   }
 
@@ -1299,7 +1268,7 @@ export async function fetchHomepageTopRated(limit = 20): Promise<Game[]> {
         isPublicSafeGame(r) &&
         hasUsableCardImage(r)
       ));
-      filtered = filterQualityGames(ready, { section: "topRated", minResults: 4, allowReadinessFallback: false });
+      filtered = prioritizeById(filtered, filterQualityGames(ready, { section: "topRated", minResults: 4, allowReadinessFallback: false }), filtered.length + ready.length);
     }
   }
 
@@ -1355,12 +1324,11 @@ export async function fetchHomepageTopRated(limit = 20): Promise<Game[]> {
     }
   }
 
-  const mergedTopRated = prioritizeById(primaryPool, evergreenBackfill, primaryPool.length + evergreenBackfill.length);
-  if (mergedTopRated.length > 0) {
-    filtered = mergedTopRated;
-  } else {
-    filtered = preferHomepageTopRatedPool(filtered, desiredCount);
-  }
+  // Preferred evidence tiers influence rank, not minimum eligibility. Keep
+  // qualified recent candidates even when just one preferred title survives.
+  filtered = deduplicateBySteamAppId(prioritizeById(
+    [...primaryPool, ...evergreenBackfill], filtered, primaryPool.length + evergreenBackfill.length + filtered.length,
+  ));
   filtered.sort((a, b) => {
     const homepageEligibleDiff = Number(isHomepageTopRatedEligible(b)) - Number(isHomepageTopRatedEligible(a));
     if (homepageEligibleDiff !== 0) return homepageEligibleDiff;
@@ -1370,7 +1338,7 @@ export async function fetchHomepageTopRated(limit = 20): Promise<Game[]> {
   });
 
   // Genre diversity: one per genre first, then fill
-  const diversified = applyGenreDiversity(filtered, limit, 2);
+  const diversified = prioritizeById(applyGenreDiversity(filtered, limit, 2), filtered, limit);
 
   return diversified.map(mapGameRow);
 }
@@ -1438,6 +1406,7 @@ export interface HomepageData {
 }
 
 export interface HomepageAnticipatedGame {
+  catalogueId?: string;
   earlyAccess?: boolean;
   releaseWindow?: string;
   releaseTiming?: ReleaseTiming;
@@ -1521,7 +1490,7 @@ function cacheHomepageRail<T>(
 const cachedHero = cacheHomepageRail('homepage-hero-v10', 'refresh_hero', () => fetchHeroCandidates(HOMEPAGE_HERO_FETCH_TARGET));
 const cachedTrending = cacheHomepageRail('homepage-trending-v3', 'refresh_trending', () => fetchTrendingGames(HOMEPAGE_SECTION_FETCH_TARGET, true));
 const cachedNewReleases = cacheHomepageRail('homepage-new-v6', 'refresh_new_releases', () => fetchNewReleases(HOMEPAGE_SECTION_FETCH_TARGET));
-const cachedTopRated = cacheHomepageRail('homepage-top-v3', 'refresh_top_rated', () => fetchHomepageTopRated(HOMEPAGE_SECTION_FETCH_TARGET));
+const cachedTopRated = cacheHomepageRail('homepage-top-v4', 'refresh_top_rated', () => fetchHomepageTopRated(HOMEPAGE_SECTION_FETCH_TARGET));
 const cachedRecommendations = cacheHomepageRail('homepage-recommendations-v5', 'refresh_recommendations', () => fetchHomepageRecommendations(HOMEPAGE_SECTION_FETCH_TARGET));
 
 const readHomepageData = coalesceCatalogueRead(fetchHomepageData);
@@ -1535,30 +1504,44 @@ function isValidAnticipationSnapshot(fetchedAt: string | undefined): fetchedAt i
   return age >= 0 && age <= MOST_ANTICIPATED_MAX_AGE_MS;
 }
 
+function isStillAnticipated(game: HomepageAnticipatedGame, today: string): boolean {
+  const timing = game.releaseTiming;
+  if (!timing) return game.tba || !game.released || game.released >= today;
+  if (timing.precision === 'tba') return true;
+  if (timing.precision === 'quarter') {
+    const quarter = Number(timing.value.at(-1)) * 3;
+    return timing.value.slice(0, 4) + '-' + String(quarter).padStart(2, '0') >= today.slice(0, 7);
+  }
+  return timing.value >= today.slice(0, timing.value.length);
+}
+
 const getCachedHomepageMostAnticipated = unstable_cache(
   coalesceCatalogueRead(async () => {
     const signal = currentHomepageSignal();
     const { loadExplore } = await import('@/lib/services/explore');
-    const data = await loadExplore('best-of-year', 1, HOMEPAGE_MOST_ANTICIPATED_TARGET, undefined, undefined, 'default', '', undefined, { snapshotOnly: true });
+    // Keep a short reserve from the same loaded snapshot for windows that
+    // expire between cache refreshes. No additional provider request.
+    const data = await loadExplore('best-of-year', 1, HOMEPAGE_MOST_ANTICIPATED_TARGET + 5, undefined, undefined, 'default', '', undefined, { snapshotOnly: true });
     signal?.throwIfAborted();
     if (data.source !== 'rawg' || data.degraded || !isValidAnticipationSnapshot(data.fetchedAt)) {
       throw new Error('Discovery snapshot temporarily unavailable');
     }
     const seen = new Set<string>();
     const items = data.items.filter(item => {
-      if (!item.image || seen.has(item.slug)) return false;
+      if (seen.has(item.slug)) return false;
       seen.add(item.slug);
       return true;
     }).map(item => {
         return {
           rawgId: item.rawgId, slug: item.slug, name: item.name, released: item.released, tba: item.tba,
-    earlyAccess: item.earlyAccess, releaseWindow: item.releaseWindow, releaseTiming: item.releaseTiming,
-          image: item.image, imageKind: item.imageKind, added: item.added, toplay: item.toplay, genres: item.genres,
+          earlyAccess: item.earlyAccess, releaseWindow: item.releaseWindow, releaseTiming: item.releaseTiming,
+          catalogueId: item.catalogueId, image: item.landscapeImage ?? item.image,
+          imageKind: item.landscapeImageKind ?? item.imageKind, added: item.added, toplay: item.toplay, genres: item.genres,
         };
       });
     return { data: items, fetchedAt: data.fetchedAt };
   }),
-  ["homepage-most-anticipated-v11"],
+  ["homepage-most-anticipated-v14"],
   { revalidate: 300 }
 );
 
@@ -1588,7 +1571,7 @@ export async function loadHomepageMostAnticipatedWithStatus() {
         return {
           fetchedAt: snapshot.fetchedAt,
           degraded: false,
-          data: snapshot.data.filter(game => !game.released || game.released > today),
+          data: snapshot.data.filter(game => isStillAnticipated(game, today)).slice(0, HOMEPAGE_MOST_ANTICIPATED_TARGET),
         };
       }
     } catch {
@@ -1607,45 +1590,16 @@ function resolveHomepageSection<T>(result: PromiseSettledResult<T>, label: strin
   return fallback;
 }
 
-function isHomepageTrendingFallbackCandidate(game: Game): boolean {
-  const currentPlayers = game.currentPlayers ?? 0;
-  const momentum = game.momentum ?? 0;
-  const reviewCount = game.reviewCount ?? 0;
-  const score = game.verdictScore ?? game.score ?? 0;
-  const today = new Date().toISOString().slice(0, 10);
-  const ageDays = getHomepageReleaseAgeDays(game.releaseDate);
-
-  if (!game.coverImage || !game.releaseDate || game.releaseDate > today) {
-    return false;
-  }
-
-  if (game.verdictLabel === "COMING SOON") {
-    return false;
-  }
-
-  if (!game.isTrendingManual && score < 74) {
-    return false;
-  }
-
-  if (ageDays > 365 * 4) {
-    return Boolean(game.isTrendingManual)
-      || ((game.trending ?? false) && currentPlayers >= 16000 && momentum >= 0.07 && score >= 76)
-      || (currentPlayers >= 22000 && momentum >= 0.07 && score >= 78);
-  }
-
-  if (ageDays > 365 * 3) {
-    return Boolean(game.isTrendingManual)
-      || ((game.trending ?? false) && currentPlayers >= 12000 && momentum >= 0.06 && score >= 74)
-      || (currentPlayers >= 18000 && momentum >= 0.06 && score >= 76);
-  }
-
-  return Boolean(game.isTrendingManual)
-    || Boolean(game.trending)
-    || (momentum >= 0.08 && currentPlayers >= 175 && reviewCount >= 90 && score >= 74)
-    || (momentum >= 0.05 && currentPlayers >= 2500 && score >= 76)
-    || currentPlayers >= 10000
-    || (currentPlayers >= 4000 && score >= 80)
-    || (reviewCount >= 10000 && currentPlayers >= 750);
+function classifyHomepageTrending(game: Game): Game | null {
+  const signal = { current_players: game.currentPlayers ?? 0, momentum: game.momentum ?? 0, players_updated_at: game.playersUpdatedAt ?? null };
+  if (!game.coverImage || !game.releaseDate || isFutureDate(game.releaseDate) ||
+    game.isProvisional || game.verdictLabel === 'COMING SOON' || hasUnreleasedStatus({ release_status: game.releaseStatus })) return null;
+  const growth = getPlayerGrowthEvidence(signal);
+  const players = getFreshPlayerSignals(signal).players;
+  const popular = players >= 4000 || players >= 750 && game.reviewCount >= 10000;
+  const reason = game.isTrendingManual ? "Editor's Pick" : growth === 'fresh' ? 'Trending Up'
+    : popular ? 'Popular Now' : growth === 'stale' ? 'Past Momentum' : null;
+  return reason ? { ...game, trendingReason: reason } : null;
 }
 
 function getHomepageTrendingFallbackScore(game: Game): number {
@@ -1678,7 +1632,7 @@ function buildHomepageTrendingFallback(pools: Game[][], limit: number): Game[] {
   }
 
   return merged
-    .filter(isHomepageTrendingFallbackCandidate)
+    .flatMap(game => classifyHomepageTrending(game) ?? [])
     .sort((left, right) => getHomepageTrendingFallbackScore(right) - getHomepageTrendingFallbackScore(left))
     .slice(0, limit);
 }
@@ -1727,7 +1681,8 @@ export async function fetchHomepageData(): Promise<HomepageData> {
 
   const finishSelection = startHomepagePhase('candidate_selection');
   const heroRaw = resolveHomepageSection(heroResult, "hero rail", [] as Game[]);
-  let trendingRaw = resolveHomepageSection(trendingPrimaryResult, "trending rail", [] as Game[]);
+  let trendingRaw = resolveHomepageSection(trendingPrimaryResult, "trending rail", [] as Game[])
+    .flatMap(game => classifyHomepageTrending(game) ?? []);
   const topRatedRaw = resolveHomepageSection(topRatedResult, "top rated rail", [] as Game[]);
   const newReleasesRaw = resolveHomepageSection(newReleasesResult, "new releases rail", [] as Game[]);
   const recsRaw = resolveHomepageSection(recsResult, "recommendations rail", [] as Game[]);
@@ -1760,7 +1715,11 @@ export async function fetchHomepageData(): Promise<HomepageData> {
     const railIds = new Set<string>();
     let repeatedItems = 0;
 
-    for (const g of candidates) {
+    // Prefer new appearances across the entire eligible pool, even if a
+    // higher-ranked game has already been used by the Hero or another rail.
+    const ordered = [...candidates.filter(game => !appearanceCounts.has(game.id)),
+      ...candidates.filter(game => appearanceCounts.has(game.id))];
+    for (const g of ordered) {
       if (result.length >= max) break;
 
       if (railIds.has(g.id)) {
@@ -1811,13 +1770,13 @@ export async function fetchHomepageData(): Promise<HomepageData> {
 
   // Claim in priority order
   const hero = claimSlots(heroRaw, HOMEPAGE_HERO_TARGET);
-  const trending = claimSlots(trendingCandidates, HOMEPAGE_RAIL_TARGET, HOMEPAGE_TRENDING_REPEAT_BUDGET);
-  const newReleases = claimSlots(newReleaseCandidates, HOMEPAGE_RAIL_TARGET, HOMEPAGE_NEW_RELEASE_REPEAT_BUDGET);
   const topRatedClaimed = claimSlots(topRatedRaw, HOMEPAGE_RAIL_TARGET, HOMEPAGE_TOP_RATED_REPEAT_BUDGET);
   const topRatedPremium = topRatedClaimed.filter(isReservedHomepageTopRatedGame);
   const topRated = topRatedPremium.length >= HOMEPAGE_PRIORITY_FLOOR
     ? prioritizeById(topRatedPremium, topRatedClaimed, HOMEPAGE_RAIL_TARGET)
     : topRatedClaimed;
+  const trending = claimSlots(trendingCandidates, HOMEPAGE_RAIL_TARGET, HOMEPAGE_TRENDING_REPEAT_BUDGET);
+  const newReleases = claimSlots(newReleaseCandidates, HOMEPAGE_RAIL_TARGET, HOMEPAGE_NEW_RELEASE_REPEAT_BUDGET);
   const exclusiveRecommendations = recsRaw.filter(game => !appearanceCounts.has(game.id));
   const recommendationRanks = new Map(recsRaw.map((game, index) => [game.id, -index / 2]));
   const rankedRecommendations = diversifyRecommendations(exclusiveRecommendations, HOMEPAGE_RAIL_TARGET,
@@ -1829,6 +1788,13 @@ export async function fetchHomepageData(): Promise<HomepageData> {
 }
 
 function prioritizeById<T extends { id: string }>(primary: T[], fallback: T[], limit: number): T[] {
-  const primaryIds = new Set(primary.map((item) => item.id));
-  return [...primary, ...fallback.filter((item) => !primaryIds.has(item.id))].slice(0, limit);
+  const ids = new Set<string>();
+  const result: T[] = [];
+  for (const item of [...primary, ...fallback]) {
+    if (result.length === limit) break;
+    if (ids.has(item.id)) continue;
+    ids.add(item.id);
+    result.push(item);
+  }
+  return result;
 }

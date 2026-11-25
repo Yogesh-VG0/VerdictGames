@@ -4,7 +4,7 @@
  * Returns all games by a developer with aggregate stats.
  */
 
-export const revalidate = 300; // ISR: revalidate every 5 minutes
+export const revalidate = 3600;
 export const maxDuration = 30;
 
 import { NextRequest } from "next/server";
@@ -19,7 +19,7 @@ export async function GET(
   const { slug } = await params;
   try {
     const hub = await loadDeveloperHub(slug);
-    return hub ? jsonOk(hub, 200, { cacheControl: 's-maxage=900, stale-while-revalidate=3600' }) : jsonNotFound('Developer');
+    return hub ? jsonOk(hub, 200, { cacheControl: 's-maxage=3600, stale-while-revalidate=3600' }) : jsonNotFound('Developer');
   } catch (err) {
     console.error("[API] /developers/[slug] error:", err);
     return jsonError('Developer data temporarily unavailable', 503);

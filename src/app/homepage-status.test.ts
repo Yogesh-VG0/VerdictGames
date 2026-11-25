@@ -41,7 +41,7 @@ describe('homepage degradation scope', () => {
     });
     const page = renderToStaticMarkup(await HomePage());
     expect(page).toContain('Most Anticipated');
-    expect(page).toContain('RAWG snapshot from');
+    expect(page).toContain('RAWG snapshot');
     expect(page).toContain(fetchedAt);
     expect(page).not.toContain(notice);
   });

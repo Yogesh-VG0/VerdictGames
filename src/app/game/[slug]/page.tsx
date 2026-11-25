@@ -5,9 +5,9 @@ import {
   GAME_DETAIL_REVALIDATE_SECONDS,
   loadGameDetail,
 } from "@/lib/services/game-detail";
-import { buildSocialMetadata, DEFAULT_OG_IMAGE, serializeJsonLd, SITE_URL } from "@/lib/seo";
+import { buildSocialMetadata, DEFAULT_OG_IMAGE, getGameDatePublished, serializeJsonLd, SITE_URL } from "@/lib/seo";
 
-export const revalidate = 900;
+export const revalidate = 3600;
 export const maxDuration = 30;
 
 // Generate on first visit, then serve cached HTML. Query strings do not change
@@ -80,21 +80,33 @@ export default async function GameDetailPage({ params }: GameDetailPageProps) {
 
   const canonicalSlug = detail.game.slug;
   const game = detail.game;
+  const canonicalUrl = `${SITE_URL}/game/${detail.canonicalSlug}`;
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "VideoGame",
+    "@id": `${canonicalUrl}#game`,
     name: game.title,
     description: game.verdictSummary || game.description || undefined,
     image: game.headerImage || game.coverImage || undefined,
-    url: `${SITE_URL}/game/${detail.canonicalSlug}`,
+    url: canonicalUrl,
     genre: game.genres.slice(0, 4),
     gamePlatform: game.platforms.slice(0, 6),
     author: game.developer ? { "@type": "Organization", name: game.developer } : undefined,
     publisher: game.publisher ? { "@type": "Organization", name: game.publisher } : undefined,
-    datePublished: game.releaseTiming
-      ? game.releaseTiming.precision === 'day' ? game.releaseTiming.value : undefined
-      : game.releaseDate || undefined,
+    datePublished: getGameDatePublished(game),
   };
+
+  // The public detail API keeps its existing shape. The SSR client receives
+  // only what the page needs, without enrichment timestamps or feed badges.
+  const initialGame = { ...game };
+  delete initialGame.lastEnrichedAt;
+  delete initialGame.trendingReason;
+  delete initialGame.momentum;
+  delete initialGame.peakPlayers24h;
+  delete initialGame.isFeaturedManual;
+  delete initialGame.isTrendingManual;
+  delete initialGame.trending;
+  delete initialGame.featured;
 
   return (
     <>
@@ -106,9 +118,8 @@ export default async function GameDetailPage({ params }: GameDetailPageProps) {
         key={canonicalSlug}
         slug={canonicalSlug}
         rawgId={game.rawgId ?? null}
-        initialGame={game}
+        initialGame={initialGame}
       />
     </>
   );
 }
-

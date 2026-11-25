@@ -23,6 +23,7 @@ export default function DeveloperClientPage({ slug, initialHub }: Props) {
     queryKey: ["developer", slug],
     queryFn: () => getDeveloperHub(slug),
     initialData: initialHub,
+    staleTime: 60 * 60 * 1000,
   });
 
   if (isLoading) {

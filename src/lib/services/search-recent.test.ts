@@ -138,7 +138,7 @@ describe('bounded Recently Added cohort',()=>{
   it('bounds 500-row sorts after the same wide-read failure was observed in Top Rated',async()=>{
     const result=await loadSearchResults({...request,sort:'top-rated'});
     expect(result.total).toBe(500);expect(result.totalIsExact).toBe(false);
-    expect(result.items.map(row=>row.id)).toEqual(rows.slice(0,25).map(row=>row.id));
+    expect(result.items.map(row=>row.id)).toEqual(rows.slice(0,500).map(row=>row.id).sort((a,b)=>a.localeCompare(b)).slice(0,25));
     expect(state.calls[0].columns).toBe('id');expect(state.calls[0].range).toEqual([0,499]);
     expect(state.calls.filter(call=>call.ids && call.ids.length>25).map(call=>call.ids!.length)).toEqual([200,200,100]);
     expect(state.peak).toBe(2);

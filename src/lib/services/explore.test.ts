@@ -16,6 +16,23 @@ import type { RawgListGameItem } from '@/lib/api';
 describe('Explore catalogue regressions', () => {
   afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); });
   beforeEach(() => { state.rows = []; state.compact = null; state.upcoming.mockReset(); state.dates.mockReset(); });
+  it('shows the reviewed Catalyst year and omits its obsolete provider date from the calendar', async () => {
+    vi.stubEnv('TWITCH_CLIENT_ID', 'fixture');
+    vi.stubEnv('TWITCH_CLIENT_SECRET', 'fixture');
+    const released = '2027-12-31';
+    const name = 'Tomb Raider: Catalyst';
+    state.upcoming.mockResolvedValue({ count: 1, results: [{
+      id: 1015411, slug: 'tomb-raider-catalyst', name, released, tba: false, rating: 0, ratings_count: 0,
+      background_image: 'poster.jpg', tags: [], genres: [], platforms: [], added: 100,
+    }] });
+    state.dates.mockResolvedValue([{ name, id: 10, release_dates: [{ y: 2027, date_format: { format: 'YYYY' } }] }]);
+    expect((await loadExplore('best-of-year')).items[0]).toMatchObject({
+      releaseWindow: '2028', releaseTiming: { precision: 'year', value: '2028' },
+    });
+    const calendar = await loadExplore('best-of-year', 1, 20, 2027, 'action', 'default', '', undefined,
+      { snapshotOnly: true, releaseMonth: '2027-12' });
+    expect(calendar.items).toEqual([]);
+  });
   it('keeps an explicit December 31 launch and excludes a year-only entry from a December view', async () => {
     vi.stubEnv('TWITCH_CLIENT_ID', 'fixture');
     vi.stubEnv('TWITCH_CLIENT_SECRET', 'fixture');
@@ -47,11 +64,11 @@ describe('Explore catalogue regressions', () => {
     expect(first.items[0]).toMatchObject({ slug: 'canonical-one', image: 'https://images.igdb.com/igdb/image/upload/t_cover_big/co123.jpg' });
     expect((await loadExplore('best-of-year', 2, 1)).items[0].slug).toBe('game-2');
   });
-  it('uses an exactly matched IGDB cover for a real untracked anticipated title', async () => {
-    state.portraits.mockResolvedValueOnce([{ name: 'Exodus', year:2099, companies:['Archetype Entertainment'], aliases: [], image: 'https://images.igdb.com/igdb/image/upload/t_cover_big/co123.jpg' }]);
+  it('keeps an untracked upcoming title on its own snapshot art without a render-time IGDB lookup', async () => {
     state.upcoming.mockResolvedValue({ count: 1, results: [{ id: 973389, slug: 'exodus-archetype-entertainment', name: 'Exodus (Archetype Entertainment)', released: '2099-04-07', tba:false, rating:0, ratings_count:0, background_image: 'https://media.rawg.io/media/screenshots/c78/example.jpg', tags: [], genres: [], platforms: [], added: 23, added_by_status: { toplay: 12 } }] });
     const result = await loadExplore('best-of-year');
-    expect(result.items[0].imageKind).toBe('cover');
+    expect(result.items[0].image).toContain('/screenshots/c78/example.jpg');
+    expect(state.portraits).not.toHaveBeenCalled();
     expect(result.items[0].metricSource).toBe('rawg');
     expect(result.items[0].added).toBe(23);
   });
@@ -100,30 +117,24 @@ describe('Explore catalogue regressions', () => {
     state.rows = [{ slug:'game', title:'Game', cover_image:'poster.jpg', header_image:'gameplay.jpg', score:90, tags:[], genres:[] }];
     expect((await loadExplore('popular-in-year')).items[0].image).toBe('poster.jpg');
   });
-  it('replaces an imported screenshot cover only when the official Steam poster is available', async () => {
-    const fetchPoster = vi.fn().mockResolvedValue(new Response(null, { status:200, headers:{'content-type':'image/jpeg'} }));
-    vi.stubGlobal('fetch', fetchPoster);
-    state.rows = [{ slug:'game', title:'Game', steam_app_id:2912430, cover_image:'https://media.rawg.io/media/screenshots/game.jpg', header_image:'scene.jpg', score:90, tags:[], genres:[] }];
-    expect((await loadExplore('popular-in-year')).items[0].image).toContain('/2912430/library_600x900_2x.jpg');
-    expect(fetchPoster.mock.calls[0][1].method).toBe('HEAD');
-    fetchPoster.mockResolvedValue(new Response(null, {status:404}));
-    expect((await loadExplore('popular-in-year')).items[0].image).toContain('/screenshots/game.jpg');
-  });
-  it.each(['compact','legacy'])('overlaps sparse missing posters within the existing limit on the %s path', async (mode) => {
-    const rows=Array.from({length:16},(_,index)=>({id:String(index),slug:`game-${String(index).padStart(2,'0')}`,title:`Game ${index}`,release_date:'2020-01-01',score:90,verdict_score:90,confidence:1,review_count:1000,tags:[],genres:[],platforms:['PC'],cover_image:'https://images.igdb.com/igdb/image/upload/t_cover_big/co123.jpg',steam_app_id:index+100,ranking_score:90,rank:index+1}));
-    for(const index of [10,13])rows[index].cover_image='https://media.rawg.io/media/screenshots/game.jpg';
-    state.rows=rows;
-    if(mode==='compact')state.compact={count:16,rows,fetchedAt:new Date().toISOString()};
-    let releaseFirst: (()=>void)|undefined;
-    const poster=()=>new Response(null,{status:200,headers:{'content-type':'image/jpeg'}});
-    const probes=vi.fn().mockImplementationOnce(()=>new Promise<Response>(resolve=>{releaseFirst=()=>resolve(poster());})).mockImplementation(()=>Promise.resolve(poster()));
-    vi.stubGlobal('fetch',probes);
-    const request=loadExplore('all-time',1,16);
-    try { await vi.waitFor(()=>expect(probes).toHaveBeenCalledTimes(2),{timeout:250,interval:10}); }
-    finally { releaseFirst?.(); await request; }
-    const result=await request;
-    expect(probes).toHaveBeenCalledTimes(2);
-    expect(result.items.filter(item=>item.image?.includes('library_600x900_2x.jpg'))).toHaveLength(2);
-    expect(result.items.filter(item=>item.image?.includes('co123.jpg'))).toHaveLength(14);
+  it.each(['compact', 'legacy'])('reuses stored artwork without Steam HEAD calls on the %s path', async mode => {
+    const rows = Array.from({ length: 16 }, (_, index) => ({
+      id: String(index), slug: 'game-' + String(index).padStart(2, '0'), title: 'Game ' + index,
+      release_date: '2020-01-01', score: 90, verdict_score: 90, confidence: 1,
+      review_count: 1000, tags: [], genres: [], platforms: ['PC'], steam_app_id: index + 100,
+      cover_image: index === 10 ? 'https://media.rawg.io/media/screenshots/game.jpg'
+        : 'https://images.igdb.com/igdb/image/upload/t_cover_big/co123.jpg',
+      ranking_score: 90, rank: index + 1,
+    }));
+    state.rows = rows;
+    if (mode === 'compact') state.compact = { count: 16, rows, fetchedAt: new Date().toISOString() };
+    const externalFetch = vi.fn();
+    vi.stubGlobal('fetch', externalFetch);
+    const result = await loadExplore('all-time', 1, 16, 2025, 'action', 'rating');
+    expect(externalFetch).not.toHaveBeenCalled();
+    expect(result.items.find(item => item.slug === 'game-10')).toMatchObject({
+      image: 'https://media.rawg.io/media/screenshots/game.jpg', imageKind: 'artwork',
+    });
+    expect(result.items.filter(item => item.imageKind === 'cover')).toHaveLength(15);
   });
 });

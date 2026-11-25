@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect, useLayoutEffect } from "react";
+import { useState, useCallback, useRef, useEffect, useLayoutEffect, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
@@ -83,13 +83,38 @@ function StatBar({ value, max, label, color }: { value: number; max: number; lab
   );
 }
 
-const LIVE_PLAYER_FRESHNESS_HOURS = 8;
+const LIVE_PLAYER_FRESHNESS_MS = 8 * 60 * 60 * 1000;
+const playerObservationDate = new Intl.DateTimeFormat('en', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'UTC' });
+const playerCountFormat = new Intl.NumberFormat('en');
+const serverObservationFreshness = () => false;
 
-function getTimestampAgeHours(iso?: string | null): number {
-  if (!iso) return Number.POSITIVE_INFINITY;
-  const timestamp = new Date(iso).getTime();
-  if (!Number.isFinite(timestamp)) return Number.POSITIVE_INFINITY;
-  return Math.max(0, (Date.now() - timestamp) / 3600000);
+function PlayerObservation({ count, observedAt }: { count: number; observedAt?: string }) {
+  const observed = Date.parse(observedAt ?? '');
+  const expiresAt = observed + LIVE_PLAYER_FRESHNESS_MS;
+  const getFreshness = useCallback(() => {
+    const now = Date.now();
+    return observed <= now && now < expiresAt;
+  }, [expiresAt, observed]);
+  const subscribe = useCallback((update: () => void) => {
+    if (!getFreshness()) return () => {};
+    const timeout = window.setTimeout(update, Math.max(0, expiresAt - Date.now()));
+    return () => window.clearTimeout(timeout);
+  }, [expiresAt, getFreshness]);
+  const isFresh = useSyncExternalStore(subscribe, getFreshness, serverObservationFreshness);
+
+  return (
+    <div className="pt-3 border-t border-border/50">
+      <div className="flex items-baseline justify-between">
+        <span className="text-xs text-tertiary">{isFresh ? 'Playing Now' : 'Recent Players'}</span>
+        <span className="text-lg font-bold text-accent tabular-nums">{playerCountFormat.format(count)}</span>
+      </div>
+      {Number.isFinite(observed) && (
+        <p className="text-[10px] text-tertiary/60 mt-0.5">
+          Observed <time dateTime={observedAt}>{playerObservationDate.format(observed)} UTC</time>
+        </p>
+      )}
+    </div>
+  );
 }
 
 export default function GameDetailClientPage({
@@ -111,6 +136,8 @@ export default function GameDetailClientPage({
   const [shareOpen, setShareOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const shareRef = useRef<HTMLDivElement>(null);
+  const relatedSection = useRef<HTMLDivElement>(null);
+  const [relatedSlug, setRelatedSlug] = useState<string | null>(null);
 
   useLayoutEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
@@ -167,10 +194,27 @@ export default function GameDetailClientPage({
   const reviewsData = privateReviews.data ?? publicReviews.data;
   const isReviewsLoading = publicReviews.isLoading;
 
+  useEffect(() => {
+    const section = relatedSection.current;
+    if (!section || initialGame.isPreview || relatedSlug === slug) return;
+    if (typeof IntersectionObserver === 'undefined') {
+      const frame = requestAnimationFrame(() => setRelatedSlug(slug));
+      return () => cancelAnimationFrame(frame);
+    }
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry?.isIntersecting) {
+        setRelatedSlug(slug);
+        observer.disconnect();
+      }
+    }, { rootMargin: '480px' });
+    observer.observe(section);
+    return () => observer.disconnect();
+  }, [initialGame.isPreview, relatedSlug, slug]);
+
   const { data: related } = useQuery({
     queryKey: ["relatedGames", slug],
     queryFn: () => getRelatedGames(slug),
-    enabled: !!game && !initialGame.isPreview,
+    enabled: relatedSlug === slug && !initialGame.isPreview,
     initialData: initialRelated,
     staleTime: 10 * 60 * 1000,
   });
@@ -418,12 +462,6 @@ export default function GameDetailClientPage({
   const notices = getGameNotices(game);
   const developerName = game.developer?.trim() || null;
   const developerHref = developerName ? `/developers/${encodeURIComponent(slugify(developerName))}` : null;
-  const playerStatsAgeHours = getTimestampAgeHours(game.playersUpdatedAt);
-  const hasFreshPlayerStats = playerStatsAgeHours <= LIVE_PLAYER_FRESHNESS_HOURS;
-  const playerStatsLabel = hasFreshPlayerStats ? "Playing Now" : "Recent Players";
-  const playerStatsTimestampLabel = game.playersUpdatedAt
-    ? `${hasFreshPlayerStats ? "Updated" : "Last updated"} ${formatTimeAgo(game.playersUpdatedAt)}`
-    : null;
 
   return (
     <div className="space-y-0">
@@ -1234,19 +1272,7 @@ export default function GameDetailClientPage({
 
                     {/* Player counts */}
                     {(game.currentPlayers !== undefined && game.currentPlayers > 0) && (
-                      <div className="pt-3 border-t border-border/50">
-                        <div className="flex items-baseline justify-between">
-                          <span className="text-xs text-tertiary">{playerStatsLabel}</span>
-                          <span className="text-lg font-bold text-accent tabular-nums">
-                            {game.currentPlayers.toLocaleString()}
-                          </span>
-                        </div>
-                        {playerStatsTimestampLabel && (
-                          <p className="text-[10px] text-tertiary/60 mt-0.5">
-                            {playerStatsTimestampLabel}
-                          </p>
-                        )}
-                      </div>
+                      <PlayerObservation count={game.currentPlayers} observedAt={game.playersUpdatedAt} />
                     )}
                     {game.reviewCount > 0 && (game.steamUrl || game.scoreSource === "steam" || game.steamRatingLabel) && (
                       <div className="flex items-baseline justify-between text-sm">
@@ -1453,15 +1479,17 @@ export default function GameDetailClientPage({
 
         {/* ═══════════════ FULL-WIDTH SECTIONS ═══════════════ */}
 
-        {/* ── Related Games ── */}
-        <FadeInSection>
-          {related && related.length > 0 && (
-            <section className="mt-12 pt-8 border-t border-border">
-              <SectionHeader title="You Might Also Like" icon={<Target className="w-5 h-5" />} />
-              <GameGrid games={related} columns={4} />
-            </section>
-          )}
-        </FadeInSection>
+        {/* Observe a stable anchor even before related games have loaded. */}
+        <div ref={relatedSection} data-related-anchor className="min-h-px">
+          <FadeInSection>
+            {related && related.length > 0 && (
+              <section className="mt-12 pt-8 border-t border-border">
+                <SectionHeader title="You Might Also Like" icon={<Target className="w-5 h-5" />} />
+                <GameGrid games={related} columns={4} />
+              </section>
+            )}
+          </FadeInSection>
+        </div>
 
         {/* ── Attribution ── */}
         <FadeInSection>

@@ -141,6 +141,11 @@ export interface Game {
   verdictScore?: number;     // final blended score, 0-100
 }
 
+export type GameCardData = Pick<Game,
+  'id' | 'slug' | 'title' | 'coverImage' | 'platforms' | 'genres' | 'releaseDate' | 'releaseDateTba'
+  | 'score' | 'verdictLabel' | 'verdictSummary' | 'confidence' | 'scoreSource' | 'isPreview' | 'rawgId'
+  | 'isProvisional' | 'releaseStatus' | 'releaseTiming' | 'trendingReason'>;
+
 export interface Review {
   id: string;
   gameId: string;

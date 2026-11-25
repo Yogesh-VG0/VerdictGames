@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Space_Grotesk } from "next/font/google";
+import { themeBootstrap } from "@/lib/theme-preference";
 import "./globals.css";
 import Providers from "./providers";
 import NavbarTop from "@/components/NavbarTop";
@@ -8,7 +9,7 @@ import Footer from "@/components/Footer";
 import ScrollToTop from "@/components/ScrollToTop";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
-import { serializeJsonLd } from "@/lib/seo";
+import { buildSocialMetadata, HOME_DESCRIPTION, HOME_TITLE, SITE_NAME, SITE_URL } from "@/lib/seo";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -26,17 +27,15 @@ const spaceGrotesk = Space_Grotesk({
   weight: ["400", "500", "600", "700"],
 });
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://www.verdict.games";
 const enableVercelObservability = Boolean(process.env.VERCEL || process.env.VERCEL_ENV);
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "verdict.games — The Verdict on Every Game",
-    template: "%s | verdict.games",
+    default: HOME_TITLE,
+    template: `%s | ${SITE_NAME}`,
   },
-  description:
-    "Your trusted source for honest game reviews across all platforms. Discover verdicts, curated lists, and a community that cares about gaming.",
+  description: HOME_DESCRIPTION,
   keywords: [
     "game reviews", "verdict games", "PC game reviews", "PlayStation reviews",
     "Xbox reviews", "Nintendo Switch reviews", "game ratings", "game verdicts",
@@ -46,22 +45,14 @@ export const metadata: Metadata = {
      src/app/favicon.ico, src/app/icon.png, src/app/apple-icon.png */
   alternates: { canonical: SITE_URL },
   category: "gaming",
-  openGraph: {
-    title: "verdict.games",
-    description: "Honest verdicts for games across all platforms.",
-    siteName: "verdict.games",
+  ...buildSocialMetadata({
+    title: HOME_TITLE,
+    description: HOME_DESCRIPTION,
     locale: "en_US",
-    type: "website",
     url: SITE_URL,
-    images: [{ url: "/og-default.png", width: 1200, height: 630, alt: "verdict.games — The Verdict on Every Game" }],
-  },
+    imageAlt: `${SITE_NAME} — The Verdict on Every Game`,
+  }),
   manifest: "/manifest.json",
-  twitter: {
-    card: "summary_large_image",
-    title: "verdict.games",
-    description: "Honest verdicts for games across all platforms.",
-    images: [{ url: "/og-default.png", alt: "verdict.games" }],
-  },
   robots: {
     index: true,
     follow: true,
@@ -80,30 +71,10 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "WebSite",
-    name: "verdict.games",
-    url: SITE_URL,
-    description:
-      "Your trusted source for honest game reviews across all platforms.",
-    potentialAction: {
-      "@type": "SearchAction",
-      target: {
-        "@type": "EntryPoint",
-        urlTemplate: `${SITE_URL}/search?q={search_term_string}`,
-      },
-      "query-input": "required name=search_term_string",
-    },
-  };
-
   return (
     <html lang="en" suppressHydrationWarning data-scroll-behavior="smooth">
       <head>
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
-        />
+        <script dangerouslySetInnerHTML={{ __html: themeBootstrap }} />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${spaceGrotesk.variable} antialiased bg-background text-foreground`}
