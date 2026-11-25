@@ -31,6 +31,15 @@ const readCachedPublishedUpcomingSnapshot = unstable_cache(async () => {
   return stored;
 }, ['published-upcoming-v1'], { revalidate: 300, tags: ['public-explore'] });
 
+// Calendar needs the already published snapshot even when optional identity
+// enrichment or a live RAWG refresh cannot finish within its response budget.
+export async function readCalendarUpcomingSnapshot() {
+  const stored = await readCachedPublishedUpcomingSnapshot().catch(() => undefined);
+  const age = stored ? Date.now() - Date.parse(stored.fetchedAt) : Infinity;
+  if (stored && age >= 0 && age <= SNAPSHOT_MAX_AGE_MS) return stored;
+  return readUpcomingSnapshot();
+}
+
 const readLiveUpcoming = unstable_cache(coalesceCatalogueRead(async () => {
   const live = await getRawgUpcoming(AbortSignal.timeout(2000));
   if (!isUpcomingSnapshot(live) || live.count !== live.results.length) throw new Error('Invalid upcoming response');

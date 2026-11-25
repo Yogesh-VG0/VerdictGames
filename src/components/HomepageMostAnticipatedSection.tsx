@@ -5,6 +5,7 @@ import HorizontalScroll from "@/components/HorizontalScroll";
 import SectionHeader from "@/components/SectionHeader";
 import HeroImage from "@/components/ui/HeroImage";
 import { formatNumber } from "@/lib/utils";
+import { formatReleaseTiming, resolveReleaseTiming } from '@/lib/utils/release-timing';
 import type { HomepageAnticipatedGame } from "@/lib/services/homepage";
 
 const MOST_ANTICIPATED_SUBTITLE = "Upcoming games and full releases ranked by RAWG interest";
@@ -42,48 +43,43 @@ export default function HomepageMostAnticipatedSection({
             </p>
           )}
           <HorizontalScroll>
-            {games.map((game) => (
-              <div key={game.slug} className="shrink-0 w-44 sm:w-52 md:w-56 h-full">
-                <Link href={`/game/${game.slug}?rawgId=${game.rawgId}`} prefetch={false} className="block group">
-                  <div className="relative aspect-[3/4] rounded-2xl overflow-hidden border border-border bg-surface-2 group-hover:border-accent/40 transition-all">
-                    {game.image ? (
-                      <HeroImage
-                        src={game.image}
-                        alt={game.name}
-                        sizes="(max-width: 640px) 176px, 224px"
-                        fit={game.imageKind === 'artwork' ? 'contain' : 'cover'}
-                        className="group-hover:scale-105 transition-transform duration-500"
-                        priority={false}
-                        fallbackClassName="bg-surface-2"
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-gradient-to-br from-accent/10 to-pixel-cyan/10" />
-                    )}
-                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent p-3 pt-8">
-                      <p className="text-sm font-bold text-white line-clamp-1 drop-shadow-lg">{game.name}</p>
-                      {game.earlyAccess && <p className="mt-1 text-[10px] text-white/80">Early Access · full release pending</p>}
-                      <div className="flex items-center gap-2 mt-1">
-                        {game.genres.slice(0, 2).map((genre, genreIndex) => (
-                          <span key={genre} className="text-[10px] text-white/60">
-                            {genreIndex > 0 && <span className="mr-1">·</span>}
-                            {genre}
-                          </span>
-                        ))}
-                        <span className="ml-auto text-[10px] font-medium">
-                          <span className={game.releaseWindow ? "text-white/70" : "text-yellow-400"}>
-                            {game.releaseWindow ?? (!game.tba && game.released ? game.released : "TBA")}
-                          </span>
-                        </span>
+            {games.map((game) => {
+              const landscape = game.imageKind === 'artwork';
+              const timing = game.releaseTiming ?? resolveReleaseTiming(game.released, { upcoming: true, tba: game.tba });
+              return (
+                <div key={game.slug} className={landscape ? 'shrink-0 w-64 sm:w-72 md:w-80' : 'shrink-0 w-32 sm:w-36 md:w-40'}>
+                  <Link href={`/game/${game.slug}?rawgId=${game.rawgId}`} prefetch={false} className="block group">
+                    <div className="overflow-hidden rounded-2xl border border-border bg-surface-2 transition-colors group-hover:border-accent/40">
+                      <div className="relative h-36 sm:h-40 md:h-44 overflow-hidden">
+                        {game.image ? (
+                          <HeroImage
+                            src={game.image}
+                            alt={game.name}
+                            sizes={landscape ? '(max-width: 640px) 256px, 320px' : '(max-width: 640px) 128px, 160px'}
+                            className="motion-safe:group-hover:scale-[1.03] transition-transform duration-500"
+                            fallbackClassName="bg-surface-2"
+                          />
+                        ) : (
+                          <div className="absolute inset-0 bg-gradient-to-br from-accent/10 to-pixel-cyan/10" />
+                        )}
+                      </div>
+                      <div className="min-h-[5.5rem] p-3">
+                        <p className="text-sm font-bold text-foreground line-clamp-1">{game.name}</p>
+                        <div className="mt-1 flex items-baseline gap-2 text-[10px]">
+                          <span className="min-w-0 truncate text-secondary">{game.genres.slice(0, 2).join(' · ')}</span>
+                          <span className="ml-auto shrink-0 font-medium text-secondary">{game.releaseWindow ?? formatReleaseTiming(timing)}</span>
+                        </div>
+                        {game.earlyAccess && <p className="mt-1 text-[10px] leading-tight text-secondary">Early Access · full release pending</p>}
                       </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-3 mt-2 px-1 text-[10px] text-secondary">
-                    {Number(game.added) > 0 && <span title="RAWG users who added this game to any library status" className="text-secondary font-medium">{formatNumber(game.added)} RAWG adds</span>}
-                    {game.toplay > 0 && <span title="RAWG want-to-play status">{formatNumber(game.toplay)} RAWG want to play</span>}
-                  </div>
-                </Link>
-              </div>
-            ))}
+                    <div className="mt-2 flex flex-wrap items-center gap-x-3 px-1 text-[10px] text-secondary">
+                      {game.added > 0 && <span title="RAWG users who added this game to any library status">{formatNumber(game.added)} RAWG adds</span>}
+                      {game.toplay > 0 && <span title="RAWG want-to-play status">{formatNumber(game.toplay)} RAWG want to play</span>}
+                    </div>
+                  </Link>
+                </div>
+              );
+            })}
           </HorizontalScroll>
         </FadeInSection>
       </div>

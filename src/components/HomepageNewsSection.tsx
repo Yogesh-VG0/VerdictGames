@@ -1,5 +1,6 @@
 "use client";
 
+import { selectGamingNews } from '@/lib/utils/news-relevance';
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { motion } from "framer-motion";
@@ -25,24 +26,7 @@ export default function HomepageNewsSection() {
       if (available.length === 0) {
         throw new Error("Gaming news is temporarily unavailable.");
       }
-      const [popular = [], feed = []] = available;
-      const seenTitles = new Set<string>();
-      const seenUrls = new Set<string>();
-      const merged = [] as typeof popular;
-      for (const article of [...popular, ...feed]) {
-        if (!article.publisherName?.trim()) continue;
-        let url: URL;
-        try { url = new URL(article.url); } catch { continue; }
-        if (url.protocol !== "https:" || url.username || url.password || url.pathname === "/") continue;
-        const title = article.title.trim().toLowerCase().replace(/[^a-z0-9]/g, "");
-        const canonicalUrl = url.hostname.replace(/^www\./, "") + url.pathname.replace(/\/$/, "");
-        if (!title || seenTitles.has(title) || seenUrls.has(canonicalUrl)) continue;
-        seenTitles.add(title);
-        seenUrls.add(canonicalUrl);
-        merged.push(article);
-        if (merged.length >= 12) break;
-      }
-      return merged;
+      return selectGamingNews(available.flat(), 12);
     },
     staleTime: 5 * 60 * 1000,
   });

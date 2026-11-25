@@ -19,6 +19,8 @@ import { dedupePublicCanonicalRows } from "@/lib/utils/publicCanonical";
 import { isPublicSafeGame } from "@/lib/utils/publicSafety";
 import { hasUsableCardImage } from "@/lib/utils/mediaReadiness";
 import { hasUnreleasedStatus } from "@/lib/utils/release-status";
+import { getDiscoveryCanonicalTitle, isPackagingEditionTitle } from "@/lib/utils/discovery";
+import { diversifyRecommendations, recommendationVariantBase, removeRecommendationVariants } from "@/lib/utils/recommendation-selection";
 import type { GameRow } from "@/lib/supabase/types";
 import { getAuthSupabase, getCurrentUser } from "@/lib/supabase/auth";
 
@@ -49,7 +51,11 @@ async function loadRecommendations(request: NextRequest) {
 
     // Try to get user-specific recommendations
     let userGenres: string[] = [];
+    let genreAffinity = new Map<string, number>();
     let userGameIds: string[] = [];
+    const ownedTitles = new Set<string>();
+    const ownedVariants = new Set<string>();
+    const ownedSteamIds = new Set<number>();
     let largeLibraryProfileId: string | undefined;
 
     try {
@@ -62,9 +68,9 @@ async function loadRecommendations(request: NextRequest) {
         // Get user's library to find preferred genres
         const { data: userGames, error: libraryError } = await supabase
           .from("user_games")
-          .select("game_id, game:games!inner(genres)")
+          .select("game_id, game:games!inner(genres,title,steam_app_id)")
           .eq("user_id", user.profileId)
-          .order("game_id").limit(1000) as { data: { game_id: string; game: { genres: string[] } | null }[] | null; error: unknown };
+          .order("game_id").limit(1000) as { data: { game_id: string; game: Pick<GameRow, "genres" | "title" | "steam_app_id"> | null }[] | null; error: unknown };
 
         if (libraryError && homepage) throw libraryError;
 
@@ -75,7 +81,13 @@ async function loadRecommendations(request: NextRequest) {
           // Count genre frequency
           const genreCounts: Record<string, number> = {};
           for (const ug of userGames) {
-            const game = ug.game as { genres: string[] } | null;
+            const game = ug.game;
+            if (game?.steam_app_id) ownedSteamIds.add(game.steam_app_id);
+            if (game?.title) {
+              const base = recommendationVariantBase(game.title);
+              if (base || isPackagingEditionTitle(game.title)) ownedVariants.add(base ?? getDiscoveryCanonicalTitle(game.title));
+              ownedTitles.add(base ?? getDiscoveryCanonicalTitle(game.title));
+            }
             if (game?.genres) {
               for (const g of game.genres) {
                 genreCounts[g] = (genreCounts[g] ?? 0) + 1;
@@ -88,6 +100,7 @@ async function loadRecommendations(request: NextRequest) {
             .sort((a, b) => b[1] - a[1])
             .slice(0, 3)
             .map(([g]) => g);
+          genreAffinity = new Map(userGenres.map(genre => [genre, genreCounts[genre] / genreCounts[userGenres[0]]]));
         }
       }
     } catch (error) {
@@ -102,7 +115,7 @@ async function loadRecommendations(request: NextRequest) {
     // Build recommendation query — require minimum review count at DB level
     let query = supabase
       .from("games")
-      .select(GAME_CARD_COLUMNS_WITH_DESC)
+      .select(GAME_CARD_COLUMNS_WITH_DESC + ",franchise")
       .not("release_date", "is", null)
       .lte("release_date", today)           // exclude unreleased/future games
       .gte("score", 70)
@@ -137,7 +150,12 @@ async function loadRecommendations(request: NextRequest) {
     // Exclude games already in user's library
     if (userGameIds.length > 0) {
       const excludeSet = new Set(userGameIds);
-      rows = rows.filter((r) => !excludeSet.has(r.id));
+      rows = rows.filter(row => {
+        if (excludeSet.has(row.id) || row.steam_app_id && ownedSteamIds.has(row.steam_app_id)) return false;
+        const variant = recommendationVariantBase(row.title);
+        const canonical = variant ?? getDiscoveryCanonicalTitle(row.title);
+        return !ownedVariants.has(canonical) && (!(variant || isPackagingEditionTitle(row.title)) || !ownedTitles.has(canonical));
+      });
     }
 
     // The bounded genre sample may omit owned games from a large library.
@@ -152,35 +170,23 @@ async function loadRecommendations(request: NextRequest) {
       }
       rows = rows.filter(row => !owned.has(row.id));
     }
-    rows = dedupePublicCanonicalRows(rows);
+    rows = removeRecommendationVariants(dedupePublicCanonicalRows(rows));
 
     const matchesLibrary = (row: GameRow) => userGenres.some(genre => row.genres?.includes(genre));
-    rows.sort((a, b) => (homepage ? Number(shown.has(a.slug)) - Number(shown.has(b.slug)) : 0)
-      || Number(matchesLibrary(b)) - Number(matchesLibrary(a))
-      || Number(isHomepageRecommendationEligible(b)) - Number(isHomepageRecommendationEligible(a))
-      || getHomepageRecommendationScore(b) - getHomepageRecommendationScore(a)
-      || a.id.localeCompare(b.id));
-
-    // Ensure genre diversity: pick one per primary genre first
-    const seen = new Set<string>();
-    const picks: GameRow[] = [];
-    for (const row of rows) {
-      if (picks.length >= limit) break;
-      const genre = row.genres?.find(value => !seen.has(value.toLowerCase()));
-      if (genre && !shown.has(row.slug)) {
-        seen.add(genre.toLowerCase());
-        picks.push(row);
-      }
-    }
-
-    // Fill remaining slots
-    if (picks.length < limit) {
-      const pickIds = new Set(picks.map((p) => p.id));
-      for (const row of rows) {
-        if (picks.length >= limit) break;
-        if (!pickIds.has(row.id)) picks.push(row);
-      }
-    }
+    const libraryScore = (row: GameRow) => {
+      const weights = [...new Set(row.genres ?? [])].map(genre => genreAffinity.get(genre) ?? 0).sort((a, b) => b - a);
+      return (weights[0] ?? 0) * 22 + (weights[1] ?? 0) * 6;
+    };
+    const scores = new Map(rows.map(row => [
+      row.id,
+      getHomepageRecommendationScore(row) + (isHomepageRecommendationEligible(row) ? 10 : 0)
+        + libraryScore(row),
+    ]));
+    rows.sort((a, b) => a.id.localeCompare(b.id));
+    const select = (candidates: GameRow[], count: number) =>
+      diversifyRecommendations(candidates, count, row => scores.get(row.id)!, row => Number(row.release_date?.slice(0, 4)));
+    const picks = select(rows.filter(row => !shown.has(row.slug)), limit);
+    if (picks.length < limit) picks.push(...select(rows.filter(row => shown.has(row.slug)), limit - picks.length));
 
     const relevant = picks.filter(matchesLibrary).length;
     return respond(picks.map(mapGameRow), relevant > 0 && relevant >= Math.ceil(picks.length / 3));

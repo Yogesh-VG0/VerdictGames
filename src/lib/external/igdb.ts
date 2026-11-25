@@ -13,6 +13,8 @@
  */
 
 import { recordProviderUsage } from "@/lib/utils/providerUsage";
+import type { IgdbReleaseDate } from '@/lib/utils/release-timing';
+import { homepageSignal } from '@/lib/services/homepage-budget';
 
 const IGDB_BASE = "https://api.igdb.com/v4";
 const TWITCH_TOKEN_URL = "https://id.twitch.tv/oauth2/token";
@@ -91,6 +93,7 @@ export interface IgdbGame {
   total_rating?: number;           // combined
   total_rating_count?: number;
   first_release_date?: number;     // epoch
+  release_dates?: IgdbReleaseDate[];
   url?: string;                    // IGDB page URL
   cover?: { id: number; image_id: string };
   screenshots?: { id: number; image_id: string; width?: number; height?: number }[];
@@ -109,6 +112,22 @@ export interface IgdbGame {
   similar_games?: { id: number; name: string; slug: string; cover?: { image_id: string } }[];
   game_modes?: { id: number; name: string }[];      // Single player, Multiplayer, etc.
   player_perspectives?: { id: number; name: string }[]; // First person, Third person, etc.
+}
+
+export async function getIgdbReleaseDates(names: string[], ids: number[]) {
+  if (!isIgdbConfigured()) return [];
+  const filters = [
+    ...(ids.length ? [`id = (${ids.join(',')})`] : []),
+    ...(names.length ? [`name = (${names.map(name => `"${escapeQuotes(name)}"`).join(',')})`] : []),
+  ];
+  if (!filters.length) return [];
+  const rows = await igdbQuery<Pick<IgdbGame, 'id' | 'name' | 'release_dates'>>(
+    'games',
+    `fields name,release_dates.date,release_dates.y,release_dates.m,release_dates.date_format.format,release_dates.status.name; where ${filters.join(' | ')}; limit 200;`,
+    homepageSignal(AbortSignal.timeout(1000)),
+  );
+  if (!rows) throw new Error('IGDB release evidence unavailable');
+  return rows;
 }
 
 /** IGDB Website category enum */
@@ -140,7 +159,8 @@ export const IGDB_WEBSITE_CATEGORY = {
  */
 async function igdbQuery<T>(
   endpoint: string,
-  body: string
+  body: string,
+  signal = AbortSignal.timeout(5000),
 ): Promise<T[] | null> {
   const token = await getIgdbToken();
   if (!token) return null;
@@ -157,7 +177,7 @@ async function igdbQuery<T>(
         "Content-Type": "text/plain",
       },
       body,
-      signal: AbortSignal.timeout(5000),
+      signal,
     });
 
     // Fire-and-forget tracking (non-blocking)

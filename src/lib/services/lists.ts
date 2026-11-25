@@ -3,7 +3,9 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { getPublicSupabase } from '@/lib/supabase/public';
 import type { Database, GameRow, ListRow } from '@/lib/supabase/types';
 import type { GameListSummary } from '@/lib/types';
-import { editorialListTitle, passesCuratedListSelection } from '@/lib/utils/curatedLists';
+import { editorialListTitle, isAnnualEditorialList, passesCuratedListSelection } from '@/lib/utils/curatedLists';
+import { ANNUAL_LIST_TARGET } from '@/lib/utils/editorial-eligibility.mjs';
+import { readAnnualListEvidence } from '@/lib/services/annual-list-evidence';
 import { dedupePublicCanonicalRows } from '@/lib/utils/publicCanonical';
 import { isPublicSafeGame } from '@/lib/utils/publicSafety';
 import { coalesceCatalogueRead } from '@/lib/db/cached-catalogue';
@@ -11,7 +13,7 @@ import { hasUsableCardImage } from '@/lib/utils/mediaReadiness';
 
 export const LIST_PAGE_SIZE = 24;
 export interface ListSummaries { items: GameListSummary[]; hasNext: boolean; page: number }
-const gameColumns = 'id,slug,title,cover_image,header_image,description,genres,tags,platforms,score,verdict_score,review_count,confidence,steam_total_count,critic_source_count,critic_score,community_score,release_date,release_status,is_provisional,verdict_label,steam_app_id,franchise,developer,publisher,hltb_main,rawg_id';
+const gameColumns = 'id,slug,title,cover_image,header_image,description,genres,tags,platforms,score,verdict_score,review_count,confidence,steam_total_count,critic_source_count,critic_score,community_score,release_date,release_status,is_provisional,verdict_label,steam_app_id,franchise,developer,publisher,hltb_main,rawg_id,igdb_id';
 
 export async function readListSummaries(client: SupabaseClient<Database>, page: number, ownerId?: string, privateScope = false, kind = 'all'): Promise<ListSummaries> {
   let query = client.from('lists').select('id,slug,title,description,preview_text,cover_image,curated_by,created_at,tags,owner_id,is_public,is_system_managed,last_seeded_at');
@@ -43,17 +45,21 @@ export async function readListSummaries(client: SupabaseClient<Database>, page: 
       for (const row of result.data || []) if (isPublicSafeGame(row) && hasUsableCardImage(row)) games.set(row.id, row as unknown as GameRow);
     }
   }
-  return { page, hasNext: (data?.length || 0) > LIST_PAGE_SIZE, items: lists.map(list => {
+  const annualListIds = new Set(lists.filter(isAnnualEditorialList).map(list => list.id));
+  const annualRows = items.filter(item => annualListIds.has(item.list_id)).flatMap(item => games.get(item.game_id) ?? []);
+  const annualEvidence = await readAnnualListEvidence(annualRows).catch(() => new Map());
+  return { page, hasNext: (data?.length || 0) > LIST_PAGE_SIZE, items: lists.flatMap(list => {
     const rows = (items || []).filter(item => item.list_id === list.id).map(item => games.get(item.game_id))
-      .filter((row): row is GameRow => Boolean(row && passesCuratedListSelection(list as ListRow, row)));
+      .filter((row): row is GameRow => Boolean(row && passesCuratedListSelection(list as ListRow, row, annualListIds.has(list.id) ? annualEvidence.get(row.id) : undefined)));
     const visible = dedupePublicCanonicalRows(rows);
-    return {
+    if (!privateScope && annualListIds.has(list.id) && visible.length < ANNUAL_LIST_TARGET) return [];
+    return [{
       id: list.id, slug: list.slug, title: editorialListTitle(list), description: list.preview_text || list.description,
       coverImage: list.is_system_managed ? visible[0]?.cover_image || '' : list.cover_image || '', gameCount: visible.length,
       games: visible.filter(row => row.cover_image).slice(0, 4).map(row => ({ id: row.id, slug: row.slug, title: row.title, coverImage: row.cover_image })),
       curatedBy: list.curated_by, createdAt: list.created_at, tags: list.tags || [], ownerId: list.owner_id || undefined,
       isPublic: list.is_public, isSystemManaged: list.is_system_managed,
-    };
+    }];
   }) };
 }
 
@@ -64,7 +70,7 @@ const readCachedPublicListSummaries = unstable_cache((page: number, ownerId: str
   page === 1 && !ownerId && kind === 'all'
     ? readPublicOverview()
     : readListSummaries(getPublicSupabase(), page, ownerId ?? undefined, false, kind),
-['public-list-summaries-v5'], { revalidate: 300, tags: ['public-lists'] });
+['public-list-summaries-v6'], { revalidate: 300, tags: ['public-lists'] });
 
 // Normalize defaults before building the key: SSR(1) and API(1,undefined,'all')
 // must not create independent entries and duplicate catalogue refreshes.

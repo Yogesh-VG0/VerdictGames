@@ -91,7 +91,9 @@ export default async function GameDetailPage({ params }: GameDetailPageProps) {
     gamePlatform: game.platforms.slice(0, 6),
     author: game.developer ? { "@type": "Organization", name: game.developer } : undefined,
     publisher: game.publisher ? { "@type": "Organization", name: game.publisher } : undefined,
-    datePublished: game.releaseDate || undefined,
+    datePublished: game.releaseTiming
+      ? game.releaseTiming.precision === 'day' ? game.releaseTiming.value : undefined
+      : game.releaseDate || undefined,
   };
 
   return (

@@ -15,6 +15,7 @@ import { sanitizeDiscoveryDescription } from "../utils/discovery";
 import { normalizePlatforms } from "../utils/platform";
 import {hasUnreleasedStatus,hasKnownFullRelease} from '../utils/release-status';
 import {getPlayerGrowthEvidence} from '../utils/trending';
+import { resolveReleaseTiming } from '../utils/release-timing';
 
 /**
  * Regenerate verdict summary from display score + title + genres.
@@ -225,6 +226,10 @@ export function mapGameRow(row: GameRow): Game {
     developer: row.developer,
     publisher: row.publisher,
     releaseDate: row.release_date ?? "",
+    ...(!hasKnownFullRelease(row) && (isFutureRelease || explicitlyUnreleased) ? { releaseTiming: resolveReleaseTiming(row.release_date, {
+      upcoming: true,
+      tba: row.release_status === 'tba',
+    }) } : {}),
     description,
     score,
     verdictLabel,

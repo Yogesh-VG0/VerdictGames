@@ -2,14 +2,19 @@ import type { GameRow, ListRow } from "@/lib/supabase/types";
 import { isPrimaryDiscoveryGame } from "@/lib/utils/discovery";
 import { isQualityGame, isSurfaceReady } from "@/lib/utils/quality";
 import {hasEarlyAccessSignal,hasKnownFullRelease} from './release-status';
-import { editorialExclusion } from './editorial-eligibility.mjs';
+import { ANNUAL_LIST_TARGET, editorialExclusion } from './editorial-eligibility.mjs';
+import type { ReleaseTiming } from './release-timing';
 
 type CuratedListDescriptor = Pick<ListRow, "is_system_managed" | "slug" | "tags">;
 
-export function editorialListTitle(list: CuratedListDescriptor & Pick<ListRow, "title">): string {
+export function isAnnualEditorialList(list: CuratedListDescriptor & Partial<Pick<ListRow, 'owner_id'>>): boolean {
+  return list.is_system_managed && !list.owner_id && /^most-wanted-\d{4}$/.test(list.slug);
+}
+
+export function editorialListTitle(list: CuratedListDescriptor & Pick<ListRow, "title">, qualified = ANNUAL_LIST_TARGET): string {
   const annual = /^most-wanted-(\d{4})$/.exec(list.slug);
   const currentYear = new Date().getUTCFullYear();
-  return list.is_system_managed && annual && Number(annual[1]) < currentYear
+  return isAnnualEditorialList(list) && annual && (Number(annual[1]) < currentYear || qualified < ANNUAL_LIST_TARGET)
     ? `${list.title} (archive)`
     : list.title;
 }
@@ -38,8 +43,8 @@ export function isUpcomingCuratedListGame(row: GameRow): boolean {
   );
 }
 
-export function passesCuratedListSelection(list: CuratedListDescriptor, row: GameRow): boolean {
-  if (list.is_system_managed && (editorialExclusion(list.slug, row) || !isPrimaryDiscoveryGame(row))) return false;
+export function passesCuratedListSelection(list: CuratedListDescriptor, row: GameRow, releaseTiming?: ReleaseTiming): boolean {
+  if (list.is_system_managed && (editorialExclusion(list.slug, releaseTiming ? { ...row, releaseTiming } : row) || !isPrimaryDiscoveryGame(row))) return false;
   if (isUpcomingSystemManagedList(list)) {
     return isUpcomingCuratedListGame(row)
       && isPrimaryDiscoveryGame(row)

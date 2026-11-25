@@ -1,12 +1,12 @@
 "use client";
 
+import { selectGamingNews } from '@/lib/utils/news-relevance';
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { Newspaper, Filter, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { getGXPopularNews, getGXNewsFeed } from "@/lib/api";
-import type { GXNewsItem } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import GradientText from "@/components/ui/GradientText";
 import HeroImage from "@/components/ui/HeroImage";
@@ -29,22 +29,7 @@ export default function NewsPage() {
       if (available.length === 0) {
         throw new Error("Gaming news is temporarily unavailable.");
       }
-      const [popular = [], feed = []] = available;
-      // Dedupe by normalized title, popular items first
-      // ALSO filter out articles without images (user requirement: don't show imageless news)
-      const seen = new Set<string>();
-      const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
-      const merged: GXNewsItem[] = [];
-      for (const a of [...popular, ...feed]) {
-        // Skip articles without images
-        if (!a.image || a.image.trim() === "") continue;
-        const key = normalize(a.title);
-        if (!seen.has(key)) {
-          seen.add(key);
-          merged.push(a);
-        }
-      }
-      return merged;
+      return selectGamingNews(available.flat().filter(article => article.image?.trim()));
     },
     staleTime: 5 * 60 * 1000,
     refetchOnMount: "always",

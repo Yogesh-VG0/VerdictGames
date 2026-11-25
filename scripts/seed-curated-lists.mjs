@@ -30,7 +30,7 @@
  */
 
 import { buildSeedHash, publishManagedList } from './lib/curated-publisher.mjs';
-import { compareEditorialGames, editorialAnticipation, editorialExclusion, EDITORIAL_GAME_COLUMNS, EDITORIAL_UPCOMING_SNAPSHOT_KEY, matchesEditorialAnticipation, selectEditorialIds } from "../src/lib/utils/editorial-eligibility.mjs";
+import { ANNUAL_LIST_TARGET, annualReleaseTiming, compareEditorialGames, editorialAnticipation, editorialExclusion, EDITORIAL_GAME_COLUMNS, EDITORIAL_UPCOMING_SNAPSHOT_KEY, matchesEditorialAnticipation, selectEditorialIds } from "../src/lib/utils/editorial-eligibility.mjs";
 import { startRun, finishRun, acquireLock, releaseLock, isInfrastructureDbError } from './lib/scheduler-logger.mjs';
 import { connectDb, closeDb } from './lib/db-connect.mjs';
 
@@ -240,7 +240,7 @@ const LIST_BLUEPRINTS = [
       return sql`
         SELECT id FROM games
         WHERE rawg_id = ANY(${ids}::integer[])
-          AND release_date > ${today} AND release_date >= ${yearStr + "-01-01"} AND release_date < ${String(annualYear + 1) + "-01-01"}
+          AND (release_date IS NULL OR (release_date > ${today} AND release_date >= ${yearStr + "-01-01"} AND release_date < ${String(annualYear + 1) + "-01-01"}))
           AND cover_image IS NOT NULL AND cover_image != ''
         ORDER BY array_position(${ids}::integer[], rawg_id), release_date, id
         LIMIT 60
@@ -590,11 +590,17 @@ async function dedupeCanonicalIds(ids, slug, anticipation) {
   }
 
   const rows = await sql`
-    SELECT ${sql(EDITORIAL_GAME_COLUMNS.split(","))}, current_players, verdict_score
+    SELECT ${sql(EDITORIAL_GAME_COLUMNS.split(","))}, current_players, verdict_score, igdb_id
     FROM games
     WHERE id = ANY(${ids})
   `;
   const annual = /^most-wanted-\d{4}$/.test(slug);
+  if (annual && rows.length) {
+    const sources = await sql`SELECT game_id, jsonb_build_object('id', raw_data->'id', 'release_dates', raw_data->'release_dates') AS evidence
+      FROM game_sources WHERE game_id = ANY(${rows.map(row => row.id)}::uuid[]) AND source_name = 'igdb' AND raw_data ? 'release_dates'`;
+    const byId = new Map(sources.map(row => [row.game_id, row.evidence]));
+    for (const row of rows) row.releaseTiming = annualReleaseTiming(row, byId.get(row.id), anticipation.get(row.rawg_id)?.date);
+  }
   const eligible = rows.filter(row => !editorialExclusion(slug, row)
     && (!annual || matchesEditorialAnticipation(row, anticipation)));
   const rowsById = new Map(eligible.map(row => [row.id, row]));
@@ -650,6 +656,11 @@ for (const blueprint of LIST_BLUEPRINTS) {
 
   const allIds = await dedupeCanonicalIds(gameRows.map(row => row.id), blueprint.slug, anticipation);
   const constrainedIds = selectEditorialIds(allIds, gameAppearanceCount);
+  if (/^most-wanted-\d{4}$/.test(blueprint.slug) && constrainedIds.length < ANNUAL_LIST_TARGET) {
+    console.log('  Annual release evidence does not support a complete edition; preserving history');
+    skipped++;
+    continue;
+  }
   if (!constrainedIds.length) {
     console.log('  No records passed the editorial contract; preserving the saved selection');
     skipped++;

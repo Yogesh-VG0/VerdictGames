@@ -8,7 +8,7 @@ vi.mock('@/lib/supabase/server', () => ({ getServerSupabase: () => ({ from: () =
   query.maybeSingle = async () => ({ data: state.stored, error: null });
   return query;
 } }) }));
-import { readUpcomingSnapshot } from './upcoming-snapshot';
+import { readCalendarUpcomingSnapshot, readUpcomingSnapshot } from './upcoming-snapshot';
 const results = [{ id: 391403, name:'Path of Exile 2', slug:'path-of-exile-2', tba:false, released:'2026-12-11', added:537, ratings_count:67, rating:3.55, genres:[],tags:[],platforms:[] }];
 describe('durable upcoming snapshot', () => {
   beforeEach(() => {
@@ -25,6 +25,12 @@ describe('durable upcoming snapshot', () => {
     state.stored = { payload: { results, complete: true, count: results.length }, fetched_at:'2020-01-01T00:00:00Z' };
     state.live.mockRejectedValue(new Error('timeout'));
     expect(await readUpcomingSnapshot()).toEqual({ results, fetchedAt:'2020-01-01T00:00:00Z', complete:true });
+  });
+  it('uses a still-valid published calendar snapshot during the live refresh interval', async () => {
+    const fetched_at = new Date(Date.now() - 9 * 60 * 60 * 1000).toISOString();
+    state.stored = { payload: { results, complete: true, count: results.length }, fetched_at };
+    expect(await readCalendarUpcomingSnapshot()).toMatchObject({ fetchedAt: fetched_at, complete: true, results });
+    expect(state.live).not.toHaveBeenCalled();
   });
   it('does not replace a successful snapshot with an empty or malformed response', async () => {
     state.stored = { payload: { results, complete: true, count: results.length }, fetched_at:'2020-01-01T00:00:00Z' };

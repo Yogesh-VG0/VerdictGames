@@ -13,12 +13,13 @@ import { boundedHomepageRead } from '@/lib/services/homepage-budget';
 import { normalizeTitle } from '@/lib/utils/slugify';
 import { isPublicSafeGame } from "@/lib/utils/publicSafety";
 import { IncompleteCatalogueRead } from "@/lib/db/cached-catalogue";
+import { releaseTimingMonth, resolveReleaseTiming } from '@/lib/utils/release-timing';
 
 export const CALENDAR_REVALIDATE_SECONDS = 300;
 export const CALENDAR_API_CACHE_CONTROL = `s-maxage=${CALENDAR_REVALIDATE_SECONDS}, stale-while-revalidate=3600`;
 export const CALENDAR_DEFAULT_LIMIT = 50;
 export const CALENDAR_MAX_LIMIT = 200;
-const CALENDAR_MONTH_CACHE_NAMESPACE = "calendar-month-v4-upcoming";
+const CALENDAR_MONTH_CACHE_NAMESPACE = "calendar-month-v6-precision";
 
 export function normalizeCalendarLimit(limit?: number): number {
   return Number.isFinite(limit) && Number(limit) > 0
@@ -109,7 +110,7 @@ async function fetchCalendarMonth(month: string, limit: number): Promise<Calenda
   const [dbResult, gxResult, upcoming] = await Promise.all([
     dbQuery.catch(() => ({ data: null, error: new Error('Catalogue calendar unavailable') })),
     boundedHomepageRead(6500, () => gxFetchCalendarMonthSnapshot(month, getGXCalendar)).catch(() => null),
-    month >= getCalendarMonthKey() ? boundedHomepageRead(3800, () => loadExplore('best-of-year', 1, limit, undefined, undefined, 'oldest', '', undefined, { snapshotOnly: true, releaseMonth: month })).catch(() => null) : null,
+    month >= getCalendarMonthKey() ? boundedHomepageRead(4200, () => loadExplore('best-of-year', 1, 100, undefined, undefined, 'oldest', '', undefined, { snapshotOnly: true, calendar: true })).catch(() => null) : null,
   ]);
   const { data, error } = dbResult;
   const gxCalendar = gxResult ?? { items: [], source: 'empty' as const, fetchedAt: undefined };
@@ -136,42 +137,45 @@ async function fetchCalendarMonth(month: string, limit: number): Promise<Calenda
   const dbGames = Array.from(new Map([...dbMonthGames, ...dbContextGames].map((game) => [game.id, game])).values());
 
   const items = mergeCalendarGames(dbGames, gxCalendar.items).filter(game => game.releaseDate?.slice(0, 7) === month);
-  const knownTitles = new Set(items.map(game => normalizeTitle(game.title)));
-  const knownSlugs = new Set(items.map(game => game.slug));
-  if (upcoming?.source === 'rawg' && !upcoming.degraded) {
+  const today = new Date().toISOString().slice(0, 10);
+  for (const game of items) {
+    if (!game.releaseTiming || game.releaseDate !== game.calendarOriginalReleaseDate) {
+      game.releaseTiming = resolveReleaseTiming(game.releaseDate, { upcoming: game.releaseDate > today });
+    }
+  }
+  const upcomingAge = upcoming?.fetchedAt ? Date.now() - Date.parse(upcoming.fetchedAt) : Infinity;
+  const usableUpcoming = upcoming?.source === 'rawg' && upcomingAge >= 0 && upcomingAge <= 12 * 60 * 60 * 1000;
+  if (usableUpcoming && upcoming) {
     for (const game of upcoming.items) {
-      if (!game.released) continue;
+      const timing = game.releaseTiming ?? resolveReleaseTiming(game.released, { upcoming: true, tba: game.tba });
       const titleKey = normalizeTitle(game.name);
-      if (knownSlugs.has(game.slug) || knownTitles.has(titleKey)) {
-        if (game.releaseWindow) {
-          const match = items.find(entry => (entry.slug === game.slug || normalizeTitle(entry.title) === titleKey)
-            && entry.releaseDate?.slice(0, 10) === game.released && !entry.calendarOriginalReleaseDate);
-          if (match) {
-            match.releaseDate = '';
-            match.calendarReleaseWindow = game.releaseWindow;
-            if (game.earlyAccess) match.calendarEntryTag = 'Full release pending';
-          }
+      const matches = items.filter(entry => entry.slug === game.slug || normalizeTitle(entry.title) === titleKey);
+      if (matches.length) {
+        for (const match of matches) {
+          if (match.releaseDate.slice(0, 10) !== game.released && match.releaseTiming?.precision === 'day') continue;
+          match.releaseTiming = timing;
+          if (game.earlyAccess) match.calendarEntryTag = 'Full release pending';
         }
         continue;
       }
-      knownSlugs.add(game.slug);
-      knownTitles.add(titleKey);
+      if (releaseTimingMonth(timing) !== month) continue;
       const entry = gxCalendarToGame({ title: game.name, slug: game.slug, cover: game.image,
-        releaseDate: game.released, originalReleaseDate: null, hotGame: false,
+        releaseDate: game.released ?? (timing.precision === 'day' ? timing.value : ''), originalReleaseDate: null, hotGame: false,
         url: null, ctaLabel: null, tagLabel: game.earlyAccess ? 'Full release pending' : null, tagColor: null,
         genres: game.genres, platforms: game.platforms });
       items.push({ ...entry, rawgId: game.rawgId, scoreSource: 'rawg', calendarHasDetailPage: true,
-        ...(game.releaseWindow ? { releaseDate: '', calendarReleaseWindow: game.releaseWindow } : {}) });
+        releaseTiming: timing });
     }
   }
   const unavailable = [
     ...(error ? ['catalogue'] : []),
     ...(gxCalendar.source === 'empty' ? ['GX calendar'] : []),
-    ...(month >= getCalendarMonthKey() && (!upcoming || upcoming.degraded) ? ['upcoming snapshot'] : []),
+    ...(month >= getCalendarMonthKey() && (!usableUpcoming || upcoming?.degraded) ? ['upcoming snapshot'] : []),
   ];
   const dataForMonth: CalendarMonthResponse = {
     month,
-    items: items.sort((a, b) => (a.releaseDate || '9999').localeCompare(b.releaseDate || '9999') || a.title.localeCompare(b.title)).slice(0, limit),
+    items: items.filter(game => game.releaseTiming && releaseTimingMonth(game.releaseTiming) === month)
+      .sort((a, b) => (a.releaseDate || '9999').localeCompare(b.releaseDate || '9999') || a.title.localeCompare(b.title)).slice(0, limit),
     gxSource: gxCalendar.source,
     gxCount: gxCalendar.items.length,
     dbCount: dbMonthGames.length,
