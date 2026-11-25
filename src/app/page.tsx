@@ -115,7 +115,7 @@ export default async function HomePage() {
 
       {hasMostAnticipatedGames ? (
         <>
-          <HomepageMostAnticipatedSection games={mostAnticipatedGames} fetchedAt={anticipatedResult.fetchedAt} />
+          <HomepageMostAnticipatedSection games={mostAnticipatedGames} />
 
           <div className="max-w-[1400px] mx-auto px-4">
             <hr className="border-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
