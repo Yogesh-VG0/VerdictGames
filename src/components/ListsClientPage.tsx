@@ -10,6 +10,7 @@ import Pagination from '@/components/ui/Pagination';
 import { useAuth } from "@/hooks/useAuth";
 import PixelBadge from "@/components/ui/PixelBadge";
 import SafeImage from "@/components/ui/SafeImage";
+import { OrientedCardImage } from "@/components/CatalogueCardArtwork";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { ListPlus, Loader2, BookOpen } from "lucide-react";
 import GradientText from "@/components/ui/GradientText";
@@ -127,13 +128,12 @@ export default function ListsPage({ initialData }: { initialData?: ListSummaries
                         <div className="flex h-full w-full justify-center bg-surface-2">
                           {coverGames.map((g) => (
                             <div key={g.id} className="relative h-full min-w-0 flex-1 overflow-hidden" style={{ maxWidth: '25%' }}>
-                              <SafeImage
-                                src={g.coverImage}
+                              <OrientedCardImage
+                                image={g.coverImage}
+                                layout="portrait"
                                 alt={g.title}
-                                fill
                                 sizes="(max-width: 640px) 25vw, (max-width: 1024px) 12vw, 9vw"
                                 className="object-cover transition-transform duration-200 motion-safe:group-hover:scale-[1.03]"
-                                fallback={<ListPlus className="h-6 w-6 text-tertiary" />}
                                 fallbackClassName="flex items-center justify-center bg-surface-2"
                               />
                             </div>

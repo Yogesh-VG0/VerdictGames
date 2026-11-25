@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Space_Grotesk } from "next/font/google";
+import { themeBootstrap } from "@/lib/theme-preference";
 import "./globals.css";
 import Providers from "./providers";
 import NavbarTop from "@/components/NavbarTop";
@@ -100,6 +101,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning data-scroll-behavior="smooth">
       <head>
+        <script dangerouslySetInnerHTML={{ __html: themeBootstrap }} />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}

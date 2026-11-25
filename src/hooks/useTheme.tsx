@@ -5,10 +5,10 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useRef,
   useState,
 } from "react";
-
-type Theme = "dark" | "light";
+import { readThemePreference, SYSTEM_THEME_QUERY, THEME_STORAGE_KEY, type Theme } from "@/lib/theme-preference";
 
 interface ThemeCtx {
   theme: Theme;
@@ -22,28 +22,28 @@ const ThemeContext = createContext<ThemeCtx>({
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useState<Theme>("dark");
+  const manualPreference = useRef<Theme | null>(null);
 
-  // Read from localStorage on mount
   useEffect(() => {
-    const stored = localStorage.getItem("vg-theme") as Theme | null;
-    if (stored === "light") {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setTheme("light");
-      document.documentElement.classList.add("light");
-    }
+    const system = window.matchMedia?.(SYSTEM_THEME_QUERY);
+    const sync = () => {
+      const next = manualPreference.current ?? (system?.matches ? "light" : "dark");
+      document.documentElement.classList.toggle("light", next === "light");
+      setTheme(next);
+    };
+    manualPreference.current = readThemePreference();
+    sync();
+    system?.addEventListener?.("change", sync);
+    return () => system?.removeEventListener?.("change", sync);
   }, []);
 
   const toggle = useCallback(() => {
-    setTheme((prev) => {
-      const next = prev === "dark" ? "light" : "dark";
-      localStorage.setItem("vg-theme", next);
-      if (next === "light") {
-        document.documentElement.classList.add("light");
-      } else {
-        document.documentElement.classList.remove("light");
-      }
-      return next;
-    });
+    const root = document.documentElement;
+    const next = root.classList.contains("light") ? "dark" : "light";
+    manualPreference.current = next;
+    try { localStorage.setItem(THEME_STORAGE_KEY, next); } catch { /* Keep this tab's manual preference. */ }
+    root.classList.toggle("light", next === "light");
+    setTheme(next);
   }, []);
 
   return (

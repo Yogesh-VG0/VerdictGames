@@ -2,7 +2,7 @@ import { unstable_cache } from 'next/cache';
 import { getPublicSupabase } from '@/lib/supabase/public';
 import { isPublicSafeGame, isPublicSafeRawgGame } from '@/lib/utils/publicSafety';
 import { readUpcomingSnapshot as readUpcoming, readCalendarUpcomingSnapshot } from '@/lib/services/upcoming-snapshot';
-import { selectCatalogueArtwork, portraitArtwork } from '@/lib/utils/artwork';
+import { selectCatalogueArtwork } from '@/lib/utils/artwork';
 import { reviewedUpcomingArtwork } from '@/lib/utils/reviewed-upcoming-artwork';
 import { EXPLORE_GENRES } from '@/lib/utils/explore-filters';
 import { normalizeTitle } from '@/lib/utils/slugify';
@@ -24,7 +24,7 @@ const columns = 'id,rawg_id,slug,title,release_date,release_status,cover_image,h
 const readUpcomingMatches = unstable_cache(async (ids:number[]) => {
   if (!ids.length) return [];
   const {data,error} = await getPublicSupabase().from('games')
-    .select('id,rawg_id,igdb_id,slug,title,description,cover_image,header_image,steam_app_id,tags,genres,release_status,monetization')
+    .select('id,rawg_id,igdb_id,slug,title,description,cover_image,header_image,steam_app_id,is_featured_manual,tags,genres,release_status,monetization')
     .in('rawg_id',ids).abortSignal(homepageSignal(AbortSignal.timeout(1800)));
   if (error) throw error;
   return data || [];
@@ -157,7 +157,8 @@ export async function loadExplore(type: RawgListType, page = 1, pageSize = 20, y
         const releaseTiming = releaseTimings.get(item.id)!;
         const reviewed = reviewedUpcomingArtwork(item.id, item.name);
         const artwork = selectCatalogueArtwork(local, item.background_image);
-        if (reviewed && (!local?.header_image || local.header_image === local.cover_image || local.header_image === item.background_image)) {
+        if (reviewed && (!local?.header_image || !local.is_featured_manual &&
+          (local.header_image === local.cover_image || local.header_image === item.background_image))) {
           artwork.landscapeImage = reviewed.landscape;
           artwork.landscapeImageKind = 'artwork';
           if (artwork.imageKind !== 'cover') {
@@ -189,7 +190,7 @@ export async function loadExplore(type: RawgListType, page = 1, pageSize = 20, y
     const compact = await measure('catalogue_query', () => readCataloguePage(type,year,EXPLORE_GENRES[genre] || '',platform,type === 'all-time' ? 'default' : sort,page,pageSize,today));
     if (compact) {
       const visible:RawgListGameItem[]=compact.rows.map(row=>({
-        catalogueId:row.id,rawgId:row.rawg_id || 0,slug:row.slug,name:row.title,...portraitArtwork(row),tags:row.tags || [],
+        catalogueId:row.id,rawgId:row.rawg_id || 0,slug:row.slug,name:row.title,...selectCatalogueArtwork(row),tags:row.tags || [],
         released:row.release_date,
         ...(type === 'best-of-year' ? { releaseTiming: resolveReleaseTiming(row.release_date, { upcoming: true,
           tba: hasEarlyAccessSignal(row) && Boolean(row.release_date && row.release_date <= today),
@@ -208,7 +209,7 @@ export async function loadExplore(type: RawgListType, page = 1, pageSize = 20, y
     const pool = await measure('legacy_pool', () => readCataloguePool(type, type === 'popular-in-year' ? year : 0, type === 'genre' ? genre : '', today));
     fetchedAt = pool.fetchedAt;
     items = pool.rows.map(row => ({
-      catalogueId:row.id,rawgId: row.rawg_id || 0, slug: row.slug, name: row.title, ...portraitArtwork(row),tags:row.tags || [],
+      catalogueId:row.id,rawgId: row.rawg_id || 0, slug: row.slug, name: row.title, ...selectCatalogueArtwork(row),tags:row.tags || [],
       released: row.release_date, tba: !row.release_date || type === 'best-of-year' && hasEarlyAccessSignal(row) && Boolean(row.release_date && row.release_date <= today), earlyAccess: hasEarlyAccessSignal(row),
       ...(type === 'best-of-year' ? { releaseTiming: resolveReleaseTiming(row.release_date, { upcoming: true,
         tba: hasEarlyAccessSignal(row) && Boolean(row.release_date && row.release_date <= today),

@@ -24,8 +24,9 @@ describe('Newest release-date eligibility',()=>{
  });
  afterEach(()=>vi.useRealTimers());
  beforeEach(()=>{state.rows=[];state.filters=[];vi.useFakeTimers({toFake:['Date']});vi.setSystemTime(new Date('2026-11-19T12:00:00Z'));});
- it('includes a mainstream console launch with limited evidence without changing its Verdict',async()=>{
-  state.rows=[launch];const result=await loadSearchResults(request);
+ it('requires release confirmation even for a mainstream title with provider ratings',async()=>{
+  state.rows=[launch];expect((await loadSearchResults(request)).items).toEqual([]);
+  state.rows=[{...launch,release_status:'released'}];const result=await loadSearchResults(request);
   expect(result.items).toHaveLength(1);expect(result.items[0]).toMatchObject({score:77,criticScore:98});
   expect(state.filters).toContainEqual(['neq','verdict_label','COMING SOON']);
  });
@@ -37,6 +38,13 @@ describe('Newest release-date eligibility',()=>{
   state.rows=[{...launch,release_date:'2027-01-01'},{...launch,id:'unreleased',release_status:'upcoming'},
    {...launch,id:'announced',release_status:'announced'},{...launch,id:'tba',release_status:'coming_soon'},
    {...launch,id:'cancelled',release_status:'cancelled'},{...launch,id:'adult',title:'Hentai Clicker'}];
+  expect((await loadSearchResults(request)).items).toEqual([]);
+ });
+ it('uses reviewed exact identity and date in the ranked cohort and its hydrated card',async()=>{
+  const row={...launch,slug:'silent-hill-townfall',rawg_id:1018062,release_date:'2026-09-23'};
+  state.rows=[row];
+  expect((await loadSearchResults(request)).items).toMatchObject([{releaseDate:'2026-09-24',releaseStatus:'released'}]);
+  state.rows=[{...row,rawg_id:111111}];
   expect((await loadSearchResults(request)).items).toEqual([]);
  });
  it('retains exact platform predicates on the initial and hydration reads',async()=>{

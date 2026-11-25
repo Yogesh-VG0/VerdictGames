@@ -1,5 +1,6 @@
 import HeroImage from '@/components/ui/HeroImage';
 import { cn } from '@/lib/utils';
+import { artworkKind } from '@/lib/utils/artwork';
 
 interface CatalogueCardArtworkProps {
   image: string | null;
@@ -8,22 +9,37 @@ interface CatalogueCardArtworkProps {
   priority?: boolean;
 }
 
-export default function CatalogueCardArtwork({ image, imageKind, layout, priority }: CatalogueCardArtworkProps) {
+export function OrientedCardImage({ image, imageKind, layout, priority, alt = '', sizes, className, alternate, fallbackClassName }:
+  CatalogueCardArtworkProps & { alt?: string; sizes: string; className?: string; alternate?: string; fallbackClassName?: string }) {
   const portrait = layout === 'portrait';
-  const contained = imageKind ? (imageKind === 'cover') !== portrait : false;
+  const kind = imageKind ?? artworkKind(image);
+  const contained = kind ? (kind === 'cover') !== portrait : false;
   return (
-    <div className={cn('relative overflow-hidden border-b border-border bg-surface-2', portrait ? 'aspect-[3/4]' : 'aspect-video')}>
-      {contained ? (
-        <div aria-hidden="true" className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,var(--color-surface),transparent_85%)]" />
-      ) : null}
+    <>
+      {contained && image && (
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden opacity-50">
+          <HeroImage src={image} alt="" sizes={sizes} className="scale-110 blur-xl" fallback={<span />} />
+        </div>
+      )}
       <HeroImage
         src={image ?? ''}
-        alt=""
+        alt={alt}
+        alternate={alternate}
+        fallbackClassName={fallbackClassName}
         priority={priority}
-        sizes={portrait ? '(max-width: 639px) 50vw, (max-width: 767px) 33vw, (max-width: 1279px) 25vw, 20vw' : '(max-width: 639px) 240px, (max-width: 1023px) 288px, 320px'}
+        sizes={sizes}
         fit={contained ? 'contain' : 'cover'}
-        className={cn(contained ? 'p-2' : 'motion-safe:group-hover:scale-[1.03] motion-safe:transition-transform duration-200')}
+        className={cn(contained ? 'p-1' : 'motion-safe:group-hover:scale-[1.03] motion-safe:transition-transform duration-200', className)}
       />
+    </>
+  );
+}
+
+export default function CatalogueCardArtwork(props: CatalogueCardArtworkProps & { sizes?: string }) {
+  const portrait = props.layout === 'portrait';
+  return (
+    <div className={cn('relative overflow-hidden border-b border-border bg-surface-2', portrait ? 'aspect-[3/4]' : 'aspect-video')}>
+      <OrientedCardImage {...props} sizes={props.sizes ?? '(max-width: 639px) 240px, (max-width: 1023px) 288px, 320px'} />
     </div>
   );
 }
@@ -31,12 +47,11 @@ export default function CatalogueCardArtwork({ image, imageKind, layout, priorit
 export function CatalogueCardSkeleton() {
   return (
     <div className="overflow-hidden rounded-2xl border border-border bg-surface" aria-hidden="true">
-      <div className="aspect-[3/4] border-b border-border bg-surface-2 motion-safe:animate-pulse" />
+      <div className="aspect-video border-b border-border bg-surface-2 motion-safe:animate-pulse" />
       <div className="grid gap-2 p-2.5 sm:p-3">
         <div className="h-10 w-4/5 rounded bg-surface-2 motion-safe:animate-pulse" />
-        <div className="h-8 w-2/3 rounded bg-surface-2 motion-safe:animate-pulse" />
-        <div className="h-12 w-1/2 rounded bg-surface-2 motion-safe:animate-pulse" />
-        <div className="h-8 w-3/4 rounded bg-surface-2 motion-safe:animate-pulse" />
+        <div className="h-4 w-2/3 rounded bg-surface-2 motion-safe:animate-pulse" />
+        <div className="h-4 w-1/2 rounded bg-surface-2 motion-safe:animate-pulse" />
         <div className="h-3 w-1/3 rounded bg-surface-2 motion-safe:animate-pulse" />
       </div>
     </div>

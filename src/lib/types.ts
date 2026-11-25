@@ -143,8 +143,8 @@ export interface Game {
 
 export type GameCardData = Pick<Game,
   'id' | 'slug' | 'title' | 'coverImage' | 'platforms' | 'genres' | 'releaseDate' | 'releaseDateTba'
-  | 'score' | 'verdictLabel' | 'verdictSummary' | 'confidence' | 'scoreSource' | 'isPreview'
-  | 'isProvisional' | 'releaseStatus' | 'trendingReason'>;
+  | 'score' | 'verdictLabel' | 'verdictSummary' | 'confidence' | 'scoreSource' | 'isPreview' | 'rawgId'
+  | 'isProvisional' | 'releaseStatus' | 'releaseTiming' | 'trendingReason'>;
 
 export interface Review {
   id: string;

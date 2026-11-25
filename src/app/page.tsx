@@ -99,7 +99,7 @@ export default async function HomePage() {
                   href="/search?sort=trending"
                   linkLabel="See trending games"
                   icon={<Flame className="w-5 h-5" />}
-                  subtitle="Rising games and popular picks with an active community"
+                  subtitle="Recent player growth, active player counts, past momentum and editorial picks"
                   gradient="linear-gradient(90deg, #f97316 0%, #ef4444 25%, #f97316 50%, #eab308 75%, #f97316 100%)"
                 />
                 <HorizontalScroll>

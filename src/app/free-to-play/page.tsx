@@ -9,7 +9,7 @@ import { getGXFreeToPlay, getGXTopGames } from "@/lib/api";
 import type { GXFreeGame, GXTopGame } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import GXPageNav from "@/components/GXPageNav";
-import HeroImage from "@/components/ui/HeroImage";
+import { OrientedCardImage } from "@/components/CatalogueCardArtwork";
 import { GameGridSkeleton } from "@/components/ui/Skeleton";
 
 type ActiveTab = "free" | "subscriptions";
@@ -19,8 +19,8 @@ function FreeGameCard({ game, priority = false }: { game: GXFreeGame; priority?:
   const artwork = (
     <div className="relative aspect-[3/4] overflow-hidden">
       {game.cover ? (
-        <HeroImage
-          src={game.cover}
+        <OrientedCardImage layout="portrait"
+          image={game.cover}
           alt={game.title}
           sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
           className="transition-transform duration-700 group-hover:scale-110"
@@ -88,8 +88,8 @@ function SubscriptionGameCard({ game, priority = false }: { game: GXTopGame; pri
   const artwork = (
     <div className="relative aspect-[3/4] overflow-hidden">
       {game.cover ? (
-        <HeroImage
-          src={game.cover}
+        <OrientedCardImage layout="portrait"
+          image={game.cover}
           alt={game.title}
           sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
           className="transition-transform duration-700 group-hover:scale-110"

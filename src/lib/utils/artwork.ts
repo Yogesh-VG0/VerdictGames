@@ -16,6 +16,12 @@ export function isPortraitArtwork(url: string | null | undefined): boolean {
   } catch { return false; }
 }
 
+export function artworkKind(url?: string | null): 'cover' | 'artwork' | undefined {
+  if (isPortraitArtwork(url)) return 'cover';
+  const steamLandscape = /^https:\/\/(?:[^/]+\.)?(?:steamstatic\.com|akamaihd\.net)\/(?:store_item_assets\/)?steam\/apps\/\d+\/(?:[^/]+\/)?(?:header|library_hero(?:_2x)?|ss_[a-z0-9]+)\./i;
+  return url && (isProviderHeroArtwork(url) || steamLandscape.test(url)) ? 'artwork' : undefined;
+}
+
 export interface PortraitCandidate { name: string; slug?: string; aliases: string[]; year?: number | null; companies?: string[]; image: string }
 export function matchPortrait(game: { name: string; slug: string; released: string | null }, candidates: PortraitCandidate[]): string | null {
   const key = artworkTitleKey(game.name);
@@ -33,6 +39,7 @@ type ArtworkFields = {
   cover_image?: string | null;
   header_image?: string | null;
   steam_app_id?: number | null;
+  is_featured_manual?: boolean | null;
 };
 
 function matchesStoredSteamApp(value: string | null | undefined, appId: number | null | undefined) {
@@ -57,11 +64,11 @@ export function selectCatalogueArtwork(row: ArtworkFields | undefined, providerB
   const landscapeHeader = header && matchesStoredSteamApp(header, row?.steam_app_id)
     && header !== cover && !isPortraitArtwork(header) ? header : null;
   const landscapeBackground = providerBackground && !isPortraitArtwork(providerBackground) ? providerBackground : null;
-  const landscapeImage = selectLandscapeArtwork({
+  const landscapeImage = (row?.is_featured_manual && landscapeHeader) || selectLandscapeArtwork({
     existing: landscapeHeader,
     rawg: { background_image: landscapeBackground },
     steamAppId: row?.steam_app_id,
-    cover,
+    cover: isPortraitArtwork(cover) ? cover : undefined,
   }) || landscapeBackground || image;
   const landscapeImageKind: 'cover' | 'artwork' = landscapeImage && (isPortraitArtwork(landscapeImage)
     || landscapeImage === cover && !isProviderHeroArtwork(landscapeImage)) ? 'cover' : 'artwork';

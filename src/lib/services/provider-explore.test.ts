@@ -35,5 +35,17 @@ describe('RAWG default ranking and public boundaries',()=>{
     state.rows=[{rawg_id:2,slug:'tracked',review_count:5000}];
     const result=await loadProviderRanking('all-time',0,1,20,'','2026-11-18');
     expect(result.items.map(row=>row.rawgId)).toEqual([2]);expect(result.items[0].ratingsCount).toBe(5);
+    expect(result.items[0].rank).toBe(2);
+    expect(result.notice).toMatch(/1 of 2 RAWG positions qualify/);
+  });
+  it('keeps God of War 2018 on its canonical identity and selects its landscape art',async()=>{
+    const background='https://media.rawg.io/media/games/4be/4be6a6ad0364751a96229c56bf69be59.jpg';
+    state.snapshot.mockResolvedValue({results:[{...game(58175),name:'God of War (2018)',slug:'god-of-war-2',
+      released:'2018-04-20',background_image:background}],fetchedAt:new Date().toISOString()});
+    state.rows=[{id:'canonical-id',rawg_id:58175,steam_app_id:1593500,slug:'god-of-war-2018',release_status:'released',
+      cover_image:background,header_image:'https://media.rawg.io/media/screenshots/e2e/e2e16b63691fab32fa20d99f3e6895a0.jpeg'}];
+    expect((await loadProviderRanking('all-time',0,1,20,'','2026-11-18')).items[0]).toMatchObject({
+      rawgId:58175,slug:'god-of-war-2018',catalogueId:'canonical-id',landscapeImage:background,landscapeImageKind:'artwork',
+    });
   });
 });

@@ -12,9 +12,30 @@ vi.mock('@/lib/supabase/public',()=>({getPublicSupabase:()=>({from:()=>{
   chain.then=(resolve:(value:unknown)=>unknown,reject:(error:unknown)=>unknown)=>Promise.resolve(state.responses.shift()).then(resolve,reject);
   return chain;
 }})}));
-import {fetchTrendingGames,fetchNewReleases,fetchHeroCandidates} from './homepage';
+import {fetchTrendingGames,fetchNewReleases,fetchHeroCandidates,fetchHomepageTopRated} from './homepage';
 describe('homepage trending read failures',()=>{
  beforeEach(()=>{state.responses=[];state.discovery=[]});
+ it('refills one preferred Top Rated slot from twenty qualified rows without admitting weak or unreleased records',async()=>{
+   const released=new Date(Date.now()-46*86400000).toISOString().slice(0,10);
+   const base={release_date:released,release_status:'released',description:'A complete standalone action adventure with independent rating evidence and detailed coverage.',
+     cover_image:'https://images.igdb.com/co123.jpg',platforms:['PC'],genres:['Action'],tags:[],score:90,verdict_score:90,
+     confidence:0.8,review_count:6000,steam_total_count:6000,verdict_label:'MUST PLAY',developer:'Studio',publisher:'Studio'};
+   const qualified=Array.from({length:20},(_,id)=>({...base,id:String(id),slug:`games-${id}`,title:`Game ${id}`,
+     steam_app_id:10000+id,current_players:id===0?2000:0,players_updated_at:new Date().toISOString()}));
+   const blocked=[
+     {...base,id:'future',slug:'future',title:'Future Game',release_status:'upcoming'},
+     {...base,id:'weak',slug:'weak',title:'Weak Game',review_count:1,steam_total_count:1,confidence:0},
+     {...base,id:'missing',slug:'missing',title:'Missing Art',cover_image:''},
+     {...qualified[0],id:'same-steam-app',slug:'same-steam-app'},
+   ];
+   state.responses=[{data:[...qualified,...blocked],error:null},{data:[],error:null}];
+   const rail=await fetchHomepageTopRated(20);
+   expect(rail).toHaveLength(20);
+   expect(new Set(rail.map(game=>game.steamAppId)).size).toBe(20);
+   expect(rail.map(game=>game.id)).not.toContain('future');
+   expect(rail.map(game=>game.id)).not.toContain('weak');
+   expect(state.responses).toHaveLength(0);
+ });
  it('uses discovery to select a hero without replacing the canonical Verdict or adding reads per slide',async()=>{
    const today=new Date().toISOString().slice(0,10);
    const base={release_date:today,description:'A standalone action adventure with substantial review coverage.',

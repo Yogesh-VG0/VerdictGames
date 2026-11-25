@@ -12,7 +12,7 @@ import GXDealCard from "@/components/GXDealCard";
 import SectionHeader from "@/components/SectionHeader";
 import SortDropdown from "@/components/ui/SortDropdown";
 import { GameGridSkeleton } from "@/components/ui/Skeleton";
-import HeroImage from "@/components/ui/HeroImage";
+import { OrientedCardImage } from "@/components/CatalogueCardArtwork";
 import { PLATFORM_FILTER_OPTIONS, platformFilterIcon } from "@/components/ui/PlatformIcon";
 import { searchGames, getGXDeals, getGXFreeToPlay, getGXTopGames } from "@/lib/api";
 import { buildSearchApiPath, buildSearchPagePath, normalizeSearchGamesState, SEARCH_GENRE_OPTIONS, searchGamesStateToFilters, type SearchBrowseTab, type SearchPageState } from "@/lib/search";
@@ -69,7 +69,7 @@ function getSearchPageHeader(browseTab: SearchBrowseTab, freeSubTab: FreeSubTab,
     case "trending":
       return {
         title: "Trending Games",
-        subtitle: "Games gaining momentum right now based on player activity.",
+        subtitle: "Games with recent player growth or separately labelled past momentum.",
         gradient: "linear-gradient(90deg, #f97316, #ef4444, #f97316)",
         icon: <Flame className="w-6 h-6 text-orange-500" />,
       };
@@ -739,6 +739,7 @@ function SearchClientPageContent({
             >
               <div className="text-5xl">🔍</div>
               <p className="text-foreground font-semibold text-lg">No games found</p>
+              {data?.notice && <p role="status" className="text-sm text-secondary">{data.notice}</p>}
               <p className="text-sm text-secondary max-w-md mx-auto">
                 {debouncedQuery
                   ? `No results for "${debouncedQuery}". The game may not be in our database yet — try a different spelling or search for a popular title.`
@@ -1077,8 +1078,8 @@ function SearchClientPageContent({
                     const artwork = (
                       <div className="relative aspect-[3/4] overflow-hidden">
                         {game.cover ? (
-                          <HeroImage
-                            src={game.cover}
+                          <OrientedCardImage layout="portrait"
+                            image={game.cover}
                             alt={game.title}
                             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
                             className="transition-transform duration-700 group-hover:scale-110"
@@ -1185,8 +1186,8 @@ function SearchClientPageContent({
                     const artwork = (
                       <div className="relative aspect-[3/4] overflow-hidden">
                         {game.cover ? (
-                          <HeroImage
-                            src={game.cover}
+                          <OrientedCardImage layout="portrait"
+                            image={game.cover}
                             alt={game.title}
                             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
                             className="transition-transform duration-700 group-hover:scale-110"

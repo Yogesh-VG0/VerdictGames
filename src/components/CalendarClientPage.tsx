@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import FadeInSection from "@/components/FadeInSection";
 import SectionHeader from "@/components/SectionHeader";
-import HeroImage from "@/components/ui/HeroImage";
+import { OrientedCardImage } from "@/components/CatalogueCardArtwork";
 import PlatformIcon, {
   PLATFORM_FILTER_OPTIONS,
   getFilterPlatforms,
@@ -461,8 +461,8 @@ export default function CalendarClientPage({ initialMonth, initialMonthData, tod
                                 <>
                                   <div className="relative w-14 h-[74px] sm:w-[72px] sm:h-24 shrink-0 rounded-lg overflow-hidden bg-surface-2">
                                     {game.coverImage ? (
-                                      <HeroImage
-                                        src={game.coverImage}
+                                      <OrientedCardImage layout="portrait"
+                                        image={game.coverImage}
                                         alt={game.title}
                                         sizes="72px"
                                         className="object-cover"

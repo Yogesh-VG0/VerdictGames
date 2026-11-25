@@ -60,20 +60,21 @@ function GameCard({ game, rank, priority = false, showRating = true }: { game: R
       className="group signal-card relative flex flex-col rounded-2xl border border-border bg-surface overflow-hidden hover:border-border-hover focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent"
     >
       <div className="relative">
-        <CatalogueCardArtwork image={game.image} imageKind={game.imageKind} layout="portrait" priority={priority} />
+        <CatalogueCardArtwork image={game.landscapeImage ?? game.image} imageKind={game.landscapeImageKind ?? game.imageKind}
+          layout="landscape" priority={priority} sizes="(max-width: 639px) 48vw, (max-width: 767px) 33vw, (max-width: 1279px) 25vw, 280px" />
         {rank != null && <span className="absolute top-2 left-2 rounded-lg border border-white/10 bg-black/75 px-2 py-1 text-xs font-bold text-white">#{rank}</span>}
       </div>
       <div className="flex flex-1 flex-col gap-2 p-2.5 sm:p-3">
         <h3 className="min-h-10 line-clamp-2 break-words text-sm font-bold leading-5 text-foreground" title={game.name}>{game.name}</h3>
-        <p className="min-h-8 line-clamp-2 text-xs leading-4 text-secondary">{game.genres.slice(0, 2).join(' · ')}</p>
-        <div className="min-h-12 text-xs leading-4">
+        <div className="flex flex-wrap items-baseline justify-between gap-x-2 text-xs leading-4">
+          <p className="min-w-0 truncate text-secondary">{game.genres.slice(0, 2).join(' · ')}</p>
           <p className="font-medium text-foreground">
             {game.releaseTiming ? formatReleaseTiming(game.releaseTiming)
               : game.tba ? 'TBA' : game.releaseWindow ?? game.released?.slice(0, 4)}
           </p>
           {game.earlyAccess && <p className="text-secondary">Early Access · full release pending</p>}
         </div>
-        <div className="flex min-h-8 min-w-0 flex-wrap content-start items-center gap-x-2 gap-y-1 text-[11px] text-secondary">
+        <div className="flex min-w-0 flex-wrap content-start items-center gap-x-2 gap-y-1 text-[11px] text-secondary">
           {!showRating && game.added > 0 && (
             <span className="flex items-center gap-1" title="RAWG library additions, not wishlists">
               <Users aria-hidden="true" className="w-3 h-3 text-tertiary" />
@@ -234,7 +235,7 @@ export default function ExplorePage({ initialData, initialKey = '' }: { initialD
           </span>
         )}
       </div>
-      {query.data?.degraded && !isPending && <p role="status" className="text-sm text-secondary">{query.data.notice || (query.data.source === 'rawg' ? 'Showing saved RAWG rankings while we check for updates.' : activeTab === 'best-of-year' ? 'Showing saved upcoming games. Community counts are temporarily unavailable.' : 'RAWG rankings are temporarily unavailable. Showing Verdict rankings instead.')}</p>}
+      {(query.data?.notice || query.data?.degraded) && !isPending && <p role="status" className="text-sm text-secondary">{query.data.notice || (query.data.source === 'rawg' ? 'Showing saved RAWG rankings while we check for updates.' : activeTab === 'best-of-year' ? 'Showing saved upcoming games. Community counts are temporarily unavailable.' : 'RAWG rankings are temporarily unavailable. Showing Verdict rankings instead.')}</p>}
 
       {(isPending || query.isLoading) && <p role="status" className="flex items-center gap-2 text-sm text-secondary"><span className="h-2 w-2 rounded-full bg-accent motion-safe:animate-pulse" aria-hidden="true" />Updating games…</p>}
       {/* Feedback belongs beside the results being replaced, not in a distant toast. */}
