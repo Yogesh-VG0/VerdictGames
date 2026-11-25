@@ -51,12 +51,12 @@ function FreeGameCard({ game, priority = false }: { game: GXFreeGame; priority?:
       <div className="p-3 flex-1 flex flex-col gap-1.5">
         {gameHref ? (
           <Link href={gameHref}>
-            <h3 className="text-sm font-semibold text-foreground leading-tight line-clamp-1 group-hover:text-pixel-green transition-colors">
+            <h3 className="min-h-[2.5em] text-sm font-semibold text-foreground leading-tight line-clamp-2 group-hover:text-pixel-green transition-colors">
               {game.title}
             </h3>
           </Link>
         ) : (
-          <h3 className="text-sm font-semibold text-foreground leading-tight line-clamp-1 group-hover:text-pixel-green transition-colors">
+          <h3 className="min-h-[2.5em] text-sm font-semibold text-foreground leading-tight line-clamp-2 group-hover:text-pixel-green transition-colors">
             {game.title}
           </h3>
         )}
@@ -102,23 +102,21 @@ function SubscriptionGameCard({ game, priority = false }: { game: GXTopGame; pri
         </div>
       )}
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-      {game.serviceName && (
-        <div className="absolute top-2.5 left-2.5">
+      <div className="absolute inset-x-2.5 top-2.5 flex flex-wrap justify-between gap-1">
+        {game.serviceName && (
           <span
-            className="text-[10px] font-bold text-white backdrop-blur-md px-2 py-0.5 rounded-lg border border-white/10"
+            className="max-w-full rounded-lg border border-white/10 px-2 py-0.5 text-[10px] font-bold text-white backdrop-blur-md"
             style={{ backgroundColor: game.serviceColor ? `${game.serviceColor}CC` : "rgba(139,92,246,0.8)" }}
           >
             {game.serviceName}
           </span>
-        </div>
-      )}
-      {game.serviceTag && (
-        <div className="absolute top-2.5 right-2.5">
-          <span className="text-[10px] font-bold text-white bg-black/50 backdrop-blur-md px-2 py-0.5 rounded-lg border border-white/10">
+        )}
+        {game.serviceTag && (
+          <span className="ml-auto max-w-full rounded-lg border border-white/10 bg-black/50 px-2 py-0.5 text-[10px] font-bold text-white backdrop-blur-md">
             {game.serviceTag}
           </span>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 
@@ -132,12 +130,12 @@ function SubscriptionGameCard({ game, priority = false }: { game: GXTopGame; pri
       <div className="p-3 flex-1 flex flex-col gap-1.5">
         {gameHref ? (
           <Link href={gameHref}>
-            <h3 className="text-sm font-semibold text-foreground leading-tight line-clamp-1 group-hover:text-accent transition-colors">
+            <h3 className="min-h-[2.5em] text-sm font-semibold text-foreground leading-tight line-clamp-2 group-hover:text-accent transition-colors">
               {game.title}
             </h3>
           </Link>
         ) : (
-          <h3 className="text-sm font-semibold text-foreground leading-tight line-clamp-1 group-hover:text-accent transition-colors">
+          <h3 className="min-h-[2.5em] text-sm font-semibold text-foreground leading-tight line-clamp-2 group-hover:text-accent transition-colors">
             {game.title}
           </h3>
         )}

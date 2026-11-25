@@ -81,7 +81,7 @@ export default function GXDealCard({ deal, priority = false }: GXDealCardProps) 
             href={cardHref}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-sm font-semibold text-foreground leading-tight line-clamp-1 group-hover:text-accent transition-colors"
+            className="min-h-[2.5em] text-sm font-semibold text-foreground leading-tight line-clamp-2 group-hover:text-accent transition-colors"
           >
             {deal.title}
           </a>
@@ -89,12 +89,12 @@ export default function GXDealCard({ deal, priority = false }: GXDealCardProps) 
           <Link
             href={cardHref}
             prefetch={false}
-            className="text-sm font-semibold text-foreground leading-tight line-clamp-1 group-hover:text-accent transition-colors"
+            className="min-h-[2.5em] text-sm font-semibold text-foreground leading-tight line-clamp-2 group-hover:text-accent transition-colors"
           >
             {deal.title}
           </Link>
         ) : (
-          <div className="text-sm font-semibold text-foreground leading-tight line-clamp-1 group-hover:text-accent transition-colors">
+          <div className="min-h-[2.5em] text-sm font-semibold text-foreground leading-tight line-clamp-2 group-hover:text-accent transition-colors">
             {deal.title}
           </div>
         )}

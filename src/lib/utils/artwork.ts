@@ -1,3 +1,5 @@
+import { isProviderHeroArtwork, selectLandscapeArtwork } from "./artwork-policy.mjs";
+
 export function artworkTitleKey(title: string): string {
   return title.toLowerCase().replace(/\s+\(archetype entertainment\)$/i, '').normalize('NFKD').replace(/[^a-z0-9]/g, '');
 }
@@ -24,4 +26,49 @@ export function matchPortrait(game: { name: string; slug: string; released: stri
   const bySlug = matches.filter(candidate => candidate.slug === game.slug);
   // Same-name releases and editions are ambiguous without a provider identity.
   return bySlug.length === 1 ? bySlug[0].image : matches.length === 1 ? matches[0].image : null;
+}
+
+
+type ArtworkFields = {
+  cover_image?: string | null;
+  header_image?: string | null;
+  steam_app_id?: number | null;
+};
+
+function matchesStoredSteamApp(value: string | null | undefined, appId: number | null | undefined) {
+  if (!value) return false;
+  const match = /^https:\/\/[^/]*(?:steamstatic\.com|akamaihd\.net)\/(?:store_item_assets\/)?steam\/apps\/(\d+)\//i.exec(value);
+  return !match || Number(match[1]) === appId;
+}
+
+export function portraitArtwork(row: ArtworkFields | undefined, providerBackground?: string | null) {
+  const imageCandidates = [row?.cover_image, row?.header_image].filter(value => matchesStoredSteamApp(value, row?.steam_app_id));
+  const portrait = imageCandidates.find(isPortraitArtwork);
+  const image = portrait || imageCandidates[0] || providerBackground || null;
+  const imageKind: 'cover' | 'artwork' = portrait || isPortraitArtwork(image) ? 'cover' : 'artwork';
+  return { image, imageKind };
+}
+
+export function selectCatalogueArtwork(row: ArtworkFields | undefined, providerBackground?: string | null) {
+  const { image, imageKind } = portraitArtwork(row, providerBackground);
+  const cover = row?.cover_image;
+  const header = row?.header_image;
+  // The catalogue match and RAWG record are already identity-bound by the caller.
+  const landscapeHeader = header && matchesStoredSteamApp(header, row?.steam_app_id)
+    && header !== cover && !isPortraitArtwork(header) ? header : null;
+  const landscapeBackground = providerBackground && !isPortraitArtwork(providerBackground) ? providerBackground : null;
+  const landscapeImage = selectLandscapeArtwork({
+    existing: landscapeHeader,
+    rawg: { background_image: landscapeBackground },
+    steamAppId: row?.steam_app_id,
+    cover,
+  }) || landscapeBackground || image;
+  const landscapeImageKind: 'cover' | 'artwork' = landscapeImage && (isPortraitArtwork(landscapeImage)
+    || landscapeImage === cover && !isProviderHeroArtwork(landscapeImage)) ? 'cover' : 'artwork';
+  return { image, imageKind, landscapeImage, landscapeImageKind };
+}
+
+export function catalogueGameHref(game: { slug: string; rawgId: number; catalogueId?: string }) {
+  return '/game/' + game.slug + (!game.catalogueId && Number.isSafeInteger(game.rawgId) && game.rawgId > 0
+    ? '?rawgId=' + game.rawgId : '');
 }

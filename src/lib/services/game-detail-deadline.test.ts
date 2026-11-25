@@ -104,7 +104,7 @@ describe('game-detail slug deadline with the installed SDK and Next cache', () =
     const hit = await request('hades', 'fixture-session=ignored');
     expect(response.status).toBe(200);
     expect(hit.response.status).toBe(200);
-    expect(response.headers.get('cache-control')).toBe('s-maxage=900, stale-while-revalidate=300');
+    expect(response.headers.get('cache-control')).toBe('s-maxage=3600, stale-while-revalidate=300');
     expect(hit.response.headers.get('cache-control')).toBe(response.headers.get('cache-control'));
     expect(hit.response.headers.get('x-verdict-resolved-via')).toBe('slug');
     const body = await response.json();

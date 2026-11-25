@@ -1438,6 +1438,7 @@ export interface HomepageData {
 }
 
 export interface HomepageAnticipatedGame {
+  catalogueId?: string;
   earlyAccess?: boolean;
   releaseWindow?: string;
   releaseTiming?: ReleaseTiming;
@@ -1546,19 +1547,20 @@ const getCachedHomepageMostAnticipated = unstable_cache(
     }
     const seen = new Set<string>();
     const items = data.items.filter(item => {
-      if (!item.image || seen.has(item.slug)) return false;
+      if (seen.has(item.slug)) return false;
       seen.add(item.slug);
       return true;
     }).map(item => {
         return {
           rawgId: item.rawgId, slug: item.slug, name: item.name, released: item.released, tba: item.tba,
-    earlyAccess: item.earlyAccess, releaseWindow: item.releaseWindow, releaseTiming: item.releaseTiming,
-          image: item.image, imageKind: item.imageKind, added: item.added, toplay: item.toplay, genres: item.genres,
+          earlyAccess: item.earlyAccess, releaseWindow: item.releaseWindow, releaseTiming: item.releaseTiming,
+          catalogueId: item.catalogueId, image: item.landscapeImage ?? item.image,
+          imageKind: item.landscapeImageKind ?? item.imageKind, added: item.added, toplay: item.toplay, genres: item.genres,
         };
       });
     return { data: items, fetchedAt: data.fetchedAt };
   }),
-  ["homepage-most-anticipated-v11"],
+  ["homepage-most-anticipated-v13"],
   { revalidate: 300 }
 );
 

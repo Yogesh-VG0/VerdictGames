@@ -16,6 +16,7 @@ import { withVerifiedEditorialModes } from '../../src/lib/utils/editorial-eligib
 import { rawgFetchJson } from "./rawg-client.mjs";
 import { isInfrastructureDbError } from "./scheduler-logger.mjs";
 import { fetchSteamReviews } from "../../src/lib/external/steam-reviews-api.mjs";
+import { chooseEnrichedHeader } from './artwork-quality.mjs';
 import { matchedIgdbArtwork, preferExistingCover, reviewedHeroArtwork, selectLandscapeArtwork, steamLibraryHeroAsset, verifiedSteamLibraryHero } from '../../src/lib/utils/artwork-policy.mjs';
 import { refreshIgdbCatalogue } from './igdb-fallback.mjs';
 import {igdbVerifiedReleaseFields} from '../../src/lib/external/igdb-record.mjs';
@@ -591,13 +592,19 @@ export async function ingestGameDirect(sql, query, options = {}) {
   const igdbSS = ie?.screenshots ?? [];
   const rawgCover = fullGame.background_image || "";
   
+  const artworkSteamId = existing?.steam_app_id != null && existing.steam_app_id !== steamAppId ? null : steamAppId;
+  const artworkIgdb = matchedIgdbArtwork(igdbData, {
+    igdbId: existing?.igdb_id, steamAppId: artworkSteamId, title: fullGame.name, releaseDate: fullGame.released,
+    developer: fullGame.developers?.[0]?.name, publisher: fullGame.publishers?.[0]?.name, requireCompanies: true,
+  });
+
   let cover = "";
   let mediaSource = null;
   let coverDebug = "";
   let listedSteamHero = null;
   
   // Priority 1: IGDB cover (preferred)
-  if (igdbCover) {
+  if (igdbCover && artworkIgdb) {
     cover = igdbCover;
     mediaSource = "igdb";
     coverDebug = "[cover] Using IGDB cover (priority 1)";
@@ -624,10 +631,6 @@ export async function ingestGameDirect(sql, query, options = {}) {
   if (process.env.DEBUG_MEDIA) console.log(`  ${fullGame.name}: ${coverDebug}`);
   
   const artworkRawg = fullGame.id === best.id && (existing?.rawg_id == null || existing.rawg_id === fullGame.id) ? fullGame : null;
-  const artworkSteamId = existing?.steam_app_id != null && existing.steam_app_id !== steamAppId ? null : steamAppId;
-  const artworkIgdb = matchedIgdbArtwork(igdbData, {
-    igdbId: existing?.igdb_id, steamAppId: artworkSteamId, title: fullGame.name, releaseDate: fullGame.released,
-  });
   const artwork = {
     igdb: artworkIgdb, rawg: artworkRawg, rawgScreenshots: artworkRawg ? ssUrls : [],
     steam: steamDet, steamAppId: artworkSteamId, steamHeroUrl: listedSteamHero, existing: existing?.header_image, cover,
@@ -635,7 +638,16 @@ export async function ingestGameDirect(sql, query, options = {}) {
   };
   const steamHeroUrl = existing?.is_featured_manual || (finalScore >= 80 && ((curPlayers ?? 0) >= 2000 || (critN >= 2 && revCount >= 1000)))
     ? await verifiedSteamLibraryHero(artwork) : null;
-  const header = selectLandscapeArtwork({ ...artwork, steamHeroUrl });
+  const artworkSources = { ...artwork, steamHeroUrl: steamHeroUrl || listedSteamHero };
+  const selectedHeader = selectLandscapeArtwork(artworkSources);
+  const header = forceRefresh && existing
+    ? await chooseEnrichedHeader({
+      existing: existing.header_image,
+      selected: selectedHeader,
+      preferred: selectLandscapeArtwork({ ...artworkSources, existing: undefined }),
+      cover, reviewed: artwork.reviewed, protectExisting: existing.is_featured_manual,
+    })
+    : selectedHeader;
   const finalSS = igdbSS.length ? igdbSS : ssUrls;
   const freeTags = ["free-to-play","free to play","f2p"];
   const monetization = isFree ? "Free" : allTags.some(t => freeTags.includes(t)) ? "Free" : "Paid";
@@ -739,6 +751,7 @@ export async function ingestGameDirect(sql, query, options = {}) {
 
     if (header && header !== existing.header_image) {
       await sql`UPDATE games SET ${sql(upd)}, header_image = CASE WHEN header_image IS NOT DISTINCT FROM ${existing.header_image}
+        AND (is_featured_manual IS NOT TRUE OR NULLIF(header_image, '') IS NULL)
         THEN ${header} ELSE header_image END WHERE id = ${existing.id}`;
     } else if (Object.keys(upd).length > 0) {
       await sql`UPDATE games SET ${sql(upd)} WHERE id = ${existing.id}`;

@@ -46,6 +46,10 @@ describe('developer directory cache', () => {
     const [north, south] = await Promise.all([read('north-studio'), read('south-studio')]);
     expect(north?.games.map(game => game.title)).toEqual(['North Studio', 'North-Studio']);
     expect(south?.gameCount).toBe(1);
+    expect(south?.games[0]).toMatchObject({ title: 'South Studio', score: expect.any(Number), platforms: ['PC'] });
+    for (const property of ['description', 'pros', 'headerImage', 'currentPlayers', 'performanceNotes']) {
+      expect(south?.games[0]).not.toHaveProperty(property);
+    }
     expect(await read('north-studio')).toEqual(north);
     expect(await read('../invalid')).toBeNull();
     expect(calls).toEqual({ directory: 1, hub: 2 });

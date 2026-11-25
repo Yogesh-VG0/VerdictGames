@@ -1,3 +1,4 @@
+import type { GameCardData } from '@/lib/types';
 /**
  * VERDICT.GAMES — API Client
  *
@@ -593,7 +594,7 @@ export interface DeveloperHub {
   slug: string;
   gameCount: number;
   averageScore: number;
-  games: Game[];
+  games: GameCardData[];
 }
 
 /** Get developer hub data. */
@@ -693,6 +694,8 @@ export async function getGXCalendar(month?: string): Promise<GXCalendarMonthResp
    ═══════════════════════════════════════════════════ */
 
 export interface RawgListGameItem {
+  landscapeImage?: string | null;
+  landscapeImageKind?: 'cover' | 'artwork';
   catalogueId?: string;
   tags?: string[];
   monetization?: Game['monetization'];

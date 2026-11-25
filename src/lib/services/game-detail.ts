@@ -24,7 +24,7 @@ import type { GameRow } from "@/lib/supabase/types";
 import {isPublicSafeGame,isPublicSafeRawgGame} from '@/lib/utils/publicSafety';
 import type { Game } from "@/lib/types";
 
-export const GAME_DETAIL_REVALIDATE_SECONDS = 900;
+export const GAME_DETAIL_REVALIDATE_SECONDS = 3600;
 export const GAME_DETAIL_API_CACHE_CONTROL = `s-maxage=${GAME_DETAIL_REVALIDATE_SECONDS}, stale-while-revalidate=300`;
 export const GAME_DETAIL_RAWG_ID_HEADER = "x-verdict-game-rawg-id";
 export const GAME_DETAIL_SLUG_REDIRECTS: Record<string, string> = {
@@ -204,7 +204,7 @@ async function fetchRawgPreviewRecord(identity: number | string): Promise<Previe
     ]);
 
     return {
-      game: mapRawgPreviewGame({ detail, screenshots, storeLinks, evidence: evidence ?? getReviewedReleaseTiming(detail.id, detail.released) }),
+      game: mapRawgPreviewGame({ detail, screenshots, storeLinks, evidence: getReviewedReleaseTiming(detail.id, detail.released, evidence) }),
       canonicalSlug: detail.slug,
     };
   } catch (error) {
@@ -303,8 +303,7 @@ async function fetchGameRecord(args: {
     mobileListings = [];
   }
 
-  const evidence = (await releaseEvidence)?.(identity, row.release_date)
-    ?? reviewedTiming;
+  const evidence = getReviewedReleaseTiming(row.rawg_id, row.release_date, (await releaseEvidence)?.(identity, row.release_date));
   const releaseTiming = needsReleaseEvidence ? resolveReleaseTiming(row.release_date, {
     upcoming: true,
     tba: row.release_status === 'tba' || hasEarlyAccessSignal(row) && Boolean(row.release_date && row.release_date <= today),

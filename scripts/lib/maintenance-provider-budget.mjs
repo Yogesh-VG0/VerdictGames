@@ -25,20 +25,30 @@ export function getProvider(input) {
 }
 
 const job = process.env.CATALOGUE_BUDGET_JOB;
+const budget = job && providerBudgets[job];
 const counts = {};
 const blocked = new Set();
+
+function attemptLimit(provider) {
+  return budget[provider] ?? (provider === 'other' ? 100 : 0);
+}
+
+export function hasOptionalMaintenanceFetchCapacity(input) {
+  if (!budget) return true;
+  const provider = getProvider(input);
+  return (counts[provider] ?? 0) < attemptLimit(provider);
+}
 
 export function readMaintenanceBudget() {
   return job && providerBudgets[job] ? { provider_attempts: { ...counts }, budget_exhausted: [...blocked] } : null;
 }
 
-if (job && providerBudgets[job]) {
-  const budget = providerBudgets[job];
+if (budget) {
   const baseFetch = globalThis.fetch;
   globalThis.fetch = async (input, init) => {
     const provider = getProvider(input);
     const count = counts[provider] ?? 0;
-    if (count >= (budget[provider] ?? (provider === 'other' ? 100 : 0))) {
+    if (count >= attemptLimit(provider)) {
       blocked.add(provider);
       throw new Error(`Maintenance request budget reached for ${provider}`);
     }

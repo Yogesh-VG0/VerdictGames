@@ -13,7 +13,7 @@ import {
   parseGameDetailRawgId,
 } from "@/lib/services/game-detail";
 
-export const revalidate = 900;
+export const revalidate = 3600;
 export const maxDuration = 30;
 
 if (GAME_DETAIL_REVALIDATE_SECONDS !== revalidate) {
@@ -51,4 +51,3 @@ export async function GET(
     return jsonError('Game data is temporarily unavailable', 503);
   }
 }
-

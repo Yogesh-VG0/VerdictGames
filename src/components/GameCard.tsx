@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Gamepad2 } from "lucide-react";
-import { Game } from "@/lib/types";
+import type { GameCardData } from "@/lib/types";
 import { scoreColor, cn, sourceLabel, scoreGlowClass, getStableYear } from "@/lib/utils";
 import { collapsePlatforms } from "@/lib/utils/platform";
 import VerdictBadge from "@/components/ui/VerdictBadge";
@@ -10,7 +10,7 @@ import PlatformIcon from "@/components/ui/PlatformIcon";
 import SafeImage from "@/components/ui/SafeImage";
 
 interface GameCardProps {
-  game: Game;
+  game: GameCardData;
   priority?: boolean;
   prefetch?: boolean;
   className?: string;
@@ -21,11 +21,11 @@ function yearFromDate(date: string | undefined): string | null {
   return getStableYear(date);
 }
 
-function isUnreleased(game: Game): boolean {
+function isUnreleased(game: GameCardData): boolean {
   return game.isProvisional || game.verdictLabel === "COMING SOON";
 }
 
-function hasRealScore(game: Game): boolean {
+function hasRealScore(game: GameCardData): boolean {
   if (isUnreleased(game)) return false;
   if (game.score === 0 && game.scoreSource === "gx") return false;
   if (game.verdictLabel === "JUST RELEASED") return false;
@@ -81,7 +81,7 @@ export default function GameCard({
     : `Verdict score: ${game.score}. Provider ratings are separate; this score accounts for review confidence.`;
   if (variant === "spotlight") {
     return (
-      <Link href={`/game/${game.slug}`} prefetch={prefetch} className={cn("block group", className)}>
+      <Link href={`/game/${game.slug}`} prefetch={prefetch} className={cn("block group rounded-2xl focus-visible:outline-2 focus-visible:outline-accent", className)}>
         <article
           className={cn(
             "relative rounded-2xl border border-border bg-surface overflow-hidden signal-card h-full hover:border-border-hover",
@@ -173,7 +173,7 @@ export default function GameCard({
   }
 
   return (
-    <Link href={`/game/${game.slug}`} prefetch={prefetch} className={cn("block group", className)}>
+    <Link href={`/game/${game.slug}`} prefetch={prefetch} className={cn("block group rounded-2xl focus-visible:outline-2 focus-visible:outline-accent", className)}>
       <article
         className={cn(
           "relative rounded-2xl border border-border bg-surface overflow-hidden signal-card h-full hover:border-border-hover",
@@ -255,7 +255,7 @@ export default function GameCard({
         </div>
 
         <div className="p-3.5 space-y-2">
-          <h3 className="text-sm font-semibold text-foreground leading-snug line-clamp-1 group-hover:text-accent transition-colors h-5">
+          <h3 className="min-h-10 break-words text-sm font-semibold leading-5 text-foreground line-clamp-2 group-hover:text-accent transition-colors">
             {game.title}
           </h3>
 

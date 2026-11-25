@@ -82,3 +82,18 @@ export function selectIgdbTiming(entries: IgdbReleaseDate[], rawDate?: string | 
     return { precision: 'month', value: [...months][0] };
   }
 }
+
+// Chronological sorts compare the start of each supported release window.
+// Dates that are still unknown always follow entries with timing evidence.
+export function compareUpcomingTiming(left: ReleaseTiming, right: ReleaseTiming, newest: boolean): number {
+  const key = (timing: Exclude<ReleaseTiming, { precision: 'tba' }>) => {
+    if (timing.precision === 'day') return timing.value;
+    if (timing.precision === 'month') return timing.value + '-01';
+    const year = timing.value.slice(0, 4);
+    const month = timing.precision === 'quarter' ? (Number(timing.value.at(-1)) - 1) * 3 + 1 : 1;
+    return year + '-' + String(month).padStart(2, '0') + '-01';
+  };
+  if (left.precision === 'tba') return right.precision === 'tba' ? 0 : 1;
+  if (right.precision === 'tba') return -1;
+  return (newest ? -1 : 1) * key(left).localeCompare(key(right));
+}
