@@ -11,14 +11,9 @@ import type { HomepageAnticipatedGame } from "@/lib/services/homepage";
 
 interface HomepageMostAnticipatedSectionProps {
   games: HomepageAnticipatedGame[];
-  fetchedAt: string | null;
 }
 
-const snapshotFormatter = new Intl.DateTimeFormat("en", {
-  dateStyle: "medium", timeStyle: "short", timeZone: "UTC",
-});
-
-export default function HomepageMostAnticipatedSection({ games, fetchedAt }: HomepageMostAnticipatedSectionProps) {
+export default function HomepageMostAnticipatedSection({ games }: HomepageMostAnticipatedSectionProps) {
   if (games.length === 0) return null;
 
   return (
@@ -56,9 +51,6 @@ export default function HomepageMostAnticipatedSection({ games, fetchedAt }: Hom
               );
             })}
           </HorizontalScroll>
-          {fetchedAt && Number.isFinite(Date.parse(fetchedAt)) && (
-            <p className="mt-3 text-xs text-secondary">RAWG snapshot <time dateTime={fetchedAt}>{snapshotFormatter.format(new Date(fetchedAt))} UTC</time></p>
-          )}
         </FadeInSection>
       </div>
     </section>
