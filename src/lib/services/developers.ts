@@ -2,12 +2,14 @@ import { cache } from 'react';
 import { unstable_cache } from 'next/cache';
 import type { DeveloperHub } from '@/lib/api';
 import { getPublicSupabase } from '@/lib/supabase/public';
+import { getServerSupabase } from '@/lib/supabase/server';
 import { mapGameRow } from '@/lib/db/mappers';
 import type { GameRow } from '@/lib/supabase/types';
 import { collectSitemapRows } from '@/lib/seo/sitemap';
 import { slugify } from '@/lib/utils/slugify';
 import { isPublicSafeGame } from '@/lib/utils/publicSafety';
 import { coalesceCatalogueRead } from '@/lib/db/cached-catalogue';
+import { developerDirectoryKey, developerDirectoryMaxAge, isDeveloperDirectory } from './developer-directory-snapshot.mjs';
 
 export const DEVELOPER_PAGE_REVALIDATE_SECONDS = 3600;
 
@@ -15,6 +17,14 @@ export const DEVELOPER_PAGE_REVALIDATE_SECONDS = 3600;
 const developerCardColumns = 'id,slug,title,description,cover_image,platforms,genres,tags,release_date,release_status,is_provisional,score,verdict_label,verdict_score,confidence,review_count,critic_score,igdb_rating,rawg_metacritic,steam_total_count,user_score,score_source';
 
 const PUBLIC_DATABASE_READ_TIMEOUT_MS = 10_000;
+
+const loadDeveloperDirectory = unstable_cache(coalesceCatalogueRead(async () => {
+  const { data, error } = await getServerSupabase().from('gx_cache').select('payload')
+    .eq('feed_key', developerDirectoryKey).abortSignal(AbortSignal.timeout(1500)).maybeSingle();
+  const payload = data?.payload;
+  if (error || !isDeveloperDirectory(payload, slugify)) throw new Error('Developer directory snapshot unavailable');
+  return payload as { generatedAt: number; groups: Record<string, string[]> };
+}), ['developer-alias-snapshot-v1'], { revalidate: 300 });
 
 const loadDeveloperNames = unstable_cache(coalesceCatalogueRead(async () => {
   const db = getPublicSupabase();
@@ -57,6 +67,14 @@ const cachedDeveloperHub = unstable_cache(async (slug: string, names: string[]):
 
 export const loadDeveloperHub = cache(async (slug: string): Promise<DeveloperHub | null> => {
   if (!/^[a-z0-9_-]{1,150}$/.test(slug)) return null;
+  if (process.env.DEVELOPER_DIRECTORY_SNAPSHOT_ENABLED === 'true') {
+    const directory = await loadDeveloperDirectory();
+    if (Date.now() - directory.generatedAt >= developerDirectoryMaxAge) {
+      throw new Error('Developer directory snapshot expired');
+    }
+    const names = Object.hasOwn(directory.groups, slug) ? directory.groups[slug] : undefined;
+    return names ? cachedDeveloperHub(slug, names) : null;
+  }
   // Resolve aliases outside the hub cache so Next.js can reuse the directory.
   const names = (await loadDeveloperNames()).filter(name => slugify(name) === slug);
   return names.length ? cachedDeveloperHub(slug, names) : null;
