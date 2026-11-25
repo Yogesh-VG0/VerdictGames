@@ -28,7 +28,7 @@ describe('Newest release-date eligibility',()=>{
   state.rows=[launch];expect((await loadSearchResults(request)).items).toEqual([]);
   state.rows=[{...launch,release_status:'released'}];const result=await loadSearchResults(request);
   expect(result.items).toHaveLength(1);expect(result.items[0]).toMatchObject({score:77,criticScore:98});
-  expect(state.filters).toContainEqual(['neq','verdict_label','COMING SOON']);
+  expect(state.filters.some(([method,condition])=>method==='or'&&String(condition).includes('release_status.in.'))).toBe(true);
  });
  it('does not call a provisional past-date record a released game',async()=>{
   state.rows=[{...launch,release_date:'2026-10-22',id:'pending-enrichment',review_count:0,verdict_label:'COMING SOON',is_provisional:true}];
@@ -46,6 +46,10 @@ describe('Newest release-date eligibility',()=>{
   expect((await loadSearchResults(request)).items).toMatchObject([{releaseDate:'2026-09-24',releaseStatus:'released'}]);
   state.rows=[{...row,rawg_id:111111}];
   expect((await loadSearchResults(request)).items).toEqual([]);
+ });
+ it('honors a reviewed publisher launch even when the generated card still says Coming Soon',async()=>{
+  state.rows=[{...launch,slug:'grand-theft-auto-vi',rawg_id:972995,release_date:'2026-11-19',is_provisional:true,verdict_label:'COMING SOON'}];
+  expect((await loadSearchResults(request)).items).toMatchObject([{releaseDate:'2026-11-19',releaseStatus:'released',isProvisional:false}]);
  });
  it('retains exact platform predicates on the initial and hydration reads',async()=>{
   state.rows=[launch];await loadSearchResults({...request,platform:'PlayStation 5'});

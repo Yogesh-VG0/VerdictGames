@@ -30,13 +30,12 @@ describe('RAWG default ranking and public boundaries',()=>{
   it('does not hide a database failure behind provider-only results',async()=>{
     state.error={code:'57014'};await expect(loadProviderRanking('all-time',0,1,20,'','2026-11-18')).rejects.toMatchObject({code:'57014'});
   });
-  it('retains the review-evidence floor without relabelling Steam reviews as RAWG ratings',async()=>{
-    state.snapshot.mockResolvedValue({results:[{...game(1),ratings_count:2},{...game(2),ratings_count:5}],fetchedAt:new Date().toISOString()});
+  it.each(['all-time','popular-in-year'] as const)('keeps low-volume %s positions without substituting local review evidence',async type=>{
+    state.snapshot.mockResolvedValue({results:[{...game(1),ratings_count:2},{...game(2),ratings_count:5},{...game(3),rating:0,ratings_count:0}],fetchedAt:new Date().toISOString()});
     state.rows=[{rawg_id:2,slug:'tracked',review_count:5000}];
-    const result=await loadProviderRanking('all-time',0,1,20,'','2026-11-18');
-    expect(result.items.map(row=>row.rawgId)).toEqual([2]);expect(result.items[0].ratingsCount).toBe(5);
-    expect(result.items[0].rank).toBe(2);
-    expect(result.notice).toMatch(/1 of 2 RAWG positions qualify/);
+    const result=await loadProviderRanking(type,2025,1,20,'','2026-11-18');
+    expect(result.items.map(row=>row.ratingsCount)).toEqual([2,5,0]);
+    if(type==='all-time')expect(result.items.map(row=>row.rank)).toEqual([1,2,3]);
   });
   it('keeps God of War 2018 on its canonical identity and selects its landscape art',async()=>{
     const background='https://media.rawg.io/media/games/4be/4be6a6ad0364751a96229c56bf69be59.jpg';

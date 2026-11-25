@@ -2,7 +2,7 @@ import { getPublicSupabase } from '@/lib/supabase/public';
 import { readCommunityRanking } from './community-ranking';
 import { isPublicSafeRawgGame, isPublicSafeGame } from '@/lib/utils/publicSafety';
 import { isPrimaryDiscoveryGame } from '@/lib/utils/discovery';
-import { hasEarlyAccessSignal } from '@/lib/utils/release-status';
+import { hasEarlyAccessSignal, hasUnreleasedStatus } from '@/lib/utils/release-status';
 import { selectCatalogueArtwork } from '@/lib/utils/artwork';
 import type { RawgListResponse, RawgListGameItem } from '@/lib/api';
 
@@ -13,15 +13,14 @@ export async function loadProviderRanking(type:'all-time'|'popular-in-year',year
     && (type!=='popular-in-year' || item.released.startsWith(`${year}-`)));
   if(!raw.length)throw new Error('Empty eligible community ranking');
   const {data,error}=await getPublicSupabase().from('games')
-    .select('id,rawg_id,slug,cover_image,header_image,steam_app_id,is_featured_manual,release_status,tags,genres,title,review_count')
+    .select('id,rawg_id,slug,cover_image,header_image,steam_app_id,is_featured_manual,release_status,tags,genres,title')
     .in('rawg_id',raw.map(({item})=>item.id)).abortSignal(AbortSignal.timeout(3000));
   if(error)throw error;
   const byId=new Map((data||[]).map(row=>[row.rawg_id,row]));
   const seen=new Set<string>();
   const eligible=raw.filter(({item})=>{
     const local=byId.get(item.id);
-    if(item.ratings_count<100 && (local?.review_count || 0)<100)return false;
-    if(local && (!isPublicSafeGame(local) || hasEarlyAccessSignal(local) || ['announced','coming_soon','upcoming','tba','cancelled','canceled','delisted'].includes(local.release_status || '')))return false;
+    if(local && (!isPublicSafeGame(local) || hasEarlyAccessSignal(local) || hasUnreleasedStatus(local)))return false;
     // A bad historical Steam mapping must not collapse two distinct RAWG
     // games. Merge only matching title identities within a shared mapping.
     const titleIdentity=item.name.toLowerCase().replace(/[^a-z0-9]/g,'');
@@ -49,5 +48,5 @@ export async function loadProviderRanking(type:'all-time'|'popular-in-year',year
   ].filter(Boolean).join(' ');
   return {source:'rawg',count:filtered.length,page,pageSize,hasNext:page*pageSize<filtered.length,items,fetchedAt:snapshot.fetchedAt,
     degraded:stale,...(notices ? {notice:notices} : {}),
-    definition:`RAWG community order, with adult-only games, add-ons, duplicate editions and unreleased games excluded. Games need at least 100 ratings on RAWG or reviews in the Verdict catalogue.${type==='all-time'?' Platform filters keep each game’s overall position.':''} Displayed community ratings are from RAWG, not Steam.`};
+    definition:`RAWG community order, with adult-only games, add-ons, duplicate editions and unreleased games excluded.${type==='all-time'?' Platform filters keep each game’s overall position.':''} Ratings and rating counts are shown when RAWG provides rating evidence.`};
 }

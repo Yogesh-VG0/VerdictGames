@@ -20,6 +20,7 @@ import { chooseEnrichedHeader } from './artwork-quality.mjs';
 import { matchedIgdbArtwork, preferExistingCover, reviewedHeroArtwork, selectLandscapeArtwork, steamLibraryHeroAsset, verifiedSteamLibraryHero } from '../../src/lib/utils/artwork-policy.mjs';
 import { refreshIgdbCatalogue } from './igdb-fallback.mjs';
 import {igdbVerifiedReleaseFields} from '../../src/lib/external/igdb-record.mjs';
+import {steamVerifiedFullRelease} from '../../src/lib/external/steam-release-evidence.mjs';
 
 // ══════════════════════════════════════════════════
 // Configuration
@@ -442,7 +443,7 @@ const BLOCKED = new Set(["grand-theft-aito-vi"]);
  */
 export async function ingestGameDirect(sql, query, options = {}) {
   const { forceRefresh = false, expectedSlug, expectedGameId, expectedSteamAppId, expectedRawgId } = options;
-  const [target] = expectedGameId ? await sql`SELECT id, slug, release_status, header_image, igdb_id,
+  const [target] = expectedGameId ? await sql`SELECT id, slug, release_status, release_date, header_image, igdb_id,
     rawg_id, steam_app_id, is_featured_manual FROM games WHERE id = ${expectedGameId}` : [];
   if (expectedGameId && !target) return { success: false, message: "Expected catalogue game is missing" };
   const verifiedId = Number(target?.rawg_id ?? expectedRawgId);
@@ -491,7 +492,7 @@ export async function ingestGameDirect(sql, query, options = {}) {
       LIMIT 1`;
     if (conflict) return { success: false, message: "RAWG identity already belongs to another game" };
   }
-  const [matchedExisting] = target ? [] : await sql`SELECT id, slug, release_status, header_image, igdb_id, rawg_id, steam_app_id, is_featured_manual
+  const [matchedExisting] = target ? [] : await sql`SELECT id, slug, release_status, release_date, header_image, igdb_id, rawg_id, steam_app_id, is_featured_manual
     FROM games WHERE slug = ${slug} OR rawg_id = ${best.id} LIMIT 1`;
   const existing = target ?? matchedExisting;
   if (existing && !forceRefresh) return { success: true, gameId: existing.id, slug: existing.slug, title: best.name, rawgId: best.id, message: "Already exists.", alreadyExisted: true };
@@ -568,8 +569,18 @@ export async function ingestGameDirect(sql, query, options = {}) {
   const conf = confidence(revCount, critN, source);
   const vs = verdictScore(commScore, critScore, conf);
   const finalScore = vs > 0 ? vs : legacy;
-  const verifiedRelease = igdbVerifiedReleaseFields(igdbData, new Date(), existing?.release_status);
-  const relDate = verifiedRelease.release_date ?? fullGame.released ?? null;
+  const artworkSteamId = existing?.steam_app_id != null && existing.steam_app_id !== steamAppId ? null : steamAppId;
+  const artworkIgdb = matchedIgdbArtwork(igdbData, {
+    igdbId: existing?.igdb_id, steamAppId: artworkSteamId, title: fullGame.name, releaseDate: fullGame.released,
+    developer: fullGame.developers?.[0]?.name, publisher: fullGame.publishers?.[0]?.name, requireCompanies: true,
+  });
+  const igdbRelease = igdbVerifiedReleaseFields(artworkIgdb, new Date(), existing?.release_status);
+  const verifiedRelease = igdbRelease.release_status || fullGame.tba ? igdbRelease : steamVerifiedFullRelease(steamDet, {
+    appId:artworkSteamId, currentStatus:existing?.release_status, catalogueDate:existing?.release_date || fullGame.released, tags:allTags,
+  });
+  const knownFullRelease = ['released','full release'].includes(String(existing?.release_status ?? '').toLowerCase().replace(/[-_]/g, ' ').trim());
+  const relDate = verifiedRelease.release_date ?? (knownFullRelease ? existing.release_date
+    : verifiedRelease.release_status === 'released' ? null : fullGame.released ?? null);
   const isUpcoming = relDate ? new Date(relDate) > new Date() : false;
   const isJustRel = relDate ? (Date.now() - new Date(relDate).getTime()) < 14 * 86400000 && revCount < 20 : false;
   const vl = vs > 0 ? verdictLabel(vs, conf, isUpcoming, isJustRel) : legacyVerdict(finalScore);
@@ -592,12 +603,6 @@ export async function ingestGameDirect(sql, query, options = {}) {
   const igdbSS = ie?.screenshots ?? [];
   const rawgCover = fullGame.background_image || "";
   
-  const artworkSteamId = existing?.steam_app_id != null && existing.steam_app_id !== steamAppId ? null : steamAppId;
-  const artworkIgdb = matchedIgdbArtwork(igdbData, {
-    igdbId: existing?.igdb_id, steamAppId: artworkSteamId, title: fullGame.name, releaseDate: fullGame.released,
-    developer: fullGame.developers?.[0]?.name, publisher: fullGame.publishers?.[0]?.name, requireCompanies: true,
-  });
-
   let cover = "";
   let mediaSource = null;
   let coverDebug = "";
@@ -684,7 +689,7 @@ export async function ingestGameDirect(sql, query, options = {}) {
     hltb_completionist: hltbData?.completionist ?? null, hltb_last_fetched: hltbData ? now : null,
     last_enriched_at: now, enrichment_sources: sources,
     media_source: mediaSource,
-    is_provisional: !steamRev && !igdbData,
+    is_provisional: !knownFullRelease && verifiedRelease.release_status !== 'released' && !steamRev && !igdbData,
   };
 
   // ── 6. Upsert game ──

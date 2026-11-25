@@ -3,6 +3,7 @@ import { getPublicSupabase } from '@/lib/supabase/public';
 import { isPublicSafeGame, isPublicSafeRawgGame } from '@/lib/utils/publicSafety';
 import { readUpcomingSnapshot as readUpcoming, readCalendarUpcomingSnapshot } from '@/lib/services/upcoming-snapshot';
 import { selectCatalogueArtwork } from '@/lib/utils/artwork';
+import { matchReviewedCatalogueRelease } from './reviewed-catalogue-releases';
 import { reviewedUpcomingArtwork } from '@/lib/utils/reviewed-upcoming-artwork';
 import { EXPLORE_GENRES } from '@/lib/utils/explore-filters';
 import { normalizeTitle } from '@/lib/utils/slugify';
@@ -24,7 +25,7 @@ const columns = 'id,rawg_id,slug,title,release_date,release_status,cover_image,h
 const readUpcomingMatches = unstable_cache(async (ids:number[]) => {
   if (!ids.length) return [];
   const {data,error} = await getPublicSupabase().from('games')
-    .select('id,rawg_id,igdb_id,slug,title,description,cover_image,header_image,steam_app_id,is_featured_manual,tags,genres,release_status,monetization')
+    .select('id,rawg_id,igdb_id,slug,title,description,cover_image,header_image,steam_app_id,is_featured_manual,tags,genres,release_status,release_date,monetization')
     .in('rawg_id',ids).abortSignal(homepageSignal(AbortSignal.timeout(1800)));
   if (error) throw error;
   return data || [];
@@ -120,7 +121,8 @@ export async function loadExplore(type: RawgListType, page = 1, pageSize = 20, y
       const byId = new Map((matches || []).map(item => [item.rawg_id, item]));
       const eligibleUpcoming = upcoming.filter(item => {
         const local = byId.get(item.id);
-        return !local || isPublicSafeGame(local) && !hasKnownFullRelease(local) && isPrimaryDiscoveryGame(local);
+        return !local || isPublicSafeGame(local) && !hasKnownFullRelease(local)
+          && !matchReviewedCatalogueRelease(local) && isPrimaryDiscoveryGame(local);
       });
       const normalizedPlatform = (name: string) => name === 'Xbox Series S/X' ? 'Xbox Series X|S' : name;
       const safeUpcoming = eligibleUpcoming.filter(item => isPrimaryDiscoveryGame({title:item.name,description:''})

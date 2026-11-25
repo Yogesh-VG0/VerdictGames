@@ -9,6 +9,7 @@ import {isPrimaryDiscoveryGame} from '@/lib/utils/discovery';
 import {boundedHomepageRead} from './homepage-budget';
 import {coalesceCatalogueRead} from '@/lib/db/cached-catalogue';
 import {compareUpcomingTiming,resolveReleaseTiming} from '@/lib/utils/release-timing';
+import {matchReviewedPendingCatalogueRelease} from './reviewed-catalogue-releases';
 
 export function upcomingCard(item:RawgListGameItem):Game {
   const today=new Date().toISOString().slice(0,10);
@@ -43,10 +44,13 @@ export function mergeUpcomingCards(local:Game[],discovered:Game[],state:SearchGa
   const byId=new Map(discovered.map(game=>[game.id,game]));
   for(const game of local){
     const provider=byId.get(game.id);
+    const reviewed=matchReviewedPendingCatalogueRelease({slug:game.slug,rawg_id:game.rawgId??null,release_status:game.releaseStatus??null});
+    const timing=reviewed?.timing ?? provider?.releaseTiming ?? game.releaseTiming;
     byId.set(game.id,provider?{...game,coverImage:provider.coverImage || game.coverImage,
       platforms:normalizePlatforms([...game.platforms,...provider.platforms]),
-      releaseDate:provider.releaseDate,releaseDateTba:provider.releaseDateTba,releaseTiming:provider.releaseTiming,
-      releaseStatus:provider.releaseStatus,tags:[...new Set([...game.tags,...provider.tags])]}:game);
+      releaseDate:reviewed ? game.releaseDate : provider.releaseDate,
+      releaseDateTba:timing?.precision==='tba',releaseTiming:timing,
+      releaseStatus:reviewed?.status ?? provider.releaseStatus,tags:[...new Set([...game.tags,...provider.tags])]}:game);
   }
   const candidates=[...byId.values()].filter(game=>isPublicSafeGame(game) && isPrimaryDiscoveryGame(game) && matches(game,state)).map(game=>({
     game,title:game.title,franchise:game.franchise || null,developer:game.developer,publisher:game.publisher,
@@ -70,9 +74,12 @@ export async function loadUpcomingSearch(state:SearchGamesState,localRead:Promis
   if(local.status==='rejected' && discovery.status==='rejected')throw local.reason;
   const providerCards = discovery.status === 'fulfilled' && !discovery.value.degraded ? discovery.value.items.map(upcomingCard) : [];
   const cards=mergeUpcomingCards(local.status==='fulfilled'?local.value.cards || []:[],providerCards,state);
-  const complete=local.status==='fulfilled' && local.value.totalIsExact && discovery.status==='fulfilled'
-    && !discovery.value.degraded && discovery.value.count === discovery.value.items.length;
-  const notice=complete?undefined:discovery.status==='fulfilled' && discovery.value.notice || (discovery.status==='rejected'?'Upcoming discovery is temporarily unavailable. Showing saved catalogue games.':'Some upcoming details are temporarily unavailable. Showing the games we could load.');
+  const bothAvailable=local.status==='fulfilled' && discovery.status==='fulfilled' && !discovery.value.degraded;
+  const complete=bothAvailable && local.value.totalIsExact && discovery.value.count === discovery.value.items.length;
+  const notice=complete ? undefined : bothAvailable ? 'Showing a bounded selection of eligible upcoming games.'
+    : discovery.status==='fulfilled' && discovery.value.notice || (discovery.status==='rejected'
+      ? 'Upcoming discovery is temporarily unavailable. Showing saved catalogue games.'
+      : 'Some upcoming details are temporarily unavailable. Showing the games we could load.');
   const pageSize=25,start=(state.page-1)*pageSize;
   return {items:cards.slice(start,start+pageSize),total:cards.length,page:state.page,pageSize,hasMore:start+pageSize<cards.length,totalIsExact:complete,...(notice?{notice}:{})};
 }
