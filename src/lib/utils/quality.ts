@@ -193,7 +193,7 @@ export function hasStrongCriticEvidence(row: EvidenceRow): boolean {
  * NOTE: This function NEVER penalises for missing media. Media is a readiness
  * concern, not a quality concern.
  */
-export function confidenceWeightedScore(row: GameRow): number {
+export function confidenceWeightedScore(row: Pick<GameRow, "verdict_score" | "confidence" | "score" | "review_count">): number {
   // v2 path: use pre-computed verdict scoring
   if (row.verdict_score != null && row.verdict_score > 0) {
     const conf = row.confidence ?? 0;
@@ -217,7 +217,7 @@ function getReleaseAgeDays(row: Pick<GameRow, "release_date">, observedNow = Dat
     return Number.POSITIVE_INFINITY;
   }
 
-  return (observedNow - Date.parse(row.release_date)) / 86400000;
+  return (observedNow - Date.parse(`${row.release_date}T00:00:00Z`)) / 86400000;
 }
 
 export function isStrongNewReleaseCandidate(row: GameRow): boolean {
