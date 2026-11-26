@@ -1,4 +1,4 @@
-import { jsonOk } from "@/lib/api/response";
+import { jsonOk, jsonUnavailable } from "@/lib/api/response";
 import { getGXHighlights } from "@/lib/external/gxcorner";
 import { gxFetchWithCache } from "@/lib/external/gx-cache";
 import {
@@ -16,9 +16,10 @@ if (GX_FEEDS_REVALIDATE_SECONDS !== revalidate) {
 }
 
 export async function GET() {
-  const { data: highlights } = await gxFetchWithCache(
+  const { data: highlights, source } = await gxFetchWithCache(
     "highlights",
     getGXHighlights
   );
+  if (source === "empty") return jsonUnavailable("Highlights feed is temporarily unavailable.");
   return jsonOk(highlights, 200, { cacheControl: GX_FEEDS_API_CACHE_CONTROL });
 }

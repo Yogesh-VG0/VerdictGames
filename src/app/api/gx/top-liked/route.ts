@@ -1,4 +1,4 @@
-import { jsonOk } from "@/lib/api/response";
+import { jsonOk, jsonUnavailable } from "@/lib/api/response";
 import { getGXTopLiked } from "@/lib/external/gxcorner";
 import { gxFetchWithCache } from "@/lib/external/gx-cache";
 import {
@@ -17,10 +17,11 @@ if (GX_FEEDS_REVALIDATE_SECONDS !== revalidate) {
 }
 
 export async function GET() {
-  const { data: raw } = await gxFetchWithCache(
+  const { data: raw, source } = await gxFetchWithCache(
     "top_liked",
     getGXTopLiked
   );
+  if (source === "empty") return jsonUnavailable("Popular games feed is temporarily unavailable.");
   const games: GXMostLiked[] = raw.map((g) => ({
     id: g.id,
     title: g.title,

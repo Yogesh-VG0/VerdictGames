@@ -6,7 +6,7 @@
 
 export const dynamic = "force-dynamic";
 
-import { jsonOk, jsonError } from "@/lib/api/response";
+import { jsonOk, jsonUnavailable } from "@/lib/api/response";
 
 export async function GET() {
   try {
@@ -19,7 +19,9 @@ export async function GET() {
       supabase.from("profiles").select("id", { count: "exact", head: true }),
     ]);
 
-    if (gamesRes.error || reviewsRes.error || usersRes.error) throw new Error('Stats query failed');
+    if ([gamesRes, reviewsRes, usersRes].some(result => result.error || result.count === null)) {
+      return jsonUnavailable("Statistics are temporarily unavailable.");
+    }
 
     return jsonOk({
       totalGames: gamesRes.count ?? 0,
@@ -28,6 +30,6 @@ export async function GET() {
       enrichmentSources: 5, // RAWG, Steam, IGDB, CheapShark, Wikipedia
     }, 200, { cacheControl: 's-maxage=900, stale-while-revalidate=3600' });
   } catch {
-    return jsonError("Failed to fetch stats", 500);
+    return jsonUnavailable("Statistics are temporarily unavailable.");
   }
 }

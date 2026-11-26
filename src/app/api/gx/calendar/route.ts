@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { jsonBadRequest, jsonOk } from "@/lib/api/response";
+import { jsonBadRequest, jsonOk, jsonUnavailable } from "@/lib/api/response";
 import { getGXCalendar } from "@/lib/external/gxcorner";
 import { gxFetchCalendarMonthSnapshot } from "@/lib/external/gx-cache";
 import { resolveCalendarMonthKey } from "@/lib/utils/gx-calendar";
@@ -13,5 +13,6 @@ export async function GET(request: NextRequest) {
   }
 
   const response = await gxFetchCalendarMonthSnapshot(month, getGXCalendar);
+  if (response.source === "empty") return jsonUnavailable("Release calendar feed is temporarily unavailable.");
   return jsonOk(response, 200, { cache: true });
 }

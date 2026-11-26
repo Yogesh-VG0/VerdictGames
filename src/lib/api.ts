@@ -565,7 +565,17 @@ export async function getCalendarGames(month?: string, signal?: AbortSignal): Pr
 
 /** Compare two games side by side. */
 export async function compareGames(slug1: string, slug2: string): Promise<{ game1: Game; game2: Game } | null> {
-  return apiFetch<{ game1: Game; game2: Game }>(`/api/compare?g1=${encodeURIComponent(slug1)}&g2=${encodeURIComponent(slug2)}`);
+  const query = new URLSearchParams({ g1: slug1, g2: slug2 });
+  const response = await fetch(`${getBaseUrl()}/api/compare?${query}`, {
+    credentials: "omit", signal: boundedClientSignal(),
+  });
+  if (response.status === 404) return null;
+  if (!response.ok) throw new Error("Comparison is temporarily unavailable.");
+  const result = await response.json();
+  if (result.success !== true || !result.data?.game1 || !result.data?.game2) {
+    throw new Error("Comparison response was incomplete.");
+  }
+  return result.data;
 }
 
 /* ═══════════════════════════════════════════════════
