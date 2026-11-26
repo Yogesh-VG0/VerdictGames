@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
-import { Game } from "@/lib/types";
+import type { SpotlightGame } from "@/lib/ui/homepage-props";
 import VerdictBadge from "@/components/ui/VerdictBadge";
 import ScoreRing from "@/components/ui/ScoreRing";
 import PixelButton from "@/components/ui/PixelButton";
@@ -15,7 +15,7 @@ import {getHeroSummary} from '@/lib/utils/homepageHero';
 import { getFreshPlayerSignals } from '@/lib/utils/trending';
 
 interface HeroCarouselProps {
-  games: Game[];
+  games: SpotlightGame[];
   /** Auto-advance interval in ms (default: 6000) */
   interval?: number;
 }
@@ -162,7 +162,7 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
   });
 
   // Context-aware reason label per slide
-  const getReasonLabel = (g: Game): string => {
+  const getReasonLabel = (g: SpotlightGame): string => {
     if (g.releaseStatus === 'early-access') return "Early Access";
     if (g.spotlightReason) return g.spotlightReason;
     if (g.isFeaturedManual) return "Editor's Pick";

@@ -3,6 +3,7 @@ import { Flame, Trophy } from "lucide-react";
 import HeroCarousel from "@/components/HeroCarousel";
 import FadeInSection from "@/components/FadeInSection";
 import GameCard from "@/components/GameCard";
+import { toHomepageCard, toSpotlightGame } from "@/lib/ui/homepage-props";
 import HorizontalScroll from "@/components/HorizontalScroll";
 import HomepageMostAnticipatedSection from "@/components/HomepageMostAnticipatedSection";
 import SectionHeader from "@/components/SectionHeader";
@@ -77,7 +78,7 @@ export default async function HomePage() {
       <section className="relative">
         <div className="absolute inset-0 hero-spotlight pointer-events-none" />
         <FadeInSection>
-          {featured.length > 0 ? <HeroCarousel games={featured} interval={7000} /> : null}
+          {featured.length > 0 ? <HeroCarousel games={featured.map(toSpotlightGame)} interval={7000} /> : null}
         </FadeInSection>
       </section>
 
@@ -101,7 +102,7 @@ export default async function HomePage() {
                 {hasTrendingGames && <HorizontalScroll>
                   {trendingGames.map((game) => (
                     <div key={game.id} className={CARD_WIDTH}>
-                      <GameCard game={game} priority={false} />
+                      <GameCard game={toHomepageCard(game)} priority={false} />
                     </div>
                   ))}
                 </HorizontalScroll>}
@@ -143,7 +144,7 @@ export default async function HomePage() {
                 <HorizontalScroll>
                   {topRatedGames.map((game) => (
                     <div key={game.id} className={CARD_WIDTH}>
-                      <GameCard game={game} priority={false} />
+                      <GameCard game={toHomepageCard(game)} priority={false} />
                     </div>
                   ))}
                 </HorizontalScroll>
@@ -162,8 +163,8 @@ export default async function HomePage() {
           ...[...featured, ...trendingGames, ...topRatedGames, ...homepage.newReleases].map(game => game.slug),
           ...mostAnticipatedGames.map(game => game.slug),
         ])].join(",")}
-        initialRecommendations={homepage.recommendations}
-        initialNewReleases={homepage.newReleases}
+        initialRecommendations={homepage.recommendations.map(toHomepageCard)}
+        initialNewReleases={homepage.newReleases.map(toHomepageCard)}
       />
 
       {/* ── 6. Gaming News ── */}

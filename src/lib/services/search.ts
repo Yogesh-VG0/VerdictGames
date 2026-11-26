@@ -1,4 +1,4 @@
-import { getCatalogueUpcomingTiming, getUpcomingMetadataScore, projectReviewedRelease, rankCatalogueCohort } from "@/lib/services/catalogue-discovery-ranking";
+import { getUpcomingMetadataScore, projectBrowseCard, projectReviewedRelease, rankCatalogueCohort } from "@/lib/services/catalogue-discovery-ranking";
 import { unstable_cache } from "next/cache";
 import { expandGameSearchAlias, searchGamesStateToFilters, type SearchGamesState } from "@/lib/search";
 import { GAME_CARD_COLUMNS_WITH_DESC } from "@/lib/db/columns";
@@ -12,8 +12,8 @@ import { isPublicSafeGame, isPublicSafeRawgGame } from "@/lib/utils/publicSafety
 import { normalizeTitle } from "@/lib/utils/slugify";
 import { isFutureDate } from "@/lib/utils";
 import {searchGenrePredicate} from '@/lib/utils/searchGenre';
-import { hasEarlyAccessSignal, hasUnavailableStatus } from "@/lib/utils/release-status";
-import { matchReviewedPendingCatalogueRelease, reviewedCatalogueReleases, reviewedPendingCatalogueReleases } from './reviewed-catalogue-releases';
+import { hasUnavailableStatus } from "@/lib/utils/release-status";
+import { reviewedCatalogueReleases, reviewedPendingCatalogueReleases } from './reviewed-catalogue-releases';
 
 export { getBrowseTopRatedScore, isBrowseTopRatedEligible } from "@/lib/services/catalogue-discovery-ranking";
 
@@ -69,7 +69,7 @@ function createSearchQueryFactory(state: SearchGamesState) {
   let mobileIds: Promise<string[]> | undefined;
   const today = new Date().toISOString().slice(0, 10);
   const recentlyAddedReleaseCutoff = new Date();
-  recentlyAddedReleaseCutoff.setFullYear(recentlyAddedReleaseCutoff.getFullYear() - 5);
+  recentlyAddedReleaseCutoff.setUTCFullYear(recentlyAddedReleaseCutoff.getUTCFullYear() - 5);
   const recentlyAddedReleaseCutoffStr = recentlyAddedReleaseCutoff.toISOString().slice(0, 10);
   return async (columns: string, signal: AbortSignal, ids?: string[]) => {
     let query = supabase.from("games").select(columns);
@@ -340,20 +340,14 @@ async function fetchSearchResults(state: SearchGamesState,poolOnly=false): Promi
   let rows = rankCatalogueCohort(data ?? [], state, usesStoredClassification, observedNow);
   const filteredTotal = rows.length;
 
-  if(poolOnly)return {ids:rows.map(row=>row.id),totalIsExact,...(isTrendingSort?{observedAt:observedNow}:{}),...(isUpcoming?{cards:rows.map(row=>{
-    const game = mapGameRow(row);
-    const reviewed=matchReviewedPendingCatalogueRelease(row);
-    const timing = getCatalogueUpcomingTiming(row, new Date(observedNow));
-    return {...game,description:'',releaseTiming:timing,releaseDateTba:timing.precision==='tba',isProvisional:true,
-      releaseDate:timing.precision==='day'?timing.value:timing.precision==='tba'?'':game.releaseDate,
-      verdictLabel:'COMING SOON' as const,releaseStatus:reviewed?.status ?? (hasEarlyAccessSignal(row)?'early-access':'upcoming')};
-  })}:{})};
-  rows=rows.slice(start,start+SEARCH_PAGE_SIZE);
-
-  const games = rows.map(row => isTrendingSort
-    ? { ...mapGameRow(row), trendingReason: getPlayerGrowthEvidence(row, observedNow) === 'fresh' ? 'Trending Up' : 'Past Momentum' }
-    : mapGameRow(row));
-  let total = filteredTotal;
+  if (poolOnly) return {
+    ids: rows.map(row => row.id), totalIsExact,
+    ...(isTrendingSort ? { observedAt: observedNow } : {}),
+    ...(isUpcoming ? { cards: rows.map(row => projectBrowseCard(row, sort, observedNow)) } : {}),
+  };
+  rows = rows.slice(start, start + SEARCH_PAGE_SIZE);
+  const games = rows.map(row => projectBrowseCard(row, sort, observedNow));
+   let total = filteredTotal;
 
   const noFilters = platform === "All" && !genre && !year && monetization === "All";
   const allowPreviewFallback = sort === "relevance" && q.length >= 2 && page === 1 && noFilters;
@@ -467,7 +461,8 @@ export async function loadSearchResults(state: SearchGamesState): Promise<Pagina
   if (expandedQuery !== state.query) state = { ...state, query: expandedQuery };
   if(state.sort==='upcoming'){
     const {loadUpcomingSearch}=await import('./upcoming-search');
-    return loadUpcomingSearch(state,readRankedBrowsePool('upcoming'));
+    const scoped = state.query || state.platform !== 'All' || state.genre || state.year || state.monetization !== 'All';
+    return loadUpcomingSearch(state, scoped ? fetchSearchResults(state, true) : readRankedBrowsePool('upcoming'));
   }
   // Next bypasses nested unstable_cache reads. Keep the cohort and small-card
   // caches outside the per-filter response cache, or every page rescans1,000 rows.

@@ -7,6 +7,7 @@ import type { Game } from "@/lib/types";
 import { hasUsableCardImage } from "@/lib/utils/mediaReadiness";
 import { dedupePublicCanonicalRows } from "@/lib/utils/publicCanonical";
 import { isPublicSafeGame } from "@/lib/utils/publicSafety";
+import { hasUnreleasedStatus } from "@/lib/utils/release-status";
 import { confidenceWeightedScore, isQualityGame } from "@/lib/utils/quality";
 import { normalizeTitle } from "@/lib/utils/slugify";
 import { currentHomepageSignal, homepageSignal } from "@/lib/services/homepage-budget";
@@ -114,7 +115,7 @@ function isEligibleCandidate(target: RelatedGameTarget, row: GameRow): boolean {
   if (row.id === target.id) return false;
   if (normalizeSignal(row.title) === normalizeSignal(target.title)) return false;
   if (!isPublicSafeGame(row) || !hasUsableCardImage(row)) return false;
-  if ((row.is_provisional ?? false) || row.verdict_label === "COMING SOON") return false;
+  if (row.is_provisional || row.verdict_label === "COMING SOON" || hasUnreleasedStatus(row)) return false;
   if (row.release_date && row.release_date > new Date().toISOString().slice(0, 10)) return false;
   return true;
 }
@@ -151,7 +152,7 @@ function scoreCandidate(target: RelatedGameTarget, candidate: RelatedCandidateBu
   }
 
   score += getGenreMatchScore(targetGenres, candidateGenres);
-  score += Math.min(getSharedCount(targetTags, candidateTags), 4) * 10;
+  score += Math.min(getSharedCount(targetTags, candidateTags), 4) * 18;
   score += Math.min(getSharedCount(targetPlatforms, candidatePlatforms), 2) * 6;
   score += getReleaseAffinityScore(target.releaseDate, row.release_date);
   score += Math.min((row.confidence ?? 0) * 24, 24);
@@ -303,7 +304,7 @@ async function fetchRelatedRankings(game: RelatedGameTarget): Promise<RelatedRan
       const leftReviews = left.row.review_count ?? 0;
       if (rightReviews !== leftReviews) return rightReviews - leftReviews;
 
-      return (right.row.current_players ?? 0) - (left.row.current_players ?? 0);
+      return (right.row.current_players ?? 0) - (left.row.current_players ?? 0) || left.row.id.localeCompare(right.row.id);
     });
   return {
     all: eligible.slice(0, 12).map(candidate => mapGameRow(candidate.row)),
@@ -315,7 +316,7 @@ async function fetchRelatedRankings(game: RelatedGameTarget): Promise<RelatedRan
 const coalesceRelatedRankings = createRelatedReadCoalescer<RelatedRankings>();
 const readCachedRelatedRankings = unstable_cache(
   (game: RelatedGameTarget) => coalesceRelatedRankings(JSON.stringify(game), () => fetchRelatedRankings(game)),
-  ["related-games-v6"],
+  ["related-games-v7"],
   { revalidate: RELATED_GAMES_REVALIDATE_SECONDS },
 );
 

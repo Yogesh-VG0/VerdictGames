@@ -1,4 +1,6 @@
 import { rankCatalogueMatches } from "@/lib/services/catalogue-search-ranking";
+import { mapGameRowAt } from "@/lib/db/mappers";
+import type { Game, SortOption } from "@/lib/types";
 import type { SearchGamesState } from "@/lib/search";
 import type { GameRow } from "@/lib/supabase/types";
 import { isFutureDate } from "@/lib/utils";
@@ -17,6 +19,22 @@ import { matchReviewedCatalogueRelease, matchReviewedPendingCatalogueRelease } f
 export function projectReviewedRelease(row: GameRow): GameRow {
   const reviewed = matchReviewedCatalogueRelease(row);
   return reviewed ? { ...row, release_date: reviewed.date, release_status: 'released', is_provisional:false } : row;
+}
+
+export function projectBrowseCard(row: GameRow, sort: SortOption, observedNow: number): Game {
+  const game = mapGameRowAt(row, observedNow);
+  if (sort === "trending") {
+    return { ...game, trendingReason: getPlayerGrowthEvidence(row, observedNow) === "fresh" ? "Trending Up" : "Past Momentum" };
+  }
+  if (sort !== "upcoming") return game;
+  const timing = getCatalogueUpcomingTiming(row, new Date(observedNow));
+  const reviewed = matchReviewedPendingCatalogueRelease(row);
+  return {
+    ...game, description: "", releaseTiming: timing, releaseDateTba: timing.precision === "tba",
+    releaseDate: timing.precision === "day" ? timing.value : timing.precision === "tba" ? "" : game.releaseDate,
+    isProvisional: true, verdictLabel: "COMING SOON",
+    releaseStatus: reviewed?.status ?? (hasEarlyAccessSignal(row) ? "early-access" : "upcoming"),
+  };
 }
 
 function passesBrowseDiscoveryFloor(row: GameRow, observedNow: number): boolean {
@@ -335,9 +353,9 @@ export function rankCatalogueCohort(data: GameRow[], state: Pick<SearchGamesStat
     });
   } else if (isRecentlyAdded && rows.length > 0) {
     rows.sort((left, right) => {
-      const createdDiff = (right.created_at ?? "").localeCompare(left.created_at ?? "");
-      if (createdDiff !== 0) return createdDiff;
-      return left.id.localeCompare(right.id);
+      const leftTime = left.created_at ? Date.parse(left.created_at) : -Infinity;
+      const rightTime = right.created_at ? Date.parse(right.created_at) : -Infinity;
+      return rightTime - leftTime || left.id.localeCompare(right.id);
     });
   } else if (isUpcoming && rows.length > 0) {
     rows = rows.map(row => ({ row, timing: getCatalogueUpcomingTiming(row, now) }))

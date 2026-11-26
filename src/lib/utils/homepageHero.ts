@@ -3,7 +3,7 @@ import { getEvidenceReviewCount, hasStrongCriticEvidence } from "@/lib/utils/qua
 import { hasBrowseTrendingSignal } from "@/lib/utils/trending";
 import {isPublicSafeRawgGame} from './publicSafety';
 import type {RawgListItem} from '@/lib/external/rawg';
-import type {Game} from '@/lib/types';
+import type {SpotlightGame} from '@/lib/ui/homepage-props';
 import { hasKnownFullRelease, hasUnreleasedStatus } from './release-status';
 import { isProviderHeroArtwork, reviewedHeroArtwork } from './artwork-policy.mjs';
 
@@ -19,7 +19,7 @@ export function hasRecentHeroActivity(row: Pick<GameRow, 'players_updated_at'>, 
   return age >= 0 && age <= HERO_ACTIVITY_WINDOW_MS;
 }
 
-export function getHeroSummary(game:Game):string {
+export function getHeroSummary(game:SpotlightGame):string {
   const description=game.description?.trim();
   const staleEarlyAccessLead = game.releaseStatus === 'early-access' && /\bis an upcoming\b/i.test(description?.slice(0, 120) ?? '');
   if(description && description.length>20 && !staleEarlyAccessLead && !/is an exceptional|is a solid|has moments of brilliance|struggles to deliver/i.test(description)) {
