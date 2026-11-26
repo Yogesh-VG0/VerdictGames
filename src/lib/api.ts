@@ -113,17 +113,17 @@ export async function getFeaturedGames(limit = 5): Promise<Game[]> {
 
 /** Get trending games. */
 export async function getTrendingGames(): Promise<Game[]> {
-  return (await apiFetch<Game[]>("/api/games/trending?limit=10")) ?? [];
+  return apiFetchOrThrow<Game[]>("/api/games/trending?limit=10");
 }
 
 /** Get newest releases (sorted by date desc). */
 export async function getNewReleases(limit = 8): Promise<Game[]> {
-  return (await apiFetch<Game[]>(`/api/games/new-releases?limit=${limit}`)) ?? [];
+  return apiFetchOrThrow<Game[]>(`/api/games/new-releases?limit=${limit}`);
 }
 
 /** Get top-rated games. */
 export async function getTopRated(limit = 8): Promise<Game[]> {
-  return (await apiFetch<Game[]>(`/api/games/top-rated?limit=${limit}`)) ?? [];
+  return apiFetchOrThrow<Game[]>(`/api/games/top-rated?limit=${limit}`);
 }
 
 /* ═══════════════════════════════════════════════════

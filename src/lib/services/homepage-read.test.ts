@@ -12,7 +12,7 @@ vi.mock('@/lib/supabase/public',()=>({getPublicSupabase:()=>({from:()=>{
   chain.then=(resolve:(value:unknown)=>unknown,reject:(error:unknown)=>unknown)=>Promise.resolve(state.responses.shift()).then(resolve,reject);
   return chain;
 }})}));
-import {fetchTrendingGames,fetchNewReleases,fetchHeroCandidates,fetchHomepageTopRated} from './homepage';
+import {fetchHomepageTrendingCandidates,fetchNewReleases,fetchHeroCandidates,fetchHomepageTopRated} from './homepage';
 describe('homepage trending read failures',()=>{
  beforeEach(()=>{state.responses=[];state.discovery=[]});
  it('refills one preferred Top Rated slot from twenty qualified rows without admitting weak or unreleased records',async()=>{
@@ -39,7 +39,7 @@ describe('homepage trending read failures',()=>{
  it('uses discovery to select a hero without replacing the canonical Verdict or adding reads per slide',async()=>{
    const today=new Date().toISOString().slice(0,10);
    const base={release_date:today,description:'A standalone action adventure with substantial review coverage.',
-    cover_image:'https://images.igdb.com/co123.jpg',header_image:'https://images.igdb.com/scene.jpg',
+    cover_image:'https://images.igdb.com/co123.jpg',header_image:'https://images.igdb.com/igdb/image/upload/t_1080p/scene.jpg',
     platforms:['PC'],genres:['Action'],tags:[],score:95,verdict_score:95,confidence:0.9,
     review_count:100000,steam_total_count:100000,steam_app_id:123,user_score:95,
     current_players:10000,players_updated_at:new Date().toISOString(),developer:'Studio',publisher:'Studio',verdict_label:'MUST PLAY'};
@@ -50,7 +50,7 @@ describe('homepage trending read failures',()=>{
      release_date: new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10),
      is_provisional: false,
    });
-   const launch={...base,id:'launch',rawg_id:972995,igdb_id:52189,slug:'grand-theft-auto-vi',title:'Grand Theft Auto VI',steam_app_id:null,
+   const launch={...base,id:'launch',rawg_id:972995,igdb_id:52189,slug:'grand-theft-auto-vi',title:'Grand Theft Auto VI',steam_app_id:null,release_status:'released',
     steam_total_count:null,user_score:null,score:77,verdict_score:77,confidence:0.245543,review_count:104};
    state.discovery=[{id:972995,name:'Grand Theft Auto VI',slug:'grand-theft-auto-vi',released:today,tba:false,added:1000,
     background_image:base.header_image,tags:[],genres:[],platforms:[]}];
@@ -59,6 +59,12 @@ describe('homepage trending read failures',()=>{
    expect(result).toHaveLength(6);expect(result[0]).toMatchObject({id:'launch',score:77,verdictScore:77,verdictLabel:'WORTH IT',isProvisional:false});
    expect(result[0].headerImage).toContain('/ar6i4p.jpg');
    expect(result[0].description).toContain('Vice City');
+   const launchMarkup = renderToStaticMarkup(createElement(HeroCarousel, { games: [result[0]] }));
+   expect(launchMarkup).toContain('Recent Release');
+   expect(launchMarkup).toContain('Limited rating evidence');
+   expect(launchMarkup).toContain('View game');
+   expect(launchMarkup).not.toContain('WORTH IT');
+   expect(launchMarkup).not.toContain('>77<');
    const spotlight = result.find(game => game.id === 'hero-0');
    expect(spotlight).toMatchObject({ description: '' });
    const markup = renderToStaticMarkup(createElement(HeroCarousel, { games: [spotlight!] }));
@@ -82,7 +88,7 @@ describe('homepage trending read failures',()=>{
    const release = { id:'confirmed', slug:'confirmed-launch', title:'Confirmed Console Launch',
      description:'A complete standalone action adventure, available on consoles.', release_status:'released',
      release_date:new Date().toISOString().slice(0,10), cover_image:'https://images.igdb.com/co123.jpg',
-     header_image:'https://images.igdb.com/scene.jpg', platforms:['PlayStation 5'], genres:['Action'], tags:[],
+     header_image:'https://images.igdb.com/igdb/image/upload/t_1080p/scene.jpg', platforms:['PlayStation 5'], genres:['Action'], tags:[],
      score:55, verdict_score:77, critic_score:98, critic_source_count:1, confidence:0.24, review_count:104 };
    const pool = Array.from({length:6}, (_,i)=>({...release,id:`historical-${i}`,slug:`historical-${i}`,
      title:`Historical ${i}`,release_date:'2020-11-20',steam_app_id:8000+i}));
@@ -126,11 +132,11 @@ describe('homepage trending read failures',()=>{
  it('propagates a failed candidate pool rather than caching a successful empty rail',async()=>{
   const error={code:'57014',message:'Controlled statement cancellation'};
   state.responses=[{data:[],error:null},{data:null,error}];
-  await expect(fetchTrendingGames(100,true)).rejects.toBe(error);
+  await expect(fetchHomepageTrendingCandidates()).rejects.toBe(error);
   expect(state.responses).toHaveLength(0);
  });
  it('still accepts a genuinely empty successful candidate pool',async()=>{
-  state.responses=[{data:[],error:null},{data:[],error:null}];
-  await expect(fetchTrendingGames(100,true)).resolves.toEqual([]);
+  state.responses=[{data:[],error:null},{data:[],error:null},{data:[],error:null}];
+  await expect(fetchHomepageTrendingCandidates()).resolves.toEqual([]);
  });
 });

@@ -30,6 +30,19 @@ function isUnreleased(game: RenderedGameCard): boolean {
   return game.isProvisional || game.verdictLabel === "COMING SOON";
 }
 
+const momentumDateFormat = new Intl.DateTimeFormat("en", { month: "short", day: "numeric", timeZone: "UTC" });
+
+function TrendingEvidence({ game }: { game: RenderedGameCard }) {
+  if (!game.trendingReason) return null;
+  const observed = game.trendingReason === "Past Momentum" ? Date.parse(game.playersUpdatedAt ?? "") : NaN;
+  return (
+    <span className="block text-[9px] font-bold text-white bg-black/75 px-2 py-0.5 rounded-lg border border-white/20 whitespace-nowrap">
+      {game.trendingReason}
+      {Number.isFinite(observed) && <time dateTime={game.playersUpdatedAt}> · {momentumDateFormat.format(observed)}</time>}
+    </span>
+  );
+}
+
 function hasRealScore(game: RenderedGameCard): boolean {
   if (isUnreleased(game)) return false;
   if (game.score === 0 && game.scoreSource === "gx") return false;
@@ -138,9 +151,7 @@ export default function GameCard({
 
               {game.trendingReason && (
                 <div className="absolute bottom-3 right-3 z-[1]">
-                  <span className="text-[9px] font-bold text-white bg-white/15 backdrop-blur-md px-2 py-0.5 rounded-lg border border-white/10 whitespace-nowrap">
-                    {game.trendingReason}
-                  </span>
+                  <TrendingEvidence game={game} />
                 </div>
               )}
             </div>
@@ -255,9 +266,7 @@ export default function GameCard({
 
           {game.trendingReason && (
             <div className="absolute bottom-2.5 right-2.5 z-[1]">
-              <span className="text-[9px] font-bold text-white bg-white/15 backdrop-blur-md px-1.5 py-0.5 rounded-lg border border-white/10 whitespace-nowrap">
-                {game.trendingReason}
-              </span>
+              <TrendingEvidence game={game} />
             </div>
           )}
         </div>

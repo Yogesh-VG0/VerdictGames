@@ -6,7 +6,7 @@ export function hasKnownFullRelease(game: ReleaseSignals) {
 }
 
 export function hasUnreleasedStatus(game:ReleaseSignals) {
-  return ['upcoming','unreleased','announced','coming soon','tba','cancelled','canceled','delisted']
+  return ['upcoming','unreleased','announced','coming soon','tba','cancelled','canceled','delisted','withdrawn']
     .includes(normalizedStatus(game.release_status || ''));
 }
 

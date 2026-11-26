@@ -42,3 +42,9 @@ export function jsonNotFound(entity = "Resource") {
 export function jsonBadRequest(message = "Invalid request.") {
   return jsonError(message, 400);
 }
+
+export function jsonUnavailable(message: string) {
+  const response = jsonError(message, 503);
+  response.headers.set("Retry-After", "30");
+  return response;
+}

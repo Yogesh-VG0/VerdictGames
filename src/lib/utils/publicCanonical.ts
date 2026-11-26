@@ -172,9 +172,9 @@ export function getPublicCanonicalGroup(
 export function pickPreferredPublicRepresentative<T extends PublicCanonicalRow>(
   a: T,
   b: T,
-  preference: PublicCanonicalPreference = "default"
+  preference: PublicCanonicalPreference = "default",
+  observedNow = Date.now(),
 ): T {
-  const now=Date.now();
   const score = (row: T) => {
     let value = 0;
 
@@ -193,7 +193,7 @@ export function pickPreferredPublicRepresentative<T extends PublicCanonicalRow>(
     value += (row.confidence ?? 0) * 150;
 
     if (row.release_date) {
-      const ageDays = Math.max(0, (now - new Date(row.release_date).getTime()) / 86400000);
+      const ageDays = Math.max(0, (observedNow - new Date(row.release_date).getTime()) / 86400000);
       value += Math.max(0, 60 - Math.min(ageDays / 30, 60));
     }
 
@@ -210,9 +210,9 @@ export function pickPreferredPublicRepresentative<T extends PublicCanonicalRow>(
 
 export function dedupePublicCanonicalRows<T extends PublicCanonicalRow>(
   rows: T[],
-  options: { query?: string } = {}
+  { query = "", observedNow = Date.now() }: { query?: string; observedNow?: number } = {}
 ): T[] {
-  const preference = getPublicCanonicalPreference(options.query ?? "");
+  const preference = getPublicCanonicalPreference(query);
   const canonicalBuckets = new Map<string, T[]>();
 
   for (const row of rows) {
@@ -249,7 +249,7 @@ export function dedupePublicCanonicalRows<T extends PublicCanonicalRow>(
       continue;
     }
 
-    byGroup.set(key, pickPreferredPublicRepresentative(existing, row, preference));
+    byGroup.set(key, pickPreferredPublicRepresentative(existing, row, preference, observedNow));
   }
 
   return Array.from(byGroup.values());

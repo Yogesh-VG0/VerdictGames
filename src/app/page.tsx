@@ -54,7 +54,7 @@ export default async function HomePage() {
   const { data: homepage } = homepageResult;
   const mostAnticipatedGames = anticipatedResult.data;
   const degraded = homepageResult.degraded;
-  const featured = homepage.hero.filter((game) => game.headerImage || game.coverImage).slice(0, 6);
+  const featured = homepage.hero.filter((game) => game.headerImage).slice(0, 6);
   const trendingGames = homepage.trending
     .filter((game) => game.coverImage)
     .slice(0, 20);
@@ -82,7 +82,7 @@ export default async function HomePage() {
       </section>
 
       {/* ── 2. Trending Now ── */}
-      {hasTrendingGames ? (
+      {hasTrendingGames || !degraded ? (
         <>
           <section className="relative py-12 sm:py-16">
             <div className="absolute inset-0 mesh-gradient opacity-50 pointer-events-none" />
@@ -93,16 +93,18 @@ export default async function HomePage() {
                   href="/search?sort=trending"
                   linkLabel="See trending games"
                   icon={<Flame className="w-5 h-5" />}
-                  subtitle="Recent player growth, active player counts, past momentum and editorial picks"
+                  subtitle={hasTrendingGames
+                    ? `${trendingGames.length} games ranked by player activity, growth, long-term popularity or editorial selection`
+                    : "No games currently have enough activity or popularity evidence for this collection."}
                   gradient="linear-gradient(90deg, #f97316 0%, #ef4444 25%, #f97316 50%, #eab308 75%, #f97316 100%)"
                 />
-                <HorizontalScroll>
+                {hasTrendingGames && <HorizontalScroll>
                   {trendingGames.map((game) => (
                     <div key={game.id} className={CARD_WIDTH}>
                       <GameCard game={game} priority={false} />
                     </div>
                   ))}
-                </HorizontalScroll>
+                </HorizontalScroll>}
               </FadeInSection>
             </div>
           </section>

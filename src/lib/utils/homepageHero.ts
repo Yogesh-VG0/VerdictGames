@@ -5,6 +5,12 @@ import {isPublicSafeRawgGame} from './publicSafety';
 import type {RawgListItem} from '@/lib/external/rawg';
 import type {Game} from '@/lib/types';
 import { hasKnownFullRelease, hasUnreleasedStatus } from './release-status';
+import { isProviderHeroArtwork, reviewedHeroArtwork } from './artwork-policy.mjs';
+
+export function hasWideHeroArtwork(row: GameRow): boolean {
+  return Boolean(reviewedHeroArtwork({ slug: row.slug, igdbId: row.igdb_id, rawgId: row.rawg_id })
+    || row.header_image !== row.cover_image && isProviderHeroArtwork(row.header_image, row.steam_app_id ?? 0));
+}
 
 const HERO_ACTIVITY_WINDOW_MS = 72 * 60 * 60 * 1000;
 
