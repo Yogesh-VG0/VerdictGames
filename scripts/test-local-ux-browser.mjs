@@ -210,14 +210,45 @@ try {
       await page.getByRole('heading', { name: 'A Very Long Adventure Title: The Complete Collector’s Edition', exact: true }).waitFor();
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, 'Missing artwork and long title fit');
       await page.screenshot({ path: `${output}/missing-art-${theme}-390.png` });
-      await page.goto(base + '/search?q=Hades', { waitUntil: 'domcontentloaded' });
-      await page.route('**/api/search?*', async route => { await new Promise(resolve => setTimeout(resolve, 650)); await route.fulfill({ status: 503, json: { success: false, error: 'Simulated local provider outage' } }); });
-      await page.getByRole('searchbox', { name: 'Search games', exact: true }).fill('local-outage-fixture');
-      await page.getByRole('status', { name: 'Loading games' }).waitFor();
+      await page.goto(base + '/search?q=Hades', { waitUntil: 'load' });
+      // The server-rendered input can be visible before React handles changes.
+      const filterToggle = page.getByRole('button', { name: 'Filters and sorting', expanded: false });
+      const platformFilters = page.getByRole('radiogroup', { name: 'Platform', exact: true });
+      for (let attempt = 0; attempt < 4 && !(await platformFilters.isVisible()); attempt++) {
+        await filterToggle.click();
+        await platformFilters.waitFor({ state: 'visible', timeout: 1000 }).catch(error => {
+          if (error.name !== 'TimeoutError') throw error;
+        });
+      }
+      await platformFilters.waitFor({ state: 'visible' });
+      await page.getByRole('button', { name: 'Filters and sorting', expanded: true }).click();
+      await platformFilters.waitFor({ state: 'hidden' });
+
+      const searchField = page.getByRole('searchbox', { name: 'Search games', exact: true });
+      const outageQuery = 'local-outage-fixture';
+      const isOutageSearch = url => url.origin === base && url.pathname === '/api/search' && url.searchParams.get('q') === outageQuery;
+      const releaseOutage = Promise.withResolvers();
+      await page.route(isOutageSearch, async route => {
+        await releaseOutage.promise;
+        await route.fulfill({ status: 503, json: { success: false, error: 'Simulated local provider outage' } });
+      });
+      try {
+        await Promise.all([
+          page.waitForRequest(request => isOutageSearch(new URL(request.url()))),
+          searchField.fill(outageQuery),
+        ]);
+        // Keep the simulated request pending until the loading state is visible.
+        await page.getByRole('status', { name: 'Loading games', exact: true }).waitFor({ state: 'visible' });
+        const outageResponse = page.waitForResponse(response => isOutageSearch(new URL(response.url())));
+        releaseOutage.resolve();
+        assert.equal((await outageResponse).status(), 503, 'The simulated search request reached the browser');
+      } finally {
+        releaseOutage.resolve();
+        await page.unroute(isOutageSearch);
+      }
       await page.getByText('Browse results are temporarily unavailable', { exact: true }).waitFor();
       await page.screenshot({ path: `${output}/search-error-${theme}-390.png` });
-      await page.unroute('**/api/search?*');
-      await page.getByRole('searchbox', { name: 'Search games', exact: true }).fill('Hades');
+      await searchField.fill('Hades');
       await page.locator('main a[href="/game/ux-fixture-hades"]').first().waitFor();
       const slowRoute = url => url.pathname === '/game/ux-fixture-hades' && url.searchParams.has('_rsc');
       await page.route(slowRoute, async route => { await new Promise(resolve => setTimeout(resolve, 800)); await route.continue(); });
