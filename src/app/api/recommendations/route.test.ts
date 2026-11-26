@@ -55,10 +55,13 @@ describe('private homepage recommendations', () => {
 
   it('returns a private service error when the authenticated library cannot be read', async () => {
     state.error = { code: '57014' };
-    const response = await request();
-    expect(response.status).toBe(503);
-    expect(response.headers.get('Cache-Control')).toContain('private, no-store');
-    expect(await response.json()).toMatchObject({ success: false });
+    const requests = [request(), GET(new NextRequest('http://127.0.0.1/api/recommendations'))];
+    for (const response of await Promise.all(requests)) {
+      expect(response.status).toBe(503);
+      expect(response.headers.get('Cache-Control')).toContain('private, no-store');
+      expect(response.headers.get('Retry-After')).toBe('30');
+      expect(await response.json()).toMatchObject({ success: false });
+    }
   });
 
   it('excludes a base game when the library holds a named update', async () => {

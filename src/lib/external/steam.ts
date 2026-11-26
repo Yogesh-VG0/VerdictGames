@@ -342,20 +342,14 @@ export async function getSteamNews(
   count = 5,
   maxLength = 500
 ): Promise<SteamNewsItem[]> {
-  try {
-    const res = await fetch(
-      `${STEAM_API_BASE}/ISteamNews/GetNewsForApp/v2/?appid=${appId}&count=${count}&maxlength=${maxLength}&format=json`,
-      { next: { revalidate: 1800 } } // cache 30 min
-    );
-
-    if (!res.ok) return [];
-
-    const data: SteamNewsResponse = await res.json();
-    return data?.appnews?.newsitems ?? [];
-  } catch {
-    console.error(`[Steam] Failed to fetch news for ${appId}`);
-    return [];
-  }
+  const res = await fetch(
+    `${STEAM_API_BASE}/ISteamNews/GetNewsForApp/v2/?appid=${appId}&count=${count}&maxlength=${maxLength}&format=json`,
+    { next: { revalidate: 1800 }, signal: AbortSignal.timeout(4500) }
+  );
+  if (!res.ok) throw new Error(`Steam news returned HTTP ${res.status}`);
+  const data: SteamNewsResponse = await res.json();
+  if (!Array.isArray(data?.appnews?.newsitems)) throw new Error("Incomplete Steam news response");
+  return data.appnews.newsitems;
 }
 
 /* ───────── Achievement Stats API ───────── */

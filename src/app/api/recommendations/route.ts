@@ -10,7 +10,7 @@ export const maxDuration = 15;
 
 import { NextRequest } from "next/server";
 import { boundedHomepageRead } from "@/lib/services/homepage-budget";
-import { jsonError, jsonPrivateOk as jsonOk } from "@/lib/api/response";
+import { jsonError, jsonPrivateOk as jsonOk, jsonUnavailable } from "@/lib/api/response";
 import { getHomepageRecommendationScore, isHomepageRecommendationEligible } from "@/lib/services/homepage";
 import { mapGameRow } from "@/lib/db/mappers";
 import { GAME_CARD_COLUMNS_WITH_DESC } from "@/lib/db/columns";
@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
   try {
     return await boundedHomepageRead(7500, () => loadRecommendations(request));
   } catch {
-    return jsonError("Recommendations temporarily unavailable", 503);
+    return jsonUnavailable("Recommendations temporarily unavailable.");
   }
 }
 
@@ -44,7 +44,7 @@ async function loadRecommendations(request: NextRequest) {
 
   try {
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-      return respond([]);
+      return jsonUnavailable("Recommendations temporarily unavailable.");
     }
 
     const supabase = await getAuthSupabase();
@@ -72,7 +72,7 @@ async function loadRecommendations(request: NextRequest) {
           .eq("user_id", user.profileId)
           .order("game_id").limit(1000) as { data: { game_id: string; game: Pick<GameRow, "genres" | "title" | "steam_app_id"> | null }[] | null; error: unknown };
 
-        if (libraryError && homepage) throw libraryError;
+        if (libraryError) throw libraryError;
 
         if (userGames && userGames.length > 0) {
           userGameIds = userGames.map((ug) => ug.game_id);
@@ -104,7 +104,8 @@ async function loadRecommendations(request: NextRequest) {
         }
       }
     } catch (error) {
-      if (homepage) throw error;
+      console.error("[API] Could not resolve the recommendation account or library:", error);
+      return jsonUnavailable("Recommendations temporarily unavailable.");
     }
 
     const today = new Date().toISOString().slice(0, 10);
@@ -192,7 +193,6 @@ async function loadRecommendations(request: NextRequest) {
     return respond(picks.map(mapGameRow), relevant > 0 && relevant >= Math.ceil(picks.length / 3));
   } catch (err) {
     console.error("[API] /recommendations error:", err);
-    if (homepage) throw err;
-    return respond([]);
+    return jsonUnavailable("Recommendations temporarily unavailable.");
   }
 }
