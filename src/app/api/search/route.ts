@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { jsonError } from "@/lib/api/response";
+import { unstable_rethrow } from "next/navigation";
+import { jsonUnavailable } from "@/lib/api/response";
 import { parseSearchPageState } from "@/lib/search";
 import { loadSearchResults, SEARCH_API_CACHE_CONTROL, SEARCH_REVALIDATE_SECONDS } from "@/lib/services/search";
 import { boundedHomepageRead } from "@/lib/services/homepage-budget";
+import { hasPublicSupabaseEnv } from "@/lib/supabase/public";
 
 export const revalidate = 300;
 export const maxDuration = 15;
@@ -13,6 +15,7 @@ if (SEARCH_REVALIDATE_SECONDS !== revalidate) {
 
 export async function GET(request: NextRequest) {
   const state = parseSearchPageState(request.nextUrl.searchParams);
+  if (!hasPublicSupabaseEnv()) return jsonUnavailable("Browse results are temporarily unavailable.");
 
   try {
     const data = await boundedHomepageRead(8500, () => loadSearchResults(state.games));
@@ -22,13 +25,14 @@ export async function GET(request: NextRequest) {
       {
         status: 200,
         headers: {
-          "Cache-Control": data.notice && state.games.sort === "upcoming" ? "no-store" : SEARCH_API_CACHE_CONTROL,
+          "Cache-Control": state.games.sort === "trending" || data.notice && state.games.sort === "upcoming"
+            ? "no-store" : SEARCH_API_CACHE_CONTROL,
         },
       }
     );
   } catch (error) {
-    console.error("[API] /search error:", error);
-
-    return jsonError("Browse results are temporarily unavailable.", 503);
+    unstable_rethrow(error);
+    console.warn("[API] Browse catalogue read failed");
+    return jsonUnavailable("Browse results are temporarily unavailable.");
   }
 }

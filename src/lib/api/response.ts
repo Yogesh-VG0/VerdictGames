@@ -31,8 +31,8 @@ export function jsonOk<T>(data: T, status = 200, options?: { cache?: boolean; ca
   return NextResponse.json({ success: true, data }, { status, headers: Object.keys(headers).length ? headers : undefined });
 }
 
-export function jsonError(message: string, status = 500) {
-  return NextResponse.json({ success: false, error: message }, { status, headers: PRIVATE_RESPONSE_HEADERS });
+export function jsonError(message: string, status = 500, code?: string) {
+  return NextResponse.json({ success: false, error: message, ...(code ? { code } : {}) }, { status, headers: PRIVATE_RESPONSE_HEADERS });
 }
 
 export function jsonNotFound(entity = "Resource") {
@@ -43,8 +43,8 @@ export function jsonBadRequest(message = "Invalid request.") {
   return jsonError(message, 400);
 }
 
-export function jsonUnavailable(message: string) {
-  const response = jsonError(message, 503);
+export function jsonUnavailable(message: string, code?: string) {
+  const response = jsonError(message, 503, code);
   response.headers.set("Retry-After", "30");
   return response;
 }

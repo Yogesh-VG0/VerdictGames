@@ -1,7 +1,7 @@
 import { createHomepageSlots } from '@/lib/services/homepage-slots';
 import { getFreshPlayerSignals, hasBrowseTrendingSignal, isPremiumTrendingCandidate } from '@/lib/utils/trending';
 import { homepageReleaseWindow, selectHomepageNewReleases } from '@/lib/services/homepage-releases';
-import { matchReviewedCatalogueRelease } from './reviewed-catalogue-releases';
+import { matchReviewedCatalogueRelease, matchReviewedPendingCatalogueRelease } from './reviewed-catalogue-releases';
 /**
  * VERDICT.GAMES — Homepage Service Layer
  *
@@ -29,7 +29,7 @@ import { unstable_cache } from "next/cache";
 import { getPublicSupabase } from "@/lib/supabase/public";
 import { readCachedUpcomingSnapshot } from '@/lib/services/upcoming-snapshot';
 import { readHomepageReleaseRanking } from '@/lib/services/community-ranking';
-import {hasEarlyAccessSignal,hasUnreleasedStatus,hasKnownFullRelease} from '@/lib/utils/release-status';
+import {hasEarlyAccessSignal,hasUnreleasedStatus,hasKnownFullRelease,hasUnavailableStatus} from '@/lib/utils/release-status';
 import { isPrimaryDiscoveryGame } from '@/lib/utils/discovery';
 import { mapGameRow } from "@/lib/db/mappers";
 import { GAME_CARD_COLUMNS_WITH_DESC } from "@/lib/db/columns";
@@ -412,7 +412,7 @@ function isHomepageHeroBackfillCandidate(row: GameRow): boolean {
 
 const HERO_GAME_COLUMNS = GAME_CARD_COLUMNS_WITH_DESC + ',rawg_id,igdb_id';
 
-function mapHeroGameRow(row: GameRow): Game {
+export function mapHomepageHeroCard(row: GameRow): Game {
   const game = mapGameRow(row);
   // TVGS identifies this Steam app as Early Access. Its stored score remains canonical.
   if (row.steam_app_id === 3164500 && row.slug === 'schedule-i' && !row.release_status) {
@@ -564,7 +564,7 @@ export async function fetchHeroCandidates(limit = 12): Promise<Game[]> {
   // half empty when the catalogue has enough otherwise-qualified games.
   const diversified = prioritizeById(applyGenreDiversity(ranked, limit, 2), ranked, limit);
 
-  const released = diversified.map(mapHeroGameRow);
+  const released = diversified.map(mapHomepageHeroCard);
   // A confirmed, independently reviewed launch can qualify from catalogue
   // evidence when the third-party ranking snapshot is absent or slow.
   const verifiedLaunch = ready.filter(row => freshIds.has(row.id) && row.header_image !== row.cover_image
@@ -572,7 +572,7 @@ export async function fetchHeroCandidates(limit = 12): Promise<Game[]> {
       && isPrimaryDiscoveryGame(row) && (row.verdict_score ?? row.score ?? 0) >= 75
       && (row.critic_score ?? 0) >= 85 && (row.critic_source_count ?? 0) >= 1 && (row.review_count ?? 0) >= 100)
     .sort((a, b) => getHomepageHeroScore(b) - getHomepageHeroScore(a))[0];
-  const launch = verifiedLaunch && { ...mapHeroGameRow(verifiedLaunch), spotlightReason: "Recent Release" as const };
+  const launch = verifiedLaunch && { ...mapHomepageHeroCard(verifiedLaunch), spotlightReason: "Recent Release" as const };
   const fallback = launch ? [launch, ...released.filter(game => game.id !== launch.id)].slice(0, limit) : released;
   try {
     return await boundedHomepageRead(2200, async () => {
@@ -590,11 +590,13 @@ export async function fetchHeroCandidates(limit = 12): Promise<Game[]> {
         const row=rows.find(row=>row.rawg_id===item.id);
         if (!row || row.release_date !== item.released || !isPublicSafeGame(row) || !isPrimaryDiscoveryGame(row)) return [];
         const isRecentLaunch = item.released! <= today;
+        const verifiedTiming = matchReviewedPendingCatalogueRelease(row)?.timing;
         if (isRecentLaunch
           ? hasUnreleasedStatus(row) || hasEarlyAccessSignal(row) || row.is_provisional
             || !hasKnownFullRelease(row) && !matchReviewedCatalogueRelease(row)
-          : hasKnownFullRelease(row) || /^(cancelled|canceled|delisted|withdrawn)$/i.test(row.release_status ?? '')) return [];
-        const game=mapHeroGameRow(row);
+          : hasKnownFullRelease(row) || hasUnavailableStatus(row)
+            || verifiedTiming?.precision !== 'day' || verifiedTiming.value !== item.released) return [];
+        const game=mapHomepageHeroCard(row);
         const header = hasWideHeroArtwork(row) ? game.headerImage : item.background_image;
         if (!header || header === game.coverImage || !isProviderHeroArtwork(header, row.steam_app_id ?? 0)) return [];
         return [{ ...game, headerImage: header, spotlightReason: isRecentLaunch ? "Recent Release" as const : "Upcoming" as const }];

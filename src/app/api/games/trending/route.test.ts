@@ -36,6 +36,16 @@ describe("Trending endpoint", () => {
     expect(await response.json()).toMatchObject({ success: false });
   });
 
+  it("rejects a cached growth label when its observation has crossed the freshness boundary", async () => {
+    const observed = new Date(Date.now() - 25 * 3_600_000).toISOString();
+    mocks.load.mockResolvedValue({
+      items: [{ playersUpdatedAt: observed, currentPlayers: 2500, momentum: 0.2, trendingReason: "Trending Up" }], total: 1,
+    });
+    const response = await GET(request());
+    expect(response.status).toBe(503);
+    expect((await response.json()).code).toBe("catalogue_snapshot_expired");
+  });
+
   it.each(["?limit=0", "?limit=26", "?limit=5games", "?limit="])("validates %s without querying", async (query) => {
     expect((await GET(request(query))).status).toBe(400);
     expect(mocks.load).not.toHaveBeenCalled();

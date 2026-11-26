@@ -12,7 +12,7 @@ import { isPublicSafeGame, isPublicSafeRawgGame } from "@/lib/utils/publicSafety
 import { normalizeTitle } from "@/lib/utils/slugify";
 import { isFutureDate } from "@/lib/utils";
 import {searchGenrePredicate} from '@/lib/utils/searchGenre';
-import { hasEarlyAccessSignal } from "@/lib/utils/release-status";
+import { hasEarlyAccessSignal, hasUnavailableStatus } from "@/lib/utils/release-status";
 import { matchReviewedPendingCatalogueRelease, reviewedCatalogueReleases, reviewedPendingCatalogueReleases } from './reviewed-catalogue-releases';
 
 export { getBrowseTopRatedScore, isBrowseTopRatedEligible } from "@/lib/services/catalogue-discovery-ranking";
@@ -20,7 +20,7 @@ export { getBrowseTopRatedScore, isBrowseTopRatedEligible } from "@/lib/services
 export const SEARCH_REVALIDATE_SECONDS = 300;
 export const SEARCH_API_CACHE_CONTROL = `s-maxage=${SEARCH_REVALIDATE_SECONDS}, stale-while-revalidate=300`;
 export const SEARCH_PAGE_SIZE = 25;
-const SEARCH_RESULTS_CACHE_NAMESPACE = "search-results-v16";
+const SEARCH_RESULTS_CACHE_NAMESPACE = "search-results-v17";
 const BOUNDED_BROWSE_NOTICE = "Results are from a bounded catalogue selection. Use filters to narrow the search.";
 const TRENDING_NOTICE = "Trending Up uses player growth observed in the last 24 hours. Past Momentum uses older observations, up to seven days. Games without qualifying growth are excluded.";
 // Ranking and eligibility need evidence and safety metadata, not display copy,
@@ -249,7 +249,7 @@ async function hydrateBrowseCohort(
   return ids.flatMap(id => rows.has(id) ? [rows.get(id)!] : []);
 }
 
-interface RankedBrowsePool { ids:string[]; totalIsExact:boolean; cards?:Game[] }
+interface RankedBrowsePool { ids:string[]; totalIsExact:boolean; cards?:Game[]; observedAt?:number }
 function browseNotice(sort: SearchGamesState['sort'], totalIsExact: boolean) {
   const notes = [sort === 'trending' ? TRENDING_NOTICE : '', !totalIsExact ? BOUNDED_BROWSE_NOTICE : ''].filter(Boolean);
   return notes.length ? { notice: notes.join(' ') } : {};
@@ -265,6 +265,9 @@ async function fetchSearchResults(state: SearchGamesState,poolOnly=false): Promi
 
   if(!poolOnly && !q && platform==='All' && !genre && !year && monetization==='All') {
     const pool=await readRankedBrowsePool(sort);
+    if (sort === "trending" && (pool.observedAt == null || Date.now() - pool.observedAt > 2 * SEARCH_REVALIDATE_SECONDS * 1000)) {
+      throw new Error("Trending catalogue snapshot expired.");
+    }
     const ids=pool.ids.slice((page-1)*SEARCH_PAGE_SIZE,page*SEARCH_PAGE_SIZE);
     const projection = sort==='newest' || sort==='trending' ? sort : undefined;
     const cards=ids.length?await (page<=3?readCachedBrowseCards:readBrowseCards)(ids,projection):[];
@@ -337,7 +340,7 @@ async function fetchSearchResults(state: SearchGamesState,poolOnly=false): Promi
   let rows = rankCatalogueCohort(data ?? [], state, usesStoredClassification, observedNow);
   const filteredTotal = rows.length;
 
-  if(poolOnly)return {ids:rows.map(row=>row.id),totalIsExact,...(isUpcoming?{cards:rows.map(row=>{
+  if(poolOnly)return {ids:rows.map(row=>row.id),totalIsExact,...(isTrendingSort?{observedAt:observedNow}:{}),...(isUpcoming?{cards:rows.map(row=>{
     const game = mapGameRow(row);
     const reviewed=matchReviewedPendingCatalogueRelease(row);
     const timing = getCatalogueUpcomingTiming(row, new Date(observedNow));
@@ -443,13 +446,13 @@ function readSharedBrowsePool(sort: SearchGamesState['sort']): Promise<RankedBro
 const readRankedBrowsePool=unstable_cache(async(sort:SearchGamesState['sort'])=>{
   if(!['relevance','newest','upcoming','recently-added','top-rated','trending'].includes(sort))throw new Error('Invalid public browse sort');
   return readSharedBrowsePool(sort);
-},['public-browse-ranked-ids-v13'],{revalidate:SEARCH_REVALIDATE_SECONDS,tags:['public-search']});
+},['public-browse-ranked-ids-v14'],{revalidate:SEARCH_REVALIDATE_SECONDS,tags:['public-search']});
 
 async function readBrowseCards(ids:string[], projection?:'newest'|'trending'):Promise<Game[]> {
   const columns = GAME_CARD_COLUMNS_WITH_DESC + (projection==='newest' ? NEWEST_EVIDENCE_COLUMNS : '');
   const {data,error}=await getPublicSupabase().from('games').select(columns).in('id',ids).abortSignal(AbortSignal.timeout(5000));
   if(error)throw error;
-  const rows=((data || []) as unknown as GameRow[]).filter(isPublicSafeGame);
+  const rows=((data || []) as unknown as GameRow[]).filter(row => isPublicSafeGame(row) && !hasUnavailableStatus(row));
   if (projection!=='trending') return rows.map(row=>mapGameRow(projection==='newest'?projectReviewedRelease(row):row));
   const now=Date.now();
   return rows.flatMap(row=>{
@@ -457,7 +460,7 @@ async function readBrowseCards(ids:string[], projection?:'newest'|'trending'):Pr
     return growth?[{...mapGameRow(row),trendingReason:growth==='fresh'?'Trending Up':'Past Momentum'}]:[];
   });
 }
-const readCachedBrowseCards=unstable_cache(readBrowseCards,['public-browse-cards-v2'],{revalidate:SEARCH_REVALIDATE_SECONDS,tags:['public-search']});
+const readCachedBrowseCards=unstable_cache(readBrowseCards,['public-browse-cards-v3'],{revalidate:SEARCH_REVALIDATE_SECONDS,tags:['public-search']});
 
 export async function loadSearchResults(state: SearchGamesState): Promise<PaginatedResponse<Game>> {
   const expandedQuery = expandGameSearchAlias(state.query);
