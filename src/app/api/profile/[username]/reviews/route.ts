@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
-import { jsonPrivateOk as jsonOk } from "@/lib/api/response";
+import { unstable_rethrow } from "next/navigation";
+import { jsonPrivateOk as jsonOk, jsonUnavailable } from "@/lib/api/response";
 import { mapReviewRow } from "@/lib/db/mappers";
 import { attachReviewVoteFields, getReviewVoteAggregates, getUserReviewVotes } from "@/lib/reviewVotes";
 import { getAuthSupabase, getCurrentUser } from "@/lib/supabase/auth";
@@ -13,17 +14,18 @@ export async function GET(
 
   try {
     if (!hasPublicSupabaseEnv()) {
-      return jsonOk([]);
+      return jsonUnavailable("Profile reviews are temporarily unavailable.");
     }
 
     const supabase = getPublicSupabase();
 
-    const { data: profile } = await supabase
+    const { data: profile, error: profileError } = await supabase
       .from("profiles")
       .select("id")
       .eq("username", username)
-      .maybeSingle() as { data: { id: string } | null };
+      .maybeSingle();
 
+    if (profileError) throw profileError;
     if (!profile) {
       return jsonOk([]);
     }
@@ -62,7 +64,8 @@ export async function GET(
 
     return jsonOk(reviews);
   } catch (err) {
-    console.error(`[API] /profile/${username}/reviews error:`, err);
-    return jsonOk([]);
+    unstable_rethrow(err);
+    console.warn("[API] Profile reviews read failed");
+    return jsonUnavailable("Profile reviews are temporarily unavailable.");
   }
 }

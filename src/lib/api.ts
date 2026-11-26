@@ -438,7 +438,7 @@ export async function getUserProfile(username: string): Promise<User | null> {
 
 /** Get reviews by a specific user. */
 export async function getUserReviews(username: string): Promise<Review[]> {
-  return (await apiFetch<Review[]>(`/api/profile/${encodeURIComponent(username)}/reviews`)) ?? [];
+  return apiFetchOrThrow<Review[]>(`/api/profile/${encodeURIComponent(username)}/reviews`);
 }
 
 /* ═══════════════════════════════════════════════════
@@ -518,7 +518,7 @@ export async function voteOnReview(reviewId: string, value: 1 | -1): Promise<Vot
 
 /** Get comments for a review. */
 export async function getReviewComments(reviewId: string): Promise<ReviewComment[]> {
-  return (await apiFetch<ReviewComment[]>(`/api/reviews/${reviewId}/comments`)) ?? [];
+  return apiFetchOrThrow<ReviewComment[]>(`/api/reviews/${encodeURIComponent(reviewId)}/comments`);
 }
 
 /** Add a comment to a review. */

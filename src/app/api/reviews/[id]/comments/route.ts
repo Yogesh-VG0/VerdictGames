@@ -4,7 +4,8 @@
  */
 
 import { NextRequest } from "next/server";
-import { jsonOk, jsonError, jsonBadRequest } from "@/lib/api/response";
+import { jsonOk, jsonError, jsonBadRequest, jsonUnavailable } from "@/lib/api/response";
+import { unstable_rethrow } from "next/navigation";
 import { getAuthSupabase, getCurrentUser } from "@/lib/supabase/auth";
 import { getPublicSupabase, hasPublicSupabaseEnv } from "@/lib/supabase/public";
 import { mapCommentRow } from "@/lib/db/mappers";
@@ -21,7 +22,7 @@ export async function GET(
 
   try {
     if (!hasPublicSupabaseEnv()) {
-      return jsonOk([]);
+      return jsonUnavailable("Review comments are temporarily unavailable.");
     }
 
     const supabase = getPublicSupabase();
@@ -58,8 +59,9 @@ export async function GET(
 
     return jsonOk(roots);
   } catch (err) {
-    console.error("[API] /reviews/[id]/comments GET error:", err);
-    return jsonOk([]);
+    unstable_rethrow(err);
+    console.warn("[API] Review comments read failed");
+    return jsonUnavailable("Review comments are temporarily unavailable.");
   }
 }
 

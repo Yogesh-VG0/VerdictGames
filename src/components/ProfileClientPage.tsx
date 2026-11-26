@@ -33,7 +33,7 @@ export default function ProfileClientPage({ username, initialUser }: Props) {
     initialDataUpdatedAt: 0,
   });
 
-  const { data: reviews } = useQuery({
+  const { data: reviews, isLoading: reviewsLoading, isError: reviewsError, refetch: retryReviews } = useQuery({
     queryKey: ["userReviews", username, currentUser?.id ?? null],
     queryFn: () => getUserReviews(username),
     enabled: !!user,
@@ -166,7 +166,14 @@ export default function ProfileClientPage({ username, initialUser }: Props) {
       label: "Reviews",
       content: (
         <div className="space-y-4">
-          {reviews && reviews.length > 0 ? (
+          {reviewsLoading ? (
+            <p role="status" className="text-secondary text-sm text-center py-8">Loading reviews…</p>
+          ) : reviewsError && !reviews ? (
+            <p role="status" className="text-secondary text-sm text-center py-8">
+              Reviews are temporarily unavailable.{" "}
+              <button type="button" className="text-accent underline" onClick={() => void retryReviews()}>Retry</button>
+            </p>
+          ) : reviews && reviews.length > 0 ? (
             reviews.map((review) => (
               <ReviewCard key={review.id} review={review} />
             ))
