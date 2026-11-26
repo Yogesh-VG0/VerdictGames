@@ -32,7 +32,7 @@ describe('homepage degradation scope', () => {
     expect(page).not.toContain(notice);
   });
 
-  it('shows the original timestamp on a usable discovery snapshot', async () => {
+  it('shows usable discovery snapshot games without exposing the timestamp', async () => {
     const fetchedAt = '2026-11-23T11:30:00Z';
     reads.core.mockResolvedValue({ data: core, degraded: false });
     reads.anticipated.mockResolvedValue({
@@ -41,8 +41,9 @@ describe('homepage degradation scope', () => {
     });
     const page = renderToStaticMarkup(await HomePage());
     expect(page).toContain('Most Anticipated');
-    expect(page).toContain('RAWG snapshot');
-    expect(page).toContain(fetchedAt);
+    expect(page).toContain('Fixture upcoming game');
+    expect(page).not.toContain('RAWG snapshot');
+    expect(page).not.toContain(fetchedAt);
     expect(page).not.toContain(notice);
   });
 
