@@ -39,9 +39,18 @@ const contrast = (element, property) => {
 try {
   const columns = new Set((await sql`select column_name from information_schema.columns where table_schema='public' and table_name='games'`).map(row => row.column_name));
   const source = JSON.parse(readFileSync('scripts/fixtures/public-games.json', 'utf8'));
+  const now = new Date();
   const games = source.map((game, index) => ({ ...Object.fromEntries(Object.entries(game).filter(([key]) => columns.has(key))),
     id: randomUUID(), slug: `ux-fixture-${game.slug}`, featured: index < 6, trending: index < 6,
-    last_enriched_at: new Date().toISOString() }));
+    last_enriched_at: now.toISOString() }));
+  // Give the reduced-motion assertions one qualified slide independently of
+  // the historical fixture dates and the availability of provider feeds.
+  if (phase === 'after') Object.assign(games[0], {
+    release_date: new Date(now.getTime() - 30 * 86400000).toISOString().slice(0, 10), release_status: 'released',
+    score: 97, verdict_score: 97, confidence: 0.92, review_count: 60000, steam_total_count: 60000,
+    critic_score: 92, critic_source_count: 2, is_provisional: false, current_players: 8000,
+    players_updated_at: now.toISOString(),
+  });
   if (phase === 'after') games.push({ ...games[0], id: randomUUID(), slug: 'ux-fixture-missing-art', title: 'A Very Long Adventure Title: The Complete Collector’s Edition', cover_image: '', header_image: '', screenshots: [], featured: false, trending: false });
   assert.equal((await admin.from('games').select('id').in('slug', games.map(g => g.slug))).data?.length, 0, 'Never overwrite an existing record');
   const inserted = await admin.from('games').insert(games).select('id');
@@ -277,6 +286,7 @@ try {
       await context.close();
     }
   }
+  mkdirSync('.verification', { recursive: true });
   writeFileSync(`.verification/ux-${supplemental ? 'supplemental' : phase}.json`, JSON.stringify(metrics, null, 2));
   console.log(supplemental ? 'PASS supplemental scenarios and eligible sitemap coverage' : `PASS ${phase}: 54 real page renders captured; no uncaught JavaScript errors`);
 } finally {
