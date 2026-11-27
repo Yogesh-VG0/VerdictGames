@@ -1,6 +1,9 @@
 // Mature age ratings and content warnings are not adult-only classifications.
 // Shared by public responses and provider ingestion.
 const explicit = /\b(?:nsfw|hentai|porn(?:ography|ographic)?|erotic(?:a)?|adult[ -]?only|adults[ -]?only|explicit sex(?:ual content)?|sex game|sexual simulation)\b/i;
+// PostgreSQL's word-boundary operator with the C collation matches the
+// JavaScript word boundary. The worker can project one flag for long prose.
+export const explicitContentPostgresPattern = explicit.source.replaceAll('\\b', '\\y');
 export function isPublicContentAllowed({ title = '', name = '', tags = [], genres = [], description = '' }) {
   const terms = [...(tags || []), ...(genres || [])].map(value => typeof value === 'string' ? value : value?.name || value?.slug || '');
   return !explicit.test(`${title}\n${name}\n${description || ''}`)

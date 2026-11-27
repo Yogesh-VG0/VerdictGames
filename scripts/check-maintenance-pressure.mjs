@@ -4,6 +4,7 @@ import { connectDb, closeDb } from './lib/db-connect.mjs';
 const lowerPriority = new Set([
   'seed-curated-lists', 'refresh-steam-reviews', 'backfill-mobile-android', 'backfill-mobile-ios',
   'discover-steam-popular', 'discover-deep', 'backfill-games',
+  'refresh-sitemap',
 ]);
 const job = process.argv[2];
 let ready = true;

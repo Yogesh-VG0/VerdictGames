@@ -2,11 +2,10 @@ import { connection } from 'next/server';
 import { loadSitemap } from '@/lib/services/sitemap';
 import { serializeSitemap } from '@/lib/seo/sitemap';
 
-export const maxDuration = 60;
+export const maxDuration = 10;
 
 export async function GET() {
-  // Do not query the live catalog during next build. Successful XML is cached
-  // at the CDN for an hour; stale copies remain usable during backend errors.
+  // Read one published snapshot at runtime. Cache the validated XML at the CDN.
   await connection();
   try {
     const pages = await loadSitemap();
