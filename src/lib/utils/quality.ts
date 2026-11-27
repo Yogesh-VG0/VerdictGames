@@ -193,7 +193,7 @@ export function hasStrongCriticEvidence(row: EvidenceRow): boolean {
  * NOTE: This function NEVER penalises for missing media. Media is a readiness
  * concern, not a quality concern.
  */
-export function confidenceWeightedScore(row: GameRow): number {
+export function confidenceWeightedScore(row: Pick<GameRow, "verdict_score" | "confidence" | "score" | "review_count">): number {
   // v2 path: use pre-computed verdict scoring
   if (row.verdict_score != null && row.verdict_score > 0) {
     const conf = row.confidence ?? 0;
@@ -212,12 +212,12 @@ export function confidenceWeightedScore(row: GameRow): number {
   return (score * reviews + C * m) / (reviews + m);
 }
 
-function getReleaseAgeDays(row: Pick<GameRow, "release_date">): number {
+function getReleaseAgeDays(row: Pick<GameRow, "release_date">, observedNow = Date.now()): number {
   if (!row.release_date) {
     return Number.POSITIVE_INFINITY;
   }
 
-  return (Date.now() - new Date(`${row.release_date}T00:00:00`).getTime()) / 86400000;
+  return (observedNow - Date.parse(`${row.release_date}T00:00:00Z`)) / 86400000;
 }
 
 export function isStrongNewReleaseCandidate(row: GameRow): boolean {
@@ -275,12 +275,12 @@ export function isStrongNewReleaseCandidate(row: GameRow): boolean {
   return ageDays <= 3 && currentPlayers >= 1200 && verdictScore >= 68;
 }
 
-export function getNewReleaseDiscoveryScore(row: GameRow): number {
+export function getNewReleaseDiscoveryScore(row: GameRow, observedNow = Date.now()): number {
   const qualityScore = confidenceWeightedScore(row);
   const evidenceReviewCount = getEvidenceReviewCount(row);
   const currentPlayers = row.current_players ?? 0;
   const momentum = Math.max(0, row.momentum ?? 0);
-  const ageDays = getReleaseAgeDays(row);
+  const ageDays = getReleaseAgeDays(row, observedNow);
   const freshness = ageDays <= 7
     ? 16
     : ageDays <= 14

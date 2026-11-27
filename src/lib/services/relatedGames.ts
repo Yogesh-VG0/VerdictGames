@@ -7,9 +7,13 @@ import type { Game } from "@/lib/types";
 import { hasUsableCardImage } from "@/lib/utils/mediaReadiness";
 import { dedupePublicCanonicalRows } from "@/lib/utils/publicCanonical";
 import { isPublicSafeGame } from "@/lib/utils/publicSafety";
+import { hasUnreleasedStatus } from "@/lib/utils/release-status";
 import { confidenceWeightedScore, isQualityGame } from "@/lib/utils/quality";
 import { normalizeTitle } from "@/lib/utils/slugify";
 import { currentHomepageSignal, homepageSignal } from "@/lib/services/homepage-budget";
+import type { RelatedGameTarget } from "@/lib/services/game-detail";
+import { RelatedDependencyError, relatedDatabaseError } from "@/lib/services/related-errors";
+import { createRelatedReadCoalescer } from "@/lib/services/related-read";
 
 export const RELATED_GAMES_REVALIDATE_SECONDS = 300;
 export const RELATED_GAMES_API_CACHE_CONTROL = `s-maxage=${RELATED_GAMES_REVALIDATE_SECONDS}, stale-while-revalidate=300`;
@@ -107,16 +111,16 @@ function isSameValue(left: string | null | undefined, right: string | null | und
   return Boolean(a && b && a === b);
 }
 
-function isEligibleCandidate(target: Game, row: GameRow): boolean {
+function isEligibleCandidate(target: RelatedGameTarget, row: GameRow): boolean {
   if (row.id === target.id) return false;
   if (normalizeSignal(row.title) === normalizeSignal(target.title)) return false;
   if (!isPublicSafeGame(row) || !hasUsableCardImage(row)) return false;
-  if ((row.is_provisional ?? false) || row.verdict_label === "COMING SOON") return false;
+  if (row.is_provisional || row.verdict_label === "COMING SOON" || hasUnreleasedStatus(row)) return false;
   if (row.release_date && row.release_date > new Date().toISOString().slice(0, 10)) return false;
   return true;
 }
 
-function scoreCandidate(target: Game, candidate: RelatedCandidateBucket): number {
+function scoreCandidate(target: RelatedGameTarget, candidate: RelatedCandidateBucket): number {
   const row = candidate.row;
   const targetGenres = uniqueStrings(target.genres);
   const targetTags = pickSignalTags(target.tags, target.genres).slice(0, 4);
@@ -148,7 +152,7 @@ function scoreCandidate(target: Game, candidate: RelatedCandidateBucket): number
   }
 
   score += getGenreMatchScore(targetGenres, candidateGenres);
-  score += Math.min(getSharedCount(targetTags, candidateTags), 4) * 10;
+  score += Math.min(getSharedCount(targetTags, candidateTags), 4) * 18;
   score += Math.min(getSharedCount(targetPlatforms, candidatePlatforms), 2) * 6;
   score += getReleaseAffinityScore(target.releaseDate, row.release_date);
   score += Math.min((row.confidence ?? 0) * 24, 24);
@@ -159,9 +163,9 @@ function scoreCandidate(target: Game, candidate: RelatedCandidateBucket): number
   return score;
 }
 
-async function fetchCandidateRows(game: Game): Promise<RelatedCandidateBucket[]> {
+async function fetchCandidateRows(game: RelatedGameTarget): Promise<RelatedCandidateBucket[]> {
   if (!hasPublicSupabaseEnv()) {
-    return [];
+    throw new RelatedDependencyError("database-unavailable");
   }
 
   const supabase = getPublicSupabase();
@@ -177,13 +181,16 @@ async function fetchCandidateRows(game: Game): Promise<RelatedCandidateBucket[]>
     let query = supabase
       .from("games")
       .select(SELECT_COLUMNS)
-      .neq("id", game.id)
       .not("cover_image", "is", null)
       .neq("cover_image", "")
       .order("verdict_score", { ascending: false, nullsFirst: false })
       .order("confidence", { ascending: false, nullsFirst: false })
       .order("score", { ascending: false })
-      .order("updated_at", { ascending: false });
+      .order("updated_at", { ascending: false })
+      .order("id", { ascending: true });
+
+    // Provider previews use synthetic IDs. Candidate title safety still applies.
+    if (!game.isPreview) query = query.neq("id", game.id);
 
     if (args.exact) {
       query = query.eq(args.exact.column, args.exact.value);
@@ -197,8 +204,11 @@ async function fetchCandidateRows(game: Game): Promise<RelatedCandidateBucket[]>
       query = query.lte("release_date", today);
     }
 
-    const { data, error } = await query.limit(args.limit).abortSignal(homepageSignal(AbortSignal.timeout(2200))) as unknown as { data: GameRow[] | null; error: unknown };
-    if (error) throw error;
+    const overall = currentHomepageSignal();
+    const transport = AbortSignal.timeout(2200);
+    const { data, error } = await Promise.resolve(query.limit(args.limit).abortSignal(homepageSignal(transport)))
+      .catch(error => { throw relatedDatabaseError(error, transport, overall); }) as unknown as { data: GameRow[] | null; error: unknown };
+    if (error) throw relatedDatabaseError(error, transport, overall);
     return { source: args.source, rows: data ?? [] };
   }
 
@@ -276,15 +286,14 @@ async function fetchCandidateRows(game: Game): Promise<RelatedCandidateBucket[]>
   return Array.from(byId.values()).filter((candidate) => dedupedIds.has(candidate.row.id));
 }
 
-async function fetchRelatedGames(game: Game, limit: number): Promise<Game[]> {
-  const buckets = await fetchCandidateRows(game);
-  const eligible = buckets.filter((candidate) => isEligibleCandidate(game, candidate.row));
-  const qualityEligible = eligible.filter((candidate) => isQualityGame(candidate.row, "generic"));
-  const pool = qualityEligible.length >= limit ? qualityEligible : eligible;
+type RelatedRankings = { all: Game[]; quality: Game[] };
 
-  return pool
+async function fetchRelatedRankings(game: RelatedGameTarget): Promise<RelatedRankings> {
+  const buckets = await fetchCandidateRows(game);
+  const eligible = buckets.filter(candidate => isEligibleCandidate(game, candidate.row))
+    .map(candidate => ({ row: candidate.row, score: scoreCandidate(game, candidate) }))
     .sort((left, right) => {
-      const scoreDiff = scoreCandidate(game, right) - scoreCandidate(game, left);
+      const scoreDiff = right.score - left.score;
       if (scoreDiff !== 0) return scoreDiff;
 
       const rightVerdict = right.row.verdict_score ?? right.row.score ?? 0;
@@ -295,18 +304,26 @@ async function fetchRelatedGames(game: Game, limit: number): Promise<Game[]> {
       const leftReviews = left.row.review_count ?? 0;
       if (rightReviews !== leftReviews) return rightReviews - leftReviews;
 
-      return (right.row.current_players ?? 0) - (left.row.current_players ?? 0);
-    })
-    .slice(0, limit)
-    .map((candidate) => mapGameRow(candidate.row));
+      return (right.row.current_players ?? 0) - (left.row.current_players ?? 0) || left.row.id.localeCompare(right.row.id);
+    });
+  return {
+    all: eligible.slice(0, 12).map(candidate => mapGameRow(candidate.row)),
+    quality: eligible.filter(candidate => isQualityGame(candidate.row, "generic"))
+      .slice(0, 12).map(candidate => mapGameRow(candidate.row)),
+  };
 }
 
-export async function getRelatedGamesForGame(game: Game, limit = 4): Promise<Game[]> {
-  const safeLimit = clampLimit(limit);
+const coalesceRelatedRankings = createRelatedReadCoalescer<RelatedRankings>();
+const readCachedRelatedRankings = unstable_cache(
+  (game: RelatedGameTarget) => coalesceRelatedRankings(JSON.stringify(game), () => fetchRelatedRankings(game)),
+  ["related-games-v7"],
+  { revalidate: RELATED_GAMES_REVALIDATE_SECONDS },
+);
 
-  return unstable_cache(
-    async () => fetchRelatedGames(game, safeLimit),
-    ["related-games-v4", game.id, String(safeLimit)],
-    { revalidate: RELATED_GAMES_REVALIDATE_SECONDS }
-  )();
+export async function getRelatedGamesForGame(game: RelatedGameTarget, limit = 4): Promise<Game[]> {
+  const safeLimit = clampLimit(limit);
+  // Ranking inputs invalidate previously scored lists for the same identity
+  // after the shorter tracked target refresh has observed their update.
+  const rankings = await readCachedRelatedRankings(game);
+  return (rankings.quality.length >= safeLimit ? rankings.quality : rankings.all).slice(0, safeLimit);
 }

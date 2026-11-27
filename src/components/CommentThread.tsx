@@ -134,7 +134,7 @@ export default function CommentThread({ reviewId, onAuthRequired }: CommentThrea
   const [isExpanded, setIsExpanded] = useState(false);
   const newCommentInputId = `review-comment-${reviewId}`;
 
-  const { data: comments, isLoading } = useQuery({
+  const { data: comments, isLoading, isError, refetch } = useQuery({
     queryKey: ["reviewComments", reviewId],
     queryFn: () => getReviewComments(reviewId),
     enabled: isExpanded,
@@ -161,6 +161,8 @@ export default function CommentThread({ reviewId, onAuthRequired }: CommentThrea
   return (
     <div className="space-y-3">
       <button
+        type="button"
+        aria-expanded={isExpanded}
         onClick={() => setIsExpanded(!isExpanded)}
         className="text-xs text-tertiary hover:text-accent transition-colors flex items-center gap-1"
       >
@@ -217,6 +219,11 @@ export default function CommentThread({ reviewId, onAuthRequired }: CommentThrea
                   <div key={i} className="h-12 bg-white/5 rounded-lg animate-pulse" />
                 ))}
               </div>
+            ) : isError && !comments ? (
+              <p role="status" className="text-sm text-secondary">
+                Comments are temporarily unavailable.{" "}
+                <button type="button" className="text-accent underline" onClick={() => void refetch()}>Retry</button>
+              </p>
             ) : comments && comments.length > 0 ? (
               <div className="space-y-4">
                 {comments.map((comment) => (

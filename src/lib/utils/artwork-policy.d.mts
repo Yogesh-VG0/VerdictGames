@@ -12,7 +12,7 @@ export function reviewedHeroArtwork(identity: Identity): ReviewedArtwork | null;
 export function matchedIgdbArtwork<T>(game: T | null, identity: {
   igdbId?: number | null; steamAppId?: number | null; title: string; releaseDate?: string | null; developer?: string; publisher?: string; requireCompanies?: boolean;
 }): T | null;
-export function isProviderHeroArtwork(url: string | null | undefined): boolean;
+export function isProviderHeroArtwork(url: string | null | undefined, steamAppId?: number): boolean;
 export function steamLibraryHeroAsset(item: unknown, appId: number): string | null;
 export function selectLandscapeArtwork(input: ArtworkInput): string;
 export function verifiedSteamLibraryHero(input: ArtworkInput, fetchImage?: typeof fetch): Promise<string | null>;

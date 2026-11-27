@@ -70,17 +70,16 @@ function sanitizePros(pros: string[], reviewCount: number): string[] {
   });
 }
 
-function computeTrendingReason(row: GameRow, label: VerdictLabel): string | undefined {
+function computeTrendingReason(row: GameRow, label: VerdictLabel, observedNow: number): string | undefined {
   if (label === 'COMING SOON' || label === 'CANCELLED') return undefined;
   const r = row as GameRow & { is_trending_manual?: boolean; is_featured_manual?: boolean };
-  const momentum = getFreshPlayerSignals(row).momentum;
+  const { momentum, players: currentPlayers } = getFreshPlayerSignals(row, observedNow);
   const score = (row.verdict_score != null && row.verdict_score > 0)
     ? Math.round(row.verdict_score)
     : displayScore(row.score ?? 0, row.review_count ?? 0);
-  const currentPlayers = getFreshPlayerSignals(row).players;
   const reviewCount = row.review_count ?? 0;
   const ageDays = row.release_date
-    ? (Date.now() - new Date(`${row.release_date}T00:00:00`).getTime()) / 86400000
+    ? (observedNow - Date.parse(`${row.release_date}T00:00:00Z`)) / 86400000
     : Number.POSITIVE_INFINITY;
 
   // Priority: manual > momentum > recency > quality > popularity > deals > fallback
@@ -94,12 +93,12 @@ function computeTrendingReason(row: GameRow, label: VerdictLabel): string | unde
   if (ageDays <= 30) return "✨ Just Released";
 
   // 3. Momentum signals
-  const growth = getPlayerGrowthEvidence(row);
+  const growth = getPlayerGrowthEvidence(row, observedNow);
   if (growth === 'fresh') return "Trending Up";
   if (growth === 'stale') return "Past Momentum";
 
   // 4. Quality / popularity tiers
-  const observationAge = Date.now() - Date.parse(row.players_updated_at ?? '');
+  const observationAge = observedNow - Date.parse(row.players_updated_at ?? '');
   if (currentPlayers > 10000 && observationAge >= 0 && observationAge <= 72 * 60 * 60 * 1000) return "🎮 Popular Now";
   if (score >= 90 && reviewCount >= 150) return "Top Rated";
   if (row.price_deal_url && row.price_lowest != null && score >= 75) return "On Sale";
@@ -126,6 +125,11 @@ function displayScore(score: number, reviewCount: number): number {
 
 /** Map a games row to the frontend Game interface. */
 export function mapGameRow(row: GameRow): Game {
+  return mapGameRowAt(row, Date.now());
+}
+
+/** Use a single observation clock when projecting a public snapshot. */
+export function mapGameRowAt(row: GameRow, observedNow: number): Game {
   const flagProvisional = (row as GameRow & { is_provisional?: boolean }).is_provisional ?? false;
   const releaseStatus = row.release_status?.toLowerCase().replace(/_/g,'-') || undefined;
 
@@ -134,9 +138,10 @@ export function mapGameRow(row: GameRow): Game {
   const isComingSoonLabel = rowVerdict === "COMING SOON";
 
   // Force future/unreleased games into Coming Soon state — no real verdicts until released
-  const today = new Date().toISOString().slice(0, 10);
+  const now = new Date(observedNow);
+  const today = now.toISOString().slice(0, 10);
   const isFutureRelease = row.release_date
-    ? isFutureDate(row.release_date)
+    ? isFutureDate(row.release_date, now)
     : false;
 
   // Games with 0 reviews should not display real verdicts — their score is just a RAWG rating guess
@@ -151,8 +156,8 @@ export function mapGameRow(row: GameRow): Game {
   const JUST_RELEASED_MIN_REVIEWS = 20;
   const isRecentRelease = row.release_date
     ? (() => {
-        const releaseMs = new Date(row.release_date + "T00:00:00").getTime();
-        const todayMs = new Date(today + "T00:00:00").getTime();
+        const releaseMs = Date.parse(`${row.release_date}T00:00:00Z`);
+        const todayMs = Date.parse(today);
         const daysSinceRelease = (todayMs - releaseMs) / (1000 * 60 * 60 * 24);
         return daysSinceRelease >= 0 && daysSinceRelease <= JUST_RELEASED_DAYS;
       })()
@@ -208,7 +213,7 @@ export function mapGameRow(row: GameRow): Game {
     : isJustReleased
       ? `${row.title} just launched — verdict pending as review data comes in.`
       : regenerateVerdictSummary(row.title, score);
-  const description = sanitizeDiscoveryDescription(row);
+  const description = sanitizeDiscoveryDescription(row, today);
 
   return {
     id: row.id,
@@ -283,7 +288,7 @@ export function mapGameRow(row: GameRow): Game {
     // Trending signals
     isFeaturedManual: (row as GameRow & { is_featured_manual?: boolean }).is_featured_manual ?? undefined,
     isTrendingManual: (row as GameRow & { is_trending_manual?: boolean }).is_trending_manual ?? undefined,
-    trendingReason: computeTrendingReason(row, verdictLabel),
+    trendingReason: computeTrendingReason(row, verdictLabel, observedNow),
 
     // Momentum
     momentum: row.momentum ?? undefined,

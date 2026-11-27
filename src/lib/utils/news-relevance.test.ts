@@ -6,6 +6,8 @@ describe('gaming feed relevance',()=>{
   'Avengers: Doomsday in ScreenX will have things you will not see elsewhere',
   'Dragon Ball Animators Responsible for Leaks Facing Consequences',
   'Blade Runner 2099 release schedule: When is episode 1 on Prime Video?',
+  'Wordle hints and answer for November 26',
+  'Today’s NYT Connections hints and answers',
  ])('rejects unrelated entertainment: %s',title=>expect(isRelevantGamingHeadline(title)).toBe(false));
  it.each([
   'GTA 6 release day live coverage', 'Nintendo Black Friday Sale Launches Early',
@@ -14,6 +16,7 @@ describe('gaming feed relevance',()=>{
   'An anime crossover comes to this RPG',
   'Sony announces a new PlayStation handheld',
   'Studio employees discuss publishing and developer tools',
+  'The story behind Wordle and its original developer',
  ])('keeps gaming coverage: %s',title=>expect(isRelevantGamingHeadline(title)).toBe(true));
  it('fills the featured mix with other relevant topics before repeating guides', () => {
    const articles = [

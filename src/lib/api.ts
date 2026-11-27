@@ -113,17 +113,17 @@ export async function getFeaturedGames(limit = 5): Promise<Game[]> {
 
 /** Get trending games. */
 export async function getTrendingGames(): Promise<Game[]> {
-  return (await apiFetch<Game[]>("/api/games/trending?limit=10")) ?? [];
+  return apiFetchOrThrow<Game[]>("/api/games/trending?limit=10");
 }
 
 /** Get newest releases (sorted by date desc). */
 export async function getNewReleases(limit = 8): Promise<Game[]> {
-  return (await apiFetch<Game[]>(`/api/games/new-releases?limit=${limit}`)) ?? [];
+  return apiFetchOrThrow<Game[]>(`/api/games/new-releases?limit=${limit}`);
 }
 
 /** Get top-rated games. */
 export async function getTopRated(limit = 8): Promise<Game[]> {
-  return (await apiFetch<Game[]>(`/api/games/top-rated?limit=${limit}`)) ?? [];
+  return apiFetchOrThrow<Game[]>(`/api/games/top-rated?limit=${limit}`);
 }
 
 /* ═══════════════════════════════════════════════════
@@ -438,7 +438,7 @@ export async function getUserProfile(username: string): Promise<User | null> {
 
 /** Get reviews by a specific user. */
 export async function getUserReviews(username: string): Promise<Review[]> {
-  return (await apiFetch<Review[]>(`/api/profile/${encodeURIComponent(username)}/reviews`)) ?? [];
+  return apiFetchOrThrow<Review[]>(`/api/profile/${encodeURIComponent(username)}/reviews`);
 }
 
 /* ═══════════════════════════════════════════════════
@@ -518,7 +518,7 @@ export async function voteOnReview(reviewId: string, value: 1 | -1): Promise<Vot
 
 /** Get comments for a review. */
 export async function getReviewComments(reviewId: string): Promise<ReviewComment[]> {
-  return (await apiFetch<ReviewComment[]>(`/api/reviews/${reviewId}/comments`)) ?? [];
+  return apiFetchOrThrow<ReviewComment[]>(`/api/reviews/${encodeURIComponent(reviewId)}/comments`);
 }
 
 /** Add a comment to a review. */
@@ -565,7 +565,17 @@ export async function getCalendarGames(month?: string, signal?: AbortSignal): Pr
 
 /** Compare two games side by side. */
 export async function compareGames(slug1: string, slug2: string): Promise<{ game1: Game; game2: Game } | null> {
-  return apiFetch<{ game1: Game; game2: Game }>(`/api/compare?g1=${encodeURIComponent(slug1)}&g2=${encodeURIComponent(slug2)}`);
+  const query = new URLSearchParams({ g1: slug1, g2: slug2 });
+  const response = await fetch(`${getBaseUrl()}/api/compare?${query}`, {
+    credentials: "omit", signal: boundedClientSignal(),
+  });
+  if (response.status === 404) return null;
+  if (!response.ok) throw new Error("Comparison is temporarily unavailable.");
+  const result = await response.json();
+  if (result.success !== true || !result.data?.game1 || !result.data?.game2) {
+    throw new Error("Comparison response was incomplete.");
+  }
+  return result.data;
 }
 
 /* ═══════════════════════════════════════════════════

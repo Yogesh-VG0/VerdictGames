@@ -1,4 +1,4 @@
-import { getFreshPlayerSignals } from '@/lib/utils/trending';
+import { getUpcomingMetadataScore, projectBrowseCard, projectReviewedRelease, rankCatalogueCohort } from "@/lib/services/catalogue-discovery-ranking";
 import { unstable_cache } from "next/cache";
 import { expandGameSearchAlias, searchGamesStateToFilters, type SearchGamesState } from "@/lib/search";
 import { GAME_CARD_COLUMNS_WITH_DESC } from "@/lib/db/columns";
@@ -6,32 +6,21 @@ import { mapGameRow } from "@/lib/db/mappers";
 import { getPublicSupabase, hasPublicSupabaseEnv } from "@/lib/supabase/public";
 import type { Game, PaginatedResponse, Platform } from "@/lib/types";
 import type { GameRow } from "@/lib/supabase/types";
-import { hasUsableCardImage } from "@/lib/utils/mediaReadiness";
 import { isPrimaryDiscoveryGame } from "@/lib/utils/discovery";
-import { getPlayerGrowthEvidence, getPlayerGrowthRank } from "@/lib/utils/trending";
-import {
-  confidenceWeightedScore,
-  getCriticSourceCount,
-  getEvidenceReviewCount,
-  getNewReleaseDiscoveryScore,
-  hasStrongCriticEvidence,
-  isQualityGame,
-  isSurfaceReady,
-} from "@/lib/utils/quality";
-import { dedupePublicCanonicalRows } from "@/lib/utils/publicCanonical";
+import { getPlayerGrowthEvidence } from "@/lib/utils/trending";
 import { isPublicSafeGame, isPublicSafeRawgGame } from "@/lib/utils/publicSafety";
 import { normalizeTitle } from "@/lib/utils/slugify";
 import { isFutureDate } from "@/lib/utils";
 import {searchGenrePredicate} from '@/lib/utils/searchGenre';
-import {hasEarlyAccessSignal,hasKnownFullRelease,hasUnreleasedStatus} from '@/lib/utils/release-status';
-import { resolveReleaseTiming } from '@/lib/utils/release-timing';
-import { getReviewedReleaseTiming } from './release-timing';
-import { matchReviewedCatalogueRelease, matchReviewedPendingCatalogueRelease, reviewedCatalogueReleases, reviewedPendingCatalogueReleases } from './reviewed-catalogue-releases';
+import { hasUnavailableStatus } from "@/lib/utils/release-status";
+import { reviewedCatalogueReleases, reviewedPendingCatalogueReleases } from './reviewed-catalogue-releases';
+
+export { getBrowseTopRatedScore, isBrowseTopRatedEligible } from "@/lib/services/catalogue-discovery-ranking";
 
 export const SEARCH_REVALIDATE_SECONDS = 300;
 export const SEARCH_API_CACHE_CONTROL = `s-maxage=${SEARCH_REVALIDATE_SECONDS}, stale-while-revalidate=300`;
 export const SEARCH_PAGE_SIZE = 25;
-const SEARCH_RESULTS_CACHE_NAMESPACE = "search-results-v16";
+const SEARCH_RESULTS_CACHE_NAMESPACE = "search-results-v17";
 const BOUNDED_BROWSE_NOTICE = "Results are from a bounded catalogue selection. Use filters to narrow the search.";
 const TRENDING_NOTICE = "Trending Up uses player growth observed in the last 24 hours. Past Momentum uses older observations, up to seven days. Games without qualifying growth are excluded.";
 // Ranking and eligibility need evidence and safety metadata, not display copy,
@@ -49,22 +38,17 @@ const RECENT_POOL_COLUMNS = [
   'id','title','cover_image','release_date','created_at','steam_app_id',
   'review_count','steam_total_count','rawg_rating','score_source','user_score',
   'score','verdict_score','confidence','current_players','players_updated_at','is_provisional',
-  'verdict_label','developer','publisher','explore_primary_safe',
+  'verdict_label','release_status','developer','publisher','explore_primary_safe',
 ].join(',');
 // The unfiltered Relevance cohort only needs ranking inputs and canonical
 // identity. Read display copy for visible cards and classifier-null rows.
-const RELEVANCE_POOL_COLUMNS = RECENT_POOL_COLUMNS + ',franchise,momentum,release_status';
+const RELEVANCE_POOL_COLUMNS = RECENT_POOL_COLUMNS + ',franchise,momentum';
 const UPCOMING_POOL_COLUMNS = [
   'id','slug','title','cover_image','header_image','platforms','genres','tags','developer','publisher','franchise',
   'release_date','release_status','monetization','rawg_id','igdb_id','steam_app_id','score','verdict_score',
   'confidence','review_count','current_players','explore_primary_safe',
 ].join(',');
 const NEWEST_EVIDENCE_COLUMNS = ',rawg_id,igdb_id';
-
-function projectReviewedRelease(row: GameRow): GameRow {
-  const reviewed = matchReviewedCatalogueRelease(row);
-  return reviewed ? { ...row, release_date: reviewed.date, release_status: 'released', is_provisional:false } : row;
-}
 
 export function createEmptySearchResult(page: number): PaginatedResponse<Game> {
   return {
@@ -77,239 +61,6 @@ export function createEmptySearchResult(page: number): PaginatedResponse<Game> {
   };
 }
 
-function titleSimilarity(query: string, title: string): number {
-  const q = query.toLowerCase().trim();
-  const t = title.toLowerCase().trim();
-
-  if (q === t) return 1.0;
-  if (t.startsWith(q)) return 0.9 + Math.min(0.09, (q.length / t.length) * 0.09);
-  if (q.startsWith(t)) return 0.85 + Math.min(0.09, (t.length / q.length) * 0.09);
-
-  const qWords = q.split(/\s+/);
-  const tWords = t.split(/\s+/);
-  const allQueryWordsInTitle = qWords.every((qw) => tWords.some((tw) => tw.includes(qw)));
-
-  if (allQueryWordsInTitle) {
-    const wordOverlap = qWords.length / Math.max(tWords.length, 1);
-    return 0.7 + Math.min(0.19, wordOverlap * 0.19);
-  }
-
-  if (t.includes(q)) {
-    const lengthRatio = q.length / t.length;
-    return 0.5 + Math.min(0.19, lengthRatio * 0.19);
-  }
-
-  const matchingWords = qWords.filter((qw) => tWords.some((tw) => tw.includes(qw) || qw.includes(tw)));
-  if (matchingWords.length > 0) {
-    return 0.1 + (matchingWords.length / qWords.length) * 0.3;
-  }
-
-  return 0;
-}
-
-
-function passesBrowseDiscoveryFloor(row: GameRow): boolean {
-  const reviewCount = getEvidenceReviewCount(row);
-  const confidence = row.confidence ?? 0;
-  const currentPlayers = getFreshPlayerSignals(row).players;
-  const qualityScore = confidenceWeightedScore(row);
-
-  if (qualityScore < 74) {
-    return false;
-  }
-
-  return reviewCount >= 50 || confidence >= 0.25 || currentPlayers >= 150 || qualityScore >= 84;
-}
-
-function getDateAgeDays(value: string | null | undefined): number {
-  if (!value) {
-    return Number.POSITIVE_INFINITY;
-  }
-
-  const normalizedValue = /^\d{4}-\d{2}-\d{2}$/.test(value)
-    ? `${value}T00:00:00Z`
-    : /^\d{4}$/.test(value)
-      ? `${value}-01-01T00:00:00Z`
-      : value;
-  const timestamp = new Date(normalizedValue).getTime();
-  if (!Number.isFinite(timestamp)) {
-    return Number.POSITIVE_INFINITY;
-  }
-
-  return (Date.now() - timestamp) / 86400000;
-}
-
-function getBrowseRelevanceDiscoveryScore(row: GameRow): number {
-  const qualityScore = confidenceWeightedScore(row);
-  const evidenceReviewCount = getEvidenceReviewCount(row);
-  const currentPlayers = getFreshPlayerSignals(row).players;
-  const momentum = Math.max(0, getFreshPlayerSignals(row).momentum);
-  const ageDays = getDateAgeDays(row.release_date);
-  const freshness = ageDays <= 180
-    ? 10
-    : ageDays <= 365
-      ? 8
-      : ageDays <= 730
-        ? 5
-        : ageDays <= 1825
-          ? 2
-          : 0;
-
-  return qualityScore
-    + freshness
-    + Math.min(10, Math.log10(evidenceReviewCount + 1) * 2.8)
-    + Math.min(8, Math.log10(currentPlayers + 1) * 2.2)
-    + Math.min(6, momentum * 22);
-}
-
-function getBrowseTopRatedAgeDays(row: GameRow): number {
-  return getDateAgeDays(row.release_date);
-}
-
-export function isBrowseTopRatedEligible(row: GameRow): boolean {
-  const evidenceReviewCount = getEvidenceReviewCount(row);
-  const currentPlayers = getFreshPlayerSignals(row).players;
-  const ageDays = getBrowseTopRatedAgeDays(row);
-
-  if (ageDays <= 120 && currentPlayers < 400 && evidenceReviewCount < 50000) {
-    return false;
-  }
-
-  if (ageDays > 120 && ageDays <= 365 && currentPlayers < 500 && evidenceReviewCount < 100000) {
-    return false;
-  }
-
-  if (ageDays > 365 && ageDays <= 1825 && currentPlayers < 750 && evidenceReviewCount < 150000) {
-    return false;
-  }
-
-  if (ageDays > 1825 && currentPlayers < 500 && evidenceReviewCount < 300000) {
-    return false;
-  }
-
-  if (evidenceReviewCount >= 300000) {
-    return currentPlayers >= 500 || ageDays <= 3650;
-  }
-
-  if (evidenceReviewCount >= 100000) {
-    return currentPlayers >= 250 || ageDays <= 2555;
-  }
-
-  if (evidenceReviewCount >= 50000) {
-    return currentPlayers >= 300 || ageDays <= 1825;
-  }
-
-  if (hasStrongCriticEvidence(row)) {
-    return currentPlayers >= 1500
-      || (ageDays <= 365 && evidenceReviewCount >= 10000 && currentPlayers >= 400)
-      || (ageDays <= 120 && evidenceReviewCount >= 2500 && currentPlayers >= 100);
-  }
-
-  if (evidenceReviewCount >= 10000 && currentPlayers >= 500) {
-    return true;
-  }
-
-  if (evidenceReviewCount >= 5000 && currentPlayers >= 1000) {
-    return true;
-  }
-
-  return ageDays <= 180 && evidenceReviewCount >= 2500 && currentPlayers >= 400;
-}
-
-export function getBrowseTopRatedScore(row: GameRow): number {
-  const qualityScore = confidenceWeightedScore(row);
-  const evidenceReviewCount = getEvidenceReviewCount(row);
-  const criticSources = getCriticSourceCount(row);
-  const currentPlayers = getFreshPlayerSignals(row).players;
-  const momentum = Math.max(0, getFreshPlayerSignals(row).momentum);
-  const ageDays = getBrowseTopRatedAgeDays(row);
-  const reviewScore = Math.min(14, Math.log10(evidenceReviewCount + 1) * 3.1);
-  const activityScore = Math.min(18, Math.log10(currentPlayers + 1) * 4.6);
-  const recencyScore = ageDays <= 90
-    ? 14
-    : ageDays <= 180
-      ? 11
-      : ageDays <= 365
-        ? 8
-        : ageDays <= 730
-          ? 4
-          : ageDays <= 1825
-            ? 1
-            : 0;
-  const criticBonus = criticSources >= 2 ? 4 : criticSources === 1 ? 1.5 : 0;
-  const scaleBonus = evidenceReviewCount >= 300000
-    ? 10
-    : evidenceReviewCount >= 100000
-      ? 8
-      : evidenceReviewCount >= 50000
-        ? 6
-        : evidenceReviewCount >= 10000
-          ? 3
-          : 0;
-  const momentumBonus = Math.min(4, momentum * 18);
-  const lowPresencePenalty = ageDays > 3650 && currentPlayers < 1800
-    ? 36
-    : ageDays > 2555 && currentPlayers < 1200
-      ? 28
-      : ageDays > 1825 && currentPlayers < 800
-        ? 20
-        : ageDays > 730 && currentPlayers < 750
-          ? 12
-          : ageDays > 365 && currentPlayers < 500
-            ? 6
-            : 0;
-
-  return qualityScore + reviewScore + activityScore + recencyScore + criticBonus + scaleBonus + momentumBonus - lowPresencePenalty;
-}
-
-function passesRecentlyAddedDiscoveryFloor(row: GameRow): boolean {
-  const qualityScore = confidenceWeightedScore(row);
-  const evidenceReviewCount = getEvidenceReviewCount(row);
-  const currentPlayers = getFreshPlayerSignals(row).players;
-  const releaseAgeDays = getDateAgeDays(row.release_date);
-
-  if (!isPrimaryDiscoveryGame(row)) {
-    return false;
-  }
-
-  if (qualityScore < 68) {
-    return false;
-  }
-
-  if (releaseAgeDays > 365 * 5) {
-    return false;
-  }
-
-  if (releaseAgeDays > 365 * 3 && qualityScore < 82 && evidenceReviewCount < 5000) {
-    return false;
-  }
-
-  return evidenceReviewCount >= 20 || currentPlayers >= 50 || qualityScore >= 78;
-}
-
-function getUpcomingMetadataScore(row: GameRow): number {
-  const hasCredits = Boolean(row.developer?.trim() || row.publisher?.trim());
-  const hasPlatforms = (row.platforms?.length ?? 0) > 0;
-  const hasGenres = (row.genres?.length ?? 0) > 0;
-  const hasDescription = Boolean(row.description && row.description.length >= 20);
-
-  return Number(hasCredits) + Number(hasPlatforms) + Number(hasGenres) + Number(hasDescription);
-}
-
-function isUpcomingDiscoveryReady(row: GameRow, classified: boolean): boolean {
-  const hasCredits = Boolean(row.developer?.trim() || row.publisher?.trim());
-  const hasPlatforms = (row.platforms?.length ?? 0) > 0;
-
-  const reviewed = matchReviewedPendingCatalogueRelease(row);
-  return (isFutureDate(row.release_date) || hasUnreleasedStatus(row) || hasEarlyAccessSignal(row)
-      || Boolean(reviewed && (reviewed.timing.precision==='tba' || isFutureDate(reviewed.timing.value))))
-    && !hasKnownFullRelease(row) && !matchReviewedCatalogueRelease(row)
-    && !['cancelled','canceled','delisted'].includes((row.release_status || '').toLowerCase())
-    && (classified || isPrimaryDiscoveryGame(row))
-    && getUpcomingMetadataScore(row) >= 2
-    && (hasCredits || hasPlatforms);
-}
-
 // Resolve filters once, then reuse them for the narrow cohort and bounded reads.
 // A wrapped builder avoids accidentally executing its Promise-like query here.
 function createSearchQueryFactory(state: SearchGamesState) {
@@ -318,7 +69,7 @@ function createSearchQueryFactory(state: SearchGamesState) {
   let mobileIds: Promise<string[]> | undefined;
   const today = new Date().toISOString().slice(0, 10);
   const recentlyAddedReleaseCutoff = new Date();
-  recentlyAddedReleaseCutoff.setFullYear(recentlyAddedReleaseCutoff.getFullYear() - 5);
+  recentlyAddedReleaseCutoff.setUTCFullYear(recentlyAddedReleaseCutoff.getUTCFullYear() - 5);
   const recentlyAddedReleaseCutoffStr = recentlyAddedReleaseCutoff.toISOString().slice(0, 10);
   return async (columns: string, signal: AbortSignal, ids?: string[]) => {
     let query = supabase.from("games").select(columns);
@@ -498,7 +249,7 @@ async function hydrateBrowseCohort(
   return ids.flatMap(id => rows.has(id) ? [rows.get(id)!] : []);
 }
 
-interface RankedBrowsePool { ids:string[]; totalIsExact:boolean; cards?:Game[] }
+interface RankedBrowsePool { ids:string[]; totalIsExact:boolean; cards?:Game[]; observedAt?:number }
 function browseNotice(sort: SearchGamesState['sort'], totalIsExact: boolean) {
   const notes = [sort === 'trending' ? TRENDING_NOTICE : '', !totalIsExact ? BOUNDED_BROWSE_NOTICE : ''].filter(Boolean);
   return notes.length ? { notice: notes.join(' ') } : {};
@@ -514,6 +265,9 @@ async function fetchSearchResults(state: SearchGamesState,poolOnly=false): Promi
 
   if(!poolOnly && !q && platform==='All' && !genre && !year && monetization==='All') {
     const pool=await readRankedBrowsePool(sort);
+    if (sort === "trending" && (pool.observedAt == null || Date.now() - pool.observedAt > 2 * SEARCH_REVALIDATE_SECONDS * 1000)) {
+      throw new Error("Trending catalogue snapshot expired.");
+    }
     const ids=pool.ids.slice((page-1)*SEARCH_PAGE_SIZE,page*SEARCH_PAGE_SIZE);
     const projection = sort==='newest' || sort==='trending' ? sort : undefined;
     const cards=ids.length?await (page<=3?readCachedBrowseCards:readBrowseCards)(ids,projection):[];
@@ -582,173 +336,18 @@ async function fetchSearchResults(state: SearchGamesState,poolOnly=false): Promi
   }
   let totalIsExact = returnedCount < requestedLimit && (data?.length ?? 0) === returnedCount;
 
-  const justReleasedDays = 14;
-  const todayStr = new Date().toISOString().slice(0, 10);
-  const todayMs = new Date(`${todayStr}T00:00:00`).getTime();
   const observedNow = Date.now();
-  const isTrending = isTrendingSort;
-  const isBroadDiscovery = !q && (isTopRated || isTrending || sort === "relevance" || isNewest || isUpcoming || isRecentlyAdded);
+  let rows = rankCatalogueCohort(data ?? [], state, usesStoredClassification, observedNow);
+  const filteredTotal = rows.length;
 
-  const dated = isNewest ? (data ?? []).map(projectReviewedRelease) : data ?? [];
-  let rows = dated.filter((row) => {
-    const storedSafety=usesStoredClassification?(row as GameRow & {explore_primary_safe?:boolean|null}).explore_primary_safe:undefined;
-    if (storedSafety===false || (storedSafety!==true && !isPublicSafeGame(row)) || !hasUsableCardImage(row)) {
-      return false;
-    }
-
-    if (isBroadDiscovery && storedSafety!==true && !isPrimaryDiscoveryGame(row)) {
-      return false;
-    }
-
-    if (isUpcoming) {
-      return isUpcomingDiscoveryReady(row,storedSafety===true);
-    }
-
-    // Newest is a release-date view, not a confidence/popularity ranking.
-    // Fresh console releases must not require Steam activity or old reviews.
-    if (isNewest) {
-      return Boolean(row.release_date && !isFutureDate(row.release_date))
-        && hasKnownFullRelease(row)
-        && mapGameRow(row).verdictLabel !== 'COMING SOON';
-    }
-
-    if ((row as GameRow & { is_provisional?: boolean }).is_provisional) {
-      return false;
-    }
-
-    if (row.verdict_label === "COMING SOON" || !q && hasUnreleasedStatus(row)) {
-      return false;
-    }
-
-    if (isFutureDate(row.release_date)) {
-      return false;
-    }
-
-    const reviewCount = row.review_count ?? 0;
-    if (!isTrending && reviewCount === 0 && row.release_date) {
-      const normalizedReleaseDate = /^\d{4}-\d{2}-\d{2}$/.test(row.release_date)
-        ? `${row.release_date}T00:00:00Z`
-        : /^\d{4}$/.test(row.release_date)
-          ? `${row.release_date}-01-01T00:00:00Z`
-          : row.release_date;
-      const releaseMs = new Date(normalizedReleaseDate).getTime();
-      if (Number.isNaN(releaseMs)) {
-        return false;
-      }
-      const daysSinceRelease = (todayMs - releaseMs) / 86400000;
-      if (daysSinceRelease > justReleasedDays) {
-        return false;
-      }
-    }
-
-    if (isTopRated && !isQualityGame(row, "topRated")) {
-      return false;
-    }
-
-    if (isTrending && (!row.release_date || hasUnreleasedStatus(row) || !hasUsableCardImage(row) || !getPlayerGrowthEvidence(row, observedNow))) {
-      return false;
-    }
-
-
-    if (isRecentlyAdded && !passesRecentlyAddedDiscoveryFloor(row)) {
-      return false;
-    }
-
-    if (sort === "relevance" && !q && !passesBrowseDiscoveryFloor(row)) {
-      return false;
-    }
-
-    return true;
-  });
-
-  rows = dedupePublicCanonicalRows(rows, { query: q });
-
-  if (isTopRated && rows.length > 0) {
-    const browseEligible = rows.filter(isBrowseTopRatedEligible);
-    rows = browseEligible;
-  }
-
-  if (isTrending && rows.length > 0) {
-    rows.sort((left, right) => Number(getPlayerGrowthEvidence(right, observedNow) === 'fresh') - Number(getPlayerGrowthEvidence(left, observedNow) === 'fresh')
-      || getPlayerGrowthRank(right) - getPlayerGrowthRank(left) || left.id.localeCompare(right.id));
-  } else if (isNewest && rows.length > 0) {
-    rows.sort((left, right) => {
-      const releaseDiff = (right.release_date ?? "").localeCompare(left.release_date ?? "");
-      if (releaseDiff !== 0) return releaseDiff;
-      const launchDiff = getNewReleaseDiscoveryScore(right) - getNewReleaseDiscoveryScore(left);
-      if (launchDiff !== 0) return launchDiff;
-      const reviewDiff = getEvidenceReviewCount(right) - getEvidenceReviewCount(left);
-      if (reviewDiff !== 0) return reviewDiff;
-      return getFreshPlayerSignals(right).players - getFreshPlayerSignals(left).players || left.id.localeCompare(right.id);
-    });
-  } else if (isRecentlyAdded && rows.length > 0) {
-    rows.sort((left, right) => {
-      const createdDiff = (right.created_at ?? "").localeCompare(left.created_at ?? "");
-      if (createdDiff !== 0) return createdDiff;
-      return left.id.localeCompare(right.id);
-    });
-  } else if (isUpcoming && rows.length > 0) {
-    rows.sort((left, right) => {
-      const releaseDiff = (left.release_date ?? "").localeCompare(right.release_date ?? "");
-      if (releaseDiff !== 0) return releaseDiff;
-      const metadataDiff = getUpcomingMetadataScore(right) - getUpcomingMetadataScore(left);
-      if (metadataDiff !== 0) return metadataDiff;
-      const qualityDiff = confidenceWeightedScore(right) - confidenceWeightedScore(left);
-      if (qualityDiff !== 0) return qualityDiff;
-      return getEvidenceReviewCount(right) - getEvidenceReviewCount(left) || left.id.localeCompare(right.id);
-    });
-  } else if (sort === "relevance" && !q && rows.length > 0) {
-    rows.sort((left, right) => getBrowseRelevanceDiscoveryScore(right) - getBrowseRelevanceDiscoveryScore(left) || left.id.localeCompare(right.id));
-  }
-
-  let filteredTotal = rows.length;
-  if (isRelevanceWithQuery && rows.length > 0) {
-    const scored = rows.map((row) => {
-      const similarity = titleSimilarity(q, row.title);
-      const quality = Math.min(1, confidenceWeightedScore(row) / 100);
-      const volume = Math.min(1, Math.log10((row.review_count ?? 0) + 1) / 6);
-      const ageMs = row.release_date ? Date.now() - new Date(row.release_date).getTime() : Number.POSITIVE_INFINITY;
-      const ageDays = ageMs / 86400000;
-      const recency = ageDays < 365 ? 1 : ageDays < 730 ? 0.8 : ageDays < 1825 ? 0.6 : 0.3;
-      const readiness = isSurfaceReady(row, "searchResult") ? 0.05 : 0;
-      const relevance = (similarity * 0.5) + (quality * 0.25) + (volume * 0.15) + (recency * 0.1) + readiness;
-      return { row, relevance };
-    });
-
-    scored.sort((left, right) => right.relevance - left.relevance || left.row.id.localeCompare(right.row.id));
-    filteredTotal = scored.length;
-    rows = scored.map((entry) => entry.row);
-  }
-
-  if (isTopRated && rows.length > 0) {
-    rows.sort((left, right) => {
-      const scoreDiff = getBrowseTopRatedScore(right) - getBrowseTopRatedScore(left);
-      if (scoreDiff !== 0) return scoreDiff;
-      const reviewDiff = getEvidenceReviewCount(right) - getEvidenceReviewCount(left);
-      if (reviewDiff !== 0) return reviewDiff;
-      const playerDiff = getFreshPlayerSignals(right).players - getFreshPlayerSignals(left).players;
-      if (playerDiff !== 0) return playerDiff;
-      const criticDiff = getCriticSourceCount(right) - getCriticSourceCount(left);
-      if (criticDiff !== 0) return criticDiff;
-      return (right.release_date ?? "").localeCompare(left.release_date ?? "") || left.id.localeCompare(right.id);
-    });
-  }
-
-  if(poolOnly)return {ids:rows.map(row=>row.id),totalIsExact,...(isUpcoming?{cards:rows.map(row=>{
-    const game = mapGameRow(row);
-    const reviewed=matchReviewedPendingCatalogueRelease(row);
-    const timing = resolveReleaseTiming(row.release_date, { upcoming: true, tba: !isFutureDate(row.release_date),
-      evidence: reviewed?.timing ?? getReviewedReleaseTiming(row.rawg_id, row.release_date) });
-    return {...game,description:'',releaseTiming:timing,releaseDateTba:timing.precision==='tba',isProvisional:true,
-      releaseDate:timing.precision==='day'?timing.value:timing.precision==='tba'?'':game.releaseDate,
-      verdictLabel:'COMING SOON' as const,releaseStatus:reviewed?.status ?? (hasEarlyAccessSignal(row)?'early-access':'upcoming')};
-  })}:{})};
-  rows=rows.slice(start,start+SEARCH_PAGE_SIZE);
-
-  const games = rows.map(row => isTrending
-    ? { ...mapGameRow(row), trendingReason: getPlayerGrowthEvidence(row, observedNow) === 'fresh' ? 'Trending Up' : 'Past Momentum' }
-    : mapGameRow(row));
-  let total = filteredTotal;
+  if (poolOnly) return {
+    ids: rows.map(row => row.id), totalIsExact,
+    ...(isTrendingSort ? { observedAt: observedNow } : {}),
+    ...(isUpcoming ? { cards: rows.map(row => projectBrowseCard(row, sort, observedNow)) } : {}),
+  };
+  rows = rows.slice(start, start + SEARCH_PAGE_SIZE);
+  const games = rows.map(row => projectBrowseCard(row, sort, observedNow));
+   let total = filteredTotal;
 
   const noFilters = platform === "All" && !genre && !year && monetization === "All";
   const allowPreviewFallback = sort === "relevance" && q.length >= 2 && page === 1 && noFilters;
@@ -841,13 +440,13 @@ function readSharedBrowsePool(sort: SearchGamesState['sort']): Promise<RankedBro
 const readRankedBrowsePool=unstable_cache(async(sort:SearchGamesState['sort'])=>{
   if(!['relevance','newest','upcoming','recently-added','top-rated','trending'].includes(sort))throw new Error('Invalid public browse sort');
   return readSharedBrowsePool(sort);
-},['public-browse-ranked-ids-v13'],{revalidate:SEARCH_REVALIDATE_SECONDS,tags:['public-search']});
+},['public-browse-ranked-ids-v14'],{revalidate:SEARCH_REVALIDATE_SECONDS,tags:['public-search']});
 
 async function readBrowseCards(ids:string[], projection?:'newest'|'trending'):Promise<Game[]> {
   const columns = GAME_CARD_COLUMNS_WITH_DESC + (projection==='newest' ? NEWEST_EVIDENCE_COLUMNS : '');
   const {data,error}=await getPublicSupabase().from('games').select(columns).in('id',ids).abortSignal(AbortSignal.timeout(5000));
   if(error)throw error;
-  const rows=((data || []) as unknown as GameRow[]).filter(isPublicSafeGame);
+  const rows=((data || []) as unknown as GameRow[]).filter(row => isPublicSafeGame(row) && !hasUnavailableStatus(row));
   if (projection!=='trending') return rows.map(row=>mapGameRow(projection==='newest'?projectReviewedRelease(row):row));
   const now=Date.now();
   return rows.flatMap(row=>{
@@ -855,14 +454,15 @@ async function readBrowseCards(ids:string[], projection?:'newest'|'trending'):Pr
     return growth?[{...mapGameRow(row),trendingReason:growth==='fresh'?'Trending Up':'Past Momentum'}]:[];
   });
 }
-const readCachedBrowseCards=unstable_cache(readBrowseCards,['public-browse-cards-v2'],{revalidate:SEARCH_REVALIDATE_SECONDS,tags:['public-search']});
+const readCachedBrowseCards=unstable_cache(readBrowseCards,['public-browse-cards-v3'],{revalidate:SEARCH_REVALIDATE_SECONDS,tags:['public-search']});
 
 export async function loadSearchResults(state: SearchGamesState): Promise<PaginatedResponse<Game>> {
   const expandedQuery = expandGameSearchAlias(state.query);
   if (expandedQuery !== state.query) state = { ...state, query: expandedQuery };
   if(state.sort==='upcoming'){
     const {loadUpcomingSearch}=await import('./upcoming-search');
-    return loadUpcomingSearch(state,readRankedBrowsePool('upcoming'));
+    const scoped = state.query || state.platform !== 'All' || state.genre || state.year || state.monetization !== 'All';
+    return loadUpcomingSearch(state, scoped ? fetchSearchResults(state, true) : readRankedBrowsePool('upcoming'));
   }
   // Next bypasses nested unstable_cache reads. Keep the cohort and small-card
   // caches outside the per-filter response cache, or every page rescans1,000 rows.

@@ -3,6 +3,7 @@ import SearchClientPage from "@/components/SearchClientPage";
 import { buildSearchPagePath, getSearchRobotsRule, getSearchSeoCopy, parseSearchPageState } from "@/lib/search";
 import { loadSearchResults, SEARCH_REVALIDATE_SECONDS } from "@/lib/services/search";
 import { boundedHomepageRead } from "@/lib/services/homepage-budget";
+import { hasPublicSupabaseEnv } from "@/lib/supabase/public";
 import { buildSocialMetadata, SITE_URL } from "@/lib/seo";
 
 export const revalidate = 300;
@@ -45,7 +46,7 @@ export async function generateMetadata({ searchParams }: SearchPageProps): Promi
 export default async function SearchPage({ searchParams }: SearchPageProps) {
   const resolvedSearchParams = searchParams ? await searchParams : undefined;
   const state = parseSearchPageState(resolvedSearchParams);
-  const initialGamesData = state.browseTab === "games"
+  const initialGamesData = state.browseTab === "games" && hasPublicSupabaseEnv()
     ? await boundedHomepageRead(8500, () => loadSearchResults(state.games)).catch(() => null)
     : null;
   return (

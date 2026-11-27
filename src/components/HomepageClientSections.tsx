@@ -10,7 +10,7 @@ import {
 } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
-import type { Game } from "@/lib/types";
+import type { GameCardData } from "@/lib/types";
 import FadeInSection from "@/components/FadeInSection";
 import GameCard from "@/components/GameCard";
 import HorizontalScroll from "@/components/HorizontalScroll";
@@ -32,8 +32,8 @@ import {
 type DiscoverTab = "new" | "deals" | "free";
 
 interface HomepageClientSectionsProps {
-  initialRecommendations: Game[];
-  initialNewReleases: Game[];
+  initialRecommendations: GameCardData[];
+  initialNewReleases: GameCardData[];
   shownGameSlugs: string;
 }
 

@@ -11,24 +11,39 @@ import SafeImage from "@/components/ui/SafeImage";
 import { OrientedCardImage } from "@/components/CatalogueCardArtwork";
 import { artworkKind, catalogueGameHref } from "@/lib/utils/artwork";
 
+type RenderedGameCard = Omit<GameCardData, "verdictSummary"> & Partial<Pick<GameCardData, "verdictSummary">>;
+
 interface GameCardProps {
-  game: GameCardData;
+  game: RenderedGameCard;
   priority?: boolean;
   prefetch?: boolean;
   className?: string;
   variant?: "default" | "spotlight";
 }
 
-function yearFromGame(game: GameCardData): string | null {
+function yearFromGame(game: RenderedGameCard): string | null {
   return game.releaseTiming ? game.releaseTiming.precision === 'tba' ? null : game.releaseTiming.value.slice(0, 4)
     : getStableYear(game.releaseDate);
 }
 
-function isUnreleased(game: GameCardData): boolean {
+function isUnreleased(game: RenderedGameCard): boolean {
   return game.isProvisional || game.verdictLabel === "COMING SOON";
 }
 
-function hasRealScore(game: GameCardData): boolean {
+const momentumDateFormat = new Intl.DateTimeFormat("en", { month: "short", day: "numeric", timeZone: "UTC" });
+
+function TrendingEvidence({ game }: { game: RenderedGameCard }) {
+  if (!game.trendingReason) return null;
+  const observed = game.trendingReason === "Past Momentum" ? Date.parse(game.playersUpdatedAt ?? "") : NaN;
+  return (
+    <span className="block text-[9px] font-bold text-white bg-black/75 px-2 py-0.5 rounded-lg border border-white/20 whitespace-nowrap">
+      {game.trendingReason}
+      {Number.isFinite(observed) && <time dateTime={game.playersUpdatedAt}> · {momentumDateFormat.format(observed)}</time>}
+    </span>
+  );
+}
+
+function hasRealScore(game: RenderedGameCard): boolean {
   if (isUnreleased(game)) return false;
   if (game.score === 0 && game.scoreSource === "gx") return false;
   if (game.verdictLabel === "JUST RELEASED") return false;
@@ -136,9 +151,7 @@ export default function GameCard({
 
               {game.trendingReason && (
                 <div className="absolute bottom-3 right-3 z-[1]">
-                  <span className="text-[9px] font-bold text-white bg-white/15 backdrop-blur-md px-2 py-0.5 rounded-lg border border-white/10 whitespace-nowrap">
-                    {game.trendingReason}
-                  </span>
+                  <TrendingEvidence game={game} />
                 </div>
               )}
             </div>
@@ -253,9 +266,7 @@ export default function GameCard({
 
           {game.trendingReason && (
             <div className="absolute bottom-2.5 right-2.5 z-[1]">
-              <span className="text-[9px] font-bold text-white bg-white/15 backdrop-blur-md px-1.5 py-0.5 rounded-lg border border-white/10 whitespace-nowrap">
-                {game.trendingReason}
-              </span>
+              <TrendingEvidence game={game} />
             </div>
           )}
         </div>

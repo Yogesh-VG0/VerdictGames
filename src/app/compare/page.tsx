@@ -223,6 +223,7 @@ function CompareContent() {
         {single.isLoading ? <p role="status">Loading selected game…</p> : single.data ? <><GameHeader game={single.data} /><p className="text-center text-sm text-secondary">Choose a {slug1 ? 'second' : 'first'} game above to compare.</p></> : <p role="alert">The selected game could not be loaded. <button onClick={() => single.refetch()} className="underline">Try again</button></p>}
       </section>}
       {isError && <p role="alert">Comparison could not be loaded. <button onClick={() => refetch()} className="underline">Try again</button></p>}
+      {slug1 && slug2 && data === null && <p role="status">One or both games are no longer available to compare.</p>}
       {isLoading && slug1 && slug2 && (
         <div role="status" aria-label="Loading comparison" aria-busy="true" className="space-y-4">
           <div className="grid grid-cols-2 gap-6">

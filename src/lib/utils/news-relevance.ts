@@ -3,6 +3,9 @@
  * adaptations and crossovers when the headline establishes a gaming connection.
  */
 export function isRelevantGamingHeadline(title: string, href = ''): boolean {
+  const dailyPuzzle = /\b(?:wordle|quordle|strands|nyt connections|mini crossword|daily crossword|daily puzzle|spelling bee)\b/i;
+  const answerGuide = /\b(?:hints?|answers?|solutions?|spoilers?|today'?s|daily)\b/i;
+  if (dailyPuzzle.test(title) && answerGuide.test(title)) return false;
   const entertainment = /\b(anime|manga|screenx|box office|cinema|films?|movies?|tv (?:shows?|series)|television|animators|casting|recast(?:ing)?|cast as|cast to play|actors?|avengers[ :]+doomsday|prime video|netflix series|hbo max)\b/i;
   const gaming = /\b(video[ -]?games?|games?|gaming|gameplay|gamers?|playstation|xbox|nintendo|steam|dlc|esports?|rpg|controller|console)\b/i;
   const schedule = /\b(?:release schedule|when (?:is|does)|where to watch|streaming on)\b.*\b(?:episode|season)\b|\bepisode\s+\d+\b.*\b(?:release date|release schedule|streaming)\b/i;

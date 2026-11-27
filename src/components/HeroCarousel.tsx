@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
-import { Game } from "@/lib/types";
+import type { SpotlightGame } from "@/lib/ui/homepage-props";
 import VerdictBadge from "@/components/ui/VerdictBadge";
 import ScoreRing from "@/components/ui/ScoreRing";
 import PixelButton from "@/components/ui/PixelButton";
@@ -15,7 +15,7 @@ import {getHeroSummary} from '@/lib/utils/homepageHero';
 import { getFreshPlayerSignals } from '@/lib/utils/trending';
 
 interface HeroCarouselProps {
-  games: Game[];
+  games: SpotlightGame[];
   /** Auto-advance interval in ms (default: 6000) */
   interval?: number;
 }
@@ -154,18 +154,21 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
   }, [paused, slideCount, interval, paginate]);
 
   if (!game) return null;
+  const hasLimitedEvidence = game.score > 0 && game.confidence != null && game.confidence < 0.3;
+  const showVerdict = !game.isProvisional && game.score > 0 && !hasLimitedEvidence;
   const { players: freshPlayers } = getFreshPlayerSignals({
     current_players: game.currentPlayers,
     players_updated_at: game.playersUpdatedAt,
   });
 
   // Context-aware reason label per slide
-  const getReasonLabel = (g: Game): string => {
+  const getReasonLabel = (g: SpotlightGame): string => {
     if (g.releaseStatus === 'early-access') return "Early Access";
+    if (g.spotlightReason) return g.spotlightReason;
     if (g.isFeaturedManual) return "Editor's Pick";
-    if (g.isProvisional || g.verdictLabel === "COMING SOON" || g.verdictLabel === 'JUST RELEASED') return "Featured";
-    if (g.trendingReason === "Trending Up") return "Trending Now";
-    if (g.score >= 90) return "Top Rated";
+    if (g.isProvisional || g.verdictLabel === "COMING SOON") return "Upcoming";
+    if (g.verdictLabel === "JUST RELEASED") return "Recent Release";
+    if (showVerdict && g.score >= 90) return "Top Rated";
     if (g.priceCurrent === 0 || g.isFree) return "Free to Play";
     if (g.priceLowest && g.priceCurrent && g.priceCurrent < g.priceLowest) return "On Sale";
     if (g.featured) return "Featured";
@@ -207,10 +210,10 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
             className="absolute inset-0"
             style={{ transformStyle: "preserve-3d" }}
           >
-            {(game.headerImage || game.coverImage) ? (
+            {game.headerImage ? (
               <OrientedCardImage layout="landscape" sizes="100vw"
-                image={game.headerImage || game.coverImage}
-                alternate={game.heroArtworkFallback || (game.coverImage !== game.headerImage ? game.coverImage : undefined)}
+                image={game.headerImage}
+                alternate={game.heroArtworkFallback}
                 alt={game.title}
                 className={game.heroArtworkMobileFocalPoint === 'right'
                   ? 'object-[69%_center] md:object-[56%_center]'
@@ -249,16 +252,14 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
 
             {/* Score + Verdict + Platforms */}
             <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-              {!game.isProvisional && game.score > 0 && <div className="flex flex-col items-center gap-0.5">
+              {showVerdict && <div className="flex flex-col items-center gap-0.5">
                 <ScoreRing score={game.score} size={40} strokeWidth={3} className="sm:hidden" />
                 <ScoreRing score={game.score} size={56} strokeWidth={3} className="hidden sm:block" />
-                  {game.score > 0 && (
-                  <span className="text-[9px] font-medium hero-overlay-text-muted uppercase tracking-wider opacity-70">
-                      Verdict
-                  </span>
-                )}
+                <span className="text-[9px] font-medium hero-overlay-text-muted uppercase tracking-wider opacity-70">
+                  Verdict
+                </span>
               </div>}
-              <VerdictBadge label={game.verdictLabel} size="lg" />
+              {!hasLimitedEvidence && <VerdictBadge label={game.verdictLabel} size="lg" />}
               <div className="hidden sm:flex items-center gap-2.5 flex-wrap">
                 {(() => {
                   const { visible, overflow } = collapsePlatforms(game.platforms, 4);
@@ -282,7 +283,7 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
             </div>
 
             {/* Summary - prefer actual description over template verdict summary */}
-            {game.score > 0 && game.confidence != null && game.confidence < 0.3 && (
+            {hasLimitedEvidence && (
               <p className="text-xs hero-overlay-text-muted">Limited rating evidence</p>
             )}
             <p className="text-xs sm:text-sm md:text-base hero-overlay-text-secondary max-w-2xl line-clamp-2">
@@ -314,7 +315,7 @@ export default function HeroCarousel({ games, interval = 6000 }: HeroCarouselPro
             {/* CTAs */}
             <div className="flex gap-3 pt-0.5 sm:pt-1 flex-wrap" data-interactive>
               <Link href={`/game/${game.slug}`} prefetch={false} onClick={(e) => { if (isSwiping.current) e.preventDefault(); }}>
-                <PixelButton as="span" size="md">{game.isProvisional ? 'View game' : 'Read Verdict'}</PixelButton>
+                <PixelButton as="span" size="md">{showVerdict ? 'Read Verdict' : 'View game'}</PixelButton>
               </Link>
               {game.trailerUrl && (
                 <a

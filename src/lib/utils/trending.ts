@@ -182,6 +182,9 @@ export function hasBrowseTrendingSignal(row: GameRow): boolean {
     || hasStrongFlaggedSignal;
 }
 
+const PLAYER_GROWTH_FRESH_MS = 24 * 3600000;
+const PLAYER_GROWTH_HISTORY_MS = 7 * 86400000;
+
 export function getPlayerGrowthEvidence(
   row: Pick<GameRow, 'players_updated_at' | 'current_players' | 'momentum'>,
   now = Date.now(),
@@ -189,13 +192,18 @@ export function getPlayerGrowthEvidence(
   const observed = Date.parse(row.players_updated_at ?? '');
   const current = row.current_players ?? 0;
   const growth = Math.expm1(row.momentum ?? 0);
-  if (!Number.isFinite(observed) || observed > now || now - observed > 7 * 86400000
+  if (!Number.isFinite(observed) || observed > now || now - observed > PLAYER_GROWTH_HISTORY_MS
     || !Number.isFinite(growth) || current < 100 || growth < 0.0399) return null;
   // The worker stores ln(current + 1) minus ln(previous + 1), rounded to four places.
   const previous = (current + 1) / (1 + growth) - 1;
   const delta = current - previous;
   if (previous < 1 || (growth < 0.0999 || delta < 25) && (current < 750 || delta < 50)) return null;
-  return now - observed <= 24 * 3600000 ? 'fresh' : 'stale';
+  return now - observed <= PLAYER_GROWTH_FRESH_MS ? 'fresh' : 'stale';
+}
+
+export function getPlayerGrowthLabelExpiry(observedAt: string | null, evidence: 'fresh' | 'stale'): number {
+  const window = evidence === 'fresh' ? PLAYER_GROWTH_FRESH_MS : PLAYER_GROWTH_HISTORY_MS;
+  return Date.parse(observedAt ?? '') + window + 1;
 }
 
 export function getPlayerGrowthRank(row: Pick<GameRow, 'momentum' | 'current_players'>): number {

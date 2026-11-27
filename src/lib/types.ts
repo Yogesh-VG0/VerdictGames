@@ -124,6 +124,7 @@ export interface Game {
 
   // Trending/freshness signals
   trendingReason?: string;
+  spotlightReason?: "Recent Release" | "Upcoming";
   isFeaturedManual?: boolean;
   isTrendingManual?: boolean;
 
@@ -144,7 +145,7 @@ export interface Game {
 export type GameCardData = Pick<Game,
   'id' | 'slug' | 'title' | 'coverImage' | 'platforms' | 'genres' | 'releaseDate' | 'releaseDateTba'
   | 'score' | 'verdictLabel' | 'verdictSummary' | 'confidence' | 'scoreSource' | 'isPreview' | 'rawgId'
-  | 'isProvisional' | 'releaseStatus' | 'releaseTiming' | 'trendingReason'>;
+  | 'isProvisional' | 'releaseStatus' | 'releaseTiming' | 'trendingReason' | 'playersUpdatedAt'>;
 
 export interface Review {
   id: string;

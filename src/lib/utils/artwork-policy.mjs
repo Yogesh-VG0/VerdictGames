@@ -134,8 +134,8 @@ function storedTier(value, steamAppId) {
   return steamHero.test(steamFile ?? '') ? 90 : steamHeader.test(steamFile ?? '') ? 76 : steamScreenshot.test(steamFile ?? '') ? 40 : 0;
 }
 
-export function isProviderHeroArtwork(value) {
-  return storedTier(value) > 0;
+export function isProviderHeroArtwork(value, steamAppId) {
+  return storedTier(value, steamAppId) > 0;
 }
 
 export function selectLandscapeArtwork({ igdb, rawg, rawgScreenshots = [], steam, steamAppId, steamHeroUrl, existing, cover, reviewed }) {

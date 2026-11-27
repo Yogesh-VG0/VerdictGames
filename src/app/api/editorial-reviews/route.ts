@@ -1,13 +1,16 @@
 import { NextRequest } from "next/server";
-import { jsonOk, jsonError } from "@/lib/api/response";
+import { jsonBadRequest, jsonOk, jsonUnavailable } from "@/lib/api/response";
 import { getPublicSupabase } from "@/lib/supabase/public";
 
 export async function GET(request: NextRequest) {
+  const parameter = request.nextUrl.searchParams.get("page") ?? "1";
+  const page = Number(parameter);
+  const pageSize = 20;
+  if (!/^\d+$/.test(parameter) || page < 1 || !Number.isSafeInteger(page * pageSize)) {
+    return jsonBadRequest("Invalid editorial reviews page.");
+  }
   try {
     const supabase = getPublicSupabase();
-    const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get("page") || "1", 10);
-    const pageSize = 20;
 
     const { data: reviews, error, count } = await supabase
       .from("editorial_reviews")
@@ -31,21 +34,20 @@ export async function GET(request: NextRequest) {
       .eq("is_published", true)
       .order("is_featured", { ascending: false })
       .order("published_at", { ascending: false })
+      .order("id", { ascending: true })
       .range((page - 1) * pageSize, page * pageSize - 1);
 
-    if (error) {
-      console.error("[Editorial Reviews API] Error:", error);
-      return jsonOk({ reviews: [], total: 0, page, pageSize });
-    }
+    if (error) throw error;
+    if (!reviews || count === null) throw new Error("Incomplete editorial review result");
 
     return jsonOk({
-      reviews: reviews || [],
-      total: count || 0,
+      reviews,
+      total: count,
       page,
       pageSize,
     });
   } catch (error) {
     console.error("[Editorial Reviews API] Error:", error);
-    return jsonError(error instanceof Error ? error.message : "Failed to fetch editorial reviews", 500);
+    return jsonUnavailable("Editorial reviews temporarily unavailable.");
   }
 }

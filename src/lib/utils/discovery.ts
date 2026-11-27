@@ -179,6 +179,7 @@ export function sanitizeDiscoveryDescription(
   row: Pick<GameRow, "title" | "description" | "igdb_summary" | "wikipedia_excerpt">
     & Partial<Pick<GameRow, "release_status" | "release_date" | "steam_app_id" | "steam_total_count"
       | "is_provisional" | "verdict_label" | "tags" | "genres">>,
+  today = new Date().toISOString().slice(0, 10),
 ): string {
   const candidates = [row.description, row.igdb_summary, row.wikipedia_excerpt]
     .map((value) => value?.trim() || "")
@@ -195,7 +196,7 @@ export function sanitizeDiscoveryDescription(
   const hasLegacyPlayabilityEvidence = !row.release_status && row.is_provisional === false
     && row.verdict_label !== "COMING SOON"
     && !!row.release_date && /^\d{4}-\d{2}-\d{2}$/.test(row.release_date)
-    && row.release_date < new Date().toISOString().slice(0, 10)
+    && row.release_date < today
     && (row.steam_app_id ?? 0) > 0 && (row.steam_total_count ?? 0) > 0
     && !hasEarlyAccessSignal(row);
   const preferred = candidates[0];

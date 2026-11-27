@@ -6,8 +6,12 @@ export function hasKnownFullRelease(game: ReleaseSignals) {
 }
 
 export function hasUnreleasedStatus(game:ReleaseSignals) {
-  return ['upcoming','unreleased','announced','coming soon','tba','cancelled','canceled','delisted']
+  return hasUnavailableStatus(game) || ['upcoming','unreleased','announced','coming soon','tba']
     .includes(normalizedStatus(game.release_status || ''));
+}
+
+export function hasUnavailableStatus(game: ReleaseSignals) {
+  return ['cancelled', 'canceled', 'delisted', 'withdrawn'].includes(normalizedStatus(game.release_status || ''));
 }
 
 export function hasEarlyAccessSignal(game: ReleaseSignals) {

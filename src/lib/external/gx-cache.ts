@@ -152,8 +152,9 @@ export async function gxFetchWithCache<T>(
       if (error) throw error;
       const parsed = parsePayload<T>(data?.payload);
       if (data && parsed !== null && acceptPayload(parsed)) {
-        stored = { data: parsed, source: 'cache' };
-        if (Date.now() - Date.parse(data.fetched_at) < staleTtlMs) return stored;
+        const age = Date.now() - Date.parse(data.fetched_at);
+        if (age >= 0 && age < staleTtlMs) return { data: parsed, source: 'cache' };
+        if (age >= 0 && age < 2 * staleTtlMs) stored = { data: parsed, source: 'cache' };
       }
     } catch {
       console.warn(`[GX Cache] Snapshot read failed for ${feedKey}`);
